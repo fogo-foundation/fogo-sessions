@@ -5,9 +5,12 @@ package_manager = "pnpm"
 resolution = true
 skip-lint = false
 
+[programs.localnet]
+session_manager = "mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk"
+
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-"build-idl" = "anchor build && cp target/{idl/session_manager.json,types/session_manager.ts} app/src/idl"
+"build-idl" = "anchor build && mkdir -p app/src/idl && cp target/{idl/session_manager.json,types/session_manager.ts} app/src/idl"
