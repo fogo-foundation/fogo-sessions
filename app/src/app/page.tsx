@@ -13,7 +13,7 @@ import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import sessionManagerIdl from "../idl/session_manager.json"
 import type { SessionManager } from "../idl/session_manager"
 
-const SPONSOR = process.env.NEXT_PUBLIC_SPONSOR_KEY ? new PublicKey(process.env.NEXT_PUBLIC_SPONSOR_KEY) : new PublicKey("H5kT56ow3MGvNFXxUZ589YGkTSZjNKebjsxkdv72sFbQ");
+const SPONSOR = new PublicKey(process.env.NEXT_PUBLIC_SPONSOR_KEY!);
 
 export default function Home() {
   const { connection } = useConnection();
@@ -22,7 +22,7 @@ export default function Home() {
   const provider = new AnchorProvider(
     connection,
     {} as Wallet,
-    {commitment: "processed"}
+    {}
   )
 
   const sessionManagerProgram : Program<SessionManager> = new Program<SessionManager>(
@@ -75,7 +75,7 @@ export default function Home() {
   return (
     <main>
       <div className="m-auto w-2/4 parent space-y-2">
-        <h1>Gasless Trading Demo</h1>
+        <h1>Gasless Trading App</h1>
         <WalletMultiButton />
         <WalletDisconnectButton />
         {canEnableTrading && (

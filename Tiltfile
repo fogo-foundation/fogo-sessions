@@ -18,3 +18,10 @@ local_resource(
     ),
     resource_deps=["build-programs"],
 )
+
+local_resource(
+    "web-app",
+    serve_cmd="pnpm i && pnpm start:dev",
+    serve_dir="./app",
+    resource_deps=["svm-localnet"],
+)
