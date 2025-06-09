@@ -8,3 +8,6 @@ skip-lint = false
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
+
+[scripts]
+"build-idl" = "anchor build && cp target/{idl/session_manager.json,types/session_manager.ts} app/src/idl"
