@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("5QdNueoih49C6pmYCaUvX5TN2Sar47FQkGXKMpt5HmHg");
+declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
 #[program]
 pub mod session_manager {
@@ -13,5 +13,5 @@ pub mod session_manager {
 
 #[derive(Accounts)]
 pub struct Start<'info> {
-    pub payer: Signer<'info>,
+    pub sponsor: Signer<'info>,
 }
