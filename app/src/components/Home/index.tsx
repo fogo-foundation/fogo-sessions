@@ -15,6 +15,56 @@ import type { SessionManager } from "@/idl/session_manager";
 
 const SPONSOR = new PublicKey(process.env.NEXT_PUBLIC_SPONSOR_KEY!);
 
+const handleEnableTrading = async (
+  sessionManagerProgram: Program<SessionManager>,
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>,
+  setLoading: (loading: boolean) => void,
+) => {
+    setLoading(true);
+    const provider = sessionManagerProgram.provider;
+    const sessionKey = Keypair.generate();
+
+    const transaction = await sessionManagerProgram.methods
+      .start()
+      .accounts({
+        sponsor: SPONSOR,
+      })
+      .transaction();
+
+    await signMessage!(
+      new TextEncoder().encode(`
+      chain_id: ${process.env.NEXT_PUBLIC_CHAIN_ID}
+      session_key: ${sessionKey.publicKey.toBase58()}
+      nonce: ${Math.floor(Date.now() / 1000)}
+      domain: gasless-trading.vercel.app
+    `),
+    );
+
+    transaction.recentBlockhash = (
+      await provider.connection.getLatestBlockhash()
+    ).blockhash;
+    transaction.feePayer = SPONSOR;
+
+    const response = await fetch("/api/sponsor_and_send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(
+        Buffer.from(transaction.serialize({ requireAllSignatures: false })),
+      ),
+    });
+
+    const lastValidBlockHeight = await provider.connection.getSlot();
+    const { signature } = await response.json();
+    await provider.connection.confirmTransaction({
+      signature,
+      blockhash: transaction.recentBlockhash,
+      lastValidBlockHeight,
+    });
+    setLoading(false);
+};
+
 export const Home = () => {
   const { connection } = useConnection();
   const [loading, setLoading] = useState(false);
@@ -26,57 +76,14 @@ export const Home = () => {
 
   const { publicKey, signMessage } = useWallet();
 
-  const handleEnableTrading = useCallback(() => {
-    const inner = async () => {
-      setLoading(true);
-      const sessionKey = Keypair.generate();
-
-      const transaction = await sessionManagerProgram.methods
-        .start()
-        .accounts({
-          sponsor: SPONSOR,
-        })
-        .transaction();
-
-      await signMessage!(
-        new TextEncoder().encode(`
-        chain_id: ${process.env.NEXT_PUBLIC_CHAIN_ID}
-        session_key: ${sessionKey.publicKey.toBase58()}
-        nonce: ${Math.floor(Date.now() / 1000)}
-        domain: gasless-trading.vercel.app
-      `),
-      );
-
-      transaction.recentBlockhash = (
-        await provider.connection.getLatestBlockhash()
-      ).blockhash;
-      transaction.feePayer = SPONSOR;
-
-      const response = await fetch("/api/sponsor_and_send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(
-          Buffer.from(transaction.serialize({ requireAllSignatures: false })),
-        ),
+  const onEnableTrading = useCallback(() => {
+    if (signMessage) {
+      handleEnableTrading(sessionManagerProgram, signMessage, setLoading).catch((error) => {
+        setLoading(false);
+        console.error(error);
       });
-
-      const lastValidBlockHeight = await connection.getSlot();
-      const { signature } = await response.json();
-      await connection.confirmTransaction({
-        signature,
-        blockhash: transaction.recentBlockhash,
-        lastValidBlockHeight,
-      });
-      setLoading(false);
-    };
-
-    inner().catch((error) => {
-      setLoading(false);
-      console.error(error);
-    });
-  }, [publicKey, signMessage]);
+    }
+  }, [publicKey, signMessage, sessionManagerProgram]);
 
   const canEnableTrading = publicKey && signMessage;
   return (
@@ -86,7 +93,7 @@ export const Home = () => {
         <WalletMultiButton />
         <WalletDisconnectButton />
         {canEnableTrading && (
-          <Button onClick={handleEnableTrading} loading={loading}>
+          <Button onClick={onEnableTrading} loading={loading}>
             Enable Trading
           </Button>
         )}
