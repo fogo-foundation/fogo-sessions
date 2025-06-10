@@ -39,10 +39,10 @@ const handleEnableTrading = async (
     `Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain you are signing from.\n\nsession_key: ${sessionKey.publicKey.toBase58()}\nnonce: ${sessionKey.publicKey.toBase58()}\ndomain: gasless-trading.vercel.app\nextra: extra`,
   );
 
-  const intentSignature = await signMessage!(message);
+  const intentSignature = await signMessage(message);
 
   const intentInstruction = Ed25519Program.createInstructionWithPublicKey({
-    publicKey: publicKey!.toBytes(),
+    publicKey: publicKey.toBytes(),
     signature: intentSignature,
     message: message,
   });
@@ -79,9 +79,7 @@ const handleEnableTrading = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      transaction: Buffer.from(
-        transaction.serialize({ requireAllSignatures: false }),
-      ).toString("base64"),
+      transaction: transaction.serialize({ requireAllSignatures: false }).toString("base64"),
     }),
   });
 
