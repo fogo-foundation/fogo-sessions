@@ -79,7 +79,9 @@ const handleEnableTrading = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      transaction: transaction.serialize({ requireAllSignatures: false }).toString("base64"),
+      transaction: transaction
+        .serialize({ requireAllSignatures: false })
+        .toString("base64"),
     }),
   });
 
