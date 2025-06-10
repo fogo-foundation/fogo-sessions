@@ -78,7 +78,7 @@
         "cache": false
       },
       "start:dev": {
-        "dependsOn": ["//#install:modules", "pull:env"],
+        "dependsOn": ["//#install:modules"],
         "persistent": true,
         "cache": false
       },
