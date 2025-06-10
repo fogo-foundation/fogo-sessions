@@ -50,9 +50,9 @@ const handleEnableTrading = async (
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(
-        Buffer.from(transaction.serialize({ requireAllSignatures: false })),
-      ),
+      body: JSON.stringify({transaction:
+        transaction.serialize({ requireAllSignatures: false }).toString("base64"),
+    }),
     });
 
     const lastValidBlockHeight = await provider.connection.getSlot();
