@@ -64,7 +64,6 @@ mod test {
             MESSAGE_PREFIX, key, nonce
         );
 
-        println!("message: {}", message);
         let parsed_message = Message(message.as_bytes().to_vec()).parse_claims().unwrap();
         assert_eq!(parsed_message.domain, Domain("https://app.xyz".to_string()));
         assert_eq!(parsed_message.session_key, SessionKey(key));
