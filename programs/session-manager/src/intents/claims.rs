@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{state::AudienceItem, StartSession};
 use anchor_lang::prelude::*;
 
@@ -9,6 +11,13 @@ pub struct Domain(pub(crate) String);
 
 #[derive(PartialEq, Debug)]
 pub struct SessionKey(pub(crate) Pubkey);
+
+pub struct Claims {
+    pub domain: Domain,
+    pub nonce: Nonce,
+    pub session_key: SessionKey,
+    pub extra: HashMap<String, String>,
+}
 
 impl<'info> StartSession<'info> {
     pub fn check_nonce(&self, _nonce: Nonce) -> Result<()> {

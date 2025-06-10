@@ -1,17 +1,11 @@
 use crate::{
     error::SessionManagerError,
-    intents::claims::{Domain, Nonce, SessionKey},
+    intents::claims::{Claims, Domain, Nonce, SessionKey},
 };
 use anchor_lang::prelude::*;
 use std::{collections::HashMap, str::FromStr};
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain you are signing from.\n\n";
-pub struct Claims {
-    pub domain: Domain,
-    pub nonce: Nonce,
-    pub session_key: SessionKey,
-    pub extra: HashMap<String, String>,
-}
 
 #[derive(AnchorDeserialize)]
 pub struct Message(pub(crate) Vec<u8>);
