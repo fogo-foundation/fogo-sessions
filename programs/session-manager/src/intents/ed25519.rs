@@ -1,6 +1,6 @@
 use crate::{error::SessionManagerError, intents::message::Message, StartSession};
-use anchor_lang::{prelude::*, solana_program::sysvar::instructions::load_instruction_at_checked};
 use anchor_lang::solana_program::ed25519_program;
+use anchor_lang::{prelude::*, solana_program::sysvar::instructions::load_instruction_at_checked};
 
 pub struct Intent {
     pub signer: Pubkey,
@@ -30,7 +30,7 @@ impl Ed25519InstructionHeader {
             signature_offset: Self::LEN + 32,
             signature_instruction_index: u16::MAX, // u16::MAX represents the current instruction
             public_key_offset: Self::LEN,
-            public_key_instruction_index: u16::MAX, 
+            public_key_instruction_index: u16::MAX,
             message_data_offset: Self::LEN + 32 + 64,
             message_instruction_index: u16::MAX,
             message_data_size: self.message_data_size,

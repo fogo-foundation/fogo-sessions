@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use anchor_lang::prelude::*;
+use std::collections::HashMap;
 
 #[account]
 pub struct Session {

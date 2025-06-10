@@ -38,11 +38,7 @@ impl Message {
                 .ok_or(error!(SessionManagerError::InvalidArgument))?,
             session_key: kv
                 .remove("session_key")
-                .and_then(|session_key| {
-                    Pubkey::from_str(&session_key)
-                        .ok()
-                        .map(SessionKey)
-                })
+                .and_then(|session_key| Pubkey::from_str(&session_key).ok().map(SessionKey))
                 .ok_or(error!(SessionManagerError::InvalidArgument))?,
             extra: kv,
         };
