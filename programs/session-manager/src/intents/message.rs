@@ -47,12 +47,7 @@ mod test {
     pub fn test_parse_message() {
         let key = Pubkey::new_unique();
         let nonce = Pubkey::new_unique();
-        let message = format!("Fogo Sessions:\nSigning this intent will allow the app to transfer your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain you are signing from.
-domain https://app.xyz
-session_key {}
-nonce {}
-key1 value1
-key2 value2", key, nonce);
+        let message = format!("{}domain: https://app.xyz\nsession_key: {}\nnonce: {}\nkey1: value1\nkey2: value2", MESSAGE_PREFIX, key, nonce);
 
         println!("message: {}", message);
         let parsed_message = Message(message.as_bytes().to_vec()).parse_claims().unwrap();
