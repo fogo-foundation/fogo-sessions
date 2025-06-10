@@ -1,8 +1,6 @@
 const config = {
   reactStrictMode: true,
 
-  pageExtensions: ["ts", "tsx", "mdx"],
-
   logging: {
     fetches: {
       fullUrl: true,
@@ -15,10 +13,6 @@ const config = {
       use: ["@svgr/webpack"],
     });
     config.resolve.fallback = { fs: false };
-    config.resolve.extensionAlias = {
-      ".js": [".js", ".ts", ".tsx"],
-    };
-
     return config;
   },
 

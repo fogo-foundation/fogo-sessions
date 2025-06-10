@@ -10,12 +10,10 @@
     "build": "next build",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
-    "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
     "start:dev": "next dev --port 3000",
     "start:prod": "next start --port 3000",
     "test:format": "prettier --check .",
     "test:lint:eslint": "eslint .",
-    "test:lint:stylelint": "stylelint 'src/**/*.scss'",
     "test:types": "tsc"
   },
   "dependencies": {
