@@ -21,7 +21,6 @@ local_resource(
 
 local_resource(
     "web-app",
-    serve_cmd="pnpm i && pnpm start:dev",
-    serve_dir="./app",
+    serve_cmd="pnpm turbo start:dev",
     resource_deps=["svm-localnet"],
 )

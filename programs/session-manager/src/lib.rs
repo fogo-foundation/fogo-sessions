@@ -1,3 +1,6 @@
+#![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
+#![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
+
 use crate::intents::claims::Claims;
 use crate::intents::ed25519::Intent;
 use crate::state::Session;
@@ -9,7 +12,6 @@ declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 pub mod error;
 pub mod intents;
 pub mod state;
-
 #[program]
 pub mod session_manager {
     use super::*;

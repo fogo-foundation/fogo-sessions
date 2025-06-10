@@ -1,0 +1,19 @@
+packageManagerStrict: true
+packageManagerStrictVersion: true
+engineStrict: true
+strictPeerDependencies: true
+strictDepBuilds: true
+managePackageManagerVersions: false
+
+catalog:
+  turbo: ^2.5.0
+  prettier: ^3.5.3
+
+onlyBuiltDependencies:
+  - sharp
+  - bigint-buffer
+  - bufferutil
+  - utf-8-validate
+
+packages:
+  - app

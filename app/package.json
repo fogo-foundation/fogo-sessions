@@ -10,12 +10,10 @@
     "build": "next build",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
-    "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
     "start:dev": "next dev --port 3000",
     "start:prod": "next start --port 3000",
     "test:format": "prettier --check .",
     "test:lint:eslint": "eslint .",
-    "test:lint:stylelint": "stylelint 'src/**/*.scss'",
     "test:types": "tsc"
   },
   "dependencies": {
@@ -45,6 +43,5 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17"
-  },
-  "packageManager": "pnpm@9.15.4+sha256.9bee59c7313a216722c079c1e22160dea7f88df4e0c3450b1d7b01b882336c6a"
+  }
 }
