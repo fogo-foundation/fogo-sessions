@@ -1,0 +1,19 @@
+name: Cargo Clippy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: clippy
+      - name: Clippy
+        run: cargo clippy --all-features -- -D warnings
