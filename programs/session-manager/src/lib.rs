@@ -4,7 +4,7 @@ use crate::state::Session;
 use crate::state::SessionInfo;
 use anchor_lang::{
     prelude::*,
-    solana_program::sysvar::{instructions, recent_blockhashes::RecentBlockhashes},
+    solana_program::sysvar::instructions,
 };
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");

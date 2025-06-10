@@ -36,21 +36,19 @@ impl Message {
         let claims = Claims {
             domain: kv
                 .remove("domain")
-                .map(|domain| Domain(domain))
+                .map(Domain)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?,
             nonce: kv
                 .remove("nonce")
-                .map(|nonce| Pubkey::from_str(&nonce).ok().map(|nonce| Nonce(nonce)))
-                .flatten()
+                .and_then(|nonce| Pubkey::from_str(&nonce).ok().map(Nonce))
                 .ok_or(error!(SessionManagerError::InvalidArgument))?,
             session_key: kv
                 .remove("session_key")
-                .map(|session_key| {
+                .and_then(|session_key| {
                     Pubkey::from_str(&session_key)
                         .ok()
-                        .map(|session_key| SessionKey(session_key))
+                        .map(SessionKey)
                 })
-                .flatten()
                 .ok_or(error!(SessionManagerError::InvalidArgument))?,
             extra: kv,
         };
