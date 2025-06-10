@@ -31,8 +31,8 @@ const handleEnableTrading = async (
   setLink: (link: string) => void,
 ) => {
   setLoading(true);
-  const sessionKey = Keypair.generate();
   const provider = sessionManagerProgram.provider;
+  const sessionKey = Keypair.generate();
 
   // TODO: This should be a function
   const message = new TextEncoder().encode(
