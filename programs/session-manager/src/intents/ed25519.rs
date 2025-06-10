@@ -1,7 +1,7 @@
 use crate::{error::SessionManagerError, intents::message::Message, StartSession};
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions::load_instruction_at_checked};
+use anchor_lang::solana_program::ed25519_program;
 
-const ED25519_PROGRAM_ID: Pubkey = pubkey!("Ed25519SigVerify111111111111111111111111111");
 pub struct Intent {
     pub signer: Pubkey,
     pub message: Message,
@@ -28,12 +28,12 @@ impl Ed25519InstructionHeader {
             num_signatures: 1,
             padding: 0,
             signature_offset: Self::LEN + 32,
-            signature_instruction_index: u16::MAX,
+            signature_instruction_index: u16::MAX, // u16::MAX represents the current instruction
             public_key_offset: Self::LEN,
-            public_key_instruction_index: u16::MAX,
+            public_key_instruction_index: u16::MAX, 
             message_data_offset: Self::LEN + 32 + 64,
             message_instruction_index: u16::MAX,
-            ..*self
+            message_data_size: self.message_data_size,
         };
         self == &expected_header
     }
@@ -42,7 +42,7 @@ impl Ed25519InstructionHeader {
 struct Ed25519InstructionData {
     header: Ed25519InstructionHeader,
     public_key: Pubkey,
-    _signature: [u8; 64],
+    _signature: [u8; 64], // We don't check the signature here, the ed25519 program is responsible for that
     message: Message,
 }
 
@@ -65,9 +65,10 @@ impl AnchorDeserialize for Ed25519InstructionData {
 
 impl<'info> StartSession<'info> {
     pub fn verify_intent(&self) -> Result<Intent> {
+        // TODO: Let the user pass the instruction index
         let instruction_data = load_instruction_at_checked(0, &self.sysvar_instructions)?;
 
-        if !instruction_data.program_id.eq(&ED25519_PROGRAM_ID) {
+        if !instruction_data.program_id.eq(&ed25519_program::ID) {
             return Err(error!(SessionManagerError::InvalidArgument));
         }
 

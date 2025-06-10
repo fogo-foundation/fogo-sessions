@@ -1,5 +1,5 @@
 use crate::intents::ed25519::Intent;
-use crate::intents::message::Claims;
+use crate::intents::claims::Claims;
 use crate::state::Session;
 use crate::state::SessionInfo;
 use anchor_lang::{
