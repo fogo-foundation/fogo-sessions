@@ -26,7 +26,7 @@ const handleEnableTrading = async (
   sessionManagerProgram: Program<SessionManager>,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
-) : Promise<{link: string, status: 'success' | 'error'}> => {
+): Promise<{ link: string; status: "success" | "error" }> => {
   const provider = sessionManagerProgram.provider;
   const sessionKey = Keypair.generate();
 
@@ -90,15 +90,18 @@ const handleEnableTrading = async (
   });
   const link = `https://explorer.fogo.io/tx/${signature}?cluster=custom&customUrl=${SOLANA_RPC}`;
   if (confirmationResult.value.err === null) {
-    return {link, status: "success"};
+    return { link, status: "success" };
   } else {
-    return {link, status: "error"};
+    return { link, status: "error" };
   }
 };
 
 export const Home = () => {
   const { connection } = useConnection();
-  const [{ link, status }, setValues] = useState<{ link: string|null, status: 'success' | 'error'|'loading' | null}>({link: null, status: null})
+  const [{ link, status }, setValues] = useState<{
+    link: string | null;
+    status: "success" | "error" | "loading" | null;
+  }>({ link: null, status: null });
 
   const provider = new AnchorProvider(connection, {} as Wallet, {});
 
@@ -109,17 +112,15 @@ export const Home = () => {
 
   const onEnableTrading = useCallback(() => {
     if (signMessage && publicKey) {
-      setValues({link: null, status: 'loading'});
-      handleEnableTrading(
-        sessionManagerProgram,
-        publicKey,
-        signMessage,
-      ).then(({link, status}) => {
-        setValues({link, status});
-      }).catch((error) => {
-        setValues({link: null, status: null});
-        console.error(error);
-      });
+      setValues({ link: null, status: "loading" });
+      handleEnableTrading(sessionManagerProgram, publicKey, signMessage)
+        .then(({ link, status }) => {
+          setValues({ link, status });
+        })
+        .catch((error) => {
+          setValues({ link: null, status: null });
+          console.error(error);
+        });
     }
   }, [publicKey, signMessage, sessionManagerProgram]);
 
@@ -131,7 +132,7 @@ export const Home = () => {
         <WalletMultiButton />
         <WalletDisconnectButton />
         {canEnableTrading && (
-          <Button onClick={onEnableTrading} loading={status === 'loading'}>
+          <Button onClick={onEnableTrading} loading={status === "loading"}>
             Enable Trading
           </Button>
         )}
