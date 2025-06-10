@@ -1,0 +1,31 @@
+{
+  "address": "mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk",
+  "metadata": {
+    "name": "session_manager",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "start",
+      "discriminator": [
+        62,
+        15,
+        117,
+        236,
+        47,
+        1,
+        89,
+        139
+      ],
+      "accounts": [
+        {
+          "name": "sponsor",
+          "signer": true
+        }
+      ],
+      "args": []
+    }
+  ]
+}
