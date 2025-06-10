@@ -74,7 +74,7 @@ impl<'info> StartSession<'info> {
         } = Ed25519InstructionData::try_from_slice(&instruction_data.data)?;
     
         if !header.check() {
-            return Err(SessionManagerError::InvalidSignature.into());
+            return Err(error!(SessionManagerError::InvalidArgument));
         }
     
         Ok(Intent {

@@ -17,7 +17,7 @@ pub struct Message (pub(crate) Vec<u8>);
 impl Message {
     pub fn parse_claims(self) -> Result<Claims> {
         let message = String::from_utf8(self.0).map_err(|_| error!(SessionManagerError::InvalidArgument))?;
-        let message = message.strip_prefix(MESSAGE_PREFIX).ok_or(error!(SessionManagerError::InvalidMessage))?;
+        let message = message.strip_prefix(MESSAGE_PREFIX).ok_or(error!(SessionManagerError::InvalidArgument))?;
     
         let mut kv = HashMap::new();
         for line in message.lines() {
