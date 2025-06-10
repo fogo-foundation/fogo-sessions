@@ -1,0 +1,12 @@
+packageManagerStrict: true
+packageManagerStrictVersion: true
+engineStrict: true
+strictPeerDependencies: true
+strictDepBuilds: true
+managePackageManagerVersions: false
+
+catalog:
+  turbo: ^2.5.0
+
+packages:
+  - app

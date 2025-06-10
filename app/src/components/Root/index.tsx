@@ -9,9 +9,9 @@ type Props = {
 export const Root = ({ children }: Props) => {
   return (
     <WalletProvider endpoint={SOLANA_RPC}>
-        <html>
-          <body>{children}</body>
-        </html>
+      <html>
+        <body>{children}</body>
+      </html>
     </WalletProvider>
   );
 };
