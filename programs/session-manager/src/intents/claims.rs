@@ -1,5 +1,5 @@
-use anchor_lang::prelude::*;
 use crate::{state::AudienceItem, StartSession};
+use anchor_lang::prelude::*;
 
 #[derive(PartialEq, Debug)]
 pub struct Nonce(pub(crate) Pubkey);
@@ -9,7 +9,6 @@ pub struct Domain(pub(crate) String);
 
 #[derive(PartialEq, Debug)]
 pub struct SessionKey(pub(crate) Pubkey);
-
 
 impl<'info> StartSession<'info> {
     pub fn check_nonce(&self, _nonce: Nonce) -> Result<()> {
@@ -29,4 +28,3 @@ impl<'info> StartSession<'info> {
         Ok(vec![])
     }
 }
-

@@ -1,14 +1,17 @@
-use anchor_lang::{prelude::*, solana_program::sysvar::{instructions, recent_blockhashes::RecentBlockhashes}};
-use crate::state::Session;
 use crate::intents::ed25519::Intent;
 use crate::intents::message::Claims;
+use crate::state::Session;
 use crate::state::SessionInfo;
+use anchor_lang::{
+    prelude::*,
+    solana_program::sysvar::{instructions, recent_blockhashes::RecentBlockhashes},
+};
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
-pub mod state;
 pub mod error;
 pub mod intents;
+pub mod state;
 
 #[program]
 pub mod session_manager {
@@ -16,7 +19,12 @@ pub mod session_manager {
 
     pub fn start_session(ctx: Context<StartSession>) -> Result<()> {
         let Intent { signer, message } = ctx.accounts.verify_intent()?;
-        let Claims { domain, session_key, nonce, extra } = message.parse_claims()?;
+        let Claims {
+            domain,
+            session_key,
+            nonce,
+            extra,
+        } = message.parse_claims()?;
         ctx.accounts.check_nonce(nonce)?;
         ctx.accounts.check_session_key(session_key)?;
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
@@ -27,7 +35,7 @@ pub mod session_manager {
                 subject: signer,
                 audience: program_domains,
                 extra: extra.into(),
-                expiration: Clock::get()?.unix_timestamp + 3600
+                expiration: Clock::get()?.unix_timestamp + 3600,
             },
         };
         ctx.accounts.session.set_inner(session);

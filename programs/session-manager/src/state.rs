@@ -5,18 +5,17 @@ use anchor_lang::prelude::*;
 #[account]
 pub struct Session {
     pub sponsor: Pubkey,
-    pub session_info : SessionInfo
+    pub session_info: SessionInfo,
 }
-
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct SessionInfo {
     /// The user who started this session
-    pub subject : Pubkey,
+    pub subject: Pubkey,
     /// The expiration time of the session
-    pub expiration : i64,
+    pub expiration: i64,
     /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
-    pub audience : Vec<AudienceItem>,
+    pub audience: Vec<AudienceItem>,
     /// Extra (key, value)'s provided by the user
     pub extra: Extra,
 }
@@ -28,13 +27,17 @@ pub struct AudienceItem {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct Extra (Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of tuples well so we have to declare a ExtraItem struct
+pub struct Extra(Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of tuples well so we have to declare a ExtraItem struct
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct ExtraItem (String,String);
+pub struct ExtraItem(String, String);
 
-impl From<HashMap<String,String>> for Extra { 
-    fn from(map: HashMap<String,String>) -> Self {
-        Extra(map.into_iter().map(|(key, value)| ExtraItem(key, value)).collect())
+impl From<HashMap<String, String>> for Extra {
+    fn from(map: HashMap<String, String>) -> Self {
+        Extra(
+            map.into_iter()
+                .map(|(key, value)| ExtraItem(key, value))
+                .collect(),
+        )
     }
 }

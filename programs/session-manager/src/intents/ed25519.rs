@@ -1,10 +1,10 @@
-use anchor_lang::{prelude::*, solana_program::sysvar::instructions::load_instruction_at_checked};
 use crate::{error::SessionManagerError, intents::message::Message, StartSession};
+use anchor_lang::{prelude::*, solana_program::sysvar::instructions::load_instruction_at_checked};
 
 const ED25519_PROGRAM_ID: Pubkey = pubkey!("Ed25519SigVerify111111111111111111111111111");
 pub struct Intent {
     pub signer: Pubkey,
-    pub message: Message
+    pub message: Message,
 }
 
 #[derive(AnchorDeserialize, PartialEq)]
@@ -22,7 +22,7 @@ struct Ed25519InstructionHeader {
 
 impl Ed25519InstructionHeader {
     const LEN: u16 = 1 + 1 + 2 + 2 + 2 + 2 + 2 + 2 + 2;
-    
+
     fn check(&self) -> bool {
         let expected_header = Self {
             num_signatures: 1,
@@ -40,13 +40,13 @@ impl Ed25519InstructionHeader {
 }
 
 struct Ed25519InstructionData {
-    header:      Ed25519InstructionHeader,
+    header: Ed25519InstructionHeader,
     public_key: Pubkey,
     _signature: [u8; 64],
-    message:    Message,
+    message: Message,
 }
 
-impl AnchorDeserialize for Ed25519InstructionData{
+impl AnchorDeserialize for Ed25519InstructionData {
     fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let header = Ed25519InstructionHeader::deserialize_reader(reader)?;
         let mut signature = [0u8; 64];
@@ -54,7 +54,12 @@ impl AnchorDeserialize for Ed25519InstructionData{
         let public_key = Pubkey::deserialize_reader(reader)?;
         let mut message: Vec<u8> = vec![0u8; header.message_data_size as usize];
         reader.read_exact(&mut message)?;
-        Ok(Self{header, public_key, _signature: signature, message: Message(message)})
+        Ok(Self {
+            header,
+            public_key,
+            _signature: signature,
+            message: Message(message),
+        })
     }
 }
 
@@ -67,19 +72,19 @@ impl<'info> StartSession<'info> {
         }
 
         let Ed25519InstructionData {
-            message, 
+            message,
             public_key,
             header,
             ..
         } = Ed25519InstructionData::try_from_slice(&instruction_data.data)?;
-    
+
         if !header.check() {
             return Err(error!(SessionManagerError::InvalidArgument));
         }
-    
+
         Ok(Intent {
             signer: public_key,
-            message
+            message,
         })
     }
 }
