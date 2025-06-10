@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-
 use anchor_lang::prelude::*;
 
 #[account]
 pub struct Session {
+    /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
     pub session_info: SessionInfo,
 }
