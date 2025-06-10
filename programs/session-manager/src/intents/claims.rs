@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::StartSession;
+use crate::{state::AudienceItem, StartSession};
 
 #[derive(PartialEq, Debug)]
 pub struct Nonce(pub(crate) Pubkey);
@@ -24,7 +24,8 @@ impl<'info> StartSession<'info> {
         Ok(())
     }
 
-    pub fn get_domain_programs(&self, _domain: Domain) -> Result<Vec<(Pubkey, Pubkey)>> {
+    pub fn get_domain_programs(&self, _domain: Domain) -> Result<Vec<AudienceItem>> {
+        // TODO
         Ok(vec![])
     }
 }

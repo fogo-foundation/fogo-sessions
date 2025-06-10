@@ -28,10 +28,11 @@ impl Ed25519InstructionHeader {
             num_signatures: 1,
             padding: 0,
             signature_offset: Self::LEN + 32,
-            signature_instruction_index: 0,
+            signature_instruction_index: u16::MAX,
             public_key_offset: Self::LEN,
-            public_key_instruction_index: 0,
+            public_key_instruction_index: u16::MAX,
             message_data_offset: Self::LEN + 32 + 64,
+            message_instruction_index: u16::MAX,
             ..*self
         };
         self == &expected_header

@@ -2,7 +2,7 @@ use std::{collections::HashMap, str::FromStr};
 use anchor_lang::prelude::*;
 use crate::{error::SessionManagerError, intents::claims::{Domain, Nonce, SessionKey}};
 
-const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow the app to transfer your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain you are signing from.\n";
+const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain you are signing from.\n\n";
 pub struct Claims {
     pub domain: Domain,
     pub nonce: Nonce,
@@ -21,7 +21,7 @@ impl Message {
     
         let mut kv = HashMap::new();
         for line in message.lines() {
-            if let Some((key, value)) = line.split_once(' ') {
+            if let Some((key, value)) = line.split_once(": ") {
                 kv.insert(key.to_string(), value.to_string());
             } else {
                 return Err(error!(SessionManagerError::InvalidArgument));

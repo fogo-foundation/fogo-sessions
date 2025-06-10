@@ -9,5 +9,5 @@ function envOrThrow(name: string) {
   return value;
 }
 
-export const SOLANA_RPC = envOrThrow("SOLANA_RPC");
+export const SOLANA_RPC = envOrThrow("NEXT_PUBLIC_SOLANA_RPC");
 export const SPONSOR_KEY = envOrThrow("SPONSOR_KEY");
