@@ -16,4 +16,4 @@ jobs:
           toolchain: nightly
           components: rustfmt
       - name: Format
-        run: cargo fmt --all
+        run: cargo fmt --all -- --check
