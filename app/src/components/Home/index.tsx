@@ -20,49 +20,51 @@ const handleEnableTrading = async (
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
   setLoading: (loading: boolean) => void,
 ) => {
-    setLoading(true);
-    const provider = sessionManagerProgram.provider;
-    const sessionKey = Keypair.generate();
+  setLoading(true);
+  const provider = sessionManagerProgram.provider;
+  const sessionKey = Keypair.generate();
 
-    const transaction = await sessionManagerProgram.methods
-      .start()
-      .accounts({
-        sponsor: SPONSOR,
-      })
-      .transaction();
+  const transaction = await sessionManagerProgram.methods
+    .start()
+    .accounts({
+      sponsor: SPONSOR,
+    })
+    .transaction();
 
-    await signMessage!(
-      new TextEncoder().encode(`
+  await signMessage!(
+    new TextEncoder().encode(`
       chain_id: ${process.env.NEXT_PUBLIC_CHAIN_ID}
       session_key: ${sessionKey.publicKey.toBase58()}
       nonce: ${Math.floor(Date.now() / 1000)}
       domain: gasless-trading.vercel.app
     `),
-    );
+  );
 
-    transaction.recentBlockhash = (
-      await provider.connection.getLatestBlockhash()
-    ).blockhash;
-    transaction.feePayer = SPONSOR;
+  transaction.recentBlockhash = (
+    await provider.connection.getLatestBlockhash()
+  ).blockhash;
+  transaction.feePayer = SPONSOR;
 
-    const response = await fetch("/api/sponsor_and_send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({transaction:
-        transaction.serialize({ requireAllSignatures: false }).toString("base64"),
+  const response = await fetch("/api/sponsor_and_send", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      transaction: transaction
+        .serialize({ requireAllSignatures: false })
+        .toString("base64"),
     }),
-    });
+  });
 
-    const lastValidBlockHeight = await provider.connection.getSlot();
-    const { signature } = await response.json();
-    await provider.connection.confirmTransaction({
-      signature,
-      blockhash: transaction.recentBlockhash,
-      lastValidBlockHeight,
-    });
-    setLoading(false);
+  const lastValidBlockHeight = await provider.connection.getSlot();
+  const { signature } = await response.json();
+  await provider.connection.confirmTransaction({
+    signature,
+    blockhash: transaction.recentBlockhash,
+    lastValidBlockHeight,
+  });
+  setLoading(false);
 };
 
 export const Home = () => {
@@ -78,10 +80,12 @@ export const Home = () => {
 
   const onEnableTrading = useCallback(() => {
     if (signMessage) {
-      handleEnableTrading(sessionManagerProgram, signMessage, setLoading).catch((error) => {
-        setLoading(false);
-        console.error(error);
-      });
+      handleEnableTrading(sessionManagerProgram, signMessage, setLoading).catch(
+        (error) => {
+          setLoading(false);
+          console.error(error);
+        },
+      );
     }
   }, [publicKey, signMessage, sessionManagerProgram]);
 
@@ -100,4 +104,4 @@ export const Home = () => {
       </div>
     </main>
   );
-}
+};

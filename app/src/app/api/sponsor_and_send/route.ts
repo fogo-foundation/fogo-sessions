@@ -15,20 +15,21 @@ export const POST = async (req: Request) => {
       new Uint8Array(Buffer.from(data.transaction, "base64")),
     );
     const signedTransaction = await wallet.signTransaction(transaction);
-    await provider.connection.sendRawTransaction(signedTransaction.serialize(), {
-      skipPreflight: true,
-    });
+    await provider.connection.sendRawTransaction(
+      signedTransaction.serialize(),
+      {
+        skipPreflight: true,
+      },
+    );
     const signature = signedTransaction.signatures[0];
-    if (signature){
-    return Response.json({
-      signature: bs58.encode(signature),
-    });}
-    else{
+    if (signature) {
+      return Response.json({
+        signature: bs58.encode(signature),
+      });
+    } else {
       return new Response("Signing by sponsor failed", { status: 500 });
     }
   } catch {
     return new Response("Failed to deserialize transaction", { status: 400 });
   }
-
-
-}
+};
