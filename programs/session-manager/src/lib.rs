@@ -6,7 +6,7 @@ declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 pub mod session_manager {
     use super::*;
 
-    pub fn start(ctx: Context<Start>) -> Result<()> {
+    pub fn start(_ctx: Context<Start>) -> Result<()> {
         Ok(())
     }
 }
