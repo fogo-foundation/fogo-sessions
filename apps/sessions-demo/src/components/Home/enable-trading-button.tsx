@@ -13,8 +13,8 @@ import { useCallback, useState, useMemo } from "react";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import type { SessionManager } from "@/idl/session_manager";
-import sessionManagerIdl from "@/idl/session_manager.json";
+import type { SessionManager } from "@/idl/session-manager";
+import sessionManagerIdl from "@/idl/session-manager.json";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
 
