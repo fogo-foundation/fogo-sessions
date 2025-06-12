@@ -1,8 +1,8 @@
+/* eslint-disable n/no-process-env */
+
 import "server-only";
 import { Keypair } from "@solana/web3.js";
 import { z } from "zod";
-
-/* eslint-disable n/no-process-env */
 
 const IS_DEV_MACHINE = process.env.VERCEL_ENV === undefined;
 
