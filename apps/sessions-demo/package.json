@@ -1,0 +1,50 @@
+{
+  "name": "@fogo/sessions-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "next build",
+    "fix:format": "prettier --write .",
+    "fix:lint": "eslint --fix .",
+    "start:dev": "next dev --port 3000",
+    "start:prod": "next start --port 3000",
+    "test:format": "prettier --check .",
+    "test:lint": "eslint .",
+    "test:types": "tsc"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "catalog:",
+    "@radix-ui/react-slot": "catalog:",
+    "@solana/wallet-adapter-base": "catalog:",
+    "@solana/wallet-adapter-react": "catalog:",
+    "@solana/wallet-adapter-react-ui": "catalog:",
+    "@solana/wallet-adapter-wallets": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "bs58": "catalog:",
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwind-merge": "catalog:",
+    "tailwindcss-animate": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@cprussin/eslint-config": "catalog:",
+    "@cprussin/jest-config": "catalog:",
+    "@cprussin/prettier-config": "catalog:",
+    "@cprussin/tsconfig": "catalog:",
+    "@types/react": "catalog:",
+    "autoprefixer": "catalog:",
+    "pino-pretty": "catalog:",
+    "postcss": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -1,12 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import "@solana/wallet-adapter-react-ui/styles.css";
-import {
-  WalletDisconnectButton,
-  WalletMultiButton,
-} from "@/components/WalletButton";
 import {
   Ed25519Program,
   Keypair,
@@ -14,15 +9,18 @@ import {
   SystemProgram,
   Transaction,
 } from "@solana/web3.js";
-import { useCallback, useState } from "react";
-import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
-import sessionManagerIdl from "@/idl/session_manager.json";
-import type { SessionManager } from "@/idl/session_manager";
+import { useCallback, useState, useMemo } from "react";
+import { z } from "zod";
 
-const SPONSOR = new PublicKey(process.env.NEXT_PUBLIC_SPONSOR_KEY!);
-const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC!;
+import { Button } from "@/components/ui/button";
+import type { SessionManager } from "@/idl/session-manager";
+import sessionManagerIdl from "@/idl/session-manager.json";
+
+import "@solana/wallet-adapter-react-ui/styles.css";
 
 const handleEnableTrading = async (
+  sponsorPubkey: PublicKey,
+  solanaRpc: string,
   sessionManagerProgram: Program<SessionManager>,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
@@ -45,7 +43,7 @@ const handleEnableTrading = async (
 
   const space = 200; // TODO: Compute this dynamically
   const systemInstruction = SystemProgram.createAccount({
-    fromPubkey: SPONSOR,
+    fromPubkey: sponsorPubkey,
     newAccountPubkey: sessionKey.publicKey,
     lamports:
       await provider.connection.getMinimumBalanceForRentExemption(space),
@@ -59,14 +57,13 @@ const handleEnableTrading = async (
     .add(
       await sessionManagerProgram.methods
         .startSession()
-        .accounts({ sponsor: SPONSOR, session: sessionKey.publicKey })
+        .accounts({ sponsor: sponsorPubkey, session: sessionKey.publicKey })
         .instruction(),
     );
 
-  transaction.recentBlockhash = (
-    await provider.connection.getLatestBlockhash()
-  ).blockhash;
-  transaction.feePayer = SPONSOR;
+  const { blockhash } = await provider.connection.getLatestBlockhash();
+  transaction.recentBlockhash = blockhash;
+  transaction.feePayer = sponsorPubkey;
   transaction.partialSign(sessionKey);
 
   const response = await fetch("/api/sponsor_and_send", {
@@ -82,68 +79,87 @@ const handleEnableTrading = async (
   });
 
   const lastValidBlockHeight = await provider.connection.getSlot();
-  const { signature } = await response.json();
+  const { signature } = sponsorAndSendResultSchema.parse(await response.json());
   const confirmationResult = await provider.connection.confirmTransaction({
     signature,
     blockhash: transaction.recentBlockhash,
     lastValidBlockHeight,
   });
-  const link = `https://explorer.fogo.io/tx/${signature}?cluster=custom&customUrl=${SOLANA_RPC}`;
-  if (confirmationResult.value.err === null) {
-    return { link, status: "success" };
-  } else {
-    return { link, status: "error" };
-  }
+  const link = `https://explorer.fogo.io/tx/${signature}?cluster=custom&customUrl=${solanaRpc}`;
+  return confirmationResult.value.err === null
+    ? { link, status: "success" }
+    : { link, status: "error" };
 };
 
-export const Home = () => {
+const sponsorAndSendResultSchema = z.strictObject({
+  signature: z.string(),
+});
+
+export const EnableTradingButton = ({
+  sponsorPubkey,
+  solanaRpc,
+}: {
+  sponsorPubkey: string;
+  solanaRpc: string;
+}) => {
   const { connection } = useConnection();
   const [{ link, status }, setValues] = useState<{
-    link: string | null;
-    status: "success" | "error" | "loading" | null;
-  }>({ link: null, status: null });
+    link: string | undefined;
+    status: "success" | "error" | "loading" | undefined;
+  }>({ link: undefined, status: undefined });
 
-  const provider = new AnchorProvider(connection, {} as Wallet, {});
+  const provider = useMemo(
+    () => new AnchorProvider(connection, {} as Wallet, {}),
+    [connection],
+  );
 
-  const sessionManagerProgram: Program<SessionManager> =
-    new Program<SessionManager>(sessionManagerIdl as SessionManager, provider);
+  const sessionManagerProgram = useMemo(
+    () =>
+      new Program<SessionManager>(
+        sessionManagerIdl as SessionManager,
+        provider,
+      ),
+    [provider],
+  );
 
   const { publicKey, signMessage } = useWallet();
 
   const onEnableTrading = useCallback(() => {
     if (signMessage && publicKey) {
-      setValues({ link: null, status: "loading" });
-      handleEnableTrading(sessionManagerProgram, publicKey, signMessage)
+      setValues({ link: undefined, status: "loading" });
+      handleEnableTrading(
+        new PublicKey(sponsorPubkey),
+        solanaRpc,
+        sessionManagerProgram,
+        publicKey,
+        signMessage,
+      )
         .then(({ link, status }) => {
           setValues({ link, status });
         })
-        .catch((error) => {
-          setValues({ link: null, status: null });
+        .catch((error: unknown) => {
+          setValues({ link: undefined, status: undefined });
+          // eslint-disable-next-line no-console
           console.error(error);
         });
     }
-  }, [publicKey, signMessage, sessionManagerProgram]);
+  }, [publicKey, signMessage, sessionManagerProgram, sponsorPubkey, solanaRpc]);
 
   const canEnableTrading = publicKey && signMessage;
   return (
-    <main>
-      <div className="m-auto w-2/4 parent space-y-2">
-        <h1>Gasless Trading App</h1>
-        <WalletMultiButton />
-        <WalletDisconnectButton />
-        {canEnableTrading && (
-          <Button onClick={onEnableTrading} loading={status === "loading"}>
-            Enable Trading
-          </Button>
-        )}
-        {link && status && (
-          <a href={link} target="_blank" rel="noopener noreferrer">
-            {status === "success"
-              ? "✅ View Transaction"
-              : "❌ Transaction Failed"}
-          </a>
-        )}
-      </div>
-    </main>
+    <>
+      {canEnableTrading && (
+        <Button onClick={onEnableTrading} loading={status === "loading"}>
+          Enable Trading
+        </Button>
+      )}
+      {link && status && (
+        <a href={link} target="_blank" rel="noopener noreferrer">
+          {status === "success"
+            ? "✅ View Transaction"
+            : "❌ Transaction Failed"}
+        </a>
+      )}
+    </>
   );
 };

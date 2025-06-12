@@ -10,3 +10,8 @@ result
 target
 tilt/test-ledger/
 .DS_Store
+
+apps/
+packages/
+pnpm-lock.yaml
+tilt/keypairs/

@@ -13,4 +13,4 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-"build-idl" = "anchor build && mkdir -p app/src/idl && cp target/{idl/session_manager.json,types/session_manager.ts} app/src/idl"
+"build-idl" = "anchor build && mkdir -p apps/sessions-demo/src/idl && cp target/idl/session_manager.json apps/sessions-demo/src/idl/session-manager.json && cp target/types/session_manager.ts apps/sessions-demo/src/idl/session-manager.ts"
