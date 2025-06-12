@@ -1,16 +1,23 @@
 use crate::{
     error::SessionManagerError,
-    intents::body::{MessageBody, Domain, Nonce, SessionKey},
+    intents::body::{Domain, MessageBody, Nonce, SessionKey},
 };
 use anchor_lang::prelude::*;
-use std::{collections::HashMap, str::{FromStr, Lines}};
+use std::{
+    collections::HashMap,
+    str::{FromStr, Lines},
+};
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\n";
 const MANDATORY_KEYS: [&str; 3] = ["domain", "nonce", "session_key"];
 const KEY_VALUE_SEPARATOR: &str = ": ";
 
 fn parse_line_with_expected_key(lines: &mut Lines, expected_key: &str) -> Result<String> {
-    let (key, value) = lines.next().ok_or(error!(SessionManagerError::InvalidArgument))?.split_once(KEY_VALUE_SEPARATOR).ok_or(error!(SessionManagerError::InvalidArgument))?;
+    let (key, value) = lines
+        .next()
+        .ok_or(error!(SessionManagerError::InvalidArgument))?
+        .split_once(KEY_VALUE_SEPARATOR)
+        .ok_or(error!(SessionManagerError::InvalidArgument))?;
     if key != expected_key {
         return Err(error!(SessionManagerError::InvalidArgument));
     }
@@ -20,9 +27,11 @@ fn parse_line_with_expected_key(lines: &mut Lines, expected_key: &str) -> Result
 fn parse_extra(lines: &mut Lines) -> Result<HashMap<String, String>> {
     let mut kv = HashMap::new();
     for line in lines {
-        let (key, value) = line.split_once(KEY_VALUE_SEPARATOR).ok_or(error!(SessionManagerError::InvalidArgument))?;
-        if kv.insert(key.to_string(), value.to_string()).is_some() || MANDATORY_KEYS.contains(&key) 
-         {
+        let (key, value) = line
+            .split_once(KEY_VALUE_SEPARATOR)
+            .ok_or(error!(SessionManagerError::InvalidArgument))?;
+        if kv.insert(key.to_string(), value.to_string()).is_some() || MANDATORY_KEYS.contains(&key)
+        {
             // No duplicate keys
             return Err(error!(SessionManagerError::InvalidArgument));
         }
@@ -45,8 +54,14 @@ impl Message {
 
         let body = MessageBody {
             domain: Domain(parse_line_with_expected_key(&mut lines, "domain")?),
-            nonce: Nonce(Pubkey::from_str(&parse_line_with_expected_key(&mut lines, "nonce")?).map_err(|_| error!(SessionManagerError::InvalidArgument))?),
-            session_key: SessionKey(Pubkey::from_str(&parse_line_with_expected_key(&mut lines, "session_key")?).map_err(|_| error!(SessionManagerError::InvalidArgument))?),
+            nonce: Nonce(
+                Pubkey::from_str(&parse_line_with_expected_key(&mut lines, "nonce")?)
+                    .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
+            ),
+            session_key: SessionKey(
+                Pubkey::from_str(&parse_line_with_expected_key(&mut lines, "session_key")?)
+                    .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
+            ),
             extra: parse_extra(&mut lines)?,
         };
 

@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*};
+use anchor_lang::prelude::*;
 use std::collections::HashMap;
 
 #[account]
