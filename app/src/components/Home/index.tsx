@@ -32,7 +32,7 @@ const handleEnableTrading = async (
 
   // TODO: This should be a function
   const message = new TextEncoder().encode(
-    `Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\nsession_key: ${sessionKey.publicKey.toBase58()}\nnonce: ${sessionKey.publicKey.toBase58()}\ndomain: gasless-trading.vercel.app\nextra: extra`,
+    `Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\ndomain: gasless-trading.vercel.app\nnonce: ${sessionKey.publicKey.toBase58()}\nsession_key: ${sessionKey.publicKey.toBase58()}\nextra: extra`,
   );
 
   const intentSignature = await signMessage(message);

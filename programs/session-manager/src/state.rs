@@ -1,4 +1,4 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*};
 use std::collections::HashMap;
 
 #[account]
@@ -8,12 +8,15 @@ pub struct Session {
     pub session_info: SessionInfo,
 }
 
+/// Unix time (i.e. seconds since the Unix epoch).
+type UnixTimestamp = i64;
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct SessionInfo {
     /// The user who started this session
     pub subject: Pubkey,
     /// The expiration time of the session
-    pub expiration: i64,
+    pub expiration: UnixTimestamp,
     /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
     pub audience: Vec<AudienceItem>,
     /// Extra (key, value)'s provided by the user
