@@ -1,4 +1,4 @@
-name: Cargo Clippy
+name: Cargo Test
 
 on:
   pull_request:
@@ -6,14 +6,13 @@ on:
     branches: [main]
 
 jobs:
-  clippy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2025-06-12
-          components: clippy
-      - name: Clippy
-        run: cargo +nightly-2025-06-12 clippy --tests -- -D warnings
+          toolchain: 1.87.0
+      - name: Test
+        run: cargo +1.87.0 test

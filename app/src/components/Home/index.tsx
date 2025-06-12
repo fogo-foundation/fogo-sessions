@@ -7,43 +7,67 @@ import {
   WalletDisconnectButton,
   WalletMultiButton,
 } from "@/components/WalletButton";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import {
+  Ed25519Program,
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 import { useCallback, useState } from "react";
 import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import sessionManagerIdl from "@/idl/session_manager.json";
 import type { SessionManager } from "@/idl/session_manager";
 
 const SPONSOR = new PublicKey(process.env.NEXT_PUBLIC_SPONSOR_KEY!);
+const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC!;
 
 const handleEnableTrading = async (
   sessionManagerProgram: Program<SessionManager>,
+  publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
-  setLoading: (loading: boolean) => void,
-) => {
-  setLoading(true);
+): Promise<{ link: string; status: "success" | "error" }> => {
   const provider = sessionManagerProgram.provider;
   const sessionKey = Keypair.generate();
 
-  const transaction = await sessionManagerProgram.methods
-    .start()
-    .accounts({
-      sponsor: SPONSOR,
-    })
-    .transaction();
-
-  await signMessage!(
-    new TextEncoder().encode(`
-      chain_id: ${process.env.NEXT_PUBLIC_CHAIN_ID}
-      session_key: ${sessionKey.publicKey.toBase58()}
-      nonce: ${Math.floor(Date.now() / 1000)}
-      domain: gasless-trading.vercel.app
-    `),
+  // TODO: This should be a function
+  const message = new TextEncoder().encode(
+    `Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\ndomain: gasless-trading.vercel.app\nnonce: ${sessionKey.publicKey.toBase58()}\nsession_key: ${sessionKey.publicKey.toBase58()}\nextra: extra`,
   );
+
+  const intentSignature = await signMessage(message);
+
+  const intentInstruction = Ed25519Program.createInstructionWithPublicKey({
+    publicKey: publicKey.toBytes(),
+    signature: intentSignature,
+    message: message,
+  });
+
+  const space = 200; // TODO: Compute this dynamically
+  const systemInstruction = SystemProgram.createAccount({
+    fromPubkey: SPONSOR,
+    newAccountPubkey: sessionKey.publicKey,
+    lamports:
+      await provider.connection.getMinimumBalanceForRentExemption(space),
+    space: space,
+    programId: sessionManagerProgram.programId,
+  });
+
+  const transaction = new Transaction()
+    .add(intentInstruction)
+    .add(systemInstruction)
+    .add(
+      await sessionManagerProgram.methods
+        .startSession()
+        .accounts({ sponsor: SPONSOR, session: sessionKey.publicKey })
+        .instruction(),
+    );
 
   transaction.recentBlockhash = (
     await provider.connection.getLatestBlockhash()
   ).blockhash;
   transaction.feePayer = SPONSOR;
+  transaction.partialSign(sessionKey);
 
   const response = await fetch("/api/sponsor_and_send", {
     method: "POST",
@@ -59,17 +83,25 @@ const handleEnableTrading = async (
 
   const lastValidBlockHeight = await provider.connection.getSlot();
   const { signature } = await response.json();
-  await provider.connection.confirmTransaction({
+  const confirmationResult = await provider.connection.confirmTransaction({
     signature,
     blockhash: transaction.recentBlockhash,
     lastValidBlockHeight,
   });
-  setLoading(false);
+  const link = `https://explorer.fogo.io/tx/${signature}?cluster=custom&customUrl=${SOLANA_RPC}`;
+  if (confirmationResult.value.err === null) {
+    return { link, status: "success" };
+  } else {
+    return { link, status: "error" };
+  }
 };
 
 export const Home = () => {
   const { connection } = useConnection();
-  const [loading, setLoading] = useState(false);
+  const [{ link, status }, setValues] = useState<{
+    link: string | null;
+    status: "success" | "error" | "loading" | null;
+  }>({ link: null, status: null });
 
   const provider = new AnchorProvider(connection, {} as Wallet, {});
 
@@ -79,13 +111,16 @@ export const Home = () => {
   const { publicKey, signMessage } = useWallet();
 
   const onEnableTrading = useCallback(() => {
-    if (signMessage) {
-      handleEnableTrading(sessionManagerProgram, signMessage, setLoading).catch(
-        (error) => {
-          setLoading(false);
+    if (signMessage && publicKey) {
+      setValues({ link: null, status: "loading" });
+      handleEnableTrading(sessionManagerProgram, publicKey, signMessage)
+        .then(({ link, status }) => {
+          setValues({ link, status });
+        })
+        .catch((error) => {
+          setValues({ link: null, status: null });
           console.error(error);
-        },
-      );
+        });
     }
   }, [publicKey, signMessage, sessionManagerProgram]);
 
@@ -97,9 +132,16 @@ export const Home = () => {
         <WalletMultiButton />
         <WalletDisconnectButton />
         {canEnableTrading && (
-          <Button onClick={onEnableTrading} loading={loading}>
+          <Button onClick={onEnableTrading} loading={status === "loading"}>
             Enable Trading
           </Button>
+        )}
+        {link && status && (
+          <a href={link} target="_blank" rel="noopener noreferrer">
+            {status === "success"
+              ? "✅ View Transaction"
+              : "❌ Transaction Failed"}
+          </a>
         )}
       </div>
     </main>
