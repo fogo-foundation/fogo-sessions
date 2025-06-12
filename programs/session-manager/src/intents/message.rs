@@ -5,7 +5,7 @@ use crate::{
 use anchor_lang::prelude::*;
 use std::{collections::HashMap, str::FromStr};
 
-const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain you are signing from.\n\n";
+const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\n";
 
 #[derive(AnchorDeserialize)]
 pub struct Message(pub(crate) Vec<u8>);
