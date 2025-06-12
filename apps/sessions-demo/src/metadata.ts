@@ -27,8 +27,8 @@ export const metadata = {
       },
       ...SIZES.map((size) => ({
         type: "image/png",
-        sizes: `${size}x${size}`,
-        url: `/favicon-${size}x${size}.png`,
+        sizes: `${size.toString()}x${size.toString()}`,
+        url: `/favicon-${size.toString()}x${size.toString()}.png`,
       })),
     ],
     apple: {

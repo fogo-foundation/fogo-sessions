@@ -9,11 +9,11 @@
   "scripts": {
     "build": "next build",
     "fix:format": "prettier --write .",
-    "fix:lint:eslint": "eslint --fix .",
+    "fix:lint": "eslint --fix .",
     "start:dev": "next dev --port 3000",
     "start:prod": "next start --port 3000",
     "test:format": "prettier --check .",
-    "test:lint:eslint": "eslint .",
+    "test:lint": "eslint .",
     "test:types": "tsc"
   },
   "dependencies": {
@@ -32,7 +32,8 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwind-merge": "catalog:",
-    "tailwindcss-animate": "catalog:"
+    "tailwindcss-animate": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@cprussin/eslint-config": "catalog:",
@@ -41,6 +42,7 @@
     "@cprussin/tsconfig": "catalog:",
     "@types/react": "catalog:",
     "autoprefixer": "catalog:",
+    "pino-pretty": "catalog:",
     "postcss": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:"

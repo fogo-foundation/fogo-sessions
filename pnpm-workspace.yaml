@@ -23,6 +23,7 @@ catalog:
   jest: ^29.7.0
   lucide-react: ^0.473.0
   next: ^15.1.5
+  pino-pretty: ^13.0.0
   postcss: ^8.5.1
   prettier: ^3.5.3
   react-dom: 19.0.0
@@ -32,6 +33,7 @@ catalog:
   tailwindcss: ^3.4.17
   turbo: ^2.5.4
   typescript: ^5.8.3
+  zod: ^3.25.62
 
 engineStrict: true
 

@@ -8,5 +8,5 @@ result
 *.tsbuildinfo
 .env*.local
 target
-test-ledger
+tilt/test-ledger/
 .DS_Store

@@ -3,19 +3,21 @@
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
     mkCli.url = "github:cprussin/mkCli";
+    solana-nix.url = "github:arijoon/solana-nix";
   };
 
   outputs = {
     nixpkgs,
     flake-utils,
     mkCli,
+    solana-nix,
     ...
   }: let
     cli-overlay = nixpkgs.lib.composeExtensions mkCli.overlays.default (final: _: {
       cli = final.lib.mkCli "cli" {
         _noAll = true;
 
-        start = "${final.lib.getExe final.pnpm} turbo start:dev";
+        start = "${final.lib.getExe final.tilt} up";
         clean = "${final.lib.getExe final.git} clean -fdx";
 
         test = {
@@ -38,7 +40,7 @@
       };
     });
 
-    project-shell-overlay = final: _: {
+    project-shell-overlay = system: final: _: {
       project-shell = final.mkShell {
         FORCE_COLOR = 1;
         name = "project-shell";
@@ -48,6 +50,10 @@
           final.nodejs
           final.pnpm
           final.python3
+          final.tilt
+          solana-nix.packages."${system}".solana-cli
+          solana-nix.packages."${system}".anchor-cli
+          solana-nix.packages."${system}".solana-rust
         ];
       };
     };
@@ -57,7 +63,7 @@
         system: let
           pkgs = import nixpkgs {
             inherit system;
-            overlays = [cli-overlay project-shell-overlay];
+            overlays = [cli-overlay (project-shell-overlay system)];
             config = {};
           };
         in {
