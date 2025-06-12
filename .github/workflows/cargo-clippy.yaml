@@ -13,7 +13,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: nightly-2025-06-12
           components: clippy
       - name: Clippy
         run: cargo clippy --all-features -- -D warnings
