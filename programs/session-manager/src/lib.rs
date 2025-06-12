@@ -1,7 +1,7 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 #![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
 
-use crate::intents::claims::Claims;
+use crate::intents::body::MessageBody;
 use crate::intents::ed25519::Intent;
 use crate::state::Session;
 use crate::state::SessionInfo;
@@ -18,12 +18,12 @@ pub mod session_manager {
 
     pub fn start_session(ctx: Context<StartSession>) -> Result<()> {
         let Intent { signer, message } = ctx.accounts.verify_intent()?;
-        let Claims {
+        let MessageBody {
             domain,
             session_key,
             nonce,
             extra,
-        } = message.parse_claims()?;
+        } = message.parse()?;
         ctx.accounts.check_nonce(nonce)?;
         ctx.accounts.check_session_key(session_key)?;
         let program_domains = ctx.accounts.get_domain_programs(domain)?;

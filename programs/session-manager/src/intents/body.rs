@@ -11,7 +11,7 @@ pub struct Domain(pub(crate) String);
 #[derive(PartialEq, Debug)]
 pub struct SessionKey(pub(crate) Pubkey);
 
-pub struct Claims {
+pub struct MessageBody {
     pub domain: Domain,
     pub nonce: Nonce,
     pub session_key: SessionKey,
