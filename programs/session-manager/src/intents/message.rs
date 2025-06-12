@@ -78,8 +78,7 @@ mod test {
         let session_key = Pubkey::new_unique();
         let nonce = Pubkey::new_unique();
         let message = format!(
-            "{}domain: https://app.xyz\nnonce: {}\nsession_key: {}\nkey1: value1\nkey2: value2",
-            MESSAGE_PREFIX, nonce, session_key
+            "{MESSAGE_PREFIX}domain: https://app.xyz\nnonce: {nonce}\nsession_key: {session_key}\nkey1: value1\nkey2: value2"
         );
 
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
