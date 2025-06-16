@@ -49,11 +49,6 @@ impl<'info> StartSession<'info> {
         session_setter_bump: u8,
     ) -> Result<()> {
         for (account, (mint, amount)) in accounts.iter().zip(tokens.iter()) {
-            msg!("account: {:?}", account.key());
-            msg!("mint: {:?}", mint);
-            msg!("amount: {:?}", amount);
-            msg!("subject: {:?}", subject);
-            msg!("session_setter_bump: {:?}", session_setter_bump);
             if account.key() != get_associated_token_address(subject, mint) {
                 return err!(SessionManagerError::InvalidArgument);
             }
