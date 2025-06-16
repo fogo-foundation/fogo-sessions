@@ -5,14 +5,16 @@ use crate::{
 use anchor_lang::prelude::*;
 use std::{
     collections::HashMap,
+    iter::Peekable,
     str::{FromStr, Lines},
 };
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\n";
-const MANDATORY_KEYS: [&str; 3] = ["domain", "nonce", "session_key"];
+const MANDATORY_KEYS: [&str; 4] = ["domain", "nonce", "session_key", "tokens"];
 const KEY_VALUE_SEPARATOR: &str = ": ";
+const MINT_AMOUNT_SEPARATOR: &str = " ";
 
-fn parse_line_with_expected_key(lines: &mut Lines, expected_key: &str) -> Result<String> {
+fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str) -> Result<String> {
     let (key, value) = lines
         .next()
         .ok_or(error!(SessionManagerError::InvalidArgument))?
@@ -24,13 +26,50 @@ fn parse_line_with_expected_key(lines: &mut Lines, expected_key: &str) -> Result
     Ok(value.to_string())
 }
 
-fn parse_extra(lines: &mut Lines) -> Result<HashMap<String, String>> {
+fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u64)>> {
+    let line = lines
+        .peek()
+        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+    if *line != "tokens:" {
+        return Ok(vec![]);
+    } else {
+        lines.next();
+        let mut tokens = vec![];
+        while lines.peek().map_or(false, |line| line.starts_with("-")) {
+            let line = lines
+                .next()
+                .ok_or(error!(SessionManagerError::InvalidArgument))?;
+            let line = line
+                .strip_prefix("-")
+                .ok_or(error!(SessionManagerError::InvalidArgument))?;
+            let (key, value) = line
+                .split_once(MINT_AMOUNT_SEPARATOR)
+                .ok_or(error!(SessionManagerError::InvalidArgument))?;
+            let mint =
+                Pubkey::from_str(key).map_err(|_| error!(SessionManagerError::InvalidArgument))?;
+            if tokens.iter().any(|(m, _)| m == &mint) {
+                // No duplicate mints
+                return Err(error!(SessionManagerError::InvalidArgument));
+            } else {
+                tokens.push((
+                    mint,
+                    value
+                        .parse()
+                        .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
+                ));
+            }
+        }
+        Ok(tokens)
+    }
+}
+
+fn parse_extra(lines: &mut Peekable<Lines>) -> Result<HashMap<String, String>> {
     let mut kv = HashMap::new();
     for line in lines {
         let (key, value) = line
             .split_once(KEY_VALUE_SEPARATOR)
             .ok_or(error!(SessionManagerError::InvalidArgument))?;
-        if kv.insert(key.to_string(), value.to_string()).is_some() || MANDATORY_KEYS.contains(&key)
+        if MANDATORY_KEYS.contains(&key) || kv.insert(key.to_string(), value.to_string()).is_some()
         {
             // No duplicate keys
             return Err(error!(SessionManagerError::InvalidArgument));
@@ -50,7 +89,7 @@ impl Message {
             .strip_prefix(MESSAGE_PREFIX)
             .ok_or(error!(SessionManagerError::InvalidArgument))?;
 
-        let mut lines = message.lines();
+        let mut lines = message.lines().peekable();
 
         let body = MessageBody {
             domain: Domain(parse_line_with_expected_key(&mut lines, "domain")?),
@@ -62,6 +101,7 @@ impl Message {
                 Pubkey::from_str(&parse_line_with_expected_key(&mut lines, "session_key")?)
                     .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
             ),
+            tokens: parse_token_permissions(&mut lines)?,
             extra: parse_extra(&mut lines)?,
         };
 
@@ -77,14 +117,16 @@ mod test {
     pub fn test_parse_message() {
         let session_key = Pubkey::new_unique();
         let nonce = Pubkey::new_unique();
+        let token = Pubkey::new_unique();
         let message = format!(
-            "{MESSAGE_PREFIX}domain: https://app.xyz\nnonce: {nonce}\nsession_key: {session_key}\nkey1: value1\nkey2: value2"
+            "{MESSAGE_PREFIX}domain: https://app.xyz\nnonce: {nonce}\nsession_key: {session_key}\ntokens:\n-{token} 100\nkey1: value1\nkey2: value2"
         );
 
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
         assert_eq!(parsed_message.domain, Domain("https://app.xyz".to_string()));
         assert_eq!(parsed_message.session_key, SessionKey(session_key));
         assert_eq!(parsed_message.nonce, Nonce(nonce));
+        assert_eq!(parsed_message.tokens, vec![(token, 100)]);
         assert_eq!(
             parsed_message.extra,
             HashMap::from([
