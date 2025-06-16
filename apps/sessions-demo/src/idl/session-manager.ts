@@ -36,6 +36,36 @@ export type SessionManager = {
         {
           "name": "sysvarInstructions",
           "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "sessionSetter",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110,
+                  95,
+                  115,
+                  101,
+                  116,
+                  116,
+                  101,
+                  114
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ],
       "args": []

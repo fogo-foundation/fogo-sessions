@@ -1,4 +1,4 @@
-use crate::{state::AudienceItem, StartSession};
+use crate::{error::SessionManagerError, state::AudienceItem, StartSession};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::get_associated_token_address,
@@ -44,13 +44,18 @@ impl<'info> StartSession<'info> {
     pub fn approve_tokens(
         &self,
         accounts: &[AccountInfo<'info>],
-        tokens: Vec<(Pubkey, u64)>,
+        tokens: &Vec<(Pubkey, u64)>,
         subject: &Pubkey,
         session_setter_bump: u8,
     ) -> Result<()> {
         for (account, (mint, amount)) in accounts.iter().zip(tokens.iter()) {
+            msg!("account: {:?}", account.key());
+            msg!("mint: {:?}", mint);
+            msg!("amount: {:?}", amount);
+            msg!("subject: {:?}", subject);
+            msg!("session_setter_bump: {:?}", session_setter_bump);
             if account.key() != get_associated_token_address(subject, mint) {
-                return Err(ProgramError::InvalidArgument.into());
+                return err!(SessionManagerError::InvalidArgument);
             }
 
             let cpi_accounts = Approve {

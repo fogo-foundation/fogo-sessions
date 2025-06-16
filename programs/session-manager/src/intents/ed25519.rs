@@ -49,9 +49,9 @@ struct Ed25519InstructionData {
 impl AnchorDeserialize for Ed25519InstructionData {
     fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let header = Ed25519InstructionHeader::deserialize_reader(reader)?;
+        let public_key = Pubkey::deserialize_reader(reader)?;
         let mut signature = [0u8; 64];
         reader.read_exact(&mut signature)?;
-        let public_key = Pubkey::deserialize_reader(reader)?;
         let mut message: Vec<u8> = vec![0u8; header.message_data_size as usize];
         reader.read_exact(&mut message)?;
         Ok(Self {

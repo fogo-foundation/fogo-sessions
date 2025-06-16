@@ -28,7 +28,7 @@ pub mod session_manager {
         } = message.parse()?;
         ctx.accounts.check_nonce(nonce)?;
         ctx.accounts.check_session_key(session_key)?;
-        ctx.accounts.approve_tokens(ctx.remaining_accounts, tokens, &signer, ctx.bumps.session_setter)?;
+        ctx.accounts.approve_tokens(ctx.remaining_accounts, &tokens, &signer, ctx.bumps.session_setter)?;
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
