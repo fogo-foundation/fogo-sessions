@@ -31,11 +31,11 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u
         .peek()
         .ok_or(error!(SessionManagerError::InvalidArgument))?;
     if *line != "tokens:" {
-        return Ok(vec![]);
+        Ok(vec![])
     } else {
         lines.next();
         let mut tokens = vec![];
-        while lines.peek().map_or(false, |line| line.starts_with("-")) {
+        while lines.peek().is_some_and(|line| line.starts_with("-")) {
             let line = lines
                 .next()
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
