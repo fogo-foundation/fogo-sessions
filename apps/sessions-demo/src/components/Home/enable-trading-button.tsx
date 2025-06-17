@@ -1,6 +1,7 @@
 "use client";
 
 import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
+import { getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
   Ed25519Program,
@@ -30,7 +31,15 @@ const handleEnableTrading = async (
 
   // TODO: This should be a function
   const message = new TextEncoder().encode(
-    `Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\ndomain: gasless-trading.vercel.app\nnonce: ${sessionKey.publicKey.toBase58()}\nsession_key: ${sessionKey.publicKey.toBase58()}\nextra: extra`,
+    `Fogo Sessions:
+Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
+
+domain: gasless-trading.vercel.app
+nonce: ${sessionKey.publicKey.toBase58()}
+session_key: ${sessionKey.publicKey.toBase58()}
+tokens:
+-${NATIVE_MINT.toBase58()}: 100
+extra: extra`,
   );
 
   const intentSignature = await signMessage(message);
@@ -58,6 +67,13 @@ const handleEnableTrading = async (
       await sessionManagerProgram.methods
         .startSession()
         .accounts({ sponsor: sponsorPubkey, session: sessionKey.publicKey })
+        .remainingAccounts([
+          {
+            pubkey: getAssociatedTokenAddressSync(NATIVE_MINT, publicKey),
+            isWritable: true,
+            isSigner: false,
+          },
+        ])
         .instruction(),
     );
 

@@ -6,6 +6,7 @@ use crate::intents::ed25519::Intent;
 use crate::state::Session;
 use crate::state::SessionInfo;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
+use anchor_spl::token::Token;
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
@@ -16,16 +17,25 @@ pub mod state;
 pub mod session_manager {
     use super::*;
 
-    pub fn start_session(ctx: Context<StartSession>) -> Result<()> {
+    pub fn start_session<'info>(
+        ctx: Context<'_, '_, '_, 'info, StartSession<'info>>,
+    ) -> Result<()> {
         let Intent { signer, message } = ctx.accounts.verify_intent()?;
         let MessageBody {
             domain,
             session_key,
             nonce,
             extra,
+            tokens,
         } = message.parse()?;
         ctx.accounts.check_nonce(nonce)?;
         ctx.accounts.check_session_key(session_key)?;
+        ctx.accounts.approve_tokens(
+            ctx.remaining_accounts,
+            &tokens,
+            &signer,
+            ctx.bumps.session_setter,
+        )?;
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
@@ -51,4 +61,8 @@ pub struct StartSession<'info> {
     /// CHECK: we check the address of this account
     #[account(address = instructions::ID)]
     pub sysvar_instructions: AccountInfo<'info>,
+    /// CHECK: this is just a signer for token program CPIs
+    #[account(seeds = [b"session_setter"], bump)]
+    pub session_setter: AccountInfo<'info>,
+    pub token_program: Program<'info, Token>,
 }

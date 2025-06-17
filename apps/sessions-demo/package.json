@@ -23,6 +23,7 @@
     "@solana/wallet-adapter-react": "catalog:",
     "@solana/wallet-adapter-react-ui": "catalog:",
     "@solana/wallet-adapter-wallets": "catalog:",
+    "@solana/spl-token": "catalog:",
     "@solana/web3.js": "catalog:",
     "bs58": "catalog:",
     "class-variance-authority": "catalog:",
