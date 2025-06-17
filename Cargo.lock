@@ -1270,6 +1270,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sessions-sdk"
+version = "0.0.0"
+dependencies = [
+ "borsh 1.5.7",
+ "solana-account-info",
+ "solana-program-error",
+ "solana-pubkey",
+ "solana-sysvar",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "sha2"
 version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
