@@ -31,9 +31,15 @@ fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str)
 fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u64)>> {
     let mut tokens = vec![];
 
-    if lines.peek().is_some_and(|line| *line == TOKEN_PERMISSIONS_SECTION_HEADER) {
+    if lines
+        .peek()
+        .is_some_and(|line| *line == TOKEN_PERMISSIONS_SECTION_HEADER)
+    {
         lines.next();
-        while lines.peek().is_some_and(|line| line.starts_with(LIST_ITEM_PREFIX)) {
+        while lines
+            .peek()
+            .is_some_and(|line| line.starts_with(LIST_ITEM_PREFIX))
+        {
             let line = lines
                 .next()
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
@@ -59,7 +65,6 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u
         }
     }
     Ok(tokens)
-    
 }
 
 fn parse_extra(lines: &mut Peekable<Lines>) -> Result<HashMap<String, String>> {
