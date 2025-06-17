@@ -25,7 +25,7 @@ const handleEnableTrading = async (
   sessionManagerProgram: Program<SessionManager>,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
-): Promise<{ link: string; status: "success" | "error" }> => {
+): Promise<{ link: string; status: "success" | "error", sessionKey: Keypair | undefined }> => {
   const provider = sessionManagerProgram.provider;
   const sessionKey = Keypair.generate();
 
@@ -103,8 +103,8 @@ extra: extra`,
   });
   const link = `https://explorer.fogo.io/tx/${signature}?cluster=custom&customUrl=${solanaRpc}`;
   return confirmationResult.value.err === null
-    ? { link, status: "success" }
-    : { link, status: "error" };
+    ? { link, status: "success", sessionKey }
+    : { link, status: "error", sessionKey: undefined };
 };
 
 const sponsorAndSendResultSchema = z.strictObject({
@@ -114,20 +114,18 @@ const sponsorAndSendResultSchema = z.strictObject({
 export const EnableTradingButton = ({
   sponsorPubkey,
   solanaRpc,
+  setSessionKey,
+  provider,
 }: {
   sponsorPubkey: string;
   solanaRpc: string;
+  provider: AnchorProvider;
+  setSessionKey: (sessionKey: Keypair | undefined) => void;
 }) => {
-  const { connection } = useConnection();
   const [{ link, status }, setValues] = useState<{
     link: string | undefined;
     status: "success" | "error" | "loading" | undefined;
   }>({ link: undefined, status: undefined });
-
-  const provider = useMemo(
-    () => new AnchorProvider(connection, {} as Wallet, {}),
-    [connection],
-  );
 
   const sessionManagerProgram = useMemo(
     () =>
@@ -150,16 +148,18 @@ export const EnableTradingButton = ({
         publicKey,
         signMessage,
       )
-        .then(({ link, status }) => {
+        .then(({ link, status, sessionKey }) => {
           setValues({ link, status });
+          setSessionKey(sessionKey);
         })
         .catch((error: unknown) => {
           setValues({ link: undefined, status: undefined });
+          setSessionKey(undefined);
           // eslint-disable-next-line no-console
           console.error(error);
         });
     }
-  }, [publicKey, signMessage, sessionManagerProgram, sponsorPubkey, solanaRpc]);
+  }, [publicKey, signMessage, sessionManagerProgram, sponsorPubkey, solanaRpc, setSessionKey]);
 
   const canEnableTrading = publicKey && signMessage;
   return (

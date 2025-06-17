@@ -4,7 +4,7 @@ use anchor_spl::{
     associated_token::get_associated_token_address,
     token::{self, Approve},
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(PartialEq, Debug)]
 pub struct Nonce(pub(crate) Pubkey);
@@ -37,9 +37,13 @@ impl<'info> StartSession<'info> {
     }
 
     pub fn get_domain_programs(&self, _domain: Domain) -> Result<Vec<AudienceItem>> {
-        // TODO
-        Ok(vec![])
-    }
+                // TODO: implement this properly
+        let pubkey = Pubkey::from_str("91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45").unwrap();
+        let signer_pda = Pubkey::find_program_address(&[b"fogo_session_program_signer"], &pubkey).0;
+       Ok(vec![AudienceItem {
+           program: pubkey,
+            signer_pda,        }])
+     }
 
     pub fn approve_tokens(
         &self,

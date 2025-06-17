@@ -1,27 +1,36 @@
 
-use borsh::BorshDeserialize;
 use solana_account_info::AccountInfo;
 use solana_program_error::ProgramError;
 use solana_pubkey::Pubkey;
 use solana_sysvar::{clock::Clock, Sysvar};
 use thiserror::Error;
 
-/// DOCUMENT THIS
+#[cfg(feature = "borsh")]
+use borsh::{BorshDeserialize};
+
+#[cfg(feature = "anchor")]
+use anchor_lang::prelude::{account, AnchorDeserialize, AnchorSerialize, borsh, Discriminator};
+
 pub const SESSION_SETTER: Pubkey = solana_pubkey::pubkey!("FrfXhepGSPsSYXzvEsAxzVW8zDaxdWSneaERaDC1Q911");
-/// DOCUMENT THIS
-pub const SESSION_MANAGER: Pubkey = solana_pubkey::pubkey!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
+const ID: Pubkey = solana_pubkey::pubkey!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
+pub const SESSION_MANAGER_ID: Pubkey = ID;
 
+pub const PROGRAM_SIGNER_SEED: &[u8] = b"fogo_session_program_signer";
 
-
-/// SESSION ACCOUNT
-#[derive(BorshDeserialize, Clone)]
-pub struct SessionAccount {
+#[cfg_attr(feature = "anchor", account)]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
+#[derive(Debug)]
+pub struct Session {
+    #[cfg(not(feature = "anchor"))]
     pub discriminator: [u8; 8],
     pub sponsor: Pubkey,
     pub session: SessionInfo,
 }
 
-#[derive(BorshDeserialize, Clone)]
+
+#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, Clone))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
+#[derive(Debug)]
 pub struct SessionInfo {
     /// The user who started this session
     pub subject: Pubkey,
@@ -30,24 +39,35 @@ pub struct SessionInfo {
     /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
     pub audience: Vec<AudienceItem>,
     /// Extra (key, value)'s provided by the user
-    pub extra: Vec<(String, String)>,
+    pub extra: Vec<ExtraItem>,
 }
 
-#[derive(BorshDeserialize, Clone)]
+#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, Clone))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
+#[derive(Debug)]
+pub struct ExtraItem(String, String);
+
+#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, Clone))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
+#[derive(Debug)]
 pub struct AudienceItem {
     pub program_id: Pubkey,
     pub signer_pda: Pubkey,
 }
 
-impl SessionAccount {
+impl Session {
+    #[cfg(feature = "borsh")]
     const DISCRIMINATOR : [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
 
-    pub fn try_deserialize(data: &[u8]) -> Result<Self, ProgramError> {
-        let discriminator = data.get(0..8).ok_or(ProgramError::InvalidAccountData)?;
-        if discriminator != Self::DISCRIMINATOR {
+    #[cfg(feature = "borsh")]
+    pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, ProgramError> {
+        let result = Session::deserialize(data).map_err(|_| {
+            ProgramError::InvalidAccountData
+        })?;
+        if result.discriminator != Self::DISCRIMINATOR {
             return Err(ProgramError::InvalidAccountData);
         }
-        SessionAccount::try_from_slice(data).map_err(|_| ProgramError::InvalidAccountData)
+        Ok(result)
     }
 
     pub fn check_is_live(&self) -> Result<(), ProgramError> {

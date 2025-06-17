@@ -1,11 +1,11 @@
 [package]
-name = "session-manager"
+name = "example"
 version = "0.1.0"
 edition = { workspace = true}
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "session_manager"
+name = "example"
 
 [features]
 default = []
@@ -16,6 +16,7 @@ no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 
 [dependencies]
-anchor-lang = { version = "0.31.1"}
+anchor-lang = { version = "0.31.1", features = ["init-if-needed"]}
 anchor-spl = "0.31.1"
-
+spl-token = { version = "8.0.0", features = ["no-entrypoint"]}
+fogo-sessions-sdk = { path = "../../sdk", features = ["anchor"]}

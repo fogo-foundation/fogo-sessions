@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "programs/*",
-    "sessions-sdk"
+    "sdk"
 ]
 resolver = "2"
 

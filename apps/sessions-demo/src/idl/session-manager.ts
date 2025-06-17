@@ -9,8 +9,7 @@ export type SessionManager = {
   "metadata": {
     "name": "sessionManager",
     "version": "0.1.0",
-    "spec": "0.1.0",
-    "description": "Created with Anchor"
+    "spec": "0.1.0"
   },
   "instructions": [
     {

@@ -8,6 +8,8 @@ local_resource(
     serve_cmd="solana-test-validator \
         --bpf-program $(solana-keygen pubkey ./keypairs/session-manager.json) \
         ../target/deploy/session_manager.so \
+        --bpf-program $(solana-keygen pubkey ./keypairs/example.json) \
+        ../target/deploy/example.so \
         --mint $(solana-keygen pubkey ./keypairs/sponsor.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
         --reset",
