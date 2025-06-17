@@ -13,6 +13,8 @@ const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow thi
 const MANDATORY_KEYS: [&str; 4] = ["domain", "nonce", "session_key", "tokens"];
 const KEY_VALUE_SEPARATOR: &str = ": ";
 const MINT_AMOUNT_SEPARATOR: &str = " ";
+const LIST_ITEM_PREFIX: &str = "-";
+const TOKEN_PERMISSIONS_SECTION_HEADER: &str = "tokens:";
 
 fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str) -> Result<String> {
     let (key, value) = lines
@@ -27,20 +29,16 @@ fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str)
 }
 
 fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u64)>> {
-    let line = lines
-        .peek()
-        .ok_or(error!(SessionManagerError::InvalidArgument))?;
-    if *line != "tokens:" {
-        Ok(vec![])
-    } else {
+    let mut tokens = vec![];
+
+    if lines.peek().is_some_and(|line| *line == TOKEN_PERMISSIONS_SECTION_HEADER) {
         lines.next();
-        let mut tokens = vec![];
-        while lines.peek().is_some_and(|line| line.starts_with("-")) {
+        while lines.peek().is_some_and(|line| line.starts_with(LIST_ITEM_PREFIX)) {
             let line = lines
                 .next()
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
             let line = line
-                .strip_prefix("-")
+                .strip_prefix(LIST_ITEM_PREFIX)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
             let (key, value) = line
                 .split_once(MINT_AMOUNT_SEPARATOR)
@@ -59,8 +57,9 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u
                 ));
             }
         }
-        Ok(tokens)
     }
+    Ok(tokens)
+    
 }
 
 fn parse_extra(lines: &mut Peekable<Lines>) -> Result<HashMap<String, String>> {
