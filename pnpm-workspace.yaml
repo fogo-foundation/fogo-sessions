@@ -1,21 +1,25 @@
 packages:
   - apps/*
   - packages/*
+  - "!**/integration-tests/__fixtures__/**/*"
 
 catalog:
   "@coral-xyz/anchor": ^0.31.1
-  "@cprussin/eslint-config": ^4.0.2
-  "@cprussin/jest-config": ^2.0.2
-  "@cprussin/prettier-config": ^2.2.2
-  "@cprussin/tsconfig": ^3.1.2
+  "@cprussin/eslint-config": ^5.0.0
+  "@cprussin/jest-config": ^3.0.0
+  "@cprussin/prettier-config": ^3.0.0
+  "@cprussin/transform-package-json": ^2.0.0
+  "@cprussin/tsconfig": ^4.0.0
   "@radix-ui/react-slot": ^1.1.1
+  "@solana/spl-token": ^0.4.13
   "@solana/wallet-adapter-base": ^0.9.23
   "@solana/wallet-adapter-react": ^0.15.35
   "@solana/wallet-adapter-react-ui": ^0.9.35
-  "@solana/wallet-adapter-wallets": 0.19.10
-  "@solana/spl-token": 0.4.13
-  "@solana/web3.js": 1.92.3
-  "@types/react": 19.0.7
+  "@solana/wallet-adapter-wallets": ^0.19.10
+  "@solana/web3.js": ^1.92.3
+  "@types/jest": ^29.5.14
+  "@types/node": ^24.0.1
+  "@types/react": ^19.0.7
   autoprefixer: ^10.4.20
   bs58: ^6.0.0
   class-variance-authority: ^0.7.1
@@ -27,8 +31,8 @@ catalog:
   pino-pretty: ^13.0.0
   postcss: ^8.5.1
   prettier: ^3.5.3
-  react-dom: 19.0.0
-  react: 19.0.0
+  react-dom: ^19.0.0
+  react: ^19.0.0
   tailwind-merge: ^2.6.0
   tailwindcss-animate: ^1.0.7
   tailwindcss: ^3.4.17
@@ -41,9 +45,14 @@ engineStrict: true
 managePackageManagerVersions: false
 
 onlyBuiltDependencies:
-  - sharp
   - bigint-buffer
+  - blake-hash
   - bufferutil
+  - esbuild
+  - protobufjs
+  - sharp
+  - tiny-secp256k1
+  - usb
   - utf-8-validate
 
 packageManagerStrict: true

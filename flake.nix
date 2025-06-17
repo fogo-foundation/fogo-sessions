@@ -47,6 +47,7 @@
         buildInputs = [
           final.cli
           final.git
+          final.libusb1
           final.nodejs
           final.pnpm
           final.python3
