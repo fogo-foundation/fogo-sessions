@@ -44,7 +44,7 @@ impl<'info> StartSession<'info> {
     pub fn approve_tokens(
         &self,
         accounts: &[AccountInfo<'info>],
-        tokens: &Vec<(Pubkey, u64)>,
+        tokens: &[(Pubkey, u64)],
         subject: &Pubkey,
         session_setter_bump: u8,
     ) -> Result<()> {
