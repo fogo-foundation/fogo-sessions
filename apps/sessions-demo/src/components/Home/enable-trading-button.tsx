@@ -38,7 +38,7 @@ domain: gasless-trading.vercel.app
 nonce: ${sessionKey.publicKey.toBase58()}
 session_key: ${sessionKey.publicKey.toBase58()}
 tokens:
--${NATIVE_MINT.toBase58()} 100
+-${NATIVE_MINT.toBase58()}: 100
 extra: extra`,
   );
 

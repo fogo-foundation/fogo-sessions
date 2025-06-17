@@ -12,7 +12,6 @@ use std::{
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\n";
 const MANDATORY_KEYS: [&str; 4] = ["domain", "nonce", "session_key", "tokens"];
 const KEY_VALUE_SEPARATOR: &str = ": ";
-const MINT_AMOUNT_SEPARATOR: &str = " ";
 const LIST_ITEM_PREFIX: &str = "-";
 const TOKEN_PERMISSIONS_SECTION_HEADER: &str = "tokens:";
 
@@ -47,7 +46,7 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u
                 .strip_prefix(LIST_ITEM_PREFIX)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
             let (key, value) = line
-                .split_once(MINT_AMOUNT_SEPARATOR)
+                .split_once(KEY_VALUE_SEPARATOR)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
             let mint =
                 Pubkey::from_str(key).map_err(|_| error!(SessionManagerError::InvalidArgument))?;
@@ -123,7 +122,7 @@ mod test {
         let nonce = Pubkey::new_unique();
         let token = Pubkey::new_unique();
         let message = format!(
-            "{MESSAGE_PREFIX}domain: https://app.xyz\nnonce: {nonce}\nsession_key: {session_key}\ntokens:\n-{token} 100\nkey1: value1\nkey2: value2"
+            "{MESSAGE_PREFIX}domain: https://app.xyz\nnonce: {nonce}\nsession_key: {session_key}\ntokens:\n-{token}: 100\nkey1: value1\nkey2: value2"
         );
 
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
