@@ -27,10 +27,9 @@ pub struct SessionInfo {
 pub struct AuthorizedProgram {
     /// The program ID that the session key is allowed to interact with
     pub program_id: Pubkey,
-    /// The PDA of `program_id` with seeds `PROGRAM_SIGNER_SEED`, which is required to sign for in-session token transfers 
+    /// The PDA of `program_id` with seeds `PROGRAM_SIGNER_SEED`, which is required to sign for in-session token transfers
     pub signer_pda: Pubkey,
 }
-
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct Extra(Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of tuples well so we have to declare a ExtraItem struct

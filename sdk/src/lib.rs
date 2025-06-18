@@ -52,7 +52,7 @@ pub struct ExtraItem(String, String);
 pub struct AuthorizedProgram {
     /// The program ID that the session key is allowed to interact with
     pub program_id: Pubkey,
-    /// The PDA of `program_id` with seeds `PROGRAM_SIGNER_SEED`, which is required to sign for in-session token transfers 
+    /// The PDA of `program_id` with seeds `PROGRAM_SIGNER_SEED`, which is required to sign for in-session token transfers
     pub signer_pda: Pubkey,
 }
 
@@ -83,7 +83,10 @@ impl Session {
         Ok(())
     }
 
-    pub fn check_authorized_program_signer(&self, signers: &[AccountInfo]) -> Result<(), ProgramError> {
+    pub fn check_authorized_program_signer(
+        &self,
+        signers: &[AccountInfo],
+    ) -> Result<(), ProgramError> {
         let signer_account_info = signers
             .iter()
             .find(|signer| {
