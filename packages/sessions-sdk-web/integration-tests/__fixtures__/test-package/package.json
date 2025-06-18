@@ -1,0 +1,11 @@
+{
+  "name": "test-package",
+  "type": "module",
+  "dependencies": {
+    "@fogo/sessions-sdk-web": "file:../../../dist"
+  },
+  "devDependencies": {
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1"
+  }
+}

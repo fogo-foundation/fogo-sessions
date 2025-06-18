@@ -157,7 +157,8 @@
       "dependsOn": ["//#install:modules", "^build"]
     },
     "test:integration": {
-      "dependsOn": ["//#install:modules", "build"]
+      "dependsOn": ["//#install:modules", "build"],
+      "env": ["PUPPETEER_EXECUTABLE_PATH"]
     }
   }
 }
