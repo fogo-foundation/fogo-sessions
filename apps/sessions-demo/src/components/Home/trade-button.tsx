@@ -1,13 +1,13 @@
 "use client";
 
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
-import { createAssociatedTokenAccountIdempotentInstruction, getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import {
-  Keypair,
-  PublicKey,
-  Transaction,
-} from "@solana/web3.js";
+  createAssociatedTokenAccountIdempotentInstruction,
+  getAssociatedTokenAddressSync,
+  NATIVE_MINT,
+} from "@solana/spl-token";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 import { z } from "zod";
 
@@ -21,21 +21,35 @@ const handleTrade = async (
   solanaRpc: string,
   exampleProgram: Program<Example>,
   publicKey: PublicKey,
-  sessionKey: Keypair
+  sessionKey: Keypair,
 ): Promise<{ link: string; status: "success" | "error" }> => {
   const provider = exampleProgram.provider;
 
-  const sinkAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey)
-  const userTokenAccount = getAssociatedTokenAddressSync(NATIVE_MINT, publicKey)
+  const sinkAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey);
+  const userTokenAccount = getAssociatedTokenAddressSync(
+    NATIVE_MINT,
+    publicKey,
+  );
 
-  const createAssociatedTokenAccountInstruction = createAssociatedTokenAccountIdempotentInstruction(sponsorPubkey, sinkAta, sponsorPubkey, NATIVE_MINT);
-  const transaction = new Transaction().add(createAssociatedTokenAccountInstruction).add(await 
-    exampleProgram.methods.exampleTransfer(new BN(100)).accounts({
-        sessionKey: sessionKey.publicKey,
-        sink: sinkAta,
-        userTokenAccount: userTokenAccount,
-    }).instruction()
-  )
+  const createAssociatedTokenAccountInstruction =
+    createAssociatedTokenAccountIdempotentInstruction(
+      sponsorPubkey,
+      sinkAta,
+      sponsorPubkey,
+      NATIVE_MINT,
+    );
+  const transaction = new Transaction()
+    .add(createAssociatedTokenAccountInstruction)
+    .add(
+      await exampleProgram.methods
+        .exampleTransfer({ amount: 100 })
+        .accounts({
+          sessionKey: sessionKey.publicKey,
+          sink: sinkAta,
+          userTokenAccount: userTokenAccount,
+        })
+        .instruction(),
+    );
   const { blockhash } = await provider.connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhash;
   transaction.feePayer = sponsorPubkey;
@@ -74,12 +88,12 @@ export const TradeButton = ({
   sponsorPubkey,
   solanaRpc,
   provider,
-  sessionKey
+  sessionKey,
 }: {
   sponsorPubkey: string;
   solanaRpc: string;
   provider: AnchorProvider;
-  sessionKey: Keypair | undefined
+  sessionKey: Keypair | undefined;
 }) => {
   const [{ link, status }, setValues] = useState<{
     link: string | undefined;
@@ -87,11 +101,7 @@ export const TradeButton = ({
   }>({ link: undefined, status: undefined });
 
   const exampleProgram = useMemo(
-    () =>
-      new Program<Example>(
-        exampleIdl as Example,
-        provider,
-      ),
+    () => new Program<Example>(exampleIdl as Example, provider),
     [provider],
   );
 
@@ -116,7 +126,7 @@ export const TradeButton = ({
           console.error(error);
         });
     }
-  }, [ sponsorPubkey, solanaRpc, exampleProgram, publicKey, sessionKey ]);
+  }, [sponsorPubkey, solanaRpc, exampleProgram, publicKey, sessionKey]);
 
   const canTrade = sessionKey !== undefined && publicKey;
   return (

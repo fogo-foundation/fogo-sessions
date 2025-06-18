@@ -25,7 +25,11 @@ const handleEnableTrading = async (
   sessionManagerProgram: Program<SessionManager>,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
-): Promise<{ link: string; status: "success" | "error", sessionKey: Keypair | undefined }> => {
+): Promise<{
+  link: string;
+  status: "success" | "error";
+  sessionKey: Keypair | undefined;
+}> => {
   const provider = sessionManagerProgram.provider;
   const sessionKey = Keypair.generate();
 
@@ -159,7 +163,14 @@ export const EnableTradingButton = ({
           console.error(error);
         });
     }
-  }, [publicKey, signMessage, sessionManagerProgram, sponsorPubkey, solanaRpc, setSessionKey]);
+  }, [
+    publicKey,
+    signMessage,
+    sessionManagerProgram,
+    sponsorPubkey,
+    solanaRpc,
+    setSessionKey,
+  ]);
 
   const canEnableTrading = publicKey && signMessage;
   return (
