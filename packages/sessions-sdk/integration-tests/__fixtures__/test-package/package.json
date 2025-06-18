@@ -1,0 +1,7 @@
+{
+  "name": "test-package",
+  "type": "module",
+  "dependencies": {
+    "@fogo/sessions-sdk": "file:../../../dist"
+  }
+}

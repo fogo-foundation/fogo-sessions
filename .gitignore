@@ -10,3 +10,4 @@ result
 target
 tilt/test-ledger/
 .DS_Store
+dist/
