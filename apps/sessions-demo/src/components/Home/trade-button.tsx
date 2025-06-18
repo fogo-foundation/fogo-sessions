@@ -1,10 +1,7 @@
 "use client";
 
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
-import {
-  getAssociatedTokenAddressSync,
-  NATIVE_MINT,
-} from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
@@ -30,17 +27,16 @@ const handleTrade = async (
     publicKey,
   );
 
-  const transaction = new Transaction()
-    .add(
-      await exampleProgram.methods
-        .exampleTransfer(new BN(100))
-        .accounts({
-          sessionKey: sessionKey.publicKey,
-          sink: sinkAta,
-          userTokenAccount: userTokenAccount,
-        })
-        .instruction(),
-    );
+  const transaction = new Transaction().add(
+    await exampleProgram.methods
+      .exampleTransfer(new BN(100))
+      .accounts({
+        sessionKey: sessionKey.publicKey,
+        sink: sinkAta,
+        userTokenAccount: userTokenAccount,
+      })
+      .instruction(),
+  );
   const { blockhash } = await provider.connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhash;
   transaction.feePayer = sponsorPubkey;
