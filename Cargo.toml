@@ -1,8 +1,5 @@
 [workspace]
-members = [
-    "programs/*",
-    "sdk"
-]
+members = ["programs/*", "sdk"]
 resolver = "2"
 
 [workspace.package]
