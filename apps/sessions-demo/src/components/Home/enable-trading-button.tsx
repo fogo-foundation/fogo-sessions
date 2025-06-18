@@ -59,7 +59,7 @@ extra: extra`,
     message: message,
   });
 
-  const sinkAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey);
+  const faucetAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey);
   const userTokenAccount = getAssociatedTokenAddressSync(
     NATIVE_MINT,
     publicKey,
@@ -73,8 +73,9 @@ extra: extra`,
       NATIVE_MINT,
     );
 
+  // We are sending the connected wallet some assets to play with in this demo
   const transferInstruction = createTransferInstruction(
-    sinkAta,
+    faucetAta,
     userTokenAccount,
     sponsorPubkey,
     5_000_000_000,
