@@ -17,6 +17,7 @@ catalog:
   "@solana/wallet-adapter-react-ui": ^0.9.35
   "@solana/wallet-adapter-wallets": ^0.19.10
   "@solana/web3.js": ^1.92.3
+  "@types/bn.js": ^5.2.0
   "@types/jest": ^29.5.14
   "@types/node": ^24.0.1
   "@types/react": ^19.0.7
@@ -39,7 +40,6 @@ catalog:
   turbo: ^2.5.4
   typescript: ^5.8.3
   zod: ^3.25.62
-  "@types/bn.js": ^5.2.0
 
 engineStrict: true
 
