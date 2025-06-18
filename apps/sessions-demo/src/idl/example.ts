@@ -106,16 +106,22 @@ export type Example = {
   ],
   "types": [
     {
-      "name": "audienceItem",
+      "name": "authorizedProgram",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "programId",
+            "docs": [
+              "The program ID that the session key is allowed to interact with"
+            ],
             "type": "pubkey"
           },
           {
             "name": "signerPda",
+            "docs": [
+              "The PDA of `program_id` with seeds `PROGRAM_SIGNER_SEED`, which is required to sign for in-session token transfers"
+            ],
             "type": "pubkey"
           }
         ]
@@ -157,7 +163,7 @@ export type Example = {
         "kind": "struct",
         "fields": [
           {
-            "name": "subject",
+            "name": "user",
             "docs": [
               "The user who started this session"
             ],
@@ -171,14 +177,14 @@ export type Example = {
             "type": "i64"
           },
           {
-            "name": "audience",
+            "name": "authorizedPrograms",
             "docs": [
               "Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them"
             ],
             "type": {
               "vec": {
                 "defined": {
-                  "name": "audienceItem"
+                  "name": "authorizedProgram"
                 }
               }
             }

@@ -32,11 +32,11 @@ pub struct Session {
 #[derive(Debug)]
 pub struct SessionInfo {
     /// The user who started this session
-    pub subject: Pubkey,
+    pub user: Pubkey,
     /// The expiration time of the session
     pub expiration: i64,
     /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
-    pub audience: Vec<AudienceItem>,
+    pub authorized_programs: Vec<AuthorizedProgram>,
     /// Extra (key, value)'s provided by the user
     pub extra: Vec<ExtraItem>,
 }
@@ -49,8 +49,10 @@ pub struct ExtraItem(String, String);
 #[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, Clone))]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
 #[derive(Debug)]
-pub struct AudienceItem {
+pub struct AuthorizedProgram {
+    /// The program ID that the session key is allowed to interact with
     pub program_id: Pubkey,
+    /// The PDA of `program_id` with seeds `PROGRAM_SIGNER_SEED`, which is required to sign for in-session token transfers 
     pub signer_pda: Pubkey,
 }
 
@@ -74,35 +76,35 @@ impl Session {
         Ok(())
     }
 
-    pub fn check_subject(&self, expected_subject: &Pubkey) -> Result<(), ProgramError> {
-        if self.session.subject != *expected_subject {
+    pub fn check_user(&self, expected_user: &Pubkey) -> Result<(), ProgramError> {
+        if self.session.user != *expected_user {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
     }
 
-    pub fn check_audience_signer(&self, signers: &[AccountInfo]) -> Result<(), ProgramError> {
+    pub fn check_authorized_program_signer(&self, signers: &[AccountInfo]) -> Result<(), ProgramError> {
         let signer_account_info = signers
             .iter()
             .find(|signer| {
                 self.session
-                    .audience
+                    .authorized_programs
                     .iter()
                     .any(|item| *signer.key == item.signer_pda)
             })
-            .ok_or(SessionError::AudienceMismatch)?;
+            .ok_or(SessionError::UnauthorizedProgram)?;
         if !signer_account_info.is_signer {
             return Err(ProgramError::MissingRequiredSignature);
         }
         Ok(())
     }
 
-    pub fn check_audience_program(&self, program_id: &Pubkey) -> Result<(), ProgramError> {
+    pub fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), ProgramError> {
         self.session
-            .audience
+            .authorized_programs
             .iter()
-            .find(|audience_item| audience_item.program_id == *program_id)
-            .ok_or(SessionError::AudienceMismatch)?;
+            .find(|authorized_program| authorized_program.program_id == *program_id)
+            .ok_or(SessionError::UnauthorizedProgram)?;
         Ok(())
     }
 }
@@ -112,9 +114,9 @@ pub enum SessionError {
     #[error("Session is expired")]
     Expired,
     #[error("Session was created for a different user")]
-    SubjectMismatch,
+    UserMismatch,
     #[error("Session was created for a different program")]
-    AudienceMismatch,
+    UnauthorizedProgram,
 }
 
 impl From<SessionError> for ProgramError {

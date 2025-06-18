@@ -14,8 +14,8 @@ pub mod example {
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
         let session_key = &ctx.accounts.session_key;
         session_key.check_is_live()?;
-        session_key.check_subject(&ctx.accounts.user_token_account.owner)?;
-        session_key.check_audience_program(ctx.program_id)?;
+        session_key.check_user(&ctx.accounts.user_token_account.owner)?;
+        session_key.check_authorized_program(ctx.program_id)?;
 
         let mut instruction = transfer(
             ctx.accounts.token_program.key,

@@ -41,8 +41,8 @@ pub mod session_manager {
         let session = Session {
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
-                subject: signer,
-                audience: program_domains,
+                user: signer,
+                authorized_programs: program_domains,
                 extra: extra.into(),
                 expiration: Clock::get()?.unix_timestamp + 3600,
             },
