@@ -11,8 +11,8 @@
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix .",
     "install:modules": "[ $CI ] && true || pnpm install",
-    "test:format": "jest --colors --selectProjects format",
-    "test:lint": "jest --colors --selectProjects lint"
+    "test:format": "run-jest --colors --selectProjects format",
+    "test:lint": "run-jest --colors --selectProjects lint"
   },
   "devDependencies": {
     "@cprussin/eslint-config": "catalog:",

@@ -1,0 +1,22 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@fogo/sessions-sdk':
+        specifier: file:../../../dist
+        version: file:../../../dist
+
+packages:
+
+  '@fogo/sessions-sdk@file:../../../dist':
+    resolution: {directory: ../../../dist, type: directory}
+
+snapshots:
+
+  '@fogo/sessions-sdk@file:../../../dist': {}
