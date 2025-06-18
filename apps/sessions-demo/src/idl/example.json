@@ -127,9 +127,6 @@
     },
     {
       "name": "Session",
-      "docs": [
-        "SESSION ACCOUNT"
-      ],
       "type": {
         "kind": "struct",
         "fields": [

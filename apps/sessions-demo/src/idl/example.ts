@@ -133,9 +133,6 @@ export type Example = {
     },
     {
       "name": "session",
-      "docs": [
-        "SESSION ACCOUNT"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
