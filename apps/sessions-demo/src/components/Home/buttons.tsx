@@ -23,7 +23,7 @@ export const Buttons = ({
   const [sessionKey, setSessionKey] = useState<Keypair | undefined>(undefined);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div className="flex flex-col">
       <EnableTradingButton
         sponsorPubkey={sponsorPubkey}
         solanaRpc={solanaRpc}

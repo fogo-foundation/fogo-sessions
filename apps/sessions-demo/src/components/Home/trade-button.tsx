@@ -5,12 +5,12 @@ import { getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import type { Example } from "@/idl/example";
 import exampleIdl from "@/idl/example.json";
+import { sendTransaction } from "@/send-transaction";
 
 const handleTrade = async (
   sponsorPubkey: PublicKey,
@@ -37,39 +37,9 @@ const handleTrade = async (
       })
       .instruction(),
   );
-  const { blockhash } = await provider.connection.getLatestBlockhash();
-  transaction.recentBlockhash = blockhash;
-  transaction.feePayer = sponsorPubkey;
-  transaction.partialSign(sessionKey);
-
-  const response = await fetch("/api/sponsor_and_send", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      transaction: transaction
-        .serialize({ requireAllSignatures: false })
-        .toString("base64"),
-    }),
-  });
-
-  const lastValidBlockHeight = await provider.connection.getSlot();
-  const { signature } = sponsorAndSendResultSchema.parse(await response.json());
-  const confirmationResult = await provider.connection.confirmTransaction({
-    signature,
-    blockhash: transaction.recentBlockhash,
-    lastValidBlockHeight,
-  });
-  const link = `https://explorer.fogo.io/tx/${signature}?cluster=custom&customUrl=${solanaRpc}`;
-  return confirmationResult.value.err === null
-    ? { link, status: "success" }
-    : { link, status: "error" };
+  
+  return sendTransaction(transaction, sponsorPubkey, solanaRpc, provider.connection, sessionKey);
 };
-
-const sponsorAndSendResultSchema = z.strictObject({
-  signature: z.string(),
-});
 
 export const TradeButton = ({
   sponsorPubkey,
