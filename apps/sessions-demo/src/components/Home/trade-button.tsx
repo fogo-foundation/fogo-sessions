@@ -10,6 +10,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 import { z } from "zod";
+
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import type { Example } from "@/idl/example";
