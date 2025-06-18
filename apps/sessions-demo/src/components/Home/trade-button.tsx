@@ -1,8 +1,7 @@
 "use client";
 
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 import {
-  createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
   NATIVE_MINT,
 } from "@solana/spl-token";
@@ -31,18 +30,10 @@ const handleTrade = async (
     publicKey,
   );
 
-  const createAssociatedTokenAccountInstruction =
-    createAssociatedTokenAccountIdempotentInstruction(
-      sponsorPubkey,
-      sinkAta,
-      sponsorPubkey,
-      NATIVE_MINT,
-    );
   const transaction = new Transaction()
-    .add(createAssociatedTokenAccountInstruction)
     .add(
       await exampleProgram.methods
-        .exampleTransfer({ amount: 100 })
+        .exampleTransfer(new BN(100))
         .accounts({
           sessionKey: sessionKey.publicKey,
           sink: sinkAta,

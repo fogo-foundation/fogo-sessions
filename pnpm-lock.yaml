@@ -42,6 +42,9 @@ catalogs:
     '@solana/web3.js':
       specifier: 1.92.3
       version: 1.92.3
+    '@types/bn.js':
+      specifier: ^5.2.0
+      version: 5.2.0
     '@types/react':
       specifier: 19.0.7
       version: 19.0.7
@@ -198,6 +201,9 @@ importers:
       '@cprussin/tsconfig':
         specifier: 'catalog:'
         version: 3.1.2(typescript@5.8.3)
+      '@types/bn.js':
+        specifier: 'catalog:'
+        version: 5.2.0
       '@types/react':
         specifier: 'catalog:'
         version: 19.0.7
@@ -1639,6 +1645,9 @@ packages:
 
   '@types/babel__traverse@7.20.7':
     resolution: {integrity: sha512-dkO5fhS7+/oos4ciWxyEyjWe48zmG6wbCheo/G2ZnHx4fs3EU6YC6UM8rk56gAjNJ9P3MTH2jo5jb92/K6wbng==}
+
+  '@types/bn.js@5.2.0':
+    resolution: {integrity: sha512-DLbJ1BPqxvQhIGbeu8VbUC1DiAiahHtAYvA0ZEAa4P31F7IaArc8z3C3BRQdWX4mtLQuABG4yzp76ZrS02Ui1Q==}
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
@@ -7987,6 +7996,10 @@ snapshots:
   '@types/babel__traverse@7.20.7':
     dependencies:
       '@babel/types': 7.27.6
+
+  '@types/bn.js@5.2.0':
+    dependencies:
+      '@types/node': 24.0.0
 
   '@types/connect@3.4.38':
     dependencies:

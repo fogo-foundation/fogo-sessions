@@ -23,14 +23,13 @@ local_resource(
 )
 
 local_resource(
-    "set-balances",
-    """solana -u l airdrop 5 $(solana-keygen pubkey ./tilt/keypairs/user.json)\
-    && spl-token -u l wrap 5 --fee-payer ./tilt/keypairs/sponsor.json ./tilt/keypairs/user.json""",
+    "setup-wrapped-sol-faucet",
+    """spl-token -u l wrap 100 --fee-payer ./tilt/keypairs/sponsor.json ./tilt/keypairs/sponsor.json""",
     resource_deps=["svm-localnet"],
 )
 
 local_resource(
     "web-app",
     serve_cmd="pnpm turbo start:dev",
-    resource_deps=["set-balances"],
+    resource_deps=["setup-wrapped-sol-faucet"],
 )

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
-import { getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
+import { createAssociatedTokenAccountIdempotentInstruction, createTransferInstruction, getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   Ed25519Program,
@@ -54,6 +54,22 @@ extra: extra`,
     message: message,
   });
 
+    const sinkAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey);
+    const userTokenAccount = getAssociatedTokenAddressSync(
+    NATIVE_MINT,
+    publicKey,
+  );
+
+  const createAssociatedTokenAccountInstruction =
+  createAssociatedTokenAccountIdempotentInstruction(
+    sponsorPubkey,
+    userTokenAccount,
+    publicKey,
+    NATIVE_MINT,
+  );
+
+  const transferInstruction = createTransferInstruction(sinkAta, userTokenAccount, sponsorPubkey, 5_000_000_000)
+
   const space = 200; // TODO: Compute this dynamically
   const systemInstruction = SystemProgram.createAccount({
     fromPubkey: sponsorPubkey,
@@ -66,6 +82,8 @@ extra: extra`,
 
   const transaction = new Transaction()
     .add(intentInstruction)
+    .add(createAssociatedTokenAccountInstruction)
+    .add(transferInstruction)
     .add(systemInstruction)
     .add(
       await sessionManagerProgram.methods
