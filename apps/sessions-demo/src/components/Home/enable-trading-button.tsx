@@ -109,8 +109,18 @@ extra: extra`,
         .instruction(),
     );
 
-  const { link, status } = await sendTransaction(transaction, sponsorPubkey, solanaRpc, provider.connection, sessionKey);
-  return { link, status, sessionKey: status=="success"? sessionKey: undefined };
+  const { link, status } = await sendTransaction(
+    transaction,
+    sponsorPubkey,
+    solanaRpc,
+    provider.connection,
+    sessionKey,
+  );
+  return {
+    link,
+    status,
+    sessionKey: status == "success" ? sessionKey : undefined,
+  };
 };
 
 export const EnableTradingButton = ({

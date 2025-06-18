@@ -37,8 +37,14 @@ const handleTrade = async (
       })
       .instruction(),
   );
-  
-  return sendTransaction(transaction, sponsorPubkey, solanaRpc, provider.connection, sessionKey);
+
+  return sendTransaction(
+    transaction,
+    sponsorPubkey,
+    solanaRpc,
+    provider.connection,
+    sessionKey,
+  );
 };
 
 export const TradeButton = ({
