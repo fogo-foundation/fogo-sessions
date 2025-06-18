@@ -1,6 +1,6 @@
 import "@solana/wallet-adapter-react-ui/styles.css";
-import { WalletDisconnectButton, WalletMultiButton } from "../WalletButton";
 import { SPONSOR_KEY, SOLANA_RPC } from "../../config/server";
+import { WalletDisconnectButton, WalletMultiButton } from "../WalletButton";
 import { Buttons } from "./buttons";
 
 export const Home = () => {

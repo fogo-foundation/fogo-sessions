@@ -12,7 +12,6 @@ import { useCallback, useState, useMemo } from "react";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-
 import "@solana/wallet-adapter-react-ui/styles.css";
 import type { Example } from "@/idl/example";
 import exampleIdl from "@/idl/example.json";
@@ -119,8 +118,6 @@ export const TradeButton = ({
     }
   }, [ sponsorPubkey, solanaRpc, exampleProgram, publicKey, sessionKey ]);
 
-  console.log("sessionKey", sessionKey)
-  console.log("publicKey", publicKey)
   const canTrade = sessionKey !== undefined && publicKey;
   return (
     <>
