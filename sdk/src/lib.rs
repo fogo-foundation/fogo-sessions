@@ -88,8 +88,7 @@ impl Session {
                 self.session
                     .audience
                     .iter()
-                    .find(|item| *signer.key == item.signer_pda)
-                    .is_some()
+                    .any(|item| *signer.key == item.signer_pda)
             })
             .ok_or(SessionError::AudienceMismatch)?;
         if !signer_account_info.is_signer {

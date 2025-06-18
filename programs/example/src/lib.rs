@@ -1,3 +1,5 @@
+#![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
+
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::token::{Token, TokenAccount};
