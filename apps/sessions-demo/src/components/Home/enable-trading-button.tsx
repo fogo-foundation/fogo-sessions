@@ -23,6 +23,8 @@ import sessionManagerIdl from "@/idl/session-manager.json";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
 
+const AIRDROP_AMOUNT_LAMPORTS = 5_000_000_000;
+
 const handleEnableTrading = async (
   sponsorPubkey: PublicKey,
   solanaRpc: string,
@@ -77,7 +79,7 @@ extra: extra`,
     faucetAta,
     userTokenAccount,
     sponsorPubkey,
-    5_000_000_000,
+    AIRDROP_AMOUNT_LAMPORTS,
   );
 
   const space = 200; // TODO: Compute this dynamically
