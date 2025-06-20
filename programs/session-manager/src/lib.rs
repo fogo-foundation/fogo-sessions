@@ -3,8 +3,8 @@
 
 use crate::intents::body::MessageBody;
 use crate::intents::ed25519::Intent;
-use crate::state::Session;
-use crate::state::SessionInfo;
+use fogo_sessions_sdk::Session;
+use fogo_sessions_sdk::SessionInfo;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
 
@@ -12,7 +12,6 @@ declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
 pub mod error;
 pub mod intents;
-pub mod state;
 #[program]
 pub mod session_manager {
     use super::*;

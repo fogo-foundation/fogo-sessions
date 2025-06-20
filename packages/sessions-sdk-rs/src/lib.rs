@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use solana_account_info::AccountInfo;
 use solana_program_error::ProgramError;
 use solana_pubkey::Pubkey;
@@ -23,37 +25,56 @@ pub const PROGRAM_SIGNER_SEED: &[u8] = b"fogo_session_program_signer";
 pub struct Session {
     #[cfg(not(feature = "anchor"))]
     pub discriminator: [u8; 8],
+    /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
-    pub session: SessionInfo,
+    pub session_info: SessionInfo,
 }
 
-#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, Clone))]
-#[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
-#[derive(Debug)]
+/// Unix time (i.e. seconds since the Unix epoch).
+type UnixTimestamp = i64;
+
+#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
+#[derive(Debug, Clone)]
 pub struct SessionInfo {
     /// The user who started this session
     pub user: Pubkey,
     /// The expiration time of the session
-    pub expiration: i64,
+    pub expiration: UnixTimestamp,
     /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
     pub authorized_programs: Vec<AuthorizedProgram>,
     /// Extra (key, value)'s provided by the user
-    pub extra: Vec<ExtraItem>,
+    pub extra: Extra,
 }
 
-#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, Clone))]
-#[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
-#[derive(Debug)]
+#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
+#[derive(Debug, Clone)]
 pub struct ExtraItem(String, String);
 
-#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, Clone))]
-#[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
-#[derive(Debug)]
+#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
+#[derive(Debug, Clone)]
 pub struct AuthorizedProgram {
     /// The program ID that the session key is allowed to interact with
     pub program_id: Pubkey,
     /// The PDA of `program_id` with seeds `PROGRAM_SIGNER_SEED`, which is required to sign for in-session token transfers
     pub signer_pda: Pubkey,
+}
+
+#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
+#[derive(Debug, Clone)]
+pub struct Extra(Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of tuples well so we have to declare a ExtraItem struct
+
+impl From<HashMap<String, String>> for Extra {
+    fn from(map: HashMap<String, String>) -> Self {
+        Extra(
+            map.into_iter()
+                .map(|(key, value)| ExtraItem(key, value))
+                .collect(),
+        )
+    }
 }
 
 impl Session {
@@ -70,14 +91,14 @@ impl Session {
     }
 
     pub fn check_is_live(&self) -> Result<(), ProgramError> {
-        if self.session.expiration < Clock::get()?.unix_timestamp {
+        if self.session_info.expiration < Clock::get()?.unix_timestamp {
             return Err(SessionError::Expired.into());
         }
         Ok(())
     }
 
     pub fn check_user(&self, expected_user: &Pubkey) -> Result<(), ProgramError> {
-        if self.session.user != *expected_user {
+        if self.session_info.user != *expected_user {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
@@ -90,7 +111,7 @@ impl Session {
         let signer_account_info = signers
             .iter()
             .find(|signer| {
-                self.session
+                self.session_info
                     .authorized_programs
                     .iter()
                     .any(|item| *signer.key == item.signer_pda)
@@ -103,7 +124,7 @@ impl Session {
     }
 
     pub fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), ProgramError> {
-        self.session
+        self.session_info
             .authorized_programs
             .iter()
             .find(|authorized_program| authorized_program.program_id == *program_id)
