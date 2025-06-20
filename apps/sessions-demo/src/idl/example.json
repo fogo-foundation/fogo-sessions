@@ -122,6 +122,21 @@
       }
     },
     {
+      "name": "Extra",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "vec": {
+              "defined": {
+                "name": "ExtraItem"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "ExtraItem",
       "type": {
         "kind": "struct",
@@ -138,10 +153,13 @@
         "fields": [
           {
             "name": "sponsor",
+            "docs": [
+              "The key that sponsored the session (gas and rent)"
+            ],
             "type": "pubkey"
           },
           {
-            "name": "session",
+            "name": "session_info",
             "type": {
               "defined": {
                 "name": "SessionInfo"
@@ -189,10 +207,8 @@
               "Extra (key, value)'s provided by the user"
             ],
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "ExtraItem"
-                }
+              "defined": {
+                "name": "Extra"
               }
             }
           }

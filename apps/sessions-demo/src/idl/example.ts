@@ -128,6 +128,21 @@ export type Example = {
       }
     },
     {
+      "name": "extra",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "vec": {
+              "defined": {
+                "name": "extraItem"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "extraItem",
       "type": {
         "kind": "struct",
@@ -144,10 +159,13 @@ export type Example = {
         "fields": [
           {
             "name": "sponsor",
+            "docs": [
+              "The key that sponsored the session (gas and rent)"
+            ],
             "type": "pubkey"
           },
           {
-            "name": "session",
+            "name": "sessionInfo",
             "type": {
               "defined": {
                 "name": "sessionInfo"
@@ -195,10 +213,8 @@ export type Example = {
               "Extra (key, value)'s provided by the user"
             ],
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "extraItem"
-                }
+              "defined": {
+                "name": "extra"
               }
             }
           }
