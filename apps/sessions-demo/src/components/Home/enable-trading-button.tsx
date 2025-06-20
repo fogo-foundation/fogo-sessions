@@ -128,13 +128,13 @@ extra: extra`,
 export const EnableTradingButton = ({
   sponsorPubkey,
   solanaRpc,
-  setSessionKey,
+  onTradingEnabled,
   provider,
 }: {
   sponsorPubkey: string;
   solanaRpc: string;
   provider: AnchorProvider;
-  setSessionKey: (sessionKey: Keypair | undefined) => void;
+  onTradingEnabled: (sessionKey: Keypair | undefined) => void;
 }) => {
   const [{ link, status }, setValues] = useState<{
     link: string | undefined;
@@ -164,11 +164,11 @@ export const EnableTradingButton = ({
       )
         .then(({ link, status, sessionKey }) => {
           setValues({ link, status });
-          setSessionKey(sessionKey);
+          onTradingEnabled(sessionKey);
         })
         .catch((error: unknown) => {
           setValues({ link: undefined, status: undefined });
-          setSessionKey(undefined);
+          onTradingEnabled(undefined);
           // eslint-disable-next-line no-console
           console.error(error);
         });
@@ -179,7 +179,7 @@ export const EnableTradingButton = ({
     sessionManagerProgram,
     sponsorPubkey,
     solanaRpc,
-    setSessionKey,
+    onTradingEnabled,
   ]);
 
   const canEnableTrading = publicKey && signMessage;

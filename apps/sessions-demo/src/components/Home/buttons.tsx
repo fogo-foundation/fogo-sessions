@@ -28,7 +28,7 @@ export const Buttons = ({
         sponsorPubkey={sponsorPubkey}
         solanaRpc={solanaRpc}
         provider={provider}
-        setSessionKey={setSessionKey}
+        onTradingEnabled={(sessionKey) => setSessionKey(sessionKey)}
       />
       <TradeButton
         sponsorPubkey={sponsorPubkey}
