@@ -1,0 +1,4 @@
+{
+  "extends": "@cprussin/tsconfig/react.json",
+  "exclude": ["node_modules", "dist"]
+}
