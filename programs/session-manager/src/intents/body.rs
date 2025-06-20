@@ -1,10 +1,10 @@
 use crate::{error::SessionManagerError, StartSession};
 use anchor_lang::prelude::*;
-use fogo_sessions_sdk::AuthorizedProgram;
 use anchor_spl::{
     associated_token::get_associated_token_address,
     token::{self, Approve},
 };
+use fogo_sessions_sdk::AuthorizedProgram;
 use std::{collections::HashMap, str::FromStr};
 
 #[derive(PartialEq, Debug)]
