@@ -31,14 +31,17 @@ const handleEnableTrading = async (
   sessionManagerProgram: Program<SessionManager>,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
-): Promise<{
-  link: string;
-  status: "success"
-  sessionKey: Keypair
-} | {
-  status: "failed",
-  link: string
-}> => {
+): Promise<
+  | {
+      link: string;
+      status: "success";
+      sessionKey: Keypair;
+    }
+  | {
+      status: "failed";
+      link: string;
+    }
+> => {
   const provider = sessionManagerProgram.provider;
   const sessionKey = Keypair.generate();
 
@@ -140,7 +143,11 @@ export const EnableTradingButton = ({
   onTradingEnabled: (sessionKey: Keypair | undefined) => void;
 }) => {
   const [state, setState] = useState<
-  {status: "success" | "failed", link: string} | {status: "error", error: unknown} | {status: "loading"} | {status: "not-started"}>({ status: "not-started" });
+    | { status: "success" | "failed"; link: string }
+    | { status: "error"; error: unknown }
+    | { status: "loading" }
+    | { status: "not-started" }
+  >({ status: "not-started" });
 
   const sessionManagerProgram = useMemo(
     () =>

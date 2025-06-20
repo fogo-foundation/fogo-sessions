@@ -24,13 +24,11 @@ export const Buttons = (props: {
       <EnableTradingButton
         {...props}
         provider={provider}
-        onTradingEnabled={(sessionKey) => setSessionKey(sessionKey)}
+        onTradingEnabled={(sessionKey) => {
+          setSessionKey(sessionKey);
+        }}
       />
-      <TradeButton
-        {...props}
-        provider={provider}
-        sessionKey={sessionKey}
-      />
+      <TradeButton {...props} provider={provider} sessionKey={sessionKey} />
     </div>
   );
 };

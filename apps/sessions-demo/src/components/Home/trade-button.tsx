@@ -18,7 +18,9 @@ const handleTrade = async (
   exampleProgram: Program<Example>,
   publicKey: PublicKey,
   sessionKey: Keypair,
-): Promise<{ link: string; status: "success"} | {status: "failed", link: string}> => {
+): Promise<
+  { link: string; status: "success" } | { status: "failed"; link: string }
+> => {
   const provider = exampleProgram.provider;
 
   const sinkAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey);
@@ -59,7 +61,11 @@ export const TradeButton = ({
   sessionKey: Keypair | undefined;
 }) => {
   const [state, setState] = useState<
-  {status: "success" | "failed", link: string} | {status: "error", error: unknown} | {status: "loading"} | {status: "not-started"}>({ status: "not-started" });
+    | { status: "success" | "failed"; link: string }
+    | { status: "error"; error: unknown }
+    | { status: "loading" }
+    | { status: "not-started" }
+  >({ status: "not-started" });
 
   const exampleProgram = useMemo(
     () => new Program<Example>(exampleIdl as Example, provider),
@@ -96,8 +102,8 @@ export const TradeButton = ({
         <Button onClick={onTrade} loading={state.status === "loading"}>
           Trade
         </Button>
-        )}
-        {(state.status === "success" || state.status === "failed") && (
+      )}
+      {(state.status === "success" || state.status === "failed") && (
         <a href={state.link} target="_blank" rel="noopener noreferrer">
           {state.status === "success"
             ? "✅ View Transaction"
