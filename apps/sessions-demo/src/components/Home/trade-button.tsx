@@ -18,7 +18,7 @@ const handleTrade = async (
   exampleProgram: Program<Example>,
   publicKey: PublicKey,
   sessionKey: Keypair,
-): Promise<{ link: string; status: "success" | "error" }> => {
+): Promise<{ link: string; status: "success"} | {status: "failed", link: string}> => {
   const provider = exampleProgram.provider;
 
   const sinkAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey);
@@ -58,10 +58,8 @@ export const TradeButton = ({
   provider: AnchorProvider;
   sessionKey: Keypair | undefined;
 }) => {
-  const [{ link, status }, setValues] = useState<{
-    link: string | undefined;
-    status: "success" | "error" | "loading" | undefined;
-  }>({ link: undefined, status: undefined });
+  const [state, setState] = useState<
+  {status: "success" | "failed", link: string} | {status: "error", error: unknown} | {status: "loading"} | {status: "not-started"}>({ status: "not-started" });
 
   const exampleProgram = useMemo(
     () => new Program<Example>(exampleIdl as Example, provider),
@@ -72,7 +70,7 @@ export const TradeButton = ({
 
   const onTrade = useCallback(() => {
     if (sessionKey && publicKey) {
-      setValues({ link: undefined, status: "loading" });
+      setState({ status: "loading" });
       handleTrade(
         new PublicKey(sponsorPubkey),
         solanaRpc,
@@ -80,11 +78,11 @@ export const TradeButton = ({
         publicKey,
         sessionKey,
       )
-        .then(({ link, status }) => {
-          setValues({ link, status });
+        .then((result) => {
+          setState(result);
         })
         .catch((error: unknown) => {
-          setValues({ link: undefined, status: undefined });
+          setState({ status: "error", error });
           // eslint-disable-next-line no-console
           console.error(error);
         });
@@ -95,13 +93,13 @@ export const TradeButton = ({
   return (
     <>
       {canTrade && (
-        <Button onClick={onTrade} loading={status === "loading"}>
+        <Button onClick={onTrade} loading={state.status === "loading"}>
           Trade
         </Button>
-      )}
-      {link && status && (
-        <a href={link} target="_blank" rel="noopener noreferrer">
-          {status === "success"
+        )}
+        {(state.status === "success" || state.status === "failed") && (
+        <a href={state.link} target="_blank" rel="noopener noreferrer">
+          {state.status === "success"
             ? "✅ View Transaction"
             : "❌ Transaction Failed"}
         </a>

@@ -18,7 +18,7 @@ export async function sendTransaction(
   sessionKey: Keypair,
 ): Promise<{
   link: string;
-  status: "success" | "error";
+  status: "success" | "failed";
 }> {
   const { blockhash } = await connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhash;
@@ -48,5 +48,5 @@ export async function sendTransaction(
 
   return confirmationResult.value.err === null
     ? { link, status: "success" }
-    : { link, status: "error" };
+    : { link, status: "failed" };
 }

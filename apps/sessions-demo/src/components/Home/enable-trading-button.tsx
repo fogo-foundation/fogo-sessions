@@ -33,7 +33,7 @@ const handleEnableTrading = async (
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
 ): Promise<{
   link: string;
-  status: "success" | "error";
+  status: "success" | "failed";
   sessionKey: Keypair | undefined;
 }> => {
   const provider = sessionManagerProgram.provider;
@@ -136,10 +136,8 @@ export const EnableTradingButton = ({
   provider: AnchorProvider;
   onTradingEnabled: (sessionKey: Keypair | undefined) => void;
 }) => {
-  const [{ link, status }, setValues] = useState<{
-    link: string | undefined;
-    status: "success" | "error" | "loading" | undefined;
-  }>({ link: undefined, status: undefined });
+  const [state, setState] = useState<
+  {status: "success" | "failed", link: string} | {status: "error", error: unknown} | {status: "loading"} | {status: "not-started"}>({ status: "not-started" });
 
   const sessionManagerProgram = useMemo(
     () =>
@@ -154,7 +152,7 @@ export const EnableTradingButton = ({
 
   const onEnableTrading = useCallback(() => {
     if (signMessage && publicKey) {
-      setValues({ link: undefined, status: "loading" });
+      setState({ status: "loading" });
       handleEnableTrading(
         new PublicKey(sponsorPubkey),
         solanaRpc,
@@ -163,11 +161,11 @@ export const EnableTradingButton = ({
         signMessage,
       )
         .then(({ link, status, sessionKey }) => {
-          setValues({ link, status });
+          setState({ link, status });
           onTradingEnabled(sessionKey);
         })
         .catch((error: unknown) => {
-          setValues({ link: undefined, status: undefined });
+          setState({ status: "error", error });
           onTradingEnabled(undefined);
           // eslint-disable-next-line no-console
           console.error(error);
@@ -186,13 +184,13 @@ export const EnableTradingButton = ({
   return (
     <>
       {canEnableTrading && (
-        <Button onClick={onEnableTrading} loading={status === "loading"}>
+        <Button onClick={onEnableTrading} loading={state.status === "loading"}>
           Enable Trading
         </Button>
       )}
-      {link && status && (
-        <a href={link} target="_blank" rel="noopener noreferrer">
-          {status === "success"
+      {(state.status === "success" || state.status === "failed") && (
+        <a href={state.link} target="_blank" rel="noopener noreferrer">
+          {state.status === "success"
             ? "✅ View Transaction"
             : "❌ Transaction Failed"}
         </a>
