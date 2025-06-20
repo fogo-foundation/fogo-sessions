@@ -3,16 +3,15 @@
 
 use crate::intents::body::MessageBody;
 use crate::intents::ed25519::Intent;
-use crate::state::Session;
-use crate::state::SessionInfo;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
+use fogo_sessions_sdk::Session;
+use fogo_sessions_sdk::SessionInfo;
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
 pub mod error;
 pub mod intents;
-pub mod state;
 #[program]
 pub mod session_manager {
     use super::*;
@@ -41,8 +40,8 @@ pub mod session_manager {
         let session = Session {
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
-                subject: signer,
-                audience: program_domains,
+                user: signer,
+                authorized_programs: program_domains,
                 extra: extra.into(),
                 expiration: Clock::get()?.unix_timestamp + 3600,
             },

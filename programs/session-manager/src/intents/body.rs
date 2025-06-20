@@ -1,10 +1,11 @@
-use crate::{error::SessionManagerError, state::AudienceItem, StartSession};
+use crate::{error::SessionManagerError, StartSession};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::get_associated_token_address,
     token::{self, Approve},
 };
-use std::collections::HashMap;
+use fogo_sessions_sdk::AuthorizedProgram;
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(PartialEq, Debug)]
 pub struct Nonce(pub(crate) Pubkey);
@@ -36,20 +37,25 @@ impl<'info> StartSession<'info> {
         Ok(())
     }
 
-    pub fn get_domain_programs(&self, _domain: Domain) -> Result<Vec<AudienceItem>> {
-        // TODO
-        Ok(vec![])
+    pub fn get_domain_programs(&self, _domain: Domain) -> Result<Vec<AuthorizedProgram>> {
+        // TODO: implement this properly
+        let pubkey = Pubkey::from_str("91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45").unwrap();
+        let signer_pda = Pubkey::find_program_address(&[b"fogo_session_program_signer"], &pubkey).0;
+        Ok(vec![AuthorizedProgram {
+            program_id: pubkey,
+            signer_pda,
+        }])
     }
 
     pub fn approve_tokens(
         &self,
         accounts: &[AccountInfo<'info>],
         tokens: &[(Pubkey, u64)],
-        subject: &Pubkey,
+        user: &Pubkey,
         session_setter_bump: u8,
     ) -> Result<()> {
         for (account, (mint, amount)) in accounts.iter().zip(tokens.iter()) {
-            if account.key() != get_associated_token_address(subject, mint) {
+            if account.key() != get_associated_token_address(user, mint) {
                 return err!(SessionManagerError::InvalidArgument);
             }
 

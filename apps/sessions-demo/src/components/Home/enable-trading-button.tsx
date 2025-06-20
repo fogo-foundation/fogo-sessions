@@ -1,8 +1,13 @@
 "use client";
 
-import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
-import { getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferInstruction,
+  getAssociatedTokenAddressSync,
+  NATIVE_MINT,
+} from "@solana/spl-token";
+import { useWallet } from "@solana/wallet-adapter-react";
 import {
   Ed25519Program,
   Keypair,
@@ -11,13 +16,14 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import type { SessionManager } from "@/idl/session-manager";
 import sessionManagerIdl from "@/idl/session-manager.json";
-
 import "@solana/wallet-adapter-react-ui/styles.css";
+import { sendTransaction } from "@/send-transaction";
+
+const AIRDROP_AMOUNT_LAMPORTS = 5_000_000_000;
 
 const handleEnableTrading = async (
   sponsorPubkey: PublicKey,
@@ -25,7 +31,17 @@ const handleEnableTrading = async (
   sessionManagerProgram: Program<SessionManager>,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
-): Promise<{ link: string; status: "success" | "error" }> => {
+): Promise<
+  | {
+      link: string;
+      status: "success";
+      sessionKey: Keypair;
+    }
+  | {
+      status: "failed";
+      link: string;
+    }
+> => {
   const provider = sessionManagerProgram.provider;
   const sessionKey = Keypair.generate();
 
@@ -50,6 +66,28 @@ extra: extra`,
     message: message,
   });
 
+  const faucetAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey);
+  const userTokenAccount = getAssociatedTokenAddressSync(
+    NATIVE_MINT,
+    publicKey,
+  );
+
+  const createAssociatedTokenAccountInstruction =
+    createAssociatedTokenAccountIdempotentInstruction(
+      sponsorPubkey,
+      userTokenAccount,
+      publicKey,
+      NATIVE_MINT,
+    );
+
+  // We are sending the connected wallet some assets to play with in this demo
+  const transferInstruction = createTransferInstruction(
+    faucetAta,
+    userTokenAccount,
+    sponsorPubkey,
+    AIRDROP_AMOUNT_LAMPORTS,
+  );
+
   const space = 200; // TODO: Compute this dynamically
   const systemInstruction = SystemProgram.createAccount({
     fromPubkey: sponsorPubkey,
@@ -62,6 +100,8 @@ extra: extra`,
 
   const transaction = new Transaction()
     .add(intentInstruction)
+    .add(createAssociatedTokenAccountInstruction)
+    .add(transferInstruction)
     .add(systemInstruction)
     .add(
       await sessionManagerProgram.methods
@@ -77,57 +117,37 @@ extra: extra`,
         .instruction(),
     );
 
-  const { blockhash } = await provider.connection.getLatestBlockhash();
-  transaction.recentBlockhash = blockhash;
-  transaction.feePayer = sponsorPubkey;
-  transaction.partialSign(sessionKey);
-
-  const response = await fetch("/api/sponsor_and_send", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      transaction: transaction
-        .serialize({ requireAllSignatures: false })
-        .toString("base64"),
-    }),
-  });
-
-  const lastValidBlockHeight = await provider.connection.getSlot();
-  const { signature } = sponsorAndSendResultSchema.parse(await response.json());
-  const confirmationResult = await provider.connection.confirmTransaction({
-    signature,
-    blockhash: transaction.recentBlockhash,
-    lastValidBlockHeight,
-  });
-  const link = `https://explorer.fogo.io/tx/${signature}?cluster=custom&customUrl=${solanaRpc}`;
-  return confirmationResult.value.err === null
-    ? { link, status: "success" }
-    : { link, status: "error" };
+  const { link, status } = await sendTransaction(
+    transaction,
+    sponsorPubkey,
+    solanaRpc,
+    provider.connection,
+    sessionKey,
+  );
+  return {
+    link,
+    status,
+    sessionKey,
+  };
 };
-
-const sponsorAndSendResultSchema = z.strictObject({
-  signature: z.string(),
-});
 
 export const EnableTradingButton = ({
   sponsorPubkey,
   solanaRpc,
+  onTradingEnabled,
+  provider,
 }: {
   sponsorPubkey: string;
   solanaRpc: string;
+  provider: AnchorProvider;
+  onTradingEnabled: (sessionKey: Keypair | undefined) => void;
 }) => {
-  const { connection } = useConnection();
-  const [{ link, status }, setValues] = useState<{
-    link: string | undefined;
-    status: "success" | "error" | "loading" | undefined;
-  }>({ link: undefined, status: undefined });
-
-  const provider = useMemo(
-    () => new AnchorProvider(connection, {} as Wallet, {}),
-    [connection],
-  );
+  const [state, setState] = useState<
+    | { status: "success" | "failed"; link: string }
+    | { status: "error"; error: unknown }
+    | { status: "loading" }
+    | { status: "not-started" }
+  >({ status: "not-started" });
 
   const sessionManagerProgram = useMemo(
     () =>
@@ -142,7 +162,7 @@ export const EnableTradingButton = ({
 
   const onEnableTrading = useCallback(() => {
     if (signMessage && publicKey) {
-      setValues({ link: undefined, status: "loading" });
+      setState({ status: "loading" });
       handleEnableTrading(
         new PublicKey(sponsorPubkey),
         solanaRpc,
@@ -150,28 +170,41 @@ export const EnableTradingButton = ({
         publicKey,
         signMessage,
       )
-        .then(({ link, status }) => {
-          setValues({ link, status });
+        .then((result) => {
+          setState(result);
+          if (result.status === "success") {
+            onTradingEnabled(result.sessionKey);
+          } else {
+            onTradingEnabled(undefined);
+          }
         })
         .catch((error: unknown) => {
-          setValues({ link: undefined, status: undefined });
+          setState({ status: "error", error });
+          onTradingEnabled(undefined);
           // eslint-disable-next-line no-console
           console.error(error);
         });
     }
-  }, [publicKey, signMessage, sessionManagerProgram, sponsorPubkey, solanaRpc]);
+  }, [
+    publicKey,
+    signMessage,
+    sessionManagerProgram,
+    sponsorPubkey,
+    solanaRpc,
+    onTradingEnabled,
+  ]);
 
   const canEnableTrading = publicKey && signMessage;
   return (
     <>
       {canEnableTrading && (
-        <Button onClick={onEnableTrading} loading={status === "loading"}>
+        <Button onClick={onEnableTrading} loading={state.status === "loading"}>
           Enable Trading
         </Button>
       )}
-      {link && status && (
-        <a href={link} target="_blank" rel="noopener noreferrer">
-          {status === "success"
+      {(state.status === "success" || state.status === "failed") && (
+        <a href={state.link} target="_blank" rel="noopener noreferrer">
+          {state.status === "success"
             ? "✅ View Transaction"
             : "❌ Transaction Failed"}
         </a>

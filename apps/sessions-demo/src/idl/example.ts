@@ -2,47 +2,45 @@
  * Program IDL in camelCase format in order to be used in JS/TS.
  *
  * Note that this is only a type helper and is not the actual IDL. The original
- * IDL can be found at `target/idl/session_manager.json`.
+ * IDL can be found at `target/idl/example.json`.
  */
-export type SessionManager = {
-  "address": "mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk",
+export type Example = {
+  "address": "91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45",
   "metadata": {
-    "name": "sessionManager",
+    "name": "example",
     "version": "0.1.0",
     "spec": "0.1.0"
   },
   "instructions": [
     {
-      "name": "startSession",
+      "name": "exampleTransfer",
       "discriminator": [
-        23,
-        227,
-        111,
-        142,
-        212,
-        230,
-        3,
-        175
+        213,
+        46,
+        157,
+        218,
+        26,
+        66,
+        41,
+        246
       ],
       "accounts": [
         {
-          "name": "sponsor"
+          "name": "sessionKey",
+          "signer": true
         },
         {
-          "name": "session",
-          "writable": true
-        },
-        {
-          "name": "sysvarInstructions",
-          "address": "Sysvar1nstructions1111111111111111111111111"
-        },
-        {
-          "name": "sessionSetter",
+          "name": "cpiSigner",
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
+                  102,
+                  111,
+                  103,
+                  111,
+                  95,
                   115,
                   101,
                   115,
@@ -51,10 +49,18 @@ export type SessionManager = {
                   111,
                   110,
                   95,
+                  112,
+                  114,
+                  111,
+                  103,
+                  114,
+                  97,
+                  109,
+                  95,
                   115,
-                  101,
-                  116,
-                  116,
+                  105,
+                  103,
+                  110,
                   101,
                   114
                 ]
@@ -63,11 +69,24 @@ export type SessionManager = {
           }
         },
         {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "sink",
+          "writable": true
+        },
+        {
           "name": "tokenProgram",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -83,12 +102,6 @@ export type SessionManager = {
         72,
         144
       ]
-    }
-  ],
-  "errors": [
-    {
-      "code": 6000,
-      "name": "invalidArgument"
     }
   ],
   "types": [

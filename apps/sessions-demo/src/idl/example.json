@@ -1,48 +1,40 @@
-/**
- * Program IDL in camelCase format in order to be used in JS/TS.
- *
- * Note that this is only a type helper and is not the actual IDL. The original
- * IDL can be found at `target/idl/session_manager.json`.
- */
-export type SessionManager = {
-  "address": "mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk",
+{
+  "address": "91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45",
   "metadata": {
-    "name": "sessionManager",
+    "name": "example",
     "version": "0.1.0",
     "spec": "0.1.0"
   },
   "instructions": [
     {
-      "name": "startSession",
+      "name": "example_transfer",
       "discriminator": [
-        23,
-        227,
-        111,
-        142,
-        212,
-        230,
-        3,
-        175
+        213,
+        46,
+        157,
+        218,
+        26,
+        66,
+        41,
+        246
       ],
       "accounts": [
         {
-          "name": "sponsor"
+          "name": "session_key",
+          "signer": true
         },
         {
-          "name": "session",
-          "writable": true
-        },
-        {
-          "name": "sysvarInstructions",
-          "address": "Sysvar1nstructions1111111111111111111111111"
-        },
-        {
-          "name": "sessionSetter",
+          "name": "cpi_signer",
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
+                  102,
+                  111,
+                  103,
+                  111,
+                  95,
                   115,
                   101,
                   115,
@@ -51,10 +43,18 @@ export type SessionManager = {
                   111,
                   110,
                   95,
+                  112,
+                  114,
+                  111,
+                  103,
+                  114,
+                  97,
+                  109,
+                  95,
                   115,
-                  101,
-                  116,
-                  116,
+                  105,
+                  103,
+                  110,
                   101,
                   114
                 ]
@@ -63,16 +63,29 @@ export type SessionManager = {
           }
         },
         {
-          "name": "tokenProgram",
+          "name": "user_token_account",
+          "writable": true
+        },
+        {
+          "name": "sink",
+          "writable": true
+        },
+        {
+          "name": "token_program",
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
     {
-      "name": "session",
+      "name": "Session",
       "discriminator": [
         243,
         81,
@@ -85,27 +98,21 @@ export type SessionManager = {
       ]
     }
   ],
-  "errors": [
-    {
-      "code": 6000,
-      "name": "invalidArgument"
-    }
-  ],
   "types": [
     {
-      "name": "authorizedProgram",
+      "name": "AuthorizedProgram",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "programId",
+            "name": "program_id",
             "docs": [
               "The program ID that the session key is allowed to interact with"
             ],
             "type": "pubkey"
           },
           {
-            "name": "signerPda",
+            "name": "signer_pda",
             "docs": [
               "The PDA of `program_id` with seeds `PROGRAM_SIGNER_SEED`, which is required to sign for in-session token transfers"
             ],
@@ -115,14 +122,14 @@ export type SessionManager = {
       }
     },
     {
-      "name": "extra",
+      "name": "Extra",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "vec": {
               "defined": {
-                "name": "extraItem"
+                "name": "ExtraItem"
               }
             }
           }
@@ -130,7 +137,7 @@ export type SessionManager = {
       }
     },
     {
-      "name": "extraItem",
+      "name": "ExtraItem",
       "type": {
         "kind": "struct",
         "fields": [
@@ -140,7 +147,7 @@ export type SessionManager = {
       }
     },
     {
-      "name": "session",
+      "name": "Session",
       "type": {
         "kind": "struct",
         "fields": [
@@ -152,10 +159,10 @@ export type SessionManager = {
             "type": "pubkey"
           },
           {
-            "name": "sessionInfo",
+            "name": "session_info",
             "type": {
               "defined": {
-                "name": "sessionInfo"
+                "name": "SessionInfo"
               }
             }
           }
@@ -163,7 +170,7 @@ export type SessionManager = {
       }
     },
     {
-      "name": "sessionInfo",
+      "name": "SessionInfo",
       "type": {
         "kind": "struct",
         "fields": [
@@ -182,14 +189,14 @@ export type SessionManager = {
             "type": "i64"
           },
           {
-            "name": "authorizedPrograms",
+            "name": "authorized_programs",
             "docs": [
               "Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them"
             ],
             "type": {
               "vec": {
                 "defined": {
-                  "name": "authorizedProgram"
+                  "name": "AuthorizedProgram"
                 }
               }
             }
@@ -201,7 +208,7 @@ export type SessionManager = {
             ],
             "type": {
               "defined": {
-                "name": "extra"
+                "name": "Extra"
               }
             }
           }
@@ -209,4 +216,4 @@ export type SessionManager = {
       }
     }
   ]
-};
+}

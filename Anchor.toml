@@ -7,10 +7,11 @@ skip-lint = false
 
 [programs.localnet]
 session_manager = "mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk"
+example = "91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45"
 
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-"build-idl" = "anchor build && mkdir -p apps/sessions-demo/src/idl && cp target/idl/session_manager.json apps/sessions-demo/src/idl/session-manager.json && cp target/types/session_manager.ts apps/sessions-demo/src/idl/session-manager.ts"
+"build-idl" = "anchor build && mkdir -p apps/sessions-demo/src/idl && cp target/idl/session_manager.json apps/sessions-demo/src/idl/session-manager.json && cp target/types/session_manager.ts apps/sessions-demo/src/idl/session-manager.ts && cp target/idl/example.json apps/sessions-demo/src/idl/example.json && cp target/types/example.ts apps/sessions-demo/src/idl/example.ts"
