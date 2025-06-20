@@ -8,10 +8,7 @@ import { useMemo, useState } from "react";
 import { EnableTradingButton } from "./enable-trading-button";
 import { TradeButton } from "./trade-button";
 
-export const Buttons = ({
-  sponsorPubkey,
-  solanaRpc,
-}: {
+export const Buttons = (props: {
   sponsorPubkey: string;
   solanaRpc: string;
 }) => {
@@ -25,14 +22,12 @@ export const Buttons = ({
   return (
     <div className="flex flex-col">
       <EnableTradingButton
-        sponsorPubkey={sponsorPubkey}
-        solanaRpc={solanaRpc}
+        {...props}
         provider={provider}
         onTradingEnabled={(sessionKey) => setSessionKey(sessionKey)}
       />
       <TradeButton
-        sponsorPubkey={sponsorPubkey}
-        solanaRpc={solanaRpc}
+        {...props}
         provider={provider}
         sessionKey={sessionKey}
       />
