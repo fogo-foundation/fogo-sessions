@@ -33,8 +33,11 @@ const handleEnableTrading = async (
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
 ): Promise<{
   link: string;
-  status: "success" | "failed";
-  sessionKey: Keypair | undefined;
+  status: "success"
+  sessionKey: Keypair
+} | {
+  status: "failed",
+  link: string
 }> => {
   const provider = sessionManagerProgram.provider;
   const sessionKey = Keypair.generate();
@@ -121,7 +124,7 @@ extra: extra`,
   return {
     link,
     status,
-    sessionKey: status == "success" ? sessionKey : undefined,
+    sessionKey,
   };
 };
 
@@ -160,9 +163,13 @@ export const EnableTradingButton = ({
         publicKey,
         signMessage,
       )
-        .then(({ link, status, sessionKey }) => {
-          setState({ link, status });
-          onTradingEnabled(sessionKey);
+        .then((result) => {
+          setState(result);
+          if (result.status === "success") {
+            onTradingEnabled(result.sessionKey);
+          } else {
+            onTradingEnabled(undefined);
+          }
         })
         .catch((error: unknown) => {
           setState({ status: "error", error });
