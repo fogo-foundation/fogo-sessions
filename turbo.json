@@ -27,6 +27,15 @@
       ],
       "outputs": ["pnpm-lock.yaml"]
     },
+    "//#build:idl": {
+      "inputs": [
+        "programs/**/src/**/*.rs",
+        "packages/**/src/**/*.rs",
+        "**/Cargo.toml",
+        "**/Anchor.toml"
+      ],
+      "outputs": ["apps/sessions-demo/src/idl/**"]
+    },
     "//#test": {
       "dependsOn": [
         "//#test:types",
@@ -50,6 +59,7 @@
     "build": {
       "dependsOn": [
         "//#install:modules",
+        "//#build:idl",
         "pull:env",
         "^build",
         "build:cjs",
@@ -126,7 +136,7 @@
       "cache": false
     },
     "start:dev": {
-      "dependsOn": ["//#install:modules", "pull:env"],
+      "dependsOn": ["//#install:modules", "pull:env", "//#build:idl"],
       "persistent": true,
       "cache": false
     },

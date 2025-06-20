@@ -12,7 +12,8 @@
     "fix:lint": "eslint --fix .",
     "install:modules": "[ $CI ] && true || pnpm install",
     "test:format": "run-jest --colors --selectProjects format",
-    "test:lint": "run-jest --colors --selectProjects lint"
+    "test:lint": "run-jest --colors --selectProjects lint",
+    "build:idl": "anchor idl build --program-name session-manager --out-ts apps/sessions-demo/src/idl/session-manager.ts --out apps/sessions-demo/src/idl/session-manager.json && anchor idl build --program-name example --out-ts apps/sessions-demo/src/idl/example.ts --out apps/sessions-demo/src/idl/example.json"
   },
   "devDependencies": {
     "@cprussin/eslint-config": "catalog:",
