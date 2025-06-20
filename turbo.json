@@ -158,13 +158,13 @@
       "dependsOn": ["//#install:modules"]
     },
     "test:lint": {
-      "dependsOn": ["//#install:modules", "^build"]
+      "dependsOn": ["//#install:modules", "//#build:idl", "^build"]
     },
     "test:types": {
-      "dependsOn": ["//#install:modules", "^build"]
+      "dependsOn": ["//#install:modules", "//#build:idl", "^build"]
     },
     "test:unit": {
-      "dependsOn": ["//#install:modules", "^build"]
+      "dependsOn": ["//#install:modules", "//#build:idl", "^build"]
     },
     "test:integration": {
       "dependsOn": ["//#install:modules", "build"],
