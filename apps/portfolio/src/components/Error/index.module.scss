@@ -1,0 +1,20 @@
+@use "../../theme";
+
+.error {
+  display: grid;
+  gap: theme.spacing(4);
+  place-content: center;
+  text-align: center;
+  min-height: 80lvh;
+
+  .header {
+    @include theme.text("4xl", "medium");
+
+    color: theme.color("heading");
+  }
+
+  .subheader {
+    color: theme.color("paragraph");
+    margin-bottom: theme.spacing(8);
+  }
+}

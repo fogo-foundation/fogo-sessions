@@ -1,0 +1,10 @@
+@use "../../theme";
+
+.link {
+  color: theme.color("paragraph");
+  text-decoration: underline;
+
+  &:hover {
+    text-decoration: none;
+  }
+}

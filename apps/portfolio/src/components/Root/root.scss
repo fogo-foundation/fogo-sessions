@@ -1,0 +1,12 @@
+@use "modern-normalize";
+@use "../../theme";
+
+:root {
+  background: theme.color("background");
+  scroll-behavior: smooth;
+}
+
+*::selection {
+  color: theme.color("background");
+  background: theme.color("brand");
+}

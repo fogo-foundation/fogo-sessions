@@ -1,0 +1,39 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": [
+        "DISABLE_ACCESSIBILITY_REPORTING",
+        "GOOGLE_ANALYTICS_ID",
+        "VERCEL_ENV"
+      ]
+    },
+    "fix:lint": {
+      "dependsOn": ["fix:lint:eslint", "fix:lint:stylelint"],
+      "cache": false
+    },
+    "fix:lint:eslint": {
+      "dependsOn": ["//#install:modules", "^build"],
+      "cache": false
+    },
+    "fix:lint:stylelint": {
+      "dependsOn": ["//#install:modules"],
+      "cache": false
+    },
+    "test:lint": {
+      "dependsOn": [
+        "//#install:modules",
+        "^build",
+        "test:lint:eslint",
+        "test:lint:stylelint"
+      ]
+    },
+    "test:lint:eslint": {
+      "dependsOn": ["//#install:modules", "^build"]
+    },
+    "test:lint:stylelint": {
+      "dependsOn": ["//#install:modules"]
+    }
+  }
+}
