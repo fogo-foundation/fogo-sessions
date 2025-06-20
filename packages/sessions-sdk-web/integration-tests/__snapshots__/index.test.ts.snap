@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`integration installs & works 1`] = `
+"<!DOCTYPE html><html><head></head><body>
+    <script src="./dist/main.js"></script><div>Hello, World!</div>
+  
+
+</body></html>"
+`;

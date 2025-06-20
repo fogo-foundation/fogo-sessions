@@ -1,0 +1,4 @@
+{
+  "extends": "@cprussin/tsconfig/dom.json",
+  "exclude": ["node_modules", "dist"]
+}

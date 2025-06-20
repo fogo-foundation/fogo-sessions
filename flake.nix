@@ -43,6 +43,8 @@
     project-shell-overlay = system: final: _: {
       project-shell = final.mkShell {
         FORCE_COLOR = 1;
+        PUPPETEER_SKIP_DOWNLOAD = 1;
+        PUPPETEER_EXECUTABLE_PATH = final.lib.getExe final.chromium;
         name = "project-shell";
         buildInputs = [
           final.cli

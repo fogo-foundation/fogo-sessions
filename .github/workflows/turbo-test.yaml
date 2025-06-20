@@ -7,7 +7,9 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # We need to stay on ubuntu-22.04 due to an [issue with puppeteer in the
+    # latest Ubuntu](https://github.com/puppeteer/puppeteer/issues/12818)
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
