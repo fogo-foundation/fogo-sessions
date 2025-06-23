@@ -7,6 +7,8 @@ use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
 use fogo_sessions_sdk::Session;
 use fogo_sessions_sdk::SessionInfo;
+use fogo_sessions_sdk::AuthorizedPrograms;
+use fogo_sessions_sdk::AuthorizedTokens;
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
@@ -14,8 +16,6 @@ pub mod error;
 pub mod intents;
 #[program]
 pub mod session_manager {
-    use fogo_sessions_sdk::{AuthorizedPrograms, AuthorizedTokens};
-
     use super::*;
 
     pub fn start_session<'info>(
