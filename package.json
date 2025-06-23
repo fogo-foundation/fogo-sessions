@@ -13,7 +13,7 @@
     "install:modules": "[ $CI ] && true || pnpm install",
     "test:format": "run-jest --colors --selectProjects format",
     "test:lint": "run-jest --colors --selectProjects lint",
-    "build:idl": "mkdir -p apps/sessions-demo/src/idl &&anchor idl build --program-name session-manager --out-ts apps/sessions-demo/src/idl/session-manager.ts --out apps/sessions-demo/src/idl/session-manager.json && anchor idl build --program-name example --out-ts apps/sessions-demo/src/idl/example.ts --out apps/sessions-demo/src/idl/example.json"
+    "build:idl": "mkdir -p packages/sessions-sdk-idls/src/idl && mkdir -p packages/sessions-sdk-idls/src/types && anchor idl build --program-name session-manager --out-ts packages/sessions-sdk-idls/src/types/session-manager.ts --out packages/sessions-sdk-idls/src/idl/session-manager.json && anchor idl build --program-name example --out-ts packages/sessions-sdk-idls/src/types/example.ts --out packages/sessions-sdk-idls/src/idl/example.json"
   },
   "devDependencies": {
     "@cprussin/eslint-config": "catalog:",

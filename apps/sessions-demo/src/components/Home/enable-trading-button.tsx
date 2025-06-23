@@ -18,8 +18,8 @@ import {
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { SessionManager } from "@/idl/session-manager";
-import sessionManagerIdl from "@/idl/session-manager.json";
+import type { SessionManager } from "@fogo/sessions-idls";
+import sessionManagerIdl from "@fogo/sessions-idls";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
 

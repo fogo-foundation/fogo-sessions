@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
+    "@fogo/sessions-idls": "workspace:*",
     "@radix-ui/react-slot": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-base": "catalog:",

@@ -282,6 +282,9 @@ importers:
       '@coral-xyz/anchor':
         specifier: 'catalog:'
         version: 0.31.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      '@fogo/sessions-idls':
+        specifier: workspace:*
+        version: link:../../packages/sessions-idls
       '@radix-ui/react-slot':
         specifier: 'catalog:'
         version: 1.2.3(@types/react@19.1.8)(react@19.1.0)
@@ -364,6 +367,18 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 3.4.17
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+
+  packages/sessions-idls:
+    devDependencies:
+      '@cprussin/transform-package-json':
+        specifier: 'catalog:'
+        version: 2.0.0
+      '@cprussin/tsconfig':
+        specifier: 'catalog:'
+        version: 4.0.0(typescript@5.8.3)
       typescript:
         specifier: 'catalog:'
         version: 5.8.3

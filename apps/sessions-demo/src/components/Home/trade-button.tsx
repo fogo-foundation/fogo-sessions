@@ -8,8 +8,8 @@ import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
-import type { Example } from "@/idl/example";
-import exampleIdl from "@/idl/example.json";
+import type { Example } from "@fogo/sessions-idls";
+import exampleIdl from "@fogo/sessions-idls";
 import { sendTransaction } from "@/send-transaction";
 
 const handleTrade = async (
