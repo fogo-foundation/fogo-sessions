@@ -42,7 +42,9 @@ pub struct SessionInfo {
     /// The expiration time of the session
     pub expiration: UnixTimestamp,
     /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
-    pub authorized_programs: Vec<AuthorizedProgram>,
+    pub authorized_programs: AuthorizedPrograms,
+    /// Tokens the session key is allowed to interact with. If `Specific`, the spend limits are stored in each individual token account.
+    pub authorized_tokens: AuthorizedTokens,
     /// Extra (key, value)'s provided by the user
     pub extra: Extra,
 }
@@ -50,7 +52,18 @@ pub struct SessionInfo {
 #[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
-pub struct ExtraItem(String, String);
+pub enum AuthorizedPrograms {
+    Specific(Vec<AuthorizedProgram>),
+    All,
+}
+
+#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
+#[derive(Debug, Clone)]
+pub enum AuthorizedTokens {
+    Specific,
+    All,
+}
 
 #[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
@@ -66,6 +79,11 @@ pub struct AuthorizedProgram {
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
 pub struct Extra(Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of tuples well so we have to declare a ExtraItem struct
+
+#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
+#[derive(Debug, Clone)]
+pub struct ExtraItem(String, String);
 
 impl From<HashMap<String, String>> for Extra {
     fn from(map: HashMap<String, String>) -> Self {
@@ -108,27 +126,34 @@ impl Session {
         &self,
         signers: &[AccountInfo],
     ) -> Result<(), ProgramError> {
-        let signer_account_info = signers
-            .iter()
-            .find(|signer| {
-                self.session_info
-                    .authorized_programs
-                    .iter()
-                    .any(|item| *signer.key == item.signer_pda)
-            })
-            .ok_or(SessionError::UnauthorizedProgram)?;
-        if !signer_account_info.is_signer {
-            return Err(ProgramError::MissingRequiredSignature);
+        match self.session_info.authorized_programs {
+            AuthorizedPrograms::Specific(ref programs) => {
+                let signer_account_info = signers
+                .iter()
+                .find(|signer| {
+                    programs
+                        .iter()
+                        .any(|item| *signer.key == item.signer_pda)
+                })
+                .ok_or(SessionError::UnauthorizedProgram)?;
+            if !signer_account_info.is_signer {
+                return Err(ProgramError::MissingRequiredSignature);
+            }
+            }
+            AuthorizedPrograms::All => {}
         }
         Ok(())
     }
 
     pub fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), ProgramError> {
-        self.session_info
-            .authorized_programs
-            .iter()
-            .find(|authorized_program| authorized_program.program_id == *program_id)
-            .ok_or(SessionError::UnauthorizedProgram)?;
+        match self.session_info.authorized_programs {
+            AuthorizedPrograms::Specific(ref programs) => {
+                programs.iter()
+                .find(|authorized_program| authorized_program.program_id == *program_id)
+                .ok_or(SessionError::UnauthorizedProgram)?;
+            }
+            AuthorizedPrograms::All => {}
+        }
         Ok(())
     }
 }
