@@ -129,16 +129,12 @@ impl Session {
         match self.session_info.authorized_programs {
             AuthorizedPrograms::Specific(ref programs) => {
                 let signer_account_info = signers
-                .iter()
-                .find(|signer| {
-                    programs
-                        .iter()
-                        .any(|item| *signer.key == item.signer_pda)
-                })
-                .ok_or(SessionError::UnauthorizedProgram)?;
-            if !signer_account_info.is_signer {
-                return Err(ProgramError::MissingRequiredSignature);
-            }
+                    .iter()
+                    .find(|signer| programs.iter().any(|item| *signer.key == item.signer_pda))
+                    .ok_or(SessionError::UnauthorizedProgram)?;
+                if !signer_account_info.is_signer {
+                    return Err(ProgramError::MissingRequiredSignature);
+                }
             }
             AuthorizedPrograms::All => {}
         }
@@ -148,9 +144,10 @@ impl Session {
     pub fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), ProgramError> {
         match self.session_info.authorized_programs {
             AuthorizedPrograms::Specific(ref programs) => {
-                programs.iter()
-                .find(|authorized_program| authorized_program.program_id == *program_id)
-                .ok_or(SessionError::UnauthorizedProgram)?;
+                programs
+                    .iter()
+                    .find(|authorized_program| authorized_program.program_id == *program_id)
+                    .ok_or(SessionError::UnauthorizedProgram)?;
             }
             AuthorizedPrograms::All => {}
         }

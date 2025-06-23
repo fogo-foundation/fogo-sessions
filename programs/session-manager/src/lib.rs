@@ -14,6 +14,8 @@ pub mod error;
 pub mod intents;
 #[program]
 pub mod session_manager {
+    use fogo_sessions_sdk::{AuthorizedPrograms, AuthorizedTokens};
+
     use super::*;
 
     pub fn start_session<'info>(
@@ -41,7 +43,8 @@ pub mod session_manager {
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
                 user: signer,
-                authorized_programs: program_domains,
+                authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                authorized_tokens: AuthorizedTokens::Specific,
                 extra: extra.into(),
                 expiration: Clock::get()?.unix_timestamp + 3600,
             },
