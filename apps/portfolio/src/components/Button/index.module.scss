@@ -1,0 +1,153 @@
+@use "../../theme";
+
+.button {
+  border: none;
+  outline: 1px solid transparent;
+  outline-offset: theme.spacing(1);
+  color: theme.color("heading");
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  transition: background-color 300ms linear;
+  position: relative;
+  text-decoration: none;
+  display: inline-block;
+  -webkit-tap-highlight-color: transparent;
+  height: theme.spacing(6);
+
+  .contents1,
+  .contents2 {
+    transition: transform 300ms ease-in-out;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+    text-align: center;
+    gap: theme.spacing(1);
+
+    .mainContent {
+      flex-grow: 1;
+    }
+  }
+
+  .contents2 {
+    position: absolute;
+    top: 100%;
+    left: 0;
+  }
+
+  .arrow {
+    display: none;
+    position: absolute;
+    right: theme.spacing(1);
+    top: theme.spacing(1);
+    height: theme.spacing(4);
+    transform: translateX(-50%);
+    opacity: 0;
+    transition:
+      transform 300ms ease-in-out,
+      opacity 300ms linear;
+  }
+
+  &[data-hovered],
+  &[data-pressed],
+  &[data-selected] {
+    .contents1,
+    .contents2 {
+      transform: translateY(-100%);
+    }
+  }
+
+  &[data-hovered],
+  &[data-pressed] {
+    .arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  &[data-noninteractive] {
+    pointer-events: none;
+  }
+
+  &[data-focus-visible] {
+    outline-color: theme.color("foreground");
+  }
+
+  &[data-disabled] {
+    cursor: default;
+  }
+
+  &[data-fill] {
+    display: block;
+    width: 100%;
+
+    .contents1,
+    .contents2 {
+      text-align: left;
+    }
+
+    .arrow {
+      display: unset;
+    }
+  }
+
+  &[data-variant="primary"] {
+    background-color: theme.color("brand");
+
+    .contents1,
+    .contents2 {
+      color: theme.color("background");
+    }
+
+    .arrow {
+      color: theme.color("background");
+    }
+  }
+
+  &[data-variant="secondary"] {
+    background-color: transparent;
+    border: 1px solid theme.color("button-border");
+
+    &[data-fill] {
+      border: none;
+      border-left: 1px solid theme.color("button-border");
+    }
+
+    &[data-hovered],
+    &[data-pressed],
+    &[data-selected] {
+      background-color: theme.pallette-color("white");
+    }
+
+    .contents2 {
+      color: theme.color("background");
+    }
+
+    .arrow {
+      color: theme.color("background");
+    }
+  }
+
+  &[data-size="md"] {
+    @include theme.text("lg", "normal");
+
+    .contents1,
+    .contents2 {
+      padding-left: theme.spacing(4);
+      padding-right: theme.spacing(4);
+    }
+  }
+
+  &[data-size="sm"] {
+    @include theme.text("base", "normal");
+
+    .contents1,
+    .contents2 {
+      padding-left: theme.spacing(2);
+      padding-right: theme.spacing(2);
+    }
+  }
+}

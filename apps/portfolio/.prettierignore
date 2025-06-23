@@ -1,0 +1,12 @@
+node_modules/
+.turbo/
+.next/
+coverage/
+.direnv/
+.DS_Store/
+result
+*.tsbuildinfo
+.env*.local
+target
+tilt/test-ledger/
+.DS_Store

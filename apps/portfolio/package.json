@@ -1,0 +1,53 @@
+{
+  "name": "@fogo/portfolio",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "next build",
+    "fix:format": "prettier --write .",
+    "fix:lint:eslint": "eslint --fix .",
+    "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
+    "start:dev": "next dev --port 3001",
+    "start:prod": "next start --port 3001",
+    "test:format": "jest --selectProjects format",
+    "test:lint:eslint": "jest --selectProjects lint",
+    "test:lint:stylelint": "stylelint 'src/**/*.scss'",
+    "test:types": "tsc"
+  },
+  "dependencies": {
+    "@fogo/sessions-sdk-react": "workspace:*",
+    "@next/third-parties": "catalog:",
+    "@phosphor-icons/react": "catalog:",
+    "clsx": "catalog:",
+    "next": "catalog:",
+    "pino": "catalog:",
+    "react": "catalog:",
+    "react-aria": "catalog:",
+    "react-aria-components": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@axe-core/react": "catalog:",
+    "@cprussin/eslint-config": "catalog:",
+    "@cprussin/jest-config": "catalog:",
+    "@cprussin/prettier-config": "catalog:",
+    "@cprussin/tsconfig": "catalog:",
+    "@svgr/webpack": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "jest": "catalog:",
+    "modern-normalize": "catalog:",
+    "prettier": "catalog:",
+    "sass": "catalog:",
+    "stylelint": "catalog:",
+    "stylelint-config-standard-scss": "catalog:",
+    "typescript": "catalog:"
+  }
+}
