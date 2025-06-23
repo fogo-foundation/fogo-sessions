@@ -136,7 +136,7 @@
       "cache": false
     },
     "start:dev": {
-      "dependsOn": ["//#install:modules", "pull:env", "//#build:idl"],
+      "dependsOn": ["//#install:modules", "pull:env"],
       "persistent": true,
       "cache": false
     },
@@ -158,13 +158,13 @@
       "dependsOn": ["//#install:modules"]
     },
     "test:lint": {
-      "dependsOn": ["//#install:modules", "//#build:idl", "^build"]
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "test:types": {
-      "dependsOn": ["//#install:modules", "//#build:idl", "^build"]
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "test:unit": {
-      "dependsOn": ["//#install:modules", "//#build:idl", "^build"]
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "test:integration": {
       "dependsOn": ["//#install:modules", "build"],
