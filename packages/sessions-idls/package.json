@@ -2,7 +2,7 @@
   "name": "@fogo/sessions-idls",
   "version": "0.0.1",
   "private": true,
-  "description": "A set of utilities for integrating with Fogo sessions",
+  "description": "The IDLs for the on-chain programs involved in the Fogo Sessions protocol",
   "keywords": [
     "fogo",
     "sessions",
