@@ -2,12 +2,12 @@
     "$schema": "https://turbo.build/schema.json",
     "extends": ["//"],
     "tasks": {
-        "build-esm": {
+        "build:esm": {
             "dependsOn": [
                 "//#build:idl"
             ]
         },
-        "build-cjs": {
+        "build:cjs": {
             "dependsOn": [
                 "//#build:idl"
             ]
