@@ -7,11 +7,12 @@ on:
 
 jobs:
   test:
-    # We need to stay on ubuntu-22.04 due to an [issue with puppeteer in the
-    # latest Ubuntu](https://github.com/puppeteer/puppeteer/issues/12818)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Fix
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install anchor cli
         run: |
           cargo install --git https://github.com/coral-xyz/anchor avm
