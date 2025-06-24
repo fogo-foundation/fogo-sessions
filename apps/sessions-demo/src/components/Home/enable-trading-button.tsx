@@ -1,6 +1,8 @@
 "use client";
 
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import type { SessionManager } from "@fogo/sessions-idls";
+import { SessionManagerIdl } from "@fogo/sessions-idls";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferInstruction,
@@ -18,8 +20,7 @@ import {
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { SessionManager } from "@fogo/sessions-idls";
-import { SessionManagerIdl } from "@fogo/sessions-idls";
+
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
 

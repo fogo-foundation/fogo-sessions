@@ -34,7 +34,10 @@
         "**/Cargo.toml",
         "**/Anchor.toml"
       ],
-      "outputs": ["packages/sessions-idls/src/idl/*.json", "packages/sessions-idls/src/types/*.ts"]
+      "outputs": [
+        "packages/sessions-idls/src/idl/*.json",
+        "packages/sessions-idls/src/types/*.ts"
+      ]
     },
     "//#test": {
       "dependsOn": [

@@ -7,9 +7,11 @@ import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
+
 import "@solana/wallet-adapter-react-ui/styles.css";
 import type { Example } from "@fogo/sessions-idls";
 import { ExampleIdl } from "@fogo/sessions-idls";
+
 import { sendTransaction } from "@/send-transaction";
 
 const handleTrade = async (
