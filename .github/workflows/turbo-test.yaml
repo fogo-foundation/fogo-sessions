@@ -29,4 +29,4 @@ jobs:
       - name: Test
         run: pnpm turbo test
         env:
-          CHROME_DEVEL_SANDBOX=/opt/google/chrome/chrome-sandbox
+          CHROME_DEVEL_SANDBOX: /opt/google/chrome/chrome-sandbox
