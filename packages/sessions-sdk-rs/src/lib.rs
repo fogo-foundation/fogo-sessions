@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use solana_account_info::AccountInfo;
-use solana_program_error::ProgramError;
 use solana_pubkey::Pubkey;
 use solana_sysvar::{clock::Clock, Sysvar};
 use thiserror::Error;
@@ -170,27 +169,30 @@ impl Session {
 
 #[derive(Error, Debug, Clone)]
 pub enum SessionError {
-   #[error("Session is expired")]
+   #[error("This session has expired")]
     Expired,
-    #[error("Session was created for a different user")]
+    #[error("This session was created for a different user")]
     UserMismatch,
-    #[error("Session was created for a different program")]
+    #[error("This session was created for a different program")]
     UnauthorizedProgram,
     #[error("A required program signer appears as a non-signer")]
     MissingRequiredSignature,
-    #[error("Error loading the clock sysvar")]
+    #[error("There was an error loading the clock sysvar")]
     ClockError,
-    #[error("The session account failed to deserialize")]
+    #[error("A session account failed to deserialize")]
     InvalidAccountData,
-    #[error("The session account has the wrong discriminator")]
+    #[error("A session account has the wrong discriminator")]
     InvalidAccountDiscriminator,
 }
+
+#[cfg(feature = "anchor")]
+const ERROR_CODE_OFFSET: u32 = anchor_lang::error::ERROR_CODE_OFFSET + 1000;
 
 #[cfg(feature = "anchor")]
 impl From<SessionError> for anchor_lang::error::Error {
     fn from(e: SessionError) -> Self {
         anchor_lang::error::Error::AnchorError(
-            Box::new(AnchorError { error_name: e.to_string(), error_code_number: e.clone() as u32, error_msg: e.to_string(), error_origin: None, compared_values: None })
+            Box::new(AnchorError { error_name: "Sessions Error".to_string(), error_code_number: e.clone() as u32 + ERROR_CODE_OFFSET , error_msg: e.to_string(), error_origin: None, compared_values: None })
         )
     }
 }
