@@ -192,7 +192,7 @@ const ERROR_CODE_OFFSET: u32 = anchor_lang::error::ERROR_CODE_OFFSET + 1000;
 impl From<SessionError> for anchor_lang::error::Error {
     fn from(e: SessionError) -> Self {
         anchor_lang::error::Error::AnchorError(
-            Box::new(AnchorError { error_name: "Sessions Error".to_string(), error_code_number: e.clone() as u32 + ERROR_CODE_OFFSET , error_msg: e.to_string(), error_origin: None, compared_values: None })
+            Box::new(AnchorError { error_name: "SessionError".to_string(), error_code_number: e.clone() as u32 + ERROR_CODE_OFFSET , error_msg: e.to_string(), error_origin: None, compared_values: None })
         )
     }
 }
