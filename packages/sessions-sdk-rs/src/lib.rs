@@ -10,7 +10,7 @@ use thiserror::Error;
 use borsh::BorshDeserialize;
 
 #[cfg(feature = "anchor")]
-use anchor_lang::prelude::{account, borsh, AnchorDeserialize, AnchorSerialize, Discriminator};
+use anchor_lang::prelude::{account, borsh, AnchorDeserialize, AnchorSerialize, Discriminator, AnchorError};
 
 pub const SESSION_SETTER: Pubkey =
     solana_pubkey::pubkey!("FrfXhepGSPsSYXzvEsAxzVW8zDaxdWSneaERaDC1Q911");
@@ -100,24 +100,24 @@ impl Session {
     const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
 
     #[cfg(feature = "borsh")]
-    pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, ProgramError> {
-        let result = Session::deserialize(data).map_err(|_| ProgramError::InvalidAccountData)?;
+    pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
+        let result = Session::deserialize(data).map_err(|_| SessionError::InvalidAccountData)?;
         if result.discriminator != Self::DISCRIMINATOR {
-            return Err(ProgramError::InvalidAccountData);
+            return Err(SessionError::InvalidAccountDiscriminator);
         }
         Ok(result)
     }
 
-    fn check_is_live(&self) -> Result<(), ProgramError> {
-        if self.session_info.expiration < Clock::get()?.unix_timestamp {
-            return Err(SessionError::Expired.into());
+    fn check_is_live(&self) -> Result<(), SessionError> {
+        if self.session_info.expiration < Clock::get().map_err(|_| SessionError::ClockError)?.unix_timestamp {
+            return Err(SessionError::Expired);
         }
         Ok(())
     }
 
-    fn check_user(&self, expected_user: &Pubkey) -> Result<(), ProgramError> {
+    fn check_user(&self, expected_user: &Pubkey) -> Result<(), SessionError> {
         if self.session_info.user != *expected_user {
-            return Err(ProgramError::InvalidAccountData);
+            return Err(SessionError::UserMismatch);
         }
         Ok(())
     }
@@ -125,7 +125,7 @@ impl Session {
     fn check_authorized_program_signer(
         &self,
         signers: &[AccountInfo],
-    ) -> Result<(), ProgramError> {
+    ) -> Result<(), SessionError> {
         match self.session_info.authorized_programs {
             AuthorizedPrograms::Specific(ref programs) => {
                 let signer_account_info = signers
@@ -133,7 +133,7 @@ impl Session {
                     .find(|signer| programs.iter().any(|item| *signer.key == item.signer_pda))
                     .ok_or(SessionError::UnauthorizedProgram)?;
                 if !signer_account_info.is_signer {
-                    return Err(ProgramError::MissingRequiredSignature);
+                    return Err(SessionError::MissingRequiredSignature);
                 }
             }
             AuthorizedPrograms::All => {}
@@ -141,7 +141,7 @@ impl Session {
         Ok(())
     }
 
-    fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), ProgramError> {
+    fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), SessionError> {
         match self.session_info.authorized_programs {
             AuthorizedPrograms::Specific(ref programs) => {
                 programs
@@ -154,32 +154,43 @@ impl Session {
         Ok(())
     }
 
-    pub fn get_token_permissions_checked(&self, user: &Pubkey, signers: &[AccountInfo]) -> Result<AuthorizedTokens, ProgramError> {
+    pub fn get_token_permissions_checked(&self, user: &Pubkey, signers: &[AccountInfo]) -> Result<AuthorizedTokens, SessionError> {
         self.check_is_live()?;
         self.check_user(user)?;
         self.check_authorized_program_signer(signers)?;
         Ok(self.session_info.authorized_tokens.clone())
     }
 
-    pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, ProgramError> {
+    pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
         self.check_is_live()?;
         self.check_authorized_program(program_id)?;
         Ok(self.session_info.user)
     }
 }
 
-#[derive(Clone, Debug, Eq, Error, PartialEq)]
+#[derive(Error, Debug, Clone)]
 pub enum SessionError {
-    #[error("Session is expired")]
+   #[error("Session is expired")]
     Expired,
     #[error("Session was created for a different user")]
     UserMismatch,
     #[error("Session was created for a different program")]
     UnauthorizedProgram,
+    #[error("A required program signer appears as a non-signer")]
+    MissingRequiredSignature,
+    #[error("Error loading the clock sysvar")]
+    ClockError,
+    #[error("The session account failed to deserialize")]
+    InvalidAccountData,
+    #[error("The session account has the wrong discriminator")]
+    InvalidAccountDiscriminator,
 }
 
-impl From<SessionError> for ProgramError {
+#[cfg(feature = "anchor")]
+impl From<SessionError> for anchor_lang::error::Error {
     fn from(e: SessionError) -> Self {
-        ProgramError::Custom(e as u32)
+        anchor_lang::error::Error::AnchorError(
+            Box::new(AnchorError { error_name: e.to_string(), error_code_number: e.clone() as u32, error_msg: e.to_string(), error_origin: None, compared_values: None })
+        )
     }
 }
