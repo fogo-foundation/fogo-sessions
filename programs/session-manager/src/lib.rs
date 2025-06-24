@@ -5,10 +5,10 @@ use crate::intents::body::MessageBody;
 use crate::intents::ed25519::Intent;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
-use fogo_sessions_sdk::Session;
-use fogo_sessions_sdk::SessionInfo;
 use fogo_sessions_sdk::AuthorizedPrograms;
 use fogo_sessions_sdk::AuthorizedTokens;
+use fogo_sessions_sdk::Session;
+use fogo_sessions_sdk::SessionInfo;
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 

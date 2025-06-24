@@ -9,14 +9,15 @@ use thiserror::Error;
 use borsh::BorshDeserialize;
 
 #[cfg(feature = "anchor")]
-use anchor_lang::prelude::{account, borsh, AnchorDeserialize, AnchorSerialize, Discriminator, AnchorError};
-
+use anchor_lang::prelude::{
+    account, borsh, AnchorDeserialize, AnchorError, AnchorSerialize, Discriminator,
+};
 
 const ID: Pubkey = solana_pubkey::pubkey!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 /// The program ID of the session manager program
 pub const SESSION_MANAGER_ID: Pubkey = ID;
 
-/// The session setter is a PDA of the session manager program used by the session manager to set token account delegations for Sessions users. 
+/// The session setter is a PDA of the session manager program used by the session manager to set token account delegations for Sessions users.
 pub const SESSION_SETTER: Pubkey =
     solana_pubkey::pubkey!("FrfXhepGSPsSYXzvEsAxzVW8zDaxdWSneaERaDC1Q911");
 
@@ -113,7 +114,11 @@ impl Session {
     }
 
     fn check_is_live(&self) -> Result<(), SessionError> {
-        if self.session_info.expiration < Clock::get().map_err(|_| SessionError::ClockError)?.unix_timestamp {
+        if self.session_info.expiration
+            < Clock::get()
+                .map_err(|_| SessionError::ClockError)?
+                .unix_timestamp
+        {
             return Err(SessionError::Expired);
         }
         Ok(())
@@ -126,10 +131,7 @@ impl Session {
         Ok(())
     }
 
-    fn check_authorized_program_signer(
-        &self,
-        signers: &[AccountInfo],
-    ) -> Result<(), SessionError> {
+    fn check_authorized_program_signer(&self, signers: &[AccountInfo]) -> Result<(), SessionError> {
         match self.session_info.authorized_programs {
             AuthorizedPrograms::Specific(ref programs) => {
                 let signer_account_info = signers
@@ -158,7 +160,11 @@ impl Session {
         Ok(())
     }
 
-    pub fn get_token_permissions_checked(&self, user: &Pubkey, signers: &[AccountInfo]) -> Result<AuthorizedTokens, SessionError> {
+    pub fn get_token_permissions_checked(
+        &self,
+        user: &Pubkey,
+        signers: &[AccountInfo],
+    ) -> Result<AuthorizedTokens, SessionError> {
         self.check_is_live()?;
         self.check_user(user)?;
         self.check_authorized_program_signer(signers)?;
@@ -175,7 +181,7 @@ impl Session {
 
 #[derive(Error, Debug, Clone)]
 pub enum SessionError {
-   #[error("This session has expired")]
+    #[error("This session has expired")]
     Expired,
     #[error("This session was created for a different user")]
     UserMismatch,
@@ -197,8 +203,12 @@ const ERROR_CODE_OFFSET: u32 = anchor_lang::error::ERROR_CODE_OFFSET + 1000;
 #[cfg(feature = "anchor")]
 impl From<SessionError> for anchor_lang::error::Error {
     fn from(e: SessionError) -> Self {
-        anchor_lang::error::Error::AnchorError(
-            Box::new(AnchorError { error_name: "SessionError".to_string(), error_code_number: e.clone() as u32 + ERROR_CODE_OFFSET , error_msg: e.to_string(), error_origin: None, compared_values: None })
-        )
+        anchor_lang::error::Error::AnchorError(Box::new(AnchorError {
+            error_name: "SessionError".to_string(),
+            error_code_number: e.clone() as u32 + ERROR_CODE_OFFSET,
+            error_msg: e.to_string(),
+            error_origin: None,
+            compared_values: None,
+        }))
     }
 }
