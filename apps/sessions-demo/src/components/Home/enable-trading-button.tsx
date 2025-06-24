@@ -20,7 +20,6 @@ import {
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
-
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
 
