@@ -11,11 +11,16 @@ use borsh::BorshDeserialize;
 #[cfg(feature = "anchor")]
 use anchor_lang::prelude::{account, borsh, AnchorDeserialize, AnchorSerialize, Discriminator, AnchorError};
 
-pub const SESSION_SETTER: Pubkey =
-    solana_pubkey::pubkey!("FrfXhepGSPsSYXzvEsAxzVW8zDaxdWSneaERaDC1Q911");
+
 const ID: Pubkey = solana_pubkey::pubkey!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
+/// The program ID of the session manager program
 pub const SESSION_MANAGER_ID: Pubkey = ID;
 
+/// The session setter is a PDA of the session manager program used by the session manager to set token account delegations for Sessions users. 
+pub const SESSION_SETTER: Pubkey =
+    solana_pubkey::pubkey!("FrfXhepGSPsSYXzvEsAxzVW8zDaxdWSneaERaDC1Q911");
+
+/// When in-session token transfers are made, the PDA of an authorized program with this seed needs to sign the transfer
 pub const PROGRAM_SIGNER_SEED: &[u8] = b"fogo_session_program_signer";
 
 #[cfg_attr(feature = "anchor", account)]
@@ -44,7 +49,7 @@ pub struct SessionInfo {
     pub authorized_programs: AuthorizedPrograms,
     /// Tokens the session key is allowed to interact with. If `Specific`, the spend limits are stored in each individual token account in the usual delegated_amount field.
     pub authorized_tokens: AuthorizedTokens,
-    /// Extra (key, value)'s provided by the user
+    /// Extra (key, value)'s provided by the user, they can be used to store extra arbitrary information about the session
     pub extra: Extra,
 }
 
@@ -160,6 +165,7 @@ impl Session {
         Ok(self.session_info.authorized_tokens.clone())
     }
 
+    /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
     pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
         self.check_is_live()?;
         self.check_authorized_program(program_id)?;
