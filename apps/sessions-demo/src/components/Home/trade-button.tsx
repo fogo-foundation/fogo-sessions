@@ -9,7 +9,7 @@ import { useCallback, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import type { Example } from "@fogo/sessions-idls";
-import exampleIdl from "@fogo/sessions-idls";
+import { ExampleIdl } from "@fogo/sessions-idls";
 import { sendTransaction } from "@/send-transaction";
 
 const handleTrade = async (
@@ -68,7 +68,7 @@ export const TradeButton = ({
   >({ status: "not-started" });
 
   const exampleProgram = useMemo(
-    () => new Program<Example>(exampleIdl as Example, provider),
+    () => new Program<Example>(ExampleIdl as Example, provider),
     [provider],
   );
 

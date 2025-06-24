@@ -19,7 +19,7 @@ import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { SessionManager } from "@fogo/sessions-idls";
-import sessionManagerIdl from "@fogo/sessions-idls";
+import { SessionManagerIdl } from "@fogo/sessions-idls";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
 
@@ -152,7 +152,7 @@ export const EnableTradingButton = ({
   const sessionManagerProgram = useMemo(
     () =>
       new Program<SessionManager>(
-        sessionManagerIdl as SessionManager,
+        SessionManagerIdl as SessionManager,
         provider,
       ),
     [provider],
