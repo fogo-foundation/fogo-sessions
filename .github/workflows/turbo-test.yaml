@@ -10,9 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fix
-        run: |
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      # # We need to disable this feature of Ubuntu
+      # - name: Fix
+      #   run: |
+      #     sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install anchor cli
         run: |
           cargo install --git https://github.com/coral-xyz/anchor avm
@@ -27,3 +28,5 @@ jobs:
           run_install: true
       - name: Test
         run: pnpm turbo test
+        env:
+        - CHROME_DEVEL_SANDBOX=/opt/google/chrome/chrome-sandbox
