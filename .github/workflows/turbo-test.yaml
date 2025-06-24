@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # We need to disable this feature of the latest Ubuntu for puppeteer to work 
+      # We need to disable this feature of the latest Ubuntu for puppeteer to work
       # https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md
       - name: Disable unprivileged userns restrictions
         run: |
