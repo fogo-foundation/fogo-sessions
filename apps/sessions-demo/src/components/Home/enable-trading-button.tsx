@@ -1,6 +1,6 @@
 "use client";
 
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
 import type { SessionManager } from "@fogo/sessions-idls";
 import { SessionManagerIdl } from "@fogo/sessions-idls";
 import {
@@ -46,9 +46,8 @@ domain: gasless-trading.vercel.app
 nonce: ${sessionKey.publicKey.toBase58()}
 session_key: ${sessionKey.publicKey.toBase58()}
 tokens:
--${NATIVE_MINT.toBase58()}: 100
-extra: extra`,
-  );
+-SOL: 100`,
+);
 
   const intentSignature = await signMessage(message);
 

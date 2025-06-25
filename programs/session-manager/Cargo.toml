@@ -19,3 +19,4 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 anchor-lang = { workspace = true }
 anchor-spl = { workspace = true }
 fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["anchor"] }
+mpl-token-metadata = "5.1.0"

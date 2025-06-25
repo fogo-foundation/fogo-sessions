@@ -27,7 +27,7 @@ fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str)
     Ok(value.to_string())
 }
 
-fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u64)>> {
+fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(String, u64)>> {
     let mut tokens = vec![];
 
     if lines
@@ -45,18 +45,17 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u
             let line = line
                 .strip_prefix(LIST_ITEM_PREFIX)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
-            let (key, value) = line
+            let (symbol, amount) = line
                 .split_once(KEY_VALUE_SEPARATOR)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
-            let mint =
-                Pubkey::from_str(key).map_err(|_| error!(SessionManagerError::InvalidArgument))?;
-            if tokens.iter().any(|(m, _)| m == &mint) {
+
+            if tokens.iter().any(|(m, _)| m == &symbol) {
                 // No duplicate mints
                 return Err(error!(SessionManagerError::InvalidArgument));
             } else {
                 tokens.push((
-                    mint,
-                    value
+                    symbol.to_string(),
+                    amount
                         .parse()
                         .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
                 ));
@@ -129,7 +128,7 @@ mod test {
         assert_eq!(parsed_message.domain, Domain("https://app.xyz".to_string()));
         assert_eq!(parsed_message.session_key, SessionKey(session_key));
         assert_eq!(parsed_message.nonce, Nonce(nonce));
-        assert_eq!(parsed_message.tokens, vec![(token, 100)]);
+        assert_eq!(parsed_message.tokens, vec![(token.to_string(), 100)]);
         assert_eq!(
             parsed_message.extra,
             HashMap::from([
