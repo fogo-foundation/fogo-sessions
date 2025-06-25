@@ -41,14 +41,10 @@ const handleEnableTrading = async (
 
   const umi = createUmi(solanaRpc);
   const metaplexNativeMint = metaplexPublicKey(NATIVE_MINT.toBase58());
-
-  console.log(findMetadataPda(umi, {mint: metaplexPublicKey("HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3")}))
-  
   const metadataAddress = findMetadataPda(umi, {mint: metaplexNativeMint})[0];
   const metadata = await fetchMetadata(umi, metadataAddress);
 
   const sessionKey = Keypair.generate();
-  console.log(metadata);
   // TODO: This should be a function
   const message = new TextEncoder().encode(
     `Fogo Sessions:
