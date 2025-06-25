@@ -34,7 +34,7 @@ const handleTrade = async (
     publicKey,
   );
 
-  // We are sending the connected wallet some assets to play with in this demo
+  // We are sending the connected wallet some assets so we can test the example transfer in the next instruction
   const transferInstruction = createTransferInstruction(
     sinkAta,
     userTokenAccount,
@@ -42,7 +42,7 @@ const handleTrade = async (
     100,
   );
 
-  const transaction = new Transaction().add(transferInstruction).add(
+  const instructions = [transferInstruction,
     await exampleProgram.methods
       .exampleTransfer(new BN(100))
       .accounts({
@@ -51,10 +51,10 @@ const handleTrade = async (
         userTokenAccount: userTokenAccount,
       })
       .instruction(),
-  );
+  ];
 
   return sendTransaction(
-    transaction.instructions,
+    instructions,
     sponsorPubkey,
     solanaRpc,
     provider.connection,
