@@ -25,11 +25,10 @@ pub mod session_manager {
         let MessageBody {
             domain,
             session_key,
-            nonce,
+            expires,
             extra,
             tokens,
         } = message.parse()?;
-        ctx.accounts.check_nonce(nonce)?;
         ctx.accounts.check_session_key(session_key)?;
         ctx.accounts.approve_tokens(
             ctx.remaining_accounts,
@@ -46,7 +45,7 @@ pub mod session_manager {
                 authorized_programs: AuthorizedPrograms::Specific(program_domains),
                 authorized_tokens: AuthorizedTokens::Specific,
                 extra: extra.into(),
-                expiration: Clock::get()?.unix_timestamp + 3600,
+                expiration: expires.timestamp(),
             },
         };
         ctx.accounts.session.set_inner(session);

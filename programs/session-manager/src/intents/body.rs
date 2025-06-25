@@ -4,12 +4,10 @@ use anchor_spl::{
     associated_token::get_associated_token_address,
     token::{self, Approve, Mint},
 };
+use chrono::{DateTime, Utc};
 use fogo_sessions_sdk::AuthorizedProgram;
 use mpl_token_metadata::accounts::Metadata;
 use std::{collections::HashMap, str::FromStr};
-
-#[derive(PartialEq, Debug)]
-pub struct Nonce(pub(crate) Pubkey);
 
 #[derive(PartialEq, Debug)]
 pub struct Domain(pub(crate) String);
@@ -19,18 +17,13 @@ pub struct SessionKey(pub(crate) Pubkey);
 
 pub struct MessageBody {
     pub domain: Domain,
-    pub nonce: Nonce,
+    pub expires: DateTime<Utc>,
     pub session_key: SessionKey,
     pub tokens: Vec<(String, u64)>,
     pub extra: HashMap<String, String>,
 }
 
 impl<'info> StartSession<'info> {
-    pub fn check_nonce(&self, _nonce: Nonce) -> Result<()> {
-        // TODO
-        Ok(())
-    }
-
     pub fn check_session_key(&self, session_key: SessionKey) -> Result<()> {
         if self.session.key() != session_key.0 {
             return Err(ProgramError::InvalidArgument.into());

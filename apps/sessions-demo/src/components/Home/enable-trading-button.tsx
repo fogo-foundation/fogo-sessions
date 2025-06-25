@@ -54,7 +54,7 @@ const handleEnableTrading = async (
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
 
 domain: gasless-trading.vercel.app
-nonce: ${sessionKey.publicKey.toBase58()}
+expires: ${expires}
 session_key: ${sessionKey.publicKey.toBase58()}
 tokens:
 -${metadata.symbol}: 100`,
