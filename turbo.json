@@ -27,6 +27,15 @@
       ],
       "outputs": ["pnpm-lock.yaml"]
     },
+    "build:idl": {
+      "inputs": [
+        "../../programs/**/src/**/*.rs",
+        "../../packages/**/src/**/*.rs",
+        "../../**/Cargo.toml",
+        "../../**/Anchor.toml"
+      ],
+      "outputs": ["src/idl/*.json", "src/types/*.ts"]
+    },
     "//#test": {
       "dependsOn": [
         "//#test:types",
@@ -71,7 +80,7 @@
       "env": ["VERCEL_ENV"]
     },
     "build:cjs": {
-      "dependsOn": ["//#install:modules", "^build"],
+      "dependsOn": ["//#install:modules", "^build", "build:idl"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!README.md",
@@ -84,7 +93,7 @@
       "outputs": ["dist/cjs/**"]
     },
     "build:esm": {
-      "dependsOn": ["//#install:modules", "^build"],
+      "dependsOn": ["//#install:modules", "^build", "build:idl"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!README.md",
@@ -151,7 +160,7 @@
       "dependsOn": ["//#install:modules", "^build"]
     },
     "test:types": {
-      "dependsOn": ["//#install:modules", "^build"]
+      "dependsOn": ["//#install:modules", "^build", "build:idl"]
     },
     "test:unit": {
       "dependsOn": ["//#install:modules", "^build"]

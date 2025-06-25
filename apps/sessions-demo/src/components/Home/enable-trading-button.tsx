@@ -1,6 +1,8 @@
 "use client";
 
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import type { SessionManager } from "@fogo/sessions-idls";
+import { SessionManagerIdl } from "@fogo/sessions-idls";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferInstruction,
@@ -18,8 +20,6 @@ import {
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { SessionManager } from "@/idl/session-manager";
-import sessionManagerIdl from "@/idl/session-manager.json";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
 
@@ -152,7 +152,7 @@ export const EnableTradingButton = ({
   const sessionManagerProgram = useMemo(
     () =>
       new Program<SessionManager>(
-        sessionManagerIdl as SessionManager,
+        SessionManagerIdl as SessionManager,
         provider,
       ),
     [provider],

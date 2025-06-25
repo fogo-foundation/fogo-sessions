@@ -1,6 +1,8 @@
 "use client";
 
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+import type { Example } from "@fogo/sessions-idls";
+import { ExampleIdl } from "@fogo/sessions-idls";
 import { getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
@@ -8,8 +10,6 @@ import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
-import type { Example } from "@/idl/example";
-import exampleIdl from "@/idl/example.json";
 import { sendTransaction } from "@/send-transaction";
 
 const handleTrade = async (
@@ -68,7 +68,7 @@ export const TradeButton = ({
   >({ status: "not-started" });
 
   const exampleProgram = useMemo(
-    () => new Program<Example>(exampleIdl as Example, provider),
+    () => new Program<Example>(ExampleIdl as Example, provider),
     [provider],
   );
 

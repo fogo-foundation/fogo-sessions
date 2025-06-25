@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install anchor cli
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm
+          avm install 0.31.1
+          avm use 0.31.1
       - uses: actions/setup-node@v4
         with:
           node-version-file: "package.json"
