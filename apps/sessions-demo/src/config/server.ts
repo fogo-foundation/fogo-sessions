@@ -17,8 +17,10 @@ function envOrThrow(name: string) {
 const defaultInDevelopment = (name: string, devValue: string) =>
   IS_DEV_MACHINE ? (process.env[name] ?? devValue) : envOrThrow(name);
 
-export const ADDRESS_LOOKUP_TABLE_ADDRESS = IS_DEV_MACHINE ?
-  "93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3": process.env.ADDRESS_LOOKUP_TABLE_ADDRESS;
+/* eslint-disable turbo/no-undeclared-env-vars */
+export const ADDRESS_LOOKUP_TABLE_ADDRESS = IS_DEV_MACHINE
+  ? "93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3"
+  : process.env.ADDRESS_LOOKUP_TABLE_ADDRESS;
 
 export const SOLANA_RPC = defaultInDevelopment(
   "SOLANA_RPC",

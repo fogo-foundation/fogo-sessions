@@ -3,7 +3,11 @@
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 import type { Example } from "@fogo/sessions-idls";
 import { ExampleIdl } from "@fogo/sessions-idls";
-import { createTransferInstruction, getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
+import {
+  createTransferInstruction,
+  getAssociatedTokenAddressSync,
+  NATIVE_MINT,
+} from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
@@ -30,7 +34,7 @@ const handleTrade = async (
     publicKey,
   );
 
- // We are sending the connected wallet some assets to play with in this demo
+  // We are sending the connected wallet some assets to play with in this demo
   const transferInstruction = createTransferInstruction(
     sinkAta,
     userTokenAccount,
@@ -106,7 +110,14 @@ export const TradeButton = ({
           console.error(error);
         });
     }
-  }, [sponsorPubkey, solanaRpc, exampleProgram, publicKey, sessionKey]);
+  }, [
+    sponsorPubkey,
+    solanaRpc,
+    exampleProgram,
+    publicKey,
+    sessionKey,
+    addressLookupTableAddress,
+  ]);
 
   const canTrade = sessionKey !== undefined && publicKey;
   return (

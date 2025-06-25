@@ -1,12 +1,9 @@
-import type {Connection, Keypair} from "@solana/web3.js";
+import type { Connection, Keypair } from "@solana/web3.js";
 import {
-  AddressLookupTableAccount,
   PublicKey,
   TransactionInstruction,
   TransactionMessage,
-  VersionedTransaction
-  
-  
+  VersionedTransaction,
 } from "@solana/web3.js";
 import { z } from "zod";
 
@@ -27,12 +24,18 @@ export async function sendTransaction(
 }> {
   const { blockhash } = await connection.getLatestBlockhash();
 
-  const addressLookupTable = addressLookupTableAddress ? (await connection.getAddressLookupTable(new PublicKey(addressLookupTableAddress))).value : undefined;
-  const transaction = new VersionedTransaction(new TransactionMessage({
-    payerKey: sponsorPubkey,
-    recentBlockhash: blockhash,
-    instructions: transactionInstructions,
-  }).compileToV0Message(addressLookupTable ? [addressLookupTable] : []));
+  const { value: addressLookupTable } = addressLookupTableAddress
+    ? await connection.getAddressLookupTable(
+        new PublicKey(addressLookupTableAddress),
+      )
+    : { value: undefined };
+  const transaction = new VersionedTransaction(
+    new TransactionMessage({
+      payerKey: sponsorPubkey,
+      recentBlockhash: blockhash,
+      instructions: transactionInstructions,
+    }).compileToV0Message(addressLookupTable ? [addressLookupTable] : []),
+  );
 
   transaction.sign([sessionKey]);
 

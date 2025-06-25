@@ -5,26 +5,16 @@ import type { SessionManager } from "@fogo/sessions-idls";
 import { SessionManagerIdl } from "@fogo/sessions-idls";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
-  createTransferInstruction,
   getAssociatedTokenAddressSync,
   NATIVE_MINT,
 } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
-import {
-  Ed25519Program,
-  Keypair,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-  TransactionMessage,
-} from "@solana/web3.js";
+import { Ed25519Program, Keypair, PublicKey } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
-
-const AIRDROP_AMOUNT_LAMPORTS = 5_000_000_000;
 
 const handleEnableTrading = async (
   sponsorPubkey: PublicKey,
@@ -68,7 +58,6 @@ extra: extra`,
     message: message,
   });
 
-  const faucetAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey);
   const userTokenAccount = getAssociatedTokenAddressSync(
     NATIVE_MINT,
     publicKey,
@@ -86,17 +75,17 @@ extra: extra`,
     intentInstruction,
     createAssociatedTokenAccountInstruction,
     await sessionManagerProgram.methods
-        .startSession()
-        .accounts({ sponsor: sponsorPubkey, session: sessionKey.publicKey })
-        .remainingAccounts([
-          {
-            pubkey: getAssociatedTokenAddressSync(NATIVE_MINT, publicKey),
-            isWritable: true,
-            isSigner: false,
-          },
-        ])
-        .instruction(),
-  ]
+      .startSession()
+      .accounts({ sponsor: sponsorPubkey, session: sessionKey.publicKey })
+      .remainingAccounts([
+        {
+          pubkey: getAssociatedTokenAddressSync(NATIVE_MINT, publicKey),
+          isWritable: true,
+          isSigner: false,
+        },
+      ])
+      .instruction(),
+  ];
 
   const { link, status } = await sendTransaction(
     instructions,
