@@ -55,17 +55,33 @@ impl<'info> StartSession<'info> {
         user: &Pubkey,
         session_setter_bump: u8,
     ) -> Result<()> {
-        require_eq!(accounts.len(), tokens.len().saturating_mul(3), SessionManagerError::InvalidArgument);
+        require_eq!(
+            accounts.len(),
+            tokens.len().saturating_mul(3),
+            SessionManagerError::InvalidArgument
+        );
         for (account_tuple, (symbol, amount)) in accounts.chunks_exact(3).zip(tokens.iter()) {
             let [user_account, mint, metadata] = account_tuple else {
                 return Err(error!(SessionManagerError::InvalidArgument));
             };
 
-            require_eq!(user_account.key(), get_associated_token_address(user, &mint.key()), SessionManagerError::InvalidArgument);
-            require_eq!(metadata.key(), Metadata::find_pda(&mint.key()).0, SessionManagerError::InvalidArgument);
+            require_eq!(
+                user_account.key(),
+                get_associated_token_address(user, &mint.key()),
+                SessionManagerError::InvalidArgument
+            );
+            require_eq!(
+                metadata.key(),
+                Metadata::find_pda(&mint.key()).0,
+                SessionManagerError::InvalidArgument
+            );
 
             let metadata = Metadata::try_from(metadata)?;
-            require_eq!(&metadata.symbol, &format!("{symbol:\0<10}"), SessionManagerError::InvalidArgument); // Symbols in the metadata account are padded to 10 characters
+            require_eq!(
+                &metadata.symbol,
+                &format!("{symbol:\0<10}"),
+                SessionManagerError::InvalidArgument
+            ); // Symbols in the metadata account are padded to 10 characters
 
             let mint = Mint::try_deserialize(&mut mint.data.borrow().as_ref())?;
             let amount_internal = amount.saturating_mul(10u64.pow(mint.decimals.into()));
