@@ -55,9 +55,9 @@ pub mod session_manager {
 
 #[derive(Accounts)]
 pub struct StartSession<'info> {
-    /// CHECK: we just use this to set it as the sponsor within the session
-    pub sponsor: AccountInfo<'info>,
-    #[account(zero)]
+    #[account(mut)]
+    pub sponsor: Signer<'info>,
+    #[account(init, payer = sponsor, space = 200)] // TODO: Compute this dynamically
     pub session: Account<'info, Session>,
     /// CHECK: we check the address of this account
     #[account(address = instructions::ID)]
@@ -66,4 +66,5 @@ pub struct StartSession<'info> {
     #[account(seeds = [b"session_setter"], bump)]
     pub session_setter: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }

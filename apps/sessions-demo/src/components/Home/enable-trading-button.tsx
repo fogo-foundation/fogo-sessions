@@ -5,25 +5,16 @@ import type { SessionManager } from "@fogo/sessions-idls";
 import { SessionManagerIdl } from "@fogo/sessions-idls";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
-  createTransferInstruction,
   getAssociatedTokenAddressSync,
   NATIVE_MINT,
 } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
-import {
-  Ed25519Program,
-  Keypair,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-} from "@solana/web3.js";
+import { Ed25519Program, Keypair, PublicKey } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
-
-const AIRDROP_AMOUNT_LAMPORTS = 5_000_000_000;
 
 const handleEnableTrading = async (
   sponsorPubkey: PublicKey,
@@ -31,6 +22,7 @@ const handleEnableTrading = async (
   sessionManagerProgram: Program<SessionManager>,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
+  addressLookupTableAddress: string | undefined,
 ): Promise<
   | {
       link: string;
@@ -68,7 +60,6 @@ extra: extra`,
     message: message,
   });
 
-  const faucetAta = getAssociatedTokenAddressSync(NATIVE_MINT, sponsorPubkey);
   const userTokenAccount = getAssociatedTokenAddressSync(
     NATIVE_MINT,
     publicKey,
@@ -82,49 +73,29 @@ extra: extra`,
       NATIVE_MINT,
     );
 
-  // We are sending the connected wallet some assets to play with in this demo
-  const transferInstruction = createTransferInstruction(
-    faucetAta,
-    userTokenAccount,
-    sponsorPubkey,
-    AIRDROP_AMOUNT_LAMPORTS,
-  );
-
-  const space = 200; // TODO: Compute this dynamically
-  const systemInstruction = SystemProgram.createAccount({
-    fromPubkey: sponsorPubkey,
-    newAccountPubkey: sessionKey.publicKey,
-    lamports:
-      await provider.connection.getMinimumBalanceForRentExemption(space),
-    space: space,
-    programId: sessionManagerProgram.programId,
-  });
-
-  const transaction = new Transaction()
-    .add(intentInstruction)
-    .add(createAssociatedTokenAccountInstruction)
-    .add(transferInstruction)
-    .add(systemInstruction)
-    .add(
-      await sessionManagerProgram.methods
-        .startSession()
-        .accounts({ sponsor: sponsorPubkey, session: sessionKey.publicKey })
-        .remainingAccounts([
-          {
-            pubkey: getAssociatedTokenAddressSync(NATIVE_MINT, publicKey),
-            isWritable: true,
-            isSigner: false,
-          },
-        ])
-        .instruction(),
-    );
+  const instructions = [
+    intentInstruction,
+    createAssociatedTokenAccountInstruction,
+    await sessionManagerProgram.methods
+      .startSession()
+      .accounts({ sponsor: sponsorPubkey, session: sessionKey.publicKey })
+      .remainingAccounts([
+        {
+          pubkey: getAssociatedTokenAddressSync(NATIVE_MINT, publicKey),
+          isWritable: true,
+          isSigner: false,
+        },
+      ])
+      .instruction(),
+  ];
 
   const { link, status } = await sendTransaction(
-    transaction,
+    instructions,
     sponsorPubkey,
     solanaRpc,
     provider.connection,
     sessionKey,
+    addressLookupTableAddress,
   );
   return {
     link,
@@ -138,11 +109,13 @@ export const EnableTradingButton = ({
   solanaRpc,
   onTradingEnabled,
   provider,
+  addressLookupTableAddress,
 }: {
   sponsorPubkey: string;
   solanaRpc: string;
   provider: AnchorProvider;
   onTradingEnabled: (sessionKey: Keypair | undefined) => void;
+  addressLookupTableAddress: string | undefined;
 }) => {
   const [state, setState] = useState<
     | { status: "success" | "failed"; link: string }
@@ -171,6 +144,7 @@ export const EnableTradingButton = ({
         sessionManagerProgram,
         publicKey,
         signMessage,
+        addressLookupTableAddress,
       )
         .then((result) => {
           setState(result);
@@ -194,6 +168,7 @@ export const EnableTradingButton = ({
     sponsorPubkey,
     solanaRpc,
     onTradingEnabled,
+    addressLookupTableAddress,
   ]);
 
   const canEnableTrading = publicKey && signMessage;

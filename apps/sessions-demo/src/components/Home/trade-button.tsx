@@ -3,9 +3,13 @@
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
 import type { Example } from "@fogo/sessions-idls";
 import { ExampleIdl } from "@fogo/sessions-idls";
-import { getAssociatedTokenAddressSync, NATIVE_MINT } from "@solana/spl-token";
+import {
+  createTransferInstruction,
+  getAssociatedTokenAddressSync,
+  NATIVE_MINT,
+} from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +22,7 @@ const handleTrade = async (
   exampleProgram: Program<Example>,
   publicKey: PublicKey,
   sessionKey: Keypair,
+  addressLookupTableAddress: string | undefined,
 ): Promise<
   { link: string; status: "success" } | { status: "failed"; link: string }
 > => {
@@ -29,7 +34,16 @@ const handleTrade = async (
     publicKey,
   );
 
-  const transaction = new Transaction().add(
+  // We are sending the connected wallet some assets so we can test the example transfer in the next instruction
+  const transferInstruction = createTransferInstruction(
+    sinkAta,
+    userTokenAccount,
+    sponsorPubkey,
+    100,
+  );
+
+  const instructions = [
+    transferInstruction,
     await exampleProgram.methods
       .exampleTransfer(new BN(100))
       .accounts({
@@ -38,14 +52,15 @@ const handleTrade = async (
         userTokenAccount: userTokenAccount,
       })
       .instruction(),
-  );
+  ];
 
   return sendTransaction(
-    transaction,
+    instructions,
     sponsorPubkey,
     solanaRpc,
     provider.connection,
     sessionKey,
+    addressLookupTableAddress,
   );
 };
 
@@ -54,11 +69,13 @@ export const TradeButton = ({
   solanaRpc,
   provider,
   sessionKey,
+  addressLookupTableAddress,
 }: {
   sponsorPubkey: string;
   solanaRpc: string;
   provider: AnchorProvider;
   sessionKey: Keypair | undefined;
+  addressLookupTableAddress: string | undefined;
 }) => {
   const [state, setState] = useState<
     | { status: "success" | "failed"; link: string }
@@ -83,6 +100,7 @@ export const TradeButton = ({
         exampleProgram,
         publicKey,
         sessionKey,
+        addressLookupTableAddress,
       )
         .then((result) => {
           setState(result);
@@ -93,7 +111,14 @@ export const TradeButton = ({
           console.error(error);
         });
     }
-  }, [sponsorPubkey, solanaRpc, exampleProgram, publicKey, sessionKey]);
+  }, [
+    sponsorPubkey,
+    solanaRpc,
+    exampleProgram,
+    publicKey,
+    sessionKey,
+    addressLookupTableAddress,
+  ]);
 
   const canTrade = sessionKey !== undefined && publicKey;
   return (

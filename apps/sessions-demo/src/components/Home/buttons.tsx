@@ -11,12 +11,14 @@ import { TradeButton } from "./trade-button";
 export const Buttons = (props: {
   sponsorPubkey: string;
   solanaRpc: string;
+  addressLookupTableAddress: string | undefined;
 }) => {
   const { connection } = useConnection();
   const provider = useMemo(
     () => new AnchorProvider(connection, {} as Wallet, {}),
     [connection],
   );
+
   const [sessionKey, setSessionKey] = useState<Keypair | undefined>(undefined);
 
   return (

@@ -1,8 +1,9 @@
-import type {
-  Connection,
-  Keypair,
+import type { Connection, Keypair } from "@solana/web3.js";
+import {
   PublicKey,
-  Transaction,
+  TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
 } from "@solana/web3.js";
 import { z } from "zod";
 
@@ -11,19 +12,32 @@ const sponsorAndSendResultSchema = z.strictObject({
 });
 
 export async function sendTransaction(
-  transaction: Transaction,
+  transactionInstructions: TransactionInstruction[],
   sponsorPubkey: PublicKey,
   solanaRpc: string,
   connection: Connection,
   sessionKey: Keypair,
+  addressLookupTableAddress: string | undefined,
 ): Promise<{
   link: string;
   status: "success" | "failed";
 }> {
   const { blockhash } = await connection.getLatestBlockhash();
-  transaction.recentBlockhash = blockhash;
-  transaction.feePayer = sponsorPubkey;
-  transaction.partialSign(sessionKey);
+
+  const { value: addressLookupTable } = addressLookupTableAddress
+    ? await connection.getAddressLookupTable(
+        new PublicKey(addressLookupTableAddress),
+      )
+    : { value: undefined };
+  const transaction = new VersionedTransaction(
+    new TransactionMessage({
+      payerKey: sponsorPubkey,
+      recentBlockhash: blockhash,
+      instructions: transactionInstructions,
+    }).compileToV0Message(addressLookupTable ? [addressLookupTable] : []),
+  );
+
+  transaction.sign([sessionKey]);
 
   const response = await fetch("/api/sponsor_and_send", {
     method: "POST",
@@ -31,9 +45,7 @@ export async function sendTransaction(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      transaction: transaction
-        .serialize({ requireAllSignatures: false })
-        .toString("base64"),
+      transaction: Buffer.from(transaction.serialize()).toString("base64"),
     }),
   });
 
@@ -41,7 +53,7 @@ export async function sendTransaction(
   const { signature } = sponsorAndSendResultSchema.parse(await response.json());
   const confirmationResult = await connection.confirmTransaction({
     signature,
-    blockhash: transaction.recentBlockhash,
+    blockhash,
     lastValidBlockHeight,
   });
   const link = `https://explorer.fogo.io/tx/${signature}?cluster=custom&customUrl=${solanaRpc}`;
