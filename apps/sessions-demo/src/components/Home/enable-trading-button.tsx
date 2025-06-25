@@ -45,13 +45,15 @@ const handleEnableTrading = async (
   const provider = sessionManagerProgram.provider;
   const sessionKey = Keypair.generate();
 
+  const expires = new Date(Date.now() + 3600 * 1000).toISOString();
+
   // TODO: This should be a function
   const message = new TextEncoder().encode(
     `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
 
 domain: gasless-trading.vercel.app
-nonce: ${sessionKey.publicKey.toBase58()}
+expires: ${expires}
 session_key: ${sessionKey.publicKey.toBase58()}
 tokens:
 -${NATIVE_MINT.toBase58()}: 100
