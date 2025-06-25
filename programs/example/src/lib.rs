@@ -12,16 +12,11 @@ declare_id!("91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45");
 pub mod example {
     use super::*;
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
-        let session_key = &ctx.accounts.session_key;
-        session_key.check_is_live()?;
-        session_key.check_user(&ctx.accounts.user_token_account.owner)?;
-        session_key.check_authorized_program(ctx.program_id)?;
-
         let mut instruction = transfer(
             ctx.accounts.token_program.key,
             &ctx.accounts.user_token_account.key(),
             &ctx.accounts.sink.key(),
-            &session_key.key(),
+            &ctx.accounts.session_key.key(),
             &[ctx.accounts.cpi_signer.key],
             amount,
         )?;
@@ -42,7 +37,7 @@ pub struct ExampleTransfer<'info> {
     /// CHECK: this is just a signer for token program CPIs
     #[account(seeds = [PROGRAM_SIGNER_SEED], bump)]
     pub cpi_signer: AccountInfo<'info>,
-    #[account(mut)]
+    #[account(mut, token::authority = session_key.get_user_checked(&ID)?)]
     pub user_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
     pub sink: Account<'info, TokenAccount>,

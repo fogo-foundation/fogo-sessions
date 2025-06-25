@@ -5,6 +5,8 @@ use crate::intents::body::MessageBody;
 use crate::intents::ed25519::Intent;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
+use fogo_sessions_sdk::AuthorizedPrograms;
+use fogo_sessions_sdk::AuthorizedTokens;
 use fogo_sessions_sdk::Session;
 use fogo_sessions_sdk::SessionInfo;
 
@@ -41,7 +43,8 @@ pub mod session_manager {
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
                 user: signer,
-                authorized_programs: program_domains,
+                authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                authorized_tokens: AuthorizedTokens::Specific,
                 extra: extra.into(),
                 expiration: Clock::get()?.unix_timestamp + 3600,
             },
