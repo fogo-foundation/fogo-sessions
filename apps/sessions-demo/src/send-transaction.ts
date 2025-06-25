@@ -53,7 +53,7 @@ export async function sendTransaction(
   const { signature } = sponsorAndSendResultSchema.parse(await response.json());
   const confirmationResult = await connection.confirmTransaction({
     signature,
-    blockhash: blockhash,
+    blockhash,
     lastValidBlockHeight,
   });
   const link = `https://explorer.fogo.io/tx/${signature}?cluster=custom&customUrl=${solanaRpc}`;
