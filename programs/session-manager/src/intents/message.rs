@@ -97,9 +97,11 @@ impl Message {
 
         let body = MessageBody {
             domain: Domain(parse_line_with_expected_key(&mut lines, "domain")?),
-            expires: DateTime::parse_from_rfc3339(&parse_line_with_expected_key(&mut lines, "expires")?)
-                .map_err(|_| error!(SessionManagerError::InvalidArgument))?
-                .into(),
+            expires: DateTime::parse_from_rfc3339(&parse_line_with_expected_key(
+                &mut lines, "expires",
+            )?)
+            .map_err(|_| error!(SessionManagerError::InvalidArgument))?
+            .into(),
             session_key: SessionKey(
                 Pubkey::from_str(&parse_line_with_expected_key(&mut lines, "session_key")?)
                     .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
@@ -127,7 +129,10 @@ mod test {
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
         assert_eq!(parsed_message.domain, Domain("https://app.xyz".to_string()));
         assert_eq!(parsed_message.session_key, SessionKey(session_key));
-        assert_eq!(parsed_message.expires, DateTime::parse_from_rfc3339("2014-11-28T12:00:09Z").unwrap());
+        assert_eq!(
+            parsed_message.expires,
+            DateTime::parse_from_rfc3339("2014-11-28T12:00:09Z").unwrap()
+        );
         assert_eq!(parsed_message.tokens, vec![(token, 100)]);
         assert_eq!(
             parsed_message.extra,
