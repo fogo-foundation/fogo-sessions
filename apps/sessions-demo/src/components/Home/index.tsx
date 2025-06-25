@@ -1,5 +1,5 @@
 import "@solana/wallet-adapter-react-ui/styles.css";
-import { SPONSOR_KEY, SOLANA_RPC } from "../../config/server";
+import { SPONSOR_KEY, SOLANA_RPC, ADDRESS_LOOKUP_TABLE_ADDRESS } from "../../config/server";
 import { WalletDisconnectButton, WalletMultiButton } from "../WalletButton";
 import { Buttons } from "./buttons";
 
@@ -12,6 +12,7 @@ export const Home = () => (
       <Buttons
         sponsorPubkey={SPONSOR_KEY.publicKey.toBase58()}
         solanaRpc={SOLANA_RPC}
+        addressLookupTableAddress={ADDRESS_LOOKUP_TABLE_ADDRESS}
       />
     </div>
   </main>
