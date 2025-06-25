@@ -4,6 +4,12 @@ import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import type { SessionManager } from "@fogo/sessions-idls";
 import { SessionManagerIdl } from "@fogo/sessions-idls";
 import {
+  fetchMetadata,
+  findMetadataPda,
+} from "@metaplex-foundation/mpl-token-metadata";
+import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
   NATIVE_MINT,
@@ -15,9 +21,6 @@ import { useCallback, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
-import { fetchMetadata, findMetadataPda } from "@metaplex-foundation/mpl-token-metadata";
-import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 
 const handleEnableTrading = async (
   sponsorPubkey: PublicKey,
@@ -41,7 +44,7 @@ const handleEnableTrading = async (
 
   const umi = createUmi(solanaRpc);
   const metaplexNativeMint = metaplexPublicKey(NATIVE_MINT.toBase58());
-  const metadataAddress = findMetadataPda(umi, {mint: metaplexNativeMint})[0];
+  const metadataAddress = findMetadataPda(umi, { mint: metaplexNativeMint })[0];
   const metadata = await fetchMetadata(umi, metadataAddress);
 
   const sessionKey = Keypair.generate();
@@ -55,7 +58,7 @@ nonce: ${sessionKey.publicKey.toBase58()}
 session_key: ${sessionKey.publicKey.toBase58()}
 tokens:
 -${metadata.symbol}: 100`,
-);
+  );
 
   const intentSignature = await signMessage(message);
 
