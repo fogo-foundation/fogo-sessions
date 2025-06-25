@@ -19,7 +19,7 @@ pub mod session_manager {
     use super::*;
 
     pub fn start_session<'info>(
-        ctx: Context<'_, '_, '_, 'info, StartSession<'info>>, _session_space: u64
+        ctx: Context<'_, '_, '_, 'info, StartSession<'info>>,
     ) -> Result<()> {
         let Intent { signer, message } = ctx.accounts.verify_intent()?;
         let MessageBody {
@@ -55,7 +55,6 @@ pub mod session_manager {
 }
 
 #[derive(Accounts)]
-#[instruction(session_space: u64)]
 pub struct StartSession<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
@@ -67,7 +66,6 @@ pub struct StartSession<'info> {
     /// CHECK: this is just a signer for token program CPIs
     #[account(seeds = [b"session_setter"], bump)]
     pub session_setter: AccountInfo<'info>,
-    pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
