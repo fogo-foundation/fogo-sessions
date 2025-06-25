@@ -9,7 +9,7 @@ import {
   NATIVE_MINT,
 } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,8 @@ const handleTrade = async (
     100,
   );
 
-  const instructions = [transferInstruction,
+  const instructions = [
+    transferInstruction,
     await exampleProgram.methods
       .exampleTransfer(new BN(100))
       .accounts({
