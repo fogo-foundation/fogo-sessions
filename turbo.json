@@ -139,10 +139,16 @@
       "persistent": true,
       "cache": false
     },
+    "@fogo/sessions-demo#start:dev": {
+      "env": ["ADDRESS_LOOKUP_TABLE_ADDRESS", "SOLANA_RPC", "SPONSOR_KEY"]
+    },
     "start:prod": {
       "dependsOn": ["//#install:modules", "build"],
       "persistent": true,
       "cache": false
+    },
+    "@fogo/sessions-demo#start:prod": {
+      "env": ["ADDRESS_LOOKUP_TABLE_ADDRESS", "SOLANA_RPC", "SPONSOR_KEY"]
     },
     "test": {
       "dependsOn": [
