@@ -19,6 +19,9 @@
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
     "@fogo/sessions-idls": "workspace:*",
+    "@metaplex-foundation/mpl-token-metadata": "catalog:",
+    "@metaplex-foundation/umi": "catalog:",
+    "@metaplex-foundation/umi-bundle-defaults": "catalog:",
     "@radix-ui/react-slot": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-base": "catalog:",
