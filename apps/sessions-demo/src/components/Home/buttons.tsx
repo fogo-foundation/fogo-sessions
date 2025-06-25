@@ -2,7 +2,8 @@
 
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import { useConnection } from "@solana/wallet-adapter-react";
-import { PublicKey, type Keypair } from "@solana/web3.js";
+import type {Keypair} from "@solana/web3.js";
+import { PublicKey  } from "@solana/web3.js";
 import { useMemo, useState } from "react";
 
 import { EnableTradingButton } from "./enable-trading-button";
