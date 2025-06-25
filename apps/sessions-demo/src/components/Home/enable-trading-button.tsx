@@ -45,7 +45,7 @@ const handleEnableTrading = async (
   const provider = sessionManagerProgram.provider;
   const sessionKey = Keypair.generate();
 
-  const expires = new Date().toISOString();
+  const expires = new Date(Date.now() + 3600 * 1000).toISOString();
 
   // TODO: This should be a function
   const message = new TextEncoder().encode(
