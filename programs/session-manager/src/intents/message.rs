@@ -97,7 +97,7 @@ impl Message {
 
         let body = MessageBody {
             domain: Domain(parse_line_with_expected_key(&mut lines, "domain")?),
-            expires: DateTime::parse_from_rfc3339(&parse_line_with_expected_key(&mut lines, "time")?)
+            expires: DateTime::parse_from_rfc3339(&parse_line_with_expected_key(&mut lines, "expires")?)
                 .map_err(|_| error!(SessionManagerError::InvalidArgument))?
                 .into(),
             session_key: SessionKey(
@@ -121,7 +121,7 @@ mod test {
         let session_key = Pubkey::new_unique();
         let token = Pubkey::new_unique();
         let message = format!(
-            "{MESSAGE_PREFIX}domain: https://app.xyz\ntime: 2014-11-28T21:00:09+09:00\nsession_key: {session_key}\ntokens:\n-{token}: 100\nkey1: value1\nkey2: value2"
+            "{MESSAGE_PREFIX}domain: https://app.xyz\nexpires: 2014-11-28T21:00:09+09:00\nsession_key: {session_key}\ntokens:\n-{token}: 100\nkey1: value1\nkey2: value2"
         );
 
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
