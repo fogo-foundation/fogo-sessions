@@ -49,7 +49,7 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(String, u
                 .split_once(KEY_VALUE_SEPARATOR)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
 
-            if tokens.iter().any(|(s, _)| s == &symbol) {
+            if tokens.iter().any(|(s, _)| s == symbol) {
                 // No duplicate mints
                 return Err(error!(SessionManagerError::InvalidArgument));
             } else {

@@ -65,7 +65,7 @@ impl<'info> StartSession<'info> {
             require_eq!(metadata.key(), Metadata::find_pda(&mint.key()).0, SessionManagerError::InvalidArgument);
 
             let metadata = Metadata::try_from(metadata)?;
-            require_eq!(&metadata.symbol, &format!("{:\0<10}", symbol), SessionManagerError::InvalidArgument); // Symbols in the metadata account are padded to 10 characters
+            require_eq!(&metadata.symbol, &format!("{symbol:\0<10}"), SessionManagerError::InvalidArgument); // Symbols in the metadata account are padded to 10 characters
 
             let mint = Mint::try_deserialize(&mut mint.data.borrow().as_ref())?;
             let amount_internal = amount.saturating_mul(10u64.pow(mint.decimals.into()));
