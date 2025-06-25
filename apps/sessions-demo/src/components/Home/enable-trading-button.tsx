@@ -96,7 +96,7 @@ tokens:
           isSigner: false,
         },
         {
-          pubkey: new PublicKey(findMetadataPda(umi, {mint: metaplexNativeMint})[0]),
+          pubkey: new PublicKey(metadataAddress),
           isWritable: false,
           isSigner: false,
         },
