@@ -108,21 +108,21 @@ impl Session {
         Ok(result)
     }
 
-    pub fn check_is_live(&self) -> Result<(), ProgramError> {
+    fn check_is_live(&self) -> Result<(), ProgramError> {
         if self.session_info.expiration < Clock::get()?.unix_timestamp {
             return Err(SessionError::Expired.into());
         }
         Ok(())
     }
 
-    pub fn check_user(&self, expected_user: &Pubkey) -> Result<(), ProgramError> {
+    fn check_user(&self, expected_user: &Pubkey) -> Result<(), ProgramError> {
         if self.session_info.user != *expected_user {
             return Err(ProgramError::InvalidAccountData);
         }
         Ok(())
     }
 
-    pub fn check_authorized_program_signer(
+    fn check_authorized_program_signer(
         &self,
         signers: &[AccountInfo],
     ) -> Result<(), ProgramError> {
@@ -141,7 +141,7 @@ impl Session {
         Ok(())
     }
 
-    pub fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), ProgramError> {
+    fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), ProgramError> {
         match self.session_info.authorized_programs {
             AuthorizedPrograms::Specific(ref programs) => {
                 programs
@@ -152,6 +152,19 @@ impl Session {
             AuthorizedPrograms::All => {}
         }
         Ok(())
+    }
+
+    pub fn get_token_permissions_checked(&self, user: &Pubkey, signers: &[AccountInfo]) -> Result<AuthorizedTokens, ProgramError> {
+        self.check_is_live()?;
+        self.check_user(user)?;
+        self.check_authorized_program_signer(signers)?;
+        Ok(self.session_info.authorized_tokens.clone())
+    }
+
+    pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, ProgramError> {
+        self.check_is_live()?;
+        self.check_authorized_program(program_id)?;
+        Ok(self.session_info.user)
     }
 }
 
