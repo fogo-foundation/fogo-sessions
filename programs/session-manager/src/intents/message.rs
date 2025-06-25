@@ -49,7 +49,7 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(String, u
                 .split_once(KEY_VALUE_SEPARATOR)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
 
-            if tokens.iter().any(|(m, _)| m == &symbol) {
+            if tokens.iter().any(|(s, _)| s == &symbol) {
                 // No duplicate mints
                 return Err(error!(SessionManagerError::InvalidArgument));
             } else {
@@ -119,16 +119,15 @@ mod test {
     pub fn test_parse_message() {
         let session_key = Pubkey::new_unique();
         let nonce = Pubkey::new_unique();
-        let token = Pubkey::new_unique();
         let message = format!(
-            "{MESSAGE_PREFIX}domain: https://app.xyz\nnonce: {nonce}\nsession_key: {session_key}\ntokens:\n-{token}: 100\nkey1: value1\nkey2: value2"
+            "{MESSAGE_PREFIX}domain: https://app.xyz\nnonce: {nonce}\nsession_key: {session_key}\ntokens:\n-SOL: 100\nkey1: value1\nkey2: value2"
         );
 
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
         assert_eq!(parsed_message.domain, Domain("https://app.xyz".to_string()));
         assert_eq!(parsed_message.session_key, SessionKey(session_key));
         assert_eq!(parsed_message.nonce, Nonce(nonce));
-        assert_eq!(parsed_message.tokens, vec![(token.to_string(), 100)]);
+        assert_eq!(parsed_message.tokens, vec![("SOL".to_string(), 100)]);
         assert_eq!(
             parsed_message.extra,
             HashMap::from([

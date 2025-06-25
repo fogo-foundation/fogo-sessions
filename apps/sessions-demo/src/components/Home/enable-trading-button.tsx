@@ -1,6 +1,6 @@
 "use client";
 
-import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import type { SessionManager } from "@fogo/sessions-idls";
 import { SessionManagerIdl } from "@fogo/sessions-idls";
 import {
@@ -15,6 +15,9 @@ import { useCallback, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
+import { fetchMetadata, findMetadataPda } from "@metaplex-foundation/mpl-token-metadata";
+import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 
 const handleEnableTrading = async (
   sponsorPubkey: PublicKey,
@@ -35,8 +38,17 @@ const handleEnableTrading = async (
     }
 > => {
   const provider = sessionManagerProgram.provider;
-  const sessionKey = Keypair.generate();
 
+  const umi = createUmi(solanaRpc);
+  const metaplexNativeMint = metaplexPublicKey(NATIVE_MINT.toBase58());
+
+  console.log(findMetadataPda(umi, {mint: metaplexPublicKey("HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3")}))
+  
+  const metadataAddress = findMetadataPda(umi, {mint: metaplexNativeMint})[0];
+  const metadata = await fetchMetadata(umi, metadataAddress);
+
+  const sessionKey = Keypair.generate();
+  console.log(metadata);
   // TODO: This should be a function
   const message = new TextEncoder().encode(
     `Fogo Sessions:
@@ -46,7 +58,7 @@ domain: gasless-trading.vercel.app
 nonce: ${sessionKey.publicKey.toBase58()}
 session_key: ${sessionKey.publicKey.toBase58()}
 tokens:
--SOL: 100`,
+-${metadata.symbol}: 100`,
 );
 
   const intentSignature = await signMessage(message);
@@ -80,6 +92,16 @@ tokens:
         {
           pubkey: getAssociatedTokenAddressSync(NATIVE_MINT, publicKey),
           isWritable: true,
+          isSigner: false,
+        },
+        {
+          pubkey: NATIVE_MINT,
+          isWritable: false,
+          isSigner: false,
+        },
+        {
+          pubkey: new PublicKey(findMetadataPda(umi, {mint: metaplexNativeMint})[0]),
+          isWritable: false,
           isSigner: false,
         },
       ])

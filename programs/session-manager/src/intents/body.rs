@@ -62,10 +62,10 @@ impl<'info> StartSession<'info> {
             };
 
             require_eq!(user_account.key(), get_associated_token_address(user, &mint.key()), SessionManagerError::InvalidArgument);
-            require_eq!(metadata.key(), mpl_token_metadata::accounts::Metadata::find_pda(&mint.key()).0, SessionManagerError::InvalidArgument);
+            require_eq!(metadata.key(), Metadata::find_pda(&mint.key()).0, SessionManagerError::InvalidArgument);
 
             let metadata = Metadata::try_from(metadata)?;
-            require_eq!(metadata.symbol, symbol.to_string(), SessionManagerError::InvalidArgument);
+            require_eq!(&metadata.symbol, &format!("{:\0<10}", symbol), SessionManagerError::InvalidArgument); // Symbols in the metadata account are padded to 10 characters
 
             let mint = Mint::try_deserialize(&mut mint.data.borrow().as_ref())?;
             let amount_internal = amount.saturating_mul(10u64.pow(mint.decimals.into()));
