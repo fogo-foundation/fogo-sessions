@@ -10,12 +10,12 @@ export const useAddressLookupTable = (addressLookupTableAddress: string | undefi
     
     useEffect(() => {
     if (!addressLookupTableAddress) {
-        setState(State.Complete(null));
+        setState(State.Complete(undefined));
     }
     else if (state.type != StateType.Running) {
         setState(State.Running());
         connection.getAddressLookupTable(new PublicKey(addressLookupTableAddress)).then((account) => {
-            setState(State.Complete(account.value));
+            setState(State.Complete(account.value ? account.value : undefined));
         }).catch((error) => {
             setState(State.ErrorState(error));
         })
@@ -35,7 +35,7 @@ export enum StateType {
 const State = {
     NotStarted: () => ({ type: StateType.NotStarted as const }),
     Running: () => ({ type: StateType.Running as const }),
-    Complete: (addressLookupTable: AddressLookupTableAccount | null) => ({ type: StateType.Complete as const, addressLookupTable }),
+    Complete: (addressLookupTable: AddressLookupTableAccount | undefined) => ({ type: StateType.Complete as const, addressLookupTable }),
     ErrorState: (error: unknown) => ({
         type: StateType.Error as const,
         error,

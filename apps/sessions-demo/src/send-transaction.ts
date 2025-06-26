@@ -17,7 +17,7 @@ export async function sendTransaction(
   solanaRpc: string,
   connection: Connection,
   sessionKey: Keypair,
-  addressLookupTable: AddressLookupTableAccount | null,
+  addressLookupTable: AddressLookupTableAccount | undefined,
 ): Promise<{
   link: string;
   status: "success" | "failed";

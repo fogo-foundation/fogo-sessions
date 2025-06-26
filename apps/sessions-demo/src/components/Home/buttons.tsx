@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 
 import { EnableTradingButton } from "./enable-trading-button";
 import { TradeButton } from "./trade-button";
-import { useAddressLookupTable } from "@/hooks/useAddressLookupTable";
+import { useAddressLookupTable } from "@/hooks/use-address-lookup-table";
 
 export const Buttons = (props: {
   sponsorPubkey: string;

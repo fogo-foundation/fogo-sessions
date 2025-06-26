@@ -14,8 +14,9 @@ import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
+import type {State as AddressLookupTableState} from "@/hooks/use-address-lookup-table";
+import { StateType as AccountLookupTableStateType  } from "@/hooks/use-address-lookup-table";
 import { sendTransaction } from "@/send-transaction";
-import { StateType as AccountLookupTableStateType, type State as AddressLookupTableState } from "@/hooks/useAddressLookupTable";
 
 const handleEnableTrading = async (
   sponsorPubkey: PublicKey,
@@ -23,7 +24,7 @@ const handleEnableTrading = async (
   sessionManagerProgram: Program<SessionManager>,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
-  addressLookupTable: AddressLookupTableAccount | null,
+  addressLookupTable: AddressLookupTableAccount | undefined,
 ): Promise<
   | {
       link: string;
