@@ -15,7 +15,7 @@ import { useCallback, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
-import { StateType, type State } from "@/hooks/useAddressLookupTable";
+import { StateType as AddressLookupTableStateType, type State as AddressLookupTableState } from "@/hooks/useAddressLookupTable";
 
 const handleTrade = async (
   sponsorPubkey: PublicKey,
@@ -76,7 +76,7 @@ export const TradeButton = ({
   solanaRpc: string;
   provider: AnchorProvider;
   sessionKey: Keypair | undefined;
-  addressLookupTableState: State;
+  addressLookupTableState: AddressLookupTableState;
 }) => {
   const [state, setState] = useState<
     | { status: "success" | "failed"; link: string }
@@ -93,7 +93,7 @@ export const TradeButton = ({
   const { publicKey } = useWallet();
 
   const onTrade = useCallback(() => {
-    if (sessionKey && publicKey && addressLookupTableState.type == StateType.Complete) {
+    if (sessionKey && publicKey && addressLookupTableState.type == AddressLookupTableStateType.Complete) {
       setState({ status: "loading" });
       handleTrade(
         new PublicKey(sponsorPubkey),
@@ -121,7 +121,7 @@ export const TradeButton = ({
     addressLookupTableState,
   ]);
 
-  const canTrade = sessionKey !== undefined && publicKey && addressLookupTableState.type == StateType.Complete;
+  const canTrade = sessionKey !== undefined && publicKey && addressLookupTableState.type == AddressLookupTableStateType.Complete;
   return (
     <>
       {canTrade && (

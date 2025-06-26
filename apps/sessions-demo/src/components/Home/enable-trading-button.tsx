@@ -172,8 +172,6 @@ export const EnableTradingButton = ({
     addressLookupTableState,
   ]);
 
-
-  console.log(addressLookupTableState)
   const canEnableTrading = publicKey && signMessage && addressLookupTableState.type === AccountLookupTableStateType.Complete;
   return (
     <>
