@@ -9,13 +9,18 @@ import {
   NATIVE_MINT,
 } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { AddressLookupTableAccount, Ed25519Program, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  AddressLookupTableAccount,
+  Ed25519Program,
+  Keypair,
+  PublicKey,
+} from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
-import type {State as AddressLookupTableState} from "@/hooks/use-address-lookup-table";
-import { StateType as AccountLookupTableStateType  } from "@/hooks/use-address-lookup-table";
+import type { State as AddressLookupTableState } from "@/hooks/use-address-lookup-table";
+import { StateType as AccountLookupTableStateType } from "@/hooks/use-address-lookup-table";
 import { sendTransaction } from "@/send-transaction";
 
 const handleEnableTrading = async (
@@ -138,7 +143,11 @@ export const EnableTradingButton = ({
   const { publicKey, signMessage } = useWallet();
 
   const onEnableTrading = useCallback(() => {
-    if (signMessage && publicKey && addressLookupTableState.type === AccountLookupTableStateType.Complete) {
+    if (
+      signMessage &&
+      publicKey &&
+      addressLookupTableState.type === AccountLookupTableStateType.Complete
+    ) {
       setState({ status: "loading" });
       handleEnableTrading(
         new PublicKey(sponsorPubkey),
@@ -173,7 +182,10 @@ export const EnableTradingButton = ({
     addressLookupTableState,
   ]);
 
-  const canEnableTrading = publicKey && signMessage && addressLookupTableState.type === AccountLookupTableStateType.Complete;
+  const canEnableTrading =
+    publicKey &&
+    signMessage &&
+    addressLookupTableState.type === AccountLookupTableStateType.Complete;
   return (
     <>
       {canEnableTrading && (

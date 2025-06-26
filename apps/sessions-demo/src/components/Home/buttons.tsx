@@ -19,7 +19,9 @@ export const Buttons = (props: {
     () => new AnchorProvider(connection, {} as Wallet, {}),
     [connection],
   );
-  const addressLookupTableState = useAddressLookupTable(props.addressLookupTableAddress) ;
+  const addressLookupTableState = useAddressLookupTable(
+    props.addressLookupTableAddress,
+  );
 
   const [sessionKey, setSessionKey] = useState<Keypair | undefined>(undefined);
 
@@ -33,7 +35,10 @@ export const Buttons = (props: {
           setSessionKey(sessionKey);
         }}
       />
-      <TradeButton {...props} provider={provider} sessionKey={sessionKey}
+      <TradeButton
+        {...props}
+        provider={provider}
+        sessionKey={sessionKey}
         addressLookupTableState={addressLookupTableState}
       />
     </div>
