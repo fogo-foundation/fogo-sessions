@@ -160,7 +160,7 @@
       "dependsOn": ["//#install:modules", "^build"]
     },
     "test:types": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl", "build"]
+      "dependsOn": ["//#install:modules", "^build", "build:idl"]
     },
     "test:unit": {
       "dependsOn": ["//#install:modules", "^build"]
