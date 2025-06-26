@@ -9,12 +9,13 @@ import {
   NATIVE_MINT,
 } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { AddressLookupTableAccount, Keypair, PublicKey } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
+import { StateType, type State } from "@/hooks/useAddressLookupTable";
 
 const handleTrade = async (
   sponsorPubkey: PublicKey,
@@ -22,7 +23,7 @@ const handleTrade = async (
   exampleProgram: Program<Example>,
   publicKey: PublicKey,
   sessionKey: Keypair,
-  addressLookupTableAddress: string | undefined,
+  addressLookupTable: AddressLookupTableAccount | null,
 ): Promise<
   { link: string; status: "success" } | { status: "failed"; link: string }
 > => {
@@ -60,7 +61,7 @@ const handleTrade = async (
     solanaRpc,
     provider.connection,
     sessionKey,
-    addressLookupTableAddress,
+    addressLookupTable,
   );
 };
 
@@ -69,13 +70,13 @@ export const TradeButton = ({
   solanaRpc,
   provider,
   sessionKey,
-  addressLookupTableAddress,
+  addressLookupTableState,
 }: {
   sponsorPubkey: string;
   solanaRpc: string;
   provider: AnchorProvider;
   sessionKey: Keypair | undefined;
-  addressLookupTableAddress: string | undefined;
+  addressLookupTableState: State;
 }) => {
   const [state, setState] = useState<
     | { status: "success" | "failed"; link: string }
@@ -92,7 +93,7 @@ export const TradeButton = ({
   const { publicKey } = useWallet();
 
   const onTrade = useCallback(() => {
-    if (sessionKey && publicKey) {
+    if (sessionKey && publicKey && addressLookupTableState.type == StateType.Complete) {
       setState({ status: "loading" });
       handleTrade(
         new PublicKey(sponsorPubkey),
@@ -100,7 +101,7 @@ export const TradeButton = ({
         exampleProgram,
         publicKey,
         sessionKey,
-        addressLookupTableAddress,
+        addressLookupTableState.addressLookupTable,
       )
         .then((result) => {
           setState(result);
@@ -117,10 +118,10 @@ export const TradeButton = ({
     exampleProgram,
     publicKey,
     sessionKey,
-    addressLookupTableAddress,
+    addressLookupTableState,
   ]);
 
-  const canTrade = sessionKey !== undefined && publicKey;
+  const canTrade = sessionKey !== undefined && publicKey && addressLookupTableState.type == StateType.Complete;
   return (
     <>
       {canTrade && (

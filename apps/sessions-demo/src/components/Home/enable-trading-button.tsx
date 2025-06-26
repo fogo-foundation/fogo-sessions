@@ -9,12 +9,13 @@ import {
   NATIVE_MINT,
 } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Ed25519Program, Keypair, PublicKey } from "@solana/web3.js";
+import { AddressLookupTableAccount, Ed25519Program, Keypair, PublicKey } from "@solana/web3.js";
 import { useCallback, useState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { sendTransaction } from "@/send-transaction";
+import { StateType as AccountLookupTableStateType, type State as AddressLookupTableState } from "@/hooks/useAddressLookupTable";
 
 const handleEnableTrading = async (
   sponsorPubkey: PublicKey,
@@ -22,7 +23,7 @@ const handleEnableTrading = async (
   sessionManagerProgram: Program<SessionManager>,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
-  addressLookupTableAddress: string | undefined,
+  addressLookupTable: AddressLookupTableAccount | null,
 ): Promise<
   | {
       link: string;
@@ -95,7 +96,7 @@ extra: extra`,
     solanaRpc,
     provider.connection,
     sessionKey,
-    addressLookupTableAddress,
+    addressLookupTable,
   );
   return {
     link,
@@ -109,13 +110,13 @@ export const EnableTradingButton = ({
   solanaRpc,
   onTradingEnabled,
   provider,
-  addressLookupTableAddress,
+  addressLookupTableState,
 }: {
   sponsorPubkey: string;
   solanaRpc: string;
   provider: AnchorProvider;
   onTradingEnabled: (sessionKey: Keypair | undefined) => void;
-  addressLookupTableAddress: string | undefined;
+  addressLookupTableState: AddressLookupTableState;
 }) => {
   const [state, setState] = useState<
     | { status: "success" | "failed"; link: string }
@@ -136,7 +137,7 @@ export const EnableTradingButton = ({
   const { publicKey, signMessage } = useWallet();
 
   const onEnableTrading = useCallback(() => {
-    if (signMessage && publicKey) {
+    if (signMessage && publicKey && addressLookupTableState.type === AccountLookupTableStateType.Complete) {
       setState({ status: "loading" });
       handleEnableTrading(
         new PublicKey(sponsorPubkey),
@@ -144,7 +145,7 @@ export const EnableTradingButton = ({
         sessionManagerProgram,
         publicKey,
         signMessage,
-        addressLookupTableAddress,
+        addressLookupTableState.addressLookupTable,
       )
         .then((result) => {
           setState(result);
@@ -168,10 +169,12 @@ export const EnableTradingButton = ({
     sponsorPubkey,
     solanaRpc,
     onTradingEnabled,
-    addressLookupTableAddress,
+    addressLookupTableState,
   ]);
 
-  const canEnableTrading = publicKey && signMessage;
+
+  console.log(addressLookupTableState)
+  const canEnableTrading = publicKey && signMessage && addressLookupTableState.type === AccountLookupTableStateType.Complete;
   return (
     <>
       {canEnableTrading && (
