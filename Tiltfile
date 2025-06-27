@@ -40,7 +40,7 @@ LOOKUP_TABLE_ADDRESSES=[
 local_resource(
     "setup-address-lookup-table",
     """
-    solana address-lookup-table extend --url localhost \
+    solana address-lookup-table extend -u l \
     --keypair ./tilt/keypairs/sponsor.json \
     93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3 \
     --addresses %s
