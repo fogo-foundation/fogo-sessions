@@ -1,4 +1,8 @@
-import type { Connection, Keypair } from "@solana/web3.js";
+import type {
+  AddressLookupTableAccount,
+  Connection,
+  Keypair,
+} from "@solana/web3.js";
 import {
   PublicKey,
   TransactionInstruction,
@@ -17,18 +21,13 @@ export async function sendTransaction(
   solanaRpc: string,
   connection: Connection,
   sessionKey: Keypair,
-  addressLookupTableAddress: string | undefined,
+  addressLookupTable: AddressLookupTableAccount | undefined,
 ): Promise<{
   link: string;
   status: "success" | "failed";
 }> {
   const { blockhash } = await connection.getLatestBlockhash();
 
-  const { value: addressLookupTable } = addressLookupTableAddress
-    ? await connection.getAddressLookupTable(
-        new PublicKey(addressLookupTableAddress),
-      )
-    : { value: undefined };
   const transaction = new VersionedTransaction(
     new TransactionMessage({
       payerKey: sponsorPubkey,

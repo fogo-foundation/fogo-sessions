@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 
 import { EnableTradingButton } from "./enable-trading-button";
 import { TradeButton } from "./trade-button";
+import { useAddressLookupTable } from "@/hooks/use-address-lookup-table";
 
 export const Buttons = (props: {
   sponsorPubkey: string;
@@ -18,6 +19,9 @@ export const Buttons = (props: {
     () => new AnchorProvider(connection, {} as Wallet, {}),
     [connection],
   );
+  const addressLookupTableState = useAddressLookupTable(
+    props.addressLookupTableAddress,
+  );
 
   const [sessionKey, setSessionKey] = useState<Keypair | undefined>(undefined);
 
@@ -26,11 +30,17 @@ export const Buttons = (props: {
       <EnableTradingButton
         {...props}
         provider={provider}
+        addressLookupTableState={addressLookupTableState}
         onTradingEnabled={(sessionKey) => {
           setSessionKey(sessionKey);
         }}
       />
-      <TradeButton {...props} provider={provider} sessionKey={sessionKey} />
+      <TradeButton
+        {...props}
+        provider={provider}
+        sessionKey={sessionKey}
+        addressLookupTableState={addressLookupTableState}
+      />
     </div>
   );
 };
