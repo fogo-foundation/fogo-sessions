@@ -41,6 +41,9 @@ impl<'info> StartSession<'info> {
         }])
     }
 
+    /// Delegate token accounts to the session key.
+    /// Signing an intent with the symbol "SOL" means delegating your token account for a token who has metadata symbol "SOL".
+    /// Although there can be multiple tokens with the same symbol, the worst case scenario is that you're delegating the token with the most value among them, which is probably what you want.
     pub fn approve_tokens(
         &self,
         accounts: &[AccountInfo<'info>],
