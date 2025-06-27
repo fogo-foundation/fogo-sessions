@@ -122,9 +122,10 @@ mod test {
     pub fn test_parse_message() {
         let session_key = Pubkey::new_unique();
         let message = format!(
-            "{MESSAGE_PREFIX}domain: https://app.xyz\nexpires: 2014-11-28T21:00:09+09:00\nsession_key: {session_key}\ntokens:\n-SOL: 100\nkey1: value1\nkey2: value2"
+            "{MESSAGE_PREFIX}chain_id: localnet\ndomain: https://app.xyz\nexpires: 2014-11-28T21:00:09+09:00\nsession_key: {session_key}\ntokens:\n-SOL: 100\nkey1: value1\nkey2: value2"
         );
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
+        assert_eq!(parsed_message.chain_id, "localnet".to_string());
         assert_eq!(parsed_message.domain, Domain("https://app.xyz".to_string()));
         assert_eq!(parsed_message.session_key, SessionKey(session_key));
         assert_eq!(
