@@ -2,6 +2,7 @@
 #![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
 
 use crate::intents::body::MessageBody;
+use crate::intents::body::Version;
 use crate::intents::ed25519::Intent;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
@@ -29,7 +30,9 @@ pub mod session_manager {
             expires,
             extra,
             tokens,
+            version,
         } = message.parse()?;
+        let Version { major, minor } = version;
         ctx.accounts.check_session_key(session_key)?;
         ctx.accounts.approve_tokens(
             ctx.remaining_accounts,
@@ -40,6 +43,8 @@ pub mod session_manager {
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
+            major,
+            minor,
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
                 user: signer,

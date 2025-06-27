@@ -24,12 +24,19 @@ pub const SESSION_SETTER: Pubkey =
 /// When in-session token transfers are made, the PDA of an authorized program with this seed needs to sign the transfer
 pub const PROGRAM_SIGNER_SEED: &[u8] = b"fogo_session_program_signer";
 
+pub const MAJOR: u8 = 0;
+pub const MINOR: u8 = 1;
+
 #[cfg_attr(feature = "anchor", account)]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
 #[derive(Debug)]
 pub struct Session {
     #[cfg(not(feature = "anchor"))]
-    pub discriminator: [u8; 8],
+    pub discriminator: [u8; 2],
+    /// The major version of the session account, major version changes can change the layout of the account after the minor field
+    pub major: u8,
+    /// The minor version of the session account, minor version changes should only add new fields at the end of the account, so that a newer session account can be deserialized by an older program
+    pub minor: u8,
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
     pub session_info: SessionInfo,
@@ -110,6 +117,11 @@ impl Session {
         if result.discriminator != Self::DISCRIMINATOR {
             return Err(SessionError::InvalidAccountDiscriminator);
         }
+
+        if result.major != MAJOR || result.minor != MINOR {
+            return Err(SessionError::InvalidAccountVersion);
+        }
+
         Ok(result)
     }
 
@@ -195,6 +207,8 @@ pub enum SessionError {
     InvalidAccountData,
     #[error("A session account has the wrong discriminator")]
     InvalidAccountDiscriminator,
+    #[error("A session account has the wrong version")]
+    InvalidAccountVersion,
 }
 
 #[cfg(feature = "anchor")]
