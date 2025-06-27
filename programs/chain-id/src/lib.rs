@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 
 declare_id!("5kf451i6V6WiF4U9yDg24beCS8eDFCkHLi1Cou6naG1Q");
 
+pub const SEED: &[u8] = b"chain_id";
+
 #[program]
 pub mod chain_id {
     use super::*;
@@ -21,7 +23,7 @@ pub mod chain_id {
 pub struct Set<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
-    #[account(init, payer = sponsor, seeds = [b"chain_id"], bump, space = 8 + 4 + chain_id.len())]
+    #[account(init, payer = sponsor, seeds = [SEED], bump, space = 8 + 4 + chain_id.len())]
     pub chain_id_account: Account<'info, ChainId>,
     pub system_program: Program<'info, System>,
 }

@@ -3,20 +3,17 @@
 
 use crate::intents::body::MessageBody;
 use crate::intents::ed25519::Intent;
-use crate::state::Config;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
 use fogo_sessions_sdk::AuthorizedPrograms;
 use fogo_sessions_sdk::AuthorizedTokens;
 use fogo_sessions_sdk::Session;
 use fogo_sessions_sdk::SessionInfo;
-use chain_id::ChainId;
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
 pub mod error;
 pub mod intents;
-mod state;
 #[program]
 pub mod session_manager {
     use super::*;
@@ -61,8 +58,8 @@ pub mod session_manager {
 pub struct StartSession<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
-    #[account(seeds = [b"chain_id"], seeds::program = chain_id::ID, bump)]
-    pub chain_id: Account<'info, ChainId>,
+    #[account(seeds = [chain_id::SEED], seeds::program = chain_id::ID, bump)]
+    pub chain_id: Account<'info, chain_id::ChainId>,
     #[account(init, payer = sponsor, space = 200)] // TODO: Compute this dynamically
     pub session: Account<'info, Session>,
     /// CHECK: we check the address of this account
