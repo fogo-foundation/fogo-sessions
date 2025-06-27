@@ -9,11 +9,10 @@ pub const SEED: &[u8] = b"chain_id";
 #[program]
 pub mod chain_id {
     use super::*;
-    pub fn set<'info>(
-        ctx: Context<'_, '_, '_, 'info, Set<'info>>,
-        chain_id: String,
-    ) -> Result<()> {
-        ctx.accounts.chain_id_account.set_inner(ChainId { chain_id });
+    pub fn set<'info>(ctx: Context<'_, '_, '_, 'info, Set<'info>>, chain_id: String) -> Result<()> {
+        ctx.accounts
+            .chain_id_account
+            .set_inner(ChainId { chain_id });
         Ok(())
     }
 }
