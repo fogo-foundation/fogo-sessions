@@ -109,7 +109,7 @@ impl From<HashMap<String, String>> for Extra {
 
 impl Session {
     #[cfg(feature = "borsh")]
-    const DISCRIMINATOR: [u8; 2] = [243, 81, 72, 115, 214, 188, 72, 144];
+    const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
 
     #[cfg(feature = "borsh")]
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
