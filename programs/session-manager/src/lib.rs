@@ -33,12 +33,14 @@ pub mod session_manager {
     ) -> Result<()> {
         let Intent { signer, message } = ctx.accounts.verify_intent()?;
         let MessageBody {
+            chain_id,
             domain,
             session_key,
             expires,
             extra,
             tokens,
         } = message.parse()?;
+        ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
         ctx.accounts.approve_tokens(
             ctx.remaining_accounts,

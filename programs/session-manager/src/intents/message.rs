@@ -11,7 +11,7 @@ use std::{
 };
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\n";
-const MANDATORY_KEYS: [&str; 4] = ["domain", "expires", "session_key", "tokens"];
+const MANDATORY_KEYS: [&str; 5] = ["chain_id", "domain", "expires", "session_key", "tokens"];
 const KEY_VALUE_SEPARATOR: &str = ": ";
 const LIST_ITEM_PREFIX: &str = "-";
 const TOKEN_PERMISSIONS_SECTION_HEADER: &str = "tokens:";
@@ -95,6 +95,7 @@ impl Message {
         let mut lines = message.lines().peekable();
 
         let body = MessageBody {
+            chain_id: parse_line_with_expected_key(&mut lines, "chain_id")?,
             domain: Domain(parse_line_with_expected_key(&mut lines, "domain")?),
             expires: DateTime::parse_from_rfc3339(&parse_line_with_expected_key(
                 &mut lines, "expires",
