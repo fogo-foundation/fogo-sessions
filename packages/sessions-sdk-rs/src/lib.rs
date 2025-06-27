@@ -24,12 +24,18 @@ pub const SESSION_SETTER: Pubkey =
 /// When in-session token transfers are made, the PDA of an authorized program with this seed needs to sign the transfer
 pub const PROGRAM_SIGNER_SEED: &[u8] = b"fogo_session_program_signer";
 
-#[cfg_attr(feature = "anchor", account)]
+pub const MAJOR: u8 = 0;
+pub const MINOR: u8 = 1;
+
+pub const SESSION_ACCOUNT_DISCRIMINATOR: [u8; 2] = [0, 1];
+#[cfg_attr(feature = "anchor", account(discriminator=&SESSION_ACCOUNT_DISCRIMINATOR))]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
 #[derive(Debug)]
 pub struct Session {
     #[cfg(not(feature = "anchor"))]
-    pub discriminator: [u8; 8],
+    pub discriminator: [u8; 2],
+    pub major: u8,
+    pub minor: u8,
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
     pub session_info: SessionInfo,
@@ -102,7 +108,7 @@ impl From<HashMap<String, String>> for Extra {
 
 impl Session {
     #[cfg(feature = "borsh")]
-    const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
+    const DISCRIMINATOR: [u8; 2] = SESSION_ACCOUNT_DISCRIMINATOR;
 
     #[cfg(feature = "borsh")]
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
@@ -110,6 +116,11 @@ impl Session {
         if result.discriminator != Self::DISCRIMINATOR {
             return Err(SessionError::InvalidAccountDiscriminator);
         }
+
+        if result.major != MAJOR || result.minor != MINOR {
+            return Err(SessionError::InvalidAccountVersion);
+        }
+
         Ok(result)
     }
 
@@ -195,6 +206,8 @@ pub enum SessionError {
     InvalidAccountData,
     #[error("A session account has the wrong discriminator")]
     InvalidAccountDiscriminator,
+    #[error("A session account has the wrong version")]
+    InvalidAccountVersion,
 }
 
 #[cfg(feature = "anchor")]

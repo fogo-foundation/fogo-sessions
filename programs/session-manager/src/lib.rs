@@ -16,6 +16,8 @@ pub mod error;
 pub mod intents;
 #[program]
 pub mod session_manager {
+    use crate::intents::body::Version;
+
     use super::*;
 
     pub fn start_session<'info>(
@@ -28,7 +30,9 @@ pub mod session_manager {
             expires,
             extra,
             tokens,
+            version,
         } = message.parse()?;
+        let Version { major, minor } = version;
         ctx.accounts.check_session_key(session_key)?;
         ctx.accounts.approve_tokens(
             ctx.remaining_accounts,
@@ -39,6 +43,8 @@ pub mod session_manager {
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
+            major,
+            minor,
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
                 user: signer,

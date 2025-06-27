@@ -15,12 +15,44 @@ pub struct Domain(pub(crate) String);
 pub struct SessionKey(pub(crate) Pubkey);
 
 pub struct MessageBody {
+    pub version: Version,
     pub domain: Domain,
     pub expires: DateTime<Utc>,
     pub session_key: SessionKey,
     pub tokens: Vec<(Pubkey, u64)>,
     pub extra: HashMap<String, String>,
 }
+
+pub struct Version {
+    pub major: u8,
+    pub minor: u8,
+}
+
+impl Version {
+    pub fn parse_and_check(version: &str) -> Result<Self> {
+        let (major, minor): (u8, u8) = {
+            let (major, minor) = version
+                .split_once('.')
+                .ok_or(error!(SessionManagerError::InvalidArgument))?;
+            let major = major
+                .parse()
+                .map_err(|_| error!(SessionManagerError::InvalidArgument))?;
+            let minor = minor
+                .parse()
+                .map_err(|_| error!(SessionManagerError::InvalidArgument))?;
+            (major, minor)
+        };
+        if major != fogo_sessions_sdk::MAJOR || minor != fogo_sessions_sdk::MINOR {
+            return Err(error!(SessionManagerError::InvalidArgument));
+        }
+        Ok(Self {
+            major,
+            minor,
+        })
+    }
+}
+
+
 
 impl<'info> StartSession<'info> {
     pub fn check_session_key(&self, session_key: SessionKey) -> Result<()> {
