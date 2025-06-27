@@ -28,7 +28,7 @@ fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str)
     Ok(value.to_string())
 }
 
-fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u64)>> {
+fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(String, u64)>> {
     let mut tokens = vec![];
 
     if lines
@@ -46,18 +46,17 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(Pubkey, u
             let line = line
                 .strip_prefix(LIST_ITEM_PREFIX)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
-            let (key, value) = line
+            let (symbol, amount) = line
                 .split_once(KEY_VALUE_SEPARATOR)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
-            let mint =
-                Pubkey::from_str(key).map_err(|_| error!(SessionManagerError::InvalidArgument))?;
-            if tokens.iter().any(|(m, _)| m == &mint) {
+
+            if tokens.iter().any(|(s, _)| s == symbol) {
                 // No duplicate mints
                 return Err(error!(SessionManagerError::InvalidArgument));
             } else {
                 tokens.push((
-                    mint,
-                    value
+                    symbol.to_string(),
+                    amount
                         .parse()
                         .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
                 ));
@@ -122,11 +121,9 @@ mod test {
     #[test]
     pub fn test_parse_message() {
         let session_key = Pubkey::new_unique();
-        let token = Pubkey::new_unique();
         let message = format!(
-            "{MESSAGE_PREFIX}version: 0.1\ndomain: https://app.xyz\nexpires: 2014-11-28T21:00:09+09:00\nsession_key: {session_key}\ntokens:\n-{token}: 100\nkey1: value1\nkey2: value2"
+            "{MESSAGE_PREFIX}version: 0.1\ndomain: https://app.xyz\nexpires: 2014-11-28T21:00:09+09:00\nsession_key: {session_key}\ntokens:\n-SOL: 100\nkey1: value1\nkey2: value2"
         );
-
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
         assert_eq!(parsed_message.domain, Domain("https://app.xyz".to_string()));
         assert_eq!(parsed_message.session_key, SessionKey(session_key));
@@ -134,7 +131,7 @@ mod test {
             parsed_message.expires,
             DateTime::parse_from_rfc3339("2014-11-28T12:00:09Z").unwrap()
         );
-        assert_eq!(parsed_message.tokens, vec![(token, 100)]);
+        assert_eq!(parsed_message.tokens, vec![("SOL".to_string(), 100)]);
         assert_eq!(
             parsed_message.extra,
             HashMap::from([
