@@ -9,6 +9,7 @@ use fogo_sessions_sdk::AuthorizedPrograms;
 use fogo_sessions_sdk::AuthorizedTokens;
 use fogo_sessions_sdk::Session;
 use fogo_sessions_sdk::SessionInfo;
+use crate::intents::body::Version;
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
@@ -16,8 +17,6 @@ pub mod error;
 pub mod intents;
 #[program]
 pub mod session_manager {
-    use crate::intents::body::Version;
-
     use super::*;
 
     pub fn start_session<'info>(

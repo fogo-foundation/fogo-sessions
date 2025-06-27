@@ -27,8 +27,7 @@ pub const PROGRAM_SIGNER_SEED: &[u8] = b"fogo_session_program_signer";
 pub const MAJOR: u8 = 0;
 pub const MINOR: u8 = 1;
 
-pub const SESSION_ACCOUNT_DISCRIMINATOR: [u8; 2] = [0, 1];
-#[cfg_attr(feature = "anchor", account(discriminator=&SESSION_ACCOUNT_DISCRIMINATOR))]
+#[cfg_attr(feature = "anchor", account)]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
 #[derive(Debug)]
 pub struct Session {
@@ -108,7 +107,7 @@ impl From<HashMap<String, String>> for Extra {
 
 impl Session {
     #[cfg(feature = "borsh")]
-    const DISCRIMINATOR: [u8; 2] = SESSION_ACCOUNT_DISCRIMINATOR;
+    const DISCRIMINATOR: [u8; 2] = [243, 81, 72, 115, 214, 188, 72, 144];
 
     #[cfg(feature = "borsh")]
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
