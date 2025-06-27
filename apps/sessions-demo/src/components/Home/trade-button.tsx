@@ -1,8 +1,5 @@
-"use client";
-
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
-import type { Example } from "@fogo/sessions-idls";
-import { ExampleIdl } from "@fogo/sessions-idls";
+import { AnchorProvider, BN } from "@coral-xyz/anchor";
+import { ExampleProgram } from "@fogo/sessions-idls";
 import {
   createTransferInstruction,
   getAssociatedTokenAddressSync,
@@ -10,7 +7,7 @@ import {
 } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Keypair, PublicKey } from "@solana/web3.js";
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -19,7 +16,7 @@ import { sendTransaction } from "@/send-transaction";
 const handleTrade = async (
   sponsorPubkey: PublicKey,
   solanaRpc: string,
-  exampleProgram: Program<Example>,
+  exampleProgram: ExampleProgram,
   publicKey: PublicKey,
   sessionKey: Keypair,
   addressLookupTableAddress: string | undefined,
@@ -84,11 +81,6 @@ export const TradeButton = ({
     | { status: "not-started" }
   >({ status: "not-started" });
 
-  const exampleProgram = useMemo(
-    () => new Program<Example>(ExampleIdl as Example, provider),
-    [provider],
-  );
-
   const { publicKey } = useWallet();
 
   const onTrade = useCallback(() => {
@@ -97,7 +89,7 @@ export const TradeButton = ({
       handleTrade(
         new PublicKey(sponsorPubkey),
         solanaRpc,
-        exampleProgram,
+        new ExampleProgram(provider),
         publicKey,
         sessionKey,
         addressLookupTableAddress,
@@ -112,9 +104,9 @@ export const TradeButton = ({
         });
     }
   }, [
+    provider,
     sponsorPubkey,
     solanaRpc,
-    exampleProgram,
     publicKey,
     sessionKey,
     addressLookupTableAddress,
