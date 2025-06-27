@@ -33,7 +33,9 @@ pub const MINOR: u8 = 1;
 pub struct Session {
     #[cfg(not(feature = "anchor"))]
     pub discriminator: [u8; 2],
+    /// The major version of the session account, major version changes can change the layout of the account after the minor field
     pub major: u8,
+    /// The minor version of the session account, minor version changes should only add new fields at the end of the account
     pub minor: u8,
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
