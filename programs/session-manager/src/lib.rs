@@ -18,6 +18,7 @@ pub mod intents;
 pub mod session_manager {
     use super::*;
 
+    #[instruction(discriminator = [0])]
     pub fn start_session<'info>(
         ctx: Context<'_, '_, '_, 'info, StartSession<'info>>,
     ) -> Result<()> {
