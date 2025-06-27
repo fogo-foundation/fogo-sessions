@@ -35,7 +35,7 @@ pub struct Session {
     pub discriminator: [u8; 2],
     /// The major version of the session account, major version changes can change the layout of the account after the minor field
     pub major: u8,
-    /// The minor version of the session account, minor version changes should only add new fields at the end of the account
+    /// The minor version of the session account, minor version changes should only add new fields at the end of the account, so that a newer session account can be deserialized by an older program
     pub minor: u8,
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
