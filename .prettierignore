@@ -14,5 +14,6 @@ dist/
 
 apps/
 packages/
+scripts/
 pnpm-lock.yaml
 tilt/keypairs/

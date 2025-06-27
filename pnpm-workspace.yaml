@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - scripts/*
   - "!**/integration-tests/__fixtures__/**/*"
 
 catalog:
@@ -32,6 +33,7 @@ catalog:
   "@types/node": ^24.0.1
   "@types/react": ^19.1.8
   "@types/react-dom": ^19.1.6
+  "@types/yargs": ^17.0.33
   autoprefixer: ^10.4.20
   bs58: ^6.0.0
   class-variance-authority: ^0.7.1
@@ -58,6 +60,7 @@ catalog:
   tailwindcss: ^3.4.17
   turbo: ^2.5.4
   typescript: ^5.8.3
+  yargs: ^18.0.0
   zod: ^3.25.62
 
 engineStrict: true

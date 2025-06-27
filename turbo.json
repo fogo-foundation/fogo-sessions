@@ -36,6 +36,10 @@
       ],
       "outputs": ["src/idl/*.json", "src/types/*.ts"]
     },
+    "//#run:initialize-chain-id": {
+      "dependsOn": ["@fogo/initialize-chain-id#build"],
+      "cache": false
+    },
     "//#test": {
       "dependsOn": [
         "//#test:types",

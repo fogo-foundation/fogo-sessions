@@ -1,11 +1,11 @@
 [package]
-name = "session-manager"
+name = "chain-id"
 version = "0.1.0"
 edition = { workspace = true }
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "session_manager"
+name = "chain_id"
 
 [features]
 default = []
@@ -16,9 +16,5 @@ no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 
 [dependencies]
-anchor-lang = { workspace = true }
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
 anchor-spl = { workspace = true }
-chain-id = { path = "../chain-id", features = ["no-entrypoint"] }
-chrono = "0.4.41"
-fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["anchor"] }
-mpl-token-metadata = "5.1.0"
