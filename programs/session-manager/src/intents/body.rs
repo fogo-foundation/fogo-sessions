@@ -46,14 +46,9 @@ impl Version {
         if major != fogo_sessions_sdk::MAJOR || minor != fogo_sessions_sdk::MINOR {
             return Err(error!(SessionManagerError::InvalidArgument));
         }
-        Ok(Self {
-            major,
-            minor,
-        })
+        Ok(Self { major, minor })
     }
 }
-
-
 
 impl<'info> StartSession<'info> {
     pub fn check_session_key(&self, session_key: SessionKey) -> Result<()> {

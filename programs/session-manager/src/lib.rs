@@ -2,6 +2,7 @@
 #![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
 
 use crate::intents::body::MessageBody;
+use crate::intents::body::Version;
 use crate::intents::ed25519::Intent;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
@@ -9,7 +10,6 @@ use fogo_sessions_sdk::AuthorizedPrograms;
 use fogo_sessions_sdk::AuthorizedTokens;
 use fogo_sessions_sdk::Session;
 use fogo_sessions_sdk::SessionInfo;
-use crate::intents::body::Version;
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 

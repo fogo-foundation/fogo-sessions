@@ -95,7 +95,9 @@ impl Message {
         let mut lines = message.lines().peekable();
 
         let body = MessageBody {
-            version: Version::parse_and_check(&parse_line_with_expected_key(&mut lines, "version")?)?,
+            version: Version::parse_and_check(&parse_line_with_expected_key(
+                &mut lines, "version",
+            )?)?,
             domain: Domain(parse_line_with_expected_key(&mut lines, "domain")?),
             expires: DateTime::parse_from_rfc3339(&parse_line_with_expected_key(
                 &mut lines, "expires",
