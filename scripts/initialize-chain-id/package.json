@@ -1,9 +1,9 @@
 {
-  "name": "@fogo/initialize-session-manager",
+  "name": "@fogo/initialize-chain-id",
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "bin": "./bin/initialize-session-manager.js",
+  "bin": "./bin/initialize-chain-id.js",
   "scripts": {
     "build": "tsc --noEmit false --outDir ./dist",
     "fix:format": "prettier --write .",

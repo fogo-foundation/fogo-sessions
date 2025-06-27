@@ -33,7 +33,7 @@ impl<'info> StartSession<'info> {
     }
 
     pub fn check_chain_id(&self, chain_id: String) -> Result<()> {
-        if self.config.chain_id != chain_id {
+        if self.chain_id.chain_id != chain_id {
             return Err(ProgramError::InvalidArgument.into());
         }
         Ok(())

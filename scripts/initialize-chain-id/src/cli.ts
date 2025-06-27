@@ -1,6 +1,6 @@
 import { Connection, Keypair } from "@solana/web3.js";
 import {AnchorProvider, Program, Wallet} from "@coral-xyz/anchor"
-import { SessionManagerIdl, type SessionManager} from "@fogo/sessions-idls"
+import { ChainIdIdl, type ChainId} from "@fogo/sessions-idls"
 import { hideBin } from "yargs/helpers";
 import yargs from "yargs";
 import fs from "fs";
@@ -36,7 +36,7 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     const connection = new Connection(url);
     const keypair = Keypair.fromSecretKey(Buffer.from(JSON.parse(fs.readFileSync(args.keypair, 'utf8'))));
     const provider = new AnchorProvider(connection, new Wallet(keypair));
-    const program: Program<SessionManager> = new Program(SessionManagerIdl as SessionManager, provider);
-    await program.methods.initialize(args['chain-id']).rpc();
+    const program: Program<ChainId> = new Program(ChainIdIdl as ChainId, provider);
+    await program.methods.set(args['chain-id']).rpc();
 }
 

@@ -10,6 +10,7 @@ use fogo_sessions_sdk::AuthorizedPrograms;
 use fogo_sessions_sdk::AuthorizedTokens;
 use fogo_sessions_sdk::Session;
 use fogo_sessions_sdk::SessionInfo;
+use chain_id::ChainId;
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
@@ -19,15 +20,6 @@ mod state;
 #[program]
 pub mod session_manager {
     use super::*;
-
-    pub fn initialize<'info>(
-        ctx: Context<'_, '_, '_, 'info, Initialize<'info>>,
-        chain_id: String,
-    ) -> Result<()> {
-        ctx.accounts.config.set_inner(Config { chain_id });
-        Ok(())
-    }
-
     pub fn start_session<'info>(
         ctx: Context<'_, '_, '_, 'info, StartSession<'info>>,
     ) -> Result<()> {
@@ -66,21 +58,11 @@ pub mod session_manager {
 }
 
 #[derive(Accounts)]
-#[instruction(chain_id: String)]
-pub struct Initialize<'info> {
-    #[account(mut)]
-    pub sponsor: Signer<'info>,
-    #[account(init, payer = sponsor, seeds = [b"config"], bump, space = 8 + 4 + chain_id.len())]
-    pub config: Account<'info, Config>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
 pub struct StartSession<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
-    #[account(seeds = [b"config"], bump)]
-    pub config: Account<'info, Config>,
+    #[account(seeds = [b"chain_id"], seeds::program = chain_id::ID, bump)]
+    pub chain_id: Account<'info, ChainId>,
     #[account(init, payer = sponsor, space = 200)] // TODO: Compute this dynamically
     pub session: Account<'info, Session>,
     /// CHECK: we check the address of this account
