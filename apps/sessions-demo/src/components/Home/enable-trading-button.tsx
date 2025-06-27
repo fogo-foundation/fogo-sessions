@@ -4,6 +4,12 @@ import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import type { SessionManager } from "@fogo/sessions-idls";
 import { SessionManagerIdl } from "@fogo/sessions-idls";
 import {
+  fetchMetadata,
+  findMetadataPda,
+} from "@metaplex-foundation/mpl-token-metadata";
+import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
   NATIVE_MINT,
@@ -39,6 +45,11 @@ const handleEnableTrading = async (
 
   const expires = new Date(Date.now() + 3600 * 1000).toISOString();
 
+  const umi = createUmi(solanaRpc);
+  const metaplexNativeMint = metaplexPublicKey(NATIVE_MINT.toBase58());
+  const metadataAddress = findMetadataPda(umi, { mint: metaplexNativeMint })[0];
+  const metadata = await fetchMetadata(umi, metadataAddress);
+
   // TODO: This should be a function
   const message = new TextEncoder().encode(
     `Fogo Sessions:
@@ -48,8 +59,7 @@ domain: gasless-trading.vercel.app
 expires: ${expires}
 session_key: ${sessionKey.publicKey.toBase58()}
 tokens:
--${NATIVE_MINT.toBase58()}: 100
-extra: extra`,
+-${metadata.symbol}: 100`,
   );
 
   const intentSignature = await signMessage(message);
@@ -83,6 +93,16 @@ extra: extra`,
         {
           pubkey: getAssociatedTokenAddressSync(NATIVE_MINT, publicKey),
           isWritable: true,
+          isSigner: false,
+        },
+        {
+          pubkey: NATIVE_MINT,
+          isWritable: false,
+          isSigner: false,
+        },
+        {
+          pubkey: new PublicKey(metadataAddress),
+          isWritable: false,
           isSigner: false,
         },
       ])

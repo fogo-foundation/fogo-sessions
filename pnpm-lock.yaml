@@ -27,6 +27,15 @@ catalogs:
     '@cprussin/tsconfig':
       specifier: ^4.0.1
       version: 4.0.1
+    '@metaplex-foundation/mpl-token-metadata':
+      specifier: ^3.4.0
+      version: 3.4.0
+    '@metaplex-foundation/umi':
+      specifier: ^1.2.0
+      version: 1.2.0
+    '@metaplex-foundation/umi-bundle-defaults':
+      specifier: ^1.2.0
+      version: 1.2.0
     '@next/third-parties':
       specifier: ^15.3.4
       version: 15.3.4
@@ -169,10 +178,10 @@ importers:
     devDependencies:
       '@cprussin/eslint-config':
         specifier: 'catalog:'
-        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
+        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
-        version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(esbuild@0.25.5)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0)(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@cprussin/prettier-config':
         specifier: 'catalog:'
         version: 3.0.0(prettier@3.5.3)
@@ -227,7 +236,7 @@ importers:
         version: 4.10.2
       '@cprussin/eslint-config':
         specifier: 'catalog:'
-        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
+        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
         version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(esbuild@0.25.5)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -285,6 +294,15 @@ importers:
       '@fogo/sessions-idls':
         specifier: workspace:*
         version: link:../../packages/sessions-idls
+      '@metaplex-foundation/mpl-token-metadata':
+        specifier: 'catalog:'
+        version: 3.4.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi':
+        specifier: 'catalog:'
+        version: 1.2.0
+      '@metaplex-foundation/umi-bundle-defaults':
+        specifier: 'catalog:'
+        version: 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
       '@radix-ui/react-slot':
         specifier: 'catalog:'
         version: 1.2.3(@types/react@19.1.8)(react@19.1.0)
@@ -339,10 +357,10 @@ importers:
     devDependencies:
       '@cprussin/eslint-config':
         specifier: 'catalog:'
-        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
+        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
-        version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(esbuild@0.25.5)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0)(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@cprussin/prettier-config':
         specifier: 'catalog:'
         version: 3.0.0(prettier@3.5.3)
@@ -375,10 +393,10 @@ importers:
     devDependencies:
       '@cprussin/eslint-config':
         specifier: 'catalog:'
-        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
+        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
-        version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(esbuild@0.25.5)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0)(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@cprussin/prettier-config':
         specifier: 'catalog:'
         version: 3.0.0(prettier@3.5.3)
@@ -408,7 +426,7 @@ importers:
     devDependencies:
       '@cprussin/eslint-config':
         specifier: 'catalog:'
-        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
+        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
         version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(esbuild@0.25.5)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -444,7 +462,7 @@ importers:
     devDependencies:
       '@cprussin/eslint-config':
         specifier: 'catalog:'
-        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
+        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
         version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(esbuild@0.25.5)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -501,7 +519,7 @@ importers:
     devDependencies:
       '@cprussin/eslint-config':
         specifier: 'catalog:'
-        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
+        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
         version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(esbuild@0.25.5)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -1879,6 +1897,98 @@ packages:
 
   '@lit/reactive-element@2.1.0':
     resolution: {integrity: sha512-L2qyoZSQClcBmq0qajBVbhYEcG6iK0XfLn66ifLe/RfC0/ihpc+pl0Wdn8bJ8o+hj38cG0fGXRgSS20MuXn7qA==}
+
+  '@metaplex-foundation/mpl-token-metadata@3.4.0':
+    resolution: {integrity: sha512-AxBAYCK73JWxY3g9//z/C9krkR0t1orXZDknUPS4+GjwGH2vgPfsk04yfZ31Htka2AdS9YE/3wH7sMUBHKn9Rg==}
+    peerDependencies:
+      '@metaplex-foundation/umi': '>= 0.8.2 <= 1'
+
+  '@metaplex-foundation/mpl-toolbox@0.10.0':
+    resolution: {integrity: sha512-84KD1L5cFyw5xnntHwL4uPwfcrkKSiwuDeypiVr92qCUFuF3ZENa2zlFVPu+pQcjTlod2LmEX3MhBmNjRMpdKg==}
+    peerDependencies:
+      '@metaplex-foundation/umi': '>= 0.8.2 <= 1'
+
+  '@metaplex-foundation/umi-bundle-defaults@1.2.0':
+    resolution: {integrity: sha512-xbBxnvsADoC/L40HOvWWnrfE1q+7FCSwZ+LsYi3dWn8A93FhcI2gpxZ+Uqy+LzHDmGmuipdECbTRFdSBLMulBA==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^1.2.0
+      '@solana/web3.js': ^1.72.0
+
+  '@metaplex-foundation/umi-downloader-http@1.2.0':
+    resolution: {integrity: sha512-voEu9BFePmPGkucZCIVDOGkkvBMuzkeHjkvmSP3E2i0YT5299HryR8sr7i9G4uNwKF/FIVdTw1qQnW61cpS2qQ==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^1.2.0
+
+  '@metaplex-foundation/umi-eddsa-web3js@1.1.1':
+    resolution: {integrity: sha512-rL22HATY7W02DqJLdBKZ8jedhMtd7iKReIFNPXLGnVeUpDwxXaqWPySZxZ+2TjY6f+Idoq2g2TpPCUGND/iOeA==}
+    peerDependencies:
+      '@metaplex-foundation/umi': 1.1.1
+      '@solana/web3.js': ^1.72.0
+
+  '@metaplex-foundation/umi-http-fetch@1.2.0':
+    resolution: {integrity: sha512-rbM97PPCAmjbR90wnSCTxJFkCUIKR++gS5lIm+ZNZ96XrjvOrFURZpSYloyDGvXRNgF44eTYWDYIDLy5zmI2JQ==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^1.2.0
+
+  '@metaplex-foundation/umi-options@1.2.0':
+    resolution: {integrity: sha512-dNEfhDg9PUoosU46SnmB8PzdhgAF7qJ0RUkn5keLKU2s0Xy2DKZVtdaELTfMZZckhaDvOzRTKdphTRrEwIjbyw==}
+
+  '@metaplex-foundation/umi-program-repository@1.2.0':
+    resolution: {integrity: sha512-mbsE0BPmqv3cMfk/jn+EKoUDJHbUieFcp8o2eRSkVBJhjXqkfLJgJ8s3koBn8vv5mcmavEBDqPYNqJQs93je0g==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^1.2.0
+
+  '@metaplex-foundation/umi-public-keys@1.2.0':
+    resolution: {integrity: sha512-UZISKLcrsAQ3M17JCkNIXtacoKHpSNEgXHGcxyJp7zfJkdLDq5Qlvd7KeyZoYC7A7XuA3lAlVY14qhhIwC5p5w==}
+
+  '@metaplex-foundation/umi-rpc-chunk-get-accounts@1.2.0':
+    resolution: {integrity: sha512-j5eSFmilDxIjw/uudZh6cvwIpwwp1vjW0XBFB7SLCDzsAHn4SaEq2j+Xwn3cvjKLBB0haJqHlMG9x35gXqBkqg==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^1.2.0
+
+  '@metaplex-foundation/umi-rpc-web3js@1.2.0':
+    resolution: {integrity: sha512-nMWJA/v8gnhA3D2iBHSHWyS02YAL9zIhE8gxWufk56GY1fTo/jBp8HQrxI4PZH0E8A1fGnBZSU0SkL4lRm7Ljw==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^1.2.0
+      '@solana/web3.js': ^1.72.0
+
+  '@metaplex-foundation/umi-serializer-data-view@1.2.0':
+    resolution: {integrity: sha512-3w9WQzfrq851cIyvzcbEslJEL4oah3r/9Y/A2zyUwCsri5/3s/G0CcHgHPaS6/cvpyYybqBJjyJKMcGiVxzs8Q==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^1.2.0
+
+  '@metaplex-foundation/umi-serializers-core@1.2.0':
+    resolution: {integrity: sha512-9scqhjkjW8tJ+/q1veh73jQjo9vvgTN5iN4OfOYFMtFVTT8/y2AVxGmniV/DbQC5wIgx7WTZkAnJmqOMs2904Q==}
+
+  '@metaplex-foundation/umi-serializers-encodings@1.2.0':
+    resolution: {integrity: sha512-Yo3TPI9ei8Z5eTJ1UeT12+pYaQ1zMSn57/M/3r4WAOTFtTCOuKsDRKg8eBQCpBuffH8yGUbRs0poy1n25IzeNg==}
+
+  '@metaplex-foundation/umi-serializers-numbers@1.2.0':
+    resolution: {integrity: sha512-ZBVb498GHYlfB+1JzOcczJ1LrCYWr0IiiXjeEAf+64mSSp3IFwK7D3rjL6RZ05bjxBzuWDJVRzI+mFVFC9UgtQ==}
+
+  '@metaplex-foundation/umi-serializers@1.2.0':
+    resolution: {integrity: sha512-7ivgqVP6ZouN13EBN5aMirjoX2x0Ja7IuzrBeIa8YYrxGcy7YQp+fUj4YCPtMClzsETgJ5jL8EZnZPpZX4dxaQ==}
+
+  '@metaplex-foundation/umi-transaction-factory-web3js@1.2.0':
+    resolution: {integrity: sha512-CDpx6KSYOEonWsHJEVUfZTzu3g0ElclUNgeAXhLyKzimS1fd7FvAkbFom6egQz6ZPuqGv/5ZTHQv37UxoGy+Zg==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^1.2.0
+      '@solana/web3.js': ^1.72.0
+
+  '@metaplex-foundation/umi-web3js-adapters@1.1.1':
+    resolution: {integrity: sha512-UXP2aY3ce59nSxsVJ4sFLtGCHpesqLTxTag2yI6grCXe0dEz+1kONMn0XFRLcYgiSKOcptJSoJWbILlHnUsWDg==}
+    peerDependencies:
+      '@metaplex-foundation/umi': 1.1.1
+      '@solana/web3.js': ^1.72.0
+
+  '@metaplex-foundation/umi-web3js-adapters@1.2.0':
+    resolution: {integrity: sha512-kKfsva8aoHTZXHbet6U/dV/va+hSFoVpqLiKFoUg3HV2Cp5IgdLXo2PH4/iN6AlE+S+a0S3+jt/7gat2rsskuw==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^1.2.0
+      '@solana/web3.js': ^1.72.0
+
+  '@metaplex-foundation/umi@1.2.0':
+    resolution: {integrity: sha512-SIcDO8O9gRYL2C5ntsedVfpRBICK7ZoMB5ap8P5N2TEJ/QC205UxDzhdQsImdWQG1DQ7XJsDXWiiFzccpFZcSg==}
 
   '@microsoft/tsdoc-config@0.17.1':
     resolution: {integrity: sha512-UtjIFe0C6oYgTnad4q1QP4qXwLhe6tIpNTRStJ2RZEPIkqQPREAwE5spzVxsdn9UaEMUqhh0AqSx3X4nWAKXWw==}
@@ -9667,7 +9777,7 @@ snapshots:
       bn.js: 5.2.2
       buffer-layout: 1.2.2
 
-  '@cprussin/eslint-config@5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)':
+  '@cprussin/eslint-config@5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(storybook@9.0.11(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)':
     dependencies:
       '@eslint/eslintrc': 3.3.1
       '@eslint/js': 9.29.0
@@ -9676,7 +9786,7 @@ snapshots:
       eslint-config-prettier: 10.1.5(eslint@9.29.0(jiti@1.21.7))
       eslint-config-turbo: 2.5.4(eslint@9.29.0(jiti@1.21.7))(turbo@2.5.4)
       eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))
-      eslint-plugin-jest: 28.14.0(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(typescript@5.8.3)
+      eslint-plugin-jest: 28.14.0(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(typescript@5.8.3)
       eslint-plugin-jest-dom: 5.5.0(@testing-library/dom@10.4.0)(eslint@9.29.0(jiti@1.21.7))
       eslint-plugin-jsonc: 2.20.1(eslint@9.29.0(jiti@1.21.7))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.29.0(jiti@1.21.7))
@@ -9707,8 +9817,8 @@ snapshots:
 
   '@cprussin/jest-config@3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(esbuild@0.25.5)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)':
     dependencies:
-      '@cprussin/jest-runner-eslint': 0.0.4(@jest/test-result@29.7.0)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest@29.7.0(@types/node@24.0.3))
-      '@cprussin/jest-runner-prettier': 1.0.0(jest@29.7.0(@types/node@24.0.3))(prettier@3.5.3)
+      '@cprussin/jest-runner-eslint': 0.0.4(@jest/test-result@29.7.0)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest@29.7.0)
+      '@cprussin/jest-runner-prettier': 1.0.0(jest@29.7.0)(prettier@3.5.3)
       '@testing-library/jest-dom': 6.6.3
       jest: 29.7.0(@types/node@24.0.3)
       jest-environment-jsdom: 30.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
@@ -9732,7 +9842,34 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@cprussin/jest-runner-eslint@0.0.4(@jest/test-result@29.7.0)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest@29.7.0(@types/node@24.0.3))':
+  '@cprussin/jest-config@3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0)(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@cprussin/jest-runner-eslint': 0.0.4(@jest/test-result@29.7.0)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest@29.7.0)
+      '@cprussin/jest-runner-prettier': 1.0.0(jest@29.7.0)(prettier@3.5.3)
+      '@testing-library/jest-dom': 6.6.3
+      jest: 29.7.0(@types/node@24.0.3)
+      jest-environment-jsdom: 30.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      prettier: 3.5.3
+      ts-jest: 29.4.0(@babel/core@7.27.4)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(jest-util@30.0.0)(jest@29.7.0)(typescript@5.8.3)
+      typescript: 5.8.3
+    optionalDependencies:
+      next: 15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(sass@1.89.2)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@jest/test-result'
+      - '@jest/transform'
+      - '@jest/types'
+      - babel-jest
+      - bufferutil
+      - canvas
+      - esbuild
+      - eslint
+      - jest-runner
+      - jest-util
+      - supports-color
+      - utf-8-validate
+
+  '@cprussin/jest-runner-eslint@0.0.4(@jest/test-result@29.7.0)(eslint@9.29.0(jiti@1.21.7))(jest-runner@29.7.0)(jest@29.7.0)':
     dependencies:
       chalk: 4.1.2
       cosmiconfig: 7.1.0
@@ -9744,9 +9881,9 @@ snapshots:
       - '@jest/test-result'
       - jest-runner
 
-  '@cprussin/jest-runner-prettier@1.0.0(jest@29.7.0(@types/node@24.0.3))(prettier@3.5.3)':
+  '@cprussin/jest-runner-prettier@1.0.0(jest@29.7.0)(prettier@3.5.3)':
     dependencies:
-      create-lite-jest-runner: 1.1.2(jest@29.7.0(@types/node@24.0.3))
+      create-lite-jest-runner: 1.1.2(jest@29.7.0)
       emphasize: 5.0.0
       jest: 29.7.0(@types/node@24.0.3)
       jest-diff: 29.7.0
@@ -10472,6 +10609,115 @@ snapshots:
   '@lit/reactive-element@2.1.0':
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.3.0
+
+  '@metaplex-foundation/mpl-token-metadata@3.4.0(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/mpl-toolbox': 0.10.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi': 1.2.0
+
+  '@metaplex-foundation/mpl-toolbox@0.10.0(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+
+  '@metaplex-foundation/umi-bundle-defaults@1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+      '@metaplex-foundation/umi-downloader-http': 1.2.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi-eddsa-web3js': 1.1.1(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
+      '@metaplex-foundation/umi-http-fetch': 1.2.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi-program-repository': 1.2.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi-rpc-chunk-get-accounts': 1.2.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi-rpc-web3js': 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
+      '@metaplex-foundation/umi-serializer-data-view': 1.2.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi-transaction-factory-web3js': 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
+      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+    transitivePeerDependencies:
+      - encoding
+
+  '@metaplex-foundation/umi-downloader-http@1.2.0(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+
+  '@metaplex-foundation/umi-eddsa-web3js@1.1.1(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+      '@metaplex-foundation/umi-web3js-adapters': 1.1.1(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
+      '@noble/curves': 1.9.2
+      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      yaml: 2.8.0
+
+  '@metaplex-foundation/umi-http-fetch@1.2.0(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
+
+  '@metaplex-foundation/umi-options@1.2.0': {}
+
+  '@metaplex-foundation/umi-program-repository@1.2.0(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+
+  '@metaplex-foundation/umi-public-keys@1.2.0':
+    dependencies:
+      '@metaplex-foundation/umi-serializers-encodings': 1.2.0
+
+  '@metaplex-foundation/umi-rpc-chunk-get-accounts@1.2.0(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+
+  '@metaplex-foundation/umi-rpc-web3js@1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+      '@metaplex-foundation/umi-web3js-adapters': 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
+      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+
+  '@metaplex-foundation/umi-serializer-data-view@1.2.0(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+
+  '@metaplex-foundation/umi-serializers-core@1.2.0': {}
+
+  '@metaplex-foundation/umi-serializers-encodings@1.2.0':
+    dependencies:
+      '@metaplex-foundation/umi-serializers-core': 1.2.0
+
+  '@metaplex-foundation/umi-serializers-numbers@1.2.0':
+    dependencies:
+      '@metaplex-foundation/umi-serializers-core': 1.2.0
+
+  '@metaplex-foundation/umi-serializers@1.2.0':
+    dependencies:
+      '@metaplex-foundation/umi-options': 1.2.0
+      '@metaplex-foundation/umi-public-keys': 1.2.0
+      '@metaplex-foundation/umi-serializers-core': 1.2.0
+      '@metaplex-foundation/umi-serializers-encodings': 1.2.0
+      '@metaplex-foundation/umi-serializers-numbers': 1.2.0
+
+  '@metaplex-foundation/umi-transaction-factory-web3js@1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+      '@metaplex-foundation/umi-web3js-adapters': 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
+      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+
+  '@metaplex-foundation/umi-web3js-adapters@1.1.1(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      buffer: 6.0.3
+
+  '@metaplex-foundation/umi-web3js-adapters@1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+      '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      buffer: 6.0.3
+
+  '@metaplex-foundation/umi@1.2.0':
+    dependencies:
+      '@metaplex-foundation/umi-options': 1.2.0
+      '@metaplex-foundation/umi-public-keys': 1.2.0
+      '@metaplex-foundation/umi-serializers': 1.2.0
 
   '@microsoft/tsdoc-config@0.17.1':
     dependencies:
@@ -15321,7 +15567,7 @@ snapshots:
       - supports-color
       - ts-node
 
-  create-lite-jest-runner@1.1.2(jest@29.7.0(@types/node@24.0.3)):
+  create-lite-jest-runner@1.1.2(jest@29.7.0):
     dependencies:
       jest: 29.7.0(@types/node@24.0.3)
       p-limit: 6.2.0
@@ -15925,7 +16171,7 @@ snapshots:
     optionalDependencies:
       '@testing-library/dom': 10.4.0
 
-  eslint-plugin-jest@28.14.0(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0(@types/node@24.0.3))(typescript@5.8.3):
+  eslint-plugin-jest@28.14.0(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3))(eslint@9.29.0(jiti@1.21.7))(jest@29.7.0)(typescript@5.8.3):
     dependencies:
       '@typescript-eslint/utils': 8.34.1(eslint@9.29.0(jiti@1.21.7))(typescript@5.8.3)
       eslint: 9.29.0(jiti@1.21.7)
@@ -19576,6 +19822,26 @@ snapshots:
       '@jest/types': 30.0.0
       babel-jest: 29.7.0(@babel/core@7.27.4)
       esbuild: 0.25.5
+      jest-util: 30.0.0
+
+  ts-jest@29.4.0(@babel/core@7.27.4)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(jest-util@30.0.0)(jest@29.7.0)(typescript@5.8.3):
+    dependencies:
+      bs-logger: 0.2.6
+      ejs: 3.1.10
+      fast-json-stable-stringify: 2.1.0
+      jest: 29.7.0(@types/node@24.0.3)
+      json5: 2.2.3
+      lodash.memoize: 4.1.2
+      make-error: 1.3.6
+      semver: 7.7.2
+      type-fest: 4.41.0
+      typescript: 5.8.3
+      yargs-parser: 21.1.1
+    optionalDependencies:
+      '@babel/core': 7.27.4
+      '@jest/transform': 29.7.0
+      '@jest/types': 30.0.0
+      babel-jest: 29.7.0(@babel/core@7.27.4)
       jest-util: 30.0.0
 
   ts-mixer@6.0.4: {}
