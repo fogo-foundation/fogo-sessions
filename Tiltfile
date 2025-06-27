@@ -52,7 +52,8 @@ local_resource(
 local_resource(
     "setup-address-lookup-table",
     """
-    solana address-lookup-table extend --keypair ./tilt/keypairs/sponsor.json \
+    solana address-lookup-table extend -u l \
+    --keypair ./tilt/keypairs/sponsor.json \
     93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3 \
     --addresses %s
     """ % ",".join(LOOKUP_TABLE_ADDRESSES),
@@ -60,7 +61,7 @@ local_resource(
 )
 
 local_resource(
-    "web-app",
-    serve_cmd="pnpm turbo start:dev",
+    "Demo Webapp",
+    serve_cmd="pnpm turbo --filter @fogo/sessions-demo start:dev",
     resource_deps=["setup-wrapped-sol-faucet", "setup-address-lookup-table", "initialize-chain-id"],
 )

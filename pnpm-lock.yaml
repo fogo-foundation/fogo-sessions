@@ -418,6 +418,9 @@ importers:
       '@types/jest':
         specifier: 'catalog:'
         version: 29.5.14
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.0.3
       eslint:
         specifier: 'catalog:'
         version: 9.29.0(jiti@1.21.7)
