@@ -1,7 +1,0 @@
-{
-  "extends": "./tsconfig.build.json",
-  "exclude": ["node_modules", "dist", "src/index.cjs.ts"],
-  "compilerOptions": {
-    "outDir": "./dist/esm"
-  }
-}
