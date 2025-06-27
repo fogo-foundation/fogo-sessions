@@ -36,6 +36,10 @@
       ],
       "outputs": ["src/idl/*.json", "src/types/*.ts"]
     },
+    "//#run:initialize-session-manager": {
+      "dependsOn": ["@fogo/initialize-session-manager#build"],
+      "cache": false
+    },
     "//#test": {
       "dependsOn": [
         "//#test:types",

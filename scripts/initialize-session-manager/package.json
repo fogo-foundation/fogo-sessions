@@ -1,0 +1,33 @@
+{
+  "name": "@fogo/initialize-session-manager",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": "./bin/initialize-session-manager.js",
+  "scripts": {
+    "build": "tsc --noEmit false --outDir ./dist",
+    "fix:format": "prettier --write .",
+    "fix:lint": "eslint --fix . --max-warnings 0",
+    "test:format": "prettier --check .",
+    "test:lint": "eslint . --max-warnings 0",
+    "test:types": "tsc"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "catalog:",
+    "@fogo/sessions-idls": "workspace:*",
+    "@solana/web3.js": "catalog:",
+    "yargs": "catalog:"
+  },
+  "devDependencies": {
+    "@cprussin/eslint-config": "catalog:",
+    "@cprussin/jest-config": "catalog:",
+    "@cprussin/prettier-config": "catalog:",
+    "@cprussin/tsconfig": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/yargs": "catalog:",
+    "eslint": "catalog:",
+    "jest": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  }
+}

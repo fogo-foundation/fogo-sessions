@@ -38,6 +38,14 @@ LOOKUP_TABLE_ADDRESSES=[
 ]
 
 local_resource(
+    "initialize-session-manager",
+    """
+    pnpm turbo run:initialize-session-manager -- -u l -k ./tilt/keypairs/sponsor.json --chain-id localnet
+    """,
+    resource_deps=["svm-localnet"],
+)
+
+local_resource(
     "setup-address-lookup-table",
     """
     solana address-lookup-table extend --keypair ./tilt/keypairs/sponsor.json \
@@ -50,5 +58,5 @@ local_resource(
 local_resource(
     "web-app",
     serve_cmd="pnpm turbo start:dev",
-    resource_deps=["setup-wrapped-sol-faucet", "setup-address-lookup-table"],
+    resource_deps=["setup-wrapped-sol-faucet", "setup-address-lookup-table", "initialize-session-manager"],
 )

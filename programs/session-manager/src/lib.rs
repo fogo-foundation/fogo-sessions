@@ -3,6 +3,7 @@
 
 use crate::intents::body::MessageBody;
 use crate::intents::ed25519::Intent;
+use crate::state::Config;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
 use fogo_sessions_sdk::AuthorizedPrograms;
@@ -14,9 +15,18 @@ declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
 pub mod error;
 pub mod intents;
+mod state;
 #[program]
 pub mod session_manager {
     use super::*;
+
+    pub fn initialize<'info>(
+        ctx: Context<'_, '_, '_, 'info, Initialize<'info>>,
+        chain_id: String,
+    ) -> Result<()> {
+        ctx.accounts.config.set_inner(Config { chain_id });
+        Ok(())
+    }
 
     pub fn start_session<'info>(
         ctx: Context<'_, '_, '_, 'info, StartSession<'info>>,
@@ -54,9 +64,21 @@ pub mod session_manager {
 }
 
 #[derive(Accounts)]
+#[instruction(chain_id: String)]
+pub struct Initialize<'info> {
+    #[account(mut)]
+    pub sponsor: Signer<'info>,
+    #[account(init, payer = sponsor, seeds = [b"config"], bump, space = 8 + 4 + chain_id.len())]
+    pub config: Account<'info, Config>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 pub struct StartSession<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
+    #[account(seeds = [b"config"], bump)]
+    pub config: Account<'info, Config>,
     #[account(init, payer = sponsor, space = 200)] // TODO: Compute this dynamically
     pub session: Account<'info, Session>,
     /// CHECK: we check the address of this account
