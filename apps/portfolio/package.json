@@ -13,9 +13,9 @@
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
     "start:dev": "next dev --port 3001",
     "start:prod": "next start --port 3001",
-    "test:format": "jest --selectProjects format",
-    "test:lint:eslint": "jest --selectProjects lint",
-    "test:lint:stylelint": "stylelint 'src/**/*.scss'",
+    "test:format": "run-jest --colors --selectProjects format",
+    "test:lint:eslint": "run-jest --colors --selectProjects lint",
+    "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
     "test:types": "tsc"
   },
   "dependencies": {

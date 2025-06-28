@@ -38,7 +38,6 @@ describe("integration", () => {
 });
 
 const runTestApp = async (port: number) => {
-  await execAsync("pnpm i", { cwd: TEST_DIR_PATH });
   await execAsync("pnpm exec next build", {
     cwd: TEST_DIR_PATH,
   });
@@ -55,7 +54,6 @@ const runTestApp = async (port: number) => {
       return Promise.all([
         browser.close(),
         rm(path.join(TEST_DIR_PATH, ".next"), { recursive: true }),
-        rm(path.join(TEST_DIR_PATH, "node_modules"), { recursive: true }),
       ]);
     },
   };
