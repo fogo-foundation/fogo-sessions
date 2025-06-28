@@ -12,14 +12,29 @@
   "type": "module",
   "main": "./dist/cjs/index.js",
   "types": "./dist/cjs/index.d.ts",
+  "engines": {
+    "node": ">=18"
+  },
   "exports": {
-    "import": {
-      "types": "./dist/esm/index.d.ts",
-      "default": "./dist/esm/index.js"
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
     },
-    "require": {
-      "types": "./dist/cjs/index.d.ts",
-      "default": "./dist/cjs/index.js"
+    "./paymaster": {
+      "import": {
+        "types": "./dist/esm/paymaster.d.ts",
+        "default": "./dist/esm/paymaster.js"
+      },
+      "require": {
+        "types": "./dist/cjs/paymaster.d.ts",
+        "default": "./dist/cjs/paymaster.js"
+      }
     }
   },
   "scripts": {
@@ -46,5 +61,16 @@
     "jest": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "catalog:",
+    "@fogo/sessions-idls": "workspace:*",
+    "@metaplex-foundation/mpl-token-metadata": "catalog:",
+    "@metaplex-foundation/umi": "catalog:",
+    "@metaplex-foundation/umi-bundle-defaults": "catalog:",
+    "@solana/spl-token": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "bs58": "catalog:",
+    "zod": "catalog:"
   }
 }

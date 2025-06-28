@@ -1,8 +1,8 @@
 {
-  "name": "test-package",
+  "name": "sessions-sdk-web-test-package",
   "type": "module",
   "dependencies": {
-    "@fogo/sessions-sdk-web": "file:../../../dist"
+    "@fogo/sessions-sdk-web": "workspace:*"
   },
   "devDependencies": {
     "webpack": "^5.99.9",

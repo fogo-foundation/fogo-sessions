@@ -1,1 +1,254 @@
-export const helloWorld = () => "Hello, World!";
+import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
+import { SessionManagerProgram } from "@fogo/sessions-idls";
+import {
+  fetchMetadata,
+  findMetadataPda,
+} from "@metaplex-foundation/mpl-token-metadata";
+import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  getAssociatedTokenAddress,
+} from "@solana/spl-token";
+import type { TransactionError } from "@solana/web3.js";
+import {
+  Ed25519Program,
+  Keypair,
+  PublicKey,
+  TransactionInstruction,
+} from "@solana/web3.js";
+
+import type { SessionAdapter, TransactionResult } from "./adapter.js";
+import { TransactionResultType } from "./adapter.js";
+
+export { TransactionResultType, createSolanaWalletAdapter } from "./adapter.js";
+
+// eslint-disable-next-line no-constant-binary-expression, @typescript-eslint/no-unnecessary-condition, valid-typeof
+const IS_BROWSER = typeof globalThis.window !== undefined;
+
+const MESSAGE_HEADER = `Fogo Sessions:
+Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
+`;
+
+type EstablishSessionOptions = {
+  adapter: SessionAdapter;
+  domain?: string | undefined;
+  expires: Date;
+  tokens: Map<PublicKey, number>;
+  extra?: string | undefined;
+};
+
+export const establishSession = async (
+  options: EstablishSessionOptions,
+): Promise<EstablishSessionResult> => {
+  const sessionKey = Keypair.generate();
+
+  const tokenInfo = await getTokenInfo(options);
+
+  const [intentInstruction, startSessionInstruction] = await Promise.all([
+    buildIntentInstruction(options, sessionKey, tokenInfo),
+    buildStartSessionInstruction(options, sessionKey, tokenInfo),
+  ]);
+  const result = await options.adapter.sendTransaction(sessionKey, [
+    intentInstruction,
+    ...buildCreateAssociatedTokenAccountInstructions(options, tokenInfo),
+    startSessionInstruction,
+  ]);
+
+  switch (result.type) {
+    case TransactionResultType.Success: {
+      return EstablishSessionResult.Success(result.signature, {
+        sessionKey,
+        publicKey: options.adapter.publicKey,
+        payer: options.adapter.payer,
+        sendTransaction: (instructions) =>
+          options.adapter.sendTransaction(sessionKey, instructions),
+      });
+    }
+    case TransactionResultType.Failed: {
+      return EstablishSessionResult.Failed(result.signature, result.error);
+    }
+  }
+};
+
+type TokenInfo = {
+  symbol: string;
+  metadataAddress: PublicKey;
+  amount: number;
+  ata: PublicKey;
+  mint: PublicKey;
+};
+
+const getTokenInfo = async (
+  options: EstablishSessionOptions,
+): Promise<TokenInfo[]> => {
+  const umi = createUmi(options.adapter.connection.rpcEndpoint);
+  return Promise.all(
+    options.tokens.entries().map(async ([mint, amount]) => {
+      const metaplexMint = metaplexPublicKey(mint.toBase58());
+      const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
+      const [metadata, ata] = await Promise.all([
+        fetchMetadata(umi, metadataAddress),
+        getAssociatedTokenAddress(mint, options.adapter.publicKey),
+      ]);
+      return {
+        symbol: metadata.symbol,
+        metadataAddress: new PublicKey(metadataAddress),
+        amount,
+        ata,
+        mint,
+      };
+    }),
+  );
+};
+
+const buildIntentInstruction = async (
+  options: EstablishSessionOptions,
+  sessionKey: Keypair,
+  tokens: TokenInfo[],
+) => {
+  const message = buildMessage({
+    domain: getDomain(options.domain),
+    sessionKey,
+    expires: options.expires,
+    tokens,
+    extra: options.extra,
+  });
+
+  const intentSignature = await options.adapter.signMessage(message);
+
+  return Ed25519Program.createInstructionWithPublicKey({
+    publicKey: options.adapter.publicKey.toBytes(),
+    signature: intentSignature,
+    message: message,
+  });
+};
+
+const getDomain = (requestedDomain?: string) => {
+  const detectedDomain = IS_BROWSER ? globalThis.location.origin : undefined;
+
+  if (requestedDomain === undefined) {
+    if (detectedDomain === undefined) {
+      throw new Error(
+        "On platforms where the origin cannot be determined, you must pass a domain to create a session.",
+      );
+    } else {
+      return detectedDomain;
+    }
+  } else {
+    if (detectedDomain === undefined || detectedDomain === requestedDomain) {
+      return requestedDomain;
+    } else {
+      throw new Error("You cannot create a session for a different domain.");
+    }
+  }
+};
+
+const buildMessage = (
+  body: Pick<EstablishSessionOptions, "expires" | "extra"> & {
+    domain: string;
+    sessionKey: Keypair;
+    tokens: TokenInfo[];
+  },
+) =>
+  new TextEncoder().encode(
+    [
+      MESSAGE_HEADER,
+      serializeKV({
+        domain: body.domain,
+        expires: body.expires.toISOString(),
+        session_key: body.sessionKey.publicKey.toBase58(),
+        tokens: serializeTokenList(body.tokens),
+        ...(body.extra && { extra: body.extra }),
+      }),
+    ].join("\n"),
+  );
+
+const serializeKV = (data: Record<string, string>) =>
+  Object.entries(data)
+    .map(([key, value]) =>
+      [key, ":", value.startsWith("\n") ? "" : " ", value].join(""),
+    )
+    .join("\n");
+
+const serializeTokenList = (tokens: TokenInfo[]) =>
+  tokens
+    .values()
+    .map(({ symbol, amount }) => `\n-${symbol}: ${amount.toString()}`)
+    .toArray()
+    .join("");
+
+const buildCreateAssociatedTokenAccountInstructions = (
+  options: EstablishSessionOptions,
+  tokens: TokenInfo[],
+) =>
+  tokens.map(({ ata, mint }) =>
+    createAssociatedTokenAccountIdempotentInstruction(
+      options.adapter.payer,
+      ata,
+      options.adapter.publicKey,
+      mint,
+    ),
+  );
+
+const buildStartSessionInstruction = (
+  options: EstablishSessionOptions,
+  sessionKey: Keypair,
+  tokens: TokenInfo[],
+) =>
+  new SessionManagerProgram(
+    new AnchorProvider(options.adapter.connection, {} as Wallet, {}),
+  ).methods
+    .startSession()
+    .accounts({ sponsor: options.adapter.payer, session: sessionKey.publicKey })
+    .remainingAccounts(
+      tokens.flatMap(({ mint, ata, metadataAddress }) => [
+        {
+          pubkey: ata,
+          isWritable: true,
+          isSigner: false,
+        },
+        {
+          pubkey: mint,
+          isWritable: false,
+          isSigner: false,
+        },
+        {
+          pubkey: metadataAddress,
+          isWritable: false,
+          isSigner: false,
+        },
+      ]),
+    )
+    .instruction();
+
+export enum SessionResultType {
+  Success,
+  Failed,
+}
+
+const EstablishSessionResult = {
+  Success: (signature: string, session: Session) => ({
+    type: SessionResultType.Success as const,
+    signature,
+    session,
+  }),
+  Failed: (signature: string, error: TransactionError) => ({
+    type: SessionResultType.Failed as const,
+    signature,
+    error,
+  }),
+};
+
+type EstablishSessionResult = ReturnType<
+  (typeof EstablishSessionResult)[keyof typeof EstablishSessionResult]
+>;
+
+export type Session = {
+  sessionKey: Keypair;
+  publicKey: PublicKey;
+  payer: PublicKey;
+  sendTransaction: (
+    instructions: TransactionInstruction[],
+  ) => Promise<TransactionResult>;
+};
