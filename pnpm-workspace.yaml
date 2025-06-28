@@ -1,7 +1,7 @@
 packages:
   - apps/*
   - packages/*
-  - "!**/integration-tests/__fixtures__/**/*"
+  - packages/*/integration-tests/__fixtures__/*
 
 catalog:
   "@axe-core/react": ^4.10.2
@@ -35,7 +35,7 @@ catalog:
   "@types/react": ^19.1.8
   "@types/react-dom": ^19.1.6
   autoprefixer: ^10.4.20
-  bs58: ^6.0.0
+  bs58: 6.0.0
   class-variance-authority: ^0.7.1
   clsx: ^2.1.1
   eslint: ^9.28.0
@@ -60,7 +60,7 @@ catalog:
   tailwindcss: ^3.4.17
   turbo: ^2.5.4
   typescript: ^5.8.3
-  zod: ^3.25.62
+  zod: 3.25.67
 
 engineStrict: true
 

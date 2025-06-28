@@ -21,7 +21,6 @@ describe("integration", () => {
   it(
     "installs & works",
     async () => {
-      await execAsync("pnpm i", { cwd: TEST_DIR_PATH });
       await execAsync("pnpm exec webpack --mode production", {
         cwd: TEST_DIR_PATH,
       });
@@ -34,7 +33,6 @@ describe("integration", () => {
       await Promise.all([
         browser.close(),
         rm(path.join(TEST_DIR_PATH, "dist"), { recursive: true }),
-        rm(path.join(TEST_DIR_PATH, "node_modules"), { recursive: true }),
       ]);
 
       expect(content).toMatchSnapshot();

@@ -19,6 +19,7 @@
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
     "@fogo/sessions-idls": "workspace:*",
+    "@fogo/sessions-sdk": "workspace:*",
     "@metaplex-foundation/mpl-token-metadata": "catalog:",
     "@metaplex-foundation/umi": "catalog:",
     "@metaplex-foundation/umi-bundle-defaults": "catalog:",

@@ -1,8 +1,8 @@
 {
-  "name": "test-package",
+  "name": "sessions-sdk-react-test-package",
   "type": "module",
   "dependencies": {
-    "@fogo/sessions-sdk-react": "file:../../../dist",
+    "@fogo/sessions-sdk-react": "workspace:*",
     "next": "^15.3.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
