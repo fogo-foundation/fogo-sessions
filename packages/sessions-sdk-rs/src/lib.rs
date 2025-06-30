@@ -33,10 +33,6 @@ pub const MINOR: u8 = 1;
 pub struct Session {
     #[cfg(not(feature = "anchor"))]
     pub discriminator: [u8; 8],
-    /// The major version of the session account, major version changes can change the layout of the account after the minor field
-    pub major: u8,
-    /// The minor version of the session account, minor version changes should only add new fields at the end of the account, so that a newer session account can be deserialized by an older program
-    pub minor: u8,
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
     pub session_info: SessionInfo,
@@ -49,6 +45,10 @@ type UnixTimestamp = i64;
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
 pub struct SessionInfo {
+    /// The major version of the session account, major version changes are breaking changes
+    pub major: u8,
+    /// The minor version of the session account. Until 1.0, every new minor version will be a breaking change.
+    pub minor: u8,
     /// The user who started this session
     pub user: Pubkey,
     /// The expiration time of the session

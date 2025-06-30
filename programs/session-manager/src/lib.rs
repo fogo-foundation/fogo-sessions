@@ -42,10 +42,10 @@ pub mod session_manager {
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
-            major,
-            minor,
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
+                major: MAJOR,
+                minor: MINOR,
                 user: signer,
                 authorized_programs: AuthorizedPrograms::Specific(program_domains),
                 authorized_tokens: AuthorizedTokens::Specific,
