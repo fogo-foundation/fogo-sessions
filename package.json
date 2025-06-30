@@ -20,7 +20,7 @@
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "eslint": "catalog:",
-    "@fogo/initialize-chain-id": "workspace:*",
+    "@fogo/scripts": "workspace:*",
     "jest": "catalog:",
     "prettier": "catalog:",
     "turbo": "catalog:"

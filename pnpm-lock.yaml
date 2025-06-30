@@ -197,9 +197,9 @@ importers:
       '@cprussin/prettier-config':
         specifier: 'catalog:'
         version: 3.0.0(prettier@3.5.3)
-      '@fogo/initialize-chain-id':
+      '@fogo/scripts':
         specifier: workspace:*
-        version: link:scripts/initialize-chain-id
+        version: link:scripts
       eslint:
         specifier: 'catalog:'
         version: 9.29.0(jiti@1.21.7)
@@ -585,14 +585,14 @@ importers:
         specifier: 'catalog:'
         version: 5.8.3
 
-  scripts/initialize-chain-id:
+  scripts:
     dependencies:
       '@coral-xyz/anchor':
         specifier: 'catalog:'
         version: 0.31.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@fogo/sessions-idls':
         specifier: workspace:*
-        version: link:../../packages/sessions-idls
+        version: link:../packages/sessions-idls
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)

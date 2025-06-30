@@ -28,7 +28,7 @@
       "outputs": ["pnpm-lock.yaml"]
     },
     "//#run:initialize-chain-id": {
-      "dependsOn": ["@fogo/initialize-chain-id#build"],
+      "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },
     "//#test": {

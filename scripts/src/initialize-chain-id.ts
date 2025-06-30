@@ -1,11 +1,10 @@
 import fs from "node:fs";
 
-import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
-import type { ChainId } from "@fogo/sessions-idls";
-import { ChainIdIdl } from "@fogo/sessions-idls";
+import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import { Connection, Keypair } from "@solana/web3.js";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { ChainIdProgram } from "@fogo/sessions-idls";
 
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)
@@ -44,6 +43,6 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     Buffer.from(JSON.parse(fs.readFileSync(args.keypair, "utf8"))),
   );
   const provider = new AnchorProvider(connection, new Wallet(keypair));
-  const program = new Program<ChainId>(ChainIdIdl as ChainId, provider);
+  const program = new ChainIdProgram(provider);
   await program.methods.set(args["chain-id"]).rpc();
 };

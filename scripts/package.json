@@ -1,9 +1,11 @@
 {
-  "name": "@fogo/initialize-chain-id",
+  "name": "@fogo/scripts",
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "bin": "./bin/initialize-chain-id.js",
+  "bin": {
+    "initialize-chain-id": "./bin/initialize-chain-id.js"
+  },
   "scripts": {
     "build": "tsc --noEmit false --outDir ./dist",
     "fix:format": "prettier --write .",
