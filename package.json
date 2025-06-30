@@ -11,6 +11,7 @@
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix .",
     "install:modules": "[ $CI ] && true || pnpm install",
+    "run:initialize-chain-id": "initialize-chain-id",
     "test:format": "run-jest --colors --selectProjects format",
     "test:lint": "run-jest --colors --selectProjects lint"
   },
@@ -19,6 +20,7 @@
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "eslint": "catalog:",
+    "@fogo/scripts": "workspace:*",
     "jest": "catalog:",
     "prettier": "catalog:",
     "turbo": "catalog:"

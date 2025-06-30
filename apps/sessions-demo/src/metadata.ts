@@ -4,11 +4,11 @@ const SIZES = [72, 48];
 
 export const metadata = {
   title: {
-    default: "Gasless Trading App",
-    template: "%s | Gasless Trading App",
+    default: "Sessions Demo App",
+    template: "%s | Sessions Demo App",
   },
-  applicationName: "Gasless Trading App",
-  description: "A gasless trading app.",
+  applicationName: "Sessions Demo App",
+  description: "An app for testing Fogo sessions.",
   referrer: "strict-origin-when-cross-origin",
   openGraph: {
     type: "website",

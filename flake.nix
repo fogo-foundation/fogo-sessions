@@ -40,7 +40,23 @@
       };
     });
 
-    project-shell-overlay = system: final: _: {
+    project-shell-overlay = system: final: _: let
+      spl-token-cli = final.rustPlatform.buildRustPackage (finalAttrs: {
+        pname = "spl-token-cli";
+        version = "5.3.0";
+
+        src = final.fetchCrate {
+          inherit (finalAttrs) pname version;
+          hash = "sha256-sUrmtE0xFBTzPRSliVT9UJpPqbGhIBAHTB2XDk7mzw0=";
+        };
+
+        cargoHash = "sha256-W6nioqctxSBsujax1sILHqu/d3I0qEPRQc+hl2gep24=";
+
+        nativeBuildInputs = [final.pkg-config final.perl final.protobuf];
+        buildInputs = [final.openssl final.udev];
+        doCheck = false;
+      });
+    in {
       project-shell = final.mkShell {
         FORCE_COLOR = 1;
         PUPPETEER_SKIP_DOWNLOAD = 1;
@@ -57,6 +73,7 @@
           solana-nix.packages."${system}".solana-cli
           solana-nix.packages."${system}".anchor-cli
           solana-nix.packages."${system}".solana-rust
+          spl-token-cli
         ];
       };
     };

@@ -11,7 +11,7 @@ use std::{
 };
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n\n";
-const MANDATORY_KEYS: [&str; 5] = ["version", "domain", "expires", "session_key", "tokens"];
+const MANDATORY_KEYS: [&str; 6] = ["version", "chain_id", "domain", "expires", "session_key", "tokens"];
 const KEY_VALUE_SEPARATOR: &str = ": ";
 const LIST_ITEM_PREFIX: &str = "-";
 const TOKEN_PERMISSIONS_SECTION_HEADER: &str = "tokens:";
@@ -98,6 +98,7 @@ impl Message {
             version: Version::parse_and_check(&parse_line_with_expected_key(
                 &mut lines, "version",
             )?)?,
+            chain_id: parse_line_with_expected_key(&mut lines, "chain_id")?,
             domain: Domain(parse_line_with_expected_key(&mut lines, "domain")?),
             expires: DateTime::parse_from_rfc3339(&parse_line_with_expected_key(
                 &mut lines, "expires",
@@ -124,9 +125,10 @@ mod test {
     pub fn test_parse_message() {
         let session_key = Pubkey::new_unique();
         let message = format!(
-            "{MESSAGE_PREFIX}version: 0.1\ndomain: https://app.xyz\nexpires: 2014-11-28T21:00:09+09:00\nsession_key: {session_key}\ntokens:\n-SOL: 100\nkey1: value1\nkey2: value2"
+            "{MESSAGE_PREFIX}version: 0.1\nchain_id: localnet\ndomain: https://app.xyz\nexpires: 2014-11-28T21:00:09+09:00\nsession_key: {session_key}\ntokens:\n-SOL: 100\nkey1: value1\nkey2: value2"
         );
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
+        assert_eq!(parsed_message.chain_id, "localnet".to_string());
         assert_eq!(parsed_message.domain, Domain("https://app.xyz".to_string()));
         assert_eq!(parsed_message.session_key, SessionKey(session_key));
         assert_eq!(
