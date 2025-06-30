@@ -2,6 +2,7 @@
 #![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
 
 use crate::intents::body::MessageBody;
+use crate::intents::body::Version;
 use crate::intents::ed25519::Intent;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
@@ -30,7 +31,9 @@ pub mod session_manager {
             expires,
             extra,
             tokens,
+            version,
         } = message.parse()?;
+        let Version { major, minor } = version;
         ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
         ctx.accounts.approve_tokens(
@@ -44,6 +47,8 @@ pub mod session_manager {
         let session = Session {
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
+                major,
+                minor,
                 user: signer,
                 authorized_programs: AuthorizedPrograms::Specific(program_domains),
                 authorized_tokens: AuthorizedTokens::Specific,

@@ -30,6 +30,9 @@ const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
 `;
 
+const CURRENT_MAJOR = "0";
+const CURRENT_MINOR = "1";
+
 type EstablishSessionOptions = {
   adapter: SessionAdapter;
   domain?: string | undefined;
@@ -150,6 +153,7 @@ const buildMessage = (
     [
       MESSAGE_HEADER,
       serializeKV({
+        version: `${CURRENT_MAJOR}.${CURRENT_MINOR}`,
         chain_id: "localnet",
         domain: body.domain,
         expires: body.expires.toISOString(),
