@@ -169,7 +169,7 @@ impl Session {
 
     /// For 0.x versions, every new minor version will be a breaking change.
     fn check_version(&self) -> Result<(), SessionError> {
-        if self.major != MAJOR || self.minor != MINOR {
+        if self.session_info.major != MAJOR || self.session_info.minor != MINOR {
             return Err(SessionError::InvalidAccountVersion);
         }
         Ok(())
