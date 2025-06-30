@@ -32,7 +32,7 @@ pub const MINOR: u8 = 1;
 #[derive(Debug)]
 pub struct Session {
     #[cfg(not(feature = "anchor"))]
-    pub discriminator: [u8; 2],
+    pub discriminator: [u8; 8],
     /// The major version of the session account, major version changes can change the layout of the account after the minor field
     pub major: u8,
     /// The minor version of the session account, minor version changes should only add new fields at the end of the account, so that a newer session account can be deserialized by an older program
