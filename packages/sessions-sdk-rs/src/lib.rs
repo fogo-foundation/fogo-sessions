@@ -117,11 +117,6 @@ impl Session {
         if result.discriminator != Self::DISCRIMINATOR {
             return Err(SessionError::InvalidAccountDiscriminator);
         }
-
-        if result.major != MAJOR || result.minor != MINOR {
-            return Err(SessionError::InvalidAccountVersion);
-        }
-
         Ok(result)
     }
 
@@ -172,11 +167,20 @@ impl Session {
         Ok(())
     }
 
+    /// For 0.x versions, every new minor version will be a breaking change.
+    fn check_version(&self) -> Result<(), SessionError> {
+        if self.major != MAJOR || self.minor != MINOR {
+            return Err(SessionError::InvalidAccountVersion);
+        }
+        Ok(())
+    }
+
     pub fn get_token_permissions_checked(
         &self,
         user: &Pubkey,
         signers: &[AccountInfo],
     ) -> Result<AuthorizedTokens, SessionError> {
+        self.check_version()?;
         self.check_is_live()?;
         self.check_user(user)?;
         self.check_authorized_program_signer(signers)?;
@@ -184,11 +188,15 @@ impl Session {
     }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
-    pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
+    pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> 
+    {
+        self.check_version()?;
         self.check_is_live()?;
         self.check_authorized_program(program_id)?;
         Ok(self.session_info.user)
     }
+
+    
 }
 
 #[derive(Error, Debug, Clone)]
