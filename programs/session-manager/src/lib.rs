@@ -44,8 +44,8 @@ pub mod session_manager {
         let session = Session {
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
-                major: MAJOR,
-                minor: MINOR,
+                major,
+                minor,
                 user: signer,
                 authorized_programs: AuthorizedPrograms::Specific(program_domains),
                 authorized_tokens: AuthorizedTokens::Specific,
