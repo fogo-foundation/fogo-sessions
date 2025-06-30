@@ -1,11 +1,12 @@
-use crate::{error::SessionManagerError, StartSession};
+use crate::{error::SessionManagerError, state::AuthorizedProgram, StartSession};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::get_associated_token_address,
     token::{self, Approve, Mint},
 };
 use chrono::{DateTime, Utc};
-use fogo_sessions_sdk::AuthorizedProgram;
+// use fogo_sessions_sdk::AuthorizedProgram;
+// use fogo_sessions_sdk::AuthorizedProgram;
 use mpl_token_metadata::accounts::Metadata;
 use std::{collections::HashMap, str::FromStr};
 
@@ -24,29 +25,28 @@ pub struct MessageBody {
     pub extra: HashMap<String, String>,
 }
 
-pub struct Version {
-    pub major: u8,
-    pub minor: u8,
+pub enum Version {
+    V1_0,
+    V1_1,
+    V2_0,
+}
+
+impl TryFrom<&str> for Version {
+    type Error = SessionManagerError;
+
+    fn try_from(version: &str) -> std::result::Result<Self, Self::Error> {
+        match version {
+            "1.0" => Ok(Self::V1_0),
+            "1.1" => Ok(Self::V1_1),
+            "2.0" => Ok(Self::V2_0),
+            _ => Err(SessionManagerError::InvalidArgument),
+        }
+    }
 }
 
 impl Version {
     pub fn parse_and_check(version: &str) -> Result<Self> {
-        let (major, minor): (u8, u8) = {
-            let (major, minor) = version
-                .split_once('.')
-                .ok_or(error!(SessionManagerError::InvalidArgument))?;
-            let major = major
-                .parse()
-                .map_err(|_| error!(SessionManagerError::InvalidArgument))?;
-            let minor = minor
-                .parse()
-                .map_err(|_| error!(SessionManagerError::InvalidArgument))?;
-            (major, minor)
-        };
-        if major != fogo_sessions_sdk::MAJOR || minor != fogo_sessions_sdk::MINOR {
-            return Err(error!(SessionManagerError::InvalidArgument));
-        }
-        Ok(Self { major, minor })
+        Ok(Self::try_from(version)?)
     }
 }
 

@@ -24,19 +24,15 @@ pub const SESSION_SETTER: Pubkey =
 /// When in-session token transfers are made, the PDA of an authorized program with this seed needs to sign the transfer
 pub const PROGRAM_SIGNER_SEED: &[u8] = b"fogo_session_program_signer";
 
-pub const MAJOR: u8 = 0;
-pub const MINOR: u8 = 1;
+pub const MAJOR: u8 = 1;
+pub const MINIMUM_MINOR: u8 = 0;
 
 #[cfg_attr(feature = "anchor", account)]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize, Clone))]
 #[derive(Debug)]
 pub struct Session {
     #[cfg(not(feature = "anchor"))]
-    pub discriminator: [u8; 2],
-    /// The major version of the session account, major version changes can change the layout of the account after the minor field
-    pub major: u8,
-    /// The minor version of the session account, minor version changes should only add new fields at the end of the account, so that a newer session account can be deserialized by an older program
-    pub minor: u8,
+    pub discriminator: [u8; 8],
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
     pub session_info: SessionInfo,
@@ -49,6 +45,10 @@ type UnixTimestamp = i64;
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
 pub struct SessionInfo {
+    /// The major version of the session account, major version changes can change the layout of the account after the minor field
+    pub major: u8,
+    /// The minor version of the session account, minor version changes should only add new fields at the end of the account, so that a newer session account can be deserialized by an older program
+    pub minor: u8,
     /// The user who started this session
     pub user: Pubkey,
     /// The expiration time of the session
@@ -118,7 +118,7 @@ impl Session {
             return Err(SessionError::InvalidAccountDiscriminator);
         }
 
-        if result.major != MAJOR || result.minor != MINOR {
+        if result.session_info.major != MAJOR || result.session_info.minor < MINIMUM_MINOR {
             return Err(SessionError::InvalidAccountVersion);
         }
 

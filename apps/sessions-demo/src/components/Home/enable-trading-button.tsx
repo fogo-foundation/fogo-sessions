@@ -55,7 +55,7 @@ const handleEnableTrading = async (
     `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
 
-version: 0.1
+version: 2.0
 domain: gasless-trading.vercel.app
 expires: ${expires}
 session_key: ${sessionKey.publicKey.toBase58()}
