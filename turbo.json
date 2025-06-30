@@ -27,15 +27,6 @@
       ],
       "outputs": ["pnpm-lock.yaml"]
     },
-    "build:idl": {
-      "inputs": [
-        "../../programs/**/src/**/*.rs",
-        "../../packages/**/src/**/*.rs",
-        "../../**/Cargo.toml",
-        "../../**/Anchor.toml"
-      ],
-      "outputs": ["src/idl/*.json", "src/types/*.ts"]
-    },
     "//#run:initialize-chain-id": {
       "dependsOn": ["@fogo/initialize-chain-id#build"],
       "cache": false
@@ -69,7 +60,8 @@
         "build:esm",
         "build:license",
         "build:package-json",
-        "build:readme"
+        "build:readme",
+        "build:types"
       ],
       "inputs": [
         "$TURBO_DEFAULT$",
@@ -84,7 +76,7 @@
       "env": ["VERCEL_ENV"]
     },
     "build:cjs": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"],
+      "dependsOn": ["//#install:modules", "^build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!README.md",
@@ -97,7 +89,7 @@
       "outputs": ["dist/cjs/**"]
     },
     "build:esm": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"],
+      "dependsOn": ["//#install:modules", "^build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!README.md",
@@ -120,6 +112,19 @@
     },
     "build:readme": {
       "outputs": ["dist/**/*.md"]
+    },
+    "build:types": {
+      "dependsOn": ["//#install:modules", "^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!README.md",
+        "!**/*.test.*",
+        "!jest.config.js",
+        "!eslint.config.js",
+        "!prettier.config.js",
+        "!vercel.json"
+      ],
+      "outputs": ["dist/types/**"]
     },
     "fix": {
       "dependsOn": ["fix:lint", "fix:format"],
@@ -164,7 +169,7 @@
       "dependsOn": ["//#install:modules", "^build"]
     },
     "test:types": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "test:unit": {
       "dependsOn": ["//#install:modules", "^build"]

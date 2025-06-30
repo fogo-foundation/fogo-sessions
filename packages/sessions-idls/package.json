@@ -10,22 +10,23 @@
     "wallet"
   ],
   "type": "module",
-  "main": "./dist/cjs/index.cjs.js",
-  "types": "./dist/cjs/index.cjs.d.ts",
+  "main": "./dist/cjs/index.js",
+  "types": "./dist/types/index.d.ts",
   "exports": {
     "import": {
-      "types": "./dist/esm/index.esm.d.ts",
-      "default": "./dist/esm/index.esm.js"
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/esm/index.js"
     },
     "require": {
-      "types": "./dist/cjs/index.cjs.d.ts",
-      "default": "./dist/cjs/index.cjs.js"
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/cjs/index.js"
     }
   },
   "scripts": {
-    "build:cjs": "tsc --project tsconfig.build.cjs.json && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-    "build:esm": "tsc --project tsconfig.build.esm.json && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "build:cjs": "swc src -d dist/cjs --strip-leading-paths --copy-files -C module.type=commonjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "build:esm": "swc src -d dist/esm --strip-leading-paths --copy-files && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
+    "build:types": "tsc --project tsconfig.build.json",
     "build:idl": "mkdir -p src/idl && mkdir -p src/types && anchor idl build --program-name session-manager --out-ts src/types/session-manager.ts --out src/idl/session-manager.json && anchor idl build --program-name example --out-ts src/types/example.ts --out src/idl/example.json && anchor idl build --program-name chain-id --out-ts src/types/chain-id.ts --out src/idl/chain-id.json",
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix . --max-warnings 0",
@@ -39,11 +40,16 @@
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
+    "@swc/cli": "catalog:",
+    "@swc/core": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
     "jest": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "catalog:"
   }
 }

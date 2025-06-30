@@ -1,8 +1,5 @@
-"use client";
-
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
-import type { SessionManager } from "@fogo/sessions-idls";
-import { SessionManagerIdl } from "@fogo/sessions-idls";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import { SessionManagerProgram } from "@fogo/sessions-idls";
 import {
   fetchMetadata,
   findMetadataPda,
@@ -16,7 +13,7 @@ import {
 } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Ed25519Program, Keypair, PublicKey } from "@solana/web3.js";
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -25,7 +22,7 @@ import { sendTransaction } from "@/send-transaction";
 const handleEnableTrading = async (
   sponsorPubkey: PublicKey,
   solanaRpc: string,
-  sessionManagerProgram: Program<SessionManager>,
+  sessionManagerProgram: SessionManagerProgram,
   publicKey: PublicKey,
   signMessage: (message: Uint8Array) => Promise<Uint8Array>,
   addressLookupTableAddress: string | undefined,
@@ -145,15 +142,6 @@ export const EnableTradingButton = ({
     | { status: "not-started" }
   >({ status: "not-started" });
 
-  const sessionManagerProgram = useMemo(
-    () =>
-      new Program<SessionManager>(
-        SessionManagerIdl as SessionManager,
-        provider,
-      ),
-    [provider],
-  );
-
   const { publicKey, signMessage } = useWallet();
 
   const onEnableTrading = useCallback(() => {
@@ -162,7 +150,7 @@ export const EnableTradingButton = ({
       handleEnableTrading(
         new PublicKey(sponsorPubkey),
         solanaRpc,
-        sessionManagerProgram,
+        new SessionManagerProgram(provider),
         publicKey,
         signMessage,
         addressLookupTableAddress,
@@ -183,9 +171,9 @@ export const EnableTradingButton = ({
         });
     }
   }, [
+    provider,
     publicKey,
     signMessage,
-    sessionManagerProgram,
     sponsorPubkey,
     solanaRpc,
     onTradingEnabled,
