@@ -24,12 +24,14 @@ pub mod session_manager {
     ) -> Result<()> {
         let Intent { signer, message } = ctx.accounts.verify_intent()?;
         let MessageBody {
+            chain_id,
             domain,
             session_key,
             expires,
             extra,
             tokens,
         } = message.parse()?;
+        ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
         ctx.accounts.approve_tokens(
             ctx.remaining_accounts,
@@ -58,6 +60,8 @@ pub mod session_manager {
 pub struct StartSession<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
+    #[account(seeds = [chain_id::SEED], seeds::program = chain_id::ID, bump)]
+    pub chain_id: Account<'info, chain_id::ChainId>,
     #[account(init, payer = sponsor, space = 200)] // TODO: Compute this dynamically
     pub session: Account<'info, Session>,
     /// CHECK: we check the address of this account

@@ -16,6 +16,7 @@ pub struct Domain(pub(crate) String);
 pub struct SessionKey(pub(crate) Pubkey);
 
 pub struct MessageBody {
+    pub chain_id: String,
     pub domain: Domain,
     pub expires: DateTime<Utc>,
     pub session_key: SessionKey,
@@ -26,6 +27,13 @@ pub struct MessageBody {
 impl<'info> StartSession<'info> {
     pub fn check_session_key(&self, session_key: SessionKey) -> Result<()> {
         if self.session.key() != session_key.0 {
+            return Err(ProgramError::InvalidArgument.into());
+        }
+        Ok(())
+    }
+
+    pub fn check_chain_id(&self, chain_id: String) -> Result<()> {
+        if self.chain_id.chain_id != chain_id {
             return Err(ProgramError::InvalidArgument.into());
         }
         Ok(())
