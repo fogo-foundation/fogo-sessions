@@ -1,10 +1,10 @@
 import fs from "node:fs";
 
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
+import { ChainIdProgram } from "@fogo/sessions-idls";
 import { Connection, Keypair } from "@solana/web3.js";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { ChainIdProgram } from "@fogo/sessions-idls";
 
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)
