@@ -1,8 +1,8 @@
 packages:
   - apps/*
   - packages/*
+  - packages/*/integration-tests/__fixtures__/*
   - scripts
-  - "!**/integration-tests/__fixtures__/**/*"
 
 catalog:
   "@axe-core/react": ^4.10.2

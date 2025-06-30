@@ -1,7 +1,7 @@
 {
-  "name": "test-package",
+  "name": "sessions-sdk-test-package",
   "type": "module",
   "dependencies": {
-    "@fogo/sessions-sdk": "file:../../../dist"
+    "@fogo/sessions-sdk": "workspace:*"
   }
 }
