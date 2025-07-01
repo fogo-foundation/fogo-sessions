@@ -24,6 +24,7 @@
     "@metaplex-foundation/umi": "catalog:",
     "@metaplex-foundation/umi-bundle-defaults": "catalog:",
     "@radix-ui/react-slot": "catalog:",
+    "@react-hookz/web": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-base": "catalog:",
     "@solana/wallet-adapter-react": "catalog:",
@@ -33,6 +34,7 @@
     "bs58": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
+    "idb": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
@@ -42,11 +44,11 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bn.js": "catalog:",
     "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
+    "@types/bn.js": "catalog:",
     "@types/react": "catalog:",
     "autoprefixer": "catalog:",
     "pino-pretty": "catalog:",

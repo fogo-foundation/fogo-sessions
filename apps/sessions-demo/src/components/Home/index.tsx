@@ -8,7 +8,7 @@ import {
 
 export const Home = () => (
   <main>
-    <div className="m-auto w-3/5 parent space-y-2">
+    <div className="m-auto px-4 sm:px-10 lg:px-0 lg:w-3/5 parent space-y-2">
       <h1 className="text-2xl font-medium mt-8 mb-4">Fogo Sessions Demo</h1>
       <Demo
         sponsor={SPONSOR_KEY.publicKey.toBase58()}

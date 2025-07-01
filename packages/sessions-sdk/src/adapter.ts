@@ -1,20 +1,35 @@
+import {
+  fromLegacyPublicKey,
+  fromLegacyTransactionInstruction,
+} from "@solana/compat";
+import type { Transaction } from "@solana/kit";
+import {
+  createTransactionMessage,
+  setTransactionMessageFeePayer,
+  setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstructions,
+  getBase64EncodedWireTransaction,
+  partiallySignTransactionMessageWithSigners,
+  pipe,
+  createSolanaRpc,
+  addSignersToTransactionMessage,
+  compressTransactionMessageUsingAddressLookupTables,
+  createSignerFromKeyPair,
+} from "@solana/kit";
 import type {
   Connection,
   PublicKey,
-  Keypair,
   TransactionError,
   TransactionInstruction,
   AddressLookupTableAccount,
 } from "@solana/web3.js";
-import { TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 
 export type SessionAdapter = {
-  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
-  publicKey: PublicKey;
+  signMessage?: ((message: Uint8Array) => Promise<Uint8Array>) | undefined;
   connection: Connection;
   payer: PublicKey;
   sendTransaction: (
-    sessionKey: Keypair,
+    sessionKey: CryptoKeyPair,
     instructions: TransactionInstruction[],
   ) => Promise<TransactionResult>;
 };
@@ -43,8 +58,7 @@ export type TransactionResult = ReturnType<
 export const createSolanaWalletAdapter = (
   options: {
     connection: Connection;
-    publicKey: PublicKey;
-    signMessage: SessionAdapter["signMessage"];
+    signMessage?: SessionAdapter["signMessage"];
     sponsor: PublicKey;
     addressLookupTables?: AddressLookupTableAccount[] | undefined;
   } & (
@@ -52,40 +66,67 @@ export const createSolanaWalletAdapter = (
         paymasterUrl: string;
       }
     | {
-        sendToPaymaster: (transaction: VersionedTransaction) => Promise<string>;
+        sendToPaymaster: (transaction: Transaction) => Promise<string>;
       }
   ),
 ): SessionAdapter => ({
-  publicKey: options.publicKey,
   signMessage: options.signMessage,
   connection: options.connection,
   payer: options.sponsor,
   sendTransaction: async (
-    sessionKey: Keypair,
+    sessionKey: CryptoKeyPair,
     instructions: TransactionInstruction[],
   ) => {
-    const { blockhash } = await options.connection.getLatestBlockhash();
+    const rpc = createSolanaRpc(options.connection.rpcEndpoint);
+    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+    const sessionKeySigner = await createSignerFromKeyPair(sessionKey);
 
-    const transaction = new VersionedTransaction(
-      new TransactionMessage({
-        payerKey: options.sponsor,
-        recentBlockhash: blockhash,
-        instructions,
-      }).compileToV0Message(options.addressLookupTables ?? []),
+    const transaction = await partiallySignTransactionMessageWithSigners(
+      pipe(
+        createTransactionMessage({ version: 0 }),
+        (tx) =>
+          setTransactionMessageFeePayer(
+            fromLegacyPublicKey(options.sponsor),
+            tx,
+          ),
+        (tx) =>
+          setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+        (tx) =>
+          appendTransactionMessageInstructions(
+            instructions.map((instruction) =>
+              fromLegacyTransactionInstruction(instruction),
+            ),
+            tx,
+          ),
+        (tx) =>
+          compressTransactionMessageUsingAddressLookupTables(
+            tx,
+            Object.fromEntries(
+              options.addressLookupTables?.map(
+                (table) =>
+                  [
+                    fromLegacyPublicKey(table.key),
+                    table.state.addresses.map((address) =>
+                      fromLegacyPublicKey(address),
+                    ),
+                  ] as const,
+              ) ?? [],
+            ),
+          ),
+        (tx) => addSignersToTransactionMessage([sessionKeySigner], tx),
+      ),
     );
-
-    transaction.sign([sessionKey]);
 
     const signature =
       "sendToPaymaster" in options
         ? await options.sendToPaymaster(transaction)
         : await sendToPaymaster(options.paymasterUrl, transaction);
 
-    const lastValidBlockHeight = await options.connection.getSlot();
+    const lastValidBlockHeight = await rpc.getSlot().send();
     const confirmationResult = await options.connection.confirmTransaction({
       signature,
-      blockhash,
-      lastValidBlockHeight,
+      blockhash: latestBlockhash.blockhash.toString(),
+      lastValidBlockHeight: Number(lastValidBlockHeight),
     });
 
     return confirmationResult.value.err === null
@@ -96,7 +137,7 @@ export const createSolanaWalletAdapter = (
 
 const sendToPaymaster = async (
   paymasterUrl: string,
-  transaction: VersionedTransaction,
+  transaction: Transaction,
 ) => {
   const response = await fetch(paymasterUrl, {
     method: "POST",
@@ -104,7 +145,7 @@ const sendToPaymaster = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      transaction: Buffer.from(transaction.serialize()).toString("base64"),
+      transaction: getBase64EncodedWireTransaction(transaction),
     }),
   });
 
