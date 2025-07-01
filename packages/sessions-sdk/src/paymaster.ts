@@ -1,50 +1,56 @@
-import { VersionedTransaction, Connection, Keypair } from "@solana/web3.js";
-import bs58 from "bs58";
+import { fromLegacyKeypair } from "@solana/compat";
+import type { Transaction, Rpc, SolanaRpcApi } from "@solana/kit";
+import {
+  signTransaction,
+  createSolanaRpc,
+  getBase64EncodedWireTransaction,
+  getTransactionDecoder,
+  getBase64Encoder,
+  getSignatureFromTransaction,
+} from "@solana/kit";
+import { Keypair } from "@solana/web3.js";
 import { z } from "zod";
 
 export const sponsorAndSend = async (
-  connection: Connection,
-  sponsor: Keypair,
-  transaction: VersionedTransaction,
+  rpc: Rpc<SolanaRpcApi>,
+  sponsor: CryptoKeyPair,
+  transaction: Transaction,
 ) => {
-  transaction.sign([sponsor]);
-  const signature = transaction.signatures[0];
-  if (signature === undefined) {
-    throw new Error("Sponsor failed to sign transaction");
-  } else {
-    await connection.sendRawTransaction(transaction.serialize(), {
+  const signedTransaction = await signTransaction([sponsor], transaction);
+  await rpc
+    .sendTransaction(getBase64EncodedWireTransaction(signedTransaction), {
+      encoding: "base64",
       skipPreflight: true,
-    });
-    return signature;
-  }
+    })
+    .send();
+  return getSignatureFromTransaction(signedTransaction);
 };
 
-export const createPaymasterEndpoint = (options: {
+export const createPaymasterEndpoint = async (options: {
   rpc: string;
   sponsor: Keypair;
 }) => {
-  const connection = new Connection(options.rpc);
-
+  const rpc = createSolanaRpc(options.rpc);
+  const sponsor = await fromLegacyKeypair(options.sponsor);
   return async (req: Request) => {
     const data = postBodySchema.parse(await req.json());
     try {
-      const transaction = VersionedTransaction.deserialize(
-        new Uint8Array(Buffer.from(data.transaction, "base64")),
+      const transaction = getTransactionDecoder().decode(
+        getBase64Encoder().encode(data.transaction),
       );
       try {
-        const signature = await sponsorAndSend(
-          connection,
-          options.sponsor,
-          transaction,
-        );
-        return new Response(bs58.encode(signature));
+        return new Response(await sponsorAndSend(rpc, sponsor, transaction));
       } catch (error: unknown) {
+        // eslint-disable-next-line no-console
+        console.error(error);
         return new Response(
           `Failed to sponsor and send: ${serializeError(error)}`,
           { status: 500 },
         );
       }
-    } catch {
+    } catch (error: unknown) {
+      // eslint-disable-next-line no-console
+      console.error(error);
       return new Response("Failed to deserialize transaction", { status: 400 });
     }
   };

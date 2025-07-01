@@ -6,6 +6,7 @@ import {
 } from "@metaplex-foundation/mpl-token-metadata";
 import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { generateKeyPair, getAddressFromPublicKey } from "@solana/kit";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
@@ -13,7 +14,6 @@ import {
 import type { TransactionError } from "@solana/web3.js";
 import {
   Ed25519Program,
-  Keypair,
   PublicKey,
   TransactionInstruction,
 } from "@solana/web3.js";
@@ -35,6 +35,7 @@ const CURRENT_MINOR = "1";
 
 type EstablishSessionOptions = {
   adapter: SessionAdapter;
+  publicKey: PublicKey;
   domain?: string | undefined;
   expires: Date;
   tokens: Map<PublicKey, number>;
@@ -44,7 +45,7 @@ type EstablishSessionOptions = {
 export const establishSession = async (
   options: EstablishSessionOptions,
 ): Promise<EstablishSessionResult> => {
-  const sessionKey = Keypair.generate();
+  const sessionKey = await generateKeyPair();
 
   const tokenInfo = await getTokenInfo(options);
 
@@ -60,19 +61,38 @@ export const establishSession = async (
 
   switch (result.type) {
     case TransactionResultType.Success: {
-      return EstablishSessionResult.Success(result.signature, {
-        sessionKey,
-        publicKey: options.adapter.publicKey,
-        payer: options.adapter.payer,
-        sendTransaction: (instructions) =>
-          options.adapter.sendTransaction(sessionKey, instructions),
-      });
+      return EstablishSessionResult.Success(
+        result.signature,
+        await createSession(options.adapter, options.publicKey, sessionKey),
+      );
     }
     case TransactionResultType.Failed: {
       return EstablishSessionResult.Failed(result.signature, result.error);
     }
   }
 };
+
+// TODO we really should check to ensure the session is still valid...
+export const reestablishSession = async (
+  adapter: SessionAdapter,
+  publicKey: PublicKey,
+  sessionKey: CryptoKeyPair,
+): Promise<Session> => createSession(adapter, publicKey, sessionKey);
+
+const createSession = async (
+  adapter: SessionAdapter,
+  publicKey: PublicKey,
+  sessionKey: CryptoKeyPair,
+): Promise<Session> => ({
+  sessionPublicKey: new PublicKey(
+    await getAddressFromPublicKey(sessionKey.publicKey),
+  ),
+  publicKey,
+  sessionKey,
+  payer: adapter.payer,
+  sendTransaction: (instructions) =>
+    adapter.sendTransaction(sessionKey, instructions),
+});
 
 type TokenInfo = {
   symbol: string;
@@ -102,24 +122,28 @@ const getTokenInfo = async (
 
 const buildIntentInstruction = async (
   options: EstablishSessionOptions,
-  sessionKey: Keypair,
+  sessionKey: CryptoKeyPair,
   tokens: TokenInfo[],
 ) => {
-  const message = buildMessage({
-    domain: getDomain(options.domain),
-    sessionKey,
-    expires: options.expires,
-    tokens,
-    extra: options.extra,
-  });
+  if (options.adapter.signMessage === undefined) {
+    throw new Error("Cannot establish a session if no wallet is connected");
+  } else {
+    const message = await buildMessage({
+      domain: getDomain(options.domain),
+      sessionKey,
+      expires: options.expires,
+      tokens,
+      extra: options.extra,
+    });
 
-  const intentSignature = await options.adapter.signMessage(message);
+    const intentSignature = await options.adapter.signMessage(message);
 
-  return Ed25519Program.createInstructionWithPublicKey({
-    publicKey: options.adapter.publicKey.toBytes(),
-    signature: intentSignature,
-    message: message,
-  });
+    return Ed25519Program.createInstructionWithPublicKey({
+      publicKey: options.publicKey.toBytes(),
+      signature: intentSignature,
+      message: message,
+    });
+  }
 };
 
 const getDomain = (requestedDomain?: string) => {
@@ -142,10 +166,10 @@ const getDomain = (requestedDomain?: string) => {
   }
 };
 
-const buildMessage = (
+const buildMessage = async (
   body: Pick<EstablishSessionOptions, "expires" | "extra"> & {
     domain: string;
-    sessionKey: Keypair;
+    sessionKey: CryptoKeyPair;
     tokens: TokenInfo[];
   },
 ) =>
@@ -157,7 +181,7 @@ const buildMessage = (
         chain_id: "localnet",
         domain: body.domain,
         expires: body.expires.toISOString(),
-        session_key: body.sessionKey.publicKey.toBase58(),
+        session_key: await getAddressFromPublicKey(body.sessionKey.publicKey),
         tokens: serializeTokenList(body.tokens),
         ...(body.extra && { extra: body.extra }),
       }),
@@ -185,29 +209,29 @@ const buildCreateAssociatedTokenAccountInstructions = (
   tokens.map(({ mint }) =>
     createAssociatedTokenAccountIdempotentInstruction(
       options.adapter.payer,
-      getAssociatedTokenAddressSync(mint, options.adapter.publicKey),
-      options.adapter.publicKey,
+      getAssociatedTokenAddressSync(mint, options.publicKey),
+      options.publicKey,
       mint,
     ),
   );
 
-const buildStartSessionInstruction = (
+const buildStartSessionInstruction = async (
   options: EstablishSessionOptions,
-  sessionKey: Keypair,
+  sessionKey: CryptoKeyPair,
   tokens: TokenInfo[],
 ) =>
   new SessionManagerProgram(
     new AnchorProvider(options.adapter.connection, {} as Wallet, {}),
   ).methods
     .startSession()
-    .accounts({ sponsor: options.adapter.payer, session: sessionKey.publicKey })
+    .accounts({
+      sponsor: options.adapter.payer,
+      session: await getAddressFromPublicKey(sessionKey.publicKey),
+    })
     .remainingAccounts(
       tokens.flatMap(({ mint, metadataAddress }) => [
         {
-          pubkey: getAssociatedTokenAddressSync(
-            mint,
-            options.adapter.publicKey,
-          ),
+          pubkey: getAssociatedTokenAddressSync(mint, options.publicKey),
           isWritable: true,
           isSigner: false,
         },
@@ -248,7 +272,8 @@ type EstablishSessionResult = ReturnType<
 >;
 
 export type Session = {
-  sessionKey: Keypair;
+  sessionPublicKey: PublicKey;
+  sessionKey: CryptoKeyPair;
   publicKey: PublicKey;
   payer: PublicKey;
   sendTransaction: (

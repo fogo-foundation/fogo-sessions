@@ -12,7 +12,7 @@ import { useRef, useEffect, useCallback } from "react";
 // libs don't make it very easy to subscribe to wallet connection state
 // changes...
 export const useWalletInfo = (): (() => Promise<WalletInfo>) => {
-  const { publicKey, signMessage } = useWallet();
+  const { publicKey, signMessage, connecting } = useWallet();
   const { setVisible, visible } = useWalletModal();
   const connectWalletResolver = useRef<
     | undefined
@@ -37,10 +37,10 @@ export const useWalletInfo = (): (() => Promise<WalletInfo>) => {
           resolve({ signMessage, publicKey });
         } else {
           connectWalletResolver.current = { resolve, reject };
-          setVisible(true);
+          setVisible(!connecting);
         }
       }),
-    [signMessage, publicKey, setVisible],
+    [signMessage, publicKey, setVisible, connecting],
   );
 };
 

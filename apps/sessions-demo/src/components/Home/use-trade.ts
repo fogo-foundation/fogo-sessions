@@ -40,7 +40,7 @@ export const useTrade = (
       ).methods
         .exampleTransfer(new BN(100))
         .accounts({
-          sessionKey: session.sessionKey.publicKey,
+          sessionKey: session.sessionPublicKey,
           sink: sinkAta,
           userTokenAccount: userTokenAccount,
         })
