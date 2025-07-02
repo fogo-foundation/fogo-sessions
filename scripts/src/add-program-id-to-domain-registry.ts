@@ -59,10 +59,6 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
       programId: new PublicKey(args["program-id"]),
       domainRecord: getDomainRecordAddress(args.domain),
     })
-    .preInstructions(
-      [await program.methods
-        .initialize()
-        .instruction(),
-    ])
+    .preInstructions([await program.methods.initialize().instruction()])
     .rpc();
 };
