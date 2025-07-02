@@ -1,8 +1,11 @@
-import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
-import { ExampleProgram } from "@fogo/sessions-idls";
 import type { Session } from "@fogo/sessions-sdk";
 import { TransactionResultType } from "@fogo/sessions-sdk";
-import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferInstruction,
+  getAssociatedTokenAddressSync,
+  getMint,
+} from "@solana/spl-token";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
@@ -11,7 +14,7 @@ import { mutate } from "swr";
 import type { Transaction } from "./use-transaction-log";
 import { useAsync } from "../../hooks/use-async";
 
-export const useTrade = (
+export const useAirdrop = (
   session: Session,
   appendTransaction: (tx: Transaction) => void,
   amount: number,
@@ -19,30 +22,28 @@ export const useTrade = (
 ) => {
   const { connection } = useConnection();
 
-  const doTrade = useCallback(async () => {
-    const sinkAta = getAssociatedTokenAddressSync(mint, session.payer);
-    const userTokenAccount = getAssociatedTokenAddressSync(
-      mint,
-      session.publicKey,
-    );
+  const doAirdrop = useCallback(async () => {
+    const faucetAta = getAssociatedTokenAddressSync(mint, session.payer);
+    const userAta = getAssociatedTokenAddressSync(mint, session.publicKey);
     const { decimals } = await getMint(connection, mint);
 
     const result = await session.sendTransaction([
-      await new ExampleProgram(
-        new AnchorProvider(connection, {} as Wallet, {}),
-      ).methods
-        .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
-        .accountsPartial({
-          sessionKey: session.sessionPublicKey,
-          sink: sinkAta,
-          userTokenAccount,
-          mint,
-        })
-        .instruction(),
+      createAssociatedTokenAccountIdempotentInstruction(
+        session.payer,
+        userAta,
+        session.publicKey,
+        mint,
+      ),
+      createTransferInstruction(
+        faucetAta,
+        userAta,
+        session.payer,
+        amount * Math.pow(10, decimals),
+      ),
     ]);
 
     appendTransaction({
-      description: "Trade",
+      description: "Airdrop",
       signature: result.signature,
       success: result.type === TransactionResultType.Success,
     });
@@ -55,7 +56,7 @@ export const useTrade = (
     );
 
     return result;
-  }, [connection, session, appendTransaction, amount, mint]);
+  }, [session, appendTransaction, amount, connection]);
 
-  return useAsync(doTrade);
+  return useAsync(doAirdrop);
 };

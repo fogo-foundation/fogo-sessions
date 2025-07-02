@@ -39,6 +39,7 @@
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "swr": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwindcss-animate": "catalog:",
     "zod": "catalog:"

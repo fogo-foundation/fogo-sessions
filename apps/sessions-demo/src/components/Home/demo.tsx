@@ -1,17 +1,21 @@
 "use client";
 
 import type { Session } from "@fogo/sessions-sdk";
+import { NATIVE_MINT } from "@solana/spl-token";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import Link from "next/link";
 import { useCallback } from "react";
 
+import { useAirdrop } from "./use-airdrop";
 import { SessionStateType, useSession } from "./use-session";
+import { useTokenAccountData } from "./use-token-account-data";
 import { useTrade } from "./use-trade";
 import type { Transaction } from "./use-transaction-log";
 import { useTransactionLog } from "./use-transaction-log";
-import { StateType } from "../../hooks/use-async";
+import { StateType as AsyncStateType } from "../../hooks/use-async";
+import { StateType } from "../../hooks/use-data";
 import { Button } from "../ui/button";
 
 export const Demo = ({
@@ -58,10 +62,20 @@ export const Demo = ({
           </div>
           <div className="flex flex-row items-center gap-4 min-h-10">
             {sessionState.type === SessionStateType.Established && (
-              <TradeButton
-                session={sessionState.session}
-                appendTransaction={appendTransaction}
-              />
+              <>
+                <AirdropButton
+                  session={sessionState.session}
+                  appendTransaction={appendTransaction}
+                  amount={1}
+                  mint={NATIVE_MINT}
+                />
+                <TradeButton
+                  session={sessionState.session}
+                  appendTransaction={appendTransaction}
+                  amount={0.5}
+                  mint={NATIVE_MINT}
+                />
+              </>
             )}
             {(sessionState.type === SessionStateType.Establishing ||
               sessionState.type === SessionStateType.NotEstablished) && (
@@ -92,8 +106,11 @@ export const Demo = ({
             </div>
           )}
       </div>
+      {sessionState.type === SessionStateType.Established && (
+        <TokenAccounts session={sessionState.session} />
+      )}
       <div>
-        <h2 className="text-lg font-semibold my-8">Transaction Log</h2>
+        <h2 className="text-lg font-semibold mt-8 mb-4">Transaction Log</h2>
         <ul>
           {transactions.map((tx) => (
             <li key={tx.signature} className="flex flex-row gap-4 items-center">
@@ -114,19 +131,90 @@ export const Demo = ({
   );
 };
 
-const TradeButton = ({
+const AirdropButton = ({
   session,
   appendTransaction,
+  amount,
+  mint,
 }: {
   session: Session;
   appendTransaction: (tx: Transaction) => void;
+  amount: number;
+  mint: PublicKey;
 }) => {
-  const { state, execute } = useTrade(session, appendTransaction);
+  const { state, execute } = useAirdrop(
+    session,
+    appendTransaction,
+    amount,
+    mint,
+  );
   return (
-    <Button onClick={execute} loading={state.type === StateType.Running}>
-      Trade
+    <Button onClick={execute} loading={state.type === AsyncStateType.Running}>
+      Airdrop {amount} SOL
     </Button>
   );
+};
+
+const TradeButton = ({
+  amount,
+  session,
+  appendTransaction,
+  mint,
+}: {
+  amount: number;
+  session: Session;
+  appendTransaction: (tx: Transaction) => void;
+  mint: PublicKey;
+}) => {
+  const { state, execute } = useTrade(session, appendTransaction, amount, mint);
+  return (
+    <Button onClick={execute} loading={state.type === AsyncStateType.Running}>
+      Trade {amount} SOL
+    </Button>
+  );
+};
+
+const TokenAccounts = ({ session }: { session: Session }) => {
+  const state = useTokenAccountData(session);
+  switch (state.type) {
+    case StateType.Error: {
+      return <div className="text-red-600">{errorToString(state.error)}</div>;
+    }
+    case StateType.Loaded: {
+      return (
+        <>
+          <div className="border border-y border-black/40 mt-8 p-4">
+            <h2 className="text-lg font-semibold mb-4">Session Limits</h2>
+            <dl>
+              {state.data.sessionLimits.map(({ name, mint, sessionLimit }) => (
+                <div key={mint} className="flex flex-row items-center gap-4">
+                  <dt>{name}</dt>
+                  <dd className="font-bold">{sessionLimit}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+          <div className="border border-y border-black/40 mt-8 p-4">
+            <h2 className="text-lg font-semibold mb-4">Wallet Contents</h2>
+            <ul>
+              {state.data.tokensInWallet.map(
+                ({ name, mint, amountInWallet }) => (
+                  <div key={mint} className="flex flex-row items-center gap-4">
+                    <dt>{name}</dt>
+                    <dd className="font-bold">{amountInWallet}</dd>
+                  </div>
+                ),
+              )}
+            </ul>
+          </div>
+        </>
+      );
+    }
+    case StateType.NotLoaded:
+    case StateType.Loading: {
+      return "Loading...";
+    }
+  }
 };
 
 const errorToString = (error: unknown) => {
