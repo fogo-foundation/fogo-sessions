@@ -246,7 +246,7 @@ const SESSION_STATE_TO_DESCRIPTION = {
 };
 
 const SessionWallet = ({ session }: { session: Session }) => {
-  const key = session.publicKey.toBase58();
+  const key = session.walletPublicKey.toBase58();
   return (
     <div className="text-sm">
       Wallet:{" "}

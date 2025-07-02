@@ -37,7 +37,7 @@ const CURRENT_MINOR = "1";
 
 type EstablishSessionOptions = {
   adapter: SessionAdapter;
-  publicKey: PublicKey;
+  walletPublicKey: PublicKey;
   domain?: string | undefined;
   expires: Date;
   tokens: Map<PublicKey, bigint>;
@@ -65,7 +65,11 @@ export const establishSession = async (
     case TransactionResultType.Success: {
       return EstablishSessionResult.Success(
         result.signature,
-        await createSession(options.adapter, options.publicKey, sessionKey),
+        await createSession(
+          options.adapter,
+          options.walletPublicKey,
+          sessionKey,
+        ),
       );
     }
     case TransactionResultType.Failed: {
@@ -77,19 +81,19 @@ export const establishSession = async (
 // TODO we really should check to ensure the session is still valid...
 export const reestablishSession = async (
   adapter: SessionAdapter,
-  publicKey: PublicKey,
+  walletPublicKey: PublicKey,
   sessionKey: CryptoKeyPair,
-): Promise<Session> => createSession(adapter, publicKey, sessionKey);
+): Promise<Session> => createSession(adapter, walletPublicKey, sessionKey);
 
 const createSession = async (
   adapter: SessionAdapter,
-  publicKey: PublicKey,
+  walletPublicKey: PublicKey,
   sessionKey: CryptoKeyPair,
 ): Promise<Session> => ({
   sessionPublicKey: new PublicKey(
     await getAddressFromPublicKey(sessionKey.publicKey),
   ),
-  publicKey,
+  walletPublicKey,
   sessionKey,
   payer: adapter.payer,
   sendTransaction: (instructions) =>
@@ -139,7 +143,7 @@ const buildIntentInstruction = async (
     const intentSignature = await options.adapter.signMessage(message);
 
     return Ed25519Program.createInstructionWithPublicKey({
-      publicKey: options.publicKey.toBytes(),
+      publicKey: options.walletPublicKey.toBytes(),
       signature: intentSignature,
       message: message,
     });
@@ -227,8 +231,8 @@ const buildCreateAssociatedTokenAccountInstructions = (
   tokens.map(({ mint }) =>
     createAssociatedTokenAccountIdempotentInstruction(
       options.adapter.payer,
-      getAssociatedTokenAddressSync(mint, options.publicKey),
-      options.publicKey,
+      getAssociatedTokenAddressSync(mint, options.walletPublicKey),
+      options.walletPublicKey,
       mint,
     ),
   );
@@ -258,7 +262,7 @@ const buildStartSessionInstruction = async (
     .remainingAccounts(
       tokens.flatMap(({ mint, metadataAddress }) => [
         {
-          pubkey: getAssociatedTokenAddressSync(mint, options.publicKey),
+          pubkey: getAssociatedTokenAddressSync(mint, options.walletPublicKey),
           isWritable: true,
           isSigner: false,
         },
@@ -301,7 +305,7 @@ type EstablishSessionResult = ReturnType<
 export type Session = {
   sessionPublicKey: PublicKey;
   sessionKey: CryptoKeyPair;
-  publicKey: PublicKey;
+  walletPublicKey: PublicKey;
   payer: PublicKey;
   sendTransaction: (
     instructions: TransactionInstruction[],

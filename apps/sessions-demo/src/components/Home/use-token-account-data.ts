@@ -20,7 +20,7 @@ export const useTokenAccountData = (session: Session) => {
     [connection, session],
   );
   return useData(
-    ["tokenAccountData", session.publicKey.toBase58()],
+    ["tokenAccountData", session.walletPublicKey.toBase58()],
     getTokenAccountData,
   );
 };
@@ -35,7 +35,7 @@ const getTokenAccounts = async (connection: Connection, session: Session) => {
         {
           memcmp: {
             offset: 32,
-            bytes: session.publicKey.toBase58(),
+            bytes: session.walletPublicKey.toBase58(),
           },
         },
       ],

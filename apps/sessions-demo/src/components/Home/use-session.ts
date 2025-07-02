@@ -35,7 +35,7 @@ export const useSession = (
         addressLookupTableAddress,
         getWalletInfo,
       )
-        .then(({ publicKey, result }) => {
+        .then((result) => {
           appendTransaction({
             description: "Create Session",
             signature: result.signature,
@@ -44,7 +44,7 @@ export const useSession = (
           if (result.type === SessionResultType.Success) {
             setStoredSession({
               sessionKey: result.session.sessionKey,
-              publicKey: publicKey.toBase58(),
+              walletPublicKey: result.session.walletPublicKey.toBase58(),
             }).catch((error: unknown) => {
               // eslint-disable-next-line no-console
               console.error("Failed to persist session", error);
@@ -132,20 +132,17 @@ const doEstablishSession = async (
   getWalletInfo: ReturnType<typeof useWalletInfo>,
 ) => {
   const walletInfo = await getWalletInfo();
-  return {
-    publicKey: walletInfo.publicKey,
-    result: await establishSessionImpl({
-      adapter: await buildAdapter(
-        connection,
-        sponsor,
-        addressLookupTableAddress,
-        walletInfo.signMessage,
-      ),
-      publicKey: walletInfo.publicKey,
-      expires: new Date(Date.now() + 3600 * 1000),
-      tokens: new Map([[NATIVE_MINT, 1_500_000_000n]]),
-    }),
-  };
+  return establishSessionImpl({
+    adapter: await buildAdapter(
+      connection,
+      sponsor,
+      addressLookupTableAddress,
+      walletInfo.signMessage,
+    ),
+    walletPublicKey: walletInfo.publicKey,
+    expires: new Date(Date.now() + 3600 * 1000),
+    tokens: new Map([[NATIVE_MINT, 1_500_000_000n]]),
+  });
 };
 
 const restoreSession = async (
@@ -156,7 +153,7 @@ const restoreSession = async (
 ) =>
   reestablishSession(
     await buildAdapter(connection, sponsor, addressLookupTableAddress),
-    new PublicKey(storedSession.publicKey),
+    new PublicKey(storedSession.walletPublicKey),
     storedSession.sessionKey,
   );
 
@@ -245,5 +242,5 @@ type SessionDBSchema = DBSchema & {
 
 type StoredSession = {
   sessionKey: CryptoKeyPair;
-  publicKey: string;
+  walletPublicKey: string;
 };
