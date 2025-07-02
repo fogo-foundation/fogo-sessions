@@ -4,7 +4,7 @@ use crate::{
 };
 use anchor_lang::prelude::*;
 use chrono::DateTime;
-use domain_registry::Domain;
+use domain_registry::domain::Domain;
 use std::{
     collections::HashMap,
     iter::Peekable,

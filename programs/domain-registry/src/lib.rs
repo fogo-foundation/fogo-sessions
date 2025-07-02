@@ -1,13 +1,14 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 use crate::error::DomainRegistryError;
 use crate::state::DomainRecordInner;
-use anchor_lang::{prelude::*, solana_program::hash::hashv};
-use fogo_sessions_sdk::AuthorizedProgram;
+use anchor_lang::prelude::*;
 use fogo_sessions_sdk::PROGRAM_SIGNER_SEED;
+use crate::domain::Domain;
 
 pub mod error;
 pub mod state;
 pub mod system_program;
+pub mod domain;
 
 declare_id!("6pubKDUKpUdJSVxNKpnMrG52vdBVbB1duXoUcNpAHzu5");
 
@@ -44,38 +45,6 @@ pub mod domain_registry {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, PartialEq, Debug)]
-pub struct Domain(String);
-
-impl Domain {
-    pub fn new_checked(domain: &str) -> Result<Self> {
-        // TO DO
-        Ok(Self(domain.to_string()))
-    }
-
-    fn get_seeds(&self) -> Vec<Vec<u8>> {
-        let hash = hashv(&[self.0.as_bytes()]);
-        let seeds = [b"domain-record", hash.as_ref()];
-        let bump = Pubkey::find_program_address(&seeds, &ID).1;
-        let mut result = vec![];
-        result.extend(seeds.iter().map(|seed| seed.to_vec()));
-        result.push(vec![bump]);
-        result
-    }
-
-    pub fn get_domain_record_address(&self) -> Pubkey {
-        let seeds = self.get_seeds();
-        Pubkey::create_program_address(
-            seeds
-                .iter()
-                .map(|seed| seed.as_slice())
-                .collect::<Vec<&[u8]>>()
-                .as_slice(),
-            &ID,
-        )
-        .expect("We pre-computed the bump")
-    }
-}
 #[derive(Accounts)]
 #[instruction(domain: String)]
 pub struct AddProgram<'info> {

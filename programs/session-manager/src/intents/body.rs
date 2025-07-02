@@ -6,7 +6,7 @@ use anchor_spl::{
 };
 use chrono::{DateTime, Utc};
 use domain_registry::state::DomainRecordInner;
-use domain_registry::Domain;
+use domain_registry::domain::Domain;
 use fogo_sessions_sdk::AuthorizedProgram;
 use mpl_token_metadata::accounts::Metadata;
 use std::collections::HashMap;
