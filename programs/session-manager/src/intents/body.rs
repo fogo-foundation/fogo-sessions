@@ -2,7 +2,7 @@ use crate::{error::SessionManagerError, StartSession};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::get_associated_token_address,
-    token::{self, Approve, ApproveChecked, Mint},
+    token::{self, ApproveChecked, Mint},
 };
 use chrono::{DateTime, Utc};
 use domain_registry::domain::Domain;
