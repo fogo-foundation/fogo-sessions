@@ -76,7 +76,7 @@ impl<'info> StartSession<'info> {
             self.domain_registry.to_account_info(),
             self.sponsor.to_account_info(),
         );
-        Ok(domain_record.to_vec()?)
+        domain_record.to_vec()
     }
 
     /// Delegate token accounts to the session key.

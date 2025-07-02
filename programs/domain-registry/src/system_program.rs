@@ -1,5 +1,3 @@
-use anchor_lang::solana_program::program::invoke_signed;
-use anchor_lang::solana_program::system_instruction;
 use anchor_lang::{prelude::*, system_program};
 
 pub fn create_pda<'a, 'info>(

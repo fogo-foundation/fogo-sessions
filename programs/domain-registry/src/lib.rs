@@ -67,7 +67,7 @@ impl Domain {
     pub fn get_domain_record_address(&self) -> Pubkey {
         let seeds = self.get_seeds();
         Pubkey::create_program_address(
-            &seeds
+            seeds
                 .iter()
                 .map(|seed| seed.as_slice())
                 .collect::<Vec<&[u8]>>()
