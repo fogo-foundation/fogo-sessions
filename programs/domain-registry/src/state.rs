@@ -2,6 +2,7 @@ use anchor_lang::{prelude::*, solana_program::system_instruction};
 use bytemuck::{Pod, Zeroable};
 use std::marker::PhantomData;
 
+pub const CONFIG_SEED: &[u8] = b"config";
 #[account]
 pub struct Config {
     pub authority: Pubkey,

@@ -4,6 +4,7 @@ use crate::error::DomainRegistryError;
 use crate::state::Config;
 use crate::state::DomainProgram;
 use crate::state::DomainRecordInner;
+use crate::state::CONFIG_SEED;
 use anchor_lang::prelude::*;
 use fogo_sessions_sdk::PROGRAM_SIGNER_SEED;
 
@@ -55,7 +56,7 @@ pub mod domain_registry {
 pub struct Initialize<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
-    #[account(init, payer = authority, space = 8 + 32, seeds = [b"config"], bump)]
+    #[account(init, payer = authority, space = 8 + 32, seeds = [CONFIG_SEED], bump)]
     pub config: Account<'info, Config>,
     pub system_program: Program<'info, System>,
 }
@@ -65,7 +66,7 @@ pub struct Initialize<'info> {
 pub struct AddProgram<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
-    #[account(seeds = [b"config"], bump, has_one = authority)]
+    #[account(seeds = [CONFIG_SEED], bump, has_one = authority)]
     pub config: Account<'info, Config>,
     /// CHECK: We will do the checks in the function since Anchor isn't expressive enough
     #[account(mut)]
