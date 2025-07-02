@@ -43,7 +43,7 @@ export const useTrade = (
           sessionKey: session.sessionPublicKey,
           sink: sinkAta,
           userTokenAccount: userTokenAccount,
-          mint: NATIVE_MINT
+          mint: NATIVE_MINT,
         })
         .instruction(),
     ]);
