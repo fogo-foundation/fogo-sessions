@@ -1,5 +1,5 @@
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
-import { SessionManagerProgram } from "@fogo/sessions-idls";
+import { DomainRegistryIdl, SessionManagerProgram } from "@fogo/sessions-idls";
 import {
   fetchMetadata,
   findMetadataPda,
@@ -20,6 +20,7 @@ import {
 
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
 import { TransactionResultType } from "./adapter.js";
+import { sha256 } from "@noble/hashes/sha2";
 
 export { TransactionResultType, createSolanaWalletAdapter } from "./adapter.js";
 
@@ -215,6 +216,11 @@ const buildCreateAssociatedTokenAccountInstructions = (
     ),
   );
 
+const getDomainRecordAddress = (domain: string) => {
+  const hash = sha256(domain);
+  return PublicKey.findProgramAddressSync([Buffer.from("domain-record"), hash], new PublicKey(DomainRegistryIdl.address))[0];
+};
+
 const buildStartSessionInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
@@ -224,10 +230,7 @@ const buildStartSessionInstruction = async (
     new AnchorProvider(options.adapter.connection, {} as Wallet, {}),
   ).methods
     .startSession()
-    .accounts({
-      sponsor: options.adapter.payer,
-      session: await getAddressFromPublicKey(sessionKey.publicKey),
-    })
+    .accounts({ sponsor: options.adapter.payer, session: await getAddressFromPublicKey(sessionKey.publicKey), domainRegistry: getDomainRecordAddress(getDomain(options.domain)) })
     .remainingAccounts(
       tokens.flatMap(({ mint, metadataAddress }) => [
         {

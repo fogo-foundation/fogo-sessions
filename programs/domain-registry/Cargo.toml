@@ -1,11 +1,11 @@
 [package]
-name = "chain-id"
+name = "domain-registry"
 version = "0.1.0"
 edition = { workspace = true }
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "chain_id"
+name = "domain_registry"
 
 [features]
 default = []
@@ -17,3 +17,5 @@ idl-build = ["anchor-lang/idl-build"]
 
 [dependencies]
 anchor-lang = { workspace = true, features = ["init-if-needed"] }
+bytemuck = { version = "1.23.1", features = ["derive"] }
+fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["bytemuck"] }

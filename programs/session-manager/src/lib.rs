@@ -72,6 +72,8 @@ pub struct StartSession<'info> {
     /// CHECK: we check the address of this account
     #[account(address = instructions::ID)]
     pub sysvar_instructions: AccountInfo<'info>,
+    /// CHECK: We will do the checks in the function
+    pub domain_registry: AccountInfo<'info>,
     /// CHECK: this is just a signer for token program CPIs
     #[account(seeds = [b"session_setter"], bump)]
     pub session_setter: AccountInfo<'info>,

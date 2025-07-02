@@ -1,7 +1,8 @@
 use crate::{
     error::SessionManagerError,
-    intents::body::{Domain, MessageBody, SessionKey, Version},
+    intents::body::{MessageBody, SessionKey, Version}
 };
+use domain_registry::Domain;
 use anchor_lang::prelude::*;
 use chrono::DateTime;
 use std::{
@@ -106,7 +107,7 @@ impl Message {
                 &mut lines, "version",
             )?)?,
             chain_id: parse_line_with_expected_key(&mut lines, "chain_id")?,
-            domain: Domain(parse_line_with_expected_key(&mut lines, "domain")?),
+            domain: Domain::new_checked(&parse_line_with_expected_key(&mut lines, "domain")?)?,
             expires: DateTime::parse_from_rfc3339(&parse_line_with_expected_key(
                 &mut lines, "expires",
             )?)
@@ -136,7 +137,7 @@ mod test {
         );
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
         assert_eq!(parsed_message.chain_id, "localnet".to_string());
-        assert_eq!(parsed_message.domain, Domain("https://app.xyz".to_string()));
+        assert_eq!(parsed_message.domain, Domain::new_checked("https://app.xyz").unwrap());
         assert_eq!(parsed_message.session_key, SessionKey(session_key));
         assert_eq!(
             parsed_message.expires,

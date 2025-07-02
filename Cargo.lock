@@ -512,7 +512,6 @@ name = "chain-id"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
- "anchor-spl",
 ]
 
 [[package]]
@@ -662,6 +661,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "domain-registry"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "bytemuck",
+ "fogo-sessions-sdk",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -723,6 +731,7 @@ dependencies = [
  "anchor-lang",
  "base64 0.22.1",
  "borsh 1.5.7",
+ "bytemuck",
  "solana-account-info",
  "solana-program-error",
  "solana-pubkey",
@@ -1375,6 +1384,7 @@ dependencies = [
  "anchor-spl",
  "chain-id",
  "chrono",
+ "domain-registry",
  "fogo-sessions-sdk",
  "mpl-token-metadata",
 ]

@@ -19,6 +19,7 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 anchor-lang = { workspace = true }
 anchor-spl = { workspace = true }
 chain-id = { path = "../chain-id", features = ["no-entrypoint"] }
+domain-registry = { path = "../domain-registry", features = ["no-entrypoint"] }
 chrono = "0.4.41"
 fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["anchor"] }
 mpl-token-metadata = "5.1.0"
