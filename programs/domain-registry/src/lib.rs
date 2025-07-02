@@ -26,7 +26,7 @@ pub mod domain_registry {
             domain.get_domain_record_address(),
             DomainRegistryError::InvalidDomainRecordPda
         );
-        ctx.accounts.create_domain_record_if_needed(&domain)?;
+        ctx.accounts.create_domain_record_if_needed(&domain)?; // We are creating the PDA outside of Anchor because Anchor doesn't support the seed to be a non-trivial function of the instruction arguments
 
         let mut domain_record = DomainRecordInner::load(
             ctx.accounts.domain_record.to_account_info(),

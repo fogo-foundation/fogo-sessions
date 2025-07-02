@@ -29,6 +29,7 @@ pub fn create_pda<'a, 'info>(
             program_owner,
         )
     } else {
+        // Handle the case where the account has received some lamports and is therefore already "created"
         let required_lamports = rent
             .minimum_balance(space as usize)
             .max(1)
