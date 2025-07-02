@@ -1,21 +1,20 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
+use crate::domain::Domain;
 use crate::error::DomainRegistryError;
+use crate::state::DomainProgram;
 use crate::state::DomainRecordInner;
 use anchor_lang::prelude::*;
 use fogo_sessions_sdk::PROGRAM_SIGNER_SEED;
-use crate::domain::Domain;
 
+pub mod domain;
 pub mod error;
 pub mod state;
 pub mod system_program;
-pub mod domain;
 
 declare_id!("6pubKDUKpUdJSVxNKpnMrG52vdBVbB1duXoUcNpAHzu5");
 
 #[program]
 pub mod domain_registry {
-    use crate::state::DomainProgram;
-
     use super::*;
     pub fn add_program<'info>(
         ctx: Context<'_, '_, '_, 'info, AddProgram<'info>>,
@@ -25,7 +24,7 @@ pub mod domain_registry {
         require_eq!(
             ctx.accounts.domain_record.key(),
             domain.get_domain_record_address(),
-            DomainRegistryError::InvalidDomainRecordAddress
+            DomainRegistryError::InvalidDomainRecordPda
         );
         ctx.accounts.create_domain_record_if_needed(&domain)?;
 
@@ -50,13 +49,13 @@ pub mod domain_registry {
 pub struct AddProgram<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
-    /// CHECK: We will do the checks in the function
+    /// CHECK: We will do the checks in the function since Anchor isn't expressive enough
     #[account(mut)]
     pub domain_record: AccountInfo<'info>,
-    /// CHECK: This account is just an arg, we don't access the data
+    /// CHECK: We just check that this is an actual program by checking the executable flag
     #[account(executable)]
     pub program_id: AccountInfo<'info>,
-    /// CHECK: This account is just an arg, we don't access the data
+    /// CHECK: We check the PDA derivation
     #[account(seeds = [PROGRAM_SIGNER_SEED], bump, seeds::program = program_id.key())]
     pub signer_pda: AccountInfo<'info>,
     pub system_program: Program<'info, System>,

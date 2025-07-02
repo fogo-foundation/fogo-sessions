@@ -25,6 +25,8 @@ pub type DomainRecordInner<'a> = resizable_account_array::ResizableAccountArray<
 
 mod resizable_account_array {
     use super::*;
+
+    /// A account that contains a dynamic array of `T` and dynamically resizes using funds from the `payer` account.
     pub struct ResizableAccountArray<'a, T>
     where
         T: Pod + Zeroable + PartialEq,

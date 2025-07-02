@@ -5,8 +5,8 @@ use anchor_spl::{
     token::{self, Approve, Mint},
 };
 use chrono::{DateTime, Utc};
-use domain_registry::state::DomainRecordInner;
 use domain_registry::domain::Domain;
+use domain_registry::state::DomainRecordInner;
 use fogo_sessions_sdk::AuthorizedProgram;
 use mpl_token_metadata::accounts::Metadata;
 use std::collections::HashMap;
