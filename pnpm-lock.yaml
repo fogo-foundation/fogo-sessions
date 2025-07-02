@@ -688,9 +688,9 @@ importers:
       '@fogo/sessions-idls':
         specifier: workspace:*
         version: link:../packages/sessions-idls
-      '@noble/hashes':
-        specifier: 'catalog:'
-        version: 1.8.0
+      '@fogo/sessions-sdk':
+        specifier: workspace:*
+        version: link:../packages/sessions-sdk
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)

@@ -216,7 +216,7 @@ const buildCreateAssociatedTokenAccountInstructions = (
     ),
   );
 
-const getDomainRecordAddress = (domain: string) => {
+export const getDomainRecordAddress = (domain: string) => {
   const hash = sha256(domain);
   return PublicKey.findProgramAddressSync([Buffer.from("domain-record"), hash], new PublicKey(DomainRegistryIdl.address))[0];
 };

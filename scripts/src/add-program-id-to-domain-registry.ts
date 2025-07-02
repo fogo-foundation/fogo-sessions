@@ -1,16 +1,11 @@
 import fs from "node:fs";
 
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
-import { DomainRegistryProgram, DomainRegistryIdl } from "@fogo/sessions-idls";
+import { DomainRegistryProgram } from "@fogo/sessions-idls";
+import { getDomainRecordAddress } from "@fogo/sessions-sdk";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { sha256 } from "@noble/hashes/sha2";
-
-const getDomainRecordAddress = (domain: string) => {
-  const hash = sha256(domain);
-  return PublicKey.findProgramAddressSync([Buffer.from("domain-record"), hash], new PublicKey(DomainRegistryIdl.address))[0];
-};
 
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)

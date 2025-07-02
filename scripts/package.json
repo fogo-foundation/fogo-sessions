@@ -18,7 +18,7 @@
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
     "@fogo/sessions-idls": "workspace:*",
-    "@noble/hashes": "catalog:",
+    "@fogo/sessions-sdk": "workspace:*",
     "@solana/web3.js": "catalog:",
     "yargs": "catalog:"
   },
