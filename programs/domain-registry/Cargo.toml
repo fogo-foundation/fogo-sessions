@@ -16,6 +16,6 @@ no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build"]
 
 [dependencies]
-anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-lang = { workspace = true }
 bytemuck = { version = "1.23.1", features = ["derive"] }
 fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs" }
