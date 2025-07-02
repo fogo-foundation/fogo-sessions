@@ -12,6 +12,7 @@
     "fix:lint": "eslint --fix .",
     "install:modules": "[ $CI ] && true || pnpm install",
     "run:initialize-chain-id": "initialize-chain-id",
+    "run:add-program-id-to-domain-registry": "add-program-id-to-domain-registry",
     "test:format": "run-jest --colors --selectProjects format",
     "test:lint": "run-jest --colors --selectProjects lint"
   },

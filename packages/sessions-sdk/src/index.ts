@@ -1,11 +1,12 @@
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
-import { SessionManagerProgram } from "@fogo/sessions-idls";
+import { DomainRegistryIdl, SessionManagerProgram } from "@fogo/sessions-idls";
 import {
   fetchMetadata,
   findMetadataPda,
 } from "@metaplex-foundation/mpl-token-metadata";
 import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { sha256 } from "@noble/hashes/sha2";
 import { generateKeyPair, getAddressFromPublicKey } from "@solana/kit";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -215,6 +216,14 @@ const buildCreateAssociatedTokenAccountInstructions = (
     ),
   );
 
+export const getDomainRecordAddress = (domain: string) => {
+  const hash = sha256(domain);
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("domain-record"), hash],
+    new PublicKey(DomainRegistryIdl.address),
+  )[0];
+};
+
 const buildStartSessionInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
@@ -227,6 +236,7 @@ const buildStartSessionInstruction = async (
     .accounts({
       sponsor: options.adapter.payer,
       session: await getAddressFromPublicKey(sessionKey.publicKey),
+      domainRegistry: getDomainRecordAddress(getDomain(options.domain)),
     })
     .remainingAccounts(
       tokens.flatMap(({ mint, metadataAddress }) => [

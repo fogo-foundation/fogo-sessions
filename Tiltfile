@@ -12,6 +12,8 @@ local_resource(
         ../target/deploy/example.so \
         --bpf-program $(solana-keygen pubkey ./keypairs/chain-id.json) \
         ../target/deploy/chain_id.so \
+        --bpf-program $(solana-keygen pubkey ./keypairs/domain-registry.json) \
+        ../target/deploy/domain_registry.so \
         --mint $(solana-keygen pubkey ./keypairs/sponsor.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
         --account-dir ./accounts \
@@ -38,13 +40,16 @@ LOOKUP_TABLE_ADDRESSES=[
     "So11111111111111111111111111111111111111112", 
     "FrfXhepGSPsSYXzvEsAxzVW8zDaxdWSneaERaDC1Q911",
     "4y6r4Ywh2wcgD7s1fq2JRXUQP1EbQEcEr4CRzN2H3a6D",
-    "6dM4TqWyWJsbx7obrdLcviBkTafD5E8av61zfU6jq57X"
+    "6dM4TqWyWJsbx7obrdLcviBkTafD5E8av61zfU6jq57X",
+    "6Cv5GxmXUXnwGaJVYPACUuybZqSPSFvj3UMdYbfzYZU9"
 ]
 
 local_resource(
-    "initialize-chain-id",
+    "initialize-programs",
     """
-    pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/sponsor.json --chain-id localnet
+    pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/sponsor.json --chain-id localnet &&
+    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/sponsor.json --domain http://localhost:3000 --program-id $(solana-keygen pubkey ./tilt/keypairs/example.json)
+
     """,
     resource_deps=["svm-localnet"],
 )
@@ -63,5 +68,5 @@ local_resource(
 local_resource(
     "Demo Webapp",
     serve_cmd="pnpm turbo --filter @fogo/sessions-demo start:dev",
-    resource_deps=["setup-wrapped-sol-faucet", "setup-address-lookup-table", "initialize-chain-id"],
+    resource_deps=["setup-wrapped-sol-faucet", "setup-address-lookup-table", "initialize-programs"],
 )

@@ -55,6 +55,7 @@
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
+    "@noble/hashes": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",

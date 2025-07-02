@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "bin": {
-    "initialize-chain-id": "./bin/initialize-chain-id.js"
+    "initialize-chain-id": "./bin/initialize-chain-id.js",
+    "add-program-id-to-domain-registry": "./bin/add-program-id-to-domain-registry.js"
   },
   "scripts": {
     "build": "tsc --noEmit false --outDir ./dist",
@@ -17,6 +18,7 @@
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
     "@fogo/sessions-idls": "workspace:*",
+    "@fogo/sessions-sdk": "workspace:*",
     "@solana/web3.js": "catalog:",
     "yargs": "catalog:"
   },

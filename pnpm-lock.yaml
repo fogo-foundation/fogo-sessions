@@ -39,6 +39,9 @@ catalogs:
     '@next/third-parties':
       specifier: ^15.3.4
       version: 15.3.4
+    '@noble/hashes':
+      specifier: ^1.8.0
+      version: 1.8.0
     '@phosphor-icons/react':
       specifier: ^2.1.10
       version: 2.1.10
@@ -522,6 +525,9 @@ importers:
       '@cprussin/tsconfig':
         specifier: 'catalog:'
         version: 4.0.1(typescript@5.8.3)
+      '@noble/hashes':
+        specifier: 'catalog:'
+        version: 1.8.0
       '@types/jest':
         specifier: 'catalog:'
         version: 29.5.14
@@ -682,6 +688,9 @@ importers:
       '@fogo/sessions-idls':
         specifier: workspace:*
         version: link:../packages/sessions-idls
+      '@fogo/sessions-sdk':
+        specifier: workspace:*
+        version: link:../packages/sessions-sdk
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)

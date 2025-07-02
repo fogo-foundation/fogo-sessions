@@ -16,6 +16,7 @@ catalog:
   "@metaplex-foundation/umi": ^1.2.0
   "@metaplex-foundation/umi-bundle-defaults": ^1.2.0
   "@next/third-parties": ^15.3.4
+  "@noble/hashes": ^1.8.0
   "@phosphor-icons/react": ^2.1.10
   "@radix-ui/react-slot": ^1.1.1
   "@react-hookz/web": ^25.1.1

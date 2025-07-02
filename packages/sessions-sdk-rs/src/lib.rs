@@ -17,6 +17,7 @@ const ID: Pubkey = solana_pubkey::pubkey!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9d
 /// The program ID of the session manager program
 pub const SESSION_MANAGER_ID: Pubkey = ID;
 
+pub const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 /// The session setter is a PDA of the session manager program used by the session manager to set token account delegations for Sessions users.
 pub const SESSION_SETTER: Pubkey =
     solana_pubkey::pubkey!("FrfXhepGSPsSYXzvEsAxzVW8zDaxdWSneaERaDC1Q911");

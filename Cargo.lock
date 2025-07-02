@@ -512,7 +512,6 @@ name = "chain-id"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
- "anchor-spl",
 ]
 
 [[package]]
@@ -659,6 +658,15 @@ dependencies = [
  "block-buffer 0.10.4",
  "crypto-common",
  "subtle",
+]
+
+[[package]]
+name = "domain-registry"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "bytemuck",
+ "fogo-sessions-sdk",
 ]
 
 [[package]]
@@ -1375,6 +1383,7 @@ dependencies = [
  "anchor-spl",
  "chain-id",
  "chrono",
+ "domain-registry",
  "fogo-sessions-sdk",
  "mpl-token-metadata",
 ]

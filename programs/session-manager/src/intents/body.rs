@@ -5,12 +5,11 @@ use anchor_spl::{
     token::{self, Approve, Mint},
 };
 use chrono::{DateTime, Utc};
-use fogo_sessions_sdk::AuthorizedProgram;
+use domain_registry::domain::Domain;
+use domain_registry::state::DomainRecordInner;
+use fogo_sessions_sdk::{AuthorizedProgram, SESSION_SETTER_SEED};
 use mpl_token_metadata::accounts::Metadata;
-use std::{collections::HashMap, str::FromStr};
-
-#[derive(PartialEq, Debug)]
-pub struct Domain(pub(crate) String);
+use std::collections::HashMap;
 
 #[derive(PartialEq, Debug)]
 pub struct SessionKey(pub(crate) Pubkey);
@@ -66,14 +65,18 @@ impl<'info> StartSession<'info> {
         Ok(())
     }
 
-    pub fn get_domain_programs(&self, _domain: Domain) -> Result<Vec<AuthorizedProgram>> {
-        // TODO: implement this properly
-        let pubkey = Pubkey::from_str("91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45").unwrap();
-        let signer_pda = Pubkey::find_program_address(&[b"fogo_session_program_signer"], &pubkey).0;
-        Ok(vec![AuthorizedProgram {
-            program_id: pubkey,
-            signer_pda,
-        }])
+    pub fn get_domain_programs(&self, domain: Domain) -> Result<Vec<AuthorizedProgram>> {
+        require_eq!(
+            self.domain_registry.key(),
+            domain.get_domain_record_address(),
+            SessionManagerError::InvalidArgument
+        );
+
+        let domain_record = DomainRecordInner::load(
+            self.domain_registry.to_account_info(),
+            self.sponsor.to_account_info(),
+        );
+        domain_record.to_vec::<AuthorizedProgram>()
     }
 
     /// Delegate token accounts to the session key.
@@ -127,7 +130,7 @@ impl<'info> StartSession<'info> {
                 CpiContext::new_with_signer(
                     self.token_program.to_account_info(),
                     cpi_accounts,
-                    &[&[b"session_setter", &[session_setter_bump]]],
+                    &[&[SESSION_SETTER_SEED, &[session_setter_bump]]],
                 ),
                 amount_internal,
             )?;

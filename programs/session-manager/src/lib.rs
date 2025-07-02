@@ -10,6 +10,7 @@ use fogo_sessions_sdk::AuthorizedPrograms;
 use fogo_sessions_sdk::AuthorizedTokens;
 use fogo_sessions_sdk::Session;
 use fogo_sessions_sdk::SessionInfo;
+use fogo_sessions_sdk::SESSION_SETTER_SEED;
 
 declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
 
@@ -72,8 +73,10 @@ pub struct StartSession<'info> {
     /// CHECK: we check the address of this account
     #[account(address = instructions::ID)]
     pub sysvar_instructions: AccountInfo<'info>,
+    /// CHECK: We will do the checks in the function in `get_domain_programs`
+    pub domain_registry: AccountInfo<'info>,
     /// CHECK: this is just a signer for token program CPIs
-    #[account(seeds = [b"session_setter"], bump)]
+    #[account(seeds = [SESSION_SETTER_SEED], bump)]
     pub session_setter: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
