@@ -5,9 +5,6 @@ use solana_pubkey::Pubkey;
 use solana_sysvar::{clock::Clock, Sysvar};
 use thiserror::Error;
 
-#[cfg(feature = "bytemuck")]
-use bytemuck::{Pod, Zeroable};
-
 #[cfg(feature = "borsh")]
 use borsh::BorshDeserialize;
 
@@ -82,9 +79,7 @@ pub enum AuthorizedTokens {
 
 #[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
-#[cfg_attr(feature = "bytemuck", derive(Pod, Zeroable, Copy))]
-#[repr(C)]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct AuthorizedProgram {
     /// The program ID that the session key is allowed to interact with
     pub program_id: Pubkey,

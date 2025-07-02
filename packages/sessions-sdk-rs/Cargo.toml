@@ -10,7 +10,6 @@ name = "fogo_sessions_sdk"
 [features]
 anchor = ["anchor-lang"]
 borsh = ["dep:borsh"]
-bytemuck = ["dep:bytemuck"]
 
 [dependencies]
 borsh = { version = "1.0.0", features = ["derive"], optional = true }
@@ -20,7 +19,6 @@ thiserror = "2.0"
 solana-sysvar = { version = "2.2.0", features = ["bincode"] }
 solana-account-info = { version = "2.2.0" }
 anchor-lang = { workspace = true, optional = true }
-bytemuck = { version = "1.20.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
 base64 = "0.22.1"
