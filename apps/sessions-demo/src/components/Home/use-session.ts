@@ -1,3 +1,6 @@
+import type { Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import { ChainIdProgram } from "@fogo/sessions-idls";
 import type { Session } from "@fogo/sessions-sdk";
 import {
   establishSession as establishSessionImpl,
@@ -15,8 +18,6 @@ import { useMemo, useCallback, useState } from "react";
 
 import type { Transaction } from "./use-transaction-log";
 import { useWalletInfo } from "../../hooks/use-wallet-info";
-import { ChainIdProgram } from "@fogo/sessions-idls";
-import { AnchorProvider, type Wallet } from "@coral-xyz/anchor";
 
 export const useSession = (
   sponsor: string,
@@ -163,8 +164,16 @@ const restoreSession = async (
   );
 
 const fetchChainId = async (connection: Connection) => {
-  const chainIdProgram = new ChainIdProgram(new AnchorProvider(connection, {publicKey: new Keypair().publicKey} as Wallet, {})); // We mock the wallet because we don't need to sign anything
-  const chainIdAddress = (await chainIdProgram.methods.set("").pubkeys()).chainIdAccount; // We use Anchor to derive the chain ID address, not caring about the actual argument of `set`
+  const chainIdProgram = new ChainIdProgram(
+    new AnchorProvider(
+      connection,
+      { publicKey: new Keypair().publicKey } as Wallet,
+      {},
+    ),
+  ); // We mock the wallet because we don't need to sign anything
+  const { chainIdAccount: chainIdAddress } = await chainIdProgram.methods
+    .set("")
+    .pubkeys(); // We use Anchor to derive the chain ID address, not caring about the actual argument of `set`
   if (chainIdAddress === undefined) {
     throw new Error("Failed to derive chain ID address");
   }

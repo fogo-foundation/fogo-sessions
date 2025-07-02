@@ -56,7 +56,7 @@ export const useAirdrop = (
     );
 
     return result;
-  }, [session, appendTransaction, amount, connection]);
+  }, [session, appendTransaction, amount, connection, mint]);
 
   return useAsync(doAirdrop);
 };
