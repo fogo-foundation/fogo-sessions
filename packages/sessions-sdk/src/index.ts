@@ -6,6 +6,7 @@ import {
 } from "@metaplex-foundation/mpl-token-metadata";
 import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { sha256 } from "@noble/hashes/sha2";
 import { generateKeyPair, getAddressFromPublicKey } from "@solana/kit";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -20,7 +21,6 @@ import {
 
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
 import { TransactionResultType } from "./adapter.js";
-import { sha256 } from "@noble/hashes/sha2";
 
 export { TransactionResultType, createSolanaWalletAdapter } from "./adapter.js";
 
@@ -218,7 +218,10 @@ const buildCreateAssociatedTokenAccountInstructions = (
 
 export const getDomainRecordAddress = (domain: string) => {
   const hash = sha256(domain);
-  return PublicKey.findProgramAddressSync([Buffer.from("domain-record"), hash], new PublicKey(DomainRegistryIdl.address))[0];
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("domain-record"), hash],
+    new PublicKey(DomainRegistryIdl.address),
+  )[0];
 };
 
 const buildStartSessionInstruction = async (
@@ -230,7 +233,11 @@ const buildStartSessionInstruction = async (
     new AnchorProvider(options.adapter.connection, {} as Wallet, {}),
   ).methods
     .startSession()
-    .accounts({ sponsor: options.adapter.payer, session: await getAddressFromPublicKey(sessionKey.publicKey), domainRegistry: getDomainRecordAddress(getDomain(options.domain)) })
+    .accounts({
+      sponsor: options.adapter.payer,
+      session: await getAddressFromPublicKey(sessionKey.publicKey),
+      domainRegistry: getDomainRecordAddress(getDomain(options.domain)),
+    })
     .remainingAccounts(
       tokens.flatMap(({ mint, metadataAddress }) => [
         {

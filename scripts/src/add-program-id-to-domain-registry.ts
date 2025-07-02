@@ -37,7 +37,7 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     throw new Error("Missing required argument: keypair");
   }
 
-  if (!args["domain"]) {
+  if (!args.domain) {
     throw new Error("Missing required argument: domain");
   }
 
@@ -53,8 +53,11 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
   );
   const provider = new AnchorProvider(connection, new Wallet(keypair));
   const program = new DomainRegistryProgram(provider);
-  await program.methods.addProgram(args["domain"]).accounts({
-    programId: new PublicKey(args["program-id"]),
-    domainRecord: getDomainRecordAddress(args["domain"]),
-  }).rpc();
+  await program.methods
+    .addProgram(args.domain)
+    .accounts({
+      programId: new PublicKey(args["program-id"]),
+      domainRecord: getDomainRecordAddress(args.domain),
+    })
+    .rpc();
 };
