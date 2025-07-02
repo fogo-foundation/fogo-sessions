@@ -7,7 +7,7 @@ use anchor_spl::{
 use chrono::{DateTime, Utc};
 use domain_registry::domain::Domain;
 use domain_registry::state::DomainRecordInner;
-use fogo_sessions_sdk::AuthorizedProgram;
+use fogo_sessions_sdk::{AuthorizedProgram, SESSION_SETTER_SEED};
 use mpl_token_metadata::accounts::Metadata;
 use std::collections::HashMap;
 
@@ -130,7 +130,7 @@ impl<'info> StartSession<'info> {
                 CpiContext::new_with_signer(
                     self.token_program.to_account_info(),
                     cpi_accounts,
-                    &[&[b"session_setter", &[session_setter_bump]]],
+                    &[&[SESSION_SETTER_SEED, &[session_setter_bump]]],
                 ),
                 amount_internal,
             )?;

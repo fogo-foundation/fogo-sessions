@@ -3,7 +3,9 @@ use bytemuck::{Pod, Zeroable};
 use std::marker::PhantomData;
 
 #[account]
-pub struct DomainRecord {}
+pub struct Config {
+    pub authority: Pubkey,
+}
 
 #[derive(Pod, Zeroable, PartialEq, Copy, Clone)]
 #[repr(C)]

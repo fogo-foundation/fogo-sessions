@@ -1,6 +1,7 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 use crate::domain::Domain;
 use crate::error::DomainRegistryError;
+use crate::state::Config;
 use crate::state::DomainProgram;
 use crate::state::DomainRecordInner;
 use anchor_lang::prelude::*;
@@ -16,6 +17,12 @@ declare_id!("6pubKDUKpUdJSVxNKpnMrG52vdBVbB1duXoUcNpAHzu5");
 #[program]
 pub mod domain_registry {
     use super::*;
+
+    pub fn initialize<'info>(ctx: Context<'_, '_, '_, 'info, Initialize<'info>>) -> Result<()> {
+        ctx.accounts.config.authority = ctx.accounts.authority.key();
+        Ok(())
+    }
+
     pub fn add_program<'info>(
         ctx: Context<'_, '_, '_, 'info, AddProgram<'info>>,
         domain: String,
@@ -30,7 +37,7 @@ pub mod domain_registry {
 
         let mut domain_record = DomainRecordInner::load(
             ctx.accounts.domain_record.to_account_info(),
-            ctx.accounts.sponsor.to_account_info(),
+            ctx.accounts.authority.to_account_info(),
         );
         let domain_program = DomainProgram {
             program_id: ctx.accounts.program_id.key(),
@@ -45,10 +52,21 @@ pub mod domain_registry {
 }
 
 #[derive(Accounts)]
+pub struct Initialize<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(init, payer = authority, space = 8 + 32, seeds = [b"config"], bump)]
+    pub config: Account<'info, Config>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 #[instruction(domain: String)]
 pub struct AddProgram<'info> {
     #[account(mut)]
-    pub sponsor: Signer<'info>,
+    pub authority: Signer<'info>,
+    #[account(seeds = [b"config"], bump, has_one = authority)]
+    pub config: Account<'info, Config>,
     /// CHECK: We will do the checks in the function since Anchor isn't expressive enough
     #[account(mut)]
     pub domain_record: AccountInfo<'info>,
@@ -65,7 +83,7 @@ impl<'info> AddProgram<'info> {
     fn create_domain_record_if_needed(&self, domain: &Domain) -> Result<()> {
         if self.domain_record.data_is_empty() {
             system_program::create_pda(
-                &self.sponsor,
+                &self.authority,
                 &self.domain_record,
                 &self.system_program,
                 &ID,
