@@ -21,8 +21,7 @@ impl From<DomainProgram> for fogo_sessions_sdk::AuthorizedProgram {
     }
 }
 
-pub type DomainRecordInner<'a> =
-    resizable_account_array::ResizableAccountArray<'a, DomainProgram>;
+pub type DomainRecordInner<'a> = resizable_account_array::ResizableAccountArray<'a, DomainProgram>;
 
 mod resizable_account_array {
     use super::*;
@@ -67,7 +66,10 @@ mod resizable_account_array {
             U: From<T>,
         {
             let data = self.acc_info.try_borrow_data()?;
-            Ok(bytemuck::cast_slice(&data).iter().map(|item : &T| (*item).into()).collect())
+            Ok(bytemuck::cast_slice(&data)
+                .iter()
+                .map(|item: &T| (*item).into())
+                .collect())
         }
 
         fn extend(&mut self) -> Result<()> {
