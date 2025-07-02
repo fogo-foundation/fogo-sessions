@@ -39,10 +39,11 @@ export const useTrade = (
         new AnchorProvider(connection, {} as Wallet, {}),
       ).methods
         .exampleTransfer(new BN(100))
-        .accounts({
+        .accountsPartial({
           sessionKey: session.sessionPublicKey,
           sink: sinkAta,
           userTokenAccount: userTokenAccount,
+          mint: NATIVE_MINT
         })
         .instruction(),
     ]);

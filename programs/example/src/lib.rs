@@ -2,9 +2,9 @@
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke_signed;
-use anchor_spl::token::{Token, TokenAccount};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 use fogo_sessions_sdk::{Session, PROGRAM_SIGNER_SEED};
-use spl_token::instruction::transfer;
+use spl_token::instruction::{transfer, transfer_checked};
 
 declare_id!("91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45");
 
@@ -12,15 +12,17 @@ declare_id!("91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45");
 pub mod example {
     use super::*;
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
-        let mut instruction = transfer(
+        let mut instruction = transfer_checked(
             ctx.accounts.token_program.key,
             &ctx.accounts.user_token_account.key(),
+            &ctx.accounts.mint.key(),
             &ctx.accounts.sink.key(),
             &ctx.accounts.session_key.key(),
             &[ctx.accounts.cpi_signer.key],
             amount,
+            ctx.accounts.mint.decimals,
         )?;
-        instruction.accounts[2].is_signer = true;
+        instruction.accounts[3].is_signer = true; // TODO: flipping this should be in the SDK
         invoke_signed(
             &instruction,
             &ctx.accounts.to_account_infos(),
@@ -37,8 +39,9 @@ pub struct ExampleTransfer<'info> {
     /// CHECK: this is just a signer for token program CPIs
     #[account(seeds = [PROGRAM_SIGNER_SEED], bump)]
     pub cpi_signer: AccountInfo<'info>,
-    #[account(mut, token::authority = session_key.get_user_checked(&ID)?)]
+    #[account(mut, associated_token::mint = mint, associated_token::authority = session_key.get_user_checked(&ID)?)]
     pub user_token_account: Account<'info, TokenAccount>,
+    pub mint: Account<'info, Mint>,
     #[account(mut)]
     pub sink: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
