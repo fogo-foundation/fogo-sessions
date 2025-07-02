@@ -8,13 +8,15 @@ import {
 import { useMountEffect } from "@react-hookz/web";
 import { NATIVE_MINT } from "@solana/spl-token";
 import { useConnection } from "@solana/wallet-adapter-react";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import type { DBSchema } from "idb";
 import { openDB, deleteDB } from "idb";
 import { useMemo, useCallback, useState } from "react";
 
 import type { Transaction } from "./use-transaction-log";
 import { useWalletInfo } from "../../hooks/use-wallet-info";
+import { ChainIdProgram } from "@fogo/sessions-idls";
+import { AnchorProvider, type Wallet } from "@coral-xyz/anchor";
 
 export const useSession = (
   sponsor: string,
@@ -160,6 +162,16 @@ const restoreSession = async (
     storedSession.sessionKey,
   );
 
+const fetchChainId = async (connection: Connection) => {
+  const chainIdProgram = new ChainIdProgram(new AnchorProvider(connection, {publicKey: new Keypair().publicKey} as Wallet, {})); // We mock the wallet because we don't need to sign anything
+  const chainIdAddress = (await chainIdProgram.methods.set("").pubkeys()).chainIdAccount; // We use Anchor to derive the chain ID address, not caring about the actual argument of `set`
+  if (chainIdAddress === undefined) {
+    throw new Error("Failed to derive chain ID address");
+  }
+  const chainId = await chainIdProgram.account.chainId.fetch(chainIdAddress);
+  return chainId.chainId;
+};
+
 const buildAdapter = async (
   connection: Connection,
   sponsor: string,
@@ -170,8 +182,10 @@ const buildAdapter = async (
     addressLookupTableAddress === undefined
       ? undefined
       : await connection.getAddressLookupTable(addressLookupTableAddress);
+
   return createSolanaWalletAdapter({
     connection,
+    chainId: await fetchChainId(connection),
     paymasterUrl: "/api/sponsor_and_send",
     sponsor: new PublicKey(sponsor),
     addressLookupTables: addressLookupTable?.value

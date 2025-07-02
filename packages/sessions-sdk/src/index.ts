@@ -129,6 +129,7 @@ const buildIntentInstruction = async (
     throw new Error("Cannot establish a session if no wallet is connected");
   } else {
     const message = await buildMessage({
+      chainId: options.adapter.chainId,
       domain: getDomain(options.domain),
       sessionKey,
       expires: options.expires,
@@ -168,6 +169,7 @@ const getDomain = (requestedDomain?: string) => {
 
 const buildMessage = async (
   body: Pick<EstablishSessionOptions, "expires" | "extra"> & {
+    chainId: string;
     domain: string;
     sessionKey: CryptoKeyPair;
     tokens: TokenInfo[];
@@ -178,7 +180,7 @@ const buildMessage = async (
       MESSAGE_HEADER,
       serializeKV({
         version: `${CURRENT_MAJOR}.${CURRENT_MINOR}`,
-        chain_id: "localnet",
+        chain_id: body.chainId,
         domain: body.domain,
         expires: body.expires.toISOString(),
         session_key: await getAddressFromPublicKey(body.sessionKey.publicKey),
