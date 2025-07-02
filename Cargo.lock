@@ -731,7 +731,6 @@ dependencies = [
  "anchor-lang",
  "base64 0.22.1",
  "borsh 1.5.7",
- "bytemuck",
  "solana-account-info",
  "solana-program-error",
  "solana-pubkey",

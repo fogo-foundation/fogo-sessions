@@ -13,6 +13,8 @@ declare_id!("6pubKDUKpUdJSVxNKpnMrG52vdBVbB1duXoUcNpAHzu5");
 
 #[program]
 pub mod domain_registry {
+    use crate::state::DomainProgram;
+
     use super::*;
     pub fn add_program<'info>(
         ctx: Context<'_, '_, '_, 'info, AddProgram<'info>>,
@@ -30,17 +32,14 @@ pub mod domain_registry {
             ctx.accounts.domain_record.to_account_info(),
             ctx.accounts.sponsor.to_account_info(),
         );
-        let authorized_program = AuthorizedProgram {
+        let domain_program = DomainProgram {
             program_id: ctx.accounts.program_id.key(),
             signer_pda: ctx.accounts.signer_pda.key(),
         };
-        if domain_record.contains(authorized_program)? {
+        if domain_record.contains(domain_program)? {
             return Err(DomainRegistryError::ProgramAlreadyAdded.into());
         }
-        domain_record.push(AuthorizedProgram {
-            program_id: ctx.accounts.program_id.key(),
-            signer_pda: ctx.accounts.signer_pda.key(),
-        })?;
+        domain_record.push(domain_program)?;
         Ok(())
     }
 }

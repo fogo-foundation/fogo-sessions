@@ -5,8 +5,24 @@ use std::marker::PhantomData;
 #[account]
 pub struct DomainRecord {}
 
+#[derive(Pod, Zeroable, PartialEq, Copy, Clone)]
+#[repr(C)]
+pub struct DomainProgram {
+    pub program_id: Pubkey,
+    pub signer_pda: Pubkey,
+}
+
+impl From<DomainProgram> for fogo_sessions_sdk::AuthorizedProgram {
+    fn from(domain_program: DomainProgram) -> Self {
+        fogo_sessions_sdk::AuthorizedProgram {
+            program_id: domain_program.program_id,
+            signer_pda: domain_program.signer_pda,
+        }
+    }
+}
+
 pub type DomainRecordInner<'a> =
-    resizable_account_array::ResizableAccountArray<'a, fogo_sessions_sdk::AuthorizedProgram>;
+    resizable_account_array::ResizableAccountArray<'a, DomainProgram>;
 
 mod resizable_account_array {
     use super::*;
@@ -46,9 +62,12 @@ mod resizable_account_array {
             Ok(bytemuck::cast_slice(&data).contains(&value))
         }
 
-        pub fn to_vec(&self) -> Result<Vec<T>> {
+        pub fn to_vec<U>(&self) -> Result<Vec<U>>
+        where
+            U: From<T>,
+        {
             let data = self.acc_info.try_borrow_data()?;
-            Ok(bytemuck::cast_slice(&data).to_vec())
+            Ok(bytemuck::cast_slice(&data).iter().map(|item : &T| (*item).into()).collect())
         }
 
         fn extend(&mut self) -> Result<()> {
