@@ -1,23 +1,34 @@
-use std::marker::PhantomData;
 use anchor_lang::{prelude::*, solana_program::system_instruction};
 use bytemuck::{Pod, Zeroable};
+use std::marker::PhantomData;
 
 #[account]
 pub struct DomainRecord {}
 
-pub type DomainRecordInner<'a> = resizable_account_array::ResizableAccountArray<'a, fogo_sessions_sdk::AuthorizedProgram>;
+pub type DomainRecordInner<'a> =
+    resizable_account_array::ResizableAccountArray<'a, fogo_sessions_sdk::AuthorizedProgram>;
 
 mod resizable_account_array {
     use super::*;
-    pub struct ResizableAccountArray<'a, T> where T : Pod + Zeroable + PartialEq {
-        pub acc_info : AccountInfo<'a>,
-        pub payer : AccountInfo<'a>,
-        pub _phantom : PhantomData<T>,
+    pub struct ResizableAccountArray<'a, T>
+    where
+        T: Pod + Zeroable + PartialEq,
+    {
+        pub acc_info: AccountInfo<'a>,
+        pub payer: AccountInfo<'a>,
+        pub _phantom: PhantomData<T>,
     }
 
-    impl <'a, T> ResizableAccountArray<'a, T> where T : Pod + Zeroable + PartialEq {
-        pub fn load(acc_info : AccountInfo<'a>, payer : AccountInfo<'a>) -> Self {
-            Self { acc_info, payer, _phantom: PhantomData }
+    impl<'a, T> ResizableAccountArray<'a, T>
+    where
+        T: Pod + Zeroable + PartialEq,
+    {
+        pub fn load(acc_info: AccountInfo<'a>, payer: AccountInfo<'a>) -> Self {
+            Self {
+                acc_info,
+                payer,
+                _phantom: PhantomData,
+            }
         }
 
         pub fn push(&mut self, value: T) -> Result<()> {
@@ -25,7 +36,7 @@ mod resizable_account_array {
 
             let data_len = self.acc_info.data_len();
             let mut data = self.acc_info.try_borrow_mut_data()?;
-            let new : &mut T = bytemuck::from_bytes_mut(&mut data[data_len - size_of::<T>()..]);
+            let new: &mut T = bytemuck::from_bytes_mut(&mut data[data_len - size_of::<T>()..]);
             *new = value;
             Ok(())
         }
@@ -41,7 +52,8 @@ mod resizable_account_array {
         }
 
         fn extend(&mut self) -> Result<()> {
-            self.acc_info.realloc(self.acc_info.data_len() + size_of::<T>(), false)?;
+            self.acc_info
+                .realloc(self.acc_info.data_len() + size_of::<T>(), false)?;
             self.adjust_rent_if_needed()?;
             Ok(())
         }
@@ -52,8 +64,11 @@ mod resizable_account_array {
             let amount_to_transfer = amount_required.saturating_sub(self.acc_info.lamports());
 
             if amount_to_transfer > 0 {
-                let transfer_instruction =
-                    system_instruction::transfer(self.payer.key, self.acc_info.key, amount_to_transfer);
+                let transfer_instruction = system_instruction::transfer(
+                    self.payer.key,
+                    self.acc_info.key,
+                    amount_to_transfer,
+                );
 
                 anchor_lang::solana_program::program::invoke(
                     &transfer_instruction,
@@ -71,4 +86,3 @@ mod resizable_account_array {
         }
     }
 }
-

@@ -5,5 +5,5 @@ pub enum DomainRegistryError {
     #[msg("The domain record address is invalid")]
     InvalidDomainRecordAddress,
     #[msg("The program is already added to the domain record")]
-    ProgramAlreadyAdded
+    ProgramAlreadyAdded,
 }

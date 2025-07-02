@@ -6,10 +6,10 @@ use anchor_spl::{
 };
 use chrono::{DateTime, Utc};
 use domain_registry::state::DomainRecordInner;
+use domain_registry::Domain;
 use fogo_sessions_sdk::AuthorizedProgram;
 use mpl_token_metadata::accounts::Metadata;
 use std::collections::HashMap;
-use domain_registry::Domain;
 
 #[derive(PartialEq, Debug)]
 pub struct SessionKey(pub(crate) Pubkey);
@@ -72,7 +72,10 @@ impl<'info> StartSession<'info> {
             SessionManagerError::InvalidArgument
         );
 
-        let domain_record = DomainRecordInner::load(self.domain_registry.to_account_info(), self.sponsor.to_account_info());
+        let domain_record = DomainRecordInner::load(
+            self.domain_registry.to_account_info(),
+            self.sponsor.to_account_info(),
+        );
         Ok(domain_record.to_vec()?)
     }
 

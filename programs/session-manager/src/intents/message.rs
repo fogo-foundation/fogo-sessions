@@ -1,10 +1,10 @@
 use crate::{
     error::SessionManagerError,
-    intents::body::{MessageBody, SessionKey, Version}
+    intents::body::{MessageBody, SessionKey, Version},
 };
-use domain_registry::Domain;
 use anchor_lang::prelude::*;
 use chrono::DateTime;
+use domain_registry::Domain;
 use std::{
     collections::HashMap,
     iter::Peekable,
@@ -137,7 +137,10 @@ mod test {
         );
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
         assert_eq!(parsed_message.chain_id, "localnet".to_string());
-        assert_eq!(parsed_message.domain, Domain::new_checked("https://app.xyz").unwrap());
+        assert_eq!(
+            parsed_message.domain,
+            Domain::new_checked("https://app.xyz").unwrap()
+        );
         assert_eq!(parsed_message.session_key, SessionKey(session_key));
         assert_eq!(
             parsed_message.expires,

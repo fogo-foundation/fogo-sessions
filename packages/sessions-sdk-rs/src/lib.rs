@@ -5,7 +5,6 @@ use solana_pubkey::Pubkey;
 use solana_sysvar::{clock::Clock, Sysvar};
 use thiserror::Error;
 
-
 #[cfg(feature = "bytemuck")]
 use bytemuck::{Pod, Zeroable};
 
