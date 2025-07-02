@@ -2,7 +2,7 @@ use crate::{error::SessionManagerError, StartSession};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::get_associated_token_address,
-    token::{self, Approve, Mint},
+    token::{self, ApproveChecked, Mint},
 };
 use chrono::{DateTime, Utc};
 use domain_registry::domain::Domain;
@@ -118,25 +118,27 @@ impl<'info> StartSession<'info> {
                 SessionManagerError::InvalidArgument
             ); // Symbols in the metadata account are padded to 10 characters
 
-            let mint = Mint::try_deserialize(&mut mint.data.borrow().as_ref())?;
+            let mint_data = Mint::try_deserialize(&mut mint.data.borrow().as_ref())?;
             let amount_internal = amount
-                .saturating_mul(10u64.saturating_pow(mint.decimals.into()).into())
+                .saturating_mul(10u64.saturating_pow(mint_data.decimals.into()).into())
                 .to_u64()
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
 
-            let cpi_accounts = Approve {
+            let cpi_accounts = ApproveChecked {
                 to: user_account.to_account_info(),
                 delegate: self.session.to_account_info(),
                 authority: self.session_setter.to_account_info(),
+                mint: mint.to_account_info(),
             };
 
-            token::approve(
+            token::approve_checked(
                 CpiContext::new_with_signer(
                     self.token_program.to_account_info(),
                     cpi_accounts,
                     &[&[SESSION_SETTER_SEED, &[session_setter_bump]]],
                 ),
                 amount_internal,
+                mint_data.decimals,
             )?;
         }
 

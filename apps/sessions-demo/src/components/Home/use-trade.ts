@@ -32,10 +32,11 @@ export const useTrade = (
         new AnchorProvider(connection, {} as Wallet, {}),
       ).methods
         .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
-        .accounts({
+        .accountsPartial({
           sessionKey: session.sessionPublicKey,
           sink: sinkAta,
           userTokenAccount,
+          mint,
         })
         .instruction(),
     ]);
