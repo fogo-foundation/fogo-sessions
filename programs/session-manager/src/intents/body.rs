@@ -9,6 +9,7 @@ use domain_registry::domain::Domain;
 use domain_registry::state::DomainRecordInner;
 use fogo_sessions_sdk::{AuthorizedProgram, SESSION_SETTER_SEED};
 use mpl_token_metadata::accounts::Metadata;
+use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::collections::HashMap;
 
 #[derive(PartialEq, Debug)]
@@ -20,7 +21,7 @@ pub struct MessageBody {
     pub domain: Domain,
     pub expires: DateTime<Utc>,
     pub session_key: SessionKey,
-    pub tokens: Vec<(String, u64)>,
+    pub tokens: Vec<(String, Decimal)>,
     pub extra: HashMap<String, String>,
 }
 
@@ -85,7 +86,7 @@ impl<'info> StartSession<'info> {
     pub fn approve_tokens(
         &self,
         accounts: &[AccountInfo<'info>],
-        tokens: &[(String, u64)],
+        tokens: &[(String, Decimal)],
         user: &Pubkey,
         session_setter_bump: u8,
     ) -> Result<()> {
@@ -118,7 +119,10 @@ impl<'info> StartSession<'info> {
             ); // Symbols in the metadata account are padded to 10 characters
 
             let mint = Mint::try_deserialize(&mut mint.data.borrow().as_ref())?;
-            let amount_internal = amount.saturating_mul(10u64.pow(mint.decimals.into()));
+            let amount_internal = amount
+                .saturating_mul(10u64.saturating_pow(mint.decimals.into()).into())
+                .to_u64()
+                .ok_or(error!(SessionManagerError::InvalidArgument))?;
 
             let cpi_accounts = Approve {
                 to: user_account.to_account_info(),

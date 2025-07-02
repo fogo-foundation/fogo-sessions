@@ -11,6 +11,7 @@ import { generateKeyPair, getAddressFromPublicKey } from "@solana/kit";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
+  getMint,
 } from "@solana/spl-token";
 import type { TransactionError } from "@solana/web3.js";
 import {
@@ -39,7 +40,7 @@ type EstablishSessionOptions = {
   publicKey: PublicKey;
   domain?: string | undefined;
   expires: Date;
-  tokens: Map<PublicKey, number>;
+  tokens: Map<PublicKey, bigint>;
   extra?: string | undefined;
 };
 
@@ -95,31 +96,29 @@ const createSession = async (
     adapter.sendTransaction(sessionKey, instructions),
 });
 
-type TokenInfo = {
-  symbol: string;
-  metadataAddress: PublicKey;
-  amount: number;
-  mint: PublicKey;
-};
-
-const getTokenInfo = async (
-  options: EstablishSessionOptions,
-): Promise<TokenInfo[]> => {
+const getTokenInfo = async (options: EstablishSessionOptions) => {
   const umi = createUmi(options.adapter.connection.rpcEndpoint);
   return Promise.all(
     options.tokens.entries().map(async ([mint, amount]) => {
       const metaplexMint = metaplexPublicKey(mint.toBase58());
       const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
-      const metadata = await fetchMetadata(umi, metadataAddress);
+      const [mintInfo, metadata] = await Promise.all([
+        getMint(options.adapter.connection, mint),
+        fetchMetadata(umi, metadataAddress),
+      ]);
+
       return {
         symbol: metadata.symbol,
         metadataAddress: new PublicKey(metadataAddress),
         amount,
         mint,
+        decimals: mintInfo.decimals,
       };
     }),
   );
 };
+
+type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 
 const buildIntentInstruction = async (
   options: EstablishSessionOptions,
@@ -199,9 +198,27 @@ const serializeKV = (data: Record<string, string>) =>
 const serializeTokenList = (tokens: TokenInfo[]) =>
   tokens
     .values()
-    .map(({ symbol, amount }) => `\n-${symbol}: ${amount.toString()}`)
+    .map(
+      ({ symbol, amount, decimals }) =>
+        `\n-${symbol}: ${amountToString(amount, decimals)}`,
+    )
     .toArray()
     .join("");
+
+const amountToString = (amount: bigint, decimals: number): string => {
+  const asStr = amount.toString();
+  const whole =
+    asStr.length > decimals ? asStr.slice(0, asStr.length - decimals) : "0";
+  const decimal =
+    asStr.length > decimals ? asStr.slice(asStr.length - decimals) : asStr;
+  const decimalPadded = decimal.padStart(decimals, "0");
+  const decimalTruncated = decimalPadded.replace(/0+$/, "");
+
+  return [
+    whole,
+    ...(decimalTruncated === "" ? [] : [".", decimalTruncated]),
+  ].join("");
+};
 
 const buildCreateAssociatedTokenAccountInstructions = (
   options: EstablishSessionOptions,

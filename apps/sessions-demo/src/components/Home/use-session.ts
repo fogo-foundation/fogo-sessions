@@ -51,7 +51,9 @@ export const useSession = (
             });
             setState(SessionState.Established(result.session));
           } else {
-            SessionState.NotEstablished();
+            // eslint-disable-next-line no-console
+            console.error(result.error);
+            setState(SessionState.NotEstablished());
           }
         })
         .catch((error: unknown) => {
@@ -141,7 +143,7 @@ const doEstablishSession = async (
       ),
       publicKey: walletInfo.publicKey,
       expires: new Date(Date.now() + 3600 * 1000),
-      tokens: new Map([[NATIVE_MINT, 100]]),
+      tokens: new Map([[NATIVE_MINT, 1_500_000_000n]]),
     }),
   };
 };

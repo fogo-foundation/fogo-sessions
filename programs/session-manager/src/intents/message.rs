@@ -5,6 +5,7 @@ use crate::{
 use anchor_lang::prelude::*;
 use chrono::DateTime;
 use domain_registry::domain::Domain;
+use rust_decimal::Decimal;
 use std::{
     collections::HashMap,
     iter::Peekable,
@@ -36,7 +37,7 @@ fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str)
     Ok(value.to_string())
 }
 
-fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(String, u64)>> {
+fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(String, Decimal)>> {
     let mut tokens = vec![];
 
     if lines
@@ -64,8 +65,7 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(String, u
             } else {
                 tokens.push((
                     symbol.to_string(),
-                    amount
-                        .parse()
+                    Decimal::from_str_exact(amount)
                         .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
                 ));
             }
@@ -128,6 +128,7 @@ impl Message {
 #[cfg(test)]
 mod test {
     use super::*;
+    use rust_decimal::dec;
 
     #[test]
     pub fn test_parse_message() {
@@ -146,7 +147,7 @@ mod test {
             parsed_message.expires,
             DateTime::parse_from_rfc3339("2014-11-28T12:00:09Z").unwrap()
         );
-        assert_eq!(parsed_message.tokens, vec![("SOL".to_string(), 100)]);
+        assert_eq!(parsed_message.tokens, vec![("SOL".to_string(), dec!(100))]);
         assert_eq!(
             parsed_message.extra,
             HashMap::from([
