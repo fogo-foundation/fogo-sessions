@@ -2,11 +2,9 @@
 
 import type { Session } from "@fogo/sessions-sdk";
 import { NATIVE_MINT } from "@solana/spl-token";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import Link from "next/link";
-import { useCallback } from "react";
 
 import { useAirdrop } from "./use-airdrop";
 import { SessionStateType, useSession } from "./use-session";
@@ -27,7 +25,6 @@ export const Demo = ({
   rpc: string;
   addressLookupTableAddress: string | undefined;
 }) => {
-  const wallet = useWallet();
   const { appendTransaction, transactions } = useTransactionLog();
   const sessionState = useSession(
     sponsor,
@@ -36,12 +33,6 @@ export const Demo = ({
       : new PublicKey(addressLookupTableAddress),
     appendTransaction,
   );
-  const doDisconnect = useCallback(() => {
-    wallet.disconnect().catch((error: unknown) => {
-      // eslint-disable-next-line no-console
-      console.error(error);
-    });
-  }, [wallet]);
 
   return (
     <div className="flex flex-col">
@@ -77,7 +68,7 @@ export const Demo = ({
                 />
               </>
             )}
-            {(sessionState.type === SessionStateType.Establishing ||
+            {(sessionState.type === SessionStateType.Loading ||
               sessionState.type === SessionStateType.NotEstablished) && (
               <Button
                 {...(sessionState.type === SessionStateType.NotEstablished
@@ -93,9 +84,6 @@ export const Demo = ({
             )}
             {sessionState.type === SessionStateType.Established && (
               <Button onClick={sessionState.endSession}>End Session</Button>
-            )}
-            {wallet.connected && (
-              <Button onClick={doDisconnect}>Disconnect Wallet</Button>
             )}
           </div>
         </div>
@@ -230,19 +218,17 @@ const errorToString = (error: unknown) => {
 const SESSION_STATE_TO_BADGE_CLASSES = {
   [SessionStateType.Established]:
     "border-green-900 bg-green-100 text-green-800",
-  [SessionStateType.Establishing]: "border-blue-700 bg-blue-50 text-blue-600",
+  [SessionStateType.Loading]: "border-blue-700 bg-blue-50 text-blue-600",
   [SessionStateType.Initializing]: "border-gray-500 bg-gray-50 text-gray-400",
   [SessionStateType.NotEstablished]:
     "border-gray-700 bg-gray-100 text-gray-500",
-  [SessionStateType.Restoring]: "border-blue-700 bg-blue-50 text-blue-600",
 };
 
 const SESSION_STATE_TO_DESCRIPTION = {
   [SessionStateType.Established]: "Session Established",
-  [SessionStateType.Establishing]: "New Session Establishing...",
+  [SessionStateType.Loading]: "Loading Session...",
   [SessionStateType.Initializing]: "Initializing...",
   [SessionStateType.NotEstablished]: "No Session",
-  [SessionStateType.Restoring]: "Restoring Session...",
 };
 
 const SessionWallet = ({ session }: { session: Session }) => {
