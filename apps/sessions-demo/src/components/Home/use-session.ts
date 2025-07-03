@@ -3,162 +3,210 @@ import { AnchorProvider } from "@coral-xyz/anchor";
 import { ChainIdProgram } from "@fogo/sessions-idls";
 import type { Session } from "@fogo/sessions-sdk";
 import {
-  establishSession as establishSessionImpl,
+  establishSession,
   createSolanaWalletAdapter,
   SessionResultType,
   reestablishSession,
 } from "@fogo/sessions-sdk";
-import { useMountEffect } from "@react-hookz/web";
 import { NATIVE_MINT } from "@solana/spl-token";
-import { useConnection } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import type { DBSchema } from "idb";
-import { openDB, deleteDB } from "idb";
-import { useMemo, useCallback, useState } from "react";
+import type { DBSchema, IDBPObjectStore } from "idb";
+import { openDB } from "idb";
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 
 import type { Transaction } from "./use-transaction-log";
-import { useWalletInfo } from "../../hooks/use-wallet-info";
 
 export const useSession = (
   sponsor: string,
   addressLookupTableAddress: PublicKey | undefined,
   appendTransaction: (tx: Transaction) => void,
 ) => {
+  const isEstablishing = useRef(false);
+  const lastError = useRef<unknown>(undefined);
+  const wallet = useWallet();
   const [state, setState] = useState<SessionState>(SessionState.Initializing());
   const { connection } = useConnection();
-  const getWalletInfo = useWalletInfo();
-  const establishSession = useCallback(() => {
-    if (state.type === SessionStateType.Establishing) {
-      throw new AlreadyInProgressError();
-    } else {
-      setState(SessionState.Establishing());
-      doEstablishSession(
+  const { setVisible } = useWalletModal();
+
+  const doEstablishSession = useCallback(
+    (publicKey: PublicKey, signMessage: MessageSigner) => {
+      lastError.current = undefined;
+      isEstablishing.current = true;
+      restoreOrEstablishSession(
         connection,
         sponsor,
         addressLookupTableAddress,
-        getWalletInfo,
+        appendTransaction,
+        publicKey,
+        signMessage,
       )
-        .then((result) => {
-          appendTransaction({
-            description: "Create Session",
-            signature: result.signature,
-            success: result.type === SessionResultType.Success,
-          });
-          if (result.type === SessionResultType.Success) {
-            setStoredSession({
-              sessionKey: result.session.sessionKey,
-              walletPublicKey: result.session.walletPublicKey.toBase58(),
-            }).catch((error: unknown) => {
+        .then((session) => {
+          if (session === undefined) {
+            wallet.disconnect().catch((error: unknown) => {
               // eslint-disable-next-line no-console
-              console.error("Failed to persist session", error);
+              console.error("Failed to disconnect wallet", error);
             });
-            setState(SessionState.Established(result.session));
           } else {
-            // eslint-disable-next-line no-console
-            console.error(result.error);
-            setState(SessionState.NotEstablished());
+            setState(SessionState.Established(session));
           }
         })
         .catch((error: unknown) => {
+          wallet.disconnect().catch((error: unknown) => {
+            // eslint-disable-next-line no-console
+            console.error("Failed to disconnect wallet", error);
+          });
           // eslint-disable-next-line no-console
-          console.error(error);
-          setState(SessionState.NotEstablished(error));
+          console.error("Failed to restore or establish session", error);
+          lastError.current = error;
+        })
+        .finally(() => {
+          isEstablishing.current = false;
         });
+    },
+    [
+      setState,
+      connection,
+      sponsor,
+      addressLookupTableAddress,
+      appendTransaction,
+      wallet,
+    ],
+  );
+
+  const establishSession = useCallback(() => {
+    if (wallet.publicKey === null || wallet.signMessage === undefined) {
+      setVisible(true);
+    } else {
+      doEstablishSession(wallet.publicKey, wallet.signMessage);
+    }
+  }, [setVisible, wallet.publicKey, wallet.signMessage, doEstablishSession]);
+
+  useEffect(() => {
+    if (!wallet.connecting && !isEstablishing.current) {
+      if (
+        wallet.disconnecting ||
+        wallet.publicKey === null ||
+        wallet.signMessage === undefined
+      ) {
+        setState((prev) =>
+          prev.type === SessionStateType.NotEstablished
+            ? prev
+            : SessionState.NotEstablished(lastError.current),
+        );
+      } else if (
+        state.type === SessionStateType.NotEstablished ||
+        state.type === SessionStateType.Initializing ||
+        (state.type === SessionStateType.Established &&
+          !state.session.walletPublicKey.equals(wallet.publicKey))
+      ) {
+        doEstablishSession(wallet.publicKey, wallet.signMessage);
+      }
     }
   }, [
-    sponsor,
-    connection,
-    getWalletInfo,
-    appendTransaction,
-    addressLookupTableAddress,
+    wallet.publicKey,
+    wallet.connecting,
+    wallet.signMessage,
+    wallet.disconnecting,
+    doEstablishSession,
     state,
-    setState,
   ]);
 
   const endSession = useCallback(() => {
-    clearStoredSession().catch((error: unknown) => {
-      // eslint-disable-next-line no-console
-      console.error("Failed to clear stored session", error);
-    });
-    setState(SessionState.NotEstablished());
-  }, []);
-
-  useMountEffect(() => {
-    getStoredSession()
-      .then((current) => {
-        if (current === undefined) {
-          setState(SessionState.NotEstablished());
-        } else {
-          setState(SessionState.Restoring());
-          restoreSession(
-            connection,
-            sponsor,
-            addressLookupTableAddress,
-            current,
-          )
-            .then((session) => {
-              setState(SessionState.Established(session));
-            })
-            .catch((error: unknown) => {
-              // eslint-disable-next-line no-console
-              console.error(error);
-              setState(SessionState.NotEstablished(error));
-            });
-        }
-      })
-      .catch((error: unknown) => {
+    if (state.type === SessionStateType.Established) {
+      clearStoredSession(state.session.walletPublicKey).catch(
+        (error: unknown) => {
+          // eslint-disable-next-line no-console
+          console.error("Failed to clear stored session", error);
+        },
+      );
+      wallet.disconnect().catch((error: unknown) => {
         // eslint-disable-next-line no-console
-        console.error(error);
-        setState(SessionState.NotEstablished(error));
+        console.error("Failed to disconnect wallet", error);
       });
-  });
+      setState(SessionState.NotEstablished());
+    } else {
+      throw new Error("Cannot end session when session is not established");
+    }
+  }, [wallet, state]);
 
   return useMemo(() => {
-    switch (state.type) {
-      case SessionStateType.NotEstablished: {
-        return { ...state, establishSession };
-      }
-      case SessionStateType.Established: {
-        return { ...state, endSession };
-      }
-      default: {
-        return state;
+    if (isEstablishing.current) {
+      return SessionState.Loading();
+    } else {
+      switch (state.type) {
+        case SessionStateType.NotEstablished: {
+          return { ...state, establishSession };
+        }
+        case SessionStateType.Established: {
+          return { ...state, endSession };
+        }
+        default: {
+          return state;
+        }
       }
     }
   }, [state, establishSession, endSession]);
 };
 
-const doEstablishSession = async (
+const restoreOrEstablishSession = async (
   connection: Connection,
   sponsor: string,
   addressLookupTableAddress: PublicKey | undefined,
-  getWalletInfo: ReturnType<typeof useWalletInfo>,
+  appendTransaction: Parameters<typeof useSession>[2],
+  walletPublicKey: PublicKey,
+  signMessage: MessageSigner,
 ) => {
-  const walletInfo = await getWalletInfo();
-  return establishSessionImpl({
-    adapter: await buildAdapter(
-      connection,
-      sponsor,
-      addressLookupTableAddress,
-      walletInfo.signMessage,
-    ),
-    walletPublicKey: walletInfo.publicKey,
-    expires: new Date(Date.now() + 3600 * 1000),
-    tokens: new Map([[NATIVE_MINT, 1_500_000_000n]]),
+  const storedSession = await getStoredSession(walletPublicKey);
+  const addressLookupTable =
+    addressLookupTableAddress === undefined
+      ? undefined
+      : await connection.getAddressLookupTable(addressLookupTableAddress);
+  const adapter = createSolanaWalletAdapter({
+    connection,
+    chainId: await fetchChainId(connection),
+    paymasterUrl: "/api/sponsor_and_send",
+    sponsor: new PublicKey(sponsor),
+    addressLookupTables: addressLookupTable?.value
+      ? [addressLookupTable.value]
+      : undefined,
+    signMessage,
   });
+  if (storedSession === undefined) {
+    const result = await establishSession({
+      adapter,
+      walletPublicKey,
+      expires: new Date(Date.now() + 3600 * 1000),
+      tokens: new Map([[NATIVE_MINT, 1_500_000_000n]]),
+    });
+    appendTransaction({
+      description: "Create Session",
+      signature: result.signature,
+      success: result.type === SessionResultType.Success,
+    });
+    switch (result.type) {
+      case SessionResultType.Success: {
+        await setStoredSession({
+          sessionKey: result.session.sessionKey,
+          walletPublicKey,
+        });
+        return result.session;
+      }
+      case SessionResultType.Failed: {
+        // eslint-disable-next-line no-console
+        console.error("Failed to create session", result.error);
+        return;
+      }
+    }
+  } else {
+    return reestablishSession(
+      adapter,
+      storedSession.walletPublicKey,
+      storedSession.sessionKey,
+    );
+  }
 };
-
-const restoreSession = async (
-  connection: Connection,
-  sponsor: string,
-  addressLookupTableAddress: PublicKey | undefined,
-  storedSession: StoredSession,
-) =>
-  reestablishSession(
-    await buildAdapter(connection, sponsor, addressLookupTableAddress),
-    new PublicKey(storedSession.walletPublicKey),
-    storedSession.sessionKey,
-  );
 
 const fetchChainId = async (connection: Connection) => {
   const chainIdProgram = new ChainIdProgram(
@@ -178,45 +226,22 @@ const fetchChainId = async (connection: Connection) => {
   return chainId.chainId;
 };
 
-const buildAdapter = async (
-  connection: Connection,
-  sponsor: string,
-  addressLookupTableAddress: PublicKey | undefined,
-  signMessage?: (message: Uint8Array) => Promise<Uint8Array>,
-) => {
-  const addressLookupTable =
-    addressLookupTableAddress === undefined
-      ? undefined
-      : await connection.getAddressLookupTable(addressLookupTableAddress);
-
-  return createSolanaWalletAdapter({
-    connection,
-    chainId: await fetchChainId(connection),
-    paymasterUrl: "/api/sponsor_and_send",
-    sponsor: new PublicKey(sponsor),
-    addressLookupTables: addressLookupTable?.value
-      ? [addressLookupTable.value]
-      : undefined,
-    signMessage,
-  });
-};
+type MessageSigner = (message: Uint8Array) => Promise<Uint8Array>;
 
 export enum SessionStateType {
   Initializing,
-  Restoring,
   NotEstablished,
-  Establishing,
+  Loading,
   Established,
 }
 
 const SessionState = {
   Initializing: () => ({ type: SessionStateType.Initializing as const }),
-  Restoring: () => ({ type: SessionStateType.Restoring as const }),
   NotEstablished: (error?: unknown) => ({
     type: SessionStateType.NotEstablished as const,
     error,
   }),
-  Establishing: () => ({ type: SessionStateType.Establishing as const }),
+  Loading: () => ({ type: SessionStateType.Loading as const }),
   Established: (session: Session) => ({
     type: SessionStateType.Established as const,
     session,
@@ -226,34 +251,46 @@ type SessionState = ReturnType<
   (typeof SessionState)[keyof typeof SessionState]
 >;
 
-class AlreadyInProgressError extends Error {
-  constructor() {
-    super("Can't attempt session initialization while already in progress!");
-    this.name = "AlreadyInProgressError";
-  }
-}
-
-const getStoredSession = async () => {
-  const db = await openDB<SessionDBSchema>("sessionsdb", 1, {
-    upgrade: (db) => db.createObjectStore("sessions"),
-  });
-  const tx = db.transaction("sessions", "readonly");
-  const store = tx.objectStore("sessions");
-  const key = await store.get("current");
-  await tx.done;
-  return key;
+const getStoredSession = async (walletPublicKey: PublicKey) => {
+  const session = await withStore("readonly", (store) =>
+    store.get(walletPublicKey.toBase58()),
+  );
+  return session
+    ? { ...session, walletPublicKey: new PublicKey(session.walletPublicKey) }
+    : undefined;
 };
 
-const clearStoredSession = () => deleteDB("sessionsdb");
+const clearStoredSession = async (walletPublicKey: PublicKey) =>
+  withStore("readwrite", (store) => store.delete(walletPublicKey.toBase58()));
 
-const setStoredSession = async (sessionData: StoredSession) => {
+const setStoredSession = async (
+  sessionData: Omit<StoredSession, "walletPublicKey"> & {
+    walletPublicKey: PublicKey;
+  },
+) => {
+  const serializedData = {
+    ...sessionData,
+    walletPublicKey: sessionData.walletPublicKey.toBase58(),
+  };
+  return withStore("readwrite", (store) =>
+    store.put(serializedData, serializedData.walletPublicKey),
+  );
+};
+
+const withStore = async <Mode extends IDBTransactionMode, Output>(
+  mode: Mode,
+  cb: (
+    store: IDBPObjectStore<SessionDBSchema, ["sessions"], "sessions", Mode>,
+  ) => Promise<Output>,
+): Promise<Output> => {
   const db = await openDB<SessionDBSchema>("sessionsdb", 1, {
     upgrade: (db) => db.createObjectStore("sessions"),
   });
-  const tx = db.transaction("sessions", "readwrite");
+  const tx = db.transaction("sessions", mode);
   const store = tx.objectStore("sessions");
-  await store.put(sessionData, "current");
+  const ret = await cb(store);
   await tx.done;
+  return ret;
 };
 
 type SessionDBSchema = DBSchema & {
