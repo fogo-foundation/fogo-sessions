@@ -23,7 +23,7 @@ export const useTrade = (
     const sinkAta = getAssociatedTokenAddressSync(mint, session.payer);
     const userTokenAccount = getAssociatedTokenAddressSync(
       mint,
-      session.publicKey,
+      session.walletPublicKey,
     );
     const { decimals } = await getMint(connection, mint);
 
@@ -47,7 +47,7 @@ export const useTrade = (
       success: result.type === TransactionResultType.Success,
     });
 
-    mutate(["tokenAccountData", session.publicKey.toBase58()]).catch(
+    mutate(["tokenAccountData", session.walletPublicKey.toBase58()]).catch(
       (error: unknown) => {
         // eslint-disable-next-line no-console
         console.error(error);

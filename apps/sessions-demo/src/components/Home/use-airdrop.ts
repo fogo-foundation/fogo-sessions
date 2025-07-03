@@ -24,14 +24,17 @@ export const useAirdrop = (
 
   const doAirdrop = useCallback(async () => {
     const faucetAta = getAssociatedTokenAddressSync(mint, session.payer);
-    const userAta = getAssociatedTokenAddressSync(mint, session.publicKey);
+    const userAta = getAssociatedTokenAddressSync(
+      mint,
+      session.walletPublicKey,
+    );
     const { decimals } = await getMint(connection, mint);
 
     const result = await session.sendTransaction([
       createAssociatedTokenAccountIdempotentInstruction(
         session.payer,
         userAta,
-        session.publicKey,
+        session.walletPublicKey,
         mint,
       ),
       createTransferInstruction(
@@ -48,7 +51,7 @@ export const useAirdrop = (
       success: result.type === TransactionResultType.Success,
     });
 
-    mutate(["tokenAccountData", session.publicKey.toBase58()]).catch(
+    mutate(["tokenAccountData", session.walletPublicKey.toBase58()]).catch(
       (error: unknown) => {
         // eslint-disable-next-line no-console
         console.error(error);
