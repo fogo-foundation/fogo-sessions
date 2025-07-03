@@ -233,13 +233,15 @@ impl From<SessionError> for anchor_lang::error::Error {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_session_setter_pda_derivation() {
-        assert_eq!(SESSION_SETTER, Pubkey::find_program_address(&[SESSION_SETTER_SEED], &SESSION_MANAGER_ID).0);
+        assert_eq!(
+            SESSION_SETTER,
+            Pubkey::find_program_address(&[SESSION_SETTER_SEED], &SESSION_MANAGER_ID).0
+        );
     }
 }

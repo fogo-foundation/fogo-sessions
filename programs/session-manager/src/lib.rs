@@ -81,7 +81,6 @@ pub struct StartSession<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
