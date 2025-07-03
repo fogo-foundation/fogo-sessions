@@ -12,7 +12,7 @@ use fogo_sessions_sdk::Session;
 use fogo_sessions_sdk::SessionInfo;
 use fogo_sessions_sdk::SESSION_SETTER_SEED;
 
-declare_id!("mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk");
+declare_id!("Sessx79M6Np5XvqewQ8A8MLP51Lpvbf6bg7t3SG7Ccs");
 
 pub mod error;
 pub mod intents;

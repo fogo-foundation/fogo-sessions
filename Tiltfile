@@ -6,13 +6,13 @@ local_resource(
 local_resource(
     "svm-localnet",
     serve_cmd="solana-test-validator \
-        --bpf-program $(solana-keygen pubkey ./keypairs/session-manager.json) \
+        --bpf-program Sessx79M6Np5XvqewQ8A8MLP51Lpvbf6bg7t3SG7Ccs \
         ../target/deploy/session_manager.so \
-        --bpf-program $(solana-keygen pubkey ./keypairs/example.json) \
+        --bpf-program Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 \
         ../target/deploy/example.so \
-        --bpf-program $(solana-keygen pubkey ./keypairs/chain-id.json) \
+        --bpf-program Cha1RcWkdcF1dmGuTui53JmSnVCacCc2Kx2SY7zSFhaN \
         ../target/deploy/chain_id.so \
-        --bpf-program $(solana-keygen pubkey ./keypairs/domain-registry.json) \
+        --bpf-program DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog \
         ../target/deploy/domain_registry.so \
         --mint $(solana-keygen pubkey ./keypairs/sponsor.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
@@ -48,7 +48,7 @@ local_resource(
     "initialize-programs",
     """
     pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/sponsor.json --chain-id localnet &&
-    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/sponsor.json --domain http://localhost:3000 --program-id $(solana-keygen pubkey ./tilt/keypairs/example.json)
+    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/sponsor.json --domain http://localhost:3000 --program-id Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3
 
     """,
     resource_deps=["svm-localnet"],

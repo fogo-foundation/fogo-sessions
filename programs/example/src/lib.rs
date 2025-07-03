@@ -6,7 +6,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use fogo_sessions_sdk::{Session, PROGRAM_SIGNER_SEED};
 use spl_token::instruction::transfer_checked;
 
-declare_id!("91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45");
+declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 
 #[program]
 pub mod example {
