@@ -26,6 +26,7 @@ import type {
 
 export type SessionAdapter = {
   signMessage?: ((message: Uint8Array) => Promise<Uint8Array>) | undefined;
+  chainId: string;
   connection: Connection;
   payer: PublicKey;
   sendTransaction: (
@@ -60,6 +61,7 @@ export const createSolanaWalletAdapter = (
     connection: Connection;
     signMessage?: SessionAdapter["signMessage"];
     sponsor: PublicKey;
+    chainId: string;
     addressLookupTables?: AddressLookupTableAccount[] | undefined;
   } & (
     | {
@@ -73,6 +75,7 @@ export const createSolanaWalletAdapter = (
   signMessage: options.signMessage,
   connection: options.connection,
   payer: options.sponsor,
+  chainId: options.chainId,
   sendTransaction: async (
     sessionKey: CryptoKeyPair,
     instructions: TransactionInstruction[],
