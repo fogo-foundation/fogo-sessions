@@ -6,7 +6,7 @@ local_resource(
 local_resource(
     "svm-localnet",
     serve_cmd="solana-test-validator \
-        --bpf-program Sessx79M6Np5XvqewQ8A8MLP51Lpvbf6bg7t3SG7Ccs \
+        --bpf-program SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC \
         ../target/deploy/session_manager.so \
         --bpf-program Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 \
         ../target/deploy/example.so \
@@ -38,7 +38,7 @@ LOOKUP_TABLE_ADDRESSES=[
     "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
     "11111111111111111111111111111111",            
     "So11111111111111111111111111111111111111112", 
-    "FrfXhepGSPsSYXzvEsAxzVW8zDaxdWSneaERaDC1Q911",
+    "akbpBKqNWBiZn3ejes3ejieJ5t3vqEhoq1ZzLBG7jQo",
     "4y6r4Ywh2wcgD7s1fq2JRXUQP1EbQEcEr4CRzN2H3a6D",
     "6dM4TqWyWJsbx7obrdLcviBkTafD5E8av61zfU6jq57X",
     "6Cv5GxmXUXnwGaJVYPACUuybZqSPSFvj3UMdYbfzYZU9"

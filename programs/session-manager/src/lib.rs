@@ -11,8 +11,7 @@ use fogo_sessions_sdk::AuthorizedTokens;
 use fogo_sessions_sdk::Session;
 use fogo_sessions_sdk::SessionInfo;
 use fogo_sessions_sdk::SESSION_SETTER_SEED;
-
-declare_id!("Sessx79M6Np5XvqewQ8A8MLP51Lpvbf6bg7t3SG7Ccs");
+declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
 pub mod error;
 pub mod intents;
@@ -80,4 +79,15 @@ pub struct StartSession<'info> {
     pub session_setter: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_program_id_matches_sdk() {
+        assert_eq!(ID, fogo_sessions_sdk::SESSION_MANAGER_ID);
+    }
 }
