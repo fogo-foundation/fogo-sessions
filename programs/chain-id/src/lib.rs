@@ -2,7 +2,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("5kf451i6V6WiF4U9yDg24beCS8eDFCkHLi1Cou6naG1Q");
+declare_id!("Cha1RcWkdcF1dmGuTui53JmSnVCacCc2Kx2SY7zSFhaN");
 
 pub const SEED: &[u8] = b"chain_id";
 

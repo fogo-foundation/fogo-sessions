@@ -13,7 +13,7 @@ pub mod error;
 pub mod state;
 pub mod system_program;
 
-declare_id!("6pubKDUKpUdJSVxNKpnMrG52vdBVbB1duXoUcNpAHzu5");
+declare_id!("DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog");
 
 #[program]
 pub mod domain_registry {
