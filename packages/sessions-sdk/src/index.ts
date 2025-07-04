@@ -109,11 +109,11 @@ const SymbolOrMint = {
   Symbol: (symbol: string) => ({
     type: SymbolOrMintType.Symbol,
     symbol,
-  }),
+  }) as const,
   Mint: (mint: PublicKey) => ({
     type: SymbolOrMintType.Mint,
     mint,
-  }),
+  }) as const,
 }
 
 const getTokenInfo = async (options: EstablishSessionOptions) => {
@@ -222,7 +222,7 @@ const serializeTokenList = (tokens: TokenInfo[]) =>
     .values()
     .map(
       ({ symbolOrMint, amount, decimals }) =>
-        `\n-${symbolOrMint}: ${amountToString(amount, decimals)}`,
+        `\n-${symbolOrMint.type === SymbolOrMintType.Symbol ? symbolOrMint.symbol : symbolOrMint.mint.toBase58()}: ${amountToString(amount, decimals)}`,
     )
     .toArray()
     .join("");
