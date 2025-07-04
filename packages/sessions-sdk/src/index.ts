@@ -106,15 +106,17 @@ enum SymbolOrMintType {
 }
 
 const SymbolOrMint = {
-  Symbol: (symbol: string) => ({
-    type: SymbolOrMintType.Symbol,
-    symbol,
-  }) as const,
-  Mint: (mint: PublicKey) => ({
-    type: SymbolOrMintType.Mint,
-    mint,
-  }) as const,
-}
+  Symbol: (symbol: string) =>
+    ({
+      type: SymbolOrMintType.Symbol,
+      symbol,
+    }) as const,
+  Mint: (mint: PublicKey) =>
+    ({
+      type: SymbolOrMintType.Mint,
+      mint,
+    }) as const,
+};
 
 const getTokenInfo = async (options: EstablishSessionOptions) => {
   const umi = createUmi(options.adapter.connection.rpcEndpoint);
@@ -128,7 +130,9 @@ const getTokenInfo = async (options: EstablishSessionOptions) => {
       ]);
 
       return {
-        symbolOrMint: metadata?.symbol ? SymbolOrMint.Symbol(metadata.symbol) : SymbolOrMint.Mint(mint),
+        symbolOrMint: metadata?.symbol
+          ? SymbolOrMint.Symbol(metadata.symbol)
+          : SymbolOrMint.Mint(mint),
         metadataAddress: new PublicKey(metadataAddress),
         amount,
         mint,
@@ -278,7 +282,7 @@ const buildStartSessionInstruction = async (
       domainRegistry: getDomainRecordAddress(getDomain(options.domain)),
     })
     .remainingAccounts(
-      tokens.flatMap(({ symbolOrMint,mint, metadataAddress }) => [
+      tokens.flatMap(({ symbolOrMint, mint, metadataAddress }) => [
         {
           pubkey: getAssociatedTokenAddressSync(mint, options.walletPublicKey),
           isWritable: true,
@@ -289,11 +293,15 @@ const buildStartSessionInstruction = async (
           isWritable: false,
           isSigner: false,
         },
-        ...(symbolOrMint.type === SymbolOrMintType.Symbol ? [{
-          pubkey: metadataAddress,
-          isWritable: false,
-          isSigner: false,
-        }] : []),
+        ...(symbolOrMint.type === SymbolOrMintType.Symbol
+          ? [
+              {
+                pubkey: metadataAddress,
+                isWritable: false,
+                isSigner: false,
+              },
+            ]
+          : []),
       ]),
     )
     .instruction();

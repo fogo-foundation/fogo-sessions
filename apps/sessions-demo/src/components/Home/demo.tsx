@@ -174,12 +174,14 @@ const TokenAccounts = ({ session }: { session: Session }) => {
           <div className="border border-y border-black/40 mt-8 p-4">
             <h2 className="text-lg font-semibold mb-4">Session Limits</h2>
             <dl>
-              {state.data.sessionLimits.map(({ nameOrMint, mint, sessionLimit }) => (
-                <div key={mint} className="flex flex-row items-center gap-4">
-                  <dt>{nameOrMint}</dt>
-                  <dd className="font-bold">{sessionLimit}</dd>
-                </div>
-              ))}
+              {state.data.sessionLimits.map(
+                ({ nameOrMint, mint, sessionLimit }) => (
+                  <div key={mint} className="flex flex-row items-center gap-4">
+                    <dt>{nameOrMint}</dt>
+                    <dd className="font-bold">{sessionLimit}</dd>
+                  </div>
+                ),
+              )}
             </dl>
           </div>
           <div className="border border-y border-black/40 mt-8 p-4">

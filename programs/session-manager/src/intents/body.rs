@@ -100,9 +100,15 @@ impl<'info> StartSession<'info> {
         for (symbol_or_mint, amount) in tokens.iter() {
             let (user_account, mint_account) = match symbol_or_mint {
                 SymbolOrMint::Symbol(symbol) => {
-                    let user_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
-                    let mint_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
-                    let metadata_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
+                    let user_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                    let mint_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                    let metadata_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
 
                     require_eq!(
                         metadata_account.key(),
@@ -118,8 +124,12 @@ impl<'info> StartSession<'info> {
                     (user_account, mint_account)
                 }
                 SymbolOrMint::Mint(mint) => {
-                    let user_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
-                    let mint_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
+                    let user_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                    let mint_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
 
                     require_eq!(
                         mint,
