@@ -3,13 +3,28 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "env": ["ADDRESS_LOOKUP_TABLE_ADDRESS", "SOLANA_RPC", "SPONSOR_KEY"]
+      "env": [
+        "ADDRESS_LOOKUP_TABLE_ADDRESS",
+        "SOLANA_RPC",
+        "SPONSOR_KEY",
+        "FOGO_SESSIONS_DOMAIN"
+      ]
     },
     "start:dev": {
-      "env": ["ADDRESS_LOOKUP_TABLE_ADDRESS", "SOLANA_RPC", "SPONSOR_KEY"]
+      "env": [
+        "ADDRESS_LOOKUP_TABLE_ADDRESS",
+        "SOLANA_RPC",
+        "SPONSOR_KEY",
+        "FOGO_SESSIONS_DOMAIN"
+      ]
     },
     "start:prod": {
-      "env": ["ADDRESS_LOOKUP_TABLE_ADDRESS", "SOLANA_RPC", "SPONSOR_KEY"]
+      "env": [
+        "ADDRESS_LOOKUP_TABLE_ADDRESS",
+        "SOLANA_RPC",
+        "SPONSOR_KEY",
+        "FOGO_SESSIONS_DOMAIN"
+      ]
     },
     "test:types": {
       "dependsOn": ["build"]

@@ -26,6 +26,8 @@ export const SOLANA_RPC = defaultInDevelopment(
   "http://127.0.0.1:8899",
 );
 
+export const FOGO_SESSIONS_DOMAIN = process.env.FOGO_SESSIONS_DOMAIN;
+
 const keySchema = z.array(z.number());
 
 export const SPONSOR_KEY = Keypair.fromSecretKey(

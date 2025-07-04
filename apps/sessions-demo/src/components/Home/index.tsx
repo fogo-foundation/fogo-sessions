@@ -4,6 +4,7 @@ import {
   SPONSOR_KEY,
   SOLANA_RPC,
   ADDRESS_LOOKUP_TABLE_ADDRESS,
+  FOGO_SESSIONS_DOMAIN,
 } from "../../config/server";
 
 export const Home = () => (
@@ -14,6 +15,7 @@ export const Home = () => (
         sponsor={SPONSOR_KEY.publicKey.toBase58()}
         rpc={SOLANA_RPC}
         addressLookupTableAddress={ADDRESS_LOOKUP_TABLE_ADDRESS}
+        domain={FOGO_SESSIONS_DOMAIN}
       />
     </div>
   </main>
