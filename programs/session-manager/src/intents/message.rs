@@ -59,15 +59,15 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(SymbolOrM
                 .split_once(KEY_VALUE_SEPARATOR)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
 
-            let token = Pubkey::from_str(symbol)
+            let symbol_or_mint = Pubkey::from_str(symbol)
                 .map(SymbolOrMint::Mint)
                 .unwrap_or(SymbolOrMint::Symbol(symbol.to_string()));
-            if tokens.iter().any(|(t, _)| t == &token) {
+            if tokens.iter().any(|(x, _)| x == &symbol_or_mint) {
                 // No duplicate mints
                 return Err(error!(SessionManagerError::InvalidArgument));
             } else {
                 tokens.push((
-                    token,
+                    symbol_or_mint,
                     Decimal::from_str_exact(amount)
                         .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
                 ));
