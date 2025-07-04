@@ -1,6 +1,6 @@
 use crate::{
     error::SessionManagerError,
-    intents::body::{MessageBody, SessionKey, Version},
+    intents::body::{MessageBody, SessionKey, SymbolOrMint, Version},
 };
 use anchor_lang::prelude::*;
 use chrono::DateTime;
@@ -37,7 +37,7 @@ fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str)
     Ok(value.to_string())
 }
 
-fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(String, Decimal)>> {
+fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(SymbolOrMint, Decimal)>> {
     let mut tokens = vec![];
 
     if lines
@@ -59,12 +59,15 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(String, D
                 .split_once(KEY_VALUE_SEPARATOR)
                 .ok_or(error!(SessionManagerError::InvalidArgument))?;
 
-            if tokens.iter().any(|(s, _)| s == symbol) {
+            let token = Pubkey::from_str(symbol)
+                .map(SymbolOrMint::Mint)
+                .unwrap_or(SymbolOrMint::Symbol(symbol.to_string()));
+            if tokens.iter().any(|(t, _)| t == &token) {
                 // No duplicate mints
                 return Err(error!(SessionManagerError::InvalidArgument));
             } else {
                 tokens.push((
-                    symbol.to_string(),
+                    token,
                     Decimal::from_str_exact(amount)
                         .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
                 ));
@@ -147,7 +150,10 @@ mod test {
             parsed_message.expires,
             DateTime::parse_from_rfc3339("2014-11-28T12:00:09Z").unwrap()
         );
-        assert_eq!(parsed_message.tokens, vec![("SOL".to_string(), dec!(100))]);
+        assert_eq!(
+            parsed_message.tokens,
+            vec![(SymbolOrMint::Symbol("SOL".to_string()), dec!(100))]
+        );
         assert_eq!(
             parsed_message.extra,
             HashMap::from([

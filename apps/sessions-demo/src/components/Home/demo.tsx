@@ -174,9 +174,9 @@ const TokenAccounts = ({ session }: { session: Session }) => {
           <div className="border border-y border-black/40 mt-8 p-4">
             <h2 className="text-lg font-semibold mb-4">Session Limits</h2>
             <dl>
-              {state.data.sessionLimits.map(({ name, mint, sessionLimit }) => (
+              {state.data.sessionLimits.map(({ nameOrMint, mint, sessionLimit }) => (
                 <div key={mint} className="flex flex-row items-center gap-4">
-                  <dt>{name}</dt>
+                  <dt>{nameOrMint}</dt>
                   <dd className="font-bold">{sessionLimit}</dd>
                 </div>
               ))}
@@ -186,9 +186,9 @@ const TokenAccounts = ({ session }: { session: Session }) => {
             <h2 className="text-lg font-semibold mb-4">Wallet Contents</h2>
             <ul>
               {state.data.tokensInWallet.map(
-                ({ name, mint, amountInWallet }) => (
+                ({ nameOrMint, mint, amountInWallet }) => (
                   <div key={mint} className="flex flex-row items-center gap-4">
-                    <dt>{name}</dt>
+                    <dt>{nameOrMint}</dt>
                     <dd className="font-bold">{amountInWallet}</dd>
                   </div>
                 ),

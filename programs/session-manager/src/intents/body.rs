@@ -21,7 +21,7 @@ pub struct MessageBody {
     pub domain: Domain,
     pub expires: DateTime<Utc>,
     pub session_key: SessionKey,
-    pub tokens: Vec<(String, Decimal)>,
+    pub tokens: Vec<(SymbolOrMint, Decimal)>,
     pub extra: HashMap<String, String>,
 }
 
@@ -49,6 +49,12 @@ impl Version {
         }
         Ok(Self { major, minor })
     }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum SymbolOrMint {
+    Symbol(String),
+    Mint(Pubkey),
 }
 
 impl<'info> StartSession<'info> {
@@ -86,39 +92,51 @@ impl<'info> StartSession<'info> {
     pub fn approve_tokens(
         &self,
         accounts: &[AccountInfo<'info>],
-        tokens: &[(String, Decimal)],
+        tokens: &[(SymbolOrMint, Decimal)],
         user: &Pubkey,
         session_setter_bump: u8,
     ) -> Result<()> {
-        require_eq!(
-            accounts.len(),
-            tokens.len().saturating_mul(3),
-            SessionManagerError::InvalidArgument
-        );
-        for (account_tuple, (symbol, amount)) in accounts.chunks_exact(3).zip(tokens.iter()) {
-            let [user_account, mint, metadata] = account_tuple else {
-                return Err(error!(SessionManagerError::InvalidArgument));
+        let mut accounts_iter = accounts.iter();
+        for (symbol_or_mint, amount) in tokens.iter() {
+            let (user_account, mint_account) = match symbol_or_mint {
+                SymbolOrMint::Symbol(symbol) => {
+                    let user_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
+                    let mint_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
+                    let metadata_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
+
+                    require_eq!(
+                        metadata_account.key(),
+                        Metadata::find_pda(&mint_account.key()).0,
+                        SessionManagerError::InvalidArgument
+                    );
+                    let metadata = Metadata::try_from(metadata_account)?;
+                    require_eq!(
+                        &metadata.symbol,
+                        &format!("{symbol:\0<10}"),
+                        SessionManagerError::InvalidArgument
+                    ); // Symbols in the metadata account are padded to 10 characters
+                    (user_account, mint_account)
+                }
+                SymbolOrMint::Mint(mint) => {
+                    let user_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
+                    let mint_account = accounts_iter.next().ok_or(error!(SessionManagerError::InvalidArgument))?;
+
+                    require_eq!(
+                        mint,
+                        &mint_account.key(),
+                        SessionManagerError::InvalidArgument
+                    );
+                    (user_account, mint_account)
+                }
             };
 
             require_eq!(
                 user_account.key(),
-                get_associated_token_address(user, &mint.key()),
-                SessionManagerError::InvalidArgument
-            );
-            require_eq!(
-                metadata.key(),
-                Metadata::find_pda(&mint.key()).0,
+                get_associated_token_address(user, &mint_account.key()),
                 SessionManagerError::InvalidArgument
             );
 
-            let metadata = Metadata::try_from(metadata)?;
-            require_eq!(
-                &metadata.symbol,
-                &format!("{symbol:\0<10}"),
-                SessionManagerError::InvalidArgument
-            ); // Symbols in the metadata account are padded to 10 characters
-
-            let mint_data = Mint::try_deserialize(&mut mint.data.borrow().as_ref())?;
+            let mint_data = Mint::try_deserialize(&mut mint_account.data.borrow().as_ref())?;
             let amount_internal = amount
                 .saturating_mul(10u64.saturating_pow(mint_data.decimals.into()).into())
                 .to_u64()
@@ -128,7 +146,7 @@ impl<'info> StartSession<'info> {
                 to: user_account.to_account_info(),
                 delegate: self.session.to_account_info(),
                 authority: self.session_setter.to_account_info(),
-                mint: mint.to_account_info(),
+                mint: mint_account.to_account_info(),
             };
 
             token::approve_checked(
