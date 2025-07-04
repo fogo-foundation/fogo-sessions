@@ -20,10 +20,12 @@ export const Demo = ({
   sponsor,
   rpc,
   addressLookupTableAddress,
+  domain,
 }: {
   sponsor: string;
   rpc: string;
   addressLookupTableAddress: string | undefined;
+  domain: string | undefined;
 }) => {
   const { appendTransaction, transactions } = useTransactionLog();
   const sessionState = useSession(
@@ -32,6 +34,7 @@ export const Demo = ({
       ? undefined
       : new PublicKey(addressLookupTableAddress),
     appendTransaction,
+    domain,
   );
 
   return (
