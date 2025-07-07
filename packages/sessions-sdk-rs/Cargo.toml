@@ -1,7 +1,9 @@
 [package]
 name = "fogo-sessions-sdk"
-version = "0.0.0"
+description = "A set of utilities for SVM on-chain programs integrating with Fogo sessions"
 edition = { workspace = true }
+license = { workspace = true }
+version = "0.1.0"
 
 [lib]
 crate-type = ["rlib"]
