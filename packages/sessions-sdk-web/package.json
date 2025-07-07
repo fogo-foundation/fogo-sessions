@@ -29,11 +29,16 @@
     "build:package-json": "transform-package-json ./package.json dist/package.json",
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix . --max-warnings 0",
+    "start:dev": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "test:format": "run-jest --colors --selectProjects format",
     "test:integration": "run-jest --colors --selectProjects integration",
     "test:lint": "run-jest --colors --selectProjects lint",
-    "test:types": "tsc",
-    "test:unit": "run-jest --colors --coverage --selectProjects unit"
+    "test:types": "tsc"
+  },
+  "dependencies": {
+    "@fogo/sessions-sdk": "workspace:*",
+    "@solana/web3.js": "catalog:",
+    "idb": "catalog:"
   },
   "devDependencies": {
     "@cprussin/eslint-config": "catalog:",

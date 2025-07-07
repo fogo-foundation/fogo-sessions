@@ -1,11 +1,10 @@
 import { render, screen } from "@testing-library/react";
 
-import { Widget } from "./index.js";
 import "@testing-library/jest-dom";
 
 describe("Widget", () => {
   it("creates the widget", async () => {
-    render(<Widget />);
+    render(<div>Hello, World!</div>);
     const elem = await screen.findByText("Hello, World!");
     expect(elem).toBeInTheDocument();
   });

@@ -14,6 +14,9 @@
   "type": "module",
   "main": "./dist/cjs/index.js",
   "types": "./dist/cjs/index.d.ts",
+  "engines": {
+    "node": ">=18"
+  },
   "exports": {
     "import": {
       "types": "./dist/esm/index.d.ts",
@@ -26,18 +29,44 @@
   },
   "scripts": {
     "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "build:css:cjs": "sass --no-source-map src:dist/cjs",
+    "build:css:esm": "sass --no-source-map src:dist/esm",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
     "fix:format": "prettier --write .",
-    "fix:lint": "eslint --fix . --max-warnings 0",
+    "fix:lint:eslint": "eslint --fix .",
+    "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
+    "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
+    "start:dev:sass": "sass --watch src:dist/esm",
     "test:format": "run-jest --colors --selectProjects format",
     "test:integration": "run-jest --colors --selectProjects integration",
-    "test:lint": "run-jest --colors --selectProjects lint",
+    "test:lint:eslint": "run-jest --colors --selectProjects lint",
+    "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
     "test:types": "tsc",
     "test:unit": "run-jest --colors --coverage --selectProjects unit"
   },
   "peerDependencies": {
     "react": "^19"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "catalog:",
+    "@fogo/sessions-idls": "workspace:*",
+    "@fogo/sessions-sdk": "workspace:*",
+    "@fogo/sessions-sdk-web": "workspace:*",
+    "@metaplex-foundation/mpl-token-metadata": "catalog:",
+    "@metaplex-foundation/umi": "catalog:",
+    "@metaplex-foundation/umi-bundle-defaults": "catalog:",
+    "@react-hookz/web": "catalog:",
+    "@solana/spl-token": "catalog:",
+    "@solana/wallet-adapter-react": "catalog:",
+    "@solana/wallet-adapter-react-ui": "catalog:",
+    "@solana/wallet-adapter-wallets": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "clsx": "catalog:",
+    "idb": "catalog:",
+    "react-aria-components": "catalog:",
+    "swr": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@cprussin/eslint-config": "catalog:",
@@ -45,7 +74,6 @@
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
-    "@fogo/sessions-sdk-web": "workspace:*",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
@@ -57,6 +85,9 @@
     "prettier": "catalog:",
     "puppeteer": "catalog:",
     "react": "catalog:",
+    "sass": "catalog:",
+    "stylelint": "catalog:",
+    "stylelint-config-standard-scss": "catalog:",
     "typescript": "catalog:"
   }
 }

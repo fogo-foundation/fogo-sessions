@@ -1,3 +1,6 @@
+import type { Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import { ChainIdProgram } from "@fogo/sessions-idls";
 import {
   fromLegacyPublicKey,
   fromLegacyTransactionInstruction,
@@ -18,17 +21,19 @@ import {
 } from "@solana/kit";
 import type {
   Connection,
-  PublicKey,
   TransactionError,
   TransactionInstruction,
-  AddressLookupTableAccount,
 } from "@solana/web3.js";
+import { PublicKey, Keypair } from "@solana/web3.js";
+
+// eslint-disable-next-line no-constant-binary-expression, @typescript-eslint/no-unnecessary-condition, valid-typeof
+const IS_BROWSER = typeof globalThis.window !== undefined;
 
 export type SessionAdapter = {
-  signMessage?: ((message: Uint8Array) => Promise<Uint8Array>) | undefined;
   chainId: string;
   connection: Connection;
   payer: PublicKey;
+  domain: string;
   sendTransaction: (
     sessionKey: CryptoKeyPair,
     instructions: TransactionInstruction[],
@@ -56,13 +61,12 @@ export type TransactionResult = ReturnType<
   (typeof TransactionResult)[keyof typeof TransactionResult]
 >;
 
-export const createSolanaWalletAdapter = (
+export const createSolanaWalletAdapter = async (
   options: {
     connection: Connection;
-    signMessage?: SessionAdapter["signMessage"];
     sponsor: PublicKey;
-    chainId: string;
-    addressLookupTables?: AddressLookupTableAccount[] | undefined;
+    addressLookupTableAddress?: string | undefined;
+    domain?: string | undefined;
   } & (
     | {
         paymasterUrl: string;
@@ -71,72 +75,78 @@ export const createSolanaWalletAdapter = (
         sendToPaymaster: (transaction: Transaction) => Promise<string>;
       }
   ),
-): SessionAdapter => ({
-  signMessage: options.signMessage,
-  connection: options.connection,
-  payer: options.sponsor,
-  chainId: options.chainId,
-  sendTransaction: async (
-    sessionKey: CryptoKeyPair,
-    instructions: TransactionInstruction[],
-  ) => {
-    const rpc = createSolanaRpc(options.connection.rpcEndpoint);
-    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-    const sessionKeySigner = await createSignerFromKeyPair(sessionKey);
+): Promise<SessionAdapter> => {
+  const addressLookupTables = await getAddressLookupTables(
+    options.connection,
+    options.addressLookupTableAddress,
+  );
+  return {
+    connection: options.connection,
+    payer: options.sponsor,
+    chainId: await fetchChainId(options.connection),
+    domain: getDomain(options.domain),
+    sendTransaction: async (
+      sessionKey: CryptoKeyPair,
+      instructions: TransactionInstruction[],
+    ) => {
+      const rpc = createSolanaRpc(options.connection.rpcEndpoint);
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+      const sessionKeySigner = await createSignerFromKeyPair(sessionKey);
 
-    const transaction = await partiallySignTransactionMessageWithSigners(
-      pipe(
-        createTransactionMessage({ version: 0 }),
-        (tx) =>
-          setTransactionMessageFeePayer(
-            fromLegacyPublicKey(options.sponsor),
-            tx,
-          ),
-        (tx) =>
-          setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        (tx) =>
-          appendTransactionMessageInstructions(
-            instructions.map((instruction) =>
-              fromLegacyTransactionInstruction(instruction),
+      const transaction = await partiallySignTransactionMessageWithSigners(
+        pipe(
+          createTransactionMessage({ version: 0 }),
+          (tx) =>
+            setTransactionMessageFeePayer(
+              fromLegacyPublicKey(options.sponsor),
+              tx,
             ),
-            tx,
-          ),
-        (tx) =>
-          compressTransactionMessageUsingAddressLookupTables(
-            tx,
-            Object.fromEntries(
-              options.addressLookupTables?.map(
-                (table) =>
-                  [
-                    fromLegacyPublicKey(table.key),
-                    table.state.addresses.map((address) =>
-                      fromLegacyPublicKey(address),
-                    ),
-                  ] as const,
-              ) ?? [],
+          (tx) =>
+            setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+          (tx) =>
+            appendTransactionMessageInstructions(
+              instructions.map((instruction) =>
+                fromLegacyTransactionInstruction(instruction),
+              ),
+              tx,
             ),
-          ),
-        (tx) => addSignersToTransactionMessage([sessionKeySigner], tx),
-      ),
-    );
+          (tx) =>
+            compressTransactionMessageUsingAddressLookupTables(
+              tx,
+              Object.fromEntries(
+                addressLookupTables?.map(
+                  (table) =>
+                    [
+                      fromLegacyPublicKey(table.key),
+                      table.state.addresses.map((address) =>
+                        fromLegacyPublicKey(address),
+                      ),
+                    ] as const,
+                ) ?? [],
+              ),
+            ),
+          (tx) => addSignersToTransactionMessage([sessionKeySigner], tx),
+        ),
+      );
 
-    const signature =
-      "sendToPaymaster" in options
-        ? await options.sendToPaymaster(transaction)
-        : await sendToPaymaster(options.paymasterUrl, transaction);
+      const signature =
+        "sendToPaymaster" in options
+          ? await options.sendToPaymaster(transaction)
+          : await sendToPaymaster(options.paymasterUrl, transaction);
 
-    const lastValidBlockHeight = await rpc.getSlot().send();
-    const confirmationResult = await options.connection.confirmTransaction({
-      signature,
-      blockhash: latestBlockhash.blockhash.toString(),
-      lastValidBlockHeight: Number(lastValidBlockHeight),
-    });
+      const lastValidBlockHeight = await rpc.getSlot().send();
+      const confirmationResult = await options.connection.confirmTransaction({
+        signature,
+        blockhash: latestBlockhash.blockhash.toString(),
+        lastValidBlockHeight: Number(lastValidBlockHeight),
+      });
 
-    return confirmationResult.value.err === null
-      ? TransactionResult.Success(signature)
-      : TransactionResult.Failed(signature, confirmationResult.value.err);
-  },
-});
+      return confirmationResult.value.err === null
+        ? TransactionResult.Success(signature)
+        : TransactionResult.Failed(signature, confirmationResult.value.err);
+    },
+  };
+};
 
 const sendToPaymaster = async (
   paymasterUrl: string,
@@ -155,6 +165,92 @@ const sendToPaymaster = async (
   if (response.status === 200) {
     return response.text();
   } else {
-    throw new Error(await response.text());
+    throw new PaymasterResponseError(response.status, await response.text());
   }
 };
+
+const getAddressLookupTables = async (
+  connection: Connection,
+  addressLookupTableAddress?: string,
+) => {
+  if (addressLookupTableAddress === undefined) {
+    return [];
+  } else {
+    const addressLookupTableResult = await connection.getAddressLookupTable(
+      new PublicKey(addressLookupTableAddress),
+    );
+    return addressLookupTableResult.value
+      ? [addressLookupTableResult.value]
+      : undefined;
+  }
+};
+
+const fetchChainId = async (connection: Connection) => {
+  const chainIdProgram = new ChainIdProgram(
+    new AnchorProvider(
+      connection,
+      { publicKey: new Keypair().publicKey } as Wallet,
+      {},
+    ),
+  ); // We mock the wallet because we don't need to sign anything
+  const { chainIdAccount: chainIdAddress } = await chainIdProgram.methods
+    .set("")
+    .pubkeys(); // We use Anchor to derive the chain ID address, not caring about the actual argument of `set`
+  if (chainIdAddress === undefined) {
+    throw new NoChainIdAddressError();
+  }
+  const chainId = await chainIdProgram.account.chainId.fetch(chainIdAddress);
+  return chainId.chainId;
+};
+
+const getDomain = (requestedDomain?: string) => {
+  const detectedDomain = IS_BROWSER ? globalThis.location.origin : undefined;
+
+  if (requestedDomain === undefined) {
+    if (detectedDomain === undefined) {
+      throw new DomainRequiredError();
+    } else {
+      return detectedDomain;
+    }
+  } else {
+    if (
+      detectedDomain === undefined ||
+      detectedDomain === requestedDomain ||
+      process.env.NODE_ENV !== "production" // eslint-disable-line n/no-process-env
+    ) {
+      return requestedDomain;
+    } else {
+      throw new DomainOverrideNotAllowedError();
+    }
+  }
+};
+
+class PaymasterResponseError extends Error {
+  constructor(statusCode: number, message: string) {
+    super(`Paymaster sent a ${statusCode.toString()} response: ${message}`);
+    this.name = "PaymasterResponseError";
+  }
+}
+
+class NoChainIdAddressError extends Error {
+  constructor() {
+    super("Failed to derive chain ID address");
+    this.name = "NoChainIdAddressError";
+  }
+}
+
+class DomainRequiredError extends Error {
+  constructor() {
+    super(
+      "On platforms where the origin cannot be determined, you must pass a domain to create a session.",
+    );
+    this.name = "DomainRequiredError";
+  }
+}
+
+class DomainOverrideNotAllowedError extends Error {
+  constructor() {
+    super("You cannot create a session for a different domain.");
+    this.name = "DomainOverrideNotAllowedError";
+  }
+}

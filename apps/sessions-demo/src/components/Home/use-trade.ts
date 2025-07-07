@@ -1,9 +1,8 @@
 import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
 import { ExampleProgram } from "@fogo/sessions-idls";
-import type { Session } from "@fogo/sessions-sdk";
 import { TransactionResultType } from "@fogo/sessions-sdk";
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
-import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { mutate } from "swr";
@@ -12,28 +11,26 @@ import type { Transaction } from "./use-transaction-log";
 import { useAsync } from "../../hooks/use-async";
 
 export const useTrade = (
-  session: Session,
+  sessionState: EstablishedSessionState,
   appendTransaction: (tx: Transaction) => void,
   amount: number,
   mint: PublicKey,
 ) => {
-  const { connection } = useConnection();
-
   const doTrade = useCallback(async () => {
-    const sinkAta = getAssociatedTokenAddressSync(mint, session.payer);
+    const sinkAta = getAssociatedTokenAddressSync(mint, sessionState.payer);
     const userTokenAccount = getAssociatedTokenAddressSync(
       mint,
-      session.walletPublicKey,
+      sessionState.walletPublicKey,
     );
-    const { decimals } = await getMint(connection, mint);
+    const { decimals } = await getMint(sessionState.connection, mint);
 
-    const result = await session.sendTransaction([
+    const result = await sessionState.sendTransaction([
       await new ExampleProgram(
-        new AnchorProvider(connection, {} as Wallet, {}),
+        new AnchorProvider(sessionState.connection, {} as Wallet, {}),
       ).methods
         .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
         .accountsPartial({
-          sessionKey: session.sessionPublicKey,
+          sessionKey: sessionState.sessionPublicKey,
           sink: sinkAta,
           userTokenAccount,
           mint,
@@ -47,7 +44,7 @@ export const useTrade = (
       success: result.type === TransactionResultType.Success,
     });
 
-    mutate(["tokenAccountData", session.walletPublicKey.toBase58()]).catch(
+    mutate(["tokenAccountData", sessionState.walletPublicKey.toBase58()]).catch(
       (error: unknown) => {
         // eslint-disable-next-line no-console
         console.error(error);
@@ -55,7 +52,7 @@ export const useTrade = (
     );
 
     return result;
-  }, [connection, session, appendTransaction, amount, mint]);
+  }, [sessionState, appendTransaction, amount, mint]);
 
   return useAsync(doTrade);
 };
