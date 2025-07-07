@@ -95,7 +95,10 @@ pub struct Extra(Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of
 
 impl Extra {
     pub fn get(&self, key: &str) -> Option<&str> {
-        self.0.iter().find(|item| item.0 == key).map(|item| item.1.as_str())
+        self.0
+            .iter()
+            .find(|item| item.0 == key)
+            .map(|item| item.1.as_str())
     }
 }
 
