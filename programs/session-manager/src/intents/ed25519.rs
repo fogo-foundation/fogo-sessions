@@ -1,7 +1,7 @@
 use crate::{error::SessionManagerError, intents::message::Message, StartSession};
+use anchor_lang::prelude::*;
 use anchor_lang::solana_program::ed25519_program;
 use anchor_lang::solana_program::sysvar::instructions::get_instruction_relative;
-use anchor_lang::prelude::*;
 
 pub struct Intent {
     pub signer: Pubkey,
