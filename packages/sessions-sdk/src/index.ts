@@ -181,7 +181,11 @@ const getDomain = (requestedDomain?: string) => {
       return detectedDomain;
     }
   } else {
-    if (detectedDomain === undefined || detectedDomain === requestedDomain) {
+    if (
+      detectedDomain === undefined ||
+      detectedDomain === requestedDomain ||
+      process.env.NODE_ENV !== "production" // eslint-disable-line n/no-process-env
+    ) {
       return requestedDomain;
     } else {
       throw new Error("You cannot create a session for a different domain.");

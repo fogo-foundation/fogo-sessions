@@ -22,6 +22,7 @@ export const useSession = (
   sponsor: string,
   addressLookupTableAddress: PublicKey | undefined,
   appendTransaction: (tx: Transaction) => void,
+  domain?: string,
 ) => {
   const isEstablishing = useRef(false);
   const lastError = useRef<unknown>(undefined);
@@ -41,6 +42,7 @@ export const useSession = (
         appendTransaction,
         publicKey,
         signMessage,
+        domain,
       )
         .then((session) => {
           if (session === undefined) {
@@ -157,6 +159,7 @@ const restoreOrEstablishSession = async (
   appendTransaction: Parameters<typeof useSession>[2],
   walletPublicKey: PublicKey,
   signMessage: MessageSigner,
+  domain?: string,
 ) => {
   const storedSession = await getStoredSession(walletPublicKey);
   const addressLookupTable =
@@ -179,6 +182,7 @@ const restoreOrEstablishSession = async (
       walletPublicKey,
       expires: new Date(Date.now() + 3600 * 1000),
       tokens: new Map([[NATIVE_MINT, 1_500_000_000n]]),
+      domain,
     });
     appendTransaction({
       description: "Create Session",
