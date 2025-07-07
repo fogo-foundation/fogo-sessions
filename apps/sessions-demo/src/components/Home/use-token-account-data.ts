@@ -1,7 +1,7 @@
 import type { Session } from "@fogo/sessions-sdk";
 import {
-  fetchMetadata,
   findMetadataPda,
+  safeFetchMetadata,
 } from "@metaplex-foundation/mpl-token-metadata";
 import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
@@ -46,7 +46,7 @@ const getTokenAccounts = async (connection: Connection, session: Session) => {
     accounts.map(async (account) => {
       const metaplexMint = metaplexPublicKey(account.mint);
       const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
-      const metadata = await fetchMetadata(umi, metadataAddress);
+      const metadata = await safeFetchMetadata(umi, metadataAddress);
       return { ...account, ...metadata };
     }),
   );
@@ -54,7 +54,7 @@ const getTokenAccounts = async (connection: Connection, session: Session) => {
     tokensInWallet: accountsWithMetadata
       .filter((account) => account.amountInWallet !== "0")
       .map(({ name, mint, amountInWallet }) => ({
-        name,
+        nameOrMint: name ?? mint,
         mint,
         amountInWallet,
       })),
@@ -66,7 +66,7 @@ const getTokenAccounts = async (connection: Connection, session: Session) => {
           account.delegateAmount !== "0",
       )
       .map(({ name, mint, delegateAmount }) => ({
-        name,
+        nameOrMint: name ?? mint,
         mint,
         sessionLimit: delegateAmount,
       })),

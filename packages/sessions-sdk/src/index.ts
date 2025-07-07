@@ -1,8 +1,8 @@
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
 import { DomainRegistryIdl, SessionManagerProgram } from "@fogo/sessions-idls";
 import {
-  fetchMetadata,
   findMetadataPda,
+  safeFetchMetadata,
 } from "@metaplex-foundation/mpl-token-metadata";
 import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
@@ -100,6 +100,22 @@ const createSession = async (
     adapter.sendTransaction(sessionKey, instructions),
 });
 
+const SymbolOrMintType = {
+  Symbol: "Symbol",
+  Mint: "Mint",
+} as const;
+
+const SymbolOrMint = {
+  Symbol: (symbol: string) => ({
+    type: SymbolOrMintType.Symbol,
+    symbol,
+  }),
+  Mint: (mint: PublicKey) => ({
+    type: SymbolOrMintType.Mint,
+    mint,
+  }),
+};
+
 const getTokenInfo = async (options: EstablishSessionOptions) => {
   const umi = createUmi(options.adapter.connection.rpcEndpoint);
   return Promise.all(
@@ -108,11 +124,13 @@ const getTokenInfo = async (options: EstablishSessionOptions) => {
       const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
       const [mintInfo, metadata] = await Promise.all([
         getMint(options.adapter.connection, mint),
-        fetchMetadata(umi, metadataAddress),
+        safeFetchMetadata(umi, metadataAddress),
       ]);
 
       return {
-        symbol: metadata.symbol,
+        symbolOrMint: metadata?.symbol
+          ? SymbolOrMint.Symbol(metadata.symbol)
+          : SymbolOrMint.Mint(mint),
         metadataAddress: new PublicKey(metadataAddress),
         amount,
         mint,
@@ -205,8 +223,8 @@ const serializeTokenList = (tokens: TokenInfo[]) =>
   tokens
     .values()
     .map(
-      ({ symbol, amount, decimals }) =>
-        `\n-${symbol}: ${amountToString(amount, decimals)}`,
+      ({ symbolOrMint, amount, decimals }) =>
+        `\n-${symbolOrMint.type === SymbolOrMintType.Symbol ? symbolOrMint.symbol : symbolOrMint.mint.toBase58()}: ${amountToString(amount, decimals)}`,
     )
     .toArray()
     .join("");
@@ -262,7 +280,7 @@ const buildStartSessionInstruction = async (
       domainRegistry: getDomainRecordAddress(getDomain(options.domain)),
     })
     .remainingAccounts(
-      tokens.flatMap(({ mint, metadataAddress }) => [
+      tokens.flatMap(({ symbolOrMint, mint, metadataAddress }) => [
         {
           pubkey: getAssociatedTokenAddressSync(mint, options.walletPublicKey),
           isWritable: true,
@@ -273,11 +291,15 @@ const buildStartSessionInstruction = async (
           isWritable: false,
           isSigner: false,
         },
-        {
-          pubkey: metadataAddress,
-          isWritable: false,
-          isSigner: false,
-        },
+        ...(symbolOrMint.type === SymbolOrMintType.Symbol
+          ? [
+              {
+                pubkey: metadataAddress,
+                isWritable: false,
+                isSigner: false,
+              },
+            ]
+          : []),
       ]),
     )
     .instruction();
