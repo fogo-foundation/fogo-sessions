@@ -100,22 +100,20 @@ const createSession = async (
     adapter.sendTransaction(sessionKey, instructions),
 });
 
-enum SymbolOrMintType {
-  Symbol = "Symbol",
-  Mint = "Mint",
-}
+const SymbolOrMintType = {
+  Symbol: "Symbol",
+  Mint: "Mint",
+} as const;
 
 const SymbolOrMint = {
-  Symbol: (symbol: string) =>
-    ({
-      type: SymbolOrMintType.Symbol,
-      symbol,
-    }) as const,
-  Mint: (mint: PublicKey) =>
-    ({
-      type: SymbolOrMintType.Mint,
-      mint,
-    }) as const,
+  Symbol: (symbol: string) => ({
+    type: SymbolOrMintType.Symbol,
+    symbol,
+  }),
+  Mint: (mint: PublicKey) => ({
+    type: SymbolOrMintType.Mint,
+    mint,
+  }),
 };
 
 const getTokenInfo = async (options: EstablishSessionOptions) => {
