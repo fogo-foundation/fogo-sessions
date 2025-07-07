@@ -163,11 +163,10 @@ const getDomain = (requestedDomain?: string) => {
       return detectedDomain;
     }
   } else {
-    // eslint-disable-next-line n/no-process-env
     if (
       detectedDomain === undefined ||
       detectedDomain === requestedDomain ||
-      process.env.NODE_ENV !== "production"
+      process.env.NODE_ENV !== "production" // eslint-disable-line n/no-process-env
     ) {
       return requestedDomain;
     } else {
