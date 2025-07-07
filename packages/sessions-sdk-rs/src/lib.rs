@@ -93,6 +93,12 @@ pub struct AuthorizedProgram {
 #[derive(Debug, Clone)]
 pub struct Extra(Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of tuples well so we have to declare a ExtraItem struct
 
+impl Extra {
+    pub fn get(&self, key: &str) -> Option<&str> {
+        self.0.iter().find(|item| item.0 == key).map(|item| item.1.as_str())
+    }
+}
+
 #[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize))]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
