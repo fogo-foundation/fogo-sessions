@@ -56,8 +56,8 @@ export const establishSession = async (
     buildStartSessionInstruction(options, sessionKey, tokenInfo),
   ]);
   const result = await options.adapter.sendTransaction(sessionKey, [
-    intentInstruction,
     ...buildCreateAssociatedTokenAccountInstructions(options, tokenInfo),
+    intentInstruction,
     startSessionInstruction,
   ]);
 
