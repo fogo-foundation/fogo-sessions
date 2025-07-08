@@ -69,7 +69,9 @@ impl<'info> StartSession<'info> {
         let instruction_data = load_instruction_at_checked(0, &self.sysvar_instructions)?;
 
         if !instruction_data.program_id.eq(&ed25519_program::ID) {
-            return Err(error!(SessionManagerError::SignatureVerificationErrorProgram));
+            return Err(error!(
+                SessionManagerError::SignatureVerificationErrorProgram
+            ));
         }
 
         let Ed25519InstructionData {
@@ -80,7 +82,9 @@ impl<'info> StartSession<'info> {
         } = Ed25519InstructionData::try_from_slice(&instruction_data.data)?;
 
         if !header.check() {
-            return Err(error!(SessionManagerError::SignatureVerificationUnexpectedHeader));
+            return Err(error!(
+                SessionManagerError::SignatureVerificationUnexpectedHeader
+            ));
         }
 
         Ok(Intent {

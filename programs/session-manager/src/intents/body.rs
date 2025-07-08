@@ -131,11 +131,7 @@ impl<'info> StartSession<'info> {
                         .next()
                         .ok_or(error!(SessionManagerError::MissingAccount))?;
 
-                    require_eq!(
-                        mint,
-                        &mint_account.key(),
-                        SessionManagerError::MintMismatch
-                    );
+                    require_eq!(mint, &mint_account.key(), SessionManagerError::MintMismatch);
                     (user_account, mint_account)
                 }
             };

@@ -30,7 +30,9 @@ pub enum SessionManagerError {
     SessionKeyMismatch,
     #[msg("This blockchain's id doesn't match the chain id in the signed intent")]
     ChainIdMismatch,
-    #[msg("The domain record provided is not the domain record of the domain in the signed intent")]
+    #[msg(
+        "The domain record provided is not the domain record of the domain in the signed intent"
+    )]
     DomainRecordMismatch,
     #[msg("An account is missing")]
     MissingAccount,
@@ -48,5 +50,4 @@ pub enum SessionManagerError {
     SignatureVerificationErrorProgram,
     #[msg("The header of the ed25519 instruction is not what was expected")]
     SignatureVerificationUnexpectedHeader,
-    
 }

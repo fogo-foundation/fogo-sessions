@@ -97,8 +97,8 @@ pub struct Message(pub(crate) Vec<u8>);
 
 impl Message {
     pub fn parse(self) -> Result<MessageBody> {
-        let message =
-            String::from_utf8(self.0).map_err(|_| error!(SessionManagerError::InvalidMessageString))?;
+        let message = String::from_utf8(self.0)
+            .map_err(|_| error!(SessionManagerError::InvalidMessageString))?;
         let message = message
             .strip_prefix(MESSAGE_PREFIX)
             .ok_or(error!(SessionManagerError::IntentHeaderMismatch))?;
