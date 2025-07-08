@@ -35,17 +35,17 @@ impl Version {
         let (major, minor): (u8, u8) = {
             let (major, minor) = version
                 .split_once('.')
-                .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                .ok_or(error!(SessionManagerError::ParsingErrorVersion))?;
             let major = major
                 .parse()
-                .map_err(|_| error!(SessionManagerError::InvalidArgument))?;
+                .map_err(|_| error!(SessionManagerError::ParsingErrorVersion))?;
             let minor = minor
                 .parse()
-                .map_err(|_| error!(SessionManagerError::InvalidArgument))?;
+                .map_err(|_| error!(SessionManagerError::ParsingErrorVersion))?;
             (major, minor)
         };
         if major != fogo_sessions_sdk::MAJOR || minor != fogo_sessions_sdk::MINOR {
-            return Err(error!(SessionManagerError::InvalidArgument));
+            return Err(error!(SessionManagerError::InvalidVersion));
         }
         Ok(Self { major, minor })
     }
@@ -60,14 +60,14 @@ pub enum SymbolOrMint {
 impl<'info> StartSession<'info> {
     pub fn check_session_key(&self, session_key: SessionKey) -> Result<()> {
         if self.session.key() != session_key.0 {
-            return Err(ProgramError::InvalidArgument.into());
+            return err!(SessionManagerError::SessionKeyMismatch);
         }
         Ok(())
     }
 
     pub fn check_chain_id(&self, chain_id: String) -> Result<()> {
         if self.chain_id.chain_id != chain_id {
-            return Err(ProgramError::InvalidArgument.into());
+            return err!(SessionManagerError::ChainIdMismatch);
         }
         Ok(())
     }
@@ -76,7 +76,7 @@ impl<'info> StartSession<'info> {
         require_eq!(
             self.domain_registry.key(),
             domain.get_domain_record_address(),
-            SessionManagerError::InvalidArgument
+            SessionManagerError::DomainRecordMismatch
         );
 
         let domain_record = DomainRecordInner::load(
@@ -102,39 +102,39 @@ impl<'info> StartSession<'info> {
                 SymbolOrMint::Symbol(symbol) => {
                     let user_account = accounts_iter
                         .next()
-                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
                     let mint_account = accounts_iter
                         .next()
-                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
                     let metadata_account = accounts_iter
                         .next()
-                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
 
                     require_eq!(
                         metadata_account.key(),
                         Metadata::find_pda(&mint_account.key()).0,
-                        SessionManagerError::InvalidArgument
+                        SessionManagerError::MetadataMismatch
                     );
                     let metadata = Metadata::try_from(metadata_account)?;
                     require_eq!(
                         &metadata.symbol,
                         &format!("{symbol:\0<10}"),
-                        SessionManagerError::InvalidArgument
+                        SessionManagerError::SymbolMismatch
                     ); // Symbols in the metadata account are padded to 10 characters
                     (user_account, mint_account)
                 }
                 SymbolOrMint::Mint(mint) => {
                     let user_account = accounts_iter
                         .next()
-                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
                     let mint_account = accounts_iter
                         .next()
-                        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
 
                     require_eq!(
                         mint,
                         &mint_account.key(),
-                        SessionManagerError::InvalidArgument
+                        SessionManagerError::MintMismatch
                     );
                     (user_account, mint_account)
                 }
@@ -143,14 +143,14 @@ impl<'info> StartSession<'info> {
             require_eq!(
                 user_account.key(),
                 get_associated_token_address(user, &mint_account.key()),
-                SessionManagerError::InvalidArgument
+                SessionManagerError::AssociatedTokenAccountMismatch
             );
 
             let mint_data = Mint::try_deserialize(&mut mint_account.data.borrow().as_ref())?;
             let amount_internal = amount
                 .saturating_mul(10u64.saturating_pow(mint_data.decimals.into()).into())
                 .to_u64()
-                .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                .ok_or(error!(SessionManagerError::AmountConversionFailed))?;
 
             let cpi_accounts = ApproveChecked {
                 to: user_account.to_account_info(),
