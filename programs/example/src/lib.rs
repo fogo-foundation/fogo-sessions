@@ -15,7 +15,7 @@ pub mod example {
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
         in_session_token_transfer(
             ctx.accounts.token_program.key,
-            ctx.accounts.to_in_session_token_transfer_checked_accounts(),
+            ctx.accounts.to_in_session_token_transfer_accounts(),
             amount,
             ctx.accounts.mint.decimals,
             BumpOrProgramId::Bump(ctx.bumps.cpi_signer),
@@ -40,7 +40,7 @@ pub struct ExampleTransfer<'info> {
 }
 
 impl<'info> ExampleTransfer<'info> {
-    pub fn to_in_session_token_transfer_checked_accounts(
+    pub fn to_in_session_token_transfer_accounts(
         &self,
     ) -> InSessionTokenTransferAccounts<'info> {
         InSessionTokenTransferAccounts {
