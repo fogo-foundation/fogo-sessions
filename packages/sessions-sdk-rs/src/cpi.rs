@@ -5,6 +5,9 @@ use solana_program_error::ProgramError;
 use solana_pubkey::Pubkey;
 use spl_token::instruction::transfer_checked;
 
+/// Transfering tokens in a session is similar to a regular token transfer, with the session key as the `authority`.
+/// Additionally, the PDA with seed `PROGRAM_SIGNER_SEED` is required to sign the cross program invocation. This 
+/// is used to check that the transfer happened was invoked by an authorized program.
 pub fn in_session_token_transfer_checked<'a>(
     token_program_id: &Pubkey,
     source: AccountInfo<'a>,
