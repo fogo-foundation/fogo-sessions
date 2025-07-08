@@ -69,7 +69,7 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(SymbolOrM
                 tokens.push((
                     symbol_or_mint,
                     Decimal::from_str_exact(amount)
-                        .map_err(|_| error!(SessionManagerError::ParsingErrorTokenSection))?,
+                        .map_err(|_| error!(SessionManagerError::ParsingErrorDecimal))?,
                 ));
             }
         }

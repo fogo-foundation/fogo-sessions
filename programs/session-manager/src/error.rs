@@ -26,6 +26,8 @@ pub enum SessionManagerError {
     ParsingErrorTokenSection,
     #[msg("The signed intent contains a duplicate token")]
     DuplicateToken,
+    #[msg("We couldn't parse a decimal amount in the token section of the signed intent")]
+    ParsingErrorDecimal,
     #[msg("We couldn't parse the extra section from the signed intent")]
     ParsingErrorExtraSection,
     #[msg("A reserved key was found in the extra section of the signed intent")]
