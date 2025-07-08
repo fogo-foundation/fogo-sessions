@@ -12,7 +12,7 @@ pub mod example {
     use super::*;
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
         in_session_token_transfer_checked(
-            &ctx.accounts.token_program.key,
+            ctx.accounts.token_program.key,
             ctx.accounts.user_token_account.to_account_info(),
             ctx.accounts.mint.to_account_info(),
             ctx.accounts.sink.to_account_info(),
