@@ -40,7 +40,9 @@ pub struct ExampleTransfer<'info> {
 }
 
 impl<'info> ExampleTransfer<'info> {
-    pub fn to_in_session_token_transfer_checked_accounts(&self) -> InSessionTokenTransferAccounts<'info> {
+    pub fn to_in_session_token_transfer_checked_accounts(
+        &self,
+    ) -> InSessionTokenTransferAccounts<'info> {
         InSessionTokenTransferAccounts {
             source: self.user_token_account.to_account_info(),
             mint: self.mint.to_account_info(),

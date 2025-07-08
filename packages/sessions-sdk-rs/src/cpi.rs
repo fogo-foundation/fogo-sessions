@@ -55,7 +55,9 @@ pub fn in_session_token_transfer<'a>(
 
     let bump = match bump_or_program_id {
         BumpOrProgramId::Bump(bump) => bump,
-        BumpOrProgramId::ProgramId(program_id) => Pubkey::find_program_address(&[PROGRAM_SIGNER_SEED], &program_id).1,
+        BumpOrProgramId::ProgramId(program_id) => {
+            Pubkey::find_program_address(&[PROGRAM_SIGNER_SEED], &program_id).1
+        }
     };
 
     invoke_signed(
