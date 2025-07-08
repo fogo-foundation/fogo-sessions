@@ -2,8 +2,8 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use fogo_sessions_sdk::{Session, PROGRAM_SIGNER_SEED};
 use fogo_sessions_sdk::cpi::in_session_token_transfer_checked;
+use fogo_sessions_sdk::{Session, PROGRAM_SIGNER_SEED};
 
 declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 
