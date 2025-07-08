@@ -2,26 +2,18 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use fogo_sessions_sdk::cpi::in_session_token_transfer_checked;
+use fogo_sessions_sdk::cpi::{in_session_token_transfer_checked, InSessionTokenTransferCheckedContext};
 use fogo_sessions_sdk::{Session, PROGRAM_SIGNER_SEED};
 
 declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 
 #[program]
 pub mod example {
-    use fogo_sessions_sdk::cpi::InSessionTokenTransferCheckedContext;
-
     use super::*;
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
         in_session_token_transfer_checked(
             ctx.accounts.token_program.key,
-            InSessionTokenTransferCheckedContext {
-                source: ctx.accounts.user_token_account.to_account_info(),
-                mint: ctx.accounts.mint.to_account_info(),
-                destination: ctx.accounts.sink.to_account_info(),
-                session_key: ctx.accounts.session_key.to_account_info(),
-                cpi_signer: ctx.accounts.cpi_signer.to_account_info(),
-            },
+            ctx.accounts.to_cpi_context(),
             &crate::ID,
             Some(ctx.bumps.cpi_signer),
             amount,
@@ -44,4 +36,16 @@ pub struct ExampleTransfer<'info> {
     #[account(mut)]
     pub sink: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
+}
+
+impl<'info> ExampleTransfer<'info> {
+    pub fn to_cpi_context(&self) -> InSessionTokenTransferCheckedContext<'info> {
+        InSessionTokenTransferCheckedContext {
+            source: self.user_token_account.to_account_info(),
+            mint: self.mint.to_account_info(),
+            destination: self.sink.to_account_info(),
+            session_key: self.session_key.to_account_info(),
+            cpi_signer: self.cpi_signer.to_account_info(),
+        }
+    }
 }
