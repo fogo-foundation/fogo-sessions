@@ -1,3 +1,3 @@
-import { createWidget } from "@fogo/sessions-sdk-web";
-
-globalThis.document.body.append(createWidget());
+const hello = globalThis.document.createElement("div");
+hello.textContent = "Hello, World!";
+globalThis.document.body.append(hello);

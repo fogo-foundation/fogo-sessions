@@ -1,3 +1,2 @@
-import { Widget } from "@fogo/sessions-sdk-react";
-const Page = () => <Widget />;
+const Page = () => <div>Hello, World!</div>;
 export default Page;

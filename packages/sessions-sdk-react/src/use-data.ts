@@ -2,34 +2,26 @@ import { useCallback } from "react";
 import type { KeyedMutator } from "swr";
 import useSWR from "swr";
 
-export const useData = <T>(
-  key: Parameters<typeof useSWR<T>>[0],
-  fetcher?: Parameters<typeof useSWR<T>>[1],
-  config?: Parameters<typeof useSWR<T>>[2],
-) => {
-  const { data, isLoading, isValidating, mutate, ...rest } = useSWR(
-    key,
-    // eslint-disable-next-line unicorn/no-null
-    fetcher ?? null,
-    config,
-  );
+export const useData = <T>(...args: Parameters<typeof useSWR<T>>) => {
+  const { data, isLoading, mutate, ...rest } = useSWR(...args);
 
   const error = rest.error as unknown;
 
   const reset = useCallback(() => {
-    mutate(undefined).catch(() => {
-      /* no-op */
+    mutate(undefined).catch((error: unknown) => {
+      // eslint-disable-next-line no-console
+      console.error("Failed to reset data", error);
     });
   }, [mutate]);
 
   if (error) {
     // eslint-disable-next-line no-console
-    console.error(error);
+    console.error("Data fetch failed:", error);
     return State.ErrorState(new UseDataError(error), reset);
   } else if (isLoading) {
     return State.Loading();
   } else if (data) {
-    return State.Loaded(data, isValidating, mutate);
+    return State.Loaded(data, mutate);
   } else {
     return State.NotLoaded();
   }
@@ -45,9 +37,8 @@ export enum StateType {
 const State = {
   NotLoaded: () => ({ type: StateType.NotLoaded as const }),
   Loading: () => ({ type: StateType.Loading as const }),
-  Loaded: <T>(data: T, isValidating: boolean, mutate: KeyedMutator<T>) => ({
+  Loaded: <T>(data: T, mutate: KeyedMutator<T>) => ({
     type: StateType.Loaded as const,
-    isValidating,
     mutate,
     data,
   }),

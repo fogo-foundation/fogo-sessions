@@ -1,0 +1,66 @@
+@use "./theme";
+
+.sessionLimits {
+  display: grid;
+  grid-template-rows: 1fr max-content;
+  gap: theme.spacing(6);
+
+  .tokenList {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: theme.spacing(2);
+    align-items: center;
+
+    .token {
+      display: grid;
+      grid-template-columns: repeat(3, max-content);
+      gap: theme.spacing(2);
+      align-items: center;
+
+      .name {
+        @include theme.text("sm", "semibold");
+
+        width: theme.spacing(40);
+        text-align: right;
+        margin-right: theme.spacing(4);
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .input {
+        text-align: right;
+        padding: theme.spacing(1) theme.spacing(2);
+        border-radius: theme.border-radius("sm");
+        border: 1px solid theme.color("panel", "border");
+        width: theme.spacing(30);
+        text-overflow: ellipsis;
+      }
+
+      .symbol {
+        @include theme.text("xs", "semibold");
+
+        width: theme.spacing(14);
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+
+  .footer {
+    display: grid;
+    grid-template-columns: 1fr max-content;
+    gap: theme.spacing(8);
+    align-items: center;
+
+    .errorMessage {
+      @include theme.text("sm", "normal");
+
+      color: theme.color("error");
+      text-align: right;
+    }
+
+    .submitButton {
+      @include theme.button("primary");
+    }
+  }
+}

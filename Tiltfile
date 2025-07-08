@@ -67,6 +67,6 @@ local_resource(
 
 local_resource(
     "Demo Webapp",
-    serve_cmd="pnpm turbo --filter @fogo/sessions-demo start:dev",
+    serve_cmd="pnpm turbo --filter @fogo/sessions-demo... start:dev",
     resource_deps=["setup-wrapped-sol-faucet", "setup-address-lookup-table", "initialize-programs"],
 )

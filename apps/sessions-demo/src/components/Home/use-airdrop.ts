@@ -1,12 +1,11 @@
-import type { Session } from "@fogo/sessions-sdk";
 import { TransactionResultType } from "@fogo/sessions-sdk";
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferInstruction,
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { mutate } from "swr";
@@ -15,32 +14,30 @@ import type { Transaction } from "./use-transaction-log";
 import { useAsync } from "../../hooks/use-async";
 
 export const useAirdrop = (
-  session: Session,
+  sessionState: EstablishedSessionState,
   appendTransaction: (tx: Transaction) => void,
   amount: number,
   mint: PublicKey,
 ) => {
-  const { connection } = useConnection();
-
   const doAirdrop = useCallback(async () => {
-    const faucetAta = getAssociatedTokenAddressSync(mint, session.payer);
+    const faucetAta = getAssociatedTokenAddressSync(mint, sessionState.payer);
     const userAta = getAssociatedTokenAddressSync(
       mint,
-      session.walletPublicKey,
+      sessionState.walletPublicKey,
     );
-    const { decimals } = await getMint(connection, mint);
+    const { decimals } = await getMint(sessionState.connection, mint);
 
-    const result = await session.sendTransaction([
+    const result = await sessionState.sendTransaction([
       createAssociatedTokenAccountIdempotentInstruction(
-        session.payer,
+        sessionState.payer,
         userAta,
-        session.walletPublicKey,
+        sessionState.walletPublicKey,
         mint,
       ),
       createTransferInstruction(
         faucetAta,
         userAta,
-        session.payer,
+        sessionState.payer,
         amount * Math.pow(10, decimals),
       ),
     ]);
@@ -51,7 +48,7 @@ export const useAirdrop = (
       success: result.type === TransactionResultType.Success,
     });
 
-    mutate(["tokenAccountData", session.walletPublicKey.toBase58()]).catch(
+    mutate(["tokenAccountData", sessionState.walletPublicKey.toBase58()]).catch(
       (error: unknown) => {
         // eslint-disable-next-line no-console
         console.error(error);
@@ -59,7 +56,7 @@ export const useAirdrop = (
     );
 
     return result;
-  }, [session, appendTransaction, amount, connection, mint]);
+  }, [sessionState, appendTransaction, amount, mint]);
 
   return useAsync(doAirdrop);
 };

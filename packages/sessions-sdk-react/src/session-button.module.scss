@@ -1,0 +1,201 @@
+@use "./theme";
+
+.sessionButton {
+  width: theme.spacing(60);
+  height: theme.spacing(10);
+
+  @include theme.button("mainButton");
+
+  .fogoWordmark {
+    height: 1.4em;
+  }
+
+  .chevron {
+    margin-left: theme.spacing(2);
+    transition: transform 300ms;
+    transform-origin: center;
+  }
+
+  &[data-session-panel-open] {
+    .chevron {
+      transform: rotateZ(180deg);
+    }
+  }
+}
+
+.sessionPanelPopover {
+  transition:
+    transform 200ms,
+    opacity 200ms;
+
+  .overlayArrow {
+    display: block;
+    fill: theme.color("panel", "background");
+    stroke: theme.color("panel", "border");
+  }
+
+  .sessionPanel {
+    background: theme.color("panel", "background");
+    border: 1px solid theme.color("panel", "border");
+    border-radius: theme.border-radius("base");
+    box-shadow: 0 8px 20px rgb(from black r g b / 10%);
+    width: theme.spacing(100);
+    height: theme.spacing(120);
+    outline: none;
+    color: theme.color("panel", "text");
+    display: grid;
+    grid-template-rows: max-content 1fr max-content;
+
+    .heading {
+      @include theme.text("base", "semibold");
+
+      text-align: center;
+      margin-top: theme.spacing(2);
+      margin-bottom: theme.spacing(2);
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-rows: max-content 1fr;
+
+      .tabList {
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        width: 100%;
+
+        .tab {
+          @include theme.text("sm", "medium");
+
+          flex-grow: 1;
+          text-align: center;
+          padding-top: theme.spacing(1);
+          padding-bottom: theme.spacing(1);
+          border-bottom: 2px solid transparent;
+          cursor: pointer;
+          transition: background-color 50ms linear;
+
+          &[data-selected] {
+            border-color: theme.color("mainButton", "border", "base");
+            cursor: unset;
+
+            &[data-hovered] {
+              background-color: unset;
+            }
+          }
+
+          &[data-hovered] {
+            background-color: rgb(from black r g b / 3%);
+          }
+        }
+      }
+
+      .tabPanel {
+        background: rgb(from black r g b / 5%);
+        border-top: 1px solid theme.color("panel", "border");
+        border-bottom: 1px solid theme.color("panel", "border");
+        overflow: auto;
+
+        .tokenList {
+          display: flex;
+          flex-flow: column nowrap;
+          gap: theme.spacing(2);
+          padding: theme.spacing(2);
+
+          .token {
+            display: grid;
+            grid-template-columns: max-content 1fr max-content;
+            gap: theme.spacing(3);
+            background: rgb(from black r g b / 5%);
+            border-radius: theme.border-radius("lg");
+            padding: theme.spacing(2) theme.spacing(3);
+            align-items: center;
+
+            .tokenIcon {
+              width: theme.spacing(8);
+              height: theme.spacing(8);
+              border-radius: theme.border-radius("full");
+              background: rgb(from black r g b / 5%);
+            }
+
+            .tokenName {
+              @include theme.text("sm", "medium");
+            }
+
+            .amount {
+              @include theme.text("xs", "semibold");
+            }
+          }
+        }
+
+        .sessionLimits {
+          padding: theme.spacing(6) theme.spacing(4);
+          min-height: 100%;
+        }
+      }
+    }
+
+    .footer {
+      @include theme.text("sm", "normal");
+
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      align-items: center;
+      padding: theme.spacing(2) theme.spacing(4);
+
+      .fogoWordmark {
+        height: 1.4em;
+        display: inline;
+      }
+
+      .logoutButton {
+        &[data-hovered] {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+
+  &[data-entering],
+  &[data-exiting] {
+    transform: var(--origin);
+    opacity: 0;
+  }
+
+  &[data-placement="top"] {
+    --origin: translateY(8px);
+
+    margin-bottom: 6px;
+  }
+
+  &[data-placement="bottom"] {
+    --origin: translateY(-8px);
+
+    margin-top: 6px;
+
+    .overlayArrow {
+      transform: rotate(180deg);
+    }
+  }
+
+  &[data-placement="right"] {
+    --origin: translateX(-8px);
+
+    margin-left: 6px;
+
+    .overlayArrow {
+      transform: rotate(90deg);
+    }
+  }
+
+  &[data-placement="left"] {
+    --origin: translateX(8px);
+
+    margin-right: 6px;
+
+    .overlayArrow {
+      transform: rotate(-90deg);
+    }
+  }
+}

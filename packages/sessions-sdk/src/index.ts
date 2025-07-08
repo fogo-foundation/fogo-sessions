@@ -23,10 +23,12 @@ import {
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
 import { TransactionResultType } from "./adapter.js";
 
-export { TransactionResultType, createSolanaWalletAdapter } from "./adapter.js";
-
-// eslint-disable-next-line no-constant-binary-expression, @typescript-eslint/no-unnecessary-condition, valid-typeof
-const IS_BROWSER = typeof globalThis.window !== undefined;
+export {
+  type SessionAdapter,
+  type TransactionResult,
+  TransactionResultType,
+  createSolanaWalletAdapter,
+} from "./adapter.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
@@ -38,9 +40,9 @@ const CURRENT_MINOR = "1";
 type EstablishSessionOptions = {
   adapter: SessionAdapter;
   walletPublicKey: PublicKey;
-  domain?: string | undefined;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   expires: Date;
-  tokens: Map<PublicKey, bigint>;
+  limits: Map<PublicKey, bigint>;
   extra?: string | undefined;
 };
 
@@ -77,6 +79,19 @@ export const establishSession = async (
     }
   }
 };
+
+export const replaceSession = async (options: {
+  adapter: SessionAdapter;
+  session: Session;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  expires: Date;
+  limits: Map<PublicKey, bigint>;
+  extra?: string | undefined;
+}) =>
+  establishSession({
+    ...options,
+    walletPublicKey: options.session.walletPublicKey,
+  });
 
 // TODO we really should check to ensure the session is still valid...
 export const reestablishSession = async (
@@ -119,7 +134,7 @@ const SymbolOrMint = {
 const getTokenInfo = async (options: EstablishSessionOptions) => {
   const umi = createUmi(options.adapter.connection.rpcEndpoint);
   return Promise.all(
-    options.tokens.entries().map(async ([mint, amount]) => {
+    options.limits.entries().map(async ([mint, amount]) => {
       const metaplexMint = metaplexPublicKey(mint.toBase58());
       const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
       const [mintInfo, metadata] = await Promise.all([
@@ -147,50 +162,22 @@ const buildIntentInstruction = async (
   sessionKey: CryptoKeyPair,
   tokens: TokenInfo[],
 ) => {
-  if (options.adapter.signMessage === undefined) {
-    throw new Error("Cannot establish a session if no wallet is connected");
-  } else {
-    const message = await buildMessage({
-      chainId: options.adapter.chainId,
-      domain: getDomain(options.domain),
-      sessionKey,
-      expires: options.expires,
-      tokens,
-      extra: options.extra,
-    });
+  const message = await buildMessage({
+    chainId: options.adapter.chainId,
+    domain: options.adapter.domain,
+    sessionKey,
+    expires: options.expires,
+    tokens,
+    extra: options.extra,
+  });
 
-    const intentSignature = await options.adapter.signMessage(message);
+  const intentSignature = await options.signMessage(message);
 
-    return Ed25519Program.createInstructionWithPublicKey({
-      publicKey: options.walletPublicKey.toBytes(),
-      signature: intentSignature,
-      message: message,
-    });
-  }
-};
-
-const getDomain = (requestedDomain?: string) => {
-  const detectedDomain = IS_BROWSER ? globalThis.location.origin : undefined;
-
-  if (requestedDomain === undefined) {
-    if (detectedDomain === undefined) {
-      throw new Error(
-        "On platforms where the origin cannot be determined, you must pass a domain to create a session.",
-      );
-    } else {
-      return detectedDomain;
-    }
-  } else {
-    if (
-      detectedDomain === undefined ||
-      detectedDomain === requestedDomain ||
-      process.env.NODE_ENV !== "production" // eslint-disable-line n/no-process-env
-    ) {
-      return requestedDomain;
-    } else {
-      throw new Error("You cannot create a session for a different domain.");
-    }
-  }
+  return Ed25519Program.createInstructionWithPublicKey({
+    publicKey: options.walletPublicKey.toBytes(),
+    signature: intentSignature,
+    message: message,
+  });
 };
 
 const buildMessage = async (
@@ -226,6 +213,7 @@ const serializeKV = (data: Record<string, string>) =>
 const serializeTokenList = (tokens: TokenInfo[]) =>
   tokens
     .values()
+    .filter(({ amount }) => amount > 0n)
     .map(
       ({ symbolOrMint, amount, decimals }) =>
         `\n-${symbolOrMint.type === SymbolOrMintType.Symbol ? symbolOrMint.symbol : symbolOrMint.mint.toBase58()}: ${amountToString(amount, decimals)}`,
@@ -281,7 +269,7 @@ const buildStartSessionInstruction = async (
     .accounts({
       sponsor: options.adapter.payer,
       session: await getAddressFromPublicKey(sessionKey.publicKey),
-      domainRegistry: getDomainRecordAddress(getDomain(options.domain)),
+      domainRegistry: getDomainRecordAddress(options.adapter.domain),
     })
     .remainingAccounts(
       tokens.flatMap(({ symbolOrMint, mint, metadataAddress }) => [
