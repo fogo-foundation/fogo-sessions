@@ -6,7 +6,7 @@ use solana_pubkey::Pubkey;
 use spl_token::instruction::transfer_checked;
 
 pub fn in_session_token_transfer_checked<'a>(
-    token_program: AccountInfo<'a>,
+    token_program_id: &Pubkey,
     source: AccountInfo<'a>,
     mint: AccountInfo<'a>,
     destination: AccountInfo<'a>,
@@ -18,7 +18,7 @@ pub fn in_session_token_transfer_checked<'a>(
     decimals: u8,
 ) -> Result<(), ProgramError> {
     let mut instruction = transfer_checked(
-        token_program.key,
+        token_program_id,
         source.key,
         mint.key,
         destination.key,

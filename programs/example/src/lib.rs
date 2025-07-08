@@ -2,8 +2,8 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use fogo_sessions_sdk::cpi::in_session_token_transfer_checked;
 use fogo_sessions_sdk::{Session, PROGRAM_SIGNER_SEED};
+use fogo_sessions_sdk::cpi::in_session_token_transfer_checked;
 
 declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 
@@ -12,14 +12,14 @@ pub mod example {
     use super::*;
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
         in_session_token_transfer_checked(
-            ctx.accounts.token_program.to_account_info(),
+            &ctx.accounts.token_program.key,
             ctx.accounts.user_token_account.to_account_info(),
             ctx.accounts.mint.to_account_info(),
             ctx.accounts.sink.to_account_info(),
             ctx.accounts.session_key.to_account_info(),
             ctx.accounts.cpi_signer.to_account_info(),
             &crate::ID,
-            None,
+            Some(ctx.bumps.cpi_signer),
             amount,
             ctx.accounts.mint.decimals,
         )?;
