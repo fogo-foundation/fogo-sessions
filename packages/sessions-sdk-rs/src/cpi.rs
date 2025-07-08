@@ -5,7 +5,7 @@ use solana_program_error::ProgramError;
 use solana_pubkey::Pubkey;
 use spl_token::instruction::transfer_checked;
 
-pub struct InSessionTokenTransferCheckedContext<'a> {
+pub struct InSessionTokenTransferAccounts<'a> {
     pub source: AccountInfo<'a>,
     pub mint: AccountInfo<'a>,
     pub destination: AccountInfo<'a>,
@@ -13,7 +13,7 @@ pub struct InSessionTokenTransferCheckedContext<'a> {
     pub cpi_signer: AccountInfo<'a>,
 }
 
-impl<'a> InSessionTokenTransferCheckedContext<'a> {
+impl<'a> InSessionTokenTransferAccounts<'a> {
     pub fn to_account_infos(self) -> [AccountInfo<'a>; 5] {
         [
             self.source,
@@ -25,16 +25,21 @@ impl<'a> InSessionTokenTransferCheckedContext<'a> {
     }
 }
 
+/// If the bump is not provided in `in_session_token_transfer` , the program id will be used to find the bump.
+pub enum BumpOrProgramId {
+    Bump(u8),
+    ProgramId(Pubkey),
+}
+
 /// Transfering tokens in a session is similar to a regular token transfer, with the session key as the `authority`.
 /// Additionally, the PDA with seed `PROGRAM_SIGNER_SEED` is required to sign the cross program invocation. This
 /// is used to check that the transfer happened was invoked by an authorized program.
-pub fn in_session_token_transfer_checked<'a>(
+pub fn in_session_token_transfer<'a>(
     token_program_id: &Pubkey,
-    cpi_context: InSessionTokenTransferCheckedContext<'a>,
-    program_id: &Pubkey,
-    bump: Option<u8>,
+    cpi_context: InSessionTokenTransferAccounts<'a>,
     amount: u64,
     decimals: u8,
+    bump_or_program_id: BumpOrProgramId,
 ) -> Result<(), ProgramError> {
     let mut instruction = transfer_checked(
         token_program_id,
@@ -48,7 +53,10 @@ pub fn in_session_token_transfer_checked<'a>(
     )?;
     instruction.accounts[3].is_signer = true;
 
-    let bump = bump.unwrap_or(Pubkey::find_program_address(&[PROGRAM_SIGNER_SEED], program_id).1);
+    let bump = match bump_or_program_id {
+        BumpOrProgramId::Bump(bump) => bump,
+        BumpOrProgramId::ProgramId(program_id) => Pubkey::find_program_address(&[PROGRAM_SIGNER_SEED], &program_id).1,
+    };
 
     invoke_signed(
         &instruction,
