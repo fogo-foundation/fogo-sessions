@@ -1,6 +1,7 @@
 use crate::{error::SessionManagerError, intents::message::Message, StartSession};
+use anchor_lang::prelude::*;
 use anchor_lang::solana_program::ed25519_program;
-use anchor_lang::{prelude::*, solana_program::sysvar::instructions::load_instruction_at_checked};
+use anchor_lang::solana_program::sysvar::instructions::get_instruction_relative;
 
 pub struct Intent {
     pub signer: Pubkey,
@@ -65,8 +66,7 @@ impl AnchorDeserialize for Ed25519InstructionData {
 
 impl<'info> StartSession<'info> {
     pub fn verify_intent(&self) -> Result<Intent> {
-        // TODO: Let the user pass the instruction index
-        let instruction_data = load_instruction_at_checked(0, &self.sysvar_instructions)?;
+        let instruction_data = get_instruction_relative(-1, &self.sysvar_instructions)?;
 
         if !instruction_data.program_id.eq(&ed25519_program::ID) {
             return Err(error!(SessionManagerError::InvalidArgument));
