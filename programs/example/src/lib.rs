@@ -1,10 +1,9 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use fogo_sessions_sdk::{Session, PROGRAM_SIGNER_SEED};
-use spl_token::instruction::transfer_checked;
+use fogo_sessions_sdk::cpi::in_session_token_transfer_checked;
 
 declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 
@@ -12,21 +11,17 @@ declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 pub mod example {
     use super::*;
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
-        let mut instruction = transfer_checked(
-            ctx.accounts.token_program.key,
-            &ctx.accounts.user_token_account.key(),
-            &ctx.accounts.mint.key(),
-            &ctx.accounts.sink.key(),
-            &ctx.accounts.session_key.key(),
-            &[ctx.accounts.cpi_signer.key],
+        in_session_token_transfer_checked(
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.user_token_account.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.sink.to_account_info(),
+            ctx.accounts.session_key.to_account_info(),
+            ctx.accounts.cpi_signer.to_account_info(),
+            &crate::ID,
+            None,
             amount,
             ctx.accounts.mint.decimals,
-        )?;
-        instruction.accounts[3].is_signer = true; // TODO: flipping this should be in the SDK
-        invoke_signed(
-            &instruction,
-            &ctx.accounts.to_account_infos(),
-            &[&[PROGRAM_SIGNER_SEED, &[ctx.bumps.cpi_signer]]],
         )?;
         Ok(())
     }

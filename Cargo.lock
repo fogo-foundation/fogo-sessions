@@ -783,9 +783,11 @@ dependencies = [
  "base64 0.22.1",
  "borsh 1.5.7",
  "solana-account-info",
+ "solana-cpi",
  "solana-program-error",
  "solana-pubkey",
  "solana-sysvar",
+ "spl-token",
  "thiserror 2.0.12",
 ]
 
