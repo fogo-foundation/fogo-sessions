@@ -18,11 +18,11 @@ pub fn in_session_token_transfer_checked<'a>(
     decimals: u8,
 ) -> Result<(), ProgramError> {
     let mut instruction = transfer_checked(
-        &token_program.key,
-        &source.key,
-        &mint.key,
-        &destination.key,
-        &session_key.key,
+        token_program.key,
+        source.key,
+        mint.key,
+        destination.key,
+        session_key.key,
         &[cpi_signer.key],
         amount,
         decimals,
