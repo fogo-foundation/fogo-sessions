@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-react",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "React components and hooks for integrating with Fogo sessions",
   "keywords": [
@@ -29,15 +29,15 @@
   },
   "scripts": {
     "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-    "build:css:cjs": "sass --no-source-map src:dist/cjs",
-    "build:css:esm": "sass --no-source-map src:dist/esm",
+    "build:css:cjs": "sass --pkg-importer node --no-source-map src:dist/cjs",
+    "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
-    "start:dev:sass": "sass --watch src:dist/esm",
+    "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
     "test:format": "run-jest --colors --selectProjects format",
     "test:integration": "run-jest --colors --selectProjects integration",
     "test:lint:eslint": "run-jest --colors --selectProjects lint",
@@ -64,6 +64,7 @@
     "@solana/web3.js": "catalog:",
     "clsx": "catalog:",
     "idb": "catalog:",
+    "modern-normalize": "catalog:",
     "react-aria-components": "catalog:",
     "swr": "catalog:",
     "zod": "catalog:"

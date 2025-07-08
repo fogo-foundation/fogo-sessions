@@ -1,4 +1,6 @@
 @use "sass:map";
+@use "sass:meta";
+@import "https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap";
 
 @function map-get-strict($map, $key...) {
   @if map.has-key($map, $key...) {
@@ -444,6 +446,16 @@ $color: (
   @return map-get-strict($color, $color-path...);
 }
 
+@mixin reset {
+  @include meta.load-css("pkg:modern-normalize");
+
+  & {
+    font-family: "Funnel Display", sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+  }
+}
+
 @mixin sr-only {
   position: absolute;
   width: 1px;
@@ -481,6 +493,7 @@ $color: (
     color linear 50ms;
   position: relative;
   padding: spacing(1) spacing(10);
+  cursor: pointer;
 
   &::before {
     position: absolute;

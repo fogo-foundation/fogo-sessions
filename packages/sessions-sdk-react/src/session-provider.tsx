@@ -28,7 +28,7 @@ import {
   LedgerWalletAdapter,
   TorusWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import type { ComponentProps, ReactNode } from "react";
 import {
   createContext,
@@ -40,6 +40,7 @@ import {
   use,
 } from "react";
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
+import { mutate } from "swr";
 
 import {
   deserializePublicKey,
@@ -49,6 +50,7 @@ import {
 import { SessionLimits } from "./session-limits.js";
 import styles from "./session-provider.module.css";
 import { TokenWhitelistProvider } from "./token-whitelist-provider.js";
+import { getCacheKey } from "./use-token-account-data.js";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
 
@@ -215,7 +217,16 @@ const useSessionStateContext = (
           endSession(session.walletPublicKey);
         },
         payer: session.payer,
-        sendTransaction: session.sendTransaction,
+        sendTransaction: async (instructions: TransactionInstruction[]) => {
+          const result = await session.sendTransaction(instructions);
+          mutate(getCacheKey(session.walletPublicKey)).catch(
+            (error: unknown) => {
+              // eslint-disable-next-line no-console
+              console.error("Failed to update token account data", error);
+            },
+          );
+          return result;
+        },
         sessionPublicKey: session.sessionPublicKey,
         walletPublicKey: session.walletPublicKey,
         connection: adapter.connection,

@@ -18,11 +18,16 @@ export const useTokenAccountData = (sessionState: EstablishedSessionState) => {
   );
 
   return useData(
-    ["tokenAccountData", sessionState.walletPublicKey.toBase58()],
+    getCacheKey(sessionState.walletPublicKey),
     getTokenAccountData,
     {},
   );
 };
+
+export const getCacheKey = (walletPublicKey: PublicKey) => [
+  "tokenAccountData",
+  walletPublicKey.toBase58(),
+];
 
 const getTokenAccounts = async (
   connection: Connection,

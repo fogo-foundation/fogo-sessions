@@ -609,6 +609,9 @@ importers:
       idb:
         specifier: 'catalog:'
         version: 8.0.3
+      modern-normalize:
+        specifier: 'catalog:'
+        version: 3.0.1
       react-aria-components:
         specifier: 'catalog:'
         version: 1.10.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
