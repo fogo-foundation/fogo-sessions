@@ -5,6 +5,7 @@
   height: theme.spacing(10);
 
   @include theme.button("mainButton");
+  @include theme.reset;
 
   .fogoWordmark {
     height: 1.4em;
@@ -27,6 +28,8 @@
   transition:
     transform 200ms,
     opacity 200ms;
+
+  @include theme.reset;
 
   .overlayArrow {
     display: block;
@@ -101,6 +104,7 @@
           flex-flow: column nowrap;
           gap: theme.spacing(2);
           padding: theme.spacing(2);
+          margin: 0;
 
           .token {
             display: grid;
@@ -150,6 +154,13 @@
       }
 
       .logoutButton {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: theme.spacing(1) theme.spacing(4);
+        position: relative;
+        margin-right: -#{theme.spacing(4)};
+
         &[data-hovered] {
           text-decoration: underline;
         }

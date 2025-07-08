@@ -8,7 +8,6 @@ import {
 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
-import { mutate } from "swr";
 
 import type { Transaction } from "./use-transaction-log";
 import { useAsync } from "../../hooks/use-async";
@@ -47,13 +46,6 @@ export const useAirdrop = (
       signature: result.signature,
       success: result.type === TransactionResultType.Success,
     });
-
-    mutate(["tokenAccountData", sessionState.walletPublicKey.toBase58()]).catch(
-      (error: unknown) => {
-        // eslint-disable-next-line no-console
-        console.error(error);
-      },
-    );
 
     return result;
   }, [sessionState, appendTransaction, amount, mint]);

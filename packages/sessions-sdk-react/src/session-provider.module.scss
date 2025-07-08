@@ -11,6 +11,8 @@
   display: grid;
   place-content: center;
 
+  @include theme.reset;
+
   &[data-entering] {
     animation: modal-fade 200ms;
   }
