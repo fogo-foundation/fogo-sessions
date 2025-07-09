@@ -28,11 +28,11 @@ const TOKEN_PERMISSIONS_SECTION_HEADER: &str = "tokens:";
 fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str) -> Result<String> {
     let (key, value) = lines
         .next()
-        .ok_or(error!(SessionManagerError::InvalidArgument))?
+        .ok_or(error!(SessionManagerError::RequiredKeyNotFound))?
         .split_once(KEY_VALUE_SEPARATOR)
-        .ok_or(error!(SessionManagerError::InvalidArgument))?;
+        .ok_or(error!(SessionManagerError::ParsingErrorRequiredKey))?;
     if key != expected_key {
-        return Err(error!(SessionManagerError::InvalidArgument));
+        return Err(error!(SessionManagerError::RequiredKeyNotFound));
     }
     Ok(value.to_string())
 }
@@ -51,25 +51,25 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Vec<(SymbolOrM
         {
             let line = lines
                 .next()
-                .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                .ok_or(error!(SessionManagerError::ParsingErrorTokenSection))?;
             let line = line
                 .strip_prefix(LIST_ITEM_PREFIX)
-                .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                .ok_or(error!(SessionManagerError::ParsingErrorTokenSection))?;
             let (symbol, amount) = line
                 .split_once(KEY_VALUE_SEPARATOR)
-                .ok_or(error!(SessionManagerError::InvalidArgument))?;
+                .ok_or(error!(SessionManagerError::ParsingErrorTokenSection))?;
 
             let symbol_or_mint = Pubkey::from_str(symbol)
                 .map(SymbolOrMint::Mint)
                 .unwrap_or(SymbolOrMint::Symbol(symbol.to_string()));
             if tokens.iter().any(|(x, _)| x == &symbol_or_mint) {
                 // No duplicate mints
-                return Err(error!(SessionManagerError::InvalidArgument));
+                return Err(error!(SessionManagerError::DuplicateToken));
             } else {
                 tokens.push((
                     symbol_or_mint,
                     Decimal::from_str_exact(amount)
-                        .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
+                        .map_err(|_| error!(SessionManagerError::ParsingErrorDecimal))?,
                 ));
             }
         }
@@ -82,11 +82,11 @@ fn parse_extra(lines: &mut Peekable<Lines>) -> Result<HashMap<String, String>> {
     for line in lines {
         let (key, value) = line
             .split_once(KEY_VALUE_SEPARATOR)
-            .ok_or(error!(SessionManagerError::InvalidArgument))?;
+            .ok_or(error!(SessionManagerError::ParsingErrorExtraSection))?;
         if MANDATORY_KEYS.contains(&key) || kv.insert(key.to_string(), value.to_string()).is_some()
         {
             // No duplicate keys
-            return Err(error!(SessionManagerError::InvalidArgument));
+            return Err(error!(SessionManagerError::ReservedKey));
         }
     }
     Ok(kv)
@@ -97,11 +97,11 @@ pub struct Message(pub(crate) Vec<u8>);
 
 impl Message {
     pub fn parse(self) -> Result<MessageBody> {
-        let message =
-            String::from_utf8(self.0).map_err(|_| error!(SessionManagerError::InvalidArgument))?;
+        let message = String::from_utf8(self.0)
+            .map_err(|_| error!(SessionManagerError::InvalidMessageString))?;
         let message = message
             .strip_prefix(MESSAGE_PREFIX)
-            .ok_or(error!(SessionManagerError::InvalidArgument))?;
+            .ok_or(error!(SessionManagerError::IntentHeaderMismatch))?;
 
         let mut lines = message.lines().peekable();
 
@@ -114,11 +114,11 @@ impl Message {
             expires: DateTime::parse_from_rfc3339(&parse_line_with_expected_key(
                 &mut lines, "expires",
             )?)
-            .map_err(|_| error!(SessionManagerError::InvalidArgument))?
+            .map_err(|_| error!(SessionManagerError::ParsingErrorDate))?
             .into(),
             session_key: SessionKey(
                 Pubkey::from_str(&parse_line_with_expected_key(&mut lines, "session_key")?)
-                    .map_err(|_| error!(SessionManagerError::InvalidArgument))?,
+                    .map_err(|_| error!(SessionManagerError::ParsingErrorSessionKey))?,
             ),
             tokens: parse_token_permissions(&mut lines)?,
             extra: parse_extra(&mut lines)?,
