@@ -4,7 +4,6 @@
 use crate::intents::body::MessageBody;
 use crate::intents::body::Version;
 use crate::intents::ed25519::Intent;
-use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
 use fogo_sessions_sdk::AuthorizedPrograms;

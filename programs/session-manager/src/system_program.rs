@@ -45,7 +45,8 @@ pub fn initialize_account<'a, 'info>(
                 system_program.to_account_info(),
                 system_program::Allocate {
                     account_to_allocate: new_account.to_account_info(),
-                }),
+                },
+            ),
             space,
         )?;
         system_program::assign(
@@ -53,7 +54,7 @@ pub fn initialize_account<'a, 'info>(
                 system_program.to_account_info(),
                 system_program::Assign {
                     account_to_assign: new_account.to_account_info(),
-                }
+                },
             ),
             program_owner,
         )
