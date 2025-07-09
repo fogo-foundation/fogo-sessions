@@ -13,6 +13,9 @@ use anchor_lang::prelude::{
     account, borsh, AnchorDeserialize, AnchorError, AnchorSerialize, Discriminator,
 };
 
+#[cfg(feature = "cpi")]
+pub mod cpi;
+
 const ID: Pubkey = solana_pubkey::pubkey!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 /// The program ID of the session manager program
 pub const SESSION_MANAGER_ID: Pubkey = ID;

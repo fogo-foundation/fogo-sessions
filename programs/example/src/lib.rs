@@ -1,10 +1,11 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::token::{Mint, Token, TokenAccount};
+use fogo_sessions_sdk::cpi::{
+    in_session_token_transfer, BumpOrProgramId, InSessionTokenTransferAccounts,
+};
 use fogo_sessions_sdk::{Session, PROGRAM_SIGNER_SEED};
-use spl_token::instruction::transfer_checked;
 
 declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 
@@ -12,21 +13,12 @@ declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 pub mod example {
     use super::*;
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
-        let mut instruction = transfer_checked(
+        in_session_token_transfer(
             ctx.accounts.token_program.key,
-            &ctx.accounts.user_token_account.key(),
-            &ctx.accounts.mint.key(),
-            &ctx.accounts.sink.key(),
-            &ctx.accounts.session_key.key(),
-            &[ctx.accounts.cpi_signer.key],
+            ctx.accounts.to_in_session_token_transfer_accounts(),
             amount,
             ctx.accounts.mint.decimals,
-        )?;
-        instruction.accounts[3].is_signer = true; // TODO: flipping this should be in the SDK
-        invoke_signed(
-            &instruction,
-            &ctx.accounts.to_account_infos(),
-            &[&[PROGRAM_SIGNER_SEED, &[ctx.bumps.cpi_signer]]],
+            BumpOrProgramId::Bump(ctx.bumps.cpi_signer),
         )?;
         Ok(())
     }
@@ -45,4 +37,16 @@ pub struct ExampleTransfer<'info> {
     #[account(mut)]
     pub sink: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
+}
+
+impl<'info> ExampleTransfer<'info> {
+    pub fn to_in_session_token_transfer_accounts(&self) -> InSessionTokenTransferAccounts<'info> {
+        InSessionTokenTransferAccounts {
+            source: self.user_token_account.to_account_info(),
+            mint: self.mint.to_account_info(),
+            destination: self.sink.to_account_info(),
+            session_key: self.session_key.to_account_info(),
+            cpi_signer: self.cpi_signer.to_account_info(),
+        }
+    }
 }
