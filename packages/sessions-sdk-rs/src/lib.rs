@@ -6,12 +6,12 @@ use solana_sysvar::{clock::Clock, Sysvar};
 use thiserror::Error;
 
 #[cfg(feature = "borsh")]
-use borsh::{BorshDeserialize};
+use borsh::BorshDeserialize;
 
 #[cfg(feature = "anchor")]
-use anchor_lang::{prelude::{
-    account, borsh, borsh::BorshSchema,AnchorDeserialize, AnchorError, AnchorSerialize, Discriminator},
-    solana_program::borsh0_10::get_instance_packed_len
+use anchor_lang::prelude::{
+    account, borsh, borsh::BorshSchema, AnchorDeserialize, AnchorError, AnchorSerialize,
+    Discriminator,
 };
 
 #[cfg(feature = "cpi")]
@@ -47,14 +47,17 @@ pub struct Session {
 impl Session {
     #[allow(deprecated)]
     pub fn get_size(&self) -> Result<u64, std::io::Error> {
-        Ok(8 + get_instance_packed_len(self)? as u64)
+        Ok(8 + anchor_lang::solana_program::borsh0_10::get_instance_packed_len(self)? as u64)
     }
 }
 
 /// Unix time (i.e. seconds since the Unix epoch).
 type UnixTimestamp = i64;
 
-#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, BorshSchema))]
+#[cfg_attr(
+    feature = "anchor",
+    derive(AnchorDeserialize, AnchorSerialize, BorshSchema)
+)]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
 pub struct SessionInfo {
@@ -74,14 +77,16 @@ pub struct SessionInfo {
     pub extra: Extra,
 }
 
-
 #[allow(dead_code)]
 /// This module is a hack because the BorshSchema macro generates dead code for `AuthorizedPrograms` in this version of borsh, but we don't want to disable dead_code globally.
 /// More info: https://github.com/near/borsh-rs/issues/111
 mod authorized_programs {
     use super::*;
 
-    #[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, BorshSchema))]
+    #[cfg_attr(
+        feature = "anchor",
+        derive(AnchorDeserialize, AnchorSerialize, BorshSchema)
+    )]
     #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
     #[derive(Debug, Clone)]
     pub enum AuthorizedPrograms {
@@ -92,7 +97,10 @@ mod authorized_programs {
 
 pub use authorized_programs::AuthorizedPrograms;
 
-#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, BorshSchema))]
+#[cfg_attr(
+    feature = "anchor",
+    derive(AnchorDeserialize, AnchorSerialize, BorshSchema)
+)]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
 pub enum AuthorizedTokens {
@@ -100,7 +108,10 @@ pub enum AuthorizedTokens {
     All,
 }
 
-#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, BorshSchema))]
+#[cfg_attr(
+    feature = "anchor",
+    derive(AnchorDeserialize, AnchorSerialize, BorshSchema)
+)]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
 pub struct AuthorizedProgram {
@@ -110,7 +121,10 @@ pub struct AuthorizedProgram {
     pub signer_pda: Pubkey,
 }
 
-#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, BorshSchema))]
+#[cfg_attr(
+    feature = "anchor",
+    derive(AnchorDeserialize, AnchorSerialize, BorshSchema)
+)]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
 pub struct Extra(Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of tuples well so we have to declare a ExtraItem struct
@@ -124,7 +138,10 @@ impl Extra {
     }
 }
 
-#[cfg_attr(feature = "anchor", derive(AnchorDeserialize, AnchorSerialize, BorshSchema))]
+#[cfg_attr(
+    feature = "anchor",
+    derive(AnchorDeserialize, AnchorSerialize, BorshSchema)
+)]
 #[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 #[derive(Debug, Clone)]
 pub struct ExtraItem(String, String);
