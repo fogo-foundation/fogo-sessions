@@ -42,6 +42,12 @@ pub struct Session {
     pub session_info: SessionInfo,
 }
 
+impl Session {
+    pub fn get_size(&self) -> u64 {
+        200
+    }
+}
+
 /// Unix time (i.e. seconds since the Unix epoch).
 type UnixTimestamp = i64;
 
