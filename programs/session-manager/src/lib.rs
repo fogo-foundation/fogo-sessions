@@ -16,6 +16,7 @@ declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
 pub mod error;
 pub mod intents;
+pub mod system_program;
 #[program]
 pub mod session_manager {
     use super::*;
@@ -57,7 +58,7 @@ pub mod session_manager {
                 expiration: expires.timestamp(),
             },
         };
-        ctx.accounts.session.set_inner(session);
+        ctx.accounts.initialize_and_store_session(&session)?;
         Ok(())
     }
 }
@@ -68,8 +69,8 @@ pub struct StartSession<'info> {
     pub sponsor: Signer<'info>,
     #[account(seeds = [chain_id::SEED], seeds::program = chain_id::ID, bump)]
     pub chain_id: Account<'info, chain_id::ChainId>,
-    #[account(init, payer = sponsor, space = 200)] // TODO: Compute this dynamically
-    pub session: Account<'info, Session>,
+    #[account(mut)]
+    pub session: Signer<'info>,
     /// CHECK: we check the address of this account
     #[account(address = instructions::ID)]
     pub sysvar_instructions: AccountInfo<'info>,
@@ -80,6 +81,26 @@ pub struct StartSession<'info> {
     pub session_setter: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+}
+
+impl<'info> StartSession<'info> {
+    pub fn initialize_and_store_session(&self, session: &Session) -> Result<()> {
+        system_program::initialize_account(
+            &self.sponsor,
+            &self.session,
+            &self.system_program,
+            &crate::ID,
+            &Rent::get()?,
+            session.get_size()?,
+        )?;
+
+        let mut data = self.session.try_borrow_mut_data()?;
+        let dst: &mut [u8] = &mut data;
+        let mut writer = anchor_lang::__private::BpfWriter::new(dst); // This is the writer that Anchor uses internally
+        session.try_serialize(&mut writer)?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
