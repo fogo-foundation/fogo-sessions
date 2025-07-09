@@ -240,20 +240,22 @@ const Token = ({
   switch (metadata.type) {
     case TokenMetadataStateType.Error:
     case TokenMetadataStateType.Loaded: {
+      const amountAsString = amountToString(amountInWallet, decimals);
       const name =
         metadata.type === TokenMetadataStateType.Loaded
           ? (metadata.data.name ?? mint.toBase58())
           : mint.toBase58();
+      const defaultSymbol = amountAsString === "1" ? "Token" : "Tokens";
       const symbol =
         metadata.type === TokenMetadataStateType.Loaded
           ? metadata.data.symbol
-          : undefined;
+          : defaultSymbol;
       return (
         <div key={mint.toBase58()} className={styles.token}>
           <div className={styles.tokenIcon} />
           <dt className={styles.tokenName}>{name}</dt>
           <dd className={styles.amount}>
-            {amountToString(amountInWallet, decimals)} {symbol}
+            {amountAsString} {symbol}
           </dd>
         </div>
       );
