@@ -12,7 +12,7 @@ Next-gen on-chain experience on Fogo.
   <a href="https://crates.io/crates/fogo-sessions-sdk">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset=" https://img.shields.io/crates/v/fogo-sessions-sdk?colorA=21262d&colorB=21262d&style=flat">
-      <img src=" https://img.shields.io/crates/v/fogo-sessions-sdk?colorA=21262d&colorB=21262d&style=flat" alt="Version">
+      <img src="https://img.shields.io/crates/v/fogo-sessions-sdk?colorA=21262d&colorB=21262d&style=flat" alt="Version">
     </picture>
   </a>
   <a href="https://github.com/fogo-foundation/fogo-sessions/blob/main/LICENSE-APACHE">
