@@ -33,10 +33,23 @@ Fogo Sessions helps Fogo app developers to provide a great user experience to th
 - enabling gasless transactions. No more sending some dust to your address to rescue stranded funds!
 - reducing the number of times the user needs to sign with their browser wallet. They only need to sign once to log in!
 
+## Getting Started
+
+To jump straight to examples, go to [here](https://github.com/fogo-foundation/fogo-sessions/programs/example) for an example program compatible with Fogo Sessions and [here](https://github.com/fogo-foundation/fogo-sessions/apps/sessions-demo) for an app that interacts with that example program. To run this app locally, follow the intructions in the **Development** section below.
+
+## Packages
+
+| Package                 | Description                                              | Version                                                                                                                          |
+| :---------------------- | :------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| `fogo-sessions-sdk`     | Rust utilities for writing SVM programs compatible with Fogo Sessions            | [![crates](https://img.shields.io/crates/v/fogo-sessions-sdk?color=blue)](https://crates.io/crates/fogo-sessions-sdk)                     |
+| `@fogo/sessions-sdk`     | A set of utilities for integrating with Fogo sessions in Typescript               | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk)         |
+| `@fogo/sessions-sdk-web` | A set of framework-agnostic utilities for integrating with Fogo sessions on web | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk-web.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk-web) |
+| `@fogo/sessions-sdk-react` | React components and hooks for integrating with Fogo sessions | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk-react.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk-react) |
+
 > [!NOTE]
 > This is a developer preview. Non-major version bumps may contain breaking changes.
 
-# Development
+## Development
 
 ### Apps
 ```
