@@ -9,7 +9,8 @@
 </div>
 
 Fogo Sessions is an open-source standard for Web3 app sessions on Fogo.
-Fogo Sessions allow app developers to provide a frictionless app experience to Solana Virtual Machine users.
-When visiting an app that uses Fogo Sessions, users just have to sign with their browser wallet once at log in. Once logged in, the user can perform on-chain actions seamlessly.  
-It supports every Solana wallet (even those that don't support Fogo yet).
 
+Fogo Sessions helps Fogo app developers to provide a great user experience to their users by:
+- enabling their apps to be used with any Solana wallet (even those that don't support Fogo!)
+- enabling gasless transactions. No more sending some dust to your address to rescue stranded funds!
+- reducing the number of times the user needs to sign with their wallet. They only need to sign once to log in!
