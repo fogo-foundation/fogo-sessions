@@ -25,10 +25,10 @@ Next-gen on-chain experience on Fogo.
   </a>
 </p>
 
-
 Fogo Sessions is an open-source standard for Web3 app sessions on Fogo.
 
 Fogo Sessions helps Fogo app developers to provide a great user experience to their users by:
+
 - enabling their apps to be used with any Solana wallet (even those that don't support Fogo!)
 - enabling gasless transactions. No more sending some dust to your address to rescue stranded funds!
 - reducing the number of times the user needs to sign with their browser wallet. They only need to sign once to log in!
@@ -39,12 +39,12 @@ To jump straight to examples, go to [here](https://github.com/fogo-foundation/fo
 
 ## Packages
 
-| Package                      | Description                                                                      | Version                                                                                                                                        |
-| :--------------------------- | :------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fogo-sessions-sdk`          | Rust utilities for writing SVM programs compatible with Fogo Sessions          | [![crates](https://img.shields.io/crates/v/fogo-sessions-sdk?color=blue)](https://crates.io/crates/fogo-sessions-sdk)                       |
-| `@fogo/sessions-sdk`         | TypeScript utilities for integrating with Fogo sessions                        | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk)                   |
-| `@fogo/sessions-sdk-web`     | Framework-agnostic utilities for integrating with Fogo sessions on web         | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk-web.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk-web)           |
-| `@fogo/sessions-sdk-react`   | React components and hooks for integrating with Fogo sessions                  | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk-react.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk-react)       |
+| Package                    | Description                                                            | Version                                                                                                                                |
+| :------------------------- | :--------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| `fogo-sessions-sdk`        | Rust utilities for writing SVM programs compatible with Fogo Sessions  | [![crates](https://img.shields.io/crates/v/fogo-sessions-sdk?color=blue)](https://crates.io/crates/fogo-sessions-sdk)                  |
+| `@fogo/sessions-sdk`       | TypeScript utilities for integrating with Fogo sessions                | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk)             |
+| `@fogo/sessions-sdk-web`   | Framework-agnostic utilities for integrating with Fogo sessions on web | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk-web.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk-web)     |
+| `@fogo/sessions-sdk-react` | React components and hooks for integrating with Fogo sessions          | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk-react.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk-react) |
 
 > [!NOTE]
 > This is a developer preview. Non-major version bumps may contain breaking changes.
@@ -52,16 +52,19 @@ To jump straight to examples, go to [here](https://github.com/fogo-foundation/fo
 ## Development
 
 ### Apps
+
 ```
 tilt up # Starts local test validators, starts demo app
 ```
 
 ### Programs
+
 ```
 cargo-build-sbf # Build on-chain programs
 ```
 
 ### Tests
+
 ```
 pnpm turbo test # Run app tests
 cargo test # Run program tests
