@@ -5,19 +5,7 @@
 Next-gen on-chain experience on Fogo.
 
 <p>
-  <a href="https://www.npmjs.com/package/@fogo/sessions-sdk-react">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/npm/v/@fogo/sessions-sdk?colorA=21262d&colorB=21262d&style=flat">
-      <img src="https://img.shields.io/npm/v/@fogo/sessions-sdk?colorA=21262d&colorB=21262d&style=flat" alt="Version">
-    </picture>
-  </a>
-  <a href="https://crates.io/crates/fogo-sessions-sdk">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset=" https://img.shields.io/crates/v/fogo-sessions-sdk?colorA=21262d&colorB=21262d&style=flat">
-      <img src="https://img.shields.io/crates/v/fogo-sessions-sdk?colorA=21262d&colorB=21262d&style=flat" alt="Version">
-    </picture>
-  </a>
-  <a href="https://github.com/fogo-foundation/fogo-sessions/blob/main/LICENSE-APACHE">
+  <a href="https://github.com/fogo-foundation/fogo-sessions/blob/main/LICENSE">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/license-APACHE-blue.svg?colorA=21262d&colorB=21262d&style=flat">
       <img src="https://img.shields.io/badge/license-APACHE-blue.svg?colorA=f6f8fa&colorB=f6f8fa&style=flat" alt="APACHE License">
@@ -41,7 +29,7 @@ To jump straight to examples, go to [here](https://github.com/fogo-foundation/fo
 
 | Package                    | Description                                                            | Version                                                                                                                                |
 | :------------------------- | :--------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
-| `fogo-sessions-sdk`        | Rust utilities for writing SVM programs compatible with Fogo Sessions  | [![crates](https://img.shields.io/crates/v/fogo-sessions-sdk?color=blue)](https://crates.io/crates/fogo-sessions-sdk)                  |
+| `fogo-sessions-sdk`        | Rust utilities for writing SVM programs compatible with Fogo Sessions  | [![crates](https://img.shields.io/crates/v/fogo-sessions-sdk?color=green)](https://crates.io/crates/fogo-sessions-sdk)                  |
 | `@fogo/sessions-sdk`       | TypeScript utilities for integrating with Fogo sessions                | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk)             |
 | `@fogo/sessions-sdk-web`   | Framework-agnostic utilities for integrating with Fogo sessions on web | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk-web.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk-web)     |
 | `@fogo/sessions-sdk-react` | React components and hooks for integrating with Fogo sessions          | [![npm](https://img.shields.io/npm/v/@fogo/sessions-sdk-react.svg?color=blue)](https://www.npmjs.com/package/@fogo/sessions-sdk-react) |
