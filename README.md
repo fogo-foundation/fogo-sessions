@@ -1,3 +1,5 @@
+![Porto](https://github.com/ithacaxyz/porto/blob/chore/readme/.github/banner.png)
+
 # Fogo Sessions
 
 Next-gen on-chain experience on Fogo.
@@ -30,3 +32,24 @@ Fogo Sessions helps Fogo app developers to provide a great user experience to th
 - enabling their apps to be used with any Solana wallet (even those that don't support Fogo!)
 - enabling gasless transactions. No more sending some dust to your address to rescue stranded funds!
 - reducing the number of times the user needs to sign with their browser wallet. They only need to sign once to log in!
+
+> [!NOTE]
+> This is a developer preview. Non-major version bumps may contain breaking changes.
+
+# Development
+
+### Apps
+```
+tilt up # Starts local test validators, starts demo app
+```
+
+### Programs
+```
+cargo-build-sbf # Build on-chain programs
+```
+
+### Tests
+```
+pnpm turbo test # Run app tests
+cargo test # Run program tests
+```
