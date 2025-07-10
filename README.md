@@ -39,7 +39,7 @@ To jump straight to examples, go to [here](https://github.com/fogo-foundation/fo
 
 ## Development
 
-### Apps
+### Demo App
 
 ```
 tilt up # Starts local test validators, starts demo app
