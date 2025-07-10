@@ -1,4 +1,4 @@
-![Porto](https://github.com/ithacaxyz/porto/blob/chore/readme/.github/banner.png)
+![Fogo Sessions](https://github.com/fogo-foundation/fogo-sessions/blob/chore/readme/.github/banner.png)
 
 # Fogo Sessions
 
