@@ -248,8 +248,8 @@ const Token = ({
       const defaultSymbol = amountAsString === "1" ? "Token" : "Tokens";
       const symbol =
         metadata.type === TokenMetadataStateType.Loaded
-          ? metadata.data.symbol
-          : defaultSymbol;
+          ? (metadata.data.symbol ?? defaultSymbol)
+          : "";
       return (
         <div key={mint.toBase58()} className={styles.token}>
           <div className={styles.tokenIcon} />
