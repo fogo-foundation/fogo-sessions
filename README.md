@@ -23,7 +23,7 @@ Fogo Sessions helps Fogo app developers to provide a great user experience to th
 
 ## Getting Started
 
-To jump straight to examples, go to [here](https://github.com/fogo-foundation/fogo-sessions/programs/example) for an example program compatible with Fogo Sessions and [here](https://github.com/fogo-foundation/fogo-sessions/apps/sessions-demo) for an app that interacts with that example program. To run this app locally, follow the intructions in the **Development** section below.
+To jump straight to examples, go to [here](https://github.com/fogo-foundation/fogo-sessions/tree/main/programs/example) for an example program compatible with Fogo Sessions and [here](https://github.com/fogo-foundation/fogo-sessions/tree/main/apps/sessions-demo) for an app that interacts with that example program. To run this app locally, follow the intructions in the **Development** section below.
 
 ## Packages
 
