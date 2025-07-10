@@ -1,11 +1,6 @@
 <div align="center">
   <img height="170x" src="https://pbs.twimg.com/media/FVUVaO9XEAAulvK?format=png&name=small" />
-
   <h1>Fogo Sessions</h1>
-
-  <p>
-    <strong>App Sessions on Fogo</strong>
-  </p>
 </div>
 
 Fogo Sessions is an open-source standard for Web3 app sessions on Fogo.
