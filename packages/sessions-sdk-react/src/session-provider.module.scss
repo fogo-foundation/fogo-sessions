@@ -1,70 +1,71 @@
 @use "./theme";
 
 .sessionLimitsModalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: var(--visual-viewport-height);
-  background: rgb(from black r g b / 40%);
-  backdrop-filter: blur(8px);
-  display: grid;
-  place-content: center;
-
-  @include theme.reset;
-
-  &[data-entering] {
-    animation: modal-fade 200ms;
-  }
-
-  &[data-exiting] {
-    animation: modal-fade 150ms reverse ease-in;
-  }
-
-  @keyframes modal-fade {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
-  }
-
-  .modal {
-    outline: none;
-    background: theme.color("panel", "background");
-    padding: theme.spacing(8);
-    border-radius: theme.border-radius("md");
-    color: theme.color("panel", "text");
-    border: 1px solid theme.color("panel", "border");
-
-    .dialog {
-      outline: none;
-      display: grid;
-      gap: theme.spacing(2);
-
-      .heading {
-        @include theme.text("lg", "semibold");
-      }
-
-      .message {
-        @include theme.text("sm", "normal");
-
-        margin-bottom: theme.spacing(4);
-      }
-    }
+  @include theme.reset {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: var(--visual-viewport-height);
+    background: rgb(from black r g b / 40%);
+    backdrop-filter: blur(8px);
+    display: grid;
+    place-content: center;
+    z-index: 999;
 
     &[data-entering] {
-      animation: modal-zoom 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      animation: modal-fade 200ms;
+    }
 
-      @keyframes modal-zoom {
-        from {
-          transform: scale(0.8);
+    &[data-exiting] {
+      animation: modal-fade 150ms reverse ease-in;
+    }
+
+    @keyframes modal-fade {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal {
+      outline: none;
+      background: theme.color("panel", "background");
+      padding: theme.spacing(8);
+      border-radius: theme.border-radius("md");
+      color: theme.color("panel", "text");
+      border: 1px solid theme.color("panel", "border");
+
+      .dialog {
+        outline: none;
+        display: grid;
+        gap: theme.spacing(2);
+
+        .heading {
+          @include theme.text("lg", "semibold");
         }
 
-        to {
-          transform: scale(1);
+        .message {
+          @include theme.text("sm", "normal");
+
+          margin-bottom: theme.spacing(4);
+        }
+      }
+
+      &[data-entering] {
+        animation: modal-zoom 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+        @keyframes modal-zoom {
+          from {
+            transform: scale(0.8);
+          }
+
+          to {
+            transform: scale(1);
+          }
         }
       }
     }
