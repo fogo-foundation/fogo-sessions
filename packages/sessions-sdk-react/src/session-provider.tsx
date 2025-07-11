@@ -60,7 +60,7 @@ type Props = Omit<
 > & {
   sponsor: PublicKey | string;
   endpoint: string;
-  tokens: (PublicKey | string)[];
+  tokens?: (PublicKey | string)[] | undefined;
   defaultRequestedLimits?:
     | Map<PublicKey, bigint>
     | Record<string, bigint>
@@ -87,10 +87,12 @@ export const FogoSessionProvider = ({
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <TokenWhitelistProvider value={deserializePublicKeyList(tokens)}>
+          <TokenWhitelistProvider
+            value={tokens ? deserializePublicKeyList(tokens) : []}
+          >
             <SessionProvider
               sponsor={deserializePublicKey(sponsor)}
-              tokens={deserializePublicKeyList(tokens)}
+              tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
               defaultRequestedLimits={
                 defaultRequestedLimits === undefined
                   ? undefined
@@ -107,12 +109,10 @@ export const FogoSessionProvider = ({
 
 const SessionProvider = ({
   children,
-  tokens,
   defaultRequestedLimits,
   ...args
 }: Parameters<typeof useSessionStateContext>[0] & {
   children: ReactNode;
-  tokens: PublicKey[];
   defaultRequestedLimits?: Map<PublicKey, bigint> | undefined;
 }) => {
   const { state, onSessionLimitsOpenChange, requestedLimits } =
@@ -121,49 +121,54 @@ const SessionProvider = ({
   return (
     <>
       <SessionContext value={state}>{children}</SessionContext>
-      <ModalOverlay
-        isDismissable
-        className={styles.sessionLimitsModalOverlay ?? ""}
-        isOpen={
-          state.type === StateType.RequestingLimits ||
-          state.type === StateType.SettingLimits
-        }
-        onOpenChange={onSessionLimitsOpenChange}
-      >
-        <Modal isDismissable className={styles.modal ?? ""}>
-          <Dialog className={styles.dialog ?? ""}>
-            <Heading slot="title" className={styles.heading ?? ""}>
-              Session Limits
-            </Heading>
-            <p className={styles.message}>
-              Limit how many tokens this app is allowed to interact with
-            </p>
-            <SessionLimits
-              tokens={tokens}
-              onSubmit={
-                state.type === StateType.RequestingLimits
-                  ? state.onSubmitLimits
-                  : undefined
-              }
-              initialLimits={
-                requestedLimits ?? defaultRequestedLimits ?? new Map()
-              }
-              error={
-                state.type === StateType.RequestingLimits
-                  ? state.error
-                  : undefined
-              }
-            />
-          </Dialog>
-        </Modal>
-      </ModalOverlay>
+      {args.tokens !== undefined && args.tokens.length > 0 && (
+        <ModalOverlay
+          isDismissable
+          className={styles.sessionLimitsModalOverlay ?? ""}
+          isOpen={
+            state.type === StateType.RequestingLimits ||
+            state.type === StateType.SettingLimits
+          }
+          onOpenChange={onSessionLimitsOpenChange}
+        >
+          <Modal isDismissable className={styles.modal ?? ""}>
+            <Dialog className={styles.dialog ?? ""}>
+              <Heading slot="title" className={styles.heading ?? ""}>
+                Session Limits
+              </Heading>
+              <p className={styles.message}>
+                Limit how many tokens this app is allowed to interact with
+              </p>
+              <SessionLimits
+                tokens={args.tokens}
+                onSubmit={
+                  state.type === StateType.RequestingLimits
+                    ? state.onSubmitLimits
+                    : undefined
+                }
+                initialLimits={
+                  requestedLimits ?? defaultRequestedLimits ?? new Map()
+                }
+                error={
+                  state.type === StateType.RequestingLimits
+                    ? state.error
+                    : undefined
+                }
+              />
+            </Dialog>
+          </Modal>
+        </ModalOverlay>
+      )}
     </>
   );
 };
 
-const useSessionStateContext = (
-  adapterArgs: Parameters<typeof useSessionAdapter>[0],
-) => {
+const useSessionStateContext = ({
+  tokens,
+  ...adapterArgs
+}: Parameters<typeof useSessionAdapter>[0] & {
+  tokens?: PublicKey[] | undefined;
+}) => {
   const [state, setState] = useState<SessionState>(SessionState.Initializing());
   const wallet = useWallet();
   const walletModal = useWalletModal();
@@ -284,36 +289,65 @@ const useSessionStateContext = (
       const adapter = await getAdapter();
       const storedSession = await getStoredSession(walletPublicKey);
       if (storedSession === undefined) {
-        const setLimits = (limits: Map<PublicKey, bigint>) => {
+        if (tokens === undefined || tokens.length === 0) {
           setState(SessionState.SettingLimits());
-          establishSessionImpl({
-            expires: new Date(Date.now() + 3600 * 1000),
-            adapter,
-            limits,
-            signMessage,
-            walletPublicKey,
-          })
-            .then((result) => {
-              switch (result.type) {
-                case SessionResultType.Success: {
-                  setSessionState(adapter, result.session, signMessage);
-                  return;
-                }
-                case SessionResultType.Failed: {
-                  setState(
-                    SessionState.RequestingLimits(setLimits, result.error),
-                  );
-                  return;
-                }
-              }
-            })
-            .catch((error: unknown) => {
-              // eslint-disable-next-line no-console
-              console.error("Failed to establish session", error);
-              setState(SessionState.RequestingLimits(setLimits, error));
+          try {
+            const result = await establishSessionImpl({
+              expires: new Date(Date.now() + 3600 * 1000),
+              adapter,
+              limits: new Map(),
+              signMessage,
+              walletPublicKey,
             });
-        };
-        setState(SessionState.RequestingLimits(setLimits));
+            switch (result.type) {
+              case SessionResultType.Success: {
+                setSessionState(adapter, result.session, signMessage);
+                return;
+              }
+              case SessionResultType.Failed: {
+                // eslint-disable-next-line no-console
+                console.error("Connection failed", result.error);
+                disconnectWallet();
+                return;
+              }
+            }
+          } catch (error: unknown) {
+            // eslint-disable-next-line no-console
+            console.error("Failed to establish session", error);
+            disconnectWallet();
+          }
+        } else {
+          const setLimits = (limits: Map<PublicKey, bigint>) => {
+            setState(SessionState.SettingLimits());
+            establishSessionImpl({
+              expires: new Date(Date.now() + 3600 * 1000),
+              adapter,
+              limits,
+              signMessage,
+              walletPublicKey,
+            })
+              .then((result) => {
+                switch (result.type) {
+                  case SessionResultType.Success: {
+                    setSessionState(adapter, result.session, signMessage);
+                    return;
+                  }
+                  case SessionResultType.Failed: {
+                    setState(
+                      SessionState.RequestingLimits(setLimits, result.error),
+                    );
+                    return;
+                  }
+                }
+              })
+              .catch((error: unknown) => {
+                // eslint-disable-next-line no-console
+                console.error("Failed to establish session", error);
+                setState(SessionState.RequestingLimits(setLimits, error));
+              });
+          };
+          setState(SessionState.RequestingLimits(setLimits));
+        }
       } else {
         const session = await reestablishSession(
           adapter,
@@ -323,7 +357,7 @@ const useSessionStateContext = (
         setSessionState(adapter, session, signMessage);
       }
     },
-    [getAdapter, setSessionState],
+    [getAdapter, setSessionState, disconnectWallet, tokens],
   );
 
   const onSessionLimitsOpenChange = useCallback(
@@ -439,15 +473,15 @@ const getNextState = (
         case StateType.Established:
         case StateType.RestoringSession:
         case StateType.RequestingLimits:
-        case StateType.SettingLimits:
         case StateType.UpdatingLimits: {
           return SessionState.CheckingStoredSession(
             wallet.publicKey,
             wallet.signMessage,
           );
         }
+        case StateType.SettingLimits:
         case StateType.CheckingStoredSession: {
-          return state;
+          return;
         }
       }
     }
