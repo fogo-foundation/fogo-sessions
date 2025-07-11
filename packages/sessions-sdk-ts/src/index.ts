@@ -211,15 +211,17 @@ const serializeKV = (data: Record<string, string>) =>
     .join("\n");
 
 const serializeTokenList = (tokens: TokenInfo[]) =>
-  tokens
-    .values()
-    .filter(({ amount }) => amount > 0n)
-    .map(
-      ({ symbolOrMint, amount, decimals }) =>
-        `\n-${symbolOrMint.type === SymbolOrMintType.Symbol ? symbolOrMint.symbol : symbolOrMint.mint.toBase58()}: ${amountToString(amount, decimals)}`,
-    )
-    .toArray()
-    .join("");
+  tokens.length === 0
+    ? "\n"
+    : tokens
+        .values()
+        .filter(({ amount }) => amount > 0n)
+        .map(
+          ({ symbolOrMint, amount, decimals }) =>
+            `\n-${symbolOrMint.type === SymbolOrMintType.Symbol ? symbolOrMint.symbol : symbolOrMint.mint.toBase58()}: ${amountToString(amount, decimals)}`,
+        )
+        .toArray()
+        .join("");
 
 const amountToString = (amount: bigint, decimals: number): string => {
   const asStr = amount.toString();
