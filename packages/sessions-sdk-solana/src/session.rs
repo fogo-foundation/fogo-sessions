@@ -1,0 +1,188 @@
+use solana_program::pubkey::Pubkey;
+use std::collections::HashMap;
+use borsh::{BorshDeserialize, BorshSerialize};
+use solana_program::sysvar::clock::Clock;
+use solana_program::account_info::AccountInfo;
+use solana_program::sysvar::Sysvar;
+
+use crate::error::SessionError;
+
+/// The program ID of the session manager program
+pub const SESSION_MANAGER_ID: Pubkey = solana_program::pubkey!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
+
+pub const MAJOR: u8 = 0;
+pub const MINOR: u8 = 1;
+
+type UnixTimestamp = i64;
+
+#[derive(Debug, BorshDeserialize, BorshSerialize)]
+pub struct Session {
+    pub discriminator: [u8; 8],
+    /// The key that sponsored the session (gas and rent)
+    pub sponsor: Pubkey,
+    pub session_info: SessionInfo,
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+pub struct SessionInfo {
+    /// The major version of the session account, major version changes are breaking changes
+    pub major: u8,
+    /// The minor version of the session account. Until 1.0, every new minor version will be a breaking change.
+    pub minor: u8,
+    /// The user who started this session
+    pub user: Pubkey,
+    /// The expiration time of the session
+    pub expiration: UnixTimestamp,
+    /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
+    pub authorized_programs: AuthorizedPrograms,
+    /// Tokens the session key is allowed to interact with. If `Specific`, the spend limits are stored in each individual token account in the usual delegated_amount field.
+    pub authorized_tokens: AuthorizedTokens,
+    /// Extra (key, value)'s provided by the user, they can be used to store extra arbitrary information about the session
+    pub extra: Extra,
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+pub enum AuthorizedPrograms {
+    Specific(Vec<AuthorizedProgram>),
+    All,
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+pub enum AuthorizedTokens {
+    Specific,
+    All,
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+pub struct AuthorizedProgram {
+    /// The program ID that the session key is allowed to interact with
+    pub program_id: Pubkey,
+    /// The PDA of `program_id` with seeds `PROGRAM_SIGNER_SEED`, which is required to sign for in-session token transfers
+    pub signer_pda: Pubkey,
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+pub struct Extra(Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of tuples well so we have to declare a ExtraItem struct
+
+impl Extra {
+    pub fn get(&self, key: &str) -> Option<&str> {
+        self.0
+            .iter()
+            .find(|item| item.0 == key)
+            .map(|item| item.1.as_str())
+    }
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+pub struct ExtraItem(String, String);
+
+impl From<HashMap<String, String>> for Extra {
+    fn from(map: HashMap<String, String>) -> Self {
+        Extra(
+            map.into_iter()
+                .map(|(key, value)| ExtraItem(key, value))
+                .collect(),
+        )
+    }
+}
+
+impl Session {
+    const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
+
+    pub fn check_signer_or_session_key(info: &AccountInfo, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
+        if !info.is_signer {
+            return Err(SessionError::MissingRequiredSignature);
+        }
+
+        if info.owner == &SESSION_MANAGER_ID {
+            let session = Self::try_deserialize(&mut info.data.borrow_mut().as_ref())?;
+            return session.get_user_checked(program_id)
+        }
+        else {
+            Ok(*info.key)
+        }
+    }
+
+    pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
+        let result = Session::deserialize(data).map_err(|_| SessionError::InvalidAccountData)?;
+        if result.discriminator != Self::DISCRIMINATOR {
+            return Err(SessionError::InvalidAccountDiscriminator);
+        }
+        Ok(result)
+    }
+
+    fn check_is_live(&self) -> Result<(), SessionError> {
+        if self.session_info.expiration
+            < Clock::get()
+                .map_err(|_| SessionError::ClockError)?
+                .unix_timestamp
+        {
+            return Err(SessionError::Expired);
+        }
+        Ok(())
+    }
+
+    fn check_user(&self, expected_user: &Pubkey) -> Result<(), SessionError> {
+        if self.session_info.user != *expected_user {
+            return Err(SessionError::UserMismatch);
+        }
+        Ok(())
+    }
+
+    fn check_authorized_program_signer(&self, signers: &[AccountInfo]) -> Result<(), SessionError> {
+        match self.session_info.authorized_programs {
+            AuthorizedPrograms::Specific(ref programs) => {
+                let signer_account_info = signers
+                    .iter()
+                    .find(|signer| programs.iter().any(|item| *signer.key == item.signer_pda))
+                    .ok_or(SessionError::UnauthorizedProgram)?;
+                if !signer_account_info.is_signer {
+                    return Err(SessionError::MissingRequiredSignature);
+                }
+            }
+            AuthorizedPrograms::All => {}
+        }
+        Ok(())
+    }
+
+    fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), SessionError> {
+        match self.session_info.authorized_programs {
+            AuthorizedPrograms::Specific(ref programs) => {
+                programs
+                    .iter()
+                    .find(|authorized_program| authorized_program.program_id == *program_id)
+                    .ok_or(SessionError::UnauthorizedProgram)?;
+            }
+            AuthorizedPrograms::All => {}
+        }
+        Ok(())
+    }
+
+    /// For 0.x versions, every new minor version will be a breaking change.
+    fn check_version(&self) -> Result<(), SessionError> {
+        if self.session_info.major != MAJOR || self.session_info.minor != MINOR {
+            return Err(SessionError::InvalidAccountVersion);
+        }
+        Ok(())
+    }
+
+    pub fn get_token_permissions_checked(
+        &self,
+        user: &Pubkey,
+        signers: &[AccountInfo],
+    ) -> Result<AuthorizedTokens, SessionError> {
+        self.check_version()?;
+        self.check_is_live()?;
+        self.check_user(user)?;
+        self.check_authorized_program_signer(signers)?;
+        Ok(self.session_info.authorized_tokens.clone())
+    }
+
+    /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
+    pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
+        self.check_version()?;
+        self.check_is_live()?;
+        self.check_authorized_program(program_id)?;
+        Ok(self.session_info.user)
+    }
+}

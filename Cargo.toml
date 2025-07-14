@@ -1,5 +1,5 @@
 [workspace]
-members = ["programs/*", "packages/sessions-sdk-rs"]
+members = ["programs/*", "packages/sessions-sdk-rs", "packages/sessions-sdk-solana"]
 resolver = "2"
 
 [workspace.package]

@@ -1,0 +1,15 @@
+[package]
+name = "fogo-sessions-sdk-solana"
+description = "A set of utilities for SVM on-chain programs integrating with Fogo sessions"
+edition = { workspace = true }
+license = { workspace = true }
+version = "0.2.0"
+
+[lib]
+crate-type = ["rlib"]
+name = "fogo_sessions_sdk_solana"
+
+[dependencies]
+borsh = { version = ">=0.10.0, <2.0.0"}
+solana-program = { version = ">=1.16, <3.0.0"}
+thiserror = {version = ">=1.0, <2.0"}
