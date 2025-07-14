@@ -1,5 +1,5 @@
 [workspace]
-members = ["programs/*", "packages/sessions-sdk-core"]
+members = ["programs/*", "packages/sessions-sdk-rs"]
 resolver = "2"
 
 [workspace.package]
