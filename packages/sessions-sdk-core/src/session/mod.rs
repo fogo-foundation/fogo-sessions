@@ -44,11 +44,20 @@ pub struct SessionInfo {
     pub extra: Extra,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub enum AuthorizedPrograms {
-    Specific(Vec<AuthorizedProgram>),
-    All,
+#[allow(dead_code)]
+/// This module is a hack because the BorshSchema macro generates dead code for `AuthorizedPrograms` in this version of borsh, but we don't want to disable dead_code globally.
+/// More info: https://github.com/near/borsh-rs/issues/111
+mod authorized_programs {
+    use super::*;
+
+    #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+    pub enum AuthorizedPrograms {
+        Specific(Vec<AuthorizedProgram>),
+        All,
+    }
 }
+
+pub use authorized_programs::AuthorizedPrograms;
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub enum AuthorizedTokens {
