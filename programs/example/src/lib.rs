@@ -33,13 +33,13 @@ pub mod example {
 
 #[derive(Accounts)]
 pub struct ExampleTransfer<'info> {
-    /// CHECK: we check this using `Session::check_signer_or_session_key`
+    /// CHECK: we check this using `Session::extract_user_from_session`
     #[account(signer)]
     pub session_key: AccountInfo<'info>,
     /// CHECK: this is just a signer for token program CPIs
     #[account(seeds = [PROGRAM_SIGNER_SEED], bump)]
     pub program_signer: AccountInfo<'info>,
-    #[account(mut, token::mint = mint, token::authority = Session::check_signer_or_session_key(&session_key, &crate::ID).map_err(|_| ProgramError::InvalidAccountData)?)]
+    #[account(mut, token::mint = mint, token::authority = Session::extract_user_from_session(&session_key, &crate::ID).map_err(|_| ProgramError::InvalidAccountData)?)]
     pub user_token_account: Account<'info, TokenAccount>,
     pub mint: Account<'info, Mint>,
     #[account(mut)]

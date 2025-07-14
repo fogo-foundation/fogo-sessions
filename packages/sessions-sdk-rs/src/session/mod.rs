@@ -102,7 +102,7 @@ impl From<HashMap<String, String>> for Extra {
 impl Session {
     pub const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
 
-    pub fn check_signer_or_session_key(
+    pub fn extract_user_from_session(
         info: &AccountInfo,
         program_id: &Pubkey,
     ) -> Result<Pubkey, SessionError> {
