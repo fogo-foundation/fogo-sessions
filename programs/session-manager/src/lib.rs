@@ -7,10 +7,10 @@ use crate::intents::ed25519::Intent;
 use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
-use fogo_sessions_sdk_core::session::AuthorizedPrograms;
-use fogo_sessions_sdk_core::session::AuthorizedTokens;
-use fogo_sessions_sdk_core::session::Session;
-use fogo_sessions_sdk_core::session::SessionInfo;
+use fogo_sessions_sdk::session::AuthorizedPrograms;
+use fogo_sessions_sdk::session::AuthorizedTokens;
+use fogo_sessions_sdk::session::Session;
+use fogo_sessions_sdk::session::SessionInfo;
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
 pub mod error;
@@ -108,13 +108,13 @@ impl<'info> StartSession<'info> {
 
 #[cfg(test)]
 mod tests {
-    use fogo_sessions_sdk_core::session::token_program::SESSION_SETTER;
+    use fogo_sessions_sdk::session::token_program::SESSION_SETTER;
 
     use super::*;
 
     #[test]
     fn test_program_id_matches_sdk() {
-        assert_eq!(ID, fogo_sessions_sdk_core::session::SESSION_MANAGER_ID);
+        assert_eq!(ID, fogo_sessions_sdk::session::SESSION_MANAGER_ID);
     }
 
     #[test]

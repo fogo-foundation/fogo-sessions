@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, solana_program::system_instruction};
 use bytemuck::{Pod, Zeroable};
-use fogo_sessions_sdk_core::session::AuthorizedProgram;
+use fogo_sessions_sdk::session::AuthorizedProgram;
 use std::marker::PhantomData;
 
 pub const CONFIG_SEED: &[u8] = b"config";
