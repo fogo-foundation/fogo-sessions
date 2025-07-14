@@ -3,8 +3,8 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use fogo_sessions_sdk::{session::Session, token::PROGRAM_SIGNER_SEED};
 use fogo_sessions_sdk::token::instruction::transfer_checked;
+use fogo_sessions_sdk::{session::Session, token::PROGRAM_SIGNER_SEED};
 
 declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 
