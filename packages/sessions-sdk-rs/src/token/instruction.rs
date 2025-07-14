@@ -19,7 +19,7 @@ pub fn transfer(
     source_pubkey: &Pubkey,
     destination_pubkey: &Pubkey,
     session_key: &Pubkey,
-    cpi_signer: &Pubkey,
+    program_signer: &Pubkey,
     amount: u64,
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
@@ -28,7 +28,7 @@ pub fn transfer(
         AccountMeta::new(*source_pubkey, false),
         AccountMeta::new(*destination_pubkey, false),
         AccountMeta::new_readonly(*session_key, true),
-        AccountMeta::new_readonly(*cpi_signer, true),
+        AccountMeta::new_readonly(*program_signer, true),
     ];
 
     let mut data = Vec::with_capacity(8);
@@ -49,7 +49,7 @@ pub fn transfer_checked(
     mint_pubkey: &Pubkey,
     destination_pubkey: &Pubkey,
     session_key: &Pubkey,
-    cpi_signer: &Pubkey,
+    program_signer: &Pubkey,
     amount: u64,
     decimals: u8,
 ) -> Result<Instruction, ProgramError> {
@@ -60,7 +60,7 @@ pub fn transfer_checked(
         AccountMeta::new_readonly(*mint_pubkey, false),
         AccountMeta::new(*destination_pubkey, false),
         AccountMeta::new_readonly(*session_key, true),
-        AccountMeta::new_readonly(*cpi_signer, true),
+        AccountMeta::new_readonly(*program_signer, true),
     ];
 
     let mut data = Vec::with_capacity(8);
