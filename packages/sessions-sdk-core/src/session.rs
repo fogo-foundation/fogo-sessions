@@ -122,29 +122,6 @@ impl Session {
         Ok(())
     }
 
-    fn check_user(&self, expected_user: &Pubkey) -> Result<(), SessionError> {
-        if self.session_info.user != *expected_user {
-            return Err(SessionError::UserMismatch);
-        }
-        Ok(())
-    }
-
-    fn check_authorized_program_signer(&self, signers: &[AccountInfo]) -> Result<(), SessionError> {
-        match self.session_info.authorized_programs {
-            AuthorizedPrograms::Specific(ref programs) => {
-                let signer_account_info = signers
-                    .iter()
-                    .find(|signer| programs.iter().any(|item| *signer.key == item.signer_pda))
-                    .ok_or(SessionError::UnauthorizedProgram)?;
-                if !signer_account_info.is_signer {
-                    return Err(SessionError::MissingRequiredSignature);
-                }
-            }
-            AuthorizedPrograms::All => {}
-        }
-        Ok(())
-    }
-
     fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), SessionError> {
         match self.session_info.authorized_programs {
             AuthorizedPrograms::Specific(ref programs) => {
@@ -164,18 +141,6 @@ impl Session {
             return Err(SessionError::InvalidAccountVersion);
         }
         Ok(())
-    }
-
-    pub fn get_token_permissions_checked(
-        &self,
-        user: &Pubkey,
-        signers: &[AccountInfo],
-    ) -> Result<AuthorizedTokens, SessionError> {
-        self.check_version()?;
-        self.check_is_live()?;
-        self.check_user(user)?;
-        self.check_authorized_program_signer(signers)?;
-        Ok(self.session_info.authorized_tokens.clone())
     }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
