@@ -739,7 +739,6 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "fogo-sessions-sdk",
- "spl-token",
 ]
 
 [[package]]
