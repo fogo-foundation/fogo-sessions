@@ -1,3 +1,4 @@
+use crate::SESSION_SETTER_SEED;
 use crate::{error::SessionManagerError, StartSession};
 use anchor_lang::prelude::*;
 use anchor_spl::{
@@ -7,7 +8,7 @@ use anchor_spl::{
 use chrono::{DateTime, Utc};
 use domain_registry::domain::Domain;
 use domain_registry::state::DomainRecordInner;
-use fogo_sessions_sdk::{AuthorizedProgram, SESSION_SETTER_SEED};
+use fogo_sessions_sdk::session::AuthorizedProgram;
 use mpl_token_metadata::accounts::Metadata;
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::collections::HashMap;
@@ -44,7 +45,8 @@ impl Version {
                 .map_err(|_| error!(SessionManagerError::ParsingErrorVersion))?;
             (major, minor)
         };
-        if major != fogo_sessions_sdk::MAJOR || minor != fogo_sessions_sdk::MINOR {
+        if major != fogo_sessions_sdk::session::MAJOR || minor != fogo_sessions_sdk::session::MINOR
+        {
             return Err(error!(SessionManagerError::InvalidVersion));
         }
         Ok(Self { major, minor })

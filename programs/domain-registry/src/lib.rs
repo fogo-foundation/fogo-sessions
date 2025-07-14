@@ -6,7 +6,7 @@ use crate::state::DomainProgram;
 use crate::state::DomainRecordInner;
 use crate::state::CONFIG_SEED;
 use anchor_lang::prelude::*;
-use fogo_sessions_sdk::PROGRAM_SIGNER_SEED;
+use fogo_sessions_sdk::token::PROGRAM_SIGNER_SEED;
 
 pub mod domain;
 pub mod error;

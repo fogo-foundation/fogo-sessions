@@ -21,9 +21,10 @@ anchor-spl = { workspace = true }
 chain-id = { path = "../chain-id", features = ["no-entrypoint"] }
 domain-registry = { path = "../domain-registry", features = ["no-entrypoint"] }
 chrono = "0.4.41"
-fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["anchor"] }
+fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs" }
 mpl-token-metadata = "5.1.0"
 rust_decimal = "1.37.2"
 
 [dev-dependencies]
 rust_decimal = { version = "1.37.2", features = ["macros"] }
+fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["token-program"] }

@@ -1,5 +1,6 @@
 use anchor_lang::{prelude::*, solana_program::system_instruction};
 use bytemuck::{Pod, Zeroable};
+use fogo_sessions_sdk::session::AuthorizedProgram;
 use std::marker::PhantomData;
 
 pub const CONFIG_SEED: &[u8] = b"config";
@@ -15,9 +16,9 @@ pub struct DomainProgram {
     pub signer_pda: Pubkey,
 }
 
-impl From<DomainProgram> for fogo_sessions_sdk::AuthorizedProgram {
+impl From<DomainProgram> for AuthorizedProgram {
     fn from(domain_program: DomainProgram) -> Self {
-        fogo_sessions_sdk::AuthorizedProgram {
+        AuthorizedProgram {
             program_id: domain_program.program_id,
             signer_pda: domain_program.signer_pda,
         }
