@@ -738,7 +738,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "fogo-sessions-sdk-solana",
+ "fogo-sessions-sdk-core",
  "spl-token",
 ]
 
@@ -792,7 +792,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fogo-sessions-sdk-solana"
+name = "fogo-sessions-sdk-core"
 version = "0.2.0"
 dependencies = [
  "borsh 0.10.4",
