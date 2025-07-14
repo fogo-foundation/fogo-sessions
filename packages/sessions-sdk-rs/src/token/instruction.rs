@@ -24,11 +24,12 @@ pub fn transfer(
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
 
-    let mut accounts = Vec::with_capacity(5);
-    accounts.push(AccountMeta::new(*source_pubkey, false));
-    accounts.push(AccountMeta::new(*destination_pubkey, false));
-    accounts.push(AccountMeta::new_readonly(*session_key, true));
-    accounts.push(AccountMeta::new_readonly(*cpi_signer, true));
+    let accounts = vec![
+        AccountMeta::new(*source_pubkey, false),
+        AccountMeta::new(*destination_pubkey, false),
+        AccountMeta::new_readonly(*session_key, true),
+        AccountMeta::new_readonly(*cpi_signer, true),
+    ];
 
     let mut data = Vec::with_capacity(8);
     data.push(3);
@@ -41,6 +42,7 @@ pub fn transfer(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn transfer_checked(
     token_program_id: &Pubkey,
     source_pubkey: &Pubkey,
@@ -53,12 +55,13 @@ pub fn transfer_checked(
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
 
-    let mut accounts = Vec::with_capacity(5);
-    accounts.push(AccountMeta::new(*source_pubkey, false));
-    accounts.push(AccountMeta::new_readonly(*mint_pubkey, false));
-    accounts.push(AccountMeta::new(*destination_pubkey, false));
-    accounts.push(AccountMeta::new_readonly(*session_key, true));
-    accounts.push(AccountMeta::new_readonly(*cpi_signer, true));
+    let accounts = vec![
+        AccountMeta::new(*source_pubkey, false),
+        AccountMeta::new_readonly(*mint_pubkey, false),
+        AccountMeta::new(*destination_pubkey, false),
+        AccountMeta::new_readonly(*session_key, true),
+        AccountMeta::new_readonly(*cpi_signer, true),
+    ];
 
     let mut data = Vec::with_capacity(8);
     data.push(12);
