@@ -15,7 +15,7 @@ pub mod example {
     use super::*;
     pub fn example_transfer(ctx: Context<ExampleTransfer>, amount: u64) -> Result<()> {
         let instruction = transfer(
-            &ctx.accounts.token_program.key,
+            ctx.accounts.token_program.key,
             &ctx.accounts.user_token_account.key(),
             &ctx.accounts.sink.key(),
             &ctx.accounts.session_key.key(),
@@ -25,7 +25,7 @@ pub mod example {
         invoke_signed(
             &instruction,
             &ctx.accounts.to_account_infos(),
-            &[&[PROGRAM_SIGNER_SEED.as_ref(), &[ctx.bumps.cpi_signer]]],
+            &[&[PROGRAM_SIGNER_SEED, &[ctx.bumps.cpi_signer]]],
         )?;
         Ok(())
     }

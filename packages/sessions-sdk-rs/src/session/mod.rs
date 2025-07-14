@@ -112,7 +112,7 @@ impl Session {
 
         if info.owner == &SESSION_MANAGER_ID {
             let session = Self::try_deserialize(&mut info.data.borrow_mut().as_ref())?;
-            return session.get_user_checked(program_id);
+            session.get_user_checked(program_id)
         } else {
             Ok(*info.key)
         }
