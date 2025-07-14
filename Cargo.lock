@@ -717,7 +717,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "bytemuck",
- "fogo-sessions-sdk",
+ "fogo-sessions-sdk-core",
 ]
 
 [[package]]
@@ -780,15 +780,7 @@ name = "fogo-sessions-sdk"
 version = "0.2.0"
 dependencies = [
  "anchor-lang",
- "base64 0.22.1",
- "borsh 1.5.7",
- "solana-account-info",
- "solana-cpi",
- "solana-program-error",
- "solana-pubkey",
- "solana-sysvar",
- "spl-token",
- "thiserror 2.0.12",
+ "fogo-sessions-sdk-core",
 ]
 
 [[package]]
@@ -1558,7 +1550,7 @@ dependencies = [
  "chain-id",
  "chrono",
  "domain-registry",
- "fogo-sessions-sdk",
+ "fogo-sessions-sdk-core",
  "mpl-token-metadata",
  "rust_decimal",
 ]

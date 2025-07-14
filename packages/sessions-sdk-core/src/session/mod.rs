@@ -1,6 +1,6 @@
 use solana_program::pubkey::Pubkey;
 use std::collections::HashMap;
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use solana_program::sysvar::clock::Clock;
 use solana_program::account_info::AccountInfo;
 use solana_program::sysvar::Sysvar;
@@ -18,7 +18,7 @@ pub const MINOR: u8 = 1;
 
 type UnixTimestamp = i64;
 
-#[derive(Debug, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct Session {
     pub discriminator: [u8; 8],
     /// The key that sponsored the session (gas and rent)
@@ -26,7 +26,7 @@ pub struct Session {
     pub session_info: SessionInfo,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct SessionInfo {
     /// The major version of the session account, major version changes are breaking changes
     pub major: u8,
@@ -44,19 +44,19 @@ pub struct SessionInfo {
     pub extra: Extra,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub enum AuthorizedPrograms {
     Specific(Vec<AuthorizedProgram>),
     All,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub enum AuthorizedTokens {
     Specific,
     All,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct AuthorizedProgram {
     /// The program ID that the session key is allowed to interact with
     pub program_id: Pubkey,
@@ -64,7 +64,7 @@ pub struct AuthorizedProgram {
     pub signer_pda: Pubkey,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct Extra(Vec<ExtraItem>); // Anchor IDL generation doesn't handle vec of tuples well so we have to declare a ExtraItem struct
 
 impl Extra {
@@ -76,7 +76,7 @@ impl Extra {
     }
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct ExtraItem(String, String);
 
 impl From<HashMap<String, String>> for Extra {
@@ -90,7 +90,7 @@ impl From<HashMap<String, String>> for Extra {
 }
 
 impl Session {
-    const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
+    pub const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
 
     pub fn check_signer_or_session_key(info: &AccountInfo, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
         if !info.is_signer {

@@ -4,19 +4,21 @@
 use crate::intents::body::MessageBody;
 use crate::intents::body::Version;
 use crate::intents::ed25519::Intent;
+use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
-use fogo_sessions_sdk::AuthorizedPrograms;
-use fogo_sessions_sdk::AuthorizedTokens;
-use fogo_sessions_sdk::Session;
-use fogo_sessions_sdk::SessionInfo;
-use fogo_sessions_sdk::SESSION_SETTER_SEED;
-
+use fogo_sessions_sdk_core::session::AuthorizedPrograms;
+use fogo_sessions_sdk_core::session::AuthorizedTokens;
+use fogo_sessions_sdk_core::session::Session;
+use fogo_sessions_sdk_core::session::SessionInfo;
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
 pub mod error;
 pub mod intents;
 pub mod system_program;
+
+const SESSION_SETTER_SEED: &[u8] = b"session_setter";
+
 #[program]
 pub mod session_manager {
     use super::*;
@@ -47,6 +49,7 @@ pub mod session_manager {
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
+            discriminator: Session::DISCRIMINATOR,
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
                 major,
@@ -91,13 +94,13 @@ impl<'info> StartSession<'info> {
             &self.system_program,
             &crate::ID,
             &Rent::get()?,
-            session.get_size()?,
+            get_instance_packed_len(&session)? as u64,
         )?;
 
         let mut data = self.session.try_borrow_mut_data()?;
         let dst: &mut [u8] = &mut data;
         let mut writer = anchor_lang::__private::BpfWriter::new(dst); // This is the writer that Anchor uses internally
-        session.try_serialize(&mut writer)?;
+        session.serialize(&mut writer)?;
 
         Ok(())
     }
@@ -109,6 +112,6 @@ mod tests {
 
     #[test]
     fn test_program_id_matches_sdk() {
-        assert_eq!(ID, fogo_sessions_sdk::SESSION_MANAGER_ID);
+        assert_eq!(ID, fogo_sessions_sdk_core::session::SESSION_MANAGER_ID);
     }
 }

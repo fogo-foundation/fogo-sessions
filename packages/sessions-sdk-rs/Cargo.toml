@@ -9,21 +9,7 @@ version = "0.2.0"
 crate-type = ["rlib"]
 name = "fogo_sessions_sdk"
 
-[features]
-anchor = ["anchor-lang"]
-borsh = ["dep:borsh"]
-cpi = ["dep:solana-cpi", "dep:spl-token"]
-
 [dependencies]
-borsh = { version = "1.0.0", features = ["derive"], optional = true }
-solana-pubkey = { version = "2.2.0", features = ["borsh"] }
-solana-program-error = { version = "2.2.0" }
-thiserror = "2.0"
-solana-sysvar = { version = "2.2.0", features = ["bincode"] }
-solana-account-info = { version = "2.2.0" }
-anchor-lang = { workspace = true, optional = true }
-spl-token = { version = "7.0.0", features = ["no-entrypoint"], optional = true }
-solana-cpi = { version = "2.2.0", optional = true }
+anchor-lang = { workspace = true }
+fogo-sessions-sdk-core = { path = "../sessions-sdk-core" }
 
-[dev-dependencies]
-base64 = "0.22.1"
