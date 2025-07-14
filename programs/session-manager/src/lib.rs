@@ -108,10 +108,20 @@ impl<'info> StartSession<'info> {
 
 #[cfg(test)]
 mod tests {
+    use fogo_sessions_sdk_core::session::token_program::SESSION_SETTER;
+
     use super::*;
 
     #[test]
     fn test_program_id_matches_sdk() {
         assert_eq!(ID, fogo_sessions_sdk_core::session::SESSION_MANAGER_ID);
+    }
+
+        #[test]
+    fn test_session_setter_pda_derivation() {
+        assert_eq!(
+            SESSION_SETTER,
+            Pubkey::find_program_address(&[SESSION_SETTER_SEED], &ID).0
+        );
     }
 }
