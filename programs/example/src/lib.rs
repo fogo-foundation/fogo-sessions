@@ -1,9 +1,9 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use fogo_sessions_sdk_core::{session::Session, token::PROGRAM_SIGNER_SEED};
-use anchor_lang::solana_program::program::invoke_signed;
 
 declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 
@@ -20,7 +20,11 @@ pub mod example {
             &ctx.accounts.cpi_signer.key(),
             amount,
         )?;
-        invoke_signed(&instruction, &ctx.accounts.to_account_infos(), &[&[PROGRAM_SIGNER_SEED.as_ref(), &[ctx.bumps.cpi_signer]]])?;
+        invoke_signed(
+            &instruction,
+            &ctx.accounts.to_account_infos(),
+            &[&[PROGRAM_SIGNER_SEED.as_ref(), &[ctx.bumps.cpi_signer]]],
+        )?;
         Ok(())
     }
 }

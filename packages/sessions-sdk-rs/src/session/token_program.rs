@@ -1,9 +1,9 @@
-use crate::session::Session;
-use solana_program::pubkey::Pubkey;
-use solana_program::account_info::AccountInfo;
-use crate::session::SessionError;
-use crate::session::AuthorizedTokens;
 use crate::session::AuthorizedPrograms;
+use crate::session::AuthorizedTokens;
+use crate::session::Session;
+use crate::session::SessionError;
+use solana_program::account_info::AccountInfo;
+use solana_program::pubkey::Pubkey;
 
 pub const SESSION_SETTER: Pubkey =
     solana_program::pubkey!("akbpBKqNWBiZn3ejes3ejieJ5t3vqEhoq1ZzLBG7jQo");

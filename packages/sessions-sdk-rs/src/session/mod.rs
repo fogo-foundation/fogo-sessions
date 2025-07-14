@@ -1,9 +1,9 @@
-use solana_program::pubkey::Pubkey;
-use std::collections::HashMap;
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
-use solana_program::sysvar::clock::Clock;
 use solana_program::account_info::AccountInfo;
+use solana_program::pubkey::Pubkey;
+use solana_program::sysvar::clock::Clock;
 use solana_program::sysvar::Sysvar;
+use std::collections::HashMap;
 
 use crate::error::SessionError;
 
@@ -11,7 +11,8 @@ use crate::error::SessionError;
 pub mod token_program;
 
 /// The program ID of the session manager program
-pub const SESSION_MANAGER_ID: Pubkey = solana_program::pubkey!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
+pub const SESSION_MANAGER_ID: Pubkey =
+    solana_program::pubkey!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
 pub const MAJOR: u8 = 0;
 pub const MINOR: u8 = 1;
@@ -101,16 +102,18 @@ impl From<HashMap<String, String>> for Extra {
 impl Session {
     pub const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
 
-    pub fn check_signer_or_session_key(info: &AccountInfo, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
+    pub fn check_signer_or_session_key(
+        info: &AccountInfo,
+        program_id: &Pubkey,
+    ) -> Result<Pubkey, SessionError> {
         if !info.is_signer {
             return Err(SessionError::MissingRequiredSignature);
         }
 
         if info.owner == &SESSION_MANAGER_ID {
             let session = Self::try_deserialize(&mut info.data.borrow_mut().as_ref())?;
-            return session.get_user_checked(program_id)
-        }
-        else {
+            return session.get_user_checked(program_id);
+        } else {
             Ok(*info.key)
         }
     }

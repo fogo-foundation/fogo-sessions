@@ -1,6 +1,11 @@
-use solana_program::{instruction::{AccountMeta, Instruction}, program_error::ProgramError, pubkey::Pubkey};
+use solana_program::{
+    instruction::{AccountMeta, Instruction},
+    program_error::ProgramError,
+    pubkey::Pubkey,
+};
 
-const SPL_TOKEN_PROGRAM_ID: Pubkey = solana_program::pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+const SPL_TOKEN_PROGRAM_ID: Pubkey =
+    solana_program::pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 
 fn check_program_account(spl_token_program_id: &Pubkey) -> Result<(), ProgramError> {
     if spl_token_program_id != &SPL_TOKEN_PROGRAM_ID {
@@ -18,16 +23,13 @@ pub fn transfer(
     amount: u64,
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
-    
+
     let mut accounts = Vec::with_capacity(5);
     accounts.push(AccountMeta::new(*source_pubkey, false));
     accounts.push(AccountMeta::new(*destination_pubkey, false));
-    accounts.push(AccountMeta::new_readonly(
-        *session_key,
-        true,
-    ));
+    accounts.push(AccountMeta::new_readonly(*session_key, true));
     accounts.push(AccountMeta::new_readonly(*cpi_signer, true));
-    
+
     let mut data = Vec::with_capacity(8);
     data.push(3);
     data.extend_from_slice(&amount.to_le_bytes());
@@ -50,17 +52,14 @@ pub fn transfer_checked(
     decimals: u8,
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
-    
+
     let mut accounts = Vec::with_capacity(5);
     accounts.push(AccountMeta::new(*source_pubkey, false));
     accounts.push(AccountMeta::new_readonly(*mint_pubkey, false));
     accounts.push(AccountMeta::new(*destination_pubkey, false));
-    accounts.push(AccountMeta::new_readonly(
-        *session_key,
-        true,
-    ));
+    accounts.push(AccountMeta::new_readonly(*session_key, true));
     accounts.push(AccountMeta::new_readonly(*cpi_signer, true));
-    
+
     let mut data = Vec::with_capacity(8);
     data.push(12);
     data.extend_from_slice(&amount.to_le_bytes());

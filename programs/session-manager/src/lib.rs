@@ -117,7 +117,7 @@ mod tests {
         assert_eq!(ID, fogo_sessions_sdk_core::session::SESSION_MANAGER_ID);
     }
 
-        #[test]
+    #[test]
     fn test_session_setter_pda_derivation() {
         assert_eq!(
             SESSION_SETTER,
