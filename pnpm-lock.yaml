@@ -495,13 +495,13 @@ importers:
         specifier: 'catalog:'
         version: 0.31.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@fogo/sessions-idls':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sessions-idls
       '@fogo/sessions-sdk':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sessions-sdk-ts
       '@fogo/sessions-sdk-web':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sessions-sdk-web
       '@metaplex-foundation/mpl-token-metadata':
         specifier: 'catalog:'
@@ -631,7 +631,7 @@ importers:
         specifier: 'catalog:'
         version: 0.31.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@fogo/sessions-idls':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sessions-idls
       '@metaplex-foundation/mpl-token-metadata':
         specifier: 'catalog:'
@@ -707,7 +707,7 @@ importers:
   packages/sessions-sdk-web:
     dependencies:
       '@fogo/sessions-sdk':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sessions-sdk-ts
       '@solana/web3.js':
         specifier: 'catalog:'

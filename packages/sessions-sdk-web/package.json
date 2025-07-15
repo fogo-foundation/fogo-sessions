@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-web",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "A set of framework-agnostic utilities for integrating with Fogo sessions on web",
   "keywords": [
@@ -36,7 +36,7 @@
     "test:types": "tsc"
   },
   "dependencies": {
-    "@fogo/sessions-sdk": "workspace:*",
+    "@fogo/sessions-sdk": "workspace:^",
     "@solana/web3.js": "catalog:",
     "idb": "catalog:"
   },
@@ -46,7 +46,6 @@
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
-    "@fogo/sessions-sdk": "workspace:*",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
