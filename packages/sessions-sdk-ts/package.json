@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "private": true,
   "description": "A set of utilities for integrating with Fogo sessions",
   "keywords": [
@@ -66,7 +66,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
-    "@fogo/sessions-idls": "workspace:*",
+    "@fogo/sessions-idls": "workspace:^",
     "@metaplex-foundation/mpl-token-metadata": "catalog:",
     "@metaplex-foundation/umi": "catalog:",
     "@metaplex-foundation/umi-bundle-defaults": "catalog:",

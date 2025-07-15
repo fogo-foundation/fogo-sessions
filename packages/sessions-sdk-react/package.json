@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-react",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "private": true,
   "description": "React components and hooks for integrating with Fogo sessions",
   "keywords": [
@@ -50,9 +50,9 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
-    "@fogo/sessions-idls": "workspace:*",
-    "@fogo/sessions-sdk": "workspace:*",
-    "@fogo/sessions-sdk-web": "workspace:*",
+    "@fogo/sessions-idls": "workspace:^",
+    "@fogo/sessions-sdk": "workspace:^",
+    "@fogo/sessions-sdk-web": "workspace:^",
     "@metaplex-foundation/mpl-token-metadata": "catalog:",
     "@metaplex-foundation/umi": "catalog:",
     "@metaplex-foundation/umi-bundle-defaults": "catalog:",
