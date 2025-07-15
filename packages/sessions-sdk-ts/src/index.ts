@@ -1,4 +1,5 @@
-import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
+import type { Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider } from "@coral-xyz/anchor";
 import { DomainRegistryIdl, SessionManagerProgram } from "@fogo/sessions-idls";
 import {
   findMetadataPda,
@@ -13,12 +14,8 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import type { TransactionError } from "@solana/web3.js";
-import {
-  Ed25519Program,
-  PublicKey,
-  TransactionInstruction,
-} from "@solana/web3.js";
+import type { TransactionInstruction, TransactionError } from "@solana/web3.js";
+import { Ed25519Program, PublicKey } from "@solana/web3.js";
 
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
 import { TransactionResultType } from "./adapter.js";
