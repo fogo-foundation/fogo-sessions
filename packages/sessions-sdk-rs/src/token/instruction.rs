@@ -15,7 +15,7 @@ fn check_program_account(spl_token_program_id: &Pubkey) -> Result<(), ProgramErr
 }
 
 /// This function is meant to replace `spl_token::instruction::transfer` in the context of sessions. 
-/// In-session transfers are different from regular transfers in that they not only require the session key to sign as the authority, but also require an additional signer.
+/// In-session tokentransfers are different from regular transfers in that they not only require the session key to sign as the authority, but also require an additional signer.
 /// This additional signer is the `program_signer` and allows the token program to verify that the transfer is happening within an authorized program.
 /// This function has also been designed to allow non-sessions transfers by setting the `program_signer` to `None`.
 pub fn transfer(
@@ -50,7 +50,7 @@ pub fn transfer(
 }
 
 /// This function is meant to replace `spl_token::instruction::transfer_checked` in the context of sessions. 
-/// In-session transfers are different from regular transfers in that they not only require the session key to sign as the authority, but also require an additional signer.
+/// In-session token transfers are different from regular transfers in that they not only require the session key to sign as the authority, but also require an additional signer.
 /// This additional signer is the `program_signer` and allows the token program to verify that the transfer is happening within an authorized program.
 /// This function has also been designed to allow non-sessions transfers by setting the `program_signer` to `None`.
 #[allow(clippy::too_many_arguments)]
