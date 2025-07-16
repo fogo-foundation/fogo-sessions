@@ -8,7 +8,6 @@ use fogo_sessions_sdk::session::is_session;
 use fogo_sessions_sdk::token::instruction::transfer_checked;
 use fogo_sessions_sdk::{session::Session, token::PROGRAM_SIGNER_SEED};
 use anchor_spl::associated_token::get_associated_token_address;
-use spl_token::instruction::transfer;
 
 declare_id!("Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3");
 
