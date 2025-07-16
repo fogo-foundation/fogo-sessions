@@ -21,7 +21,7 @@ pub const MINOR: u8 = 1;
 
 type UnixTimestamp = i64;
 
-/// Returns true if `info` is a session account
+/// Returns whether `info` is a session account
 pub fn is_session(info: &AccountInfo) -> bool {
     info.owner == &SESSION_MANAGER_ID
 }
