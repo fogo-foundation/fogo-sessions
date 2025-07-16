@@ -110,7 +110,7 @@ impl From<HashMap<String, String>> for Extra {
 impl Session {
     pub const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
 
-    /// Extracts the user public key from a signer or session account. If the account is a session, it extracts the user from the session data and also checks that the session is live and the session is allowed to interact with `program_id` on behalf of the user. Otherwise, it just returns the public key of the signer.
+    /// Extracts the user public key from a signer or a session account. If the account is a session, it extracts the user from the session data and also checks that the session is live and the session is allowed to interact with `program_id` on behalf of the user. Otherwise, it just returns the public key of the signer.
     pub fn extract_user_from_signer_or_session(
         info: &AccountInfo,
         program_id: &Pubkey,
