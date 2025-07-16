@@ -14,7 +14,7 @@ fn check_program_account(spl_token_program_id: &Pubkey) -> Result<(), ProgramErr
     Ok(())
 }
 
-/// This function is meant to replace `spl_token::instruction::transfer` in the context of sessions. 
+/// This function is meant to replace `spl_token::instruction::transfer` in the context of sessions.
 /// In-session token transfers are different from regular transfers in that they not only require the session key to sign as the authority, but also require an additional signer.
 /// This additional signer is the `program_signer` and allows the token program to verify that the transfer is happening within an authorized program. It is the PDA of the authorized program that will call the instruction via CPI with seed `PROGRAM_SIGNER_SEED`.
 /// This function has also been designed to allow non-sessions transfers by setting the `program_signer` to `None`.
@@ -49,7 +49,7 @@ pub fn transfer(
     })
 }
 
-/// This function is meant to replace `spl_token::instruction::transfer_checked` in the context of sessions. 
+/// This function is meant to replace `spl_token::instruction::transfer_checked` in the context of sessions.
 /// In-session token transfers are different from regular transfers in that they not only require the session key to sign as the authority, but also require an additional signer.
 /// This additional signer is the `program_signer` and allows the token program to verify that the transfer is happening within an authorized program. It is the PDA of the authorized program that will call the instruction via CPI with seed `PROGRAM_SIGNER_SEED`.
 /// This function has also been designed to allow non-sessions transfers by setting the `program_signer` to `None`.
