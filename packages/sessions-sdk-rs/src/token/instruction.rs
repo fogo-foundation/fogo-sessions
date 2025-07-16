@@ -22,7 +22,7 @@ pub fn transfer(
     token_program_id: &Pubkey,
     source_pubkey: &Pubkey,
     destination_pubkey: &Pubkey,
-    session_key: &Pubkey,
+    authority_pubkey: &Pubkey,
     program_signer: Option<&Pubkey>,
     amount: u64,
 ) -> Result<Instruction, ProgramError> {
@@ -31,7 +31,7 @@ pub fn transfer(
     let mut accounts = vec![
         AccountMeta::new(*source_pubkey, false),
         AccountMeta::new(*destination_pubkey, false),
-        AccountMeta::new_readonly(*session_key, true),
+        AccountMeta::new_readonly(*authority_pubkey, true),
     ];
 
     if let Some(program_signer) = program_signer {
@@ -59,7 +59,7 @@ pub fn transfer_checked(
     source_pubkey: &Pubkey,
     mint_pubkey: &Pubkey,
     destination_pubkey: &Pubkey,
-    session_key: &Pubkey,
+    authority_pubkey: &Pubkey,
     program_signer: Option<&Pubkey>,
     amount: u64,
     decimals: u8,
@@ -70,7 +70,7 @@ pub fn transfer_checked(
         AccountMeta::new(*source_pubkey, false),
         AccountMeta::new_readonly(*mint_pubkey, false),
         AccountMeta::new(*destination_pubkey, false),
-        AccountMeta::new_readonly(*session_key, true),
+        AccountMeta::new_readonly(*authority_pubkey, true),
     ];
 
     if let Some(program_signer) = program_signer {
