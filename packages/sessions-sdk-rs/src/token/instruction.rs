@@ -14,22 +14,29 @@ fn check_program_account(spl_token_program_id: &Pubkey) -> Result<(), ProgramErr
     Ok(())
 }
 
+/// This function is meant to replace `spl_token::instruction::transfer` in the context of sessions.
+/// In-session token transfers are different from regular transfers in that they not only require the session key to sign as the authority, but also require an additional signer.
+/// This additional signer is the `program_signer` and allows the token program to verify that the transfer is happening within an authorized program. It is the PDA of the authorized program that will call the instruction via CPI with seed `PROGRAM_SIGNER_SEED`.
+/// This function has also been designed to allow non-sessions transfers by setting the `program_signer` to `None`.
 pub fn transfer(
     token_program_id: &Pubkey,
     source_pubkey: &Pubkey,
     destination_pubkey: &Pubkey,
-    session_key: &Pubkey,
-    program_signer: &Pubkey,
+    authority_pubkey: &Pubkey,
+    program_signer: Option<&Pubkey>,
     amount: u64,
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
 
-    let accounts = vec![
+    let mut accounts = vec![
         AccountMeta::new(*source_pubkey, false),
         AccountMeta::new(*destination_pubkey, false),
-        AccountMeta::new_readonly(*session_key, true),
-        AccountMeta::new_readonly(*program_signer, true),
+        AccountMeta::new_readonly(*authority_pubkey, true),
     ];
+
+    if let Some(program_signer) = program_signer {
+        accounts.push(AccountMeta::new_readonly(*program_signer, true));
+    }
 
     let mut data = Vec::with_capacity(8);
     data.push(3);
@@ -42,26 +49,33 @@ pub fn transfer(
     })
 }
 
+/// This function is meant to replace `spl_token::instruction::transfer_checked` in the context of sessions.
+/// In-session token transfers are different from regular transfers in that they not only require the session key to sign as the authority, but also require an additional signer.
+/// This additional signer is the `program_signer` and allows the token program to verify that the transfer is happening within an authorized program. It is the PDA of the authorized program that will call the instruction via CPI with seed `PROGRAM_SIGNER_SEED`.
+/// This function has also been designed to allow non-sessions transfers by setting the `program_signer` to `None`.
 #[allow(clippy::too_many_arguments)]
 pub fn transfer_checked(
     token_program_id: &Pubkey,
     source_pubkey: &Pubkey,
     mint_pubkey: &Pubkey,
     destination_pubkey: &Pubkey,
-    session_key: &Pubkey,
-    program_signer: &Pubkey,
+    authority_pubkey: &Pubkey,
+    program_signer: Option<&Pubkey>,
     amount: u64,
     decimals: u8,
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
 
-    let accounts = vec![
+    let mut accounts = vec![
         AccountMeta::new(*source_pubkey, false),
         AccountMeta::new_readonly(*mint_pubkey, false),
         AccountMeta::new(*destination_pubkey, false),
-        AccountMeta::new_readonly(*session_key, true),
-        AccountMeta::new_readonly(*program_signer, true),
+        AccountMeta::new_readonly(*authority_pubkey, true),
     ];
+
+    if let Some(program_signer) = program_signer {
+        accounts.push(AccountMeta::new_readonly(*program_signer, true));
+    }
 
     let mut data = Vec::with_capacity(8);
     data.push(12);

@@ -14,11 +14,19 @@ pub mod token_program;
 pub const SESSION_MANAGER_ID: Pubkey =
     solana_program::pubkey!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
+/// The current major version of the `Session` structure
 pub const MAJOR: u8 = 0;
+/// The current minor version of the `Session` structure
 pub const MINOR: u8 = 1;
 
 type UnixTimestamp = i64;
 
+/// Returns whether `info` is a session account
+pub fn is_session(info: &AccountInfo) -> bool {
+    info.owner == &SESSION_MANAGER_ID
+}
+
+/// The on-chain representation of a session. Sessions are represented on-chain as accounts owned by the session manager program, containing a `Session` structure.
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct Session {
     pub discriminator: [u8; 8],
@@ -39,7 +47,7 @@ pub struct SessionInfo {
     pub expiration: UnixTimestamp,
     /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
     pub authorized_programs: AuthorizedPrograms,
-    /// Tokens the session key is allowed to interact with. If `Specific`, the spend limits are stored in each individual token account in the usual delegated_amount field.
+    /// Tokens the session key is allowed to interact with. If `Specific`, the spend limits are stored in each individual token account in the usual `delegated_amount` field.
     pub authorized_tokens: AuthorizedTokens,
     /// Extra (key, value)'s provided by the user, they can be used to store extra arbitrary information about the session
     pub extra: Extra,
@@ -102,7 +110,8 @@ impl From<HashMap<String, String>> for Extra {
 impl Session {
     pub const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
 
-    pub fn extract_user_from_session(
+    /// Extracts the user public key from a signer or a session account. If the account is a session, it extracts the user from the session data and also checks that the session is live and the session is allowed to interact with `program_id` on behalf of the user. Otherwise, it just returns the public key of the signer.
+    pub fn extract_user_from_signer_or_session(
         info: &AccountInfo,
         program_id: &Pubkey,
     ) -> Result<Pubkey, SessionError> {
@@ -118,6 +127,7 @@ impl Session {
         }
     }
 
+    /// Tries to deserialize a session account. This should only be used after checking that the account is owned by the session manager program.
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
         let result = Session::deserialize(data).map_err(|_| SessionError::InvalidAccountData)?;
         if result.discriminator != Self::DISCRIMINATOR {
@@ -164,5 +174,10 @@ impl Session {
         self.check_is_live()?;
         self.check_authorized_program(program_id)?;
         Ok(self.session_info.user)
+    }
+
+    /// Returns the value of one of the session's extra fields with the given key, if it exists
+    pub fn get_extra(&self, key: &str) -> Option<&str> {
+        self.session_info.extra.get(key)
     }
 }
