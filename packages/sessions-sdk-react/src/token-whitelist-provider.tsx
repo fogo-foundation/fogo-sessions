@@ -4,7 +4,10 @@ import { createContext, use } from "react";
 
 export const TokenWhitelistProvider = (
   props: Omit<ComponentProps<typeof TokenWhitelistContext>, "value"> & {
-    value: PublicKey[];
+    value: {
+      tokens: PublicKey[];
+      enableUnlimited: boolean;
+    };
   },
 ) => <TokenWhitelistContext {...props} />;
 
@@ -17,7 +20,9 @@ export const useTokenWhitelist = () => {
   }
 };
 
-const TokenWhitelistContext = createContext<PublicKey[] | undefined>(undefined);
+const TokenWhitelistContext = createContext<
+  { tokens: PublicKey[]; enableUnlimited: boolean } | undefined
+>(undefined);
 
 class NotInitializedError extends Error {
   constructor() {

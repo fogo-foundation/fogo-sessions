@@ -2,6 +2,7 @@ use anchor_lang::{prelude::*, solana_program::system_instruction};
 use bytemuck::{Pod, Zeroable};
 use fogo_sessions_sdk::session::AuthorizedProgram;
 use std::marker::PhantomData;
+use std::mem::size_of;
 
 pub const CONFIG_SEED: &[u8] = b"config";
 #[account]

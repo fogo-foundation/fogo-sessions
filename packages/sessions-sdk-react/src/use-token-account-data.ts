@@ -48,6 +48,7 @@ const getTokenAccounts = async (
       ],
     }),
   );
+
   return {
     tokensInWallet: accounts
       .filter(({ amountInWallet }) => amountInWallet !== 0n)

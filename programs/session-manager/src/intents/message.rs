@@ -25,6 +25,7 @@ const KEY_VALUE_SEPARATOR: &str = ": ";
 const LIST_ITEM_PREFIX: &str = "-";
 const TOKEN_PERMISSIONS_SECTION_KEY: &str = "tokens";
 const UNLIMITED_TOKEN_PERMISSIONS_VALUE: &str = "this app may spend any amount of any token";
+const TOKENLESS_PERMISSIONS_VALUE: &str = "this app may not spend any tokens";
 
 fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str) -> Result<String> {
     let (key, value) = lines
@@ -76,6 +77,10 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Tokens> {
         Some(line) if *line == format!("{TOKEN_PERMISSIONS_SECTION_KEY}{KEY_VALUE_SEPARATOR}{UNLIMITED_TOKEN_PERMISSIONS_VALUE}") => {
             lines.next();
             Ok(Tokens::All)
+        }
+        Some(line) if *line == format!("{TOKEN_PERMISSIONS_SECTION_KEY}{KEY_VALUE_SEPARATOR}{TOKENLESS_PERMISSIONS_VALUE}") => {
+            lines.next();
+            Ok(Tokens::Specific(vec![]))
         }
         _ => Ok(Tokens::Specific(vec![])),
     }

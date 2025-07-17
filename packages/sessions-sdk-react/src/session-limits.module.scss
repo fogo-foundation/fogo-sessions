@@ -2,8 +2,43 @@
 
 .sessionLimits {
   display: grid;
-  grid-template-rows: 1fr max-content;
+  grid-template-rows: max-content 1fr max-content;
   gap: theme.spacing(6);
+
+  .applyLimits {
+    @include theme.text("sm", "medium");
+
+    display: flex;
+    position: relative;
+    align-items: center;
+    gap: theme.spacing(2);
+    cursor: pointer;
+
+    .checkbox {
+      width: theme.spacing(4);
+      height: theme.spacing(4);
+      border: 2px solid theme.color("panel", "border");
+      border-radius: theme.border-radius("md");
+      display: grid;
+      place-content: center;
+      flex: none;
+
+      svg {
+        width: theme.spacing(3);
+        height: theme.spacing(3);
+        fill: none;
+        stroke: theme.color("primary", "border", "base");
+        stroke-width: 3px;
+        stroke-dasharray: 22px;
+        stroke-dashoffset: 66;
+        transition: stroke-dashoffset 200ms;
+      }
+    }
+
+    &[data-selected] svg {
+      stroke-dashoffset: 44;
+    }
+  }
 
   .tokenList {
     display: flex;
@@ -19,6 +54,7 @@
       grid-template-columns: repeat(3, max-content);
       gap: theme.spacing(2);
       align-items: center;
+      position: relative;
 
       .name {
         @include theme.text("sm", "semibold");
@@ -30,6 +66,27 @@
         text-overflow: ellipsis;
       }
 
+      .error {
+        @include theme.text("xs", "normal");
+
+        position: absolute;
+        background: white;
+        color: theme.color("error");
+        padding: theme.spacing(0.5) theme.spacing(2);
+        border: 1px solid theme.color("error");
+        right: theme.spacing(16);
+        bottom: theme.spacing(9);
+        display: none;
+
+        .overlayArrow {
+          fill: white;
+          stroke: theme.color("error");
+          position: absolute;
+          bottom: -12px;
+          right: 12px;
+        }
+      }
+
       .input {
         text-align: right;
         padding: theme.spacing(1) theme.spacing(2);
@@ -37,6 +94,10 @@
         border: 1px solid theme.color("panel", "border");
         width: theme.spacing(30);
         text-overflow: ellipsis;
+
+        &[data-focused] ~ .error {
+          display: block;
+        }
       }
 
       .symbol {
@@ -45,6 +106,20 @@
         width: theme.spacing(14);
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+
+      &[data-invalid] .input {
+        border-color: theme.color("error");
+      }
+
+      &[data-disabled] {
+        color: theme.color("primary", "text", "disabled");
+
+        &,
+        .name,
+        .input {
+          cursor: not-allowed;
+        }
       }
     }
   }

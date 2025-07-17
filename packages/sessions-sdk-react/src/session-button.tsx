@@ -284,7 +284,8 @@ const SessionLimitsPanel = ({
       return (
         <SessionLimits
           className={styles.sessionLimits}
-          tokens={tokenWhitelist}
+          tokens={tokenWhitelist.tokens}
+          enableUnlimited={tokenWhitelist.enableUnlimited}
           initialLimits={
             new Map(
               state.data.sessionLimits.map(({ mint, sessionLimit }) => [
