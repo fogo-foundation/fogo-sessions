@@ -22,10 +22,11 @@ pub struct MessageBody {
     pub domain: Domain,
     pub expires: DateTime<Utc>,
     pub session_key: SessionKey,
-    pub tokens: Vec<(SymbolOrMint, Decimal)>,
+    pub tokens: Tokens,
     pub extra: HashMap<String, String>,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Version {
     pub major: u8,
     pub minor: u8,
@@ -54,10 +55,17 @@ impl Version {
 }
 
 #[derive(PartialEq, Debug)]
+pub enum Tokens {
+    Specific(Vec<(SymbolOrMint, Decimal)>),
+    All,
+}
+
+#[derive(PartialEq, Debug)]
 pub enum SymbolOrMint {
     Symbol(String),
     Mint(Pubkey),
 }
+
 
 impl<'info> StartSession<'info> {
     pub fn check_session_key(&self, session_key: SessionKey) -> Result<()> {

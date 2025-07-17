@@ -21,6 +21,8 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
+    use crate::intents::body::Tokens;
+
     use super::*;
 
     #[instruction(discriminator = [0])]
@@ -40,12 +42,22 @@ pub mod session_manager {
         let Version { major, minor } = version;
         ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
-        ctx.accounts.approve_tokens(
-            ctx.remaining_accounts,
-            &tokens,
-            &signer,
-            ctx.bumps.session_setter,
-        )?;
+
+        let authorized_tokens =match tokens {
+            Tokens::Specific(tokens) => {
+                ctx.accounts.approve_tokens(
+                    ctx.remaining_accounts,
+                    &tokens,
+                    &signer,
+                    ctx.bumps.session_setter,
+                )?;
+                AuthorizedTokens::Specific
+            }
+            Tokens::All => {
+                AuthorizedTokens::All
+            }
+        };
+
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
@@ -56,7 +68,7 @@ pub mod session_manager {
                 minor,
                 user: signer,
                 authorized_programs: AuthorizedPrograms::Specific(program_domains),
-                authorized_tokens: AuthorizedTokens::Specific,
+                authorized_tokens,
                 extra: extra.into(),
                 expiration: expires.timestamp(),
             },
