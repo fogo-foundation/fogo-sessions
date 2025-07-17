@@ -2,6 +2,7 @@
 #![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
 
 use crate::intents::body::MessageBody;
+use crate::intents::body::Tokens;
 use crate::intents::body::Version;
 use crate::intents::ed25519::Intent;
 use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
@@ -11,6 +12,7 @@ use fogo_sessions_sdk::session::AuthorizedPrograms;
 use fogo_sessions_sdk::session::AuthorizedTokens;
 use fogo_sessions_sdk::session::Session;
 use fogo_sessions_sdk::session::SessionInfo;
+
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
 pub mod error;
@@ -21,8 +23,6 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
-    use crate::intents::body::Tokens;
-
     use super::*;
 
     #[instruction(discriminator = [0])]

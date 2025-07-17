@@ -170,7 +170,7 @@ mod test {
 
     #[test]
     pub fn test_parse_message_with_unlimited_token_permissions() {
-        let message = indoc!{"
+        let message = indoc! {"
             Fogo Sessions:
             Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
 
