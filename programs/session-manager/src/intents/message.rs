@@ -135,6 +135,7 @@ impl Message {
 #[cfg(test)]
 mod test {
     use super::*;
+    use indoc::indoc;
     use rust_decimal::dec;
 
     #[test]
@@ -169,15 +170,16 @@ mod test {
 
     #[test]
     pub fn test_parse_message_with_unlimited_token_permissions() {
-        let message = "Fogo Sessions:
-Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
+        let message = indoc!{"
+            Fogo Sessions:
+            Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
 
-version: 0.1
-chain_id: localnet
-domain: http://localhost:3000
-expires: 2025-07-17T17:30:15.033Z
-session_key: AnDvGGfeXStwG8pfmp98nodbcdeYGNz8r6fPxjrvJxK5
-tokens: this app may spend any amount of any token";
+            version: 0.1
+            chain_id: localnet
+            domain: http://localhost:3000
+            expires: 2025-07-17T17:30:15.033Z
+            session_key: AnDvGGfeXStwG8pfmp98nodbcdeYGNz8r6fPxjrvJxK5
+            tokens: this app may spend any amount of any token"};
 
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
         assert_eq!(parsed_message.version, Version { major: 0, minor: 1 });
