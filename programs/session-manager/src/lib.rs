@@ -43,7 +43,7 @@ pub mod session_manager {
         ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
 
-        let authorized_tokens =match tokens {
+        let authorized_tokens = match tokens {
             Tokens::Specific(tokens) => {
                 ctx.accounts.approve_tokens(
                     ctx.remaining_accounts,
@@ -53,9 +53,7 @@ pub mod session_manager {
                 )?;
                 AuthorizedTokens::Specific
             }
-            Tokens::All => {
-                AuthorizedTokens::All
-            }
+            Tokens::All => AuthorizedTokens::All,
         };
 
         let program_domains = ctx.accounts.get_domain_programs(domain)?;

@@ -39,55 +39,46 @@ fn parse_line_with_expected_key(lines: &mut Peekable<Lines>, expected_key: &str)
 }
 
 fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Tokens> {
-
-    if lines
-        .peek()
-        .is_some_and(|line| *line == format!("{TOKEN_PERMISSIONS_SECTION_KEY}:"))
-    {
-        let mut tokens = vec![];
-        lines.next();
-        while lines
-            .peek()
-            .is_some_and(|line| line.starts_with(LIST_ITEM_PREFIX))
-        {
-            let line = lines
-                .next()
-                .ok_or(error!(SessionManagerError::ParsingErrorTokenSection))?;
-            let line = line
-                .strip_prefix(LIST_ITEM_PREFIX)
-                .ok_or(error!(SessionManagerError::ParsingErrorTokenSection))?;
-            let (symbol, amount) = line
-                .split_once(KEY_VALUE_SEPARATOR)
-                .ok_or(error!(SessionManagerError::ParsingErrorTokenSection))?;
-
-            let symbol_or_mint = Pubkey::from_str(symbol)
-                .map(SymbolOrMint::Mint)
-                .unwrap_or(SymbolOrMint::Symbol(symbol.to_string()));
-            if tokens.iter().any(|(x, _)| x == &symbol_or_mint) {
-                // No duplicate mints
-                return Err(error!(SessionManagerError::DuplicateToken));
-            } else {
-                tokens.push((
-                    symbol_or_mint,
-                    Decimal::from_str_exact(amount)
-                        .map_err(|_| error!(SessionManagerError::ParsingErrorDecimal))?,
-                ));
-            }
-        }
-        return Ok(Tokens::Specific(tokens));
-    }
-    else if lines
-        .peek()
-        .is_some_and(|line| *line == format!("{TOKEN_PERMISSIONS_SECTION_KEY}{KEY_VALUE_SEPARATOR}{UNLIMITED_TOKEN_PERMISSIONS_VALUE}"))
-        {
+    match lines.peek() {
+        Some(line) if *line == format!("{TOKEN_PERMISSIONS_SECTION_KEY}:") => {
+            let mut tokens = vec![];
             lines.next();
-            return Ok(Tokens::All);
+            while lines
+                .peek()
+                .is_some_and(|line| line.starts_with(LIST_ITEM_PREFIX))
+            {
+                let line = lines
+                    .next()
+                    .ok_or(error!(SessionManagerError::ParsingErrorTokenSection))?;
+                let line = line
+                    .strip_prefix(LIST_ITEM_PREFIX)
+                    .ok_or(error!(SessionManagerError::ParsingErrorTokenSection))?;
+                let (symbol, amount) = line
+                    .split_once(KEY_VALUE_SEPARATOR)
+                    .ok_or(error!(SessionManagerError::ParsingErrorTokenSection))?;
+
+                let symbol_or_mint = Pubkey::from_str(symbol)
+                    .map(SymbolOrMint::Mint)
+                    .unwrap_or(SymbolOrMint::Symbol(symbol.to_string()));
+                if tokens.iter().any(|(x, _)| x == &symbol_or_mint) {
+                    // No duplicate mints
+                    return Err(error!(SessionManagerError::DuplicateToken));
+                } else {
+                    tokens.push((
+                        symbol_or_mint,
+                        Decimal::from_str_exact(amount)
+                            .map_err(|_| error!(SessionManagerError::ParsingErrorDecimal))?,
+                    ));
+                }
+            }
+            Ok(Tokens::Specific(tokens))
         }
-       
-    else {
-        Ok(Tokens::Specific(vec![]))
+        Some(line) if *line == format!("{TOKEN_PERMISSIONS_SECTION_KEY}{KEY_VALUE_SEPARATOR}{UNLIMITED_TOKEN_PERMISSIONS_VALUE}") => {
+            lines.next();
+            Ok(Tokens::All)
+        }
+        _ => Ok(Tokens::Specific(vec![])),
     }
-    
 }
 
 fn parse_extra(lines: &mut Peekable<Lines>) -> Result<HashMap<String, String>> {
@@ -191,9 +182,18 @@ tokens: this app may spend any amount of any token";
         let parsed_message = Message(message.as_bytes().to_vec()).parse().unwrap();
         assert_eq!(parsed_message.version, Version { major: 0, minor: 1 });
         assert_eq!(parsed_message.chain_id, "localnet".to_string());
-        assert_eq!(parsed_message.domain, Domain::new_checked("http://localhost:3000").unwrap());
-        assert_eq!(parsed_message.expires, DateTime::parse_from_rfc3339("2025-07-17T17:30:15.033Z").unwrap());
-        assert_eq!(parsed_message.session_key, SessionKey(Pubkey::from_str("AnDvGGfeXStwG8pfmp98nodbcdeYGNz8r6fPxjrvJxK5").unwrap()));
+        assert_eq!(
+            parsed_message.domain,
+            Domain::new_checked("http://localhost:3000").unwrap()
+        );
+        assert_eq!(
+            parsed_message.expires,
+            DateTime::parse_from_rfc3339("2025-07-17T17:30:15.033Z").unwrap()
+        );
+        assert_eq!(
+            parsed_message.session_key,
+            SessionKey(Pubkey::from_str("AnDvGGfeXStwG8pfmp98nodbcdeYGNz8r6fPxjrvJxK5").unwrap())
+        );
         assert_eq!(parsed_message.tokens, Tokens::All);
         assert_eq!(parsed_message.extra, HashMap::new());
     }

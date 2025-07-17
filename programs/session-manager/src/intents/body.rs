@@ -66,7 +66,6 @@ pub enum SymbolOrMint {
     Mint(Pubkey),
 }
 
-
 impl<'info> StartSession<'info> {
     pub fn check_session_key(&self, session_key: SessionKey) -> Result<()> {
         if self.session.key() != session_key.0 {
