@@ -104,7 +104,7 @@ impl<'info> StartSession<'info> {
             &self.system_program,
             &crate::ID,
             &Rent::get()?,
-            get_instance_packed_len(&session)? as u64,
+            8 + get_instance_packed_len(&session)? as u64,
         )?;
 
         let mut data = self.session.try_borrow_mut_data()?;
