@@ -12,8 +12,8 @@ struct Cli {
     keypair_path: String,
     #[clap(short, long, default_value = "http://127.0.0.1:8899")]
     url: String,
-    #[clap(short, long, default_value = "4000")]
-    port: u16,
+    #[clap(short, long, default_value = "0.0.0.0:4000")]
+    listen_address: String,
 }
 
 #[tokio::main]
@@ -24,7 +24,7 @@ async fn main() {
     api::run_server(Config {
         keypair,
         url: cli.url,
-        port: cli.port,
+        listen_address: cli.listen_address,
     })
     .await
 }

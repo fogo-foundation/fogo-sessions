@@ -18,8 +18,8 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct ServerState {
-    pub url: String,
     pub keypair: Keypair,
+    pub rpc: RpcClient,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -36,8 +36,6 @@ async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<String, ErrorResponse> {
-    let rpc = RpcClient::new(state.url.clone());
-
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
@@ -45,7 +43,8 @@ async fn sponsor_and_send_handler(
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
     transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
 
-    let signature = rpc
+    let signature = state
+        .rpc
         .send_transaction_with_config(
             &transaction,
             RpcSendTransactionConfig {
@@ -78,10 +77,10 @@ pub async fn run_server(config: Config) -> () {
                 )])),
         )
         .with_state(Arc::new(ServerState {
-            url: config.url,
             keypair: config.keypair,
+            rpc: RpcClient::new(config.url),
         }));
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.port))
+    let listener = tokio::net::TcpListener::bind(config.listen_address)
         .await
         .unwrap();
     axum::serve(listener, app).await.unwrap();
