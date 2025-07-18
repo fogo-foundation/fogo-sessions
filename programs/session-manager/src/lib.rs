@@ -66,9 +66,7 @@ pub mod session_manager {
 
     /// This is just to trick anchor into generating the IDL for the Session account since we don't use it in the context for `start_session`
     #[instruction(discriminator = [1])]
-    pub fn _unused<'info>(
-        _ctx: Context<'_, '_, '_, 'info, Unused<'info>>,
-    ) -> Result<()> {
+    pub fn _unused<'info>(_ctx: Context<'_, '_, '_, 'info, Unused<'info>>) -> Result<()> {
         err!(ErrorCode::InstructionDidNotDeserialize)
     }
 }
@@ -95,7 +93,7 @@ pub struct StartSession<'info> {
 
 #[derive(Accounts)]
 pub struct Unused<'info> {
-    pub session: Account<'info, Session>
+    pub session: Account<'info, Session>,
 }
 
 impl<'info> StartSession<'info> {

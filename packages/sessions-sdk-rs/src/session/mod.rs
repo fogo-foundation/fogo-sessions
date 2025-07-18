@@ -1,15 +1,19 @@
-use borsh::{BorshSchema};
-use solana_program::pubkey::Pubkey;
-use std::collections::HashMap;
+use borsh::BorshSchema;
 use solana_program::account_info::AccountInfo;
+use solana_program::pubkey::Pubkey;
 use solana_program::sysvar::clock::Clock;
 use solana_program::sysvar::Sysvar;
+use std::collections::HashMap;
 
 #[cfg(not(feature = "anchor"))]
 use borsh::{BorshDeserialize, BorshSerialize};
 
 #[cfg(feature = "anchor")]
-use anchor_lang::{prelude::{AnchorDeserialize as BorshDeserialize, AnchorSerialize as BorshSerialize}, account, AccountDeserialize, Discriminator, AnchorSerialize, AnchorDeserialize};
+use anchor_lang::{
+    account,
+    prelude::{AnchorDeserialize as BorshDeserialize, AnchorSerialize as BorshSerialize},
+    AccountDeserialize, AnchorDeserialize, AnchorSerialize, Discriminator,
+};
 
 use crate::error::SessionError;
 
@@ -34,7 +38,10 @@ pub fn is_session(info: &AccountInfo) -> bool {
 
 /// The on-chain representation of a session. Sessions are represented on-chain as accounts owned by the session manager program, containing a `Session` structure.
 #[cfg_attr(feature = "anchor", account)]
-#[cfg_attr(not(feature = "anchor"), derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema))]
+#[cfg_attr(
+    not(feature = "anchor"),
+    derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)
+)]
 pub struct Session {
     #[cfg(not(feature = "anchor"))]
     pub discriminator: [u8; 8],
@@ -137,7 +144,7 @@ impl Session {
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
         AccountDeserialize::try_deserialize(data).map_err(|_| SessionError::InvalidAccountData)
     }
-    
+
     #[cfg(not(feature = "anchor"))]
     const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
     #[cfg(not(feature = "anchor"))]
