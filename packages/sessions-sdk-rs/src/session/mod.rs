@@ -1,9 +1,19 @@
-use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
+use borsh::BorshSchema;
 use solana_program::account_info::AccountInfo;
 use solana_program::pubkey::Pubkey;
 use solana_program::sysvar::clock::Clock;
 use solana_program::sysvar::Sysvar;
 use std::collections::HashMap;
+
+#[cfg(not(feature = "anchor"))]
+use borsh::{BorshDeserialize, BorshSerialize};
+
+#[cfg(feature = "anchor")]
+use anchor_lang::{
+    account,
+    prelude::{AnchorDeserialize as BorshDeserialize, AnchorSerialize as BorshSerialize},
+    AccountDeserialize, AnchorDeserialize, AnchorSerialize, Discriminator,
+};
 
 use crate::error::SessionError;
 
@@ -27,8 +37,13 @@ pub fn is_session(info: &AccountInfo) -> bool {
 }
 
 /// The on-chain representation of a session. Sessions are represented on-chain as accounts owned by the session manager program, containing a `Session` structure.
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+#[cfg_attr(feature = "anchor", account)]
+#[cfg_attr(
+    not(feature = "anchor"),
+    derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)
+)]
 pub struct Session {
+    #[cfg(not(feature = "anchor"))]
     pub discriminator: [u8; 8],
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
@@ -108,8 +123,6 @@ impl From<HashMap<String, String>> for Extra {
 }
 
 impl Session {
-    pub const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
-
     /// Extracts the user public key from a signer or a session account. If the account is a session, it extracts the user from the session data and also checks that the session is live and the session is allowed to interact with `program_id` on behalf of the user. Otherwise, it just returns the public key of the signer.
     pub fn extract_user_from_signer_or_session(
         info: &AccountInfo,
@@ -127,6 +140,15 @@ impl Session {
         }
     }
 
+    #[cfg(feature = "anchor")]
+    /// Tries to deserialize a session account. This should only be used after checking that the account is owned by the session manager program.
+    pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
+        AccountDeserialize::try_deserialize(data).map_err(|_| SessionError::InvalidAccountData)
+    }
+
+    #[cfg(not(feature = "anchor"))]
+    const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
+    #[cfg(not(feature = "anchor"))]
     /// Tries to deserialize a session account. This should only be used after checking that the account is owned by the session manager program.
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
         let result = Session::deserialize(data).map_err(|_| SessionError::InvalidAccountData)?;

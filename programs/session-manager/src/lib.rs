@@ -59,7 +59,6 @@ pub mod session_manager {
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
-            discriminator: Session::DISCRIMINATOR,
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
                 major,
@@ -73,6 +72,12 @@ pub mod session_manager {
         };
         ctx.accounts.initialize_and_store_session(&session)?;
         Ok(())
+    }
+
+    /// This is just to trick anchor into generating the IDL for the Session account since we don't use it in the context for `start_session`
+    #[instruction(discriminator = [1])]
+    pub fn _unused<'info>(_ctx: Context<'_, '_, '_, 'info, Unused<'info>>) -> Result<()> {
+        err!(ErrorCode::InstructionDidNotDeserialize)
     }
 }
 
@@ -96,6 +101,11 @@ pub struct StartSession<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[derive(Accounts)]
+pub struct Unused<'info> {
+    pub session: Account<'info, Session>,
+}
+
 impl<'info> StartSession<'info> {
     pub fn initialize_and_store_session(&self, session: &Session) -> Result<()> {
         system_program::initialize_account(
@@ -104,13 +114,13 @@ impl<'info> StartSession<'info> {
             &self.system_program,
             &crate::ID,
             &Rent::get()?,
-            get_instance_packed_len(&session)? as u64,
+            8 + get_instance_packed_len(&session)? as u64,
         )?;
 
         let mut data = self.session.try_borrow_mut_data()?;
         let dst: &mut [u8] = &mut data;
         let mut writer = anchor_lang::__private::BpfWriter::new(dst); // This is the writer that Anchor uses internally
-        session.serialize(&mut writer)?;
+        session.try_serialize(&mut writer)?;
 
         Ok(())
     }
