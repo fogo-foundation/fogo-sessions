@@ -56,7 +56,7 @@ async fn sponsor_and_send_handler(
         .map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to sponsor and send: {}", err),
+                format!("Failed to sponsor and send: {err}"),
             )
         })?;
     Ok(signature.to_string())

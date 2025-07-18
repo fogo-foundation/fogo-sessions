@@ -17,7 +17,7 @@ struct Cli {
 }
 
 #[tokio::main]
-async fn main() -> () {
+async fn main() {
     let cli = Cli::parse();
     let keypair = Keypair::read_from_file(&cli.keypair_path).unwrap();
 
