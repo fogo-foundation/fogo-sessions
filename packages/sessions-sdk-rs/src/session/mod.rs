@@ -141,6 +141,7 @@ impl Session {
     }
 
     #[cfg(feature = "anchor")]
+    /// Tries to deserialize a session account. This should only be used after checking that the account is owned by the session manager program.
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
         AccountDeserialize::try_deserialize(data).map_err(|_| SessionError::InvalidAccountData)
     }
