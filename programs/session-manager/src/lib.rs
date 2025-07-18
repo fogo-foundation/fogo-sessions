@@ -112,7 +112,7 @@ impl<'info> StartSession<'info> {
         let mut data = self.session.try_borrow_mut_data()?;
         let dst: &mut [u8] = &mut data;
         let mut writer = anchor_lang::__private::BpfWriter::new(dst); // This is the writer that Anchor uses internally
-        session.serialize(&mut writer)?;
+        session.try_serialize(&mut writer)?;
 
         Ok(())
     }
