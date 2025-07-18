@@ -64,6 +64,7 @@ pub mod session_manager {
         Ok(())
     }
 
+    /// This is currently just to trick anchor into generating the IDL for the Session account
     #[instruction(discriminator = [1])]
     pub fn _unused<'info>(
         _ctx: Context<'_, '_, '_, 'info, Unused<'info>>,
