@@ -66,7 +66,13 @@ local_resource(
 )
 
 local_resource(
+    "paymaster",
+    serve_cmd="cargo run -p fogo-paymaster",
+    resource_deps=["svm-localnet"],
+)
+
+local_resource(
     "Demo Webapp",
     serve_cmd="pnpm turbo --filter @fogo/sessions-demo... start:dev",
-    resource_deps=["setup-wrapped-sol-faucet", "setup-address-lookup-table", "initialize-programs"],
+    resource_deps=["setup-wrapped-sol-faucet", "setup-address-lookup-table", "initialize-programs", "paymaster"],
 )
