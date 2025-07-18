@@ -37,14 +37,14 @@ async fn sponsor_and_send_handler(
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<String, ErrorResponse> {
     let rpc = RpcClient::new(state.url.clone());
-    let engine = base64::engine::general_purpose::STANDARD;
 
-    let transaction_bytes = engine
+    let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
-        .map_err(|e| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
+        .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
     transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
+
     let signature = rpc
         .send_transaction_with_config(
             &transaction,
