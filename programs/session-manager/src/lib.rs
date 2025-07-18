@@ -21,6 +21,8 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
+    use crate::error::SessionManagerError;
+
     use super::*;
 
     #[instruction(discriminator = [0])]
@@ -49,7 +51,6 @@ pub mod session_manager {
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
-            discriminator: Session::DISCRIMINATOR,
             sponsor: ctx.accounts.sponsor.key(),
             session_info: SessionInfo {
                 major,
@@ -63,6 +64,13 @@ pub mod session_manager {
         };
         ctx.accounts.initialize_and_store_session(&session)?;
         Ok(())
+    }
+
+    #[instruction(discriminator = [1])]
+    pub fn revoke_session<'info>(
+        ctx: Context<'_, '_, '_, 'info, RevokeSession<'info>>,
+    ) -> Result<()> {
+        err!(SessionManagerError::Unimplemented)
     }
 }
 
@@ -84,6 +92,11 @@ pub struct StartSession<'info> {
     pub session_setter: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct RevokeSession<'info> {
+    pub session: Account<'info, Session>
 }
 
 impl<'info> StartSession<'info> {
