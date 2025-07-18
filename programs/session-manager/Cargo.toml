@@ -27,4 +27,4 @@ rust_decimal = "1.37.2"
 
 [dev-dependencies]
 rust_decimal = { version = "1.37.2", features = ["macros"] }
-fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["token-program", "anchor"] }
+fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["token-program"] }
