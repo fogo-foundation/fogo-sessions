@@ -116,9 +116,6 @@ impl From<HashMap<String, String>> for Extra {
 }
 
 impl Session {
-    #[cfg(not(feature = "anchor"))]
-    pub const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
-
     /// Extracts the user public key from a signer or a session account. If the account is a session, it extracts the user from the session data and also checks that the session is live and the session is allowed to interact with `program_id` on behalf of the user. Otherwise, it just returns the public key of the signer.
     pub fn extract_user_from_signer_or_session(
         info: &AccountInfo,
@@ -136,6 +133,13 @@ impl Session {
         }
     }
 
+    #[cfg(feature = "anchor")]
+    pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
+        AccountDeserialize::try_deserialize(data).map_err(|_| SessionError::InvalidAccountData)
+    }
+    
+    #[cfg(not(feature = "anchor"))]
+    pub const DISCRIMINATOR: [u8; 8] = [243, 81, 72, 115, 214, 188, 72, 144];
     #[cfg(not(feature = "anchor"))]
     /// Tries to deserialize a session account. This should only be used after checking that the account is owned by the session manager program.
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
@@ -144,11 +148,6 @@ impl Session {
             return Err(SessionError::InvalidAccountDiscriminator);
         }
         Ok(result)
-    }
-
-    #[cfg(feature = "anchor")]
-    pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
-        AccountDeserialize::try_deserialize(data).map_err(|_| SessionError::InvalidAccountData)
     }
 
     fn check_is_live(&self) -> Result<(), SessionError> {

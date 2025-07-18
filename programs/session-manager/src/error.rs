@@ -52,6 +52,4 @@ pub enum SessionManagerError {
         "The domain record provided is not the domain record of the domain in the signed intent"
     )]
     DomainRecordMismatch,
-    #[msg("Unimplemented")]
-    Unimplemented,
 }

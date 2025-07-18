@@ -21,8 +21,6 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
-    use crate::error::SessionManagerError;
-
     use super::*;
 
     #[instruction(discriminator = [0])]
@@ -67,10 +65,10 @@ pub mod session_manager {
     }
 
     #[instruction(discriminator = [1])]
-    pub fn revoke_session<'info>(
-        ctx: Context<'_, '_, '_, 'info, RevokeSession<'info>>,
+    pub fn _unused<'info>(
+        _ctx: Context<'_, '_, '_, 'info, Unused<'info>>,
     ) -> Result<()> {
-        err!(SessionManagerError::Unimplemented)
+        err!(ErrorCode::InstructionDidNotDeserialize)
     }
 }
 
@@ -95,7 +93,7 @@ pub struct StartSession<'info> {
 }
 
 #[derive(Accounts)]
-pub struct RevokeSession<'info> {
+pub struct Unused<'info> {
     pub session: Account<'info, Session>
 }
 
