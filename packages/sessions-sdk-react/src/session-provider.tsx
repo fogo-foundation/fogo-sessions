@@ -54,6 +54,12 @@ import { getCacheKey } from "./use-token-account-data.js";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
 
+const ONE_SECOND_IN_MS = 1000;
+const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
+const ONE_HOUR_IN_MS = 60 * ONE_MINUTE_IN_MS;
+const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
+const SESSION_DURATION = 14 * ONE_DAY_IN_MS;
+
 type Props = Omit<
   ComponentProps<typeof SessionProvider>,
   "sponsor" | "tokens" | "defaultRequestedLimits"
@@ -239,7 +245,7 @@ const useSessionStateContext = ({
       const setLimits = (limits: Map<PublicKey, bigint>) => {
         setState(SessionState.UpdatingLimits(commonStateArgs));
         replaceSession({
-          expires: new Date(Date.now() + 3600 * 1000),
+          expires: new Date(Date.now() + SESSION_DURATION),
           adapter,
           limits,
           signMessage,
@@ -293,7 +299,7 @@ const useSessionStateContext = ({
           setState(SessionState.SettingLimits());
           try {
             const result = await establishSessionImpl({
-              expires: new Date(Date.now() + 3600 * 1000),
+              expires: new Date(Date.now() + SESSION_DURATION),
               adapter,
               limits: new Map(),
               signMessage,
@@ -320,7 +326,7 @@ const useSessionStateContext = ({
           const setLimits = (limits: Map<PublicKey, bigint>) => {
             setState(SessionState.SettingLimits());
             establishSessionImpl({
-              expires: new Date(Date.now() + 3600 * 1000),
+              expires: new Date(Date.now() + SESSION_DURATION),
               adapter,
               limits,
               signMessage,
