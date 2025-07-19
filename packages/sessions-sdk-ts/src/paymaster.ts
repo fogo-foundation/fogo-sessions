@@ -6,7 +6,6 @@ import {
   getBase64EncodedWireTransaction,
   getTransactionDecoder,
   getBase64Encoder,
-  getSignatureFromTransaction,
 } from "@solana/kit";
 import { Keypair } from "@solana/web3.js";
 import { z } from "zod";
@@ -15,16 +14,18 @@ export const sponsorAndSend = async (
   rpc: Rpc<SolanaRpcApi>,
   sponsor: CryptoKeyPair,
   transaction: Transaction,
-) => {
-  const signedTransaction = await signTransaction([sponsor], transaction);
-  await rpc
-    .sendTransaction(getBase64EncodedWireTransaction(signedTransaction), {
-      encoding: "base64",
-      skipPreflight: true,
-    })
+) =>
+  rpc
+    .sendTransaction(
+      getBase64EncodedWireTransaction(
+        await signTransaction([sponsor], transaction),
+      ),
+      {
+        encoding: "base64",
+        skipPreflight: true,
+      },
+    )
     .send();
-  return getSignatureFromTransaction(signedTransaction);
-};
 
 export const createPaymasterEndpoint = async (options: {
   rpc: string;

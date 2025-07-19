@@ -27,6 +27,7 @@ export const Root = ({ children }: Props) => {
           defaultRequestedLimits={{
             [NATIVE_MINT.toBase58()]: 1_500_000_000n,
           }}
+          enableUnlimited
           domain={FOGO_SESSIONS_DOMAIN}
         >
           <header className="h-16 border-b border-black">

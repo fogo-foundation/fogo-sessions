@@ -22,10 +22,11 @@ pub struct MessageBody {
     pub domain: Domain,
     pub expires: DateTime<Utc>,
     pub session_key: SessionKey,
-    pub tokens: Vec<(SymbolOrMint, Decimal)>,
+    pub tokens: Tokens,
     pub extra: HashMap<String, String>,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Version {
     pub major: u8,
     pub minor: u8,
@@ -51,6 +52,12 @@ impl Version {
         }
         Ok(Self { major, minor })
     }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum Tokens {
+    Specific(Vec<(SymbolOrMint, Decimal)>),
+    All,
 }
 
 #[derive(PartialEq, Debug)]

@@ -57,6 +57,7 @@
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@noble/hashes": "catalog:",
+    "@types/bn.js": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
@@ -74,6 +75,7 @@
     "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/web3.js": "catalog:",
+    "bn.js": "catalog:",
     "bs58": "catalog:",
     "zod": "catalog:"
   }

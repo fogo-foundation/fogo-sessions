@@ -7,6 +7,7 @@ import {
   createSolanaWalletAdapter,
   SessionResultType,
   reestablishSession,
+  AuthorizedTokens,
 } from "@fogo/sessions-sdk";
 import {
   clearStoredSession,
@@ -65,6 +66,7 @@ type Props = Omit<
     | Map<PublicKey, bigint>
     | Record<string, bigint>
     | undefined;
+  enableUnlimited?: boolean | undefined;
 };
 
 export const FogoSessionProvider = ({
@@ -88,7 +90,10 @@ export const FogoSessionProvider = ({
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <TokenWhitelistProvider
-            value={tokens ? deserializePublicKeyList(tokens) : []}
+            value={{
+              enableUnlimited: props.enableUnlimited ?? false,
+              tokens: tokens ? deserializePublicKeyList(tokens) : [],
+            }}
           >
             <SessionProvider
               sponsor={deserializePublicKey(sponsor)}
@@ -110,10 +115,12 @@ export const FogoSessionProvider = ({
 const SessionProvider = ({
   children,
   defaultRequestedLimits,
+  enableUnlimited,
   ...args
 }: Parameters<typeof useSessionStateContext>[0] & {
   children: ReactNode;
   defaultRequestedLimits?: Map<PublicKey, bigint> | undefined;
+  enableUnlimited?: boolean | undefined;
 }) => {
   const { state, onSessionLimitsOpenChange, requestedLimits } =
     useSessionStateContext(args);
@@ -140,6 +147,7 @@ const SessionProvider = ({
                 Limit how many tokens this app is allowed to interact with
               </p>
               <SessionLimits
+                enableUnlimited={enableUnlimited}
                 tokens={args.tokens}
                 onSubmit={
                   state.type === StateType.RequestingLimits
@@ -232,18 +240,20 @@ const useSessionStateContext = ({
           );
           return result;
         },
+        isLimited:
+          session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
         sessionPublicKey: session.sessionPublicKey,
         walletPublicKey: session.walletPublicKey,
         connection: adapter.connection,
       };
-      const setLimits = (limits: Map<PublicKey, bigint>) => {
+      const setLimits = (limits?: Map<PublicKey, bigint>) => {
         setState(SessionState.UpdatingLimits(commonStateArgs));
         replaceSession({
           expires: new Date(Date.now() + 3600 * 1000),
           adapter,
-          limits,
           signMessage,
           session,
+          ...(limits === undefined ? { unlimited: true } : { limits }),
         })
           .then((result) => {
             switch (result.type) {
@@ -317,14 +327,14 @@ const useSessionStateContext = ({
             disconnectWallet();
           }
         } else {
-          const setLimits = (limits: Map<PublicKey, bigint>) => {
+          const setLimits = (limits?: Map<PublicKey, bigint>) => {
             setState(SessionState.SettingLimits());
             establishSessionImpl({
               expires: new Date(Date.now() + 3600 * 1000),
               adapter,
-              limits,
               signMessage,
               walletPublicKey,
+              ...(limits === undefined ? { unlimited: true } : { limits }),
             })
               .then((result) => {
                 switch (result.type) {
@@ -555,7 +565,7 @@ const SessionState = {
   RestoringSession: () => ({ type: StateType.RestoringSession as const }),
 
   RequestingLimits: (
-    onSubmitLimits: (limits: Map<PublicKey, bigint>) => void,
+    onSubmitLimits: (limits?: Map<PublicKey, bigint>) => void,
     error?: unknown,
   ) => ({
     type: StateType.RequestingLimits as const,
@@ -571,7 +581,8 @@ const SessionState = {
       "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
     > & {
       connection: ReturnType<typeof useConnection>["connection"];
-      setLimits: (limits: Map<PublicKey, bigint>) => void;
+      isLimited: boolean;
+      setLimits: (limits?: Map<PublicKey, bigint>) => void;
       endSession: () => void;
     },
     updateLimitsError?: unknown,
@@ -587,6 +598,7 @@ const SessionState = {
       "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
     > & {
       connection: ReturnType<typeof useConnection>["connection"];
+      isLimited: boolean;
       endSession: () => void;
     },
   ) => ({ type: StateType.UpdatingLimits as const, ...options }),
