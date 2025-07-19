@@ -4,8 +4,9 @@ import { ChainIdProgram } from "@fogo/sessions-idls";
 import {
   fromLegacyPublicKey,
   fromLegacyTransactionInstruction,
+  fromVersionedTransaction,
 } from "@solana/compat";
-import type { Transaction } from "@solana/kit";
+import type { Transaction, IInstruction } from "@solana/kit";
 import {
   createTransactionMessage,
   setTransactionMessageFeePayer,
@@ -18,13 +19,15 @@ import {
   addSignersToTransactionMessage,
   compressTransactionMessageUsingAddressLookupTables,
   createSignerFromKeyPair,
+  partiallySignTransaction,
 } from "@solana/kit";
-import type {
-  Connection,
-  TransactionError,
+import type { Connection, TransactionError } from "@solana/web3.js";
+import {
+  PublicKey,
+  Keypair,
   TransactionInstruction,
+  VersionedTransaction,
 } from "@solana/web3.js";
-import { PublicKey, Keypair } from "@solana/web3.js";
 
 // eslint-disable-next-line no-constant-binary-expression, @typescript-eslint/no-unnecessary-condition, valid-typeof
 const IS_BROWSER = typeof globalThis.window !== undefined;
@@ -36,7 +39,10 @@ export type SessionAdapter = {
   domain: string;
   sendTransaction: (
     sessionKey: CryptoKeyPair,
-    instructions: TransactionInstruction[],
+    instructions:
+      | (TransactionInstruction | IInstruction)[]
+      | VersionedTransaction
+      | Transaction,
   ) => Promise<TransactionResult>;
 };
 
@@ -85,49 +91,58 @@ export const createSolanaWalletAdapter = async (
     payer: options.sponsor,
     chainId: await fetchChainId(options.connection),
     domain: getDomain(options.domain),
-    sendTransaction: async (
-      sessionKey: CryptoKeyPair,
-      instructions: TransactionInstruction[],
-    ) => {
+    sendTransaction: async (sessionKey, instructions) => {
       const rpc = createSolanaRpc(options.connection.rpcEndpoint);
       const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
       const sessionKeySigner = await createSignerFromKeyPair(sessionKey);
 
-      const transaction = await partiallySignTransactionMessageWithSigners(
-        pipe(
-          createTransactionMessage({ version: 0 }),
-          (tx) =>
-            setTransactionMessageFeePayer(
-              fromLegacyPublicKey(options.sponsor),
-              tx,
+      const transaction = Array.isArray(instructions)
+        ? await partiallySignTransactionMessageWithSigners(
+            pipe(
+              createTransactionMessage({ version: 0 }),
+              (tx) =>
+                setTransactionMessageFeePayer(
+                  fromLegacyPublicKey(options.sponsor),
+                  tx,
+                ),
+              (tx) =>
+                setTransactionMessageLifetimeUsingBlockhash(
+                  latestBlockhash,
+                  tx,
+                ),
+              (tx) =>
+                appendTransactionMessageInstructions(
+                  instructions.map((instruction) =>
+                    instruction instanceof TransactionInstruction
+                      ? fromLegacyTransactionInstruction(instruction)
+                      : instruction,
+                  ),
+                  tx,
+                ),
+              (tx) =>
+                compressTransactionMessageUsingAddressLookupTables(
+                  tx,
+                  Object.fromEntries(
+                    addressLookupTables?.map(
+                      (table) =>
+                        [
+                          fromLegacyPublicKey(table.key),
+                          table.state.addresses.map((address) =>
+                            fromLegacyPublicKey(address),
+                          ),
+                        ] as const,
+                    ) ?? [],
+                  ),
+                ),
+              (tx) => addSignersToTransactionMessage([sessionKeySigner], tx),
             ),
-          (tx) =>
-            setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-          (tx) =>
-            appendTransactionMessageInstructions(
-              instructions.map((instruction) =>
-                fromLegacyTransactionInstruction(instruction),
-              ),
-              tx,
-            ),
-          (tx) =>
-            compressTransactionMessageUsingAddressLookupTables(
-              tx,
-              Object.fromEntries(
-                addressLookupTables?.map(
-                  (table) =>
-                    [
-                      fromLegacyPublicKey(table.key),
-                      table.state.addresses.map((address) =>
-                        fromLegacyPublicKey(address),
-                      ),
-                    ] as const,
-                ) ?? [],
-              ),
-            ),
-          (tx) => addSignersToTransactionMessage([sessionKeySigner], tx),
-        ),
-      );
+          )
+        : await partiallySignTransaction(
+            [sessionKey],
+            instructions instanceof VersionedTransaction
+              ? fromVersionedTransaction(instructions)
+              : instructions,
+          );
 
       const signature =
         "sendToPaymaster" in options
