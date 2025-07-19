@@ -52,7 +52,6 @@
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
-    "@types/bn.js": "catalog:",
     "@types/react": "catalog:",
     "autoprefixer": "catalog:",
     "pino-pretty": "catalog:",

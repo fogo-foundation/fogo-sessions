@@ -1,6 +1,10 @@
 import type { Wallet } from "@coral-xyz/anchor";
-import { AnchorProvider } from "@coral-xyz/anchor";
-import { DomainRegistryIdl, SessionManagerProgram } from "@fogo/sessions-idls";
+import { AnchorProvider, BorshAccountsCoder } from "@coral-xyz/anchor";
+import {
+  DomainRegistryIdl,
+  SessionManagerProgram,
+  SessionManagerIdl,
+} from "@fogo/sessions-idls";
 import {
   findMetadataPda,
   safeFetchMetadata,
@@ -16,6 +20,8 @@ import {
 } from "@solana/spl-token";
 import type { TransactionInstruction, TransactionError } from "@solana/web3.js";
 import { Ed25519Program, PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
+import { z } from "zod";
 
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
 import { TransactionResultType } from "./adapter.js";
@@ -138,16 +144,102 @@ const createSession = async (
   adapter: SessionAdapter,
   walletPublicKey: PublicKey,
   sessionKey: CryptoKeyPair,
-): Promise<Session> => ({
-  sessionPublicKey: new PublicKey(
+): Promise<Session> => {
+  const sessionPublicKey = new PublicKey(
     await getAddressFromPublicKey(sessionKey.publicKey),
-  ),
-  walletPublicKey,
-  sessionKey,
-  payer: adapter.payer,
-  sendTransaction: (instructions) =>
-    adapter.sendTransaction(sessionKey, instructions),
-});
+  );
+  const result = await adapter.connection.getAccountInfo(sessionPublicKey);
+  if (result) {
+    return {
+      sessionPublicKey,
+      walletPublicKey,
+      sessionKey,
+      payer: adapter.payer,
+      sendTransaction: (instructions) =>
+        adapter.sendTransaction(sessionKey, instructions),
+      sessionInfo: sessionInfoSchema.parse(
+        new BorshAccountsCoder(SessionManagerIdl).decode(
+          "Session",
+          result.data,
+        ),
+      ),
+    };
+  } else {
+    throw new Error("No account found for session!");
+  }
+};
+
+const sessionInfoSchema = z
+  .object({
+    session_info: z.object({
+      authorized_programs: z.union([
+        z.object({
+          Specific: z.object({
+            0: z.array(
+              z.object({
+                program_id: z.instanceof(PublicKey),
+                signer_pda: z.instanceof(PublicKey),
+              }),
+            ),
+          }),
+        }),
+        z.object({
+          All: z.object({}),
+        }),
+      ]),
+      authorized_tokens: z.union([
+        z.object({ Specific: z.object({}) }),
+        z.object({ All: z.object({}) }),
+      ]),
+      expiration: z.instanceof(BN),
+      extra: z.object({
+        0: z.unknown(),
+      }),
+      major: z.number(),
+      minor: z.number(),
+      user: z.instanceof(PublicKey),
+    }),
+  })
+  .transform(({ session_info }) => ({
+    authorizedPrograms:
+      "All" in session_info.authorized_programs
+        ? AuthorizedPrograms.All()
+        : AuthorizedPrograms.Specific(
+            session_info.authorized_programs.Specific[0].map(
+              ({ program_id, signer_pda }) => ({
+                programId: program_id,
+                signerPda: signer_pda,
+              }),
+            ),
+          ),
+    authorizedTokens:
+      "All" in session_info.authorized_tokens
+        ? AuthorizedTokens.All
+        : AuthorizedTokens.Specific,
+    expiration: new Date(Number(session_info.expiration) * 1000),
+    extra: session_info.extra[0],
+    major: session_info.major,
+    minor: session_info.minor,
+    user: session_info.user,
+  }));
+
+export enum AuthorizedProgramsType {
+  All,
+  Specific,
+}
+
+const AuthorizedPrograms = {
+  All: () => ({ type: AuthorizedProgramsType.All as const }),
+  Specific: (programs: { programId: PublicKey; signerPda: PublicKey }[]) => ({
+    type: AuthorizedProgramsType.Specific as const,
+    programs,
+  }),
+};
+
+export enum AuthorizedTokens {
+  All,
+  Specific,
+}
 
 const SymbolOrMintType = {
   Symbol: "Symbol",
@@ -377,4 +469,5 @@ export type Session = {
   sendTransaction: (
     instructions: TransactionInstruction[],
   ) => Promise<TransactionResult>;
+  sessionInfo: z.infer<typeof sessionInfoSchema>;
 };

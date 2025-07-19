@@ -7,6 +7,7 @@ import {
   createSolanaWalletAdapter,
   SessionResultType,
   reestablishSession,
+  AuthorizedTokens,
 } from "@fogo/sessions-sdk";
 import {
   clearStoredSession,
@@ -239,6 +240,8 @@ const useSessionStateContext = ({
           );
           return result;
         },
+        isLimited:
+          session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
         sessionPublicKey: session.sessionPublicKey,
         walletPublicKey: session.walletPublicKey,
         connection: adapter.connection,
@@ -578,6 +581,7 @@ const SessionState = {
       "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
     > & {
       connection: ReturnType<typeof useConnection>["connection"];
+      isLimited: boolean;
       setLimits: (limits?: Map<PublicKey, bigint>) => void;
       endSession: () => void;
     },
@@ -594,6 +598,7 @@ const SessionState = {
       "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
     > & {
       connection: ReturnType<typeof useConnection>["connection"];
+      isLimited: boolean;
       endSession: () => void;
     },
   ) => ({ type: StateType.UpdatingLimits as const, ...options }),
