@@ -8,7 +8,7 @@ import {
 import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { sha256 } from "@noble/hashes/sha2";
-import { generateKeyPair, getAddressFromPublicKey } from "@solana/kit";
+import { getAddressFromPublicKey } from "@solana/kit";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
@@ -46,7 +46,10 @@ type EstablishSessionOptions = {
 export const establishSession = async (
   options: EstablishSessionOptions,
 ): Promise<EstablishSessionResult> => {
-  const sessionKey = await generateKeyPair();
+  const sessionKey = await crypto.subtle.generateKey("Ed25519", true, [
+    "sign",
+    "verify",
+  ]);
 
   const tokenInfo = await getTokenInfo(options);
 
@@ -80,7 +83,7 @@ export const establishSession = async (
 export const replaceSession = async (options: {
   adapter: SessionAdapter;
   session: Session;
-  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  signMessage?: ((message: Uint8Array) => Promise<Uint8Array>) | undefined;
   expires: Date;
   limits: Map<PublicKey, bigint>;
   extra?: string | undefined;
@@ -88,6 +91,15 @@ export const replaceSession = async (options: {
   establishSession({
     ...options,
     walletPublicKey: options.session.walletPublicKey,
+    // TODO the data model here is a bit strange, there are cases where we won't
+    // have a signer function (e.g. restoring sessions from the URL) and we
+    // actually don't need one.  These sessions cannot be updated and so we need
+    // to improve the UX so if you try to update the session with no wallet,
+    // you're prompted to do it on a device with a wallet connected.  We should
+    // also update the data model so we don't have this awkward function here.
+    signMessage: () => {
+      throw new Error("This session cannot sign messages");
+    },
   });
 
 // TODO we really should check to ensure the session is still valid...

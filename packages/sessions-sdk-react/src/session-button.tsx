@@ -1,6 +1,9 @@
 "use client";
 
+import { useMountEffect } from "@react-hookz/web";
 import { PublicKey } from "@solana/web3.js";
+import JSONCrush from "jsoncrush";
+import { QRCodeSVG } from "qrcode.react";
 import { useMemo, useState, useRef, useCallback } from "react";
 import {
   Button,
@@ -138,6 +141,9 @@ export const SessionButton = ({
               <Tab className={styles.tab ?? ""} id="session-limits">
                 Session
               </Tab>
+              <Tab className={styles.tab ?? ""} id="transfer-session">
+                Go Mobile
+              </Tab>
             </TabList>
             <TabPanel className={styles.tabPanel ?? ""} id="tokens">
               {isEstablished(sessionState) && (
@@ -147,6 +153,11 @@ export const SessionButton = ({
             <TabPanel className={styles.tabPanel ?? ""} id="session-limits">
               {isEstablished(sessionState) && (
                 <SessionLimitsPanel sessionState={sessionState} />
+              )}
+            </TabPanel>
+            <TabPanel className={styles.tabPanel ?? ""} id="transfer-session">
+              {isEstablished(sessionState) && (
+                <TransferSessionPanel sessionState={sessionState} />
               )}
             </TabPanel>
           </Tabs>
@@ -312,4 +323,43 @@ const SessionLimitsPanel = ({
       return "Loading...";
     }
   }
+};
+
+const TransferSessionPanel = ({
+  sessionState,
+}: {
+  sessionState: EstablishedSessionState;
+}) => {
+  const [url, setURL] = useState<string | undefined>(undefined);
+  useMountEffect(async () => {
+    const [pubkey, privkey] = await Promise.all([
+      crypto.subtle.exportKey("raw", sessionState.sessionKey.publicKey),
+      crypto.subtle.exportKey("pkcs8", sessionState.sessionKey.privateKey),
+    ]);
+
+    const url = new URL(globalThis.location.origin);
+    url.searchParams.append(
+      "importSession",
+      encodeURIComponent(
+        JSONCrush.crush(
+          JSON.stringify({
+            walletPublicKey: sessionState.walletPublicKey.toBase58(),
+            sessionPublicKey: String.fromCodePoint(...new Uint8Array(pubkey)),
+            sessionPrivateKey: String.fromCodePoint(...new Uint8Array(privkey)),
+          }),
+        ),
+      ),
+    );
+    setURL(url.toString());
+  });
+  return (
+    <>
+      <h1>Go Mobile</h1>
+      <p>
+        To interact with this session from a mobile device, scan the QR code
+        from your mobile device and open the URL in your mobile browser
+      </p>
+      {url && <QRCodeSVG value={url} />}
+    </>
+  );
 };

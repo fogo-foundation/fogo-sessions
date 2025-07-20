@@ -135,11 +135,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1749659512,
-        "narHash": "sha256-EJNLq11oT4XFMFdanzlNd6FeZY3AMEFxpRTLd0MrlSs=",
+        "lastModified": 1753039805,
+        "narHash": "sha256-t8z0/nNLSetCTfYCqACZhQHV2h+t2DEFqK9KDz0AR90=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "33bb85fc64a8d932ec6e361b854bac5182ef220b",
+        "rev": "2a88d3bb4b9826afe856de4bc4a5da9848af35c0",
         "type": "github"
       },
       "original": {
@@ -200,15 +200,15 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1746291096,
-        "narHash": "sha256-cBEBBsI9ukMwJ1TCri/MgeQ2C4Gjkf1mGWWTxBcwUX8=",
-        "owner": "arijoon",
+        "lastModified": 1753039485,
+        "narHash": "sha256-78Pr4BggRE9yP77ZryAxbMvj3bqMbaY89tUgVyQ8aWc=",
+        "owner": "cprussin",
         "repo": "solana-nix",
-        "rev": "87bea8cac979d14c758c24d2b9178c44a6e95b39",
+        "rev": "a35895af09aadea7678bdefa18e54f53ca0e2899",
         "type": "github"
       },
       "original": {
-        "owner": "arijoon",
+        "owner": "cprussin",
         "repo": "solana-nix",
         "type": "github"
       }

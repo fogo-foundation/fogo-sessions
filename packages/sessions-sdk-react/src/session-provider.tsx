@@ -13,6 +13,7 @@ import {
   getStoredSession,
   setStoredSession,
 } from "@fogo/sessions-sdk-web";
+import { useMountEffect } from "@react-hookz/web";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -29,6 +30,7 @@ import {
   TorusWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { PublicKey, TransactionInstruction } from "@solana/web3.js";
+import JSONCrush from "jsoncrush";
 import type { ComponentProps, ReactNode } from "react";
 import {
   createContext,
@@ -41,6 +43,7 @@ import {
 } from "react";
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { mutate } from "swr";
+import { z } from "zod";
 
 import {
   deserializePublicKey,
@@ -207,7 +210,7 @@ const useSessionStateContext = ({
     (
       adapter: SessionAdapter,
       session: Session,
-      signMessage: (message: Uint8Array) => Promise<Uint8Array>,
+      signMessage?: (message: Uint8Array) => Promise<Uint8Array>,
     ) => {
       setStoredSession({
         sessionKey: session.sessionKey,
@@ -232,6 +235,7 @@ const useSessionStateContext = ({
           );
           return result;
         },
+        sessionKey: session.sessionKey,
         sessionPublicKey: session.sessionPublicKey,
         walletPublicKey: session.walletPublicKey,
         connection: adapter.connection,
@@ -401,6 +405,22 @@ const useSessionStateContext = ({
     );
   }, [wallet, establishSession]);
 
+  useMountEffect(() => {
+    reestablishSessionFromUrl(getAdapter)
+      .then((data) => {
+        if (data) {
+          setSessionState(data.adapter, data.session);
+        }
+      })
+      .catch((error: unknown) => {
+        // eslint-disable-next-line no-console
+        console.error(
+          "An error occurred while loading the session from the URL param",
+          error,
+        );
+      });
+  });
+
   return useMemo(
     () => ({
       state,
@@ -410,6 +430,53 @@ const useSessionStateContext = ({
     [state, onSessionLimitsOpenChange],
   );
 };
+
+const reestablishSessionFromUrl = async (
+  getAdapter: () => Promise<SessionAdapter>,
+) => {
+  const search = new URLSearchParams(globalThis.location.search);
+  const sessionToImport = search.get("importSession");
+  if (sessionToImport === null) {
+    return;
+  } else {
+    const { walletPublicKey, sessionPublicKey, sessionPrivateKey } =
+      importSessionSchema.parse(
+        JSON.parse(JSONCrush.uncrush(decodeURIComponent(sessionToImport))),
+      );
+    const pubKeyBytes = Uint8Array.from(
+      // eslint-disable-next-line @typescript-eslint/no-misused-spread
+      [...sessionPublicKey].map((ch) => ch.codePointAt(0)),
+    ).buffer;
+    const privKeyBytes = Uint8Array.from(
+      // eslint-disable-next-line @typescript-eslint/no-misused-spread
+      [...sessionPrivateKey].map((ch) => ch.codePointAt(0)),
+    ).buffer;
+    const [adapter, privateKey, publicKey] = await Promise.all([
+      getAdapter(),
+      crypto.subtle.importKey("pkcs8", privKeyBytes, "Ed25519", true, ["sign"]),
+      crypto.subtle.importKey("raw", pubKeyBytes, "Ed25519", true, ["verify"]),
+    ]);
+    const session = await reestablishSession(
+      adapter,
+      new PublicKey(walletPublicKey),
+      { publicKey, privateKey },
+    );
+    search.delete("importSession");
+    const url = new URL(
+      globalThis.location.pathname,
+      globalThis.location.origin,
+    );
+    url.searchParams.delete("importSession");
+    globalThis.history.replaceState(undefined, "", url.toString());
+    return { adapter, session };
+  }
+};
+
+const importSessionSchema = z.strictObject({
+  walletPublicKey: z.string(),
+  sessionPublicKey: z.string(),
+  sessionPrivateKey: z.string(),
+});
 
 const useSessionAdapter = (options: {
   paymasterUrl: string;
@@ -568,7 +635,11 @@ const SessionState = {
   Established: (
     options: Pick<
       Session,
-      "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
+      | "walletPublicKey"
+      | "sessionPublicKey"
+      | "sendTransaction"
+      | "payer"
+      | "sessionKey"
     > & {
       connection: ReturnType<typeof useConnection>["connection"];
       setLimits: (limits: Map<PublicKey, bigint>) => void;
@@ -584,7 +655,11 @@ const SessionState = {
   UpdatingLimits: (
     options: Pick<
       Session,
-      "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
+      | "walletPublicKey"
+      | "sessionPublicKey"
+      | "sendTransaction"
+      | "payer"
+      | "sessionKey"
     > & {
       connection: ReturnType<typeof useConnection>["connection"];
       endSession: () => void;
