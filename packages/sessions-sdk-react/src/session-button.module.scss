@@ -165,6 +165,7 @@
           padding: theme.spacing(1) theme.spacing(4);
           position: relative;
           margin-right: -#{theme.spacing(4)};
+          color: theme.color("panel", "text");
 
           &[data-hovered] {
             text-decoration: underline;
