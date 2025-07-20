@@ -14,7 +14,7 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import type { TransactionInstruction, TransactionError } from "@solana/web3.js";
+import type { TransactionError } from "@solana/web3.js";
 import { Ed25519Program, PublicKey } from "@solana/web3.js";
 
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
@@ -323,6 +323,6 @@ export type Session = {
   walletPublicKey: PublicKey;
   payer: PublicKey;
   sendTransaction: (
-    instructions: TransactionInstruction[],
+    instructions: Parameters<SessionAdapter["sendTransaction"]>[1],
   ) => Promise<TransactionResult>;
 };

@@ -28,7 +28,7 @@ import {
   LedgerWalletAdapter,
   TorusWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { PublicKey, TransactionInstruction } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import type { ComponentProps, ReactNode } from "react";
 import {
   createContext,
@@ -223,25 +223,26 @@ const useSessionStateContext = ({
         console.error("Failed to store session", error);
         disconnectWallet();
       });
-      const commonStateArgs = {
-        endSession: () => {
-          endSession(session.walletPublicKey);
-        },
-        payer: session.payer,
-        sendTransaction: async (instructions: TransactionInstruction[]) => {
-          const result = await session.sendTransaction(instructions);
-          mutate(getCacheKey(session.walletPublicKey)).catch(
-            (error: unknown) => {
-              // eslint-disable-next-line no-console
-              console.error("Failed to update token account data", error);
-            },
-          );
-          return result;
-        },
-        sessionPublicKey: session.sessionPublicKey,
-        walletPublicKey: session.walletPublicKey,
-        connection: adapter.connection,
-      };
+      const commonStateArgs: Parameters<typeof SessionState.UpdatingLimits>[0] =
+        {
+          endSession: () => {
+            endSession(session.walletPublicKey);
+          },
+          payer: session.payer,
+          sendTransaction: async (instructions) => {
+            const result = await session.sendTransaction(instructions);
+            mutate(getCacheKey(session.walletPublicKey)).catch(
+              (error: unknown) => {
+                // eslint-disable-next-line no-console
+                console.error("Failed to update token account data", error);
+              },
+            );
+            return result;
+          },
+          sessionPublicKey: session.sessionPublicKey,
+          walletPublicKey: session.walletPublicKey,
+          connection: adapter.connection,
+        };
       const setLimits = (limits: Map<PublicKey, bigint>) => {
         setState(SessionState.UpdatingLimits(commonStateArgs));
         replaceSession({
