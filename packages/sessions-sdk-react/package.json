@@ -64,7 +64,9 @@
     "@solana/web3.js": "catalog:",
     "clsx": "catalog:",
     "idb": "catalog:",
+    "jsoncrush": "catalog:",
     "modern-normalize": "catalog:",
+    "qrcode.react": "catalog:",
     "react-aria-components": "catalog:",
     "swr": "catalog:",
     "zod": "catalog:"

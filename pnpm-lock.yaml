@@ -132,6 +132,9 @@ catalogs:
     jest:
       specifier: ^29.7.0
       version: 29.7.0
+    jsoncrush:
+      specifier: ^1.1.8
+      version: 1.1.8
     lucide-react:
       specifier: ^0.473.0
       version: 0.473.0
@@ -156,6 +159,9 @@ catalogs:
     puppeteer:
       specifier: ^24.10.1
       version: 24.10.1
+    qrcode.react:
+      specifier: ^4.2.0
+      version: 4.2.0
     react:
       specifier: ^19.0.0
       version: 19.1.0
@@ -536,9 +542,15 @@ importers:
       idb:
         specifier: 'catalog:'
         version: 8.0.3
+      jsoncrush:
+        specifier: 'catalog:'
+        version: 1.1.8
       modern-normalize:
         specifier: 'catalog:'
         version: 3.0.1
+      qrcode.react:
+        specifier: 'catalog:'
+        version: 4.2.0(react@19.1.0)
       react-aria-components:
         specifier: 'catalog:'
         version: 1.10.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -7438,6 +7450,9 @@ packages:
     resolution: {integrity: sha512-WYDyuc/uFcGp6YtM2H0uKmUwieOuzeE/5YocFJLnLfclZ4inf3mRn8ZVy1s7Hxji7Jxm6Ss8gqpexD/GlKoGgg==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
+  jsoncrush@1.1.8:
+    resolution: {integrity: sha512-lvIMGzMUA0fjuqwNcxlTNRq2bibPZ9auqT/LyGdlR5hvydJtA/BasSgkx4qclqTKVeTidrJvsS/oVjlTCPQ4Nw==}
+
   jsonify@0.0.1:
     resolution: {integrity: sha512-2/Ki0GcmuqSrgFyelQq9M05y7PS0mEwuIzrf3f1fPqkVDVRvZrPZtVSMHxdgo8Aq0sxAOb/cr2aqqA3LeWHVPg==}
 
@@ -8398,6 +8413,11 @@ packages:
     resolution: {integrity: sha512-8d3Tackk8IRLXTo67Y+c1rpaiXjoz/Dd2HpcMdW//62/x8J1Nbho14Kh8x974t9prsLHN6XqVgcnRiBGFptQmg==}
     peerDependencies:
       react: ^15.5.3 || ^16.0.0 || ^17.0.0
+
+  qrcode.react@4.2.0:
+    resolution: {integrity: sha512-QpgqWi8rD9DsS9EP3z7BT+5lY5SFhsqGjpgW5DY/i3mK4M9DTBNz3ErMi8BWYEfI3L0d8GIbGmcdFAS1uIRGjA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   qrcode@1.5.3:
     resolution: {integrity: sha512-puyri6ApkEHYiVl4CFzo1tDkAZ+ATcnbJrJ6RiBM1Fhctdn/ix9MTE3hRph33omisEbC/2fcfemsseiKgBPKZg==}
@@ -19423,6 +19443,8 @@ snapshots:
       espree: 9.6.1
       semver: 7.7.2
 
+  jsoncrush@1.1.8: {}
+
   jsonify@0.0.1: {}
 
   jsqr@1.4.0: {}
@@ -20485,6 +20507,10 @@ snapshots:
       loose-envify: 1.4.0
       prop-types: 15.8.1
       qr.js: 0.0.0
+      react: 19.1.0
+
+  qrcode.react@4.2.0(react@19.1.0):
+    dependencies:
       react: 19.1.0
 
   qrcode@1.5.3:
