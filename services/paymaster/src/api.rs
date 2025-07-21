@@ -55,10 +55,7 @@ pub fn validate_transaction(
             if !program_whitelist.contains(program_id) {
                 return Err((
                     StatusCode::BAD_REQUEST,
-                    format!(
-                        "Transaction contains unauthorized program ID: {}",
-                        program_id
-                    ),
+                    format!("Transaction contains unauthorized program ID: {program_id}"),
                 )
                     .into());
             }
