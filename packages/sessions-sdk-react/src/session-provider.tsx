@@ -324,14 +324,14 @@ const useSessionStateContext = ({
               case SessionResultType.Failed: {
                 // eslint-disable-next-line no-console
                 console.error("Connection failed", result.error);
-                disconnectWallet();
+                endSession(walletPublicKey);
                 return;
               }
             }
           } catch (error: unknown) {
             // eslint-disable-next-line no-console
             console.error("Failed to establish session", error);
-            disconnectWallet();
+            endSession(walletPublicKey);
           }
         } else {
           const setLimits = (limits?: Map<PublicKey, bigint>) => {
@@ -372,13 +372,13 @@ const useSessionStateContext = ({
           storedSession.sessionKey,
         );
         if (session === undefined) {
-          disconnectWallet();
+          endSession(walletPublicKey);
         } else {
           setSessionState(adapter, session, signMessage);
         }
       }
     },
-    [getAdapter, setSessionState, disconnectWallet, tokens],
+    [getAdapter, setSessionState, endSession, tokens],
   );
 
   const onSessionLimitsOpenChange = useCallback(
@@ -491,7 +491,6 @@ const getNextState = (
         case StateType.NotEstablished:
         case StateType.WalletConnecting:
         case StateType.SelectingWallet:
-        case StateType.Established:
         case StateType.RestoringSession:
         case StateType.RequestingLimits:
         case StateType.UpdatingLimits: {
@@ -499,6 +498,14 @@ const getNextState = (
             wallet.publicKey,
             wallet.signMessage,
           );
+        }
+        case StateType.Established: {
+          return state.walletPublicKey.equals(wallet.publicKey)
+            ? undefined
+            : SessionState.CheckingStoredSession(
+                wallet.publicKey,
+                wallet.signMessage,
+              );
         }
         case StateType.SettingLimits:
         case StateType.CheckingStoredSession: {
