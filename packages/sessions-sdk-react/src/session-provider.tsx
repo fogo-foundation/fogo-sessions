@@ -253,7 +253,7 @@ const useSessionStateContext = ({
           walletPublicKey: session.walletPublicKey,
           connection: adapter.connection,
         };
-      const setLimits = (limits?: Map<PublicKey, bigint> | undefined) => {
+      const setLimits = (limits?: Map<PublicKey, bigint>) => {
         setState(SessionState.UpdatingLimits(commonStateArgs));
         replaceSession({
           expires: new Date(Date.now() + SESSION_DURATION),
@@ -371,7 +371,11 @@ const useSessionStateContext = ({
           storedSession.walletPublicKey,
           storedSession.sessionKey,
         );
-        setSessionState(adapter, session, signMessage);
+        if (session === undefined) {
+          disconnectWallet();
+        } else {
+          setSessionState(adapter, session, signMessage);
+        }
       }
     },
     [getAdapter, setSessionState, disconnectWallet, tokens],

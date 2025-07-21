@@ -18,7 +18,11 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import type { TransactionError, TransactionInstruction } from "@solana/web3.js";
+import type {
+  TransactionError,
+  TransactionInstruction,
+  Connection,
+} from "@solana/web3.js";
 import { Ed25519Program, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { z } from "zod";
@@ -101,14 +105,17 @@ const sendSessionEstablishTransaction = async (
 
   switch (result.type) {
     case TransactionResultType.Success: {
-      return EstablishSessionResult.Success(
-        result.signature,
-        await createSession(
-          options.adapter,
-          options.walletPublicKey,
-          sessionKey,
-        ),
+      const session = await createSession(
+        options.adapter,
+        options.walletPublicKey,
+        sessionKey,
       );
+      return session
+        ? EstablishSessionResult.Success(result.signature, session)
+        : EstablishSessionResult.Failed(
+            result.signature,
+            new Error("Transaction succeeded, but the session was not created"),
+          );
     }
     case TransactionResultType.Failed: {
       return EstablishSessionResult.Failed(result.signature, result.error);
@@ -133,40 +140,51 @@ export const replaceSession = async (
     walletPublicKey: options.session.walletPublicKey,
   });
 
-// TODO we really should check to ensure the session is still valid...
 export const reestablishSession = async (
   adapter: SessionAdapter,
   walletPublicKey: PublicKey,
   sessionKey: CryptoKeyPair,
-): Promise<Session> => createSession(adapter, walletPublicKey, sessionKey);
+): Promise<Session | undefined> =>
+  createSession(adapter, walletPublicKey, sessionKey);
+
+export const getSessionAccount = async (
+  connection: Connection,
+  sessionPublicKey: PublicKey,
+) => {
+  const result = await connection.getAccountInfo(sessionPublicKey);
+  return result === null
+    ? undefined
+    : sessionInfoSchema.parse(
+        new BorshAccountsCoder(SessionManagerIdl).decode(
+          "Session",
+          result.data,
+        ),
+      );
+};
 
 const createSession = async (
   adapter: SessionAdapter,
   walletPublicKey: PublicKey,
   sessionKey: CryptoKeyPair,
-): Promise<Session> => {
+): Promise<Session | undefined> => {
   const sessionPublicKey = new PublicKey(
     await getAddressFromPublicKey(sessionKey.publicKey),
   );
-  const result = await adapter.connection.getAccountInfo(sessionPublicKey);
-  if (result) {
-    return {
-      sessionPublicKey,
-      walletPublicKey,
-      sessionKey,
-      payer: adapter.payer,
-      sendTransaction: (instructions) =>
-        adapter.sendTransaction(sessionKey, instructions),
-      sessionInfo: sessionInfoSchema.parse(
-        new BorshAccountsCoder(SessionManagerIdl).decode(
-          "Session",
-          result.data,
-        ),
-      ),
-    };
-  } else {
-    throw new Error("No account found for session!");
-  }
+  const sessionInfo = await getSessionAccount(
+    adapter.connection,
+    sessionPublicKey,
+  );
+  return sessionInfo === undefined
+    ? undefined
+    : {
+        sessionPublicKey,
+        walletPublicKey,
+        sessionKey,
+        payer: adapter.payer,
+        sendTransaction: (instructions) =>
+          adapter.sendTransaction(sessionKey, instructions),
+        sessionInfo,
+      };
 };
 
 const sessionInfoSchema = z

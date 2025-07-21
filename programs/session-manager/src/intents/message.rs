@@ -82,7 +82,7 @@ fn parse_token_permissions(lines: &mut Peekable<Lines>) -> Result<Tokens> {
             lines.next();
             Ok(Tokens::Specific(vec![]))
         }
-        _ => Ok(Tokens::Specific(vec![])),
+        _ => Err(error!(SessionManagerError::ParsingErrorTokenSection)),
     }
 }
 

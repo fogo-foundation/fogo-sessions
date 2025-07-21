@@ -27,7 +27,7 @@ export const SessionLimits = <Token extends PublicKey>({
   error,
   className,
   enableUnlimited,
-  isInitialLimited,
+  isSessionUnlimited,
 }: {
   tokens: Token[];
   initialLimits: Map<Token, bigint>;
@@ -36,11 +36,11 @@ export const SessionLimits = <Token extends PublicKey>({
   error?: unknown;
   className?: string | undefined;
 } & (
-  | { enableUnlimited?: false | undefined; isInitialLimited?: undefined }
-  | { enableUnlimited: true; isInitialLimited?: boolean }
+  | { enableUnlimited?: false | undefined; isSessionUnlimited?: undefined }
+  | { enableUnlimited: true; isSessionUnlimited?: boolean }
 )) => {
   const [applyLimits, setApplyLimits] = useState(
-    isInitialLimited ?? !enableUnlimited,
+    !(isSessionUnlimited ?? enableUnlimited),
   );
   const doSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {

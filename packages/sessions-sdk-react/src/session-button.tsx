@@ -306,7 +306,7 @@ const SessionLimitsPanel = ({
           }
           {...(tokenWhitelist.enableUnlimited && {
             enableUnlimited: true,
-            isInitialLimited: sessionState.isLimited,
+            isSessionUnlimited: !sessionState.isLimited,
           })}
         />
       );
