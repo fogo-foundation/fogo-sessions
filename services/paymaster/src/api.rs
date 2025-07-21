@@ -15,7 +15,6 @@ use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_signer::{EncodableKey, Signer};
 use solana_transaction::versioned::VersionedTransaction;
-use std::str::FromStr;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -31,11 +30,15 @@ pub struct SponsorAndSendPayload {
     pub transaction: String,
 }
 
-pub fn validate_transaction(transaction: &VersionedTransaction, program_whitelist: &[Pubkey]) -> Result<(), ErrorResponse> {
-    transaction.message.instructions().into_iter().map(|instruction| {
+pub fn validate_transaction(transaction: &VersionedTransaction, program_whitelist: &[Pubkey], sponsor : &Pubkey) -> Result<(), ErrorResponse> {
+    if transaction.message.static_account_keys()[0] != *sponsor {
+        return Err((StatusCode::BAD_REQUEST, format!("Transaction fee payer is not the sponsor: {}", transaction.message.static_account_keys()[0])).into());
+    }
+
+    transaction.message.instructions().iter().map(|instruction| {
         let program_id = instruction.program_id(transaction.message.static_account_keys());
         if !program_whitelist.contains(program_id) {
-            return Err((StatusCode::BAD_REQUEST, format!("Transaction contains unauthorized program ID: {}", program_id.to_string())).into());
+            return Err((StatusCode::BAD_REQUEST, format!("Transaction contains unauthorized program ID: {}", program_id)).into());
         }
         Ok(())
     }).collect::<Result<(), ErrorResponse>>()?;
