@@ -34,7 +34,7 @@ pub fn validate_transaction(
     transaction: &VersionedTransaction,
     program_whitelist: &[Pubkey],
     sponsor: &Pubkey,
-) -> Result<(), ErrorResponse> {
+) -> Result<(), (StatusCode, String)> {
     if transaction.message.static_account_keys()[0] != *sponsor {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -43,7 +43,7 @@ pub fn validate_transaction(
                 transaction.message.static_account_keys()[0]
             ),
         )
-            .into());
+    );
     }
 
     transaction
@@ -57,11 +57,11 @@ pub fn validate_transaction(
                     StatusCode::BAD_REQUEST,
                     format!("Transaction contains unauthorized program ID: {program_id}"),
                 )
-                    .into());
+                   );
             }
             Ok(())
         })
-        .collect::<Result<(), ErrorResponse>>()?;
+        .collect::<Result<(), (StatusCode, String)>>()?;
     Ok(())
 }
 
