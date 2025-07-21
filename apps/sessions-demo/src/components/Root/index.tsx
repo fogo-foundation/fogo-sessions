@@ -7,6 +7,7 @@ import {
   SOLANA_RPC,
   ADDRESS_LOOKUP_TABLE_ADDRESS,
   FOGO_SESSIONS_DOMAIN,
+  PAYMASTER_URL,
 } from "@/config/server";
 
 type Props = {
@@ -21,7 +22,7 @@ export const Root = ({ children }: Props) => {
           endpoint={SOLANA_RPC}
           addressLookupTableAddress={ADDRESS_LOOKUP_TABLE_ADDRESS}
           sponsor={SPONSOR_KEY.publicKey.toBase58()}
-          paymasterUrl="/api/sponsor_and_send"
+          paymasterUrl={PAYMASTER_URL ?? "/api/sponsor_and_send"}
           tokens={[NATIVE_MINT.toBase58()]}
           defaultRequestedLimits={{
             [NATIVE_MINT.toBase58()]: 1_500_000_000n,

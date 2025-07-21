@@ -21,6 +21,10 @@ export const ADDRESS_LOOKUP_TABLE_ADDRESS = IS_DEV_MACHINE
   ? "93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3"
   : process.env.ADDRESS_LOOKUP_TABLE_ADDRESS;
 
+export const PAYMASTER_URL = IS_DEV_MACHINE
+  ? "http://localhost:4000/api/sponsor_and_send"
+  : process.env.PAYMASTER_URL;
+
 export const SOLANA_RPC = defaultInDevelopment(
   "SOLANA_RPC",
   "http://127.0.0.1:8899",

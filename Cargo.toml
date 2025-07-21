@@ -1,5 +1,5 @@
 [workspace]
-members = ["programs/*", "packages/sessions-sdk-rs"]
+members = ["programs/*", "packages/sessions-sdk-rs", "services/*"]
 resolver = "2"
 
 [workspace.package]
@@ -18,3 +18,7 @@ codegen-units = 1
 [workspace.dependencies]
 anchor-lang = "0.31.1"
 anchor-spl = "0.31.1"
+solana-client = "2.2.1"
+solana-keypair = "2.2.1"
+solana-signer = "2.2.1"
+solana-transaction = "2.2.1"

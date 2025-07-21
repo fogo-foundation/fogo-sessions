@@ -29,7 +29,7 @@ import {
   LedgerWalletAdapter,
   TorusWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { PublicKey, TransactionInstruction } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import type { ComponentProps, ReactNode } from "react";
 import {
   createContext,
@@ -54,6 +54,12 @@ import { TokenWhitelistProvider } from "./token-whitelist-provider.js";
 import { getCacheKey } from "./use-token-account-data.js";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
+
+const ONE_SECOND_IN_MS = 1000;
+const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
+const ONE_HOUR_IN_MS = 60 * ONE_MINUTE_IN_MS;
+const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
+const SESSION_DURATION = 14 * ONE_DAY_IN_MS;
 
 type Props = Omit<
   ComponentProps<typeof SessionProvider>,
@@ -225,31 +231,32 @@ const useSessionStateContext = ({
         console.error("Failed to store session", error);
         disconnectWallet();
       });
-      const commonStateArgs = {
-        endSession: () => {
-          endSession(session.walletPublicKey);
-        },
-        payer: session.payer,
-        sendTransaction: async (instructions: TransactionInstruction[]) => {
-          const result = await session.sendTransaction(instructions);
-          mutate(getCacheKey(session.walletPublicKey)).catch(
-            (error: unknown) => {
-              // eslint-disable-next-line no-console
-              console.error("Failed to update token account data", error);
-            },
-          );
-          return result;
-        },
-        isLimited:
-          session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
-        sessionPublicKey: session.sessionPublicKey,
-        walletPublicKey: session.walletPublicKey,
-        connection: adapter.connection,
-      };
-      const setLimits = (limits?: Map<PublicKey, bigint>) => {
+      const commonStateArgs: Parameters<typeof SessionState.UpdatingLimits>[0] =
+        {
+          endSession: () => {
+            endSession(session.walletPublicKey);
+          },
+          payer: session.payer,
+          sendTransaction: async (instructions) => {
+            const result = await session.sendTransaction(instructions);
+            mutate(getCacheKey(session.walletPublicKey)).catch(
+              (error: unknown) => {
+                // eslint-disable-next-line no-console
+                console.error("Failed to update token account data", error);
+              },
+            );
+            return result;
+          },
+          sessionPublicKey: session.sessionPublicKey,
+          isLimited:
+            session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
+          walletPublicKey: session.walletPublicKey,
+          connection: adapter.connection,
+        };
+      const setLimits = (limits?: Map<PublicKey, bigint> | undefined) => {
         setState(SessionState.UpdatingLimits(commonStateArgs));
         replaceSession({
-          expires: new Date(Date.now() + 3600 * 1000),
+          expires: new Date(Date.now() + SESSION_DURATION),
           adapter,
           signMessage,
           session,
@@ -303,7 +310,7 @@ const useSessionStateContext = ({
           setState(SessionState.SettingLimits());
           try {
             const result = await establishSessionImpl({
-              expires: new Date(Date.now() + 3600 * 1000),
+              expires: new Date(Date.now() + SESSION_DURATION),
               adapter,
               limits: new Map(),
               signMessage,
@@ -330,7 +337,7 @@ const useSessionStateContext = ({
           const setLimits = (limits?: Map<PublicKey, bigint>) => {
             setState(SessionState.SettingLimits());
             establishSessionImpl({
-              expires: new Date(Date.now() + 3600 * 1000),
+              expires: new Date(Date.now() + SESSION_DURATION),
               adapter,
               signMessage,
               walletPublicKey,
