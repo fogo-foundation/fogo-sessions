@@ -1,8 +1,6 @@
-
-
 use anyhow::Result;
-use serde::{Deserialize, Deserializer};
 use config::File;
+use serde::{Deserialize, Deserializer};
 use solana_pubkey::Pubkey;
 use std::str::FromStr;
 

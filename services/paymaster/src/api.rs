@@ -30,18 +30,41 @@ pub struct SponsorAndSendPayload {
     pub transaction: String,
 }
 
-pub fn validate_transaction(transaction: &VersionedTransaction, program_whitelist: &[Pubkey], sponsor : &Pubkey) -> Result<(), ErrorResponse> {
+pub fn validate_transaction(
+    transaction: &VersionedTransaction,
+    program_whitelist: &[Pubkey],
+    sponsor: &Pubkey,
+) -> Result<(), ErrorResponse> {
     if transaction.message.static_account_keys()[0] != *sponsor {
-        return Err((StatusCode::BAD_REQUEST, format!("Transaction fee payer is not the sponsor: {}", transaction.message.static_account_keys()[0])).into());
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Transaction fee payer is not the sponsor: {}",
+                transaction.message.static_account_keys()[0]
+            ),
+        )
+            .into());
     }
 
-    transaction.message.instructions().iter().map(|instruction| {
-        let program_id = instruction.program_id(transaction.message.static_account_keys());
-        if !program_whitelist.contains(program_id) {
-            return Err((StatusCode::BAD_REQUEST, format!("Transaction contains unauthorized program ID: {}", program_id)).into());
-        }
-        Ok(())
-    }).collect::<Result<(), ErrorResponse>>()?;
+    transaction
+        .message
+        .instructions()
+        .iter()
+        .map(|instruction| {
+            let program_id = instruction.program_id(transaction.message.static_account_keys());
+            if !program_whitelist.contains(program_id) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Transaction contains unauthorized program ID: {}",
+                        program_id
+                    ),
+                )
+                    .into());
+            }
+            Ok(())
+        })
+        .collect::<Result<(), ErrorResponse>>()?;
     Ok(())
 }
 
@@ -59,12 +82,23 @@ async fn sponsor_and_send_handler(
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
     if transaction_bytes.len() > PACKET_DATA_SIZE {
-        return Err((StatusCode::BAD_REQUEST, format!("Transaction is too large: {} > {}", transaction_bytes.len(), PACKET_DATA_SIZE)))?;
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Transaction is too large: {} > {}",
+                transaction_bytes.len(),
+                PACKET_DATA_SIZE
+            ),
+        ))?;
     }
 
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
-    validate_transaction(&transaction, &state.program_whitelist, &state.keypair.pubkey())?;
+    validate_transaction(
+        &transaction,
+        &state.program_whitelist,
+        &state.keypair.pubkey(),
+    )?;
 
     transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
 
@@ -88,7 +122,7 @@ async fn sponsor_and_send_handler(
 
 pub async fn run_server(config: Config) -> () {
     let keypair = Keypair::read_from_file(&config.keypair_path).unwrap();
-    
+
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler))
         .split_for_parts();

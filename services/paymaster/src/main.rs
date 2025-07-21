@@ -15,6 +15,5 @@ async fn main() {
     let cli = Cli::parse();
     let config = load_config(&cli.config).unwrap();
 
-    api::run_server(config)
-    .await
+    api::run_server(config).await
 }
