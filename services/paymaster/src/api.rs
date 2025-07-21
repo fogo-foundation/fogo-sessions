@@ -49,8 +49,7 @@ pub fn validate_transaction(
     transaction
         .message
         .instructions()
-        .iter()
-        .map(|instruction| {
+        .iter().try_for_each(|instruction| {
             let program_id = instruction.program_id(transaction.message.static_account_keys());
             if !program_whitelist.contains(program_id) {
                 return Err((
@@ -60,8 +59,7 @@ pub fn validate_transaction(
                    );
             }
             Ok(())
-        })
-        .collect::<Result<(), (StatusCode, String)>>()?;
+        })?;
     Ok(())
 }
 
