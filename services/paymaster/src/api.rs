@@ -64,7 +64,7 @@ async fn sponsor_and_send_handler(
 
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
-    validate_transaction(&transaction, &state.program_whitelist)?;
+    validate_transaction(&transaction, &state.program_whitelist, &state.keypair.pubkey())?;
 
     transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
 
