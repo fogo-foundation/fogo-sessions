@@ -29,8 +29,8 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 
-// eslint-disable-next-line no-constant-binary-expression, @typescript-eslint/no-unnecessary-condition, valid-typeof
-const IS_BROWSER = typeof globalThis.window !== undefined;
+// eslint-disable-next-line unicorn/no-typeof-undefined
+const IS_BROWSER = typeof globalThis.window !== "undefined";
 
 export type SessionAdapter = {
   chainId: string;
