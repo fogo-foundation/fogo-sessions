@@ -11,8 +11,11 @@ use base64::Engine;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_keypair::Keypair;
-use solana_signer::Signer;
+use solana_packet::PACKET_DATA_SIZE;
+use solana_pubkey::Pubkey;
+use solana_signer::{EncodableKey, Signer};
 use solana_transaction::versioned::VersionedTransaction;
+use std::str::FromStr;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -20,11 +23,23 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 pub struct ServerState {
     pub keypair: Keypair,
     pub rpc: RpcClient,
+    pub program_whitelist: Vec<Pubkey>,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
 pub struct SponsorAndSendPayload {
     pub transaction: String,
+}
+
+pub fn validate_transaction(transaction: &VersionedTransaction, program_whitelist: &[Pubkey]) -> Result<(), ErrorResponse> {
+    transaction.message.instructions().into_iter().map(|instruction| {
+        let program_id = instruction.program_id(transaction.message.static_account_keys());
+        if !program_whitelist.contains(program_id) {
+            return Err((StatusCode::BAD_REQUEST, format!("Transaction contains unauthorized program ID: {}", program_id.to_string())).into());
+        }
+        Ok(())
+    }).collect::<Result<(), ErrorResponse>>()?;
+    Ok(())
 }
 
 #[utoipa::path(
@@ -39,8 +54,15 @@ async fn sponsor_and_send_handler(
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
+
+    if transaction_bytes.len() > PACKET_DATA_SIZE {
+        return Err((StatusCode::BAD_REQUEST, format!("Transaction is too large: {} > {}", transaction_bytes.len(), PACKET_DATA_SIZE)))?;
+    }
+
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
+    validate_transaction(&transaction, &state.program_whitelist)?;
+
     transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
 
     let signature = state
@@ -62,6 +84,8 @@ async fn sponsor_and_send_handler(
 }
 
 pub async fn run_server(config: Config) -> () {
+    let keypair = Keypair::read_from_file(&config.keypair_path).unwrap();
+    
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler))
         .split_for_parts();
@@ -77,8 +101,9 @@ pub async fn run_server(config: Config) -> () {
                 )])),
         )
         .with_state(Arc::new(ServerState {
-            keypair: config.keypair,
-            rpc: RpcClient::new(config.url),
+            keypair,
+            rpc: RpcClient::new(config.solana_url),
+            program_whitelist: config.program_whitelist.iter().map(|s| Pubkey::from_str(s).unwrap()).collect(),
         }));
     let listener = tokio::net::TcpListener::bind(config.listen_address)
         .await
