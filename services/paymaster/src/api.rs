@@ -39,7 +39,7 @@ pub fn validate_transaction(
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
-                "Transaction fee payer is not the sponsor: {}",
+                "Transaction fee payer must be the sponsor: {}",
                 transaction.message.static_account_keys()[0]
             ),
         ));
