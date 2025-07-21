@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-react",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": true,
   "description": "React components and hooks for integrating with Fogo sessions",
   "keywords": [
