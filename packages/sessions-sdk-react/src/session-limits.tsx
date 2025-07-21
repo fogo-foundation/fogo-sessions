@@ -1,8 +1,17 @@
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
-import type { ChangeEvent } from "react";
-import { useCallback, useState, useMemo, useRef } from "react";
-import { Button } from "react-aria-components";
+import type { FormEvent } from "react";
+import { useCallback, useState, useMemo } from "react";
+import {
+  Button,
+  FieldError,
+  Input,
+  Label,
+  TextField,
+  Text,
+  Checkbox,
+  Form,
+} from "react-aria-components";
 
 import { amountToString, stringToAmount } from "./amount-to-string.js";
 import { errorToString } from "./error-to-string.js";
@@ -17,49 +26,80 @@ export const SessionLimits = <Token extends PublicKey>({
   buttonText = "Log in",
   error,
   className,
+  enableUnlimited,
+  isSessionUnlimited,
 }: {
   tokens: Token[];
   initialLimits: Map<Token, bigint>;
-  onSubmit?: ((tokens: Map<Token, bigint>) => void) | undefined;
+  onSubmit?: ((tokens?: Map<Token, bigint>) => void) | undefined;
   buttonText?: string;
   error?: unknown;
   className?: string | undefined;
-}) => {
+} & (
+  | { enableUnlimited?: false | undefined; isSessionUnlimited?: undefined }
+  | { enableUnlimited: true; isSessionUnlimited?: boolean }
+)) => {
+  const [applyLimits, setApplyLimits] = useState(
+    !(isSessionUnlimited ?? enableUnlimited),
+  );
   const doSubmit = useCallback(
-    (data: FormData) => {
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
       if (onSubmit !== undefined) {
-        const limits = new Map(
-          tokens
-            .map((mint) => {
-              const value = data.get(mint.toBase58());
-              return typeof value === "string"
-                ? ([mint, BigInt(value)] as const)
-                : undefined;
-            })
-            .filter((value) => value !== undefined),
+        const data = new FormData(event.currentTarget);
+        onSubmit(
+          enableUnlimited && !data.get("applyLimits")
+            ? undefined
+            : new Map(
+                tokens
+                  .map((mint) => {
+                    const value = data.get(mint.toBase58());
+                    return typeof value === "string"
+                      ? ([mint, BigInt(value)] as const)
+                      : undefined;
+                  })
+                  .filter((value) => value !== undefined),
+              ),
         );
-        onSubmit(limits);
       }
     },
-    [tokens, onSubmit],
+    [tokens, onSubmit, enableUnlimited],
   );
 
   return (
-    <form className={clsx(styles.sessionLimits, className)} action={doSubmit}>
-      <ul className={styles.tokenList}>
-        {tokens.map((mint) => (
-          <li key={mint.toBase58()}>
-            <Token
-              mint={mint}
-              initialAmount={
-                initialLimits
-                  .entries()
-                  .find(([limitMint]) => limitMint.equals(mint))?.[1] ?? 0n
-              }
-            />
-          </li>
-        ))}
-      </ul>
+    <Form className={clsx(styles.sessionLimits, className)} onSubmit={doSubmit}>
+      {enableUnlimited && (
+        <Checkbox
+          name="applyLimits"
+          className={styles.applyLimits ?? ""}
+          isSelected={applyLimits}
+          onChange={setApplyLimits}
+        >
+          <div className={styles.checkbox ?? ""}>
+            <svg viewBox="0 0 18 18" aria-hidden="true">
+              <polyline points="1 9 7 14 15 4" />
+            </svg>
+          </div>
+          {"Limit this app's access to tokens"}
+        </Checkbox>
+      )}
+      {applyLimits && (
+        <ul className={styles.tokenList}>
+          {tokens.map((mint) => (
+            <li key={mint.toBase58()}>
+              <Token
+                mint={mint}
+                initialAmount={
+                  initialLimits
+                    .entries()
+                    .find(([limitMint]) => limitMint.equals(mint))?.[1] ?? 0n
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      )}
       <div className={styles.footer}>
         <p className={styles.errorMessage}>
           {error !== undefined && errorToString(error)}
@@ -73,7 +113,7 @@ export const SessionLimits = <Token extends PublicKey>({
           {buttonText}
         </Button>
       </div>
-    </form>
+    </Form>
   );
 };
 
@@ -122,38 +162,51 @@ const TokenInput = ({
   );
   const [actualAmount, setActualAmount] = useState(initialAmount.toString());
   const mintAsString = useMemo(() => mint.toBase58(), [mint]);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [error, setError] = useState<string | undefined>();
 
   const updateAmount = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setDisplayAmount(event.target.value);
+    (value: string) => {
+      setDisplayAmount(value);
       try {
         setActualAmount(
-          stringToAmount(event.target.value, metadata.decimals).toString(),
+          stringToAmount(value.toString(), metadata.decimals).toString(),
         );
-        inputRef.current?.setCustomValidity("");
+        setError(undefined);
       } catch (error: unknown) {
-        inputRef.current?.setCustomValidity(errorToString(error));
+        setError(errorToString(error));
       }
-      inputRef.current?.reportValidity();
     },
     [metadata.decimals],
   );
 
   return (
-    <div className={styles.token}>
-      <label className={styles.name} htmlFor={`visible-` + mintAsString}>
-        {metadata.name ?? mintAsString}
-      </label>
+    <>
       <input type="hidden" name={mintAsString} value={actualAmount} />
-      <input
-        ref={inputRef}
-        className={styles.input}
-        id={`visible-` + mintAsString}
+      <TextField
+        className={styles.token ?? ""}
         value={displayAmount}
         onChange={updateAmount}
-      />
-      <span className={styles.symbol}>{metadata.symbol ?? "Tokens"}</span>
-    </div>
+        isInvalid={error !== undefined}
+      >
+        <Label className={styles.name ?? ""}>
+          {metadata.name ?? mintAsString}
+        </Label>
+        <Input className={styles.input ?? ""} />
+        <Text className={styles.symbol} slot="description">
+          {metadata.symbol ?? "Tokens"}
+        </Text>
+        <FieldError className={styles.error ?? ""}>
+          <svg
+            width={12}
+            height={12}
+            viewBox="0 0 12 12"
+            className={styles.overlayArrow}
+          >
+            <path d="M0 0 L6 6 L12 0" />
+          </svg>
+          {error}
+        </FieldError>
+      </TextField>
+    </>
   );
 };

@@ -2,6 +2,7 @@
 #![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
 
 use crate::intents::body::MessageBody;
+use crate::intents::body::Tokens;
 use crate::intents::body::Version;
 use crate::intents::ed25519::Intent;
 use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
@@ -11,6 +12,7 @@ use fogo_sessions_sdk::session::AuthorizedPrograms;
 use fogo_sessions_sdk::session::AuthorizedTokens;
 use fogo_sessions_sdk::session::Session;
 use fogo_sessions_sdk::session::SessionInfo;
+
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
 pub mod error;
@@ -40,12 +42,20 @@ pub mod session_manager {
         let Version { major, minor } = version;
         ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
-        ctx.accounts.approve_tokens(
-            ctx.remaining_accounts,
-            &tokens,
-            &signer,
-            ctx.bumps.session_setter,
-        )?;
+
+        let authorized_tokens = match tokens {
+            Tokens::Specific(tokens) => {
+                ctx.accounts.approve_tokens(
+                    ctx.remaining_accounts,
+                    &tokens,
+                    &signer,
+                    ctx.bumps.session_setter,
+                )?;
+                AuthorizedTokens::Specific
+            }
+            Tokens::All => AuthorizedTokens::All,
+        };
+
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
         let session = Session {
@@ -55,7 +65,7 @@ pub mod session_manager {
                 minor,
                 user: signer,
                 authorized_programs: AuthorizedPrograms::Specific(program_domains),
-                authorized_tokens: AuthorizedTokens::Specific,
+                authorized_tokens,
                 extra: extra.into(),
                 expiration: expires.timestamp(),
             },

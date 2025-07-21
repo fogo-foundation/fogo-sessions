@@ -174,10 +174,7 @@
     },
     "rust-overlay": {
       "inputs": {
-        "nixpkgs": [
-          "solana-nix",
-          "nixpkgs"
-        ]
+        "nixpkgs": ["solana-nix", "nixpkgs"]
       },
       "locked": {
         "lastModified": 1746239644,

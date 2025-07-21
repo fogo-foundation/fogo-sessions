@@ -1,6 +1,10 @@
 import type { Wallet } from "@coral-xyz/anchor";
-import { AnchorProvider } from "@coral-xyz/anchor";
-import { DomainRegistryIdl, SessionManagerProgram } from "@fogo/sessions-idls";
+import { AnchorProvider, BorshAccountsCoder } from "@coral-xyz/anchor";
+import {
+  DomainRegistryIdl,
+  SessionManagerProgram,
+  SessionManagerIdl,
+} from "@fogo/sessions-idls";
 import {
   findMetadataPda,
   safeFetchMetadata,
@@ -14,8 +18,14 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import type { TransactionError } from "@solana/web3.js";
+import type {
+  TransactionError,
+  TransactionInstruction,
+  Connection,
+} from "@solana/web3.js";
 import { Ed25519Program, PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
+import { z } from "zod";
 
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
 import { TransactionResultType } from "./adapter.js";
@@ -30,6 +40,9 @@ export {
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
 `;
+const UNLIMITED_TOKEN_PERMISSIONS_VALUE =
+  "this app may spend any amount of any token";
+const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 
 const CURRENT_MAJOR = "0";
 const CURRENT_MINOR = "1";
@@ -39,37 +52,70 @@ type EstablishSessionOptions = {
   walletPublicKey: PublicKey;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   expires: Date;
-  limits: Map<PublicKey, bigint>;
   extra?: string | undefined;
-};
+} & (
+  | { limits?: Map<PublicKey, bigint>; unlimited?: false }
+  | { unlimited: true }
+);
 
 export const establishSession = async (
   options: EstablishSessionOptions,
 ): Promise<EstablishSessionResult> => {
   const sessionKey = await generateKeyPair();
 
-  const tokenInfo = await getTokenInfo(options);
+  if (options.unlimited) {
+    return sendSessionEstablishTransaction(
+      options,
+      sessionKey,
+      await Promise.all([
+        buildIntentInstruction(options, sessionKey),
+        buildStartSessionInstruction(options, sessionKey),
+      ]),
+    );
+  } else {
+    const filteredLimits = new Map(
+      options.limits?.entries().filter(([, amount]) => amount > 0n),
+    );
+    const tokenInfo =
+      filteredLimits.size > 0
+        ? await getTokenInfo(options.adapter, filteredLimits)
+        : [];
 
-  const [intentInstruction, startSessionInstruction] = await Promise.all([
-    buildIntentInstruction(options, sessionKey, tokenInfo),
-    buildStartSessionInstruction(options, sessionKey, tokenInfo),
-  ]);
-  const result = await options.adapter.sendTransaction(sessionKey, [
-    ...buildCreateAssociatedTokenAccountInstructions(options, tokenInfo),
-    intentInstruction,
-    startSessionInstruction,
-  ]);
+    const [intentInstruction, startSessionInstruction] = await Promise.all([
+      buildIntentInstruction(options, sessionKey, tokenInfo),
+      buildStartSessionInstruction(options, sessionKey, tokenInfo),
+    ]);
+    return sendSessionEstablishTransaction(options, sessionKey, [
+      ...buildCreateAssociatedTokenAccountInstructions(options, tokenInfo),
+      intentInstruction,
+      startSessionInstruction,
+    ]);
+  }
+};
+
+const sendSessionEstablishTransaction = async (
+  options: EstablishSessionOptions,
+  sessionKey: CryptoKeyPair,
+  instructions: TransactionInstruction[],
+) => {
+  const result = await options.adapter.sendTransaction(
+    sessionKey,
+    instructions,
+  );
 
   switch (result.type) {
     case TransactionResultType.Success: {
-      return EstablishSessionResult.Success(
-        result.signature,
-        await createSession(
-          options.adapter,
-          options.walletPublicKey,
-          sessionKey,
-        ),
+      const session = await createSession(
+        options.adapter,
+        options.walletPublicKey,
+        sessionKey,
       );
+      return session
+        ? EstablishSessionResult.Success(result.signature, session)
+        : EstablishSessionResult.Failed(
+            result.signature,
+            new Error("Transaction succeeded, but the session was not created"),
+          );
     }
     case TransactionResultType.Failed: {
       return EstablishSessionResult.Failed(result.signature, result.error);
@@ -77,40 +123,141 @@ export const establishSession = async (
   }
 };
 
-export const replaceSession = async (options: {
-  adapter: SessionAdapter;
-  session: Session;
-  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
-  expires: Date;
-  limits: Map<PublicKey, bigint>;
-  extra?: string | undefined;
-}) =>
+export const replaceSession = async (
+  options: {
+    adapter: SessionAdapter;
+    session: Session;
+    signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+    expires: Date;
+    extra?: string | undefined;
+  } & (
+    | { limits?: Map<PublicKey, bigint>; unlimited?: false }
+    | { unlimited: true }
+  ),
+) =>
   establishSession({
     ...options,
     walletPublicKey: options.session.walletPublicKey,
   });
 
-// TODO we really should check to ensure the session is still valid...
 export const reestablishSession = async (
   adapter: SessionAdapter,
   walletPublicKey: PublicKey,
   sessionKey: CryptoKeyPair,
-): Promise<Session> => createSession(adapter, walletPublicKey, sessionKey);
+): Promise<Session | undefined> =>
+  createSession(adapter, walletPublicKey, sessionKey);
+
+export const getSessionAccount = async (
+  connection: Connection,
+  sessionPublicKey: PublicKey,
+) => {
+  const result = await connection.getAccountInfo(sessionPublicKey);
+  return result === null
+    ? undefined
+    : sessionInfoSchema.parse(
+        new BorshAccountsCoder(SessionManagerIdl).decode(
+          "Session",
+          result.data,
+        ),
+      );
+};
 
 const createSession = async (
   adapter: SessionAdapter,
   walletPublicKey: PublicKey,
   sessionKey: CryptoKeyPair,
-): Promise<Session> => ({
-  sessionPublicKey: new PublicKey(
+): Promise<Session | undefined> => {
+  const sessionPublicKey = new PublicKey(
     await getAddressFromPublicKey(sessionKey.publicKey),
-  ),
-  walletPublicKey,
-  sessionKey,
-  payer: adapter.payer,
-  sendTransaction: (instructions) =>
-    adapter.sendTransaction(sessionKey, instructions),
-});
+  );
+  const sessionInfo = await getSessionAccount(
+    adapter.connection,
+    sessionPublicKey,
+  );
+  return sessionInfo === undefined
+    ? undefined
+    : {
+        sessionPublicKey,
+        walletPublicKey,
+        sessionKey,
+        payer: adapter.payer,
+        sendTransaction: (instructions) =>
+          adapter.sendTransaction(sessionKey, instructions),
+        sessionInfo,
+      };
+};
+
+const sessionInfoSchema = z
+  .object({
+    session_info: z.object({
+      authorized_programs: z.union([
+        z.object({
+          Specific: z.object({
+            0: z.array(
+              z.object({
+                program_id: z.instanceof(PublicKey),
+                signer_pda: z.instanceof(PublicKey),
+              }),
+            ),
+          }),
+        }),
+        z.object({
+          All: z.object({}),
+        }),
+      ]),
+      authorized_tokens: z.union([
+        z.object({ Specific: z.object({}) }),
+        z.object({ All: z.object({}) }),
+      ]),
+      expiration: z.instanceof(BN),
+      extra: z.object({
+        0: z.unknown(),
+      }),
+      major: z.number(),
+      minor: z.number(),
+      user: z.instanceof(PublicKey),
+    }),
+  })
+  .transform(({ session_info }) => ({
+    authorizedPrograms:
+      "All" in session_info.authorized_programs
+        ? AuthorizedPrograms.All()
+        : AuthorizedPrograms.Specific(
+            session_info.authorized_programs.Specific[0].map(
+              ({ program_id, signer_pda }) => ({
+                programId: program_id,
+                signerPda: signer_pda,
+              }),
+            ),
+          ),
+    authorizedTokens:
+      "All" in session_info.authorized_tokens
+        ? AuthorizedTokens.All
+        : AuthorizedTokens.Specific,
+    expiration: new Date(Number(session_info.expiration) * 1000),
+    extra: session_info.extra[0],
+    major: session_info.major,
+    minor: session_info.minor,
+    user: session_info.user,
+  }));
+
+export enum AuthorizedProgramsType {
+  All,
+  Specific,
+}
+
+const AuthorizedPrograms = {
+  All: () => ({ type: AuthorizedProgramsType.All as const }),
+  Specific: (programs: { programId: PublicKey; signerPda: PublicKey }[]) => ({
+    type: AuthorizedProgramsType.Specific as const,
+    programs,
+  }),
+};
+
+export enum AuthorizedTokens {
+  All,
+  Specific,
+}
 
 const SymbolOrMintType = {
   Symbol: "Symbol",
@@ -128,14 +275,17 @@ const SymbolOrMint = {
   }),
 };
 
-const getTokenInfo = async (options: EstablishSessionOptions) => {
-  const umi = createUmi(options.adapter.connection.rpcEndpoint);
+const getTokenInfo = async (
+  adapter: SessionAdapter,
+  limits: Map<PublicKey, bigint>,
+) => {
+  const umi = createUmi(adapter.connection.rpcEndpoint);
   return Promise.all(
-    options.limits.entries().map(async ([mint, amount]) => {
+    limits.entries().map(async ([mint, amount]) => {
       const metaplexMint = metaplexPublicKey(mint.toBase58());
       const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
       const [mintInfo, metadata] = await Promise.all([
-        getMint(options.adapter.connection, mint),
+        getMint(adapter.connection, mint),
         safeFetchMetadata(umi, metadataAddress),
       ]);
 
@@ -157,7 +307,7 @@ type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 const buildIntentInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
-  tokens: TokenInfo[],
+  tokens?: TokenInfo[],
 ) => {
   const message = await buildMessage({
     chainId: options.adapter.chainId,
@@ -182,7 +332,7 @@ const buildMessage = async (
     chainId: string;
     domain: string;
     sessionKey: CryptoKeyPair;
-    tokens: TokenInfo[];
+    tokens?: TokenInfo[] | undefined;
   },
 ) =>
   new TextEncoder().encode(
@@ -207,18 +357,22 @@ const serializeKV = (data: Record<string, string>) =>
     )
     .join("\n");
 
-const serializeTokenList = (tokens: TokenInfo[]) =>
-  tokens.length === 0
-    ? "\n"
-    : tokens
-        .values()
-        .filter(({ amount }) => amount > 0n)
-        .map(
-          ({ symbolOrMint, amount, decimals }) =>
-            `\n-${symbolOrMint.type === SymbolOrMintType.Symbol ? symbolOrMint.symbol : symbolOrMint.mint.toBase58()}: ${amountToString(amount, decimals)}`,
-        )
-        .toArray()
-        .join("");
+const serializeTokenList = (tokens?: TokenInfo[]) => {
+  if (tokens === undefined) {
+    return UNLIMITED_TOKEN_PERMISSIONS_VALUE;
+  } else if (tokens.length === 0) {
+    return TOKENLESS_PERMISSIONS_VALUE;
+  } else {
+    return tokens
+      .values()
+      .map(
+        ({ symbolOrMint, amount, decimals }) =>
+          `\n-${symbolOrMint.type === SymbolOrMintType.Symbol ? symbolOrMint.symbol : symbolOrMint.mint.toBase58()}: ${amountToString(amount, decimals)}`,
+      )
+      .toArray()
+      .join("");
+  }
+};
 
 const amountToString = (amount: bigint, decimals: number): string => {
   const asStr = amount.toString();
@@ -259,9 +413,9 @@ export const getDomainRecordAddress = (domain: string) => {
 const buildStartSessionInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
-  tokens: TokenInfo[],
-) =>
-  new SessionManagerProgram(
+  tokens?: TokenInfo[],
+) => {
+  const instruction = new SessionManagerProgram(
     new AnchorProvider(options.adapter.connection, {} as Wallet, {}),
   ).methods
     .startSession()
@@ -269,31 +423,39 @@ const buildStartSessionInstruction = async (
       sponsor: options.adapter.payer,
       session: await getAddressFromPublicKey(sessionKey.publicKey),
       domainRegistry: getDomainRecordAddress(options.adapter.domain),
-    })
-    .remainingAccounts(
-      tokens.flatMap(({ symbolOrMint, mint, metadataAddress }) => [
-        {
-          pubkey: getAssociatedTokenAddressSync(mint, options.walletPublicKey),
-          isWritable: true,
-          isSigner: false,
-        },
-        {
-          pubkey: mint,
-          isWritable: false,
-          isSigner: false,
-        },
-        ...(symbolOrMint.type === SymbolOrMintType.Symbol
-          ? [
-              {
-                pubkey: metadataAddress,
-                isWritable: false,
-                isSigner: false,
-              },
-            ]
-          : []),
-      ]),
-    )
-    .instruction();
+    });
+
+  return tokens === undefined
+    ? instruction.instruction()
+    : instruction
+        .remainingAccounts(
+          tokens.flatMap(({ symbolOrMint, mint, metadataAddress }) => [
+            {
+              pubkey: getAssociatedTokenAddressSync(
+                mint,
+                options.walletPublicKey,
+              ),
+              isWritable: true,
+              isSigner: false,
+            },
+            {
+              pubkey: mint,
+              isWritable: false,
+              isSigner: false,
+            },
+            ...(symbolOrMint.type === SymbolOrMintType.Symbol
+              ? [
+                  {
+                    pubkey: metadataAddress,
+                    isWritable: false,
+                    isSigner: false,
+                  },
+                ]
+              : []),
+          ]),
+        )
+        .instruction();
+};
 
 export enum SessionResultType {
   Success,
@@ -325,4 +487,5 @@ export type Session = {
   sendTransaction: (
     instructions: Parameters<SessionAdapter["sendTransaction"]>[1],
   ) => Promise<TransactionResult>;
+  sessionInfo: z.infer<typeof sessionInfoSchema>;
 };
