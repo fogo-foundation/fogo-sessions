@@ -3,7 +3,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
     mkCli.url = "github:cprussin/mkCli";
-    solana-nix.url = "github:arijoon/solana-nix";
+    solana-nix.url = "github:cprussin/solana-nix";
   };
 
   outputs = {
