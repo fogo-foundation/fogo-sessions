@@ -84,21 +84,22 @@ export const SessionLimits = <Token extends PublicKey>({
           {"Limit this app's access to tokens"}
         </Checkbox>
       )}
-      <ul className={styles.tokenList}>
-        {tokens.map((mint) => (
-          <li key={mint.toBase58()}>
-            <Token
-              mint={mint}
-              initialAmount={
-                initialLimits
-                  .entries()
-                  .find(([limitMint]) => limitMint.equals(mint))?.[1] ?? 0n
-              }
-              enableUnlimited={!applyLimits}
-            />
-          </li>
-        ))}
-      </ul>
+      {applyLimits && (
+        <ul className={styles.tokenList}>
+          {tokens.map((mint) => (
+            <li key={mint.toBase58()}>
+              <Token
+                mint={mint}
+                initialAmount={
+                  initialLimits
+                    .entries()
+                    .find(([limitMint]) => limitMint.equals(mint))?.[1] ?? 0n
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      )}
       <div className={styles.footer}>
         <p className={styles.errorMessage}>
           {error !== undefined && errorToString(error)}
@@ -119,11 +120,9 @@ export const SessionLimits = <Token extends PublicKey>({
 const Token = ({
   mint,
   initialAmount,
-  enableUnlimited,
 }: {
   mint: PublicKey;
   initialAmount: bigint;
-  enableUnlimited: boolean;
 }) => {
   const metadata = useTokenMetadata(mint);
 
@@ -137,7 +136,6 @@ const Token = ({
         <TokenInput
           mint={mint}
           initialAmount={initialAmount}
-          enableUnlimited={enableUnlimited}
           metadata={metadata.data}
         />
       );
@@ -154,12 +152,10 @@ const TokenInput = ({
   mint,
   initialAmount,
   metadata,
-  enableUnlimited,
 }: {
   mint: PublicKey;
   initialAmount: bigint;
   metadata: Metadata;
-  enableUnlimited: boolean;
 }) => {
   const [displayAmount, setDisplayAmount] = useState(
     amountToString(initialAmount, metadata.decimals),
@@ -191,7 +187,6 @@ const TokenInput = ({
         value={displayAmount}
         onChange={updateAmount}
         isInvalid={error !== undefined}
-        isDisabled={enableUnlimited}
       >
         <Label className={styles.name ?? ""}>
           {metadata.name ?? mintAsString}
