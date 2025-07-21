@@ -61,9 +61,19 @@ async fn sponsor_and_send_handler(
     Ok(signature.to_string())
 }
 
+#[utoipa::path(
+    get,
+    path = "/sponsor_pubkey",
+)]
+async fn sponsor_pubkey_handler(
+    State(state): State<Arc<ServerState>>,
+) -> Result<String, ErrorResponse> {
+    Ok(state.keypair.pubkey().to_string())
+}
+
 pub async fn run_server(config: Config) -> () {
     let (router, _) = OpenApiRouter::new()
-        .routes(routes!(sponsor_and_send_handler))
+        .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
         .split_for_parts();
 
     let app = Router::new()
