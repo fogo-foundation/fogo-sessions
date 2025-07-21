@@ -61,10 +61,7 @@ async fn sponsor_and_send_handler(
     Ok(signature.to_string())
 }
 
-#[utoipa::path(
-    get,
-    path = "/sponsor_pubkey",
-)]
+#[utoipa::path(get, path = "/sponsor_pubkey")]
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
 ) -> Result<String, ErrorResponse> {
