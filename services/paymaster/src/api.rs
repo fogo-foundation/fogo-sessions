@@ -42,21 +42,20 @@ pub fn validate_transaction(
                 "Transaction fee payer is not the sponsor: {}",
                 transaction.message.static_account_keys()[0]
             ),
-        )
-    );
+        ));
     }
 
     transaction
         .message
         .instructions()
-        .iter().try_for_each(|instruction| {
+        .iter()
+        .try_for_each(|instruction| {
             let program_id = instruction.program_id(transaction.message.static_account_keys());
             if !program_whitelist.contains(program_id) {
                 return Err((
                     StatusCode::BAD_REQUEST,
                     format!("Transaction contains unauthorized program ID: {program_id}"),
-                )
-                   );
+                ));
             }
             Ok(())
         })?;
