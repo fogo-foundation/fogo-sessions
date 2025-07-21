@@ -23,7 +23,7 @@ export const useData = <T>(...args: Parameters<typeof useSWR<T>>) => {
   } else if (data) {
     return State.Loaded(data, mutate);
   } else {
-    return State.NotLoaded();
+    return State.NotLoaded(mutate);
   }
 };
 
@@ -35,7 +35,10 @@ export enum StateType {
 }
 
 const State = {
-  NotLoaded: () => ({ type: StateType.NotLoaded as const }),
+  NotLoaded: <T>(mutate: KeyedMutator<T>) => ({
+    type: StateType.NotLoaded as const,
+    mutate,
+  }),
   Loading: () => ({ type: StateType.Loading as const }),
   Loaded: <T>(data: T, mutate: KeyedMutator<T>) => ({
     type: StateType.Loaded as const,

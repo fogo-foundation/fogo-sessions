@@ -7,9 +7,9 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { getMint } from "@solana/spl-token";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
-import { useData } from "./use-data.js";
+import { StateType, useData } from "./use-data.js";
 
 export { StateType } from "./use-data.js";
 
@@ -21,7 +21,23 @@ export const useTokenMetadata = (mint: PublicKey) => {
     async () => getTokenMetadata(connection, mint),
     [mint, connection],
   );
-  return useData(["tokenMetadata", mint.toBase58()], getMetadata, {});
+  const data = useData(["tokenMetadata", mint.toBase58()], getMetadata, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnMount: false,
+    revalidateOnReconnect: false,
+  });
+
+  useEffect(() => {
+    if (data.type === StateType.NotLoaded) {
+      data.mutate().catch((error: unknown) => {
+        // eslint-disable-next-line no-console
+        console.error("Failed to fetch token metadata", error);
+      });
+    }
+  }, [data]);
+
+  return data;
 };
 
 const getTokenMetadata = async (connection: Connection, mint: PublicKey) => {
