@@ -103,7 +103,7 @@ pub async fn run_server(config: Config) -> () {
         .with_state(Arc::new(ServerState {
             keypair,
             rpc: RpcClient::new(config.solana_url),
-            program_whitelist: config.program_whitelist.iter().map(|s| Pubkey::from_str(s).unwrap()).collect(),
+            program_whitelist: config.program_whitelist,
         }));
     let listener = tokio::net::TcpListener::bind(config.listen_address)
         .await
