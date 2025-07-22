@@ -84,7 +84,7 @@ export const SessionLimits = <Token extends PublicKey>({
           {"Limit this app's access to tokens"}
         </Checkbox>
       )}
-      {applyLimits && (
+      {applyLimits ? (
         <ul className={styles.tokenList}>
           {tokens.map((mint) => (
             <li key={mint.toBase58()}>
@@ -99,6 +99,8 @@ export const SessionLimits = <Token extends PublicKey>({
             </li>
           ))}
         </ul>
+      ) : (
+        <div />
       )}
       <div className={styles.footer}>
         <p className={styles.errorMessage}>
@@ -189,11 +191,11 @@ const TokenInput = ({
         isInvalid={error !== undefined}
       >
         <Label className={styles.name ?? ""}>
-          {metadata.name ?? mintAsString}
+          {"name" in metadata ? metadata.name : mintAsString}
         </Label>
         <Input className={styles.input ?? ""} />
         <Text className={styles.symbol} slot="description">
-          {metadata.symbol ?? "Tokens"}
+          {"symbol" in metadata ? metadata.symbol : "Tokens"}
         </Text>
         <FieldError className={styles.error ?? ""}>
           <svg

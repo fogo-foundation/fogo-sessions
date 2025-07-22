@@ -8,6 +8,7 @@ import { getMint } from "@solana/spl-token";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect } from "react";
+import { z } from "zod";
 
 import { StateType, useData } from "./use-data.js";
 
@@ -49,5 +50,25 @@ const getTokenMetadata = async (connection: Connection, mint: PublicKey) => {
     safeFetchMetadata(umi, metadataAddress),
   ]);
 
-  return { ...mintInfo, ...metadata };
+  return metadata === null
+    ? mintInfo
+    : {
+        ...mintInfo,
+        ...metadata,
+        icon: await getIcon(metadata.uri),
+      };
 };
+
+const getIcon = async (offChainMetaUri: string) => {
+  if (offChainMetaUri === "") {
+    return;
+  } else {
+    const response = await fetch(offChainMetaUri);
+    const offChainMeta = offChainMetaSchema.safeParse(await response.json());
+    return offChainMeta.success ? offChainMeta.data.image : undefined;
+  }
+};
+
+const offChainMetaSchema = z.object({
+  image: z.string(),
+});
