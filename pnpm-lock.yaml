@@ -75,6 +75,9 @@ catalogs:
     '@solana/web3.js':
       specifier: ^1.92.3
       version: 1.98.2
+    '@solana/webcrypto-ed25519-polyfill':
+      specifier: ^2.3.0
+      version: 2.3.0
     '@svgr/webpack':
       specifier: ^8.1.0
       version: 8.1.0
@@ -718,6 +721,9 @@ importers:
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      '@solana/webcrypto-ed25519-polyfill':
+        specifier: 'catalog:'
+        version: 2.3.0(typescript@5.8.3)
       idb:
         specifier: 'catalog:'
         version: 8.0.3
@@ -2509,6 +2515,9 @@ packages:
     resolution: {integrity: sha512-HxngEd2XUcg9xi20JkwlLCtYwfoFw4JGkuZpT+WlsPD4gB/cxkvTD8fSsoAnphGZhFdZYKeQIPCuFlWPm1uE0g==}
     engines: {node: ^14.21.3 || >=16}
 
+  '@noble/ed25519@2.3.0':
+    resolution: {integrity: sha512-M7dvXL2B92/M7dw9+gzuydL8qn/jiqNHaoR3Q+cb1q1GHV7uwE17WCyFMG+Y+TZb5izcaXk5TdJRrDUxHXL78A==}
+
   '@noble/hashes@1.4.0':
     resolution: {integrity: sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==}
     engines: {node: '>= 16'}
@@ -4067,6 +4076,12 @@ packages:
 
   '@solana/web3.js@1.98.2':
     resolution: {integrity: sha512-BqVwEG+TaG2yCkBMbD3C4hdpustR4FpuUFRPUmqRZYYlPI9Hg4XMWxHWOWRzHE9Lkc9NDjzXFX7lDXSgzC7R1A==}
+
+  '@solana/webcrypto-ed25519-polyfill@2.3.0':
+    resolution: {integrity: sha512-Gu6qf4X/67RhpCR6UNhGcPdUk4fo7VGenMMZyhUAFlnZ3hJKJkm773E0Z98dKQawJ3q+e7srtkrfuV9EMx+Plg==}
+    engines: {node: '>=20.18.0'}
+    peerDependencies:
+      typescript: '>=5.3.3'
 
   '@solflare-wallet/metamask-sdk@1.0.3':
     resolution: {integrity: sha512-os5Px5PTMYKGS5tzOoyjDxtOtj0jZKnbI1Uwt8+Jsw1HHIA+Ib2UACCGNhQ/un2f8sIbTfLD1WuucNMOy8KZpQ==}
@@ -11908,6 +11923,8 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
+  '@noble/ed25519@2.3.0': {}
+
   '@noble/hashes@1.4.0': {}
 
   '@noble/hashes@1.7.0': {}
@@ -14704,6 +14721,11 @@ snapshots:
       - encoding
       - typescript
       - utf-8-validate
+
+  '@solana/webcrypto-ed25519-polyfill@2.3.0(typescript@5.8.3)':
+    dependencies:
+      '@noble/ed25519': 2.3.0
+      typescript: 5.8.3
 
   '@solflare-wallet/metamask-sdk@1.0.3(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))':
     dependencies:
