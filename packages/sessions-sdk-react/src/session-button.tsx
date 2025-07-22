@@ -4,6 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import { useMemo, useState, useRef, useCallback } from "react";
 import {
   Button,
+  Link,
   Dialog,
   OverlayArrow,
   Popover,
@@ -205,7 +206,14 @@ const Tokens = ({
       return <p>{errorToString(state.error)}</p>;
     }
     case TokenDataStateType.Loaded: {
-      return (
+      return state.data.tokensInWallet.length === 0 ? (
+        <div className={styles.tokenListEmpty}>
+          Your wallet is empty
+          <Link target="_blank" href="https://faucet.fogo.io">
+            Get Testnet Tokens
+          </Link>
+        </div>
+      ) : (
         <dl className={styles.tokenList}>
           {state.data.tokensInWallet.map(
             ({ mint, amountInWallet, decimals }) => (
@@ -222,7 +230,11 @@ const Tokens = ({
     }
     case TokenDataStateType.NotLoaded:
     case TokenDataStateType.Loading: {
-      return <p>Loading...</p>;
+      return (
+        <dl className={styles.tokenList}>
+          <LoadingToken />
+        </dl>
+      );
     }
   }
 };
@@ -242,17 +254,24 @@ const Token = ({
     case TokenMetadataStateType.Loaded: {
       const amountAsString = amountToString(amountInWallet, decimals);
       const name =
-        metadata.type === TokenMetadataStateType.Loaded
-          ? (metadata.data.name ?? mint.toBase58())
+        metadata.type === TokenMetadataStateType.Loaded &&
+        "name" in metadata.data
+          ? metadata.data.name
           : mint.toBase58();
       const defaultSymbol = amountAsString === "1" ? "Token" : "Tokens";
       const symbol =
-        metadata.type === TokenMetadataStateType.Loaded
-          ? (metadata.data.symbol ?? defaultSymbol)
-          : "";
+        metadata.type === TokenMetadataStateType.Loaded &&
+        "symbol" in metadata.data
+          ? metadata.data.symbol
+          : defaultSymbol;
       return (
-        <div key={mint.toBase58()} className={styles.token}>
-          <div className={styles.tokenIcon} />
+        <div className={styles.token}>
+          {metadata.type === TokenMetadataStateType.Loaded &&
+          "icon" in metadata.data ? (
+            <img alt="" src={metadata.data.icon} className={styles.tokenIcon} />
+          ) : (
+            <div className={styles.tokenIcon} />
+          )}
           <dt className={styles.tokenName}>{name}</dt>
           <dd className={styles.amount}>
             {amountAsString} {symbol}
@@ -263,10 +282,18 @@ const Token = ({
 
     case TokenMetadataStateType.Loading:
     case TokenMetadataStateType.NotLoaded: {
-      return <p>Loading...</p>;
+      return <LoadingToken />;
     }
   }
 };
+
+const LoadingToken = () => (
+  <div data-is-loading="" className={styles.token}>
+    <div className={styles.tokenIcon} />
+    <dt className={styles.tokenName} />
+    <dd className={styles.amount} />
+  </div>
+);
 
 const SessionLimitsPanel = ({
   sessionState,

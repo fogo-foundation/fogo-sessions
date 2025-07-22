@@ -506,7 +506,7 @@ $color: (
 
   &::before {
     position: absolute;
-    top: calc((100% - spacing(4) - 1px) / 2);
+    top: calc((100% - spacing(4)) / 2 - 2px);
     left: spacing(3);
     content: "";
     display: block;
