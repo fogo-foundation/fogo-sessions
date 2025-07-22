@@ -126,7 +126,7 @@ pub fn burn(
 
 /// This function is meant to replace `spl_token::instruction::burn_checked` in the context of sessions.
 /// In-session token burns are different from regular burns in that they not only require the session key to sign as the authority, but also require an additional signer.
-/// This additional signer is the `program_signer` and allows the token program to verify that the transfer is happening within an authorized program. It is the PDA of the authorized program that will call the instruction via CPI with seed `PROGRAM_SIGNER_SEED`.
+/// This additional signer is the `program_signer` and allows the token program to verify that the burn is happening within an authorized program. It is the PDA of the authorized program that will call the instruction via CPI with seed `PROGRAM_SIGNER_SEED`.
 /// This function has also been designed to allow non-sessions burns by setting the `program_signer` to `None`.
 pub fn burn_checked(
     token_program_id: &Pubkey,
