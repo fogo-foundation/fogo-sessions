@@ -38,7 +38,7 @@ pub fn transfer(
         accounts.push(AccountMeta::new_readonly(*program_signer, true));
     }
 
-    let mut data = Vec::with_capacity(5);
+    let mut data = Vec::with_capacity(9);
     data.push(3);
     data.extend_from_slice(&amount.to_le_bytes());
 
@@ -77,7 +77,7 @@ pub fn transfer_checked(
         accounts.push(AccountMeta::new_readonly(*program_signer, true));
     }
 
-    let mut data = Vec::with_capacity(6);
+    let mut data = Vec::with_capacity(10);
     data.push(12);
     data.extend_from_slice(&amount.to_le_bytes());
     data.push(decimals);
@@ -103,7 +103,7 @@ pub fn burn(
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
 
-    let mut data = Vec::with_capacity(5);
+    let mut data = Vec::with_capacity(9);
     data.push(8);
     data.extend_from_slice(&amount.to_le_bytes());
 
@@ -139,7 +139,7 @@ pub fn burn_checked(
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
 
-    let mut data = Vec::with_capacity(6);
+    let mut data = Vec::with_capacity(10);
     data.push(15);
     data.extend_from_slice(&amount.to_le_bytes());
     data.push(decimals);
