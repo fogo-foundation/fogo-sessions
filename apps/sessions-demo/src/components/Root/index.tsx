@@ -14,6 +14,8 @@ type Props = {
   children: ReactNode;
 };
 
+const FOGO_USD_MINT = "fUSDNGgHkZfwckbr5RLLvRbvqvRcTLdH9hcHJiq4jry"
+
 export const Root = ({ children }: Props) => {
   return (
     <html lang="en">
@@ -23,7 +25,7 @@ export const Root = ({ children }: Props) => {
           addressLookupTableAddress={ADDRESS_LOOKUP_TABLE_ADDRESS}
           sponsor={SPONSOR_KEY.publicKey.toBase58()}
           paymasterUrl={PAYMASTER_URL ?? "/api/sponsor_and_send"}
-          tokens={[NATIVE_MINT.toBase58()]}
+          tokens={[NATIVE_MINT.toBase58(), FOGO_USD_MINT]}
           defaultRequestedLimits={{
             [NATIVE_MINT.toBase58()]: 1_500_000_000n,
           }}
