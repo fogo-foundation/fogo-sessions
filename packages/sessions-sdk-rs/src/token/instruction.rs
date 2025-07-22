@@ -112,7 +112,7 @@ pub fn burn(
         AccountMeta::new(*mint_pubkey, false),
         AccountMeta::new_readonly(*authority_pubkey, true),
     ];
-    
+
     if let Some(program_signer) = program_signer {
         accounts.push(AccountMeta::new_readonly(*program_signer, true));
     }
@@ -123,7 +123,6 @@ pub fn burn(
         data,
     })
 }
-
 
 /// This function is meant to replace `spl_token::instruction::burn_checked` in the context of sessions.
 /// In-session token burns are different from regular burns in that they not only require the session key to sign as the authority, but also require an additional signer.
@@ -150,7 +149,7 @@ pub fn burn_checked(
         AccountMeta::new(*mint_pubkey, false),
         AccountMeta::new_readonly(*authority_pubkey, true),
     ];
-    
+
     if let Some(program_signer) = program_signer {
         accounts.push(AccountMeta::new_readonly(*program_signer, true));
     }
@@ -161,5 +160,3 @@ pub fn burn_checked(
         data,
     })
 }
-
-
