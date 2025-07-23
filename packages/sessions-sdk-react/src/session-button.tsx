@@ -79,6 +79,7 @@ export const SessionButton = ({
     SessionStateType.WalletConnecting,
     SessionStateType.SelectingWallet,
   ].includes(sessionState.type);
+  const { tokens } = useTokenWhitelist();
 
   return (
     <>
@@ -131,26 +132,34 @@ export const SessionButton = ({
           <Heading slot="title" className={styles.heading}>
             Your Wallet
           </Heading>
-          <Tabs className={styles.tabs ?? ""}>
-            <TabList aria-label="Wallet" className={styles.tabList ?? ""}>
-              <Tab className={styles.tab ?? ""} id="tokens">
-                Tokens
-              </Tab>
-              <Tab className={styles.tab ?? ""} id="session-limits">
-                Session
-              </Tab>
-            </TabList>
-            <TabPanel className={styles.tabPanel ?? ""} id="tokens">
+          {tokens.length === 0 ? (
+            <div className={styles.tabPanel ?? ""}>
               {isEstablished(sessionState) && (
                 <Tokens sessionState={sessionState} />
               )}
-            </TabPanel>
-            <TabPanel className={styles.tabPanel ?? ""} id="session-limits">
-              {isEstablished(sessionState) && (
-                <SessionLimitsPanel sessionState={sessionState} />
-              )}
-            </TabPanel>
-          </Tabs>
+            </div>
+          ) : (
+            <Tabs className={styles.tabs ?? ""}>
+              <TabList aria-label="Wallet" className={styles.tabList ?? ""}>
+                <Tab className={styles.tab ?? ""} id="tokens">
+                  Tokens
+                </Tab>
+                <Tab className={styles.tab ?? ""} id="session-limits">
+                  Session
+                </Tab>
+              </TabList>
+              <TabPanel className={styles.tabPanel ?? ""} id="tokens">
+                {isEstablished(sessionState) && (
+                  <Tokens sessionState={sessionState} />
+                )}
+              </TabPanel>
+              <TabPanel className={styles.tabPanel ?? ""} id="session-limits">
+                {isEstablished(sessionState) && (
+                  <SessionLimitsPanel sessionState={sessionState} />
+                )}
+              </TabPanel>
+            </Tabs>
+          )}
           <div className={styles.footer}>
             <FogoWordmark className={styles.fogoWordmark} />
             <LogoutButton

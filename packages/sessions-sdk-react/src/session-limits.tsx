@@ -69,7 +69,7 @@ export const SessionLimits = <Token extends PublicKey>({
 
   return (
     <Form className={clsx(styles.sessionLimits, className)} onSubmit={doSubmit}>
-      {enableUnlimited && (
+      {enableUnlimited ? (
         <Checkbox
           name="applyLimits"
           className={styles.applyLimits ?? ""}
@@ -83,6 +83,8 @@ export const SessionLimits = <Token extends PublicKey>({
           </div>
           {"Limit this app's access to tokens"}
         </Checkbox>
+      ) : (
+        <div />
       )}
       {applyLimits ? (
         <ul className={styles.tokenList}>
