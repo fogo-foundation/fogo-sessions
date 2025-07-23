@@ -1,8 +1,6 @@
 /* eslint-disable n/no-process-env */
 
 import "server-only";
-import { Keypair } from "@solana/web3.js";
-import { z } from "zod";
 
 const IS_DEV_MACHINE = process.env.VERCEL_ENV === undefined;
 
@@ -22,7 +20,7 @@ export const ADDRESS_LOOKUP_TABLE_ADDRESS = IS_DEV_MACHINE
   : process.env.ADDRESS_LOOKUP_TABLE_ADDRESS;
 
 export const PAYMASTER_URL = IS_DEV_MACHINE
-  ? "http://localhost:4000/api/sponsor_and_send"
+  ? "http://localhost:4000"
   : process.env.PAYMASTER_URL;
 
 export const SOLANA_RPC = defaultInDevelopment(
@@ -31,18 +29,3 @@ export const SOLANA_RPC = defaultInDevelopment(
 );
 
 export const FOGO_SESSIONS_DOMAIN = process.env.FOGO_SESSIONS_DOMAIN;
-
-const keySchema = z.array(z.number());
-
-export const SPONSOR_KEY = Keypair.fromSecretKey(
-  Uint8Array.from(
-    keySchema.parse(
-      JSON.parse(
-        defaultInDevelopment(
-          "SPONSOR_KEY",
-          "[143,107,159,180,110,202,166,124,62,177,247,239,135,226,199,180,46,17,18,51,63,79,208,213,25,186,117,234,253,198,103,185,238,242,113,75,126,197,195,230,36,88,201,13,54,158,4,251,246,38,75,198,11,162,126,199,108,131,199,252,17,160,136,163]",
-        ),
-      ),
-    ),
-  ),
-);

@@ -3,7 +3,6 @@ import { NATIVE_MINT } from "@solana/spl-token";
 import type { ReactNode } from "react";
 
 import {
-  SPONSOR_KEY,
   SOLANA_RPC,
   ADDRESS_LOOKUP_TABLE_ADDRESS,
   FOGO_SESSIONS_DOMAIN,
@@ -21,8 +20,7 @@ export const Root = ({ children }: Props) => {
         <FogoSessionProvider
           endpoint={SOLANA_RPC}
           addressLookupTableAddress={ADDRESS_LOOKUP_TABLE_ADDRESS}
-          sponsor={SPONSOR_KEY.publicKey.toBase58()}
-          paymasterUrl={PAYMASTER_URL ?? "/api/sponsor_and_send"}
+          paymaster={PAYMASTER_URL}
           tokens={[NATIVE_MINT.toBase58()]}
           defaultRequestedLimits={{
             [NATIVE_MINT.toBase58()]: 1_500_000_000n,

@@ -28,9 +28,13 @@ import {
   TransactionInstruction,
   VersionedTransaction,
 } from "@solana/web3.js";
+import { z } from "zod";
 
 // eslint-disable-next-line unicorn/no-typeof-undefined
 const IS_BROWSER = typeof globalThis.window !== "undefined";
+const DEFAULT_PAYMASTER = "https://paymaster.fogo.io";
+const DEFAULT_ADDRESS_LOOKUP_TABLE_ADDRESS =
+  "B8cUjJMqaWWTNNSTXBmeptjWswwCH1gTSCRYv4nu7kJW";
 
 export type SessionAdapter = {
   chainId: string;
@@ -70,15 +74,15 @@ export type TransactionResult = ReturnType<
 export const createSolanaWalletAdapter = async (
   options: {
     connection: Connection;
-    sponsor: PublicKey;
     addressLookupTableAddress?: string | undefined;
     domain?: string | undefined;
   } & (
     | {
-        paymasterUrl: string;
+        paymaster?: string | URL | undefined;
       }
     | {
         sendToPaymaster: (transaction: Transaction) => Promise<string>;
+        sponsor: PublicKey;
       }
   ),
 ): Promise<SessionAdapter> => {
@@ -86,9 +90,10 @@ export const createSolanaWalletAdapter = async (
     options.connection,
     options.addressLookupTableAddress,
   );
+  const sponsor = await getSponsor(options);
   return {
     connection: options.connection,
-    payer: options.sponsor,
+    payer: sponsor,
     chainId: await fetchChainId(options.connection),
     domain: getDomain(options.domain),
     sendTransaction: async (sessionKey, instructions) => {
@@ -101,10 +106,7 @@ export const createSolanaWalletAdapter = async (
             pipe(
               createTransactionMessage({ version: 0 }),
               (tx) =>
-                setTransactionMessageFeePayer(
-                  fromLegacyPublicKey(options.sponsor),
-                  tx,
-                ),
+                setTransactionMessageFeePayer(fromLegacyPublicKey(sponsor), tx),
               (tx) =>
                 setTransactionMessageLifetimeUsingBlockhash(
                   latestBlockhash,
@@ -144,10 +146,7 @@ export const createSolanaWalletAdapter = async (
               : instructions,
           );
 
-      const signature =
-        "sendToPaymaster" in options
-          ? await options.sendToPaymaster(transaction)
-          : await sendToPaymaster(options.paymasterUrl, transaction);
+      const signature = await sendToPaymaster(options, transaction);
 
       const lastValidBlockHeight = await rpc.getSlot().send();
       const confirmationResult = await options.connection.confirmTransaction({
@@ -163,41 +162,57 @@ export const createSolanaWalletAdapter = async (
   };
 };
 
+const getSponsor = async (
+  options: Parameters<typeof createSolanaWalletAdapter>[0],
+) => {
+  if ("sponsor" in options) {
+    return options.sponsor;
+  } else {
+    const response = await fetch(
+      new URL("/api/sponsor_pubkey", options.paymaster ?? DEFAULT_PAYMASTER),
+    );
+    return new PublicKey(z.string().parse(await response.text()));
+  }
+};
+
 const sendToPaymaster = async (
-  paymasterUrl: string,
+  options: Parameters<typeof createSolanaWalletAdapter>[0],
   transaction: Transaction,
 ) => {
-  const response = await fetch(paymasterUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      transaction: getBase64EncodedWireTransaction(transaction),
-    }),
-  });
-
-  if (response.status === 200) {
-    return response.text();
+  if ("sendToPaymaster" in options) {
+    return options.sendToPaymaster(transaction);
   } else {
-    throw new PaymasterResponseError(response.status, await response.text());
+    const response = await fetch(
+      new URL("/api/sponsor_and_send", options.paymaster ?? DEFAULT_PAYMASTER),
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transaction: getBase64EncodedWireTransaction(transaction),
+        }),
+      },
+    );
+
+    if (response.status === 200) {
+      return response.text();
+    } else {
+      throw new PaymasterResponseError(response.status, await response.text());
+    }
   }
 };
 
 const getAddressLookupTables = async (
   connection: Connection,
-  addressLookupTableAddress?: string,
+  addressLookupTableAddress: string = DEFAULT_ADDRESS_LOOKUP_TABLE_ADDRESS,
 ) => {
-  if (addressLookupTableAddress === undefined) {
-    return [];
-  } else {
-    const addressLookupTableResult = await connection.getAddressLookupTable(
-      new PublicKey(addressLookupTableAddress),
-    );
-    return addressLookupTableResult.value
-      ? [addressLookupTableResult.value]
-      : undefined;
-  }
+  const addressLookupTableResult = await connection.getAddressLookupTable(
+    new PublicKey(addressLookupTableAddress),
+  );
+  return addressLookupTableResult.value
+    ? [addressLookupTableResult.value]
+    : undefined;
 };
 
 const fetchChainId = async (connection: Connection) => {

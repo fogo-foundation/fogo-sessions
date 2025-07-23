@@ -6,7 +6,6 @@
       "env": [
         "ADDRESS_LOOKUP_TABLE_ADDRESS",
         "SOLANA_RPC",
-        "SPONSOR_KEY",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER_URL"
       ]
@@ -15,7 +14,6 @@
       "env": [
         "ADDRESS_LOOKUP_TABLE_ADDRESS",
         "SOLANA_RPC",
-        "SPONSOR_KEY",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER_URL"
       ]
@@ -24,7 +22,6 @@
       "env": [
         "ADDRESS_LOOKUP_TABLE_ADDRESS",
         "SOLANA_RPC",
-        "SPONSOR_KEY",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER_URL"
       ]
