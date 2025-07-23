@@ -56,8 +56,8 @@ catalog:
   postcss: ^8.5.1
   prettier: ^3.5.3
   puppeteer: ^24.10.1
-  react-aria: 3.41.1
-  react-aria-components: 1.10.1
+  react-aria: ^3.41.1
+  react-aria-components: ^1.10.1
   react-dom: ^19.0.0
   react: ^19.0.0
   sass: ^1.89.2
