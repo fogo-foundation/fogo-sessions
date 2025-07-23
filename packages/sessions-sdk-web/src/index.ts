@@ -1,6 +1,9 @@
 import { PublicKey } from "@solana/web3.js";
+import { install } from "@solana/webcrypto-ed25519-polyfill";
 import type { DBSchema, IDBPObjectStore } from "idb";
 import { openDB } from "idb";
+
+install();
 
 export const getStoredSession = async (walletPublicKey: PublicKey) => {
   const session = await withStore("readonly", (store) =>

@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-web",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "description": "A set of framework-agnostic utilities for integrating with Fogo sessions on web",
   "keywords": [
@@ -38,6 +38,7 @@
   "dependencies": {
     "@fogo/sessions-sdk": "workspace:^",
     "@solana/web3.js": "catalog:",
+    "@solana/webcrypto-ed25519-polyfill": "catalog:",
     "idb": "catalog:"
   },
   "devDependencies": {
