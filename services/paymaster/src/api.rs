@@ -133,7 +133,7 @@ pub async fn run_server(config: Config) -> () {
         .layer(
             CorsLayer::new()
                 .allow_origin(AllowOrigin::any())
-                .allow_methods(AllowMethods::exact(Method::POST))
+                .allow_methods(AllowMethods::list([Method::POST, Method::GET]))
                 .allow_headers(AllowHeaders::list(vec![HeaderName::from_static(
                     "content-type",
                 )])),
