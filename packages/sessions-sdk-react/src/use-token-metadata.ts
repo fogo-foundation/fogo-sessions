@@ -1,15 +1,9 @@
-import {
-  safeFetchMetadata,
-  findMetadataPda,
-} from "@metaplex-foundation/mpl-token-metadata";
-import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { getMint } from "@solana/spl-token";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect } from "react";
-import { z } from "zod";
 
+import { getMetadata } from "./get-metadata.js";
 import { StateType, useData } from "./use-data.js";
 
 export { StateType } from "./use-data.js";
@@ -42,33 +36,11 @@ export const useTokenMetadata = (mint: PublicKey) => {
 };
 
 const getTokenMetadata = async (connection: Connection, mint: PublicKey) => {
-  const umi = createUmi(connection.rpcEndpoint);
-  const metaplexMint = metaplexPublicKey(mint);
-  const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
+  const mintAsString = mint.toString();
   const [mintInfo, metadata] = await Promise.all([
     getMint(connection, mint),
-    safeFetchMetadata(umi, metadataAddress),
+    getMetadata([mintAsString]).then((meta) => meta[mintAsString]),
   ]);
 
-  return metadata === null
-    ? mintInfo
-    : {
-        ...mintInfo,
-        ...metadata,
-        icon: await getIcon(metadata.uri),
-      };
+  return { ...mintInfo, ...metadata };
 };
-
-const getIcon = async (offChainMetaUri: string) => {
-  if (offChainMetaUri === "") {
-    return;
-  } else {
-    const response = await fetch(offChainMetaUri);
-    const offChainMeta = offChainMetaSchema.safeParse(await response.json());
-    return offChainMeta.success ? offChainMeta.data.image : undefined;
-  }
-};
-
-const offChainMetaSchema = z.object({
-  image: z.string(),
-});
