@@ -61,11 +61,10 @@ const ONE_HOUR_IN_MS = 60 * ONE_MINUTE_IN_MS;
 const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
 const SESSION_DURATION = 14 * ONE_DAY_IN_MS;
 
-type Props = Omit<
+type Props = ConstrainedOmit<
   ComponentProps<typeof SessionProvider>,
   "sponsor" | "tokens" | "defaultRequestedLimits"
 > & {
-  sponsor: PublicKey | string;
   endpoint: string;
   tokens?: (PublicKey | string)[] | undefined;
   defaultRequestedLimits?:
@@ -73,11 +72,11 @@ type Props = Omit<
     | Record<string, bigint>
     | undefined;
   enableUnlimited?: boolean | undefined;
+  sponsor?: PublicKey | string | undefined;
 };
 
 export const FogoSessionProvider = ({
   endpoint,
-  sponsor,
   tokens,
   defaultRequestedLimits,
   ...props
@@ -102,13 +101,18 @@ export const FogoSessionProvider = ({
             }}
           >
             <SessionProvider
-              sponsor={deserializePublicKey(sponsor)}
               tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
               defaultRequestedLimits={
                 defaultRequestedLimits === undefined
                   ? undefined
                   : deserializePublicKeyMap(defaultRequestedLimits)
               }
+              {...("sponsor" in props && {
+                sponsor:
+                  typeof props.sponsor === "string"
+                    ? deserializePublicKey(props.sponsor)
+                    : props.sponsor,
+              })}
               {...props}
             />
           </TokenWhitelistProvider>
@@ -432,12 +436,12 @@ const useSessionStateContext = ({
   );
 };
 
-const useSessionAdapter = (options: {
-  paymasterUrl: string;
-  sponsor: PublicKey;
-  addressLookupTableAddress?: string | undefined;
-  domain?: string | undefined;
-}) => {
+const useSessionAdapter = (
+  options: ConstrainedOmit<
+    Parameters<typeof createSolanaWalletAdapter>[0],
+    "connection"
+  >,
+) => {
   const { connection } = useConnection();
   const adapter = useRef<undefined | SessionAdapter>(undefined);
   return useCallback(async () => {
@@ -664,3 +668,8 @@ class InvariantFailedError extends Error {
     this.name = "InvariantFailedError";
   }
 }
+
+type ConstrainedOmit<T, K> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [P in keyof T as Exclude<P, K & keyof any>]: T[P];
+};

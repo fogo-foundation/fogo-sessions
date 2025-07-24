@@ -166,10 +166,10 @@ catalogs:
       specifier: ^19.0.0
       version: 19.1.0
     react-aria:
-      specifier: 3.41.1
+      specifier: ^3.41.1
       version: 3.41.1
     react-aria-components:
-      specifier: 1.10.1
+      specifier: ^1.10.1
       version: 1.10.1
     react-dom:
       specifier: ^19.0.0
