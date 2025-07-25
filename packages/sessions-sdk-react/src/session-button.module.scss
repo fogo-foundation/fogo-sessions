@@ -60,6 +60,7 @@
       .tabs {
         display: grid;
         grid-template-rows: max-content 1fr;
+        overflow: hidden;
 
         .tabList {
           display: flex;
@@ -104,6 +105,37 @@
           border-bottom: 1px solid theme.color("panel", "border");
           overflow: auto;
           outline: none;
+          display: grid;
+          grid-template-rows: max-content 1fr;
+
+          .topButtons {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: center;
+            gap: theme.spacing(8);
+            margin-top: theme.spacing(4);
+            margin-bottom: theme.spacing(2);
+
+            .topButton {
+              width: theme.spacing(12);
+              outline: none;
+
+              .icon {
+                background: theme.color("primary", "background", "base");
+                border-radius: theme.border-radius("full");
+                padding: theme.spacing(1.5);
+                font-size: theme.spacing(12);
+                margin-bottom: theme.spacing(1);
+                color: theme.color("primary", "text", "base");
+              }
+
+              .text {
+                @include theme.text("sm", "semibold");
+
+                text-align: center;
+              }
+            }
+          }
 
           .tokenList {
             display: flex;

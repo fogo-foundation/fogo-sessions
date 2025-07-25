@@ -40,7 +40,6 @@ import {
   useRef,
   use,
 } from "react";
-import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { mutate } from "swr";
 
 import {
@@ -48,8 +47,9 @@ import {
   deserializePublicKeyList,
   deserializePublicKeyMap,
 } from "./deserialize-public-key.js";
+import { Faucet } from "./faucet.js";
+import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
-import styles from "./session-provider.module.css";
 import { TokenWhitelistProvider } from "./token-whitelist-provider.js";
 import { getCacheKey } from "./use-token-account-data.js";
 
@@ -132,50 +132,54 @@ const SessionProvider = ({
   defaultRequestedLimits?: Map<PublicKey, bigint> | undefined;
   enableUnlimited?: boolean | undefined;
 }) => {
-  const { state, onSessionLimitsOpenChange, requestedLimits } =
-    useSessionStateContext(args);
+  const {
+    state,
+    onSessionLimitsOpenChange,
+    requestedLimits,
+    isFaucetOpen,
+    onFaucetOpenChange,
+  } = useSessionStateContext(args);
 
   return (
     <>
       <SessionContext value={state}>{children}</SessionContext>
       {args.tokens !== undefined && args.tokens.length > 0 && (
-        <ModalOverlay
-          isDismissable
-          className={styles.sessionLimitsModalOverlay ?? ""}
+        <ModalDialog
+          heading="Session Limits"
+          message={
+            <p>Limit how many tokens this app is allowed to interact with</p>
+          }
           isOpen={
             state.type === StateType.RequestingLimits ||
             state.type === StateType.SettingLimits
           }
           onOpenChange={onSessionLimitsOpenChange}
         >
-          <Modal isDismissable className={styles.modal ?? ""}>
-            <Dialog className={styles.dialog ?? ""}>
-              <Heading slot="title" className={styles.heading ?? ""}>
-                Session Limits
-              </Heading>
-              <p className={styles.message}>
-                Limit how many tokens this app is allowed to interact with
-              </p>
-              <SessionLimits
-                enableUnlimited={enableUnlimited}
-                tokens={args.tokens}
-                onSubmit={
-                  state.type === StateType.RequestingLimits
-                    ? state.onSubmitLimits
-                    : undefined
-                }
-                initialLimits={
-                  requestedLimits ?? defaultRequestedLimits ?? new Map()
-                }
-                error={
-                  state.type === StateType.RequestingLimits
-                    ? state.error
-                    : undefined
-                }
-              />
-            </Dialog>
-          </Modal>
-        </ModalOverlay>
+          <SessionLimits
+            enableUnlimited={enableUnlimited}
+            tokens={args.tokens}
+            onSubmit={
+              state.type === StateType.RequestingLimits
+                ? state.onSubmitLimits
+                : undefined
+            }
+            initialLimits={
+              requestedLimits ?? defaultRequestedLimits ?? new Map()
+            }
+            error={
+              state.type === StateType.RequestingLimits
+                ? state.error
+                : undefined
+            }
+          />
+        </ModalDialog>
+      )}
+      {isEstablished(state) && (
+        <Faucet
+          walletPublicKey={state.walletPublicKey}
+          isOpen={isFaucetOpen}
+          onOpenChange={onFaucetOpenChange}
+        />
       )}
     </>
   );
@@ -188,6 +192,7 @@ const useSessionStateContext = ({
   tokens?: PublicKey[] | undefined;
 }) => {
   const [state, setState] = useState<SessionState>(SessionState.Initializing());
+  const [isFaucetOpen, onFaucetOpenChange] = useState(false);
   const wallet = useWallet();
   const walletModal = useWalletModal();
   const requestedLimits = useRef<undefined | Map<PublicKey, bigint>>(undefined);
@@ -256,6 +261,9 @@ const useSessionStateContext = ({
             session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
           walletPublicKey: session.walletPublicKey,
           connection: adapter.connection,
+          showFaucet: () => {
+            onFaucetOpenChange(true);
+          },
         };
       const setLimits = (limits?: Map<PublicKey, bigint>) => {
         setState(SessionState.UpdatingLimits(commonStateArgs));
@@ -431,8 +439,10 @@ const useSessionStateContext = ({
       state,
       onSessionLimitsOpenChange,
       requestedLimits: requestedLimits.current,
+      isFaucetOpen,
+      onFaucetOpenChange,
     }),
-    [state, onSessionLimitsOpenChange],
+    [state, onSessionLimitsOpenChange, isFaucetOpen, onFaucetOpenChange],
   );
 };
 
@@ -606,6 +616,7 @@ const SessionState = {
       isLimited: boolean;
       setLimits: (limits?: Map<PublicKey, bigint>) => void;
       endSession: () => void;
+      showFaucet: () => void;
     },
     updateLimitsError?: unknown,
   ) => ({
@@ -622,6 +633,7 @@ const SessionState = {
       connection: ReturnType<typeof useConnection>["connection"];
       isLimited: boolean;
       endSession: () => void;
+      showFaucet: () => void;
     },
   ) => ({ type: StateType.UpdatingLimits as const, ...options }),
 };

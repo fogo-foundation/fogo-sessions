@@ -1,6 +1,6 @@
 @use "./theme";
 
-.sessionLimitsModalOverlay {
+.modalOverlay {
   @include theme.reset {
     position: fixed;
     top: 0;
@@ -11,7 +11,7 @@
     backdrop-filter: blur(8px);
     display: grid;
     place-content: center;
-    z-index: 999;
+    z-index: 999999;
 
     &[data-entering] {
       animation: modal-fade 200ms;
@@ -38,6 +38,7 @@
       border-radius: theme.border-radius("md");
       color: theme.color("panel", "text");
       border: 1px solid theme.color("panel", "border");
+      min-width: theme.spacing(140);
 
       .dialog {
         outline: none;
