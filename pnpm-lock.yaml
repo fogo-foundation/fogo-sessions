@@ -515,6 +515,9 @@ importers:
       '@metaplex-foundation/umi-bundle-defaults':
         specifier: 'catalog:'
         version: 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
+      '@phosphor-icons/react':
+        specifier: 'catalog:'
+        version: 2.1.10(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@react-hookz/web':
         specifier: 'catalog:'
         version: 25.1.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)

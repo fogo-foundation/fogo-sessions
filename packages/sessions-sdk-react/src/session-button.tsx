@@ -1,10 +1,10 @@
 "use client";
 
+import { CoinsIcon } from "@phosphor-icons/react/dist/ssr/Coins";
 import { PublicKey } from "@solana/web3.js";
 import { useMemo, useState, useRef, useCallback } from "react";
 import {
   Button,
-  Link,
   Dialog,
   OverlayArrow,
   Popover,
@@ -42,7 +42,7 @@ export const SessionButton = ({
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
 }) => {
   const sessionState = useSession();
-  const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
+  const [sessionPanelOpen, setSessionPanelOpen] = useState(true);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const handlePress = useCallback(() => {
     if (isEstablished(sessionState)) {
@@ -138,7 +138,18 @@ export const SessionButton = ({
             </TabList>
             <TabPanel className={styles.tabPanel ?? ""} id="tokens">
               {isEstablished(sessionState) && (
-                <Tokens sessionState={sessionState} />
+                <>
+                  <div className={styles.topButtons}>
+                    <Button
+                      className={styles.topButton ?? ""}
+                      onPress={sessionState.showFaucet}
+                    >
+                      <CoinsIcon className={styles.icon} />
+                      <span className={styles.text}>Get tokens</span>
+                    </Button>
+                  </div>
+                  <Tokens sessionState={sessionState} />
+                </>
               )}
             </TabPanel>
             <TabPanel className={styles.tabPanel ?? ""} id="session-limits">
@@ -203,12 +214,7 @@ const Tokens = ({
     }
     case TokenDataStateType.Loaded: {
       return state.data.tokensInWallet.length === 0 ? (
-        <div className={styles.tokenListEmpty}>
-          Your wallet is empty
-          <Link target="_blank" href="https://faucet.fogo.io">
-            Get Testnet Tokens
-          </Link>
-        </div>
+        <div className={styles.tokenListEmpty}>Your wallet is empty</div>
       ) : (
         <dl className={styles.tokenList}>
           {state.data.tokensInWallet

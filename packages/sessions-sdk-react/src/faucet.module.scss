@@ -1,0 +1,44 @@
+@use "./theme";
+
+.faucetContents {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, max-content);
+  width: 100%;
+  gap: theme.spacing(6);
+
+  .iframe {
+    grid-column: 1 / span 2;
+    width: 100%;
+    height: theme.spacing(160);
+    color-scheme: light;
+  }
+
+  .error {
+    @include theme.text("sm", "normal");
+
+    grid-column: 1 / span 2;
+    color: theme.color("error");
+    margin-top: theme.spacing(8);
+    text-align: right;
+  }
+
+  .closeButton {
+    @include theme.button("ghost");
+
+    place-self: start;
+  }
+
+  .requestTokensButton {
+    @include theme.button("primary");
+
+    place-self: end;
+  }
+
+  &[data-ready] {
+    .iframe {
+      width: 0;
+      height: theme.spacing(10);
+    }
+  }
+}

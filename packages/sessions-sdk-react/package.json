@@ -56,6 +56,7 @@
     "@metaplex-foundation/mpl-token-metadata": "catalog:",
     "@metaplex-foundation/umi": "catalog:",
     "@metaplex-foundation/umi-bundle-defaults": "catalog:",
+    "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-react": "catalog:",
