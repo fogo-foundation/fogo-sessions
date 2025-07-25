@@ -35,10 +35,6 @@ import {
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "./use-token-account-data.js";
-import {
-  StateType as TokenMetadataStateType,
-  useTokenMetadata,
-} from "./use-token-metadata.js";
 
 export const SessionButton = ({
   requestedLimits,
@@ -215,16 +211,37 @@ const Tokens = ({
         </div>
       ) : (
         <dl className={styles.tokenList}>
-          {state.data.tokensInWallet.map(
-            ({ mint, amountInWallet, decimals }) => (
-              <Token
-                key={mint.toBase58()}
-                mint={mint}
-                decimals={decimals}
-                amountInWallet={amountInWallet}
-              />
-            ),
-          )}
+          {state.data.tokensInWallet
+            .sort((a, b) => {
+              if (a.name === undefined) {
+                return b.name === undefined
+                  ? a.mint.toString().localeCompare(b.mint.toString())
+                  : 1;
+              } else if (b.name === undefined) {
+                return -1;
+              } else {
+                return a.name.toString().localeCompare(b.name.toString());
+              }
+            })
+            .map(({ mint, amountInWallet, decimals, image, name, symbol }) => {
+              const amountAsString = amountToString(amountInWallet, decimals);
+              return (
+                <div key={mint.toString()} className={styles.token}>
+                  {image ? (
+                    <img alt="" src={image} className={styles.tokenIcon} />
+                  ) : (
+                    <div className={styles.tokenIcon} />
+                  )}
+                  <dt className={styles.tokenName}>
+                    {name ?? mint.toBase58()}
+                  </dt>
+                  <dd className={styles.amount}>
+                    {amountAsString}
+                    {symbol ?? (amountAsString === "1" ? "Token" : "Tokens")}
+                  </dd>
+                </div>
+              );
+            })}
         </dl>
       );
     }
@@ -235,54 +252,6 @@ const Tokens = ({
           <LoadingToken />
         </dl>
       );
-    }
-  }
-};
-
-const Token = ({
-  mint,
-  decimals,
-  amountInWallet,
-}: {
-  mint: PublicKey;
-  decimals: number;
-  amountInWallet: bigint;
-}) => {
-  const metadata = useTokenMetadata(mint);
-  switch (metadata.type) {
-    case TokenMetadataStateType.Error:
-    case TokenMetadataStateType.Loaded: {
-      const amountAsString = amountToString(amountInWallet, decimals);
-      const name =
-        metadata.type === TokenMetadataStateType.Loaded &&
-        "name" in metadata.data
-          ? metadata.data.name
-          : mint.toBase58();
-      const defaultSymbol = amountAsString === "1" ? "Token" : "Tokens";
-      const symbol =
-        metadata.type === TokenMetadataStateType.Loaded &&
-        "symbol" in metadata.data
-          ? metadata.data.symbol
-          : defaultSymbol;
-      return (
-        <div className={styles.token}>
-          {metadata.type === TokenMetadataStateType.Loaded &&
-          "icon" in metadata.data ? (
-            <img alt="" src={metadata.data.icon} className={styles.tokenIcon} />
-          ) : (
-            <div className={styles.tokenIcon} />
-          )}
-          <dt className={styles.tokenName}>{name}</dt>
-          <dd className={styles.amount}>
-            {amountAsString} {symbol}
-          </dd>
-        </div>
-      );
-    }
-
-    case TokenMetadataStateType.Loading:
-    case TokenMetadataStateType.NotLoaded: {
-      return <LoadingToken />;
     }
   }
 };

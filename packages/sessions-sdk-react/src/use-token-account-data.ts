@@ -4,6 +4,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { z } from "zod";
 
+import { getMetadata } from "./get-metadata.js";
 import type { EstablishedSessionState } from "./session-provider.js";
 import { useData } from "./use-data.js";
 
@@ -49,6 +50,8 @@ const getTokenAccounts = async (
     }),
   );
 
+  const metadata = await getMetadata(accounts.map((account) => account.mint));
+
   return {
     tokensInWallet: accounts
       .filter(({ amountInWallet }) => amountInWallet !== 0n)
@@ -56,6 +59,7 @@ const getTokenAccounts = async (
         mint: new PublicKey(mint),
         amountInWallet,
         decimals,
+        ...metadata[mint],
       })),
     sessionLimits: accounts
       .filter(
@@ -70,6 +74,7 @@ const getTokenAccounts = async (
               mint: new PublicKey(mint),
               sessionLimit: delegateAmount,
               decimals,
+              ...metadata[mint],
             },
       )
       .filter((account) => account !== undefined),
