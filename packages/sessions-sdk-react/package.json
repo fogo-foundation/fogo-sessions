@@ -53,6 +53,7 @@
     "@fogo/sessions-idls": "workspace:^",
     "@fogo/sessions-sdk": "workspace:^",
     "@fogo/sessions-sdk-web": "workspace:^",
+    "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-react": "catalog:",
