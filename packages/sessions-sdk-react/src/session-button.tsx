@@ -1,10 +1,11 @@
 "use client";
 
+import { CoinsIcon } from "@phosphor-icons/react/dist/ssr/Coins";
 import { PublicKey } from "@solana/web3.js";
+import type { ComponentProps } from "react";
 import { useMemo, useState, useRef, useCallback } from "react";
 import {
   Button,
-  Link,
   Dialog,
   OverlayArrow,
   Popover,
@@ -14,6 +15,7 @@ import {
   TabPanel,
   Heading,
 } from "react-aria-components";
+import { mutate } from "swr";
 
 import { amountToString } from "./amount-to-string.js";
 import { deserializePublicKeyMap } from "./deserialize-public-key.js";
@@ -32,9 +34,12 @@ import {
 } from "./session-provider.js";
 import { useTokenWhitelist } from "./token-whitelist-provider.js";
 import {
+  getCacheKey,
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "./use-token-account-data.js";
+
+const FAUCET_URL = "https://faucet.fogo.io";
 
 export const SessionButton = ({
   requestedLimits,
@@ -42,7 +47,7 @@ export const SessionButton = ({
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
 }) => {
   const sessionState = useSession();
-  const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
+  const [sessionPanelOpen, setSessionPanelOpen] = useState(true);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const handlePress = useCallback(() => {
     if (isEstablished(sessionState)) {
@@ -138,7 +143,18 @@ export const SessionButton = ({
             </TabList>
             <TabPanel className={styles.tabPanel ?? ""} id="tokens">
               {isEstablished(sessionState) && (
-                <Tokens sessionState={sessionState} />
+                <>
+                  <div className={styles.topButtons}>
+                    <FaucetButton
+                      sessionState={sessionState}
+                      className={styles.topButton ?? ""}
+                    >
+                      <CoinsIcon className={styles.icon} />
+                      <span className={styles.text}>Get tokens</span>
+                    </FaucetButton>
+                  </div>
+                  <Tokens sessionState={sessionState} />
+                </>
               )}
             </TabPanel>
             <TabPanel className={styles.tabPanel ?? ""} id="session-limits">
@@ -158,6 +174,34 @@ export const SessionButton = ({
       </Popover>
     </>
   );
+};
+
+const FaucetButton = ({
+  sessionState,
+  ...props
+}: { sessionState: EstablishedSessionState } & Omit<
+  ComponentProps<typeof Button>,
+  "onPress"
+>) => {
+  const showFaucet = useCallback(() => {
+    const url = new URL(FAUCET_URL);
+    url.searchParams.set("wallet", sessionState.walletPublicKey.toBase58());
+    const windowRef = window.open(url, "Fogo Faucet", "height=800,width=700");
+    if (windowRef !== null) {
+      const interval = setInterval(() => {
+        if (windowRef.closed) {
+          clearInterval(interval);
+          mutate(getCacheKey(sessionState.walletPublicKey)).catch(
+            (error: unknown) => {
+              // eslint-disable-next-line no-console
+              console.error("Failed to update token account data", error);
+            },
+          );
+        }
+      }, 100);
+    }
+  }, [sessionState]);
+  return <Button {...props} onPress={showFaucet} />;
 };
 
 const LogoutButton = ({
@@ -203,12 +247,7 @@ const Tokens = ({
     }
     case TokenDataStateType.Loaded: {
       return state.data.tokensInWallet.length === 0 ? (
-        <div className={styles.tokenListEmpty}>
-          Your wallet is empty
-          <Link target="_blank" href="https://faucet.fogo.io">
-            Get Testnet Tokens
-          </Link>
-        </div>
+        <div className={styles.tokenListEmpty}>Your wallet is empty</div>
       ) : (
         <dl className={styles.tokenList}>
           {state.data.tokensInWallet
