@@ -119,6 +119,10 @@
             .topButton {
               width: theme.spacing(12);
               outline: none;
+              border: none;
+              background: transparent;
+              padding: 0;
+              cursor: pointer;
 
               .icon {
                 background: theme.color("primary", "background", "base");
