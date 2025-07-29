@@ -87,9 +87,9 @@ pub async fn validate_transaction(
         ));
     }
 
-    // Check if the sponsor account balance change exceeds 0.005 SOL (5,000,000 lamports)
+    // Check if the sponsor account balance change exceeds the maximum permissible value
     if let Some(accounts) = simulation_result.value.accounts {
-        if let Some(Some(account)) = accounts.get(0) {
+        if let Some(Some(account)) = accounts.first() {
             let current_balance = account.lamports;
             // We need to get the pre-transaction balance to calculate the change
             let pre_balance = rpc.get_balance(sponsor).map_err(|err| {
@@ -178,7 +178,7 @@ async fn sponsor_pubkey_handler(
     Ok(state.keypair.pubkey().to_string())
 }
 
-pub async fn run_server(config: Config) -> () {
+pub async fn run_server(config: Config) {
     let keypair = Keypair::read_from_file(&config.keypair_path).unwrap();
 
     let (router, _) = OpenApiRouter::new()
