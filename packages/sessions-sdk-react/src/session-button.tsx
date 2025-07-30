@@ -3,7 +3,7 @@
 import { CoinsIcon } from "@phosphor-icons/react/dist/ssr/Coins";
 import { PublicKey } from "@solana/web3.js";
 import type { ComponentProps } from "react";
-import { useMemo, useState, useRef, useCallback } from "react";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
   Button,
   Dialog,
@@ -47,7 +47,8 @@ export const SessionButton = ({
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
 }) => {
   const sessionState = useSession();
-  const [sessionPanelOpen, setSessionPanelOpen] = useState(true);
+  const prevSessionState = useRef(sessionState);
+  const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const handlePress = useCallback(() => {
     if (isEstablished(sessionState)) {
@@ -74,12 +75,24 @@ export const SessionButton = ({
   const isLoading = [
     SessionStateType.Initializing,
     SessionStateType.CheckingStoredSession,
-    SessionStateType.RestoringSession,
     SessionStateType.RequestingLimits,
     SessionStateType.SettingLimits,
     SessionStateType.WalletConnecting,
     SessionStateType.SelectingWallet,
   ].includes(sessionState.type);
+
+  useEffect(() => {
+    if (sessionState.type !== prevSessionState.current.type) {
+      if (
+        isEstablished(sessionState) &&
+        !isEstablished(prevSessionState.current) &&
+        prevSessionState.current.type !== SessionStateType.CheckingStoredSession
+      ) {
+        setSessionPanelOpen(true);
+      }
+      prevSessionState.current = sessionState;
+    }
+  }, [sessionState]);
 
   return (
     <>

@@ -14,6 +14,7 @@ import {
   getStoredSession,
   setStoredSession,
 } from "@fogo/sessions-sdk-web";
+import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -25,9 +26,9 @@ import {
   useWalletModal,
 } from "@solana/wallet-adapter-react-ui";
 import {
-  CoinbaseWalletAdapter,
-  LedgerWalletAdapter,
-  TorusWalletAdapter,
+  SolflareWalletAdapter,
+  PhantomWalletAdapter,
+  NightlyWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { PublicKey } from "@solana/web3.js";
 import type { ComponentProps, ReactNode } from "react";
@@ -83,9 +84,10 @@ export const FogoSessionProvider = ({
 }: Props) => {
   const wallets = useMemo(
     () => [
-      new CoinbaseWalletAdapter(),
-      new LedgerWalletAdapter(),
-      new TorusWalletAdapter(),
+      new NightlyWalletAdapter(),
+      new PhantomWalletAdapter(),
+      new BackpackWalletAdapter(),
+      new SolflareWalletAdapter(),
     ],
     [],
   );
@@ -474,7 +476,6 @@ const getNextState = (
       }
       case StateType.CheckingStoredSession:
       case StateType.Established:
-      case StateType.RestoringSession:
       case StateType.RequestingLimits:
       case StateType.SettingLimits:
       case StateType.UpdatingLimits: {
@@ -495,7 +496,6 @@ const getNextState = (
         case StateType.NotEstablished:
         case StateType.WalletConnecting:
         case StateType.SelectingWallet:
-        case StateType.RestoringSession:
         case StateType.RequestingLimits:
         case StateType.UpdatingLimits: {
           return SessionState.CheckingStoredSession(
@@ -522,7 +522,6 @@ const getNextState = (
       case StateType.CheckingStoredSession:
       case StateType.Established:
       case StateType.Initializing:
-      case StateType.RestoringSession:
       case StateType.RequestingLimits:
       case StateType.SettingLimits:
       case StateType.UpdatingLimits:
@@ -554,7 +553,6 @@ export enum StateType {
   SelectingWallet,
   WalletConnecting,
   CheckingStoredSession,
-  RestoringSession,
   RequestingLimits,
   SettingLimits,
   Established,
@@ -583,8 +581,6 @@ const SessionState = {
     walletPublicKey,
     signMessage,
   }),
-
-  RestoringSession: () => ({ type: StateType.RestoringSession as const }),
 
   RequestingLimits: (
     onSubmitLimits: (limits?: Map<PublicKey, bigint>) => void,
@@ -639,7 +635,6 @@ const SESSION_STATE_NAME = {
   [StateType.SelectingWallet]: "SelectingWallet",
   [StateType.WalletConnecting]: "WalletConnecting",
   [StateType.CheckingStoredSession]: "CheckingStoredSession",
-  [StateType.RestoringSession]: "RestoringSession",
   [StateType.RequestingLimits]: "RequestingLimits",
   [StateType.SettingLimits]: "SettingLimits",
   [StateType.Established]: "Established",
