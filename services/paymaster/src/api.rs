@@ -72,7 +72,7 @@ pub async fn validate_transaction(
                 replace_recent_blockhash: true,
                 accounts: Some(RpcSimulateTransactionAccountsConfig { 
                     encoding: None,
-                    addresses: vec![sponsor.to_string()]
+                    addresses: vec![sponsor.to_string()],
                 }),
                 ..RpcSimulateTransactionConfig::default()
             },
