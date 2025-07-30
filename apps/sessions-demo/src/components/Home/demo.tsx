@@ -137,8 +137,6 @@ const SESSION_STATE_TO_BADGE_CLASSES: Record<SessionStateType, string> = {
     "border-gray-700 bg-gray-100 text-gray-500",
   [SessionStateType.RequestingLimits]:
     "border-blue-700 bg-blue-50 text-blue-600",
-  [SessionStateType.RestoringSession]:
-    "border-blue-700 bg-blue-50 text-blue-600",
   [SessionStateType.SelectingWallet]:
     "border-blue-700 bg-blue-50 text-blue-600",
   [SessionStateType.SettingLimits]: "border-blue-700 bg-blue-50 text-blue-600",
@@ -153,7 +151,6 @@ const SESSION_STATE_TO_DESCRIPTION: Record<SessionStateType, string> = {
   [SessionStateType.Initializing]: "Booting App",
   [SessionStateType.NotEstablished]: "No Session",
   [SessionStateType.RequestingLimits]: "Requesting limits...",
-  [SessionStateType.RestoringSession]: "Restoring stored session...",
   [SessionStateType.SelectingWallet]: "Selecting Solana wallet...",
   [SessionStateType.SettingLimits]: "Setting requested limits...",
   [SessionStateType.UpdatingLimits]: "Updating limits...",
