@@ -40,8 +40,6 @@
     "react-aria-components": "catalog:",
     "react-dom": "catalog:",
     "swr": "catalog:",
-    "tailwind-merge": "catalog:",
-    "tailwindcss-animate": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -53,7 +51,6 @@
     "autoprefixer": "catalog:",
     "pino-pretty": "catalog:",
     "postcss": "catalog:",
-    "tailwindcss": "catalog:",
     "typescript": "catalog:"
   }
 }

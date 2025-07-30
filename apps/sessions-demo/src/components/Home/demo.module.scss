@@ -1,0 +1,94 @@
+@use "../../theme";
+
+.top {
+  height: theme.spacing(20);
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: space-between;
+  align-items: start;
+  gap: theme.spacing(4);
+  width: 100%;
+
+  @include theme.breakpoint("md") {
+    flex-direction: row-reverse;
+    align-items: center;
+  }
+
+  .badge {
+    border-width: 1px;
+    border-style: solid;
+    padding: theme.spacing(0.5) theme.spacing(2);
+
+    .sessionWallet {
+      @include theme.text("sm");
+
+      .walletAddress {
+        background: rgba(from black r g b / 10%);
+        padding: theme.spacing(0.5) theme.spacing(2);
+        margin-top: -#{theme.spacing(0.5)};
+        margin-bottom: -#{theme.spacing(0.5)};
+      }
+    }
+
+    &[data-state="initializing"] {
+      border-color: theme.pallette-color("gray", 500);
+      background-color: theme.pallette-color("gray", 50);
+      color: theme.pallette-color("gray", 400);
+    }
+
+    &[data-state="notEstablished"] {
+      border-color: theme.pallette-color("gray", 700);
+      background-color: theme.pallette-color("gray", 100);
+      color: theme.pallette-color("gray", 500);
+    }
+
+    &[data-state="loading"] {
+      border-color: theme.pallette-color("blue", 700);
+      background-color: theme.pallette-color("blue", 50);
+      color: theme.pallette-color("blue", 600);
+    }
+
+    &[data-state="established"] {
+      border-color: theme.pallette-color("green", 900);
+      background-color: theme.pallette-color("green", 100);
+      color: theme.pallette-color("green", 800);
+    }
+  }
+
+  .buttons {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: theme.spacing(4);
+  }
+}
+
+.txLog {
+  margin-top: theme.spacing(8);
+
+  .title {
+    @include theme.text("lg", "semibold");
+    margin-bottom: theme.spacing(4);
+  }
+
+  .txList {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    display: flex;
+    flex-flow: column nowrap;
+    gap: theme.spacing(1);
+
+    li {
+      display: flex;
+      flex-flow: row nowrap;
+      gap: theme.spacing(4);
+      align-items: center;
+
+      .explorerLink {
+        color: theme.pallette-color("blue", 700);
+        text-decoration: underline;
+      }
+    }
+  }
+}

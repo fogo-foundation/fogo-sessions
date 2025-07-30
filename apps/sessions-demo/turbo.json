@@ -5,25 +5,28 @@
     "build": {
       "env": [
         "ADDRESS_LOOKUP_TABLE_ADDRESS",
-        "SOLANA_RPC",
+        "RPC",
         "FOGO_SESSIONS_DOMAIN",
-        "PAYMASTER_URL"
+        "PAYMASTER",
+        "USE_TESTNET"
       ]
     },
     "start:dev": {
       "env": [
         "ADDRESS_LOOKUP_TABLE_ADDRESS",
-        "SOLANA_RPC",
+        "RPC",
         "FOGO_SESSIONS_DOMAIN",
-        "PAYMASTER_URL"
+        "PAYMASTER",
+        "USE_TESTNET"
       ]
     },
     "start:prod": {
       "env": [
         "ADDRESS_LOOKUP_TABLE_ADDRESS",
-        "SOLANA_RPC",
+        "RPC",
         "FOGO_SESSIONS_DOMAIN",
-        "PAYMASTER_URL"
+        "PAYMASTER",
+        "USE_TESTNET"
       ]
     },
     "test:types": {

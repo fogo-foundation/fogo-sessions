@@ -8,74 +8,74 @@ import {
 } from "@fogo/sessions-sdk-react";
 import { NATIVE_MINT } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import clsx from "clsx";
 import Link from "next/link";
+import { useMemo } from "react";
 
+import styles from "./demo.module.scss";
 import { useAirdrop } from "./use-airdrop";
 import { useTrade } from "./use-trade";
 import type { Transaction } from "./use-transaction-log";
 import { useTransactionLog } from "./use-transaction-log";
 import { StateType as AsyncStateType } from "../../hooks/use-async";
-import { Button } from "../ui/button";
+import { Button } from "../Button";
 
 export const Demo = ({ rpc }: { rpc: string }) => {
   const { appendTransaction, transactions } = useTransactionLog();
   const sessionState = useSession();
 
   return (
-    <div className="flex flex-col">
-      <div className="h-32">
-        <div className="flex flex-col md:flex-row-reverse justify-between items-start gap-4 w-full">
-          <div
-            className={clsx(
-              "border border-px px-2 py-0.5",
-              SESSION_STATE_TO_BADGE_CLASSES[sessionState.type],
-            )}
-          >
-            {SESSION_STATE_TO_DESCRIPTION[sessionState.type]}
-            {isEstablished(sessionState) && (
-              <SessionWallet sessionState={sessionState} />
-            )}
-          </div>
-          <div className="flex flex-row items-center gap-4 min-h-10">
-            {isEstablished(sessionState) && (
-              <>
-                <AirdropButton
-                  sessionState={sessionState}
-                  appendTransaction={appendTransaction}
-                  amount={1}
-                  mint={NATIVE_MINT}
-                />
-                <TradeButton
-                  sessionState={sessionState}
-                  appendTransaction={appendTransaction}
-                  amount={0.5}
-                  mint={NATIVE_MINT}
-                />
-              </>
-            )}
-          </div>
+    <>
+      <section className={styles.top}>
+        <div
+          data-state={SESSION_STATE_TO_BADGE_STATE[sessionState.type]}
+          className={styles.badge}
+        >
+          {SESSION_STATE_TO_DESCRIPTION[sessionState.type]}
+          {isEstablished(sessionState) && (
+            <div className={styles.sessionWallet}>
+              Wallet:{" "}
+              <code className={styles.walletAddress}>
+                <Truncate value={sessionState.walletPublicKey.toBase58()} />
+              </code>
+            </div>
+          )}
         </div>
-      </div>
-      <div>
-        <h2 className="text-lg font-semibold mt-8 mb-4">Transaction Log</h2>
-        <ul>
+        {isEstablished(sessionState) && (
+          <div className={styles.buttons}>
+            <AirdropButton
+              sessionState={sessionState}
+              appendTransaction={appendTransaction}
+              amount={1}
+              mint={NATIVE_MINT}
+            />
+            <TradeButton
+              sessionState={sessionState}
+              appendTransaction={appendTransaction}
+              amount={0.5}
+              mint={NATIVE_MINT}
+            />
+          </div>
+        )}
+      </section>
+      <section className={styles.txLog}>
+        <h2 className={styles.title}>Transaction Log</h2>
+        <ul className={styles.txList}>
           {transactions.map((tx) => (
-            <li key={tx.signature} className="flex flex-row gap-4 items-center">
+            <li key={tx.signature}>
               {tx.success ? "✅" : "❌"}
               <Link
                 href={`https://explorer.fogo.io/tx/${tx.signature}?cluster=custom&customUrl=${rpc}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-blue-700 underline"
+                className={styles.exlporerLink}
               >
                 {tx.description}
               </Link>
             </li>
           ))}
         </ul>
-      </div>
-    </div>
+      </section>
+    </>
   );
 };
 
@@ -97,8 +97,8 @@ const AirdropButton = ({
     mint,
   );
   return (
-    <Button onClick={execute} loading={state.type === AsyncStateType.Running}>
-      Airdrop {amount} SOL
+    <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
+      Airdrop {amount} FOGO
     </Button>
   );
 };
@@ -121,28 +121,22 @@ const TradeButton = ({
     mint,
   );
   return (
-    <Button onClick={execute} loading={state.type === AsyncStateType.Running}>
-      Trade {amount} SOL
+    <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
+      Trade {amount} FOGO
     </Button>
   );
 };
 
-const SESSION_STATE_TO_BADGE_CLASSES: Record<SessionStateType, string> = {
-  [SessionStateType.CheckingStoredSession]:
-    "border-blue-700 bg-blue-50 text-blue-600",
-  [SessionStateType.Established]:
-    "border-green-900 bg-green-100 text-green-800",
-  [SessionStateType.Initializing]: "border-gray-500 bg-gray-50 text-gray-400",
-  [SessionStateType.NotEstablished]:
-    "border-gray-700 bg-gray-100 text-gray-500",
-  [SessionStateType.RequestingLimits]:
-    "border-blue-700 bg-blue-50 text-blue-600",
-  [SessionStateType.SelectingWallet]:
-    "border-blue-700 bg-blue-50 text-blue-600",
-  [SessionStateType.SettingLimits]: "border-blue-700 bg-blue-50 text-blue-600",
-  [SessionStateType.UpdatingLimits]: "border-blue-700 bg-blue-50 text-blue-600",
-  [SessionStateType.WalletConnecting]:
-    "border-blue-700 bg-blue-50 text-blue-600",
+const SESSION_STATE_TO_BADGE_STATE: Record<SessionStateType, string> = {
+  [SessionStateType.CheckingStoredSession]: "loading",
+  [SessionStateType.Established]: "established",
+  [SessionStateType.Initializing]: "initializing",
+  [SessionStateType.NotEstablished]: "notEstablished",
+  [SessionStateType.RequestingLimits]: "loading",
+  [SessionStateType.SelectingWallet]: "loading",
+  [SessionStateType.SettingLimits]: "loading",
+  [SessionStateType.UpdatingLimits]: "loading",
+  [SessionStateType.WalletConnecting]: "loading",
 };
 
 const SESSION_STATE_TO_DESCRIPTION: Record<SessionStateType, string> = {
@@ -157,18 +151,7 @@ const SESSION_STATE_TO_DESCRIPTION: Record<SessionStateType, string> = {
   [SessionStateType.WalletConnecting]: "Connecting Solana wallet...",
 };
 
-const SessionWallet = ({
-  sessionState,
-}: {
-  sessionState: EstablishedSessionState;
-}) => {
-  const key = sessionState.walletPublicKey.toBase58();
-  return (
-    <div className="text-sm">
-      Wallet:{" "}
-      <code className="bg-black/10 px-2 py-0.5 -my-0.5">
-        {key.slice(0, 4)}...{key.slice(-4)}
-      </code>
-    </div>
-  );
-};
+const Truncate = ({ value }: { value: string }) => useTruncated(value);
+
+const useTruncated = (value: string) =>
+  useMemo(() => `${value.slice(0, 4)}...${value.slice(-4)}`, [value]);

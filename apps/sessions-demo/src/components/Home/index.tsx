@@ -1,4 +1,4 @@
 import { Demo } from "./demo";
-import { SOLANA_RPC } from "../../config/server";
+import { RPC } from "../../config/server";
 
-export const Home = () => <Demo rpc={SOLANA_RPC} />;
+export const Home = () => <Demo rpc={RPC} />;

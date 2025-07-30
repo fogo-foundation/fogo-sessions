@@ -1,6 +1,4 @@
 @use "sass:map";
-@use "sass:meta";
-@import "https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap";
 
 @function map-get-strict($map, $key...) {
   @if map.has-key($map, $key...) {
@@ -402,66 +400,33 @@ $color-pallette: (
 }
 
 $color: (
-  "mainButton": (
-    "background": (
-      "base": pallette-color("slate", 800),
-      "hovered": pallette-color("slate", 700),
-      "pressed": pallette-color("slate", 900),
-      "disabled": pallette-color("slate", 200),
-    ),
-    "border": (
-      "base": pallette-color("slate", 950),
-      "disabled": pallette-color("slate", 300),
-    ),
-    "text": (
-      "base": pallette-color("slate", 100),
-      "disabled": pallette-color("slate", 500),
-    ),
-  ),
-  "primary": (
-    "background": (
-      "base": pallette-color("slate", 600),
-      "hovered": pallette-color("slate", 500),
-      "pressed": pallette-color("slate", 700),
-      "disabled": pallette-color("slate", 100),
-    ),
-    "border": (
-      "base": pallette-color("slate", 700),
-      "disabled": pallette-color("slate", 100),
-    ),
-    "text": (
-      "base": pallette-color("slate", 50),
-      "disabled": pallette-color("slate", 400),
-    ),
-  ),
-  "panel": (
-    "background": pallette-color("slate", 100),
-    "border": pallette-color("slate", 300),
-    "text": pallette-color("slate", 900),
-  ),
-  "error": pallette-color("red", 600),
+  "background": pallette-color("slate", 950),
+  "foreground": pallette-color("slate", 200),
+  "heading": pallette-color("slate", 300),
+  "paragraph": pallette-color("slate", 400),
+  "muted": pallette-color("slate", 500),
+  "border": pallette-color("slate", 600),
+  "button-border": pallette-color("slate", 400),
+  "border-muted": pallette-color("slate", 800),
+  "brand": #ff3d00,
+  "brand-accent-1": #d91772,
+  "brand-accent-2": #8908c8,
 );
 
 @function color($color-path...) {
   @return map-get-strict($color, $color-path...);
 }
 
-@mixin reset {
-  &,
-  &::before,
-  &::after,
-  & * & *::before,
-  & *::after {
-    all: revert;
-  }
+$breakpoints: (
+  "sm": 640px,
+  "md": 768px,
+  "lg": 1024px,
+  "xl": 1280px,
+  "2xl": 1536px,
+);
 
-  @include meta.load-css("pkg:modern-normalize");
-
-  &#{&} {
-    font-family: "Funnel Display", sans-serif;
-    font-optical-sizing: auto;
-    font-style: normal;
-    color-scheme: dark;
+@mixin breakpoint($point) {
+  @media (min-width: map-get-strict($breakpoints, $point)) {
     @content;
   }
 }
@@ -478,6 +443,38 @@ $color: (
   border-width: 0;
 }
 
+@mixin max-width-set-breakpoints {
+  --max-width: 100vw;
+
+  @include breakpoint("lg") {
+    --max-width: #{spacing(155)};
+  }
+
+  @include breakpoint("xl") {
+    --max-width: #{spacing(200)};
+  }
+
+  @include breakpoint("2xl") {
+    --max-width: #{spacing(246)};
+  }
+}
+
+@mixin max-width {
+  max-width: $max-width;
+  padding-left: spacing(3);
+  padding-right: spacing(3);
+
+  @include breakpoint("sm") {
+    padding-left: spacing(6);
+    padding-right: spacing(6);
+  }
+
+  @include breakpoint("lg") {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 @mixin text($size: "base", $weight: "normal") {
   font-size: font-size($size);
   font-weight: font-weight($weight);
@@ -485,84 +482,5 @@ $color: (
   font-style: normal;
 }
 
-@mixin button($variant) {
-  @include text("sm", "semibold");
-
-  background-color: color($variant, "background", "base");
-  border: 2px solid color($variant, "border", "base");
-  color: color($variant, "text", "base");
-  border-radius: border-radius("md");
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-  justify-content: center;
-  gap: spacing(2);
-  transition:
-    background-color linear 50ms,
-    border-color linear 50ms,
-    color linear 50ms;
-  position: relative;
-  padding: spacing(1) spacing(10);
-  cursor: pointer;
-
-  &::before {
-    position: absolute;
-    top: calc((100% - spacing(4)) / 2 - 2px);
-    left: spacing(3);
-    content: "";
-    display: block;
-    width: spacing(4);
-    height: spacing(4);
-    border: 2px solid color($variant, "border", "base");
-    border-radius: border-radius("full");
-    border-top-color: color($variant, "border", "disabled");
-    animation: spin 1s linear infinite;
-    opacity: 0;
-    transition: opacity linear 100ms;
-
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      20% {
-        transform: rotate(40deg);
-      }
-
-      80% {
-        transform: rotate(320deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-  }
-
-  &[data-hovered] {
-    background-color: color($variant, "background", "hovered");
-  }
-
-  &[data-pressed] {
-    background-color: color($variant, "background", "pressed");
-  }
-
-  &[data-disabled],
-  &[data-pending] {
-    background-color: color($variant, "background", "disabled");
-    color: color($variant, "text", "disabled");
-    border-color: color($variant, "border", "disabled");
-  }
-
-  &[data-disabled] {
-    cursor: not-allowed;
-  }
-
-  &[data-pending] {
-    cursor: wait;
-
-    &::before {
-      opacity: 1;
-    }
-  }
-}
+$header-height: spacing(16);
+$max-width: var(--max-width);

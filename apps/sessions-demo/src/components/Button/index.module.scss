@@ -1,0 +1,58 @@
+@use "../../theme";
+
+.button {
+  @include theme.text("base", "medium");
+  background: theme.pallette-color("slate", 800);
+  color: theme.pallette-color("slate", 100);
+  border-radius: theme.border-radius("md");
+  border: none;
+  padding: theme.spacing(2) theme.spacing(10);
+  cursor: pointer;
+  position: relative;
+
+  &[data-hovered] {
+    background: theme.pallette-color("slate", 700);
+  }
+
+  &[data-pressed] {
+    background: theme.pallette-color("slate", 600);
+  }
+
+  &[data-disabled],
+  &[data-pending] {
+    background: theme.pallette-color("slate", 300);
+    color: theme.pallette-color("slate", 600);
+  }
+
+  &[data-disabled] {
+    cursor: not-allowed;
+  }
+
+  &[data-pending] {
+    cursor: wait;
+
+    &:before {
+      content: "";
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      border: 2px solid theme.pallette-color("slate", 200);
+      border-top: 2px solid theme.pallette-color("slate", 700);
+      border-radius: theme.border-radius("full");
+      animation: rotation 1s linear infinite;
+      position: absolute;
+      top: calc((100% - 1em) / 2);
+      left: calc((theme.spacing(10) - 1em) / 2);
+      box-sizing: border-box;
+
+      @keyframes rotation {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    }
+  }
+}
