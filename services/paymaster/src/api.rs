@@ -90,11 +90,11 @@ pub async fn validate_transaction(
             )
         })?;
 
-    if let Some(err) = simulation_result.value.err {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Transaction simulation failed: {err:?}"),
-        ));
+    if let Some(_err) = simulation_result.value.err {
+        // The paymaster succeeds when the transaction simulation successfully determines that the
+        // transaction returns an error. This is a stopgap measure to unblock 3rd parties while we figure
+        // out the underlying problems with transaction simulation.
+        return Ok(());
     }
 
     // Check if the sponsor account balance change exceeds the maximum permissible value
