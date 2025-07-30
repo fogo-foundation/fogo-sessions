@@ -9,7 +9,9 @@ use axum::{
 };
 use base64::Engine;
 use solana_client::rpc_client::RpcClient;
-use solana_client::rpc_config::RpcSendTransactionConfig;
+use solana_client::rpc_config::{
+    RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
+};
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
@@ -23,6 +25,7 @@ pub struct ServerState {
     pub keypair: Keypair,
     pub rpc: RpcClient,
     pub program_whitelist: Vec<Pubkey>,
+    pub max_sponsor_spending: u64,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -30,10 +33,12 @@ pub struct SponsorAndSendPayload {
     pub transaction: String,
 }
 
-pub fn validate_transaction(
+pub async fn validate_transaction(
     transaction: &VersionedTransaction,
     program_whitelist: &[Pubkey],
     sponsor: &Pubkey,
+    rpc: &RpcClient,
+    max_sponsor_spending: u64,
 ) -> Result<(), (StatusCode, String)> {
     if transaction.message.static_account_keys()[0] != *sponsor {
         return Err((
@@ -59,6 +64,60 @@ pub fn validate_transaction(
             }
             Ok(())
         })?;
+
+    // Simulate the transaction to check sponsor SOL spending
+    let simulation_result = rpc
+        .simulate_transaction_with_config(
+            transaction,
+            RpcSimulateTransactionConfig {
+                sig_verify: false,
+                replace_recent_blockhash: true,
+                accounts: Some(RpcSimulateTransactionAccountsConfig {
+                    encoding: None,
+                    addresses: vec![sponsor.to_string()],
+                }),
+                ..RpcSimulateTransactionConfig::default()
+            },
+        )
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to simulate transaction: {err}"),
+            )
+        })?;
+
+    if let Some(err) = simulation_result.value.err {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Transaction simulation failed: {err:?}"),
+        ));
+    }
+
+    // Check if the sponsor account balance change exceeds the maximum permissible value
+    if let Some(accounts) = simulation_result.value.accounts {
+        if let Some(Some(account)) = accounts.first() {
+            let current_balance = account.lamports;
+            // We need to get the pre-transaction balance to calculate the change
+            let pre_balance = rpc.get_balance(sponsor).map_err(|err| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to get sponsor balance: {err}"),
+                )
+            })?;
+
+            let balance_change = pre_balance.saturating_sub(current_balance);
+
+            if balance_change > max_sponsor_spending {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Sponsor spending exceeds limit: {balance_change} lamports (max: {max_sponsor_spending})"
+                    ),
+                ));
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -92,7 +151,10 @@ async fn sponsor_and_send_handler(
         &transaction,
         &state.program_whitelist,
         &state.keypair.pubkey(),
-    )?;
+        &state.rpc,
+        state.max_sponsor_spending,
+    )
+    .await?;
 
     transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
 
@@ -121,7 +183,7 @@ async fn sponsor_pubkey_handler(
     Ok(state.keypair.pubkey().to_string())
 }
 
-pub async fn run_server(config: Config) -> () {
+pub async fn run_server(config: Config) {
     let keypair = Keypair::read_from_file(&config.keypair_path).unwrap();
 
     let (router, _) = OpenApiRouter::new()
@@ -142,6 +204,7 @@ pub async fn run_server(config: Config) -> () {
             keypair,
             rpc: RpcClient::new(config.solana_url),
             program_whitelist: config.program_whitelist,
+            max_sponsor_spending: config.max_sponsor_spending,
         }));
     let listener = tokio::net::TcpListener::bind(config.listen_address)
         .await
