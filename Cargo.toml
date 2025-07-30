@@ -19,6 +19,7 @@ codegen-units = 1
 anchor-lang = "0.31.1"
 anchor-spl = "0.31.1"
 solana-client = "2.2.1"
+solana-commitment-config = "2.2.1"
 solana-keypair = "2.2.1"
 solana-packet = "2.2.1"
 solana-pubkey = "2.2.1"
