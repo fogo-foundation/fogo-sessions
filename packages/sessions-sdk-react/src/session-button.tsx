@@ -92,7 +92,7 @@ export const SessionButton = ({
       }
       prevSessionState.current = sessionState;
     }
-  }, [sessionState.type]);
+  }, [sessionState]);
 
   return (
     <>

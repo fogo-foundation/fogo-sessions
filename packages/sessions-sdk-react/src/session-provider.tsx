@@ -14,6 +14,7 @@ import {
   getStoredSession,
   setStoredSession,
 } from "@fogo/sessions-sdk-web";
+import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -25,9 +26,9 @@ import {
   useWalletModal,
 } from "@solana/wallet-adapter-react-ui";
 import {
-  CoinbaseWalletAdapter,
-  LedgerWalletAdapter,
-  TorusWalletAdapter,
+  SolflareWalletAdapter,
+  PhantomWalletAdapter,
+  NightlyWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { PublicKey } from "@solana/web3.js";
 import type { ComponentProps, ReactNode } from "react";
@@ -83,9 +84,10 @@ export const FogoSessionProvider = ({
 }: Props) => {
   const wallets = useMemo(
     () => [
-      new CoinbaseWalletAdapter(),
-      new LedgerWalletAdapter(),
-      new TorusWalletAdapter(),
+      new NightlyWalletAdapter(),
+      new PhantomWalletAdapter(),
+      new BackpackWalletAdapter(),
+      new SolflareWalletAdapter(),
     ],
     [],
   );
