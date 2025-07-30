@@ -9,7 +9,9 @@ use axum::{
 };
 use base64::Engine;
 use solana_client::rpc_client::RpcClient;
-use solana_client::rpc_config::{RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig};
+use solana_client::rpc_config::{
+    RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
+};
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
@@ -70,7 +72,7 @@ pub async fn validate_transaction(
             RpcSimulateTransactionConfig {
                 sig_verify: false,
                 replace_recent_blockhash: true,
-                accounts: Some(RpcSimulateTransactionAccountsConfig { 
+                accounts: Some(RpcSimulateTransactionAccountsConfig {
                     encoding: None,
                     addresses: vec![sponsor.to_string()],
                 }),
@@ -109,8 +111,7 @@ pub async fn validate_transaction(
                 return Err((
                     StatusCode::BAD_REQUEST,
                     format!(
-                        "Sponsor spending exceeds limit: {} lamports (max: {})",
-                        balance_change, max_sponsor_spending
+                        "Sponsor spending exceeds limit: {balance_change} lamports (max: {max_sponsor_spending})"
                     ),
                 ));
             }
