@@ -243,15 +243,7 @@ const getDomain = (requestedDomain?: string) => {
       return detectedDomain;
     }
   } else {
-    if (
-      detectedDomain === undefined ||
-      detectedDomain === requestedDomain ||
-      process.env.NODE_ENV !== "production" // eslint-disable-line n/no-process-env
-    ) {
-      return requestedDomain;
-    } else {
-      throw new DomainOverrideNotAllowedError();
-    }
+    return requestedDomain;
   }
 };
 
@@ -275,12 +267,5 @@ class DomainRequiredError extends Error {
       "On platforms where the origin cannot be determined, you must pass a domain to create a session.",
     );
     this.name = "DomainRequiredError";
-  }
-}
-
-class DomainOverrideNotAllowedError extends Error {
-  constructor() {
-    super("You cannot create a session for a different domain.");
-    this.name = "DomainOverrideNotAllowedError";
   }
 }
