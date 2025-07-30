@@ -23,6 +23,7 @@ catalog:
   "@solana/compat": ^2.1.1
   "@solana/kit": ^2.1.1
   "@solana/spl-token": ^0.4.13
+  "@solana/wallet-adapter-backpack": 0.1.14
   "@solana/wallet-adapter-base": ^0.9.23
   "@solana/wallet-adapter-react": ^0.15.35
   "@solana/wallet-adapter-react-ui": ^0.9.35
