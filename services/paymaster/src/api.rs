@@ -10,7 +10,6 @@ use axum::{
 use base64::Engine;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::{RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig};
-use solana_account_decoder_client_types::UiAccountEncoding;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
@@ -72,7 +71,7 @@ pub async fn validate_transaction(
                 sig_verify: false,
                 replace_recent_blockhash: true,
                 accounts: Some(RpcSimulateTransactionAccountsConfig { 
-                    encoding: Some(UiAccountEncoding::Base64),
+                    encoding: None,
                     addresses: vec![sponsor.to_string()]
                 }),
                 ..RpcSimulateTransactionConfig::default()
