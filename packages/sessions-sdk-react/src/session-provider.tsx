@@ -474,7 +474,6 @@ const getNextState = (
       }
       case StateType.CheckingStoredSession:
       case StateType.Established:
-      case StateType.RestoringSession:
       case StateType.RequestingLimits:
       case StateType.SettingLimits:
       case StateType.UpdatingLimits: {
@@ -495,7 +494,6 @@ const getNextState = (
         case StateType.NotEstablished:
         case StateType.WalletConnecting:
         case StateType.SelectingWallet:
-        case StateType.RestoringSession:
         case StateType.RequestingLimits:
         case StateType.UpdatingLimits: {
           return SessionState.CheckingStoredSession(
@@ -522,7 +520,6 @@ const getNextState = (
       case StateType.CheckingStoredSession:
       case StateType.Established:
       case StateType.Initializing:
-      case StateType.RestoringSession:
       case StateType.RequestingLimits:
       case StateType.SettingLimits:
       case StateType.UpdatingLimits:
@@ -554,7 +551,6 @@ export enum StateType {
   SelectingWallet,
   WalletConnecting,
   CheckingStoredSession,
-  RestoringSession,
   RequestingLimits,
   SettingLimits,
   Established,
@@ -583,8 +579,6 @@ const SessionState = {
     walletPublicKey,
     signMessage,
   }),
-
-  RestoringSession: () => ({ type: StateType.RestoringSession as const }),
 
   RequestingLimits: (
     onSubmitLimits: (limits?: Map<PublicKey, bigint>) => void,
@@ -639,7 +633,6 @@ const SESSION_STATE_NAME = {
   [StateType.SelectingWallet]: "SelectingWallet",
   [StateType.WalletConnecting]: "WalletConnecting",
   [StateType.CheckingStoredSession]: "CheckingStoredSession",
-  [StateType.RestoringSession]: "RestoringSession",
   [StateType.RequestingLimits]: "RequestingLimits",
   [StateType.SettingLimits]: "SettingLimits",
   [StateType.Established]: "Established",
