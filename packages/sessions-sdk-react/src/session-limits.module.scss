@@ -92,8 +92,10 @@
         padding: theme.spacing(1) theme.spacing(2);
         border-radius: theme.border-radius("sm");
         border: 1px solid theme.color("panel", "border");
-        width: theme.spacing(30);
+        width: theme.spacing(28);
         text-overflow: ellipsis;
+        background: transparent;
+        color: theme.color("panel", "text");
 
         &[data-focused] ~ .error {
           display: block;
