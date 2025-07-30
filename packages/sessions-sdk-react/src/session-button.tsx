@@ -288,7 +288,7 @@ const Tokens = ({
                     {name ?? mint.toBase58()}
                   </dt>
                   <dd className={styles.amount}>
-                    {amountAsString}
+                    {amountAsString}{" "}
                     {symbol ?? (amountAsString === "1" ? "Token" : "Tokens")}
                   </dd>
                 </div>

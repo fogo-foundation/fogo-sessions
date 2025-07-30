@@ -1,0 +1,45 @@
+@use "../../theme";
+
+.root {
+  font-family: sans-serif;
+
+  .header {
+    height: theme.spacing(16);
+    border-bottom: 1px solid black;
+
+    .contents {
+      height: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+
+      .heading {
+        @include theme.text("2xl", "medium");
+      }
+    }
+  }
+
+  .contents,
+  .main {
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: theme.spacing(4);
+    padding-right: theme.spacing(4);
+
+    @include theme.breakpoint("sm") {
+      padding-left: theme.spacing(10);
+      padding-right: theme.spacing(10);
+    }
+
+    @include theme.breakpoint("lg") {
+      padding-left: 0;
+      padding-right: 0;
+      width: calc(3 / 5 * 100%);
+    }
+  }
+
+  .main {
+    margin-top: theme.spacing(10);
+  }
+}

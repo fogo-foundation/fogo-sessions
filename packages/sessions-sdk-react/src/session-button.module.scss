@@ -137,6 +137,7 @@
                 @include theme.text("sm", "semibold");
 
                 text-align: center;
+                color: theme.color("panel", "text");
               }
             }
           }
