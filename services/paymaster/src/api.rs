@@ -94,7 +94,7 @@ pub async fn validate_transaction(
         // The paymaster succeeds when the transaction simulation successfully determines that the
         // transaction returns an error. This is a stopgap measure to unblock 3rd parties while we figure
         // out the underlying problems with transaction simulation.
-        return Ok(())
+        return Ok(());
     }
 
     // Check if the sponsor account balance change exceeds the maximum permissible value
