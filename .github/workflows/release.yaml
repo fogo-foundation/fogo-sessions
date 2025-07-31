@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+
+      - name: Install anchor cli
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v0.31.1 --locked avm
+          avm install 0.31.1
+          avm use 0.31.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "package.json"
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: true
+
+      - name: Build
+        run: pnpm turbo build
+
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: ./publish-js.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
