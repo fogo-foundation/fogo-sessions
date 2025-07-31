@@ -17,6 +17,7 @@
     "test:lint": "run-jest --colors --selectProjects lint"
   },
   "devDependencies": {
+    "@changesets/cli": "catalog:",
     "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",

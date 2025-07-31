@@ -6,6 +6,7 @@ packages:
 
 catalog:
   "@axe-core/react": ^4.10.2
+  "@changesets/cli": ^2.29.4
   "@coral-xyz/anchor": ^0.31.1
   "@cprussin/eslint-config": ^5.0.0
   "@cprussin/jest-config": ^3.1.2
