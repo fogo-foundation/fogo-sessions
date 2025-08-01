@@ -7,14 +7,16 @@
     "pnpm": "^10.13.1"
   },
   "scripts": {
-    "turbo": "[ ! -d node_modules ] && pnpm install; turbo",
+    "build:replace-packages-with-built-packages": "for package in packages/*/package.json; do packagePath=${package//\\/package.json}; mv \"${packagePath}\" \"${packagePath}-old\"; mv \"${packagePath}-old/dist\" \"${packagePath}\"; rm -rf \"${packagePath}-old\"; done",
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix .",
     "install:modules": "[ $CI ] && true || pnpm install",
-    "run:initialize-chain-id": "initialize-chain-id",
+    "publish": "changeset publish",
     "run:add-program-id-to-domain-registry": "add-program-id-to-domain-registry",
+    "run:initialize-chain-id": "initialize-chain-id",
     "test:format": "run-jest --colors --selectProjects format",
-    "test:lint": "run-jest --colors --selectProjects lint"
+    "test:lint": "run-jest --colors --selectProjects lint",
+    "turbo": "[ ! -d node_modules ] && pnpm install; turbo"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
