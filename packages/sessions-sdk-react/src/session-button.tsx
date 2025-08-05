@@ -6,6 +6,7 @@ import type { ComponentProps } from "react";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
   Button,
+  Link,
   Dialog,
   OverlayArrow,
   Popover,
@@ -30,16 +31,16 @@ import type {
 import {
   StateType as SessionStateType,
   useSession,
+  useSessionContext,
   isEstablished,
 } from "./session-provider.js";
-import { useTokenWhitelist } from "./token-whitelist-provider.js";
 import {
   getCacheKey,
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "./use-token-account-data.js";
 
-const FAUCET_URL = "https://faucet.fogo.io";
+const FAUCET_URL = "https://gas.zip/faucet/fogo";
 
 export const SessionButton = ({
   requestedLimits,
@@ -193,13 +194,21 @@ const FaucetButton = ({
   sessionState,
   ...props
 }: { sessionState: EstablishedSessionState } & Omit<
-  ComponentProps<typeof Button>,
+  ComponentProps<typeof Link>,
   "onPress"
 >) => {
-  const showFaucet = useCallback(() => {
+  const faucetUrl = useMemo(() => {
     const url = new URL(FAUCET_URL);
-    url.searchParams.set("wallet", sessionState.walletPublicKey.toBase58());
-    const windowRef = window.open(url, "Fogo Faucet", "height=800,width=700");
+    url.searchParams.set("address", sessionState.walletPublicKey.toBase58());
+    return url;
+  }, [sessionState]);
+
+  const showFaucet = useCallback(() => {
+    const windowRef = window.open(
+      faucetUrl,
+      "Fogo Faucet",
+      "height=800,width=700",
+    );
     if (windowRef !== null) {
       const interval = setInterval(() => {
         if (windowRef.closed) {
@@ -214,7 +223,14 @@ const FaucetButton = ({
       }, 100);
     }
   }, [sessionState]);
-  return <Button {...props} onPress={showFaucet} />;
+  return (
+    <Link
+      {...props}
+      onPress={showFaucet}
+      href={faucetUrl.toString()}
+      target="_blank"
+    />
+  );
 };
 
 const LogoutButton = ({
@@ -322,7 +338,7 @@ const SessionLimitsPanel = ({
   sessionState: EstablishedSessionState;
 }) => {
   const state = useTokenAccountData(sessionState);
-  const tokenWhitelist = useTokenWhitelist();
+  const { whitelistedTokens, enableUnlimited } = useSessionContext();
 
   switch (state.type) {
     case TokenDataStateType.Error: {
@@ -332,7 +348,7 @@ const SessionLimitsPanel = ({
       return (
         <SessionLimits
           className={styles.sessionLimits}
-          tokens={tokenWhitelist.tokens}
+          tokens={whitelistedTokens}
           initialLimits={
             new Map(
               state.data.sessionLimits.map(({ mint, sessionLimit }) => [
@@ -352,7 +368,7 @@ const SessionLimitsPanel = ({
               ? sessionState.updateLimitsError
               : undefined
           }
-          {...(tokenWhitelist.enableUnlimited && {
+          {...(enableUnlimited && {
             enableUnlimited: true,
             isSessionUnlimited: !sessionState.isLimited,
           })}

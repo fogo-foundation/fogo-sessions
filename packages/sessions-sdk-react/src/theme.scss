@@ -434,6 +434,22 @@ $color: (
       "disabled": pallette-color("slate", 400),
     ),
   ),
+  "ghost": (
+    "background": (
+      "base": transparent,
+      "hovered": pallette-color("slate", 200),
+      "pressed": pallette-color("slate", 300),
+      "disabled": transparent,
+    ),
+    "border": (
+      "base": transparent,
+      "disabled": transparent,
+    ),
+    "text": (
+      "base": pallette-color("slate", 900),
+      "disabled": pallette-color("slate", 200),
+    ),
+  ),
   "panel": (
     "background": pallette-color("slate", 100),
     "border": pallette-color("slate", 300),

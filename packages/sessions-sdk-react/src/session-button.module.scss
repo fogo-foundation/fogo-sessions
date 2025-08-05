@@ -113,23 +113,36 @@
             flex-flow: row nowrap;
             justify-content: center;
             gap: theme.spacing(8);
-            margin-top: theme.spacing(4);
-            margin-bottom: theme.spacing(2);
+            margin-top: theme.spacing(2);
 
             .topButton {
-              width: theme.spacing(12);
               outline: none;
               border: none;
               background: transparent;
-              padding: 0;
               cursor: pointer;
+              text-align: center;
+              text-decoration: none;
+              transition: background-color 100ms linear;
+              border-radius: theme.border-radius("lg");
+              padding: theme.spacing(3) theme.spacing(6);
+              display: grid;
+              grid-template-columns: min-content;
+              grid-template-rows: repeat(2, max-content);
+              gap: theme.spacing(1);
+
+              &[data-hovered] {
+                background-color: rgb(from black r g b / 5%);
+              }
+
+              &[data-pressed] {
+                background-color: rgb(from black r g b / 10%);
+              }
 
               .icon {
                 background: theme.color("primary", "background", "base");
                 border-radius: theme.border-radius("full");
                 padding: theme.spacing(1.5);
                 font-size: theme.spacing(12);
-                margin-bottom: theme.spacing(1);
                 color: theme.color("primary", "text", "base");
               }
 
