@@ -8,5 +8,9 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [],
-  "message": "chore: version packages"
+  "message": "chore: version packages",
+  "privatePackages": {
+    "version": false,
+    "tag": false
+  }
 }
