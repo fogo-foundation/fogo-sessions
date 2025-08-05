@@ -28,6 +28,7 @@ export const SessionLimits = <Token extends PublicKey>({
   className,
   enableUnlimited,
   isSessionUnlimited,
+  autoFocus,
 }: {
   tokens: Token[];
   initialLimits: Map<Token, bigint>;
@@ -35,6 +36,7 @@ export const SessionLimits = <Token extends PublicKey>({
   buttonText?: string;
   error?: unknown;
   className?: string | undefined;
+  autoFocus?: boolean;
 } & (
   | { enableUnlimited?: false | undefined; isSessionUnlimited?: undefined }
   | { enableUnlimited: true; isSessionUnlimited?: boolean }
@@ -111,6 +113,7 @@ export const SessionLimits = <Token extends PublicKey>({
           type="submit"
           isDisabled={onSubmit === undefined}
           isPending={onSubmit === undefined}
+          {...(autoFocus && { autoFocus })}
         >
           {buttonText}
         </Button>

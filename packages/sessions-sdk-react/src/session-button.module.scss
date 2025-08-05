@@ -90,7 +90,8 @@
             }
 
             &[data-focus-visible] {
-              outline: 2px solid theme.color("mainButton", "border", "base");
+              outline: 2px solid theme.color("primary", "border", "base");
+              outline-offset: -2px;
             }
 
             &[data-hovered] {
@@ -142,6 +143,10 @@
 
             &[data-pressed] {
               background-color: rgb(from black r g b / 10%);
+            }
+
+            &[data-focus-visible] {
+              outline: 2px solid theme.color("primary", "border", "base");
             }
 
             .icon {
@@ -273,6 +278,10 @@
 
           &[data-hovered] {
             text-decoration: underline;
+          }
+
+          &[data-focus-visible] {
+            outline: 2px solid theme.color("primary", "border", "base");
           }
         }
       }

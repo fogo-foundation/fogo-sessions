@@ -219,7 +219,7 @@ const FaucetButton = ({
         }
       }, 100);
     }
-  }, [sessionState]);
+  }, [sessionState, faucetUrl]);
   return (
     <Link
       {...props}

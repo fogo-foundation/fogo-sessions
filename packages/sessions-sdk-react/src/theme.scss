@@ -581,4 +581,9 @@ $color: (
       opacity: 1;
     }
   }
+
+  &[data-focus-visible] {
+    outline: 2px solid color("primary", "border", "base");
+    outline-offset: spacing(0.5);
+  }
 }
