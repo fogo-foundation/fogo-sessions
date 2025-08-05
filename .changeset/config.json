@@ -7,10 +7,6 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [],
-  "message": "chore: version packages",
-  "privatePackages": {
-    "version": false,
-    "tag": false
-  }
+  "ignore": ["@fogo/portfolio", "@fogo/sessions-demo"],
+  "message": "chore: version packages"
 }
