@@ -98,149 +98,154 @@
             }
           }
         }
+      }
 
-        .tabPanel {
-          background: rgb(from black r g b / 5%);
-          border-top: 1px solid theme.color("panel", "border");
-          border-bottom: 1px solid theme.color("panel", "border");
-          overflow: auto;
-          outline: none;
-          display: grid;
-          grid-template-rows: max-content 1fr;
+      .tokensPanel,
+      .limitsPanel {
+        background: rgb(from black r g b / 5%);
+        border-top: 1px solid theme.color("panel", "border");
+        border-bottom: 1px solid theme.color("panel", "border");
+        overflow: auto;
+        outline: none;
+        display: grid;
+        scrollbar-width: thin;
+      }
 
-          .topButtons {
-            display: flex;
-            flex-flow: row nowrap;
-            justify-content: center;
-            gap: theme.spacing(8);
-            margin-top: theme.spacing(2);
+      .tokensPanel {
+        grid-template-rows: max-content 1fr;
 
-            .topButton {
-              outline: none;
-              border: none;
-              background: transparent;
-              cursor: pointer;
+        .topButtons {
+          display: flex;
+          flex-flow: row nowrap;
+          justify-content: center;
+          gap: theme.spacing(8);
+          margin-top: theme.spacing(2);
+
+          .topButton {
+            outline: none;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 100ms linear;
+            border-radius: theme.border-radius("lg");
+            padding: theme.spacing(3) theme.spacing(6);
+            display: grid;
+            grid-template-columns: min-content;
+            grid-template-rows: repeat(2, max-content);
+            gap: theme.spacing(1);
+
+            &[data-hovered] {
+              background-color: rgb(from black r g b / 5%);
+            }
+
+            &[data-pressed] {
+              background-color: rgb(from black r g b / 10%);
+            }
+
+            .icon {
+              background: theme.color("primary", "background", "base");
+              border-radius: theme.border-radius("full");
+              padding: theme.spacing(1.5);
+              font-size: theme.spacing(12);
+              color: theme.color("primary", "text", "base");
+            }
+
+            .text {
+              @include theme.text("sm", "semibold");
+
               text-align: center;
-              text-decoration: none;
-              transition: background-color 100ms linear;
-              border-radius: theme.border-radius("lg");
-              padding: theme.spacing(3) theme.spacing(6);
-              display: grid;
-              grid-template-columns: min-content;
-              grid-template-rows: repeat(2, max-content);
-              gap: theme.spacing(1);
-
-              &[data-hovered] {
-                background-color: rgb(from black r g b / 5%);
-              }
-
-              &[data-pressed] {
-                background-color: rgb(from black r g b / 10%);
-              }
-
-              .icon {
-                background: theme.color("primary", "background", "base");
-                border-radius: theme.border-radius("full");
-                padding: theme.spacing(1.5);
-                font-size: theme.spacing(12);
-                color: theme.color("primary", "text", "base");
-              }
-
-              .text {
-                @include theme.text("sm", "semibold");
-
-                text-align: center;
-                color: theme.color("panel", "text");
-              }
+              color: theme.color("panel", "text");
             }
           }
+        }
 
-          .tokenList {
-            display: flex;
-            flex-flow: column nowrap;
-            gap: theme.spacing(2);
-            padding: theme.spacing(2);
-            margin: 0;
+        .tokenList {
+          display: flex;
+          flex-flow: column nowrap;
+          gap: theme.spacing(2);
+          padding: theme.spacing(2);
+          padding-bottom: theme.spacing(4);
+          margin: 0;
 
-            .token {
-              display: grid;
-              grid-template-columns: max-content 1fr max-content;
-              gap: theme.spacing(3);
+          .token {
+            display: grid;
+            grid-template-columns: max-content 1fr max-content;
+            gap: theme.spacing(3);
+            background: rgb(from black r g b / 5%);
+            border-radius: theme.border-radius("lg");
+            padding: theme.spacing(2) theme.spacing(3);
+            align-items: center;
+
+            .tokenIcon {
+              width: theme.spacing(8);
+              height: theme.spacing(8);
+              border-radius: theme.border-radius("full");
               background: rgb(from black r g b / 5%);
-              border-radius: theme.border-radius("lg");
-              padding: theme.spacing(2) theme.spacing(3);
-              align-items: center;
+            }
 
-              .tokenIcon {
-                width: theme.spacing(8);
-                height: theme.spacing(8);
-                border-radius: theme.border-radius("full");
-                background: rgb(from black r g b / 5%);
+            .tokenName {
+              @include theme.text("sm", "medium");
+
+              overflow: hidden;
+              text-overflow: ellipsis;
+              padding-right: theme.spacing(8);
+            }
+
+            .amount {
+              @include theme.text("xs", "semibold");
+            }
+
+            &[data-is-loading] {
+              .tokenIcon,
+              .tokenName,
+              .amount {
+                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+              }
+
+              .tokenName,
+              .amount {
+                background: rgb(from black r g b / 10%);
+                height: 1em;
+                border-radius: theme.border-radius("md");
               }
 
               .tokenName {
-                @include theme.text("sm", "medium");
-
-                overflow: hidden;
-                text-overflow: ellipsis;
-                padding-right: theme.spacing(8);
+                width: theme.spacing(30);
               }
 
               .amount {
-                @include theme.text("xs", "semibold");
+                width: theme.spacing(20);
               }
 
-              &[data-is-loading] {
-                .tokenIcon,
-                .tokenName,
-                .amount {
-                  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-                }
-
-                .tokenName,
-                .amount {
-                  background: rgb(from black r g b / 10%);
-                  height: 1em;
-                  border-radius: theme.border-radius("md");
-                }
-
-                .tokenName {
-                  width: theme.spacing(30);
-                }
-
-                .amount {
-                  width: theme.spacing(20);
-                }
-
-                @keyframes pulse {
-                  50% {
-                    opacity: 0.5;
-                  }
+              @keyframes pulse {
+                50% {
+                  opacity: 0.5;
                 }
               }
             }
-          }
-
-          .tokenListEmpty {
-            @include theme.text("lg", "bold");
-
-            text-align: center;
-            display: grid;
-            place-content: center;
-            height: 100%;
-            gap: theme.spacing(10);
-            color: rgb(from theme.color("panel", "text") r g b / 60%);
-
-            a {
-              @include theme.button("primary");
-            }
-          }
-
-          .sessionLimits {
-            padding: theme.spacing(6) theme.spacing(4);
-            min-height: 100%;
           }
         }
+
+        .tokenListEmpty {
+          @include theme.text("lg", "bold");
+
+          text-align: center;
+          display: grid;
+          place-content: center;
+          height: 100%;
+          gap: theme.spacing(10);
+          color: rgb(from theme.color("panel", "text") r g b / 60%);
+
+          a {
+            @include theme.button("primary");
+          }
+        }
+      }
+
+      .limitsPanel {
+        padding: theme.spacing(6) theme.spacing(4);
       }
 
       .footer {

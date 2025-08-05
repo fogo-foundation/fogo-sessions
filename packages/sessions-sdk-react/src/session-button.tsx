@@ -47,6 +47,7 @@ export const SessionButton = ({
 }: {
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
 }) => {
+  const { whitelistedTokens } = useSessionContext();
   const sessionState = useSession();
   const prevSessionState = useRef(sessionState);
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
@@ -146,37 +147,33 @@ export const SessionButton = ({
           <Heading slot="title" className={styles.heading}>
             Your Wallet
           </Heading>
-          <Tabs className={styles.tabs ?? ""}>
-            <TabList aria-label="Wallet" className={styles.tabList ?? ""}>
-              <Tab className={styles.tab ?? ""} id="tokens">
-                Tokens
-              </Tab>
-              <Tab className={styles.tab ?? ""} id="session-limits">
-                Session
-              </Tab>
-            </TabList>
-            <TabPanel className={styles.tabPanel ?? ""} id="tokens">
-              {isEstablished(sessionState) && (
-                <>
-                  <div className={styles.topButtons}>
-                    <FaucetButton
-                      sessionState={sessionState}
-                      className={styles.topButton ?? ""}
-                    >
-                      <CoinsIcon className={styles.icon} />
-                      <span className={styles.text}>Get tokens</span>
-                    </FaucetButton>
-                  </div>
-                  <Tokens sessionState={sessionState} />
-                </>
-              )}
-            </TabPanel>
-            <TabPanel className={styles.tabPanel ?? ""} id="session-limits">
-              {isEstablished(sessionState) && (
-                <SessionLimitsPanel sessionState={sessionState} />
-              )}
-            </TabPanel>
-          </Tabs>
+          {whitelistedTokens.length === 0 ? (
+            <div className={styles.tokensPanel}>
+              <Tokens sessionState={sessionState} />
+            </div>
+          ) : (
+            <Tabs className={styles.tabs ?? ""}>
+              <TabList aria-label="Wallet" className={styles.tabList ?? ""}>
+                <Tab className={styles.tab ?? ""} id="tokens">
+                  Tokens
+                </Tab>
+                <Tab className={styles.tab ?? ""} id="session-limits">
+                  Session
+                </Tab>
+              </TabList>
+              <TabPanel className={styles.tokensPanel ?? ""} id="tokens">
+                <Tokens sessionState={sessionState} />
+              </TabPanel>
+              <TabPanel
+                className={styles.limitsPanel ?? ""}
+                id="session-limits"
+              >
+                {isEstablished(sessionState) && (
+                  <SessionLimitsPanel sessionState={sessionState} />
+                )}
+              </TabPanel>
+            </Tabs>
+          )}
           <div className={styles.footer}>
             <FogoWordmark className={styles.fogoWordmark} />
             <LogoutButton
@@ -264,7 +261,23 @@ const TruncateKey = ({ keyValue }: { keyValue: PublicKey }) =>
     return `${strKey.slice(0, 4)}...${strKey.slice(-4)}`;
   }, [keyValue]);
 
-const Tokens = ({
+const Tokens = ({ sessionState }: { sessionState: SessionState }) =>
+  isEstablished(sessionState) && (
+    <>
+      <div className={styles.topButtons}>
+        <FaucetButton
+          sessionState={sessionState}
+          className={styles.topButton ?? ""}
+        >
+          <CoinsIcon className={styles.icon} />
+          <span className={styles.text}>Get tokens</span>
+        </FaucetButton>
+      </div>
+      <TokenList sessionState={sessionState} />
+    </>
+  );
+
+const TokenList = ({
   sessionState,
 }: {
   sessionState: EstablishedSessionState;
