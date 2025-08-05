@@ -41,7 +41,6 @@ import {
   useRef,
   use,
 } from "react";
-import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { mutate } from "swr";
 
 import {
@@ -49,9 +48,8 @@ import {
   deserializePublicKeyList,
   deserializePublicKeyMap,
 } from "./deserialize-public-key.js";
+import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
-import styles from "./session-provider.module.css";
-import { TokenWhitelistProvider } from "./token-whitelist-provider.js";
 import { getCacheKey } from "./use-token-account-data.js";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -96,28 +94,21 @@ export const FogoSessionProvider = ({
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <TokenWhitelistProvider
-            value={{
-              enableUnlimited: props.enableUnlimited ?? false,
-              tokens: tokens ? deserializePublicKeyList(tokens) : [],
-            }}
-          >
-            <SessionProvider
-              tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
-              defaultRequestedLimits={
-                defaultRequestedLimits === undefined
-                  ? undefined
-                  : deserializePublicKeyMap(defaultRequestedLimits)
-              }
-              {...("sponsor" in props && {
-                sponsor:
-                  typeof props.sponsor === "string"
-                    ? deserializePublicKey(props.sponsor)
-                    : props.sponsor,
-              })}
-              {...props}
-            />
-          </TokenWhitelistProvider>
+          <SessionProvider
+            tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
+            defaultRequestedLimits={
+              defaultRequestedLimits === undefined
+                ? undefined
+                : deserializePublicKeyMap(defaultRequestedLimits)
+            }
+            {...("sponsor" in props && {
+              sponsor:
+                typeof props.sponsor === "string"
+                  ? deserializePublicKey(props.sponsor)
+                  : props.sponsor,
+            })}
+            {...props}
+          />
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
@@ -134,50 +125,52 @@ const SessionProvider = ({
   defaultRequestedLimits?: Map<PublicKey, bigint> | undefined;
   enableUnlimited?: boolean | undefined;
 }) => {
-  const { state, onSessionLimitsOpenChange, requestedLimits } =
-    useSessionStateContext(args);
+  const {
+    state: sessionState,
+    onSessionLimitsOpenChange,
+    requestedLimits,
+  } = useSessionStateContext(args);
+
+  const state = useMemo(
+    () => ({
+      sessionState,
+      enableUnlimited: enableUnlimited ?? false,
+      whitelistedTokens: args.tokens ?? [],
+    }),
+    [sessionState, enableUnlimited, args.tokens],
+  );
 
   return (
     <>
       <SessionContext value={state}>{children}</SessionContext>
       {args.tokens !== undefined && args.tokens.length > 0 && (
-        <ModalOverlay
-          isDismissable
-          className={styles.sessionLimitsModalOverlay ?? ""}
+        <ModalDialog
+          heading="Session Limits"
+          message="Limit how many tokens this app is allowed to interact with"
           isOpen={
-            state.type === StateType.RequestingLimits ||
-            state.type === StateType.SettingLimits
+            sessionState.type === StateType.RequestingLimits ||
+            sessionState.type === StateType.SettingLimits
           }
           onOpenChange={onSessionLimitsOpenChange}
         >
-          <Modal isDismissable className={styles.modal ?? ""}>
-            <Dialog className={styles.dialog ?? ""}>
-              <Heading slot="title" className={styles.heading ?? ""}>
-                Session Limits
-              </Heading>
-              <p className={styles.message}>
-                Limit how many tokens this app is allowed to interact with
-              </p>
-              <SessionLimits
-                enableUnlimited={enableUnlimited}
-                tokens={args.tokens}
-                onSubmit={
-                  state.type === StateType.RequestingLimits
-                    ? state.onSubmitLimits
-                    : undefined
-                }
-                initialLimits={
-                  requestedLimits ?? defaultRequestedLimits ?? new Map()
-                }
-                error={
-                  state.type === StateType.RequestingLimits
-                    ? state.error
-                    : undefined
-                }
-              />
-            </Dialog>
-          </Modal>
-        </ModalOverlay>
+          <SessionLimits
+            enableUnlimited={enableUnlimited}
+            tokens={args.tokens}
+            onSubmit={
+              sessionState.type === StateType.RequestingLimits
+                ? sessionState.onSubmitLimits
+                : undefined
+            }
+            initialLimits={
+              requestedLimits ?? defaultRequestedLimits ?? new Map()
+            }
+            error={
+              sessionState.type === StateType.RequestingLimits
+                ? sessionState.error
+                : undefined
+            }
+          />
+        </ModalDialog>
       )}
     </>
   );
@@ -536,9 +529,16 @@ const getNextState = (
   }
 };
 
-const SessionContext = createContext<SessionState | undefined>(undefined);
+const SessionContext = createContext<
+  | {
+      sessionState: SessionState;
+      enableUnlimited: boolean;
+      whitelistedTokens: PublicKey[];
+    }
+  | undefined
+>(undefined);
 
-export const useSession = () => {
+export const useSessionContext = () => {
   const value = use(SessionContext);
   if (value === undefined) {
     throw new NotInitializedError();
@@ -546,6 +546,8 @@ export const useSession = () => {
     return value;
   }
 };
+
+export const useSession = () => useSessionContext().sessionState;
 
 export enum StateType {
   Initializing,
