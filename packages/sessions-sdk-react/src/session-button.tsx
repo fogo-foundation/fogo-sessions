@@ -1,6 +1,8 @@
 "use client";
 
+import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { CoinsIcon } from "@phosphor-icons/react/dist/ssr/Coins";
+import { CopyIcon } from "@phosphor-icons/react/dist/ssr/Copy";
 import { PublicKey } from "@solana/web3.js";
 import type { ComponentProps } from "react";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
@@ -145,7 +147,13 @@ export const SessionButton = ({
         </OverlayArrow>
         <Dialog className={styles.sessionPanel ?? ""}>
           <Heading slot="title" className={styles.heading}>
-            Your Wallet
+            <span>Your Wallet</span>
+            <span>·</span>
+            {isEstablished(sessionState) && (
+              <CopyWalletAddressButton
+                walletAddress={sessionState.walletPublicKey}
+              />
+            )}
           </Heading>
           {whitelistedTokens.length === 0 ? (
             <div className={styles.tokensPanel}>
@@ -184,6 +192,51 @@ export const SessionButton = ({
         </Dialog>
       </Popover>
     </>
+  );
+};
+
+const CopyWalletAddressButton = ({
+  walletAddress,
+}: {
+  walletAddress: PublicKey;
+}) => {
+  const [isCopied, setIsCopied] = useState(false);
+  const walletAddressAsString = useMemo(
+    () => walletAddress.toBase58(),
+    [walletAddress],
+  );
+
+  const copyAddress = useCallback(() => {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
+    navigator.clipboard
+      .writeText(walletAddressAsString)
+      .then(() => {
+        setIsCopied(true);
+        setTimeout(() => {
+          setIsCopied(false);
+        }, 1000);
+      })
+      .catch((error: unknown) => {
+        // eslint-disable-next-line no-console
+        console.error(error);
+      });
+  }, [walletAddressAsString]);
+
+  return (
+    <Button
+      className={styles.copyWalletAddressButton ?? ""}
+      onPress={copyAddress}
+      isDisabled={isCopied}
+      data-is-copied={isCopied ? "" : undefined}
+    >
+      <code>
+        <TruncateKey keyValue={walletAddress} />
+      </code>
+      <div className={styles.iconContainer}>
+        <CopyIcon className={styles.copyIcon} />
+        <CheckIcon className={styles.checkIcon} />
+      </div>
+    </Button>
   );
 };
 
