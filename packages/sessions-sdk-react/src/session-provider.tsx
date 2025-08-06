@@ -72,6 +72,10 @@ type Props = ConstrainedOmit<
     | undefined;
   enableUnlimited?: boolean | undefined;
   sponsor?: PublicKey | string | undefined;
+  onStartSessionInit?:
+    | (() => Promise<boolean> | boolean)
+    | (() => Promise<void> | void)
+    | undefined;
 };
 
 export const FogoSessionProvider = ({
@@ -119,11 +123,16 @@ const SessionProvider = ({
   children,
   defaultRequestedLimits,
   enableUnlimited,
+  onStartSessionInit,
   ...args
 }: Parameters<typeof useSessionStateContext>[0] & {
   children: ReactNode;
   defaultRequestedLimits?: Map<PublicKey, bigint> | undefined;
   enableUnlimited?: boolean | undefined;
+  onStartSessionInit?:
+    | (() => Promise<boolean> | boolean)
+    | (() => Promise<void> | void)
+    | undefined;
 }) => {
   const {
     state: sessionState,
@@ -136,8 +145,9 @@ const SessionProvider = ({
       sessionState,
       enableUnlimited: enableUnlimited ?? false,
       whitelistedTokens: args.tokens ?? [],
+      onStartSessionInit,
     }),
-    [sessionState, enableUnlimited, args.tokens],
+    [sessionState, enableUnlimited, args.tokens, onStartSessionInit],
   );
 
   return (
@@ -536,6 +546,10 @@ const SessionContext = createContext<
       sessionState: SessionState;
       enableUnlimited: boolean;
       whitelistedTokens: PublicKey[];
+      onStartSessionInit?:
+        | (() => Promise<boolean> | boolean)
+        | (() => Promise<void> | void)
+        | undefined;
     }
   | undefined
 >(undefined);

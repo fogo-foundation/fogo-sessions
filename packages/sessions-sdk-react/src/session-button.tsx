@@ -49,22 +49,43 @@ export const SessionButton = ({
 }: {
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
 }) => {
-  const { whitelistedTokens } = useSessionContext();
+  const { whitelistedTokens, onStartSessionInit } = useSessionContext();
   const sessionState = useSession();
   const prevSessionState = useRef(sessionState);
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const limits = useMemo(
+    () =>
+      requestedLimits === undefined
+        ? undefined
+        : deserializePublicKeyMap(requestedLimits),
+    [requestedLimits],
+  );
   const handlePress = useCallback(() => {
     if (isEstablished(sessionState)) {
       setSessionPanelOpen(true);
     } else if (sessionState.type === SessionStateType.NotEstablished) {
-      sessionState.establishSession(
-        requestedLimits === undefined
-          ? undefined
-          : deserializePublicKeyMap(requestedLimits),
-      );
+      if (onStartSessionInit === undefined) {
+        sessionState.establishSession(limits);
+      } else {
+        const callbackReturn = onStartSessionInit();
+        if (callbackReturn instanceof Promise) {
+          callbackReturn
+            .then((shouldStartSession) => {
+              if (shouldStartSession !== false) {
+                sessionState.establishSession(limits);
+              }
+            })
+            .catch((error: unknown) => {
+              // eslint-disable-next-line no-console
+              console.error("Error in `onStartSessionInit` callback", error);
+            });
+        } else if (callbackReturn !== false) {
+          sessionState.establishSession(limits);
+        }
+      }
     }
-  }, [requestedLimits, sessionState]);
+  }, [sessionState, limits, onStartSessionInit]);
   const handleSessionPanelOpenChange = useCallback(
     (isOpen: boolean) => {
       if (!isOpen) {
