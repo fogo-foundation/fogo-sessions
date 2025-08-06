@@ -29,6 +29,7 @@ import {
   SolflareWalletAdapter,
   PhantomWalletAdapter,
   NightlyWalletAdapter,
+  BitgetWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { PublicKey } from "@solana/web3.js";
 import type { ComponentProps, ReactNode } from "react";
@@ -88,6 +89,7 @@ export const FogoSessionProvider = ({
     () => [
       new NightlyWalletAdapter(),
       new PhantomWalletAdapter(),
+      new BitgetWalletAdapter(),
       new BackpackWalletAdapter(),
       new SolflareWalletAdapter(),
     ],
