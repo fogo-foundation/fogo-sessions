@@ -35,6 +35,11 @@
       }
     }
 
+    &[data-focus-visible] .checkbox {
+      outline: 2px solid theme.color("primary", "border", "base");
+      outline-offset: theme.spacing(0.5);
+    }
+
     &[data-selected] svg {
       stroke-dashoffset: 44;
     }
