@@ -53,8 +53,65 @@
         @include theme.text("base", "semibold");
 
         text-align: center;
-        margin-top: theme.spacing(2);
+        margin-top: theme.spacing(4);
         margin-bottom: theme.spacing(2);
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: center;
+        align-items: baseline;
+        gap: theme.spacing(4);
+
+        .copyWalletAddressButton {
+          @include theme.text("xs", "normal");
+          @include theme.button("ghost");
+
+          // stylelint-disable-next-line no-duplicate-selectors
+          & {
+            display: inline-flex;
+            padding-left: theme.spacing(2);
+            padding-right: theme.spacing(2);
+            margin-left: -#{theme.spacing(2)};
+            margin-right: -#{theme.spacing(2)};
+            cursor: copy;
+          }
+
+          .iconContainer {
+            position: relative;
+            width: 1em;
+            height: 1em;
+
+            .copyIcon,
+            .checkIcon {
+              position: absolute;
+              inset: 0;
+              transition: opacity linear 100ms;
+            }
+
+            .checkIcon {
+              color: theme.pallette-color("green", 700);
+              opacity: 0;
+              transition: opacity linear 100ms;
+            }
+          }
+
+          &[data-disabled] {
+            color: theme.color("ghost", "text", "base");
+          }
+
+          &[data-is-copied] {
+            background: theme.pallette-color("blue", 100);
+
+            .iconContainer {
+              .checkIcon {
+                opacity: 1;
+              }
+
+              .copyIcon {
+                opacity: 0;
+              }
+            }
+          }
+        }
       }
 
       .tabs {
