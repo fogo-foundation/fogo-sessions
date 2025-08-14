@@ -53,12 +53,21 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
   );
   const provider = new AnchorProvider(connection, new Wallet(keypair));
   const program = new DomainRegistryProgram(provider);
+
+  const { config: configPubkey } = await program.methods.initialize().pubkeys();
+
+  const config = configPubkey
+    ? await program.account.config.fetchNullable(configPubkey)
+    : undefined;
+
   await program.methods
     .addProgram(args.domain)
     .accounts({
       programId: new PublicKey(args["program-id"]),
       domainRecord: getDomainRecordAddress(args.domain),
     })
-    .preInstructions([await program.methods.initialize().instruction()])
+    .preInstructions(
+      config ? [] : [await program.methods.initialize().instruction()],
+    )
     .rpc();
 };
