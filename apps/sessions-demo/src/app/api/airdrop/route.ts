@@ -18,8 +18,9 @@ import {
   getCreateAssociatedTokenIdempotentInstruction,
   getTransferInstruction,
 } from "@solana-program/token";
-import { FAUCET_KEY, RPC } from "../../../config/server";
 import z from "zod";
+
+import { FAUCET_KEY, RPC } from "../../../config/server";
 
 export const NATIVE_MINT = address(
   "So11111111111111111111111111111111111111112",
