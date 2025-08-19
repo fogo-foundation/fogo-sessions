@@ -60,7 +60,10 @@ export const POST = async (req: Request) => {
 
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
   const rpcSubscriptions = createSolanaRpcSubscriptions(RPC);
-  const sendTransaction = sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions });
+  const sendTransaction = sendAndConfirmTransactionFactory({
+    rpc,
+    rpcSubscriptions,
+  });
 
   const signature = await pipe(
     createTransactionMessage({ version: 0 }),
