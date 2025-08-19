@@ -22,9 +22,7 @@ import z from "zod";
 
 import { FAUCET_KEY, RPC } from "../../../config/server";
 
-export const NATIVE_MINT = address(
-  "So11111111111111111111111111111111111111112",
-);
+const NATIVE_MINT = address("So11111111111111111111111111111111111111112");
 
 const postBodySchema = z.strictObject({
   address: z.string(),
