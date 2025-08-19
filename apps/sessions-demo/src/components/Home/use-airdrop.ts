@@ -1,3 +1,5 @@
+import type { TransactionResult } from "@fogo/sessions-sdk";
+import { TransactionResultType } from "@fogo/sessions-sdk";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { useCallback } from "react";
 
@@ -8,29 +10,23 @@ export const useAirdrop = (
   sessionState: EstablishedSessionState,
   appendTransaction: (tx: Transaction) => void,
 ) => {
-  const doAirdrop = useCallback(async () => {
+  const doAirdrop = useCallback(async (): Promise<TransactionResult> => {
     const response = await fetch("/api/airdrop", {
       method: "POST",
       body: JSON.stringify({ address: sessionState.walletPublicKey }),
     });
 
     const signature = await response.text();
-
-    if (response.status !== 200) {
-      appendTransaction({
-        description: "Airdrop",
-        signature: "",
-        success: false,
-      });
-    }
-
     appendTransaction({
       description: "Airdrop",
       signature,
       success: true,
     });
 
-    return true;
+    return {
+      type: TransactionResultType.Success,
+      signature,
+    };
   }, [sessionState, appendTransaction]);
 
   return useAsync(doAirdrop);
