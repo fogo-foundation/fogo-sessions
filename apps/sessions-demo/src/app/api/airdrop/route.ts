@@ -6,10 +6,9 @@ import {
   createSolanaRpc,
   address,
   setTransactionMessageFeePayerSigner,
-  sendAndConfirmTransactionFactory,
+  sendTransactionWithoutConfirmingFactory,
   signTransactionMessageWithSigners,
   getSignatureFromTransaction,
-  createSolanaRpcSubscriptions,
 } from "@solana/kit";
 import {
   findAssociatedTokenPda,
@@ -59,10 +58,8 @@ export const POST = async (req: Request) => {
   ];
 
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-  const rpcSubscriptions = createSolanaRpcSubscriptions(RPC);
-  const sendTransaction = sendAndConfirmTransactionFactory({
+  const sendTransaction = sendTransactionWithoutConfirmingFactory({
     rpc,
-    rpcSubscriptions,
   });
 
   const signature = await pipe(
