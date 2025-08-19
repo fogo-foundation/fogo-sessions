@@ -1,5 +1,4 @@
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
-import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 
 import type { Transaction } from "./use-transaction-log";
@@ -8,8 +7,6 @@ import { useAsync } from "../../hooks/use-async";
 export const useAirdrop = (
   sessionState: EstablishedSessionState,
   appendTransaction: (tx: Transaction) => void,
-  amount: number,
-  mint: PublicKey,
 ) => {
   const doAirdrop = useCallback(async () => {
     const response = await fetch("/api/airdrop", {
@@ -34,7 +31,7 @@ export const useAirdrop = (
     });
 
     return true;
-  }, [sessionState, appendTransaction, amount, mint]);
+  }, [sessionState, appendTransaction]);
 
   return useAsync(doAirdrop);
 };

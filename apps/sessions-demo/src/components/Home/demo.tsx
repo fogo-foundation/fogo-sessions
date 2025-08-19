@@ -45,8 +45,6 @@ export const Demo = ({ rpc }: { rpc: string }) => {
             <AirdropButton
               sessionState={sessionState}
               appendTransaction={appendTransaction}
-              amount={1}
-              mint={NATIVE_MINT}
             />
             <TradeButton
               sessionState={sessionState}
@@ -82,23 +80,14 @@ export const Demo = ({ rpc }: { rpc: string }) => {
 const AirdropButton = ({
   sessionState,
   appendTransaction,
-  amount,
-  mint,
 }: {
   sessionState: EstablishedSessionState;
   appendTransaction: (tx: Transaction) => void;
-  amount: number;
-  mint: PublicKey;
 }) => {
-  const { state, execute } = useAirdrop(
-    sessionState,
-    appendTransaction,
-    amount,
-    mint,
-  );
+  const { state, execute } = useAirdrop(sessionState, appendTransaction);
   return (
     <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
-      Airdrop {amount} FOGO
+      Airdrop 1 FOGO
     </Button>
   );
 };
