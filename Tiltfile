@@ -14,7 +14,7 @@ local_resource(
         ../target/deploy/chain_id.so \
         --bpf-program DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog \
         ../target/deploy/domain_registry.so \
-        --mint $(solana-keygen pubkey ./keypairs/sponsor.json) \
+        --mint $(solana-keygen pubkey ./keypairs/faucet.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
         --account-dir ./accounts \
         --reset",
@@ -29,7 +29,13 @@ local_resource(
 
 local_resource(
     "setup-wrapped-sol-faucet",
-    """spl-token -u l wrap 100 --fee-payer ./tilt/keypairs/sponsor.json ./tilt/keypairs/sponsor.json""",
+    """spl-token -u l wrap 100 --fee-payer ./tilt/keypairs/faucet.json ./tilt/keypairs/faucet.json""",
+    resource_deps=["svm-localnet"],
+)
+
+local_resource(
+    "setup-sponsor",
+    """solana -u l airdrop 1 ./tilt/keypairs/sponsor.json""",
     resource_deps=["svm-localnet"],
 )
 
@@ -74,5 +80,5 @@ local_resource(
 local_resource(
     "Demo Webapp",
     serve_cmd="pnpm turbo --filter @fogo/sessions-demo... start:dev",
-    resource_deps=["setup-wrapped-sol-faucet", "setup-address-lookup-table", "initialize-programs", "paymaster"],
+    resource_deps=["setup-wrapped-sol-faucet", "setup-sponsor", "setup-address-lookup-table", "initialize-programs", "paymaster"],
 )

@@ -1,11 +1,4 @@
-import { TransactionResultType } from "@fogo/sessions-sdk";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  createTransferInstruction,
-  getAssociatedTokenAddressSync,
-  getMint,
-} from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 
@@ -19,35 +12,28 @@ export const useAirdrop = (
   mint: PublicKey,
 ) => {
   const doAirdrop = useCallback(async () => {
-    const faucetAta = getAssociatedTokenAddressSync(mint, sessionState.payer);
-    const userAta = getAssociatedTokenAddressSync(
-      mint,
-      sessionState.walletPublicKey,
-    );
-    const { decimals } = await getMint(sessionState.connection, mint);
+    const response = await fetch("/api/airdrop", {
+      method: "POST",
+      body: JSON.stringify({ address: sessionState.walletPublicKey }),
+    });
 
-    const result = await sessionState.sendTransaction([
-      createAssociatedTokenAccountIdempotentInstruction(
-        sessionState.payer,
-        userAta,
-        sessionState.walletPublicKey,
-        mint,
-      ),
-      createTransferInstruction(
-        faucetAta,
-        userAta,
-        sessionState.payer,
-        amount * Math.pow(10, decimals),
-      ),
-    ]);
+    const signature = await response.text();
+
+    if (response.status !== 200) {
+      appendTransaction({
+        description: "Airdrop",
+        signature: "",
+        success: false,
+      });
+    }
 
     appendTransaction({
       description: "Airdrop",
-      signature: result.signature,
-      success: result.type === TransactionResultType.Success,
+      signature,
+      success: true,
     });
 
-    return result;
+    return true;
   }, [sessionState, appendTransaction, amount, mint]);
 
   return useAsync(doAirdrop);
