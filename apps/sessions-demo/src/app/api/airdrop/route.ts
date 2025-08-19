@@ -4,13 +4,12 @@ import {
   appendTransactionMessageInstructions,
   pipe,
   createSolanaRpc,
-  createSignerFromKeyPair,
   address,
-  getAddressFromPublicKey,
   setTransactionMessageFeePayerSigner,
-  sendTransactionWithoutConfirmingFactory,
+  sendAndConfirmTransactionFactory,
   signTransactionMessageWithSigners,
   getSignatureFromTransaction,
+  createSolanaRpcSubscriptions,
 } from "@solana/kit";
 import {
   findAssociatedTokenPda,
@@ -20,7 +19,7 @@ import {
 } from "@solana-program/token";
 import z from "zod";
 
-import { FAUCET_KEY, RPC } from "../../../config/server";
+import { FAUCET_SIGNER, RPC } from "../../../config/server";
 
 const NATIVE_MINT = address("So11111111111111111111111111111111111111112");
 
@@ -30,9 +29,8 @@ const postBodySchema = z.strictObject({
 
 export const POST = async (req: Request) => {
   const rpc = createSolanaRpc(RPC);
-  const faucetAddress = await getAddressFromPublicKey(FAUCET_KEY.publicKey);
+  const faucetAddress = FAUCET_SIGNER.address;
   const userAddress = address(postBodySchema.parse(await req.json()).address);
-  const faucetSigner = await createSignerFromKeyPair(FAUCET_KEY);
 
   const [userAta] = await findAssociatedTokenPda({
     owner: userAddress,
@@ -47,7 +45,7 @@ export const POST = async (req: Request) => {
 
   const instructions = [
     getCreateAssociatedTokenIdempotentInstruction({
-      payer: faucetSigner,
+      payer: FAUCET_SIGNER,
       owner: userAddress,
       mint: NATIVE_MINT,
       ata: userAta,
@@ -55,17 +53,18 @@ export const POST = async (req: Request) => {
     getTransferInstruction({
       source: faucetAta,
       destination: userAta,
-      authority: faucetSigner,
+      authority: FAUCET_SIGNER,
       amount: 1_000_000_000n,
     }),
   ];
 
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-  const sendTransaction = sendTransactionWithoutConfirmingFactory({ rpc });
+  const rpcSubscriptions = createSolanaRpcSubscriptions(RPC);
+  const sendTransaction = sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions });
 
   const signature = await pipe(
     createTransactionMessage({ version: 0 }),
-    (tx) => setTransactionMessageFeePayerSigner(faucetSigner, tx),
+    (tx) => setTransactionMessageFeePayerSigner(FAUCET_SIGNER, tx),
     (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
     (tx) => appendTransactionMessageInstructions(instructions, tx),
     (tx) => signTransactionMessageWithSigners(tx),

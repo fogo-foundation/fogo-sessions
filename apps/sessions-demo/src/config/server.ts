@@ -1,6 +1,6 @@
 /* eslint-disable n/no-process-env */
 
-import { createKeyPairFromBytes } from "@solana/kit";
+import { createKeyPairSignerFromBytes } from "@solana/kit";
 import "server-only";
 import { z } from "zod";
 
@@ -55,6 +55,6 @@ if (faucetKey === undefined) {
   throw new Error("The environment variable FAUCET_KEY is required.");
 }
 
-export const FAUCET_KEY = await createKeyPairFromBytes(
+export const FAUCET_SIGNER = await createKeyPairSignerFromBytes(
   Uint8Array.from(keySchema.parse(JSON.parse(faucetKey))),
 );
