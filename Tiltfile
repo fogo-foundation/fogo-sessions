@@ -49,7 +49,8 @@ LOOKUP_TABLE_ADDRESSES=[
     "akbpBKqNWBiZn3ejes3ejieJ5t3vqEhoq1ZzLBG7jQo",
     "GCUiTxhnGexbHj1kMFVzupjx4azktm12HNoePXjJmTLh",
     "6dM4TqWyWJsbx7obrdLcviBkTafD5E8av61zfU6jq57X",
-    "8MEFa571enhk3iTPsZML7ZxyM7edchbiwU3U1L1aAZBW"
+    "8MEFa571enhk3iTPsZML7ZxyM7edchbiwU3U1L1aAZBW",
+    "F9dJCJTGfepvFsyQTKb2B95XKspwUhcLGbUm7vE7vsbD"
 ]
 
 local_resource(
