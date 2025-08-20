@@ -22,7 +22,18 @@ import { z } from "zod";
 import { FAUCET_KEY, RPC } from "../../../config/server";
 
 const keyPairSchema = z.array(z.number());
-const faucetSigner = await createKeyPairSignerFromBytes(new Uint8Array(keyPairSchema.parse(JSON.parse(FAUCET_KEY ?? (() => { throw new Error("The environment variable FAUCET_KEY is required."); })()))));
+const faucetSigner = await createKeyPairSignerFromBytes(
+  new Uint8Array(
+    keyPairSchema.parse(
+      JSON.parse(
+        FAUCET_KEY ??
+          (() => {
+            throw new Error("The environment variable FAUCET_KEY is required.");
+          })(),
+      ),
+    ),
+  ),
+);
 
 const NATIVE_MINT = address("So11111111111111111111111111111111111111112");
 
