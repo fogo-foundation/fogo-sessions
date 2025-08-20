@@ -1,4 +1,3 @@
-import type { Address, ProgramDerivedAddressBump } from "@solana/kit";
 import {
   createTransactionMessage,
   setTransactionMessageLifetimeUsingBlockhash,
