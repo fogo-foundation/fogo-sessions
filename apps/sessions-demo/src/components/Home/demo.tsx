@@ -19,7 +19,13 @@ import { useTransactionLog } from "./use-transaction-log";
 import { StateType as AsyncStateType } from "../../hooks/use-async";
 import { Button } from "../Button";
 
-export const Demo = ({ rpc, faucetAvailable }: { rpc: string, faucetAvailable: boolean }) => {
+export const Demo = ({
+  rpc,
+  faucetAvailable,
+}: {
+  rpc: string;
+  faucetAvailable: boolean;
+}) => {
   const { appendTransaction, transactions } = useTransactionLog();
   const sessionState = useSession();
 
