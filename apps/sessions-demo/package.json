@@ -23,6 +23,8 @@
     "@fogo/sessions-sdk-react": "workspace:*",
     "@radix-ui/react-slot": "catalog:",
     "@react-hookz/web": "catalog:",
+    "@solana-program/token": "catalog:",
+    "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-base": "catalog:",
     "@solana/wallet-adapter-react": "catalog:",
