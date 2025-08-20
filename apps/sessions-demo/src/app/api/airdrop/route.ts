@@ -70,12 +70,10 @@ export const POST = async (req: Request) => {
     (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
     (tx) => appendTransactionMessageInstructions(instructions, tx),
     (tx) => signTransactionMessageWithSigners(tx),
-    async (tx) => {
-      return await tx.then((tx) =>
-        sendTransaction(tx, { commitment: "processed" }).then(() =>
-          getSignatureFromTransaction(tx),
-        ),
-      );
+    async (signedTxPromise) => {
+      const signedTx = await signedTxPromise;
+      await sendTransaction(signedTx, { commitment: "processed" });
+      return getSignatureFromTransaction(signedTx);
     },
   );
 
