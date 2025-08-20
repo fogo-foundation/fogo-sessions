@@ -1,4 +1,4 @@
 import { Demo } from "./demo";
-import { RPC } from "../../config/server";
+import { FAUCET_KEY, RPC } from "../../config/server";
 
-export const Home = () => <Demo rpc={RPC} />;
+export const Home = () => <Demo rpc={RPC} faucetAvailable={FAUCET_KEY!==undefined} />;

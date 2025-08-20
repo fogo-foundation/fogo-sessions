@@ -19,7 +19,7 @@ import { useTransactionLog } from "./use-transaction-log";
 import { StateType as AsyncStateType } from "../../hooks/use-async";
 import { Button } from "../Button";
 
-export const Demo = ({ rpc }: { rpc: string }) => {
+export const Demo = ({ rpc, faucetAvailable }: { rpc: string, faucetAvailable: boolean }) => {
   const { appendTransaction, transactions } = useTransactionLog();
   const sessionState = useSession();
 
@@ -42,10 +42,12 @@ export const Demo = ({ rpc }: { rpc: string }) => {
         </div>
         {isEstablished(sessionState) && (
           <div className={styles.buttons}>
-            <AirdropButton
-              sessionState={sessionState}
-              appendTransaction={appendTransaction}
-            />
+            {faucetAvailable && (
+              <AirdropButton
+                sessionState={sessionState}
+                appendTransaction={appendTransaction}
+              />
+            )}
             <TradeButton
               sessionState={sessionState}
               appendTransaction={appendTransaction}
