@@ -1,3 +1,4 @@
+import type { Address, ProgramDerivedAddressBump } from "@solana/kit";
 import {
   createTransactionMessage,
   setTransactionMessageLifetimeUsingBlockhash,
@@ -31,16 +32,18 @@ export const POST = async (req: Request) => {
   const faucetAddress = FAUCET_SIGNER.address;
   const userAddress = address(postBodySchema.parse(await req.json()).address);
 
-  const [userAta] = await findAssociatedTokenPda({
-    owner: userAddress,
-    mint: NATIVE_MINT,
-    tokenProgram: TOKEN_PROGRAM_ADDRESS,
-  });
-  const [faucetAta] = await findAssociatedTokenPda({
-    owner: faucetAddress,
-    mint: NATIVE_MINT,
-    tokenProgram: TOKEN_PROGRAM_ADDRESS,
-  });
+  const [[userAta], [faucetAta]] = await Promise.all(
+    [userAddress, faucetAddress].map((owner) =>
+      findAssociatedTokenPda({
+        owner,
+        mint: NATIVE_MINT,
+        tokenProgram: TOKEN_PROGRAM_ADDRESS,
+      }),
+    ) as [
+      ReturnType<typeof findAssociatedTokenPda>,
+      ReturnType<typeof findAssociatedTokenPda>,
+    ],
+  );
 
   const instructions = [
     getCreateAssociatedTokenIdempotentInstruction({
