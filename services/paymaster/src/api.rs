@@ -85,14 +85,14 @@ pub async fn validate_transaction(
             if !first_instruction.data.starts_with(Enter::DISCRIMINATOR) {
                 return Err((
                     StatusCode::BAD_REQUEST,
-                    format!("Invalid first instruction data, expected tollbooth Enter instruction"),
+                    "Invalid first instruction data, expected tollbooth Enter instruction".to_string(),
                 ));
             }
             
-            if !first_instruction.accounts.get(0).map(|index| transaction.message.static_account_keys().get(usize::from(*index))).flatten().map(|x| x == sponsor).unwrap_or_default(){
+            if !first_instruction.accounts.first().and_then(|index| transaction.message.static_account_keys().get(usize::from(*index))).map(|x| x == sponsor).unwrap_or_default(){
                 return Err((
                     StatusCode::BAD_REQUEST,
-                    format!("Enter instruction's sponsor must be the same as the paymaster's sponsor"),
+                    "Enter instruction's sponsor must be the same as the paymaster's sponsor".to_string(),
                 ));
             };
             
@@ -110,11 +110,11 @@ pub async fn validate_transaction(
             if !last_instruction.data.starts_with(Exit::DISCRIMINATOR) {
                 return Err((
                     StatusCode::BAD_REQUEST,
-                    format!("Invalid last instruction, expected tollbooth Exit instruction"),
+                    "Invalid last instruction, expected tollbooth Exit instruction".to_string(),
                 ));
             }
 
-            if let Some(exit) = last_instruction.data.get(1..).map(|x| Exit::try_from_slice(x).ok()).flatten() {
+            if let Some(exit) = last_instruction.data.get(1..).and_then(|x| Exit::try_from_slice(x).ok()) {
                     if u64::from(exit.max_allowed_spending) != max_sponsor_spending {
                         return Err((
                             StatusCode::BAD_REQUEST,
@@ -125,15 +125,15 @@ pub async fn validate_transaction(
                 else {
                     return Err((
                         StatusCode::BAD_REQUEST,
-                        format!("Invalid last instruction, failed to deserialize Exit instruction"),
+                        "Invalid last instruction, failed to deserialize Exit instruction".to_string(),
                     ));
                 }
             
                 
-            if !last_instruction.accounts.get(0).map(|index| transaction.message.static_account_keys().get(usize::from(*index))).flatten().map(|x| x == sponsor).unwrap_or_default(){
+            if !last_instruction.accounts.first().and_then(|index| transaction.message.static_account_keys().get(usize::from(*index))).map(|x| x == sponsor).unwrap_or_default(){
                     return Err((
                         StatusCode::BAD_REQUEST,
-                        format!("Exit instruction's sponsor must be the same as the paymaster's sponsor"),
+                        "Exit instruction's sponsor must be the same as the paymaster's sponsor".to_string(),
                     ));
                 };
             
@@ -143,7 +143,7 @@ pub async fn validate_transaction(
                     if instruction.program_id(transaction.message.static_account_keys()) == &TOLLBOOTH_PROGRAM_ID {
                         return Err((
                             StatusCode::BAD_REQUEST,
-                            format!("Tollbooth instructions must be the first and last instruction only"),
+                            "Tollbooth instructions must be the first and last instruction only".to_string(),
                         ));
                     }
                 }
