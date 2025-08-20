@@ -8,6 +8,7 @@ use axum::{
     Router,
 };
 use base64::Engine;
+use serde::Serialize;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
@@ -187,11 +188,27 @@ async fn sponsor_pubkey_handler(
     Ok(state.keypair.pubkey().to_string())
 }
 
+#[derive(utoipa::ToSchema, Serialize)]
+pub struct SponsorConfig {
+    pub max_sponsor_spending: u64,
+}
+
+#[utoipa::path(get, path = "/config")]
+async fn config_handler(
+    State(state): State<Arc<ServerState>>,
+) -> Result<Json<SponsorConfig>, ErrorResponse> {
+    Ok(Json(SponsorConfig {
+        max_sponsor_spending: state.max_sponsor_spending,
+    }))
+}
+
 pub async fn run_server(config: Config) {
     let keypair = Keypair::read_from_file(&config.keypair_path).unwrap();
 
     let (router, _) = OpenApiRouter::new()
-        .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
+        .routes(routes!(sponsor_and_send_handler))
+        .routes(routes!(sponsor_pubkey_handler))
+        .routes(routes!(config_handler))
         .split_for_parts();
 
     let app = Router::new()

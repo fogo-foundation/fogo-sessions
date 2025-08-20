@@ -1,6 +1,6 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
-import { ChainIdProgram } from "@fogo/sessions-idls";
+import { ChainIdProgram, TollboothProgram } from "@fogo/sessions-idls";
 import {
   fromLegacyPublicKey,
   fromLegacyTransactionInstruction,
@@ -91,6 +91,7 @@ export const createSolanaWalletAdapter = async (
     options.addressLookupTableAddress,
   );
   const sponsor = await getSponsor(options);
+  const paymasterConfig = await getPaymasterConfig(options);
   return {
     connection: options.connection,
     payer: sponsor,
@@ -100,6 +101,10 @@ export const createSolanaWalletAdapter = async (
       const rpc = createSolanaRpc(options.connection.rpcEndpoint);
       const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
       const sessionKeySigner = await createSignerFromKeyPair(sessionKey);
+
+      const tollboothProgram = new TollboothProgram(new AnchorProvider(options.connection, { publicKey: sponsor } as Wallet, {}));
+      const enterInstruction = fromLegacyTransactionInstruction(await tollboothProgram.methods.enter().instruction());
+      const exitInstruction = fromLegacyTransactionInstruction(await tollboothProgram.methods.exit(paymasterConfig.maxSponsorSpending).instruction());
 
       const transaction = Array.isArray(instructions)
         ? await partiallySignTransactionMessageWithSigners(
@@ -113,12 +118,15 @@ export const createSolanaWalletAdapter = async (
                   tx,
                 ),
               (tx) =>
-                appendTransactionMessageInstructions(
-                  instructions.map((instruction) =>
+                appendTransactionMessageInstructions([
+                  enterInstruction,
+                  ...instructions.map((instruction) =>
                     instruction instanceof TransactionInstruction
                       ? fromLegacyTransactionInstruction(instruction)
                       : instruction,
                   ),
+                  exitInstruction,
+                ],
                   tx,
                 ),
               (tx) =>
@@ -173,6 +181,16 @@ const getSponsor = async (
     );
     return new PublicKey(z.string().parse(await response.text()));
   }
+};
+
+const getPaymasterConfig = async (
+  options: Parameters<typeof createSolanaWalletAdapter>[0],
+) => {
+  const paymasterUrl = "paymaster" in options ? options.paymaster : DEFAULT_PAYMASTER;
+    const response = await fetch(
+      new URL("/api/config", paymasterUrl),
+    );
+    return z.object({ max_sponsor_spending: z.number() }).transform(({ max_sponsor_spending }) => ({ maxSponsorSpending: max_sponsor_spending })).parse(await response.json());
 };
 
 const sendToPaymaster = async (

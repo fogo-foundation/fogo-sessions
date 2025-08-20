@@ -14,6 +14,8 @@ local_resource(
         ../target/deploy/chain_id.so \
         --bpf-program DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog \
         ../target/deploy/domain_registry.so \
+        --bpf-program 7czSB69NDz3QJSveAga7igHR86ZkESEou9q845xzPkgf \
+        ../target/deploy/tollbooth.so \
         --mint $(solana-keygen pubkey ./keypairs/faucet.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
         --account-dir ./accounts \
