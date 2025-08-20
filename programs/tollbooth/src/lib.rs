@@ -17,8 +17,18 @@ pub mod tollbooth {
     }
 
     #[instruction(discriminator = [128])]
-    pub fn exit<'info>(ctx: Context<'_, '_, '_, 'info, Exit<'info>>, max_allowed_spending: u32) -> Result<()> {
-        require_gte!(ctx.accounts.sponsor.lamports().saturating_add(u64::from(max_allowed_spending)), ctx.accounts.sponsor_snapshot.lamports, ErrorCode::ExceededMaxAllowedSpending);
+    pub fn exit<'info>(
+        ctx: Context<'_, '_, '_, 'info, Exit<'info>>,
+        max_allowed_spending: u32,
+    ) -> Result<()> {
+        require_gte!(
+            ctx.accounts
+                .sponsor
+                .lamports()
+                .saturating_add(u64::from(max_allowed_spending)),
+            ctx.accounts.sponsor_snapshot.lamports,
+            ErrorCode::ExceededMaxAllowedSpending
+        );
         Ok(())
     }
 }
@@ -38,7 +48,6 @@ pub struct Exit<'info> {
     #[account(mut, close = sponsor, seeds = [SNAPSHOT_SEED, sponsor.key().as_ref()], bump)]
     pub sponsor_snapshot: Account<'info, BalanceSnapshot>,
 }
-
 
 #[account]
 pub struct BalanceSnapshot {

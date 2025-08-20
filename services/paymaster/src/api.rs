@@ -21,10 +21,10 @@ use solana_pubkey::Pubkey;
 use solana_signer::{EncodableKey, Signer};
 use solana_transaction::versioned::VersionedTransaction;
 use std::sync::Arc;
+use tollbooth::instruction::{Enter, Exit};
+use tollbooth::ID as TOLLBOOTH_PROGRAM_ID;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
-use tollbooth::ID as TOLLBOOTH_PROGRAM_ID;
-use tollbooth::instruction::{Enter, Exit};
 
 pub struct ServerState {
     pub keypair: Keypair,
@@ -56,98 +56,131 @@ pub async fn validate_transaction(
     }
 
     let instructions = transaction.message.instructions();
-    instructions
-        .iter()
-        .try_for_each(|instruction| {
-            let program_id = instruction.program_id(transaction.message.static_account_keys());
-            if !program_whitelist.contains(program_id) {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!("Transaction contains unauthorized program ID: {program_id}"),
-                ));
-            }
-            Ok(())
-        })?;
+    instructions.iter().try_for_each(|instruction| {
+        let program_id = instruction.program_id(transaction.message.static_account_keys());
+        if !program_whitelist.contains(program_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("Transaction contains unauthorized program ID: {program_id}"),
+            ));
+        }
+        Ok(())
+    })?;
 
+    // If the transaction is using the tollbooth, we don't need to simulate it
+    if instructions
+        .first()
+        .map(|i| i.program_id(transaction.message.static_account_keys()) == &TOLLBOOTH_PROGRAM_ID)
+        .unwrap_or_default()
+    {
+        let first_instruction = instructions.first().expect(
+            "We know the array has at least 1 instruction because instructions.first() is Some",
+        );
 
-        // If the transaction is using the tollbooth, we don't need to simulate it
-        if instructions.first().map(|i| i.program_id(transaction.message.static_account_keys()) == &TOLLBOOTH_PROGRAM_ID).unwrap_or_default() {
-            let first_instruction = instructions.first().expect("We know the array has at least 1 instruction because instructions.first() is Some");
-
-            let program_id = first_instruction.program_id(transaction.message.static_account_keys());
-            if program_id != &TOLLBOOTH_PROGRAM_ID {
-                return Err((
+        let program_id = first_instruction.program_id(transaction.message.static_account_keys());
+        if program_id != &TOLLBOOTH_PROGRAM_ID {
+            return Err((
                     StatusCode::BAD_REQUEST,
                     format!("Invalid program for first instruction, expected: {TOLLBOOTH_PROGRAM_ID}, got: {program_id}"),
                 ));
-            }
+        }
 
-            if !first_instruction.data.starts_with(Enter::DISCRIMINATOR) {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    "Invalid first instruction data, expected tollbooth Enter instruction".to_string(),
-                ));
-            }
-            
-            if !first_instruction.accounts.first().and_then(|index| transaction.message.static_account_keys().get(usize::from(*index))).map(|x| x == sponsor).unwrap_or_default(){
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    "Enter instruction's sponsor must be the same as the paymaster's sponsor".to_string(),
-                ));
-            };
-            
+        if !first_instruction.data.starts_with(Enter::DISCRIMINATOR) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid first instruction data, expected tollbooth Enter instruction".to_string(),
+            ));
+        }
 
-            let last_instruction = instructions.last().expect("We know the array has at least 1 instruction because instructions.first() is Some");
+        if !first_instruction
+            .accounts
+            .first()
+            .and_then(|index| {
+                transaction
+                    .message
+                    .static_account_keys()
+                    .get(usize::from(*index))
+            })
+            .map(|x| x == sponsor)
+            .unwrap_or_default()
+        {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Enter instruction's sponsor must be the same as the paymaster's sponsor"
+                    .to_string(),
+            ));
+        };
 
-            let program_id = last_instruction.program_id(transaction.message.static_account_keys());
-            if program_id != &TOLLBOOTH_PROGRAM_ID {
-                return Err((
+        let last_instruction = instructions.last().expect(
+            "We know the array has at least 1 instruction because instructions.first() is Some",
+        );
+
+        let program_id = last_instruction.program_id(transaction.message.static_account_keys());
+        if program_id != &TOLLBOOTH_PROGRAM_ID {
+            return Err((
                     StatusCode::BAD_REQUEST,
                     format!("Invalid program for last instruction, expected: {TOLLBOOTH_PROGRAM_ID}, got: {program_id}"),
                 ));
-            }
+        }
 
-            if !last_instruction.data.starts_with(Exit::DISCRIMINATOR) {
+        if !last_instruction.data.starts_with(Exit::DISCRIMINATOR) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid last instruction, expected tollbooth Exit instruction".to_string(),
+            ));
+        }
+
+        if let Some(exit) = last_instruction
+            .data
+            .get(1..)
+            .and_then(|x| Exit::try_from_slice(x).ok())
+        {
+            if u64::from(exit.max_allowed_spending) != max_sponsor_spending {
                 return Err((
-                    StatusCode::BAD_REQUEST,
-                    "Invalid last instruction, expected tollbooth Exit instruction".to_string(),
-                ));
-            }
-
-            if let Some(exit) = last_instruction.data.get(1..).and_then(|x| Exit::try_from_slice(x).ok()) {
-                    if u64::from(exit.max_allowed_spending) != max_sponsor_spending {
-                        return Err((
                             StatusCode::BAD_REQUEST,
                             format!("Exit instruction's max allowed spending must be the same as the paymaster's max sponsor spending. Expected: {max_sponsor_spending}, got: {}", u64::from(exit.max_allowed_spending)),
                         ));
-                    }
-                }
-                else {
-                    return Err((
-                        StatusCode::BAD_REQUEST,
-                        "Invalid last instruction, failed to deserialize Exit instruction".to_string(),
-                    ));
-                }
-            
-                
-            if !last_instruction.accounts.first().and_then(|index| transaction.message.static_account_keys().get(usize::from(*index))).map(|x| x == sponsor).unwrap_or_default(){
-                    return Err((
-                        StatusCode::BAD_REQUEST,
-                        "Exit instruction's sponsor must be the same as the paymaster's sponsor".to_string(),
-                    ));
-                };
-            
+            }
+        } else {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid last instruction, failed to deserialize Exit instruction".to_string(),
+            ));
+        }
 
-            if let Some(extra_instructions) = instructions.get(1..instructions.len().saturating_sub(1)) {
-                for instruction in extra_instructions {
-                    if instruction.program_id(transaction.message.static_account_keys()) == &TOLLBOOTH_PROGRAM_ID {
-                        return Err((
-                            StatusCode::BAD_REQUEST,
-                            "Tollbooth instructions must be the first and last instruction only".to_string(),
-                        ));
-                    }
+        if !last_instruction
+            .accounts
+            .first()
+            .and_then(|index| {
+                transaction
+                    .message
+                    .static_account_keys()
+                    .get(usize::from(*index))
+            })
+            .map(|x| x == sponsor)
+            .unwrap_or_default()
+        {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Exit instruction's sponsor must be the same as the paymaster's sponsor"
+                    .to_string(),
+            ));
+        };
+
+        if let Some(extra_instructions) = instructions.get(1..instructions.len().saturating_sub(1))
+        {
+            for instruction in extra_instructions {
+                if instruction.program_id(transaction.message.static_account_keys())
+                    == &TOLLBOOTH_PROGRAM_ID
+                {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "Tollbooth instructions must be the first and last instruction only"
+                            .to_string(),
+                    ));
                 }
             }
+        }
     } else {
         // Simulate the transaction to check sponsor SOL spending
         let simulation_result = rpc
