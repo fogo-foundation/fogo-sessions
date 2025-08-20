@@ -16,7 +16,7 @@ import {
   getCreateAssociatedTokenIdempotentInstruction,
   getTransferInstruction,
 } from "@solana-program/token";
-import z from "zod";
+import { z } from "zod";
 
 import { FAUCET_SIGNER, RPC } from "../../../config/server";
 
