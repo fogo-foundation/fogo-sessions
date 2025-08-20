@@ -22,18 +22,11 @@ import { z } from "zod";
 import { FAUCET_KEY, RPC } from "../../../config/server";
 
 const keyPairSchema = z.array(z.number());
-const faucetSigner = await createKeyPairSignerFromBytes(
-  new Uint8Array(
-    keyPairSchema.parse(
-      JSON.parse(
-        FAUCET_KEY ??
-          (() => {
-            throw new Error("The environment variable FAUCET_KEY is required.");
-          })(),
-      ),
-    ),
-  ),
-);
+const faucetSigner = FAUCET_KEY
+  ? await createKeyPairSignerFromBytes(
+      new Uint8Array(keyPairSchema.parse(JSON.parse(FAUCET_KEY))),
+    )
+  : undefined;
 
 const NATIVE_MINT = address("So11111111111111111111111111111111111111112");
 
@@ -43,6 +36,13 @@ const postBodySchema = z.strictObject({
 
 export const POST = async (req: Request) => {
   const rpc = createSolanaRpc(RPC);
+
+  if (!faucetSigner) {
+    return new Response("Faucet unavailable: no faucet key provided", {
+      status: 500,
+    });
+  }
+
   const faucetAddress = faucetSigner.address;
   const userAddress = address(postBodySchema.parse(await req.json()).address);
 
