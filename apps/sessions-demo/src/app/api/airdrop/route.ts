@@ -9,6 +9,7 @@ import {
   sendTransactionWithoutConfirmingFactory,
   signTransactionMessageWithSigners,
   getSignatureFromTransaction,
+  createKeyPairSignerFromBytes,
 } from "@solana/kit";
 import {
   findAssociatedTokenPda,
@@ -18,7 +19,10 @@ import {
 } from "@solana-program/token";
 import { z } from "zod";
 
-import { FAUCET_SIGNER, RPC } from "../../../config/server";
+import { FAUCET_KEY, RPC } from "../../../config/server";
+
+const keyPairSchema = z.array(z.number());
+const faucetSigner = await createKeyPairSignerFromBytes(new Uint8Array(keyPairSchema.parse(JSON.parse(FAUCET_KEY ?? (() => { throw new Error("The environment variable FAUCET_KEY is required."); })()))));
 
 const NATIVE_MINT = address("So11111111111111111111111111111111111111112");
 
@@ -28,7 +32,7 @@ const postBodySchema = z.strictObject({
 
 export const POST = async (req: Request) => {
   const rpc = createSolanaRpc(RPC);
-  const faucetAddress = FAUCET_SIGNER.address;
+  const faucetAddress = faucetSigner.address;
   const userAddress = address(postBodySchema.parse(await req.json()).address);
 
   const [[userAta], [faucetAta]] = await Promise.all(
@@ -46,7 +50,7 @@ export const POST = async (req: Request) => {
 
   const instructions = [
     getCreateAssociatedTokenIdempotentInstruction({
-      payer: FAUCET_SIGNER,
+      payer: faucetSigner,
       owner: userAddress,
       mint: NATIVE_MINT,
       ata: userAta,
@@ -54,7 +58,7 @@ export const POST = async (req: Request) => {
     getTransferInstruction({
       source: faucetAta,
       destination: userAta,
-      authority: FAUCET_SIGNER,
+      authority: faucetSigner,
       amount: 1_000_000_000n,
     }),
   ];
@@ -66,7 +70,7 @@ export const POST = async (req: Request) => {
 
   const signature = await pipe(
     createTransactionMessage({ version: 0 }),
-    (tx) => setTransactionMessageFeePayerSigner(FAUCET_SIGNER, tx),
+    (tx) => setTransactionMessageFeePayerSigner(faucetSigner, tx),
     (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
     (tx) => appendTransactionMessageInstructions(instructions, tx),
     (tx) => signTransactionMessageWithSigners(tx),
