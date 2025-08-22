@@ -52,14 +52,22 @@ pub async fn validate_transaction(
     }
 
     let message_bytes = transaction.message.serialize();
-    transaction.signatures.iter().zip(transaction.message.static_account_keys()).skip(1).try_for_each(|(signature, pubkey)| {
-        signature.verify(pubkey.as_ref(), &message_bytes).then_some(()).ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!("Missing or invalid signature for account {}", pubkey).to_string(),
-            )
-        })
-    })?;
+    transaction
+        .signatures
+        .iter()
+        .zip(transaction.message.static_account_keys())
+        .skip(1)
+        .try_for_each(|(signature, pubkey)| {
+            signature
+                .verify(pubkey.as_ref(), &message_bytes)
+                .then_some(())
+                .ok_or_else(|| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!("Missing or invalid signature for account {pubkey}").to_string(),
+                    )
+                })
+        })?;
 
     transaction
         .message
