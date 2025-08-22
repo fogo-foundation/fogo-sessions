@@ -4,7 +4,7 @@ export const errorToString = (error: unknown) => {
   } else if (typeof error === "string") {
     return error.toString();
   } else if (typeof error === "object") {
-    return JSON.stringify(error);  
+    return JSON.stringify(error);
   } else {
     return "Unknown Error";
   }
