@@ -4,6 +4,7 @@ version = "0.1.3"
 edition = { workspace = true }
 
 [dependencies]
+anchor-lang = { workspace = true }
 anyhow = "1.0.98"
 axum = "0.8.4"
 base64 = "0.22.1"
@@ -19,6 +20,7 @@ solana-pubkey = {workspace = true}
 solana-signer = {workspace = true}
 solana-transaction = {workspace = true}
 tokio = {version = "1.46.1", features = ["full"]}
+tollbooth = { path = "../../programs/tollbooth" }
 tower-http = {version = "0.6.6", features = ["cors"]}
 utoipa = "5.4.0"
 utoipa-axum = "0.2.0"

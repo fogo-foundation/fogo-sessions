@@ -14,6 +14,8 @@ local_resource(
         ../target/deploy/chain_id.so \
         --bpf-program DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog \
         ../target/deploy/domain_registry.so \
+        --bpf-program 7czSB69NDz3QJSveAga7igHR86ZkESEou9q845xzPkgf \
+        ../target/deploy/tollbooth.so \
         --mint $(solana-keygen pubkey ./keypairs/faucet.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
         --account-dir ./accounts \
@@ -47,7 +49,8 @@ LOOKUP_TABLE_ADDRESSES=[
     "akbpBKqNWBiZn3ejes3ejieJ5t3vqEhoq1ZzLBG7jQo",
     "GCUiTxhnGexbHj1kMFVzupjx4azktm12HNoePXjJmTLh",
     "6dM4TqWyWJsbx7obrdLcviBkTafD5E8av61zfU6jq57X",
-    "8MEFa571enhk3iTPsZML7ZxyM7edchbiwU3U1L1aAZBW"
+    "8MEFa571enhk3iTPsZML7ZxyM7edchbiwU3U1L1aAZBW",
+    "F9dJCJTGfepvFsyQTKb2B95XKspwUhcLGbUm7vE7vsbD"
 ]
 
 local_resource(

@@ -1,4 +1,5 @@
 use crate::config::Config;
+use anchor_lang::{AnchorDeserialize, Discriminator};
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -8,6 +9,7 @@ use axum::{
     Router,
 };
 use base64::Engine;
+use serde::Serialize;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
@@ -19,6 +21,8 @@ use solana_pubkey::Pubkey;
 use solana_signer::{EncodableKey, Signer};
 use solana_transaction::versioned::VersionedTransaction;
 use std::sync::Arc;
+use tollbooth::instruction::{Enter, Exit};
+use tollbooth::ID as TOLLBOOTH_PROGRAM_ID;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
@@ -51,73 +55,186 @@ pub async fn validate_transaction(
         ));
     }
 
-    transaction
-        .message
-        .instructions()
-        .iter()
-        .try_for_each(|instruction| {
-            let program_id = instruction.program_id(transaction.message.static_account_keys());
-            if !program_whitelist.contains(program_id) {
-                return Err((
+    let instructions = transaction.message.instructions();
+    instructions.iter().try_for_each(|instruction| {
+        let program_id = instruction.program_id(transaction.message.static_account_keys());
+        if !program_whitelist.contains(program_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("Transaction contains unauthorized program ID: {program_id}"),
+            ));
+        }
+        Ok(())
+    })?;
+
+    // If the transaction is using the tollbooth, we don't need to simulate it
+    if instructions
+        .first()
+        .map(|i| i.program_id(transaction.message.static_account_keys()) == &TOLLBOOTH_PROGRAM_ID)
+        .unwrap_or_default()
+    {
+        let first_instruction = instructions.first().expect(
+            "We know the array has at least 1 instruction because instructions.first() is Some",
+        );
+
+        let program_id = first_instruction.program_id(transaction.message.static_account_keys());
+        if program_id != &TOLLBOOTH_PROGRAM_ID {
+            return Err((
                     StatusCode::BAD_REQUEST,
-                    format!("Transaction contains unauthorized program ID: {program_id}"),
+                    format!("Invalid program for first instruction, expected: {TOLLBOOTH_PROGRAM_ID}, got: {program_id}"),
                 ));
+        }
+
+        if !first_instruction.data.starts_with(Enter::DISCRIMINATOR) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid first instruction data, expected tollbooth Enter instruction".to_string(),
+            ));
+        }
+
+        if !first_instruction
+            .accounts
+            .first()
+            .and_then(|index| {
+                transaction
+                    .message
+                    .static_account_keys()
+                    .get(usize::from(*index))
+            })
+            .map(|x| x == sponsor)
+            .unwrap_or_default()
+        {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Enter instruction's sponsor must be the same as the paymaster's sponsor"
+                    .to_string(),
+            ));
+        };
+
+        let last_instruction = instructions.last().expect(
+            "We know the array has at least 1 instruction because instructions.first() is Some",
+        );
+
+        let program_id = last_instruction.program_id(transaction.message.static_account_keys());
+        if program_id != &TOLLBOOTH_PROGRAM_ID {
+            return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("Invalid program for last instruction, expected: {TOLLBOOTH_PROGRAM_ID}, got: {program_id}"),
+                ));
+        }
+
+        if !last_instruction.data.starts_with(Exit::DISCRIMINATOR) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid last instruction, expected tollbooth Exit instruction".to_string(),
+            ));
+        }
+
+        if let Some(exit) = last_instruction
+            .data
+            .get(1..)
+            .and_then(|x| Exit::try_from_slice(x).ok())
+        {
+            if u64::from(exit.max_allowed_spending) != max_sponsor_spending {
+                return Err((
+                            StatusCode::BAD_REQUEST,
+                            format!("Exit instruction's max allowed spending must be the same as the paymaster's max sponsor spending. Expected: {max_sponsor_spending}, got: {}", u64::from(exit.max_allowed_spending)),
+                        ));
             }
-            Ok(())
-        })?;
+        } else {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid last instruction, failed to deserialize Exit instruction".to_string(),
+            ));
+        }
 
-    // Simulate the transaction to check sponsor SOL spending
-    let simulation_result = rpc
-        .simulate_transaction_with_config(
-            transaction,
-            RpcSimulateTransactionConfig {
-                sig_verify: false,
-                replace_recent_blockhash: true,
-                commitment: Some(CommitmentConfig {
-                    commitment: CommitmentLevel::Processed,
-                }),
-                accounts: Some(RpcSimulateTransactionAccountsConfig {
-                    encoding: None,
-                    addresses: vec![sponsor.to_string()],
-                }),
-                ..RpcSimulateTransactionConfig::default()
-            },
-        )
-        .map_err(|err| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to simulate transaction: {err}"),
+        if !last_instruction
+            .accounts
+            .first()
+            .and_then(|index| {
+                transaction
+                    .message
+                    .static_account_keys()
+                    .get(usize::from(*index))
+            })
+            .map(|x| x == sponsor)
+            .unwrap_or_default()
+        {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Exit instruction's sponsor must be the same as the paymaster's sponsor"
+                    .to_string(),
+            ));
+        };
+
+        if let Some(extra_instructions) = instructions.get(1..instructions.len().saturating_sub(1))
+        {
+            for instruction in extra_instructions {
+                if instruction.program_id(transaction.message.static_account_keys())
+                    == &TOLLBOOTH_PROGRAM_ID
+                {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        "Tollbooth instructions must be the first and last instruction only"
+                            .to_string(),
+                    ));
+                }
+            }
+        }
+    } else {
+        // Simulate the transaction to check sponsor SOL spending
+        let simulation_result = rpc
+            .simulate_transaction_with_config(
+                transaction,
+                RpcSimulateTransactionConfig {
+                    sig_verify: false,
+                    replace_recent_blockhash: true,
+                    commitment: Some(CommitmentConfig {
+                        commitment: CommitmentLevel::Processed,
+                    }),
+                    accounts: Some(RpcSimulateTransactionAccountsConfig {
+                        encoding: None,
+                        addresses: vec![sponsor.to_string()],
+                    }),
+                    ..RpcSimulateTransactionConfig::default()
+                },
             )
-        })?;
-
-    if let Some(_err) = simulation_result.value.err {
-        // The paymaster succeeds when the transaction simulation successfully determines that the
-        // transaction returns an error. This is a stopgap measure to unblock 3rd parties while we figure
-        // out the underlying problems with transaction simulation.
-        return Ok(());
-    }
-
-    // Check if the sponsor account balance change exceeds the maximum permissible value
-    if let Some(accounts) = simulation_result.value.accounts {
-        if let Some(Some(account)) = accounts.first() {
-            let current_balance = account.lamports;
-            // We need to get the pre-transaction balance to calculate the change
-            let pre_balance = rpc.get_balance(sponsor).map_err(|err| {
+            .map_err(|err| {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to get sponsor balance: {err}"),
+                    format!("Failed to simulate transaction: {err}"),
                 )
             })?;
 
-            let balance_change = pre_balance.saturating_sub(current_balance);
+        if let Some(_err) = simulation_result.value.err {
+            // The paymaster succeeds when the transaction simulation successfully determines that the
+            // transaction returns an error. This is a stopgap measure to unblock 3rd parties while we figure
+            // out the underlying problems with transaction simulation.
+            return Ok(());
+        }
 
-            if balance_change > max_sponsor_spending {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Sponsor spending exceeds limit: {balance_change} lamports (max: {max_sponsor_spending})"
-                    ),
-                ));
+        // Check if the sponsor account balance change exceeds the maximum permissible value
+        if let Some(accounts) = simulation_result.value.accounts {
+            if let Some(Some(account)) = accounts.first() {
+                let current_balance = account.lamports;
+                // We need to get the pre-transaction balance to calculate the change
+                let pre_balance = rpc.get_balance(sponsor).map_err(|err| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to get sponsor balance: {err}"),
+                    )
+                })?;
+
+                let balance_change = pre_balance.saturating_sub(current_balance);
+
+                if balance_change > max_sponsor_spending {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Sponsor spending exceeds limit: {balance_change} lamports (max: {max_sponsor_spending})"
+                        ),
+                    ));
+                }
             }
         }
     }
@@ -187,11 +304,27 @@ async fn sponsor_pubkey_handler(
     Ok(state.keypair.pubkey().to_string())
 }
 
+#[derive(utoipa::ToSchema, Serialize)]
+pub struct SponsorConfig {
+    pub max_sponsor_spending: u64,
+}
+
+#[utoipa::path(get, path = "/config")]
+async fn config_handler(
+    State(state): State<Arc<ServerState>>,
+) -> Result<Json<SponsorConfig>, ErrorResponse> {
+    Ok(Json(SponsorConfig {
+        max_sponsor_spending: state.max_sponsor_spending,
+    }))
+}
+
 pub async fn run_server(config: Config) {
     let keypair = Keypair::read_from_file(&config.keypair_path).unwrap();
 
     let (router, _) = OpenApiRouter::new()
-        .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
+        .routes(routes!(sponsor_and_send_handler))
+        .routes(routes!(sponsor_pubkey_handler))
+        .routes(routes!(config_handler))
         .split_for_parts();
 
     let app = Router::new()
