@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.15
+
+### Patch Changes
+
+- 032882c: Extend errorToString to have a reasonable behavior with errors that are objects
+
 ## 0.0.14
 
 ### Patch Changes
