@@ -1,10 +1,18 @@
 "use client";
 
+import { sendTransfer, TransactionResultType } from "@fogo/sessions-sdk";
+import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr/ArrowLeft";
+import { CameraIcon } from "@phosphor-icons/react/dist/ssr/Camera";
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { CoinsIcon } from "@phosphor-icons/react/dist/ssr/Coins";
 import { CopyIcon } from "@phosphor-icons/react/dist/ssr/Copy";
+import { PaperPlaneIcon } from "@phosphor-icons/react/dist/ssr/PaperPlane";
+import { TipJarIcon } from "@phosphor-icons/react/dist/ssr/TipJar";
+import { XCircleIcon } from "@phosphor-icons/react/dist/ssr/XCircle";
 import { PublicKey } from "@solana/web3.js";
-import type { ComponentProps } from "react";
+import { Scanner } from "@yudiel/react-qr-scanner";
+import { QRCodeSVG } from "qrcode.react";
+import type { ComponentProps, FormEvent, ReactNode } from "react";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
   Button,
@@ -17,12 +25,14 @@ import {
   Tab,
   TabPanel,
   Heading,
+  Form,
 } from "react-aria-components";
 import { mutate } from "swr";
 
-import { amountToString } from "./amount-to-string.js";
+import { amountToString, stringToAmount } from "./amount-to-string.js";
 import { deserializePublicKeyMap } from "./deserialize-public-key.js";
 import { errorToString } from "./error-to-string.js";
+import { TextField } from "./field.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import styles from "./session-button.module.css";
 import { SessionLimits } from "./session-limits.js";
@@ -36,6 +46,9 @@ import {
   useSessionContext,
   isEstablished,
 } from "./session-provider.js";
+import { useToast } from "./toast.js";
+import { TokenAmountInput } from "./token-amount-input.js";
+import type { Token } from "./use-token-account-data.js";
 import {
   getCacheKey,
   StateType as TokenDataStateType,
@@ -171,14 +184,18 @@ export const SessionButton = ({
             <span>Your Wallet</span>
             <span>·</span>
             {isEstablished(sessionState) && (
-              <CopyWalletAddressButton
-                walletAddress={sessionState.walletPublicKey}
-              />
+              <CopyButton text={sessionState.walletPublicKey.toBase58()}>
+                <code>
+                  <TruncateKey keyValue={sessionState.walletPublicKey} />
+                </code>
+              </CopyButton>
             )}
           </Heading>
           {whitelistedTokens.length === 0 ? (
-            <div className={styles.tokensPanel}>
-              <Tokens sessionState={sessionState} />
+            <div className={styles.tabPanel}>
+              {isEstablished(sessionState) && (
+                <Tokens sessionState={sessionState} />
+              )}
             </div>
           ) : (
             <Tabs className={styles.tabs ?? ""}>
@@ -190,12 +207,15 @@ export const SessionButton = ({
                   Session
                 </Tab>
               </TabList>
-              <TabPanel className={styles.tokensPanel ?? ""} id="tokens">
-                <Tokens sessionState={sessionState} />
+              <TabPanel className={styles.tabPanel ?? ""} id="tokens">
+                {isEstablished(sessionState) && (
+                  <Tokens sessionState={sessionState} />
+                )}
               </TabPanel>
               <TabPanel
-                className={styles.limitsPanel ?? ""}
+                className={styles.tabPanel ?? ""}
                 id="session-limits"
+                data-panel="session-limits"
               >
                 {isEstablished(sessionState) && (
                   <SessionLimitsPanel sessionState={sessionState} />
@@ -216,21 +236,19 @@ export const SessionButton = ({
   );
 };
 
-const CopyWalletAddressButton = ({
-  walletAddress,
+const CopyButton = ({
+  text,
+  children,
 }: {
-  walletAddress: PublicKey;
+  text: string;
+  children: ReactNode;
 }) => {
   const [isCopied, setIsCopied] = useState(false);
-  const walletAddressAsString = useMemo(
-    () => walletAddress.toBase58(),
-    [walletAddress],
-  );
 
   const copyAddress = useCallback(() => {
     // eslint-disable-next-line n/no-unsupported-features/node-builtins
     navigator.clipboard
-      .writeText(walletAddressAsString)
+      .writeText(text)
       .then(() => {
         setIsCopied(true);
         setTimeout(() => {
@@ -241,7 +259,7 @@ const CopyWalletAddressButton = ({
         // eslint-disable-next-line no-console
         console.error(error);
       });
-  }, [walletAddressAsString]);
+  }, [text]);
 
   return (
     <Button
@@ -250,9 +268,7 @@ const CopyWalletAddressButton = ({
       isDisabled={isCopied}
       data-is-copied={isCopied ? "" : undefined}
     >
-      <code>
-        <TruncateKey keyValue={walletAddress} />
-      </code>
+      {children}
       <div className={styles.iconContainer}>
         <CopyIcon className={styles.copyIcon} />
         <CheckIcon className={styles.checkIcon} />
@@ -335,27 +351,358 @@ const TruncateKey = ({ keyValue }: { keyValue: PublicKey }) =>
     return `${strKey.slice(0, 4)}...${strKey.slice(-4)}`;
   }, [keyValue]);
 
-const Tokens = ({ sessionState }: { sessionState: SessionState }) =>
-  isEstablished(sessionState) && (
-    <>
-      <div className={styles.topButtons}>
-        <FaucetButton
-          sessionState={sessionState}
-          className={styles.topButton ?? ""}
-        >
-          <CoinsIcon className={styles.icon} />
-          <span className={styles.text}>Get tokens</span>
-        </FaucetButton>
-      </div>
-      <TokenList sessionState={sessionState} />
-    </>
-  );
-
-const TokenList = ({
+const Tokens = ({
   sessionState,
 }: {
   sessionState: EstablishedSessionState;
 }) => {
+  const [currentScreen, setCurrentScreen] = useState<TokenScreen>(
+    TokenScreen.Wallet(),
+  );
+  const showWallet = useCallback(() => {
+    setCurrentScreen(TokenScreen.Wallet());
+  }, [setCurrentScreen]);
+  const showSend = useCallback(
+    (opts: Parameters<typeof TokenScreen.Send>[0]) => {
+      setCurrentScreen(TokenScreen.Send(opts));
+    },
+    [setCurrentScreen],
+  );
+  const showReceive = useCallback(() => {
+    setCurrentScreen(TokenScreen.Receive());
+  }, [setCurrentScreen]);
+  const showSelectTokenToSend = useCallback(() => {
+    setCurrentScreen(TokenScreen.SelectTokenToSend());
+  }, [setCurrentScreen]);
+  switch (currentScreen.type) {
+    case TokenScreenType.SelectTokenToSend: {
+      return (
+        <div className={styles.selectTokenPage}>
+          <Button onPress={showWallet} className={styles.backButton ?? ""}>
+            <ArrowLeftIcon />
+            Back
+          </Button>
+          <TokenList
+            sessionState={sessionState}
+            onPressToken={(token) => {
+              showSend({
+                prevScreen: TokenScreenType.SelectTokenToSend,
+                amountAvailable: token.amountInWallet,
+                decimals: token.decimals,
+                tokenMint: token.mint,
+                icon: token.image,
+                symbol: token.symbol,
+                tokenName: token.name,
+              });
+            }}
+          />
+        </div>
+      );
+    }
+    case TokenScreenType.Send: {
+      {
+        return (
+          <SendTokenScreen
+            sessionState={sessionState}
+            onBack={() => {
+              if (
+                currentScreen.prevScreen === TokenScreenType.SelectTokenToSend
+              ) {
+                showSelectTokenToSend();
+              } else {
+                showWallet();
+              }
+            }}
+            decimals={currentScreen.decimals}
+            tokenMint={currentScreen.tokenMint}
+            tokenName={currentScreen.tokenName}
+            icon={currentScreen.icon}
+            symbol={currentScreen.symbol}
+            amountAvailable={currentScreen.amountAvailable}
+            onSendComplete={showWallet}
+          />
+        );
+      }
+    }
+    case TokenScreenType.Receive: {
+      return (
+        <div className={styles.receivePage}>
+          <Button onPress={showWallet} className={styles.backButton ?? ""}>
+            <ArrowLeftIcon />
+            Back
+          </Button>
+          <div className={styles.walletKey}>
+            <h1 className={styles.header}>Receive Tokens</h1>
+            <QRCodeSVG
+              className={styles.qrCode}
+              value={sessionState.walletPublicKey.toBase58()}
+            />
+            <CopyButton text={sessionState.walletPublicKey.toBase58()}>
+              <code className={styles.walletAddress}>
+                {sessionState.walletPublicKey.toBase58()}
+              </code>
+            </CopyButton>
+          </div>
+        </div>
+      );
+    }
+    case TokenScreenType.Wallet: {
+      return (
+        <div className={styles.walletPage}>
+          <div className={styles.topButtons}>
+            <Button className={styles.topButton ?? ""} onPress={showReceive}>
+              <TipJarIcon className={styles.icon} />
+              <span className={styles.text}>Receive tokens</span>
+            </Button>
+            <Button
+              className={styles.topButton ?? ""}
+              onPress={showSelectTokenToSend}
+            >
+              <PaperPlaneIcon className={styles.icon} />
+              <span className={styles.text}>Send tokens</span>
+            </Button>
+            <FaucetButton
+              sessionState={sessionState}
+              className={styles.topButton ?? ""}
+            >
+              <CoinsIcon className={styles.icon} />
+              <span className={styles.text}>Get tokens</span>
+            </FaucetButton>
+          </div>
+          <TokenList
+            sessionState={sessionState}
+            onPressSend={(token) => {
+              showSend({
+                prevScreen: TokenScreenType.Wallet,
+                amountAvailable: token.amountInWallet,
+                decimals: token.decimals,
+                tokenMint: token.mint,
+                icon: token.image,
+                symbol: token.symbol,
+                tokenName: token.name,
+              });
+            }}
+          />
+        </div>
+      );
+    }
+  }
+};
+
+enum TokenScreenType {
+  SelectTokenToSend,
+  Send,
+  Receive,
+  Wallet,
+}
+
+const TokenScreen = {
+  SelectTokenToSend: () => ({
+    type: TokenScreenType.SelectTokenToSend as const,
+  }),
+  Send: (opts: {
+    prevScreen: TokenScreenType;
+    icon?: string | undefined;
+    tokenName?: string | undefined;
+    tokenMint: PublicKey;
+    decimals: number;
+    symbol?: string | undefined;
+    amountAvailable: bigint;
+  }) => ({ type: TokenScreenType.Send as const, ...opts }),
+  Receive: () => ({ type: TokenScreenType.Receive as const }),
+  Wallet: () => ({ type: TokenScreenType.Wallet as const }),
+};
+type TokenScreen = ReturnType<(typeof TokenScreen)[keyof typeof TokenScreen]>;
+
+const SendTokenScreen = ({
+  onBack,
+  sessionState,
+  tokenName,
+  tokenMint,
+  decimals,
+  icon,
+  symbol,
+  amountAvailable,
+  onSendComplete,
+}: Omit<Parameters<typeof TokenScreen.Send>[0], "prevScreen"> & {
+  sessionState: EstablishedSessionState;
+  onBack: () => void;
+  onSendComplete: () => void;
+}) => {
+  const [amount, setAmount] = useState("");
+  const [showScanner, setShowScanner] = useState(false);
+  const [recipient, setRecipient] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const toast = useToast();
+
+  const doSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      const recipient = data.get("recipient");
+      const amount = data.get("amount");
+      if (
+        recipient === null ||
+        amount === null ||
+        typeof recipient !== "string" ||
+        typeof amount !== "string"
+      ) {
+        throw new Error("Invalid input");
+      }
+
+      setIsLoading(true);
+      sendTransfer({
+        adapter: sessionState.adapter,
+        walletPublicKey: sessionState.walletPublicKey,
+        signMessage: sessionState.signMessage,
+        mint: tokenMint,
+        amount: stringToAmount(amount, decimals),
+        recipient: new PublicKey(recipient),
+      })
+        .then((result) => {
+          if (result.type === TransactionResultType.Success) {
+            toast.success("Tokens sent successfully!");
+            onSendComplete();
+          } else {
+            toast.error(
+              `Failed to send tokens: ${errorToString(result.error)}`,
+            );
+          }
+        })
+        .catch((error: unknown) => {
+          toast.error(`Failed to send tokens: ${errorToString(error)}`);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    },
+    [
+      decimals,
+      sessionState.adapter,
+      sessionState.signMessage,
+      sessionState.walletPublicKey,
+      tokenMint,
+      onSendComplete,
+      toast,
+    ],
+  );
+
+  return (
+    <Form onSubmit={doSubmit} className={styles.sendPage ?? ""}>
+      <Button onPress={onBack} className={styles.backButton ?? ""}>
+        <ArrowLeftIcon />
+        Back
+      </Button>
+      <h2 className={styles.header}>
+        {icon ? (
+          <img alt="" src={icon} className={styles.tokenIcon} />
+        ) : (
+          <div className={styles.tokenIcon} />
+        )}
+        Send {tokenName ?? <TruncateKey keyValue={tokenMint} />}
+      </h2>
+      <div className={styles.amountInWallet}>
+        {amountToString(amountAvailable, decimals)} {symbol} available
+      </div>
+      <TextField
+        className={styles.field ?? ""}
+        name="recipient"
+        label="Recipient"
+        isRequired
+        value={recipient}
+        onChange={setRecipient}
+        controls={
+          <Button
+            className={styles.cameraButton ?? ""}
+            onPress={() => {
+              setShowScanner(true);
+            }}
+          >
+            <CameraIcon weight="bold" />
+            <span className={styles.label}>Scan QR Code</span>
+          </Button>
+        }
+        validate={(value) => {
+          if (value) {
+            try {
+              return new PublicKey(value).equals(sessionState.walletPublicKey)
+                ? "You cannot send tokens to yourself"
+                : undefined;
+            } catch {
+              return "This is not a valid public key address.";
+            }
+          } else {
+            return;
+          }
+        }}
+      />
+      <TokenAmountInput
+        className={styles.field ?? ""}
+        decimals={decimals}
+        label="Amount"
+        name="amount"
+        symbol={symbol}
+        isRequired
+        gt={0n}
+        max={amountAvailable}
+        value={amount}
+        onChange={setAmount}
+        controls={
+          <Button
+            className={styles.maxButton ?? ""}
+            onPress={() => {
+              setAmount(amountToString(amountAvailable, decimals));
+            }}
+          >
+            Max
+          </Button>
+        }
+      />
+      <Button
+        type="submit"
+        className={styles.submitButton ?? ""}
+        isPending={isLoading}
+      >
+        Send
+      </Button>
+      {showScanner && (
+        <div className={styles.qrCodeScanner}>
+          <Button
+            className={styles.closeButton ?? ""}
+            onPress={() => {
+              setShowScanner(false);
+            }}
+          >
+            <XCircleIcon weight="bold" />
+            <span className={styles.label}>Close</span>
+          </Button>
+          <div className={styles.camera}>
+            <Scanner
+              classNames={{ container: styles.camera ?? "" }}
+              onScan={(results) => {
+                const value = results[0]?.rawValue;
+                if (value) {
+                  setRecipient(value);
+                  setShowScanner(false);
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </Form>
+  );
+};
+
+const TokenList = ({
+  sessionState,
+  ...props
+}: {
+  sessionState: EstablishedSessionState;
+} & (
+  | { onPressToken: (token: Token) => void }
+  | { onPressSend: (token: Token) => void }
+)) => {
   const state = useTokenAccountData(sessionState);
   switch (state.type) {
     case TokenDataStateType.Error: {
@@ -378,10 +725,12 @@ const TokenList = ({
                 return a.name.toString().localeCompare(b.name.toString());
               }
             })
-            .map(({ mint, amountInWallet, decimals, image, name, symbol }) => {
+            .map((token) => {
+              const { mint, amountInWallet, decimals, image, name, symbol } =
+                token;
               const amountAsString = amountToString(amountInWallet, decimals);
-              return (
-                <div key={mint.toString()} className={styles.token}>
+              const contents = (
+                <>
                   {image ? (
                     <img alt="" src={image} className={styles.tokenIcon} />
                   ) : (
@@ -394,7 +743,30 @@ const TokenList = ({
                     {amountAsString}{" "}
                     {symbol ?? (amountAsString === "1" ? "Token" : "Tokens")}
                   </dd>
+                </>
+              );
+              return "onPressSend" in props ? (
+                <div key={mint.toString()} className={styles.token}>
+                  {contents}
+                  <Button
+                    className={styles.sendButton ?? ""}
+                    onPress={() => {
+                      props.onPressSend(token);
+                    }}
+                  >
+                    Send
+                  </Button>
                 </div>
+              ) : (
+                <Button
+                  key={mint.toString()}
+                  className={styles.tokenButton ?? ""}
+                  onPress={() => {
+                    props.onPressToken(token);
+                  }}
+                >
+                  {contents}
+                </Button>
               );
             })}
         </dl>

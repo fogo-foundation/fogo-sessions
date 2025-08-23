@@ -1,0 +1,125 @@
+@use "./theme";
+
+.textField,
+.numberField {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: theme.spacing(2);
+  align-items: center;
+  position: relative;
+
+  .label {
+    @include theme.text("sm", "semibold");
+
+    text-align: right;
+    margin-right: theme.spacing(2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .inputGroup {
+    position: relative;
+    background: rgb(from white r g b / 50%);
+    display: flex;
+    flex-flow: row nowrap;
+    border-radius: theme.border-radius("md");
+    border: 1px solid theme.color("panel", "border");
+
+    .input {
+      padding: theme.spacing(1) theme.spacing(2);
+      text-overflow: ellipsis;
+      color: theme.color("panel", "text");
+      outline: none;
+      min-width: 0;
+      width: 100%;
+      background: transparent;
+      border: none;
+    }
+
+    .controls {
+      padding: theme.spacing(0.5);
+    }
+
+    .error {
+      @include theme.text("xs", "normal");
+
+      position: absolute;
+      background: white;
+      color: theme.color("error");
+      padding: theme.spacing(0.5) theme.spacing(2);
+      border: 1px solid theme.color("error");
+      left: theme.spacing(4);
+      bottom: theme.spacing(9);
+      display: none;
+      border-radius: theme.border-radius("md");
+      box-shadow: 1px 1px 2px rgb(from black r g b / 40%);
+
+      .overlayArrow {
+        fill: white;
+        stroke: theme.color("error");
+        position: absolute;
+        bottom: -#{theme.spacing(3)};
+        left: theme.spacing(4);
+      }
+    }
+
+    &:has(.input[data-focused]) {
+      outline: 2px solid theme.color("primary", "border", "base");
+    }
+
+    &:has(.input[data-focused]) .error {
+      display: block;
+    }
+  }
+
+  .description {
+    @include theme.text("xs", "semibold");
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // stylelint-disable-next-line no-descending-specificity
+  &[data-invalid] .inputGroup {
+    border-color: theme.color("error");
+
+    &:has(.input[data-focused]) {
+      outline-color: theme.color("error");
+    }
+  }
+
+  &[data-disabled] {
+    color: theme.color("primary", "text", "disabled");
+
+    &,
+    .name,
+    .input {
+      cursor: not-allowed;
+    }
+  }
+}
+
+.numberField .inputGroup {
+  .input {
+    padding-right: theme.spacing(14);
+  }
+
+  button {
+    @include theme.button("ghost");
+
+    // stylelint-disable-next-line no-duplicate-selectors
+    & {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      padding-left: theme.spacing(1);
+      padding-right: theme.spacing(1);
+      width: theme.spacing(6);
+
+      &[slot="increment"] {
+        right: theme.spacing(6);
+      }
+    }
+  }
+}

@@ -6,5 +6,6 @@ program_whitelist = [
     "Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3",
     "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
     "Ed25519SigVerify111111111111111111111111111",
-    "SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC"
+    "SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC",
+    "Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD"
 ]
