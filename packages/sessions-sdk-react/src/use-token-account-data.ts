@@ -30,6 +30,10 @@ export const getCacheKey = (walletPublicKey: PublicKey) => [
   walletPublicKey.toBase58(),
 ];
 
+export type Token = Awaited<
+  ReturnType<typeof getTokenAccounts>
+>["tokensInWallet"][number];
+
 const getTokenAccounts = async (
   connection: Connection,
   sessionState: EstablishedSessionState,

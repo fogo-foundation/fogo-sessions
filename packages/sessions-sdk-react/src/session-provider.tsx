@@ -49,8 +49,10 @@ import {
   deserializePublicKeyList,
   deserializePublicKeyMap,
 } from "./deserialize-public-key.js";
+import { errorToString } from "./error-to-string.js";
 import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
+import { ToastProvider, useToast } from "./toast.js";
 import { getCacheKey } from "./use-token-account-data.js";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -97,27 +99,29 @@ export const FogoSessionProvider = ({
   );
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
-          <SessionProvider
-            tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
-            defaultRequestedLimits={
-              defaultRequestedLimits === undefined
-                ? undefined
-                : deserializePublicKeyMap(defaultRequestedLimits)
-            }
-            {...("sponsor" in props && {
-              sponsor:
-                typeof props.sponsor === "string"
-                  ? deserializePublicKey(props.sponsor)
-                  : props.sponsor,
-            })}
-            {...props}
-          />
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <ToastProvider>
+      <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider wallets={wallets} autoConnect>
+          <WalletModalProvider>
+            <SessionProvider
+              tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
+              defaultRequestedLimits={
+                defaultRequestedLimits === undefined
+                  ? undefined
+                  : deserializePublicKeyMap(defaultRequestedLimits)
+              }
+              {...("sponsor" in props && {
+                sponsor:
+                  typeof props.sponsor === "string"
+                    ? deserializePublicKey(props.sponsor)
+                    : props.sponsor,
+              })}
+              {...props}
+            />
+          </WalletModalProvider>
+        </WalletProvider>
+      </ConnectionProvider>
+    </ToastProvider>
   );
 };
 
@@ -201,6 +205,7 @@ const useSessionStateContext = ({
   const walletModal = useWalletModal();
   const requestedLimits = useRef<undefined | Map<PublicKey, bigint>>(undefined);
   const getAdapter = useSessionAdapter(adapterArgs);
+  const toast = useToast();
 
   const establishSession = useCallback(
     (newLimits?: Map<PublicKey, bigint>) => {
@@ -265,6 +270,8 @@ const useSessionStateContext = ({
             session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
           walletPublicKey: session.walletPublicKey,
           connection: adapter.connection,
+          adapter,
+          signMessage,
         };
       const setLimits = (limits?: Map<PublicKey, bigint>) => {
         setState(SessionState.UpdatingLimits(commonStateArgs));
@@ -278,37 +285,34 @@ const useSessionStateContext = ({
           .then((result) => {
             switch (result.type) {
               case SessionResultType.Success: {
+                toast.success("Limits set successfully");
                 setSessionState(adapter, result.session, signMessage);
                 return;
               }
               case SessionResultType.Failed: {
+                toast.error(
+                  `Failed to set limits: ${errorToString(result.error)}`,
+                );
                 setState(
-                  SessionState.Established(
-                    {
-                      ...commonStateArgs,
-                      setLimits,
-                    },
-                    result.error,
-                  ),
+                  SessionState.Established({
+                    ...commonStateArgs,
+                    setLimits,
+                  }),
                 );
                 return;
               }
             }
           })
           .catch((error: unknown) => {
-            // eslint-disable-next-line no-console
-            console.error("Failed to replace session", error);
+            toast.error(`Failed to replace session: ${errorToString(error)}`);
             setState(
-              SessionState.Established(
-                { ...commonStateArgs, setLimits },
-                error,
-              ),
+              SessionState.Established({ ...commonStateArgs, setLimits }),
             );
           });
       };
       setState(SessionState.Established({ ...commonStateArgs, setLimits }));
     },
-    [disconnectWallet, endSession],
+    [disconnectWallet, endSession, toast],
   );
 
   const checkStoredSession = useCallback(
@@ -618,6 +622,8 @@ const SessionState = {
       Session,
       "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
     > & {
+      adapter: SessionAdapter;
+      signMessage: (message: Uint8Array) => Promise<Uint8Array>;
       connection: ReturnType<typeof useConnection>["connection"];
       isLimited: boolean;
       setLimits: (limits?: Map<PublicKey, bigint>) => void;
@@ -635,6 +641,8 @@ const SessionState = {
       Session,
       "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
     > & {
+      adapter: SessionAdapter;
+      signMessage: (message: Uint8Array) => Promise<Uint8Array>;
       connection: ReturnType<typeof useConnection>["connection"];
       isLimited: boolean;
       endSession: () => void;

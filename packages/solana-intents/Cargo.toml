@@ -1,0 +1,15 @@
+[package]
+name = "solana-intents"
+description = "A set of utilities for loading & validating intent-based transactions in solana"
+edition = { workspace = true }
+license = { workspace = true }
+version = "0.1.0"
+
+[lib]
+crate-type = ["rlib"]
+name = "solana_intents"
+
+[dependencies]
+nom = { workspace = true }
+solana-program = { workspace = true }
+borsh = { workspace = true }

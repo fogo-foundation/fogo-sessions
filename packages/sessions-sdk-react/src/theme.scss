@@ -1,6 +1,8 @@
 @use "sass:map";
 @use "sass:meta";
-@import "https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap";
+
+// stylelint-disable-next-line import-notation
+@import url("https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap");
 
 @function map-get-strict($map, $key...) {
   @if map.has-key($map, $key...) {
@@ -78,6 +80,21 @@ $border-radius: (
 
 @function border-radius($radius: "base") {
   @return map-get-strict($border-radius, $radius);
+}
+
+// The layering here is a bit odd.  These have to be super high numbers so that
+// they overlay no matter what the apps are doing, and in particular, we need
+// the modal dialog to be a higher z-index than the [default overlay z-index set
+// by react-aria](https://github.com/adobe/react-spectrum/blob/62eb6ceca97aef110118ea1e41f70636e70bd573/packages/%40react-aria/overlays/src/useOverlayPosition.ts#L305),
+// since that z-index also applies to the wallet popup and we want modal dialogs
+// to go above the wallet popup always.
+$layer: (
+  "modal-dialog": 999999,
+  "toast": 9999999,
+);
+
+@function layer($value) {
+  @return map-get-strict($layer, $value);
 }
 
 $color-pallette: (
@@ -437,8 +454,8 @@ $color: (
   "ghost": (
     "background": (
       "base": transparent,
-      "hovered": pallette-color("slate", 200),
-      "pressed": pallette-color("slate", 300),
+      "hovered": rgb(from black r g b / 5%),
+      "pressed": rgb(from black r g b / 10%),
       "disabled": transparent,
     ),
     "border": (
