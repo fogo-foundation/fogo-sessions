@@ -1,22 +1,13 @@
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import type { FormEvent } from "react";
-import { useCallback, useState, useMemo } from "react";
-import {
-  Button,
-  FieldError,
-  Input,
-  Label,
-  TextField,
-  Text,
-  Checkbox,
-  Form,
-} from "react-aria-components";
+import { useCallback, useState } from "react";
+import { Button, Checkbox, Form } from "react-aria-components";
 
-import { amountToString, stringToAmount } from "./amount-to-string.js";
+import { stringToAmount, amountToString } from "./amount-to-string.js";
 import { errorToString } from "./error-to-string.js";
 import styles from "./session-limits.module.css";
-import type { Metadata } from "./use-token-metadata.js";
+import { TokenAmountInput } from "./token-amount-input.js";
 import { StateType, useTokenMetadata } from "./use-token-metadata.js";
 
 export const SessionLimits = <Token extends PublicKey>({
@@ -57,8 +48,13 @@ export const SessionLimits = <Token extends PublicKey>({
                 tokens
                   .map((mint) => {
                     const value = data.get(mint.toBase58());
-                    return typeof value === "string"
-                      ? ([mint, BigInt(value)] as const)
+                    const decimals = data.get(`${mint.toBase58()}-decimals`);
+                    return typeof value === "string" &&
+                      typeof decimals === "string"
+                      ? ([
+                          mint,
+                          stringToAmount(value, Number.parseInt(decimals, 10)),
+                        ] as const)
                       : undefined;
                   })
                   .filter((value) => value !== undefined),
@@ -71,7 +67,7 @@ export const SessionLimits = <Token extends PublicKey>({
 
   return (
     <Form className={clsx(styles.sessionLimits, className)} onSubmit={doSubmit}>
-      {enableUnlimited && (
+      {enableUnlimited ? (
         <Checkbox
           name="applyLimits"
           className={styles.applyLimits ?? ""}
@@ -85,6 +81,8 @@ export const SessionLimits = <Token extends PublicKey>({
           </div>
           {"Limit this app's access to tokens"}
         </Checkbox>
+      ) : (
+        <div />
       )}
       {applyLimits ? (
         <ul className={styles.tokenList}>
@@ -138,11 +136,24 @@ const Token = ({
 
     case StateType.Loaded: {
       return (
-        <TokenInput
-          mint={mint}
-          initialAmount={initialAmount}
-          metadata={metadata.data}
-        />
+        <>
+          <input
+            name={`${mint.toBase58()}-decimals`}
+            type="hidden"
+            value={metadata.data.decimals}
+          />
+          <TokenAmountInput
+            className={styles.token ?? ""}
+            label={
+              "name" in metadata.data ? metadata.data.name : mint.toBase58()
+            }
+            decimals={metadata.data.decimals}
+            symbol={metadata.data.symbol}
+            name={mint.toBase58()}
+            defaultValue={amountToString(initialAmount, metadata.data.decimals)}
+            min={0n}
+          />
+        </>
       );
     }
 
@@ -151,67 +162,4 @@ const Token = ({
       return "Loading..."; // TODO
     }
   }
-};
-
-const TokenInput = ({
-  mint,
-  initialAmount,
-  metadata,
-}: {
-  mint: PublicKey;
-  initialAmount: bigint;
-  metadata: Metadata;
-}) => {
-  const [displayAmount, setDisplayAmount] = useState(
-    amountToString(initialAmount, metadata.decimals),
-  );
-  const [actualAmount, setActualAmount] = useState(initialAmount.toString());
-  const mintAsString = useMemo(() => mint.toBase58(), [mint]);
-  const [error, setError] = useState<string | undefined>();
-
-  const updateAmount = useCallback(
-    (value: string) => {
-      setDisplayAmount(value);
-      try {
-        setActualAmount(
-          stringToAmount(value.toString(), metadata.decimals).toString(),
-        );
-        setError(undefined);
-      } catch (error: unknown) {
-        setError(errorToString(error));
-      }
-    },
-    [metadata.decimals],
-  );
-
-  return (
-    <>
-      <input type="hidden" name={mintAsString} value={actualAmount} />
-      <TextField
-        className={styles.token ?? ""}
-        value={displayAmount}
-        onChange={updateAmount}
-        isInvalid={error !== undefined}
-      >
-        <Label className={styles.name ?? ""}>
-          {"name" in metadata ? metadata.name : mintAsString}
-        </Label>
-        <Input className={styles.input ?? ""} />
-        <Text className={styles.symbol} slot="description">
-          {"symbol" in metadata ? metadata.symbol : "Tokens"}
-        </Text>
-        <FieldError className={styles.error ?? ""}>
-          <svg
-            width={12}
-            height={12}
-            viewBox="0 0 12 12"
-            className={styles.overlayArrow}
-          >
-            <path d="M0 0 L6 6 L12 0" />
-          </svg>
-          {error}
-        </FieldError>
-      </TextField>
-    </>
-  );
 };

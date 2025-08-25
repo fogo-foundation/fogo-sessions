@@ -61,9 +61,11 @@
     "@solana/wallet-adapter-react-ui": "catalog:",
     "@solana/wallet-adapter-wallets": "catalog:",
     "@solana/web3.js": "catalog:",
+    "@yudiel/react-qr-scanner": "catalog:",
     "clsx": "catalog:",
     "idb": "catalog:",
     "modern-normalize": "catalog:",
+    "qrcode.react": "catalog:",
     "react-aria-components": "catalog:",
     "swr": "catalog:",
     "zod": "catalog:"

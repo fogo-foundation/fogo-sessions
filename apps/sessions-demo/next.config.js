@@ -30,7 +30,7 @@ const config = {
         {
           key: "Permissions-Policy",
           value:
-            "vibrate=(), geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=self",
+            "vibrate=(), geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=self, magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=self",
         },
       ],
     },
