@@ -7,7 +7,7 @@ use axum::{
     http::{HeaderName, Method},
     Router,
 };
-use axum_extra::headers::{Origin};
+use axum_extra::headers::Origin;
 use axum_extra::TypedHeader;
 use base64::Engine;
 use solana_client::rpc_client::RpcClient;
@@ -181,18 +181,29 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    let DomainState { keypair, program_whitelist } = state
+    let DomainState {
+        keypair,
+        program_whitelist,
+    } = state
         .domains
         .get(&origin.to_string())
         .or_else(|| {
             state
                 .domains
                 .iter()
-                .find(|(_, DomainState { keypair, program_whitelist: _ })| {
-                    keypair
-                        .pubkey()
-                        .eq(&transaction.message.static_account_keys()[0])
-                })
+                .find(
+                    |(
+                        _,
+                        DomainState {
+                            keypair,
+                            program_whitelist: _,
+                        },
+                    )| {
+                        keypair
+                            .pubkey()
+                            .eq(&transaction.message.static_account_keys()[0])
+                    },
+                )
                 .map(|(_, value)| value)
         })
         .ok_or_else(|| {
@@ -254,12 +265,15 @@ async fn sponsor_pubkey_handler(
     origin: Option<TypedHeader<Origin>>,
     Query(params): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
-    let domain = params.domain.or_else(|| origin.map(|origin| origin.to_string())).ok_or_else(|| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("The http origin header or query parameter domain is required"),
-        )
-    })?;
+    let domain = params
+        .domain
+        .or_else(|| origin.map(|origin| origin.to_string()))
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("The http origin header or query parameter domain is required"),
+            )
+        })?;
 
     let DomainState { keypair, program_whitelist: _ } = state
         .domains
@@ -291,7 +305,13 @@ pub async fn run_server(
             let keypair =
                 solana_keypair::keypair_from_seed_phrase_and_passphrase(&mnemonic, &domain.domain)
                     .expect("Failed to derive keypair from mnemonic_file");
-            (domain.domain, DomainState { keypair, program_whitelist: domain.program_whitelist })
+            (
+                domain.domain,
+                DomainState {
+                    keypair,
+                    program_whitelist: domain.program_whitelist,
+                },
+            )
         })
         .collect::<HashMap<_, _>>();
 
