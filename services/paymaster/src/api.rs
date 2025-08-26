@@ -13,17 +13,16 @@ use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
 };
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
-use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
-use solana_signer::{EncodableKey, Signer};
+use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct ServerState {
-    pub keypair: Keypair,
+    pub mnemonic: String,
     pub rpc: RpcClient,
     pub program_whitelist: Vec<Pubkey>,
     pub max_sponsor_spending: u64,
@@ -152,6 +151,9 @@ async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<String, ErrorResponse> {
+    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(&state.mnemonic, "")
+        .expect("Failed to derive keypair from mnemonic_file");
+
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
@@ -172,13 +174,13 @@ async fn sponsor_and_send_handler(
     validate_transaction(
         &transaction,
         &state.program_whitelist,
-        &state.keypair.pubkey(),
+        &keypair.pubkey(),
         &state.rpc,
         state.max_sponsor_spending,
     )
     .await?;
 
-    transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
+    transaction.signatures[0] = keypair.sign_message(&transaction.message.serialize());
 
     let signature = state
         .rpc
@@ -202,11 +204,14 @@ async fn sponsor_and_send_handler(
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
 ) -> Result<String, ErrorResponse> {
-    Ok(state.keypair.pubkey().to_string())
+    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(&state.mnemonic, "")
+        .expect("Failed to derive keypair from mnemonic_file");
+    Ok(keypair.pubkey().to_string())
 }
 
 pub async fn run_server(config: Config) {
-    let keypair = Keypair::read_from_file(&config.keypair_path).unwrap();
+    // Read mnemonic from file and derive keypair (no passphrase)
+    let mnemonic = std::fs::read_to_string(&config.mnemonic_file).expect("Failed to read mnemonic_file");
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
@@ -223,7 +228,7 @@ pub async fn run_server(config: Config) {
                 )])),
         )
         .with_state(Arc::new(ServerState {
-            keypair,
+            mnemonic,
             rpc: RpcClient::new(config.solana_url),
             program_whitelist: config.program_whitelist,
             max_sponsor_spending: config.max_sponsor_spending,

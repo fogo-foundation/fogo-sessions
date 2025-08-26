@@ -29,7 +29,7 @@ where
 
 #[derive(Deserialize)]
 pub struct Config {
-    pub keypair_path: String,
+    pub mnemonic_file: String,
     pub solana_url: String,
     pub listen_address: String,
     #[serde(deserialize_with = "deserialize_pubkey_vec")]

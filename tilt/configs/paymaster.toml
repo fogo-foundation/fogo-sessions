@@ -1,4 +1,4 @@
-keypair_path = "./tilt/keypairs/sponsor.json"
+mnemonic_file = "./tilt/secrets/mnemonic"
 solana_url = "http://127.0.0.1:8899"
 listen_address = "0.0.0.0:4000"
 max_sponsor_spending = 0.01
