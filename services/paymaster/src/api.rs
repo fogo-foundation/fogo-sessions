@@ -183,7 +183,7 @@ async fn sponsor_and_send_handler(
 
     let DomainState { keypair, program_whitelist } = state
         .domains
-        .get(&format!("{}", origin))
+        .get(&origin.to_string())
         .or_else(|| {
             state
                 .domains
@@ -283,7 +283,6 @@ pub async fn run_server(
         listen_address,
     }: Config,
 ) {
-    // Read mnemonic from file and derive keypair (no passphrase)
     let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
 
     let domains = domains
