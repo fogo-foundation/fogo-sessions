@@ -257,7 +257,7 @@ async fn sponsor_pubkey_handler(
     let domain = params.domain.or_else(|| origin.map(|origin| origin.to_string())).ok_or_else(|| {
         (
             StatusCode::BAD_REQUEST,
-            format!("The origin header or query parameter domain is required"),
+            format!("The http origin header or query parameter domain is required"),
         )
     })?;
 
@@ -267,7 +267,7 @@ async fn sponsor_pubkey_handler(
         .ok_or_else(|| {
             (
                 StatusCode::BAD_REQUEST,
-                format!("The request origin domain or query parameter domain has not been registered with the paymaster: {}", domain),
+                format!("The http origin header or query parameter domain is not registered with the paymaster: {}", domain),
             )
         })?;
     Ok(keypair.pubkey().to_string())
