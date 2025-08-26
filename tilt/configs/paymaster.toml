@@ -2,9 +2,9 @@ mnemonic_file = "./tilt/secrets/mnemonic"
 solana_url = "http://127.0.0.1:8899"
 listen_address = "0.0.0.0:4000"
 max_sponsor_spending = 0.01
-program_whitelist = [
-    "Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3",
-    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
-    "Ed25519SigVerify111111111111111111111111111",
-    "SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC"
-]
+# Global program whitelist
+program_whitelist = ["Ed25519SigVerify111111111111111111111111111", "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL", "SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC"]
+
+[[domains]]
+domain = "http://localhost:3000"
+program_whitelist = ["Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3"]

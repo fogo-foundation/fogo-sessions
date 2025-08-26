@@ -28,6 +28,13 @@ where
 }
 
 #[derive(Deserialize)]
+pub struct Domain {
+    pub domain: String,
+    #[serde(deserialize_with = "deserialize_pubkey_vec")]
+    pub program_whitelist: Vec<Pubkey>,
+}
+
+#[derive(Deserialize)]
 pub struct Config {
     pub mnemonic_file: String,
     pub solana_url: String,
@@ -39,6 +46,7 @@ pub struct Config {
     // However, in the config file, specify a number of FOGO -- the deserializer will auto-convert to lamports.
     #[serde(deserialize_with = "deserialize_sol_to_lamports")]
     pub max_sponsor_spending: u64,
+    pub domains: Vec<Domain>,
 }
 
 pub fn load_config(config_path: &str) -> Result<Config> {

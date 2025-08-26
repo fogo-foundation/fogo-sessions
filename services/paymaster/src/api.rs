@@ -7,27 +7,34 @@ use axum::{
     http::{HeaderName, Method},
     Router,
 };
-use axum_extra::headers::Referer;
+use axum_extra::headers::{Origin, Referer};
+use axum_extra::TypedHeader;
 use base64::Engine;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
 };
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
+use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
-use axum_extra::TypedHeader;
 
+pub struct DomainState {
+    pub keypair: Keypair,
+    pub program_whitelist: Vec<Pubkey>,
+}
 pub struct ServerState {
     pub mnemonic: String,
     pub rpc: RpcClient,
     pub program_whitelist: Vec<Pubkey>,
     pub max_sponsor_spending: u64,
+    pub domains: HashMap<String, DomainState>,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -37,7 +44,8 @@ pub struct SponsorAndSendPayload {
 
 pub async fn validate_transaction(
     transaction: &VersionedTransaction,
-    program_whitelist: &[Pubkey],
+    global_program_whitelist: &[Pubkey],
+    domain_program_whitelist: &[Pubkey],
     sponsor: &Pubkey,
     rpc: &RpcClient,
     max_sponsor_spending: u64,
@@ -76,7 +84,9 @@ pub async fn validate_transaction(
         .iter()
         .try_for_each(|instruction| {
             let program_id = instruction.program_id(transaction.message.static_account_keys());
-            if !program_whitelist.contains(program_id) {
+            if !global_program_whitelist.contains(program_id)
+                && !domain_program_whitelist.contains(program_id)
+            {
                 return Err((
                     StatusCode::BAD_REQUEST,
                     format!("Transaction contains unauthorized program ID: {program_id}"),
@@ -151,12 +161,9 @@ pub async fn validate_transaction(
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
-    TypedHeader(referer): TypedHeader<Referer>,
+    TypedHeader(origin): TypedHeader<Origin>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<String, ErrorResponse> {
-    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(&state.mnemonic, &format!("{}", referer))
-        .expect("Failed to derive keypair from mnemonic_file");
-
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
@@ -174,9 +181,35 @@ async fn sponsor_and_send_handler(
 
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
+
+    let DomainState { keypair, program_whitelist } = state
+        .domains
+        .get(&format!("{}", origin))
+        .or_else(|| {
+            state
+                .domains
+                .iter()
+                .find(|(_, DomainState { keypair, program_whitelist: _ })| {
+                    keypair
+                        .pubkey()
+                        .eq(&transaction.message.static_account_keys()[0])
+                })
+                .map(|(_, value)| value)
+        })
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "The request origin domain has not been registered with the paymaster: {}",
+                    origin
+                ),
+            )
+        })?;
+
     validate_transaction(
         &transaction,
         &state.program_whitelist,
+        &program_whitelist,
         &keypair.pubkey(),
         &state.rpc,
         state.max_sponsor_spending,
@@ -208,14 +241,36 @@ async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
     TypedHeader(referer): TypedHeader<Referer>,
 ) -> Result<String, ErrorResponse> {
-    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(&state.mnemonic, &format!("{}", referer))
-        .expect("Failed to derive keypair from mnemonic_file");
+    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(
+        &state.mnemonic,
+        &format!("{}", referer),
+    )
+    .expect("Failed to derive keypair from mnemonic_file");
     Ok(keypair.pubkey().to_string())
 }
 
-pub async fn run_server(config: Config) {
+pub async fn run_server(
+    Config {
+        mnemonic_file,
+        solana_url,
+        program_whitelist,
+        max_sponsor_spending,
+        domains,
+        listen_address,
+    }: Config,
+) {
     // Read mnemonic from file and derive keypair (no passphrase)
-    let mnemonic = std::fs::read_to_string(&config.mnemonic_file).expect("Failed to read mnemonic_file");
+    let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
+
+    let domains = domains
+        .into_iter()
+        .map(|domain| {
+            let keypair =
+                solana_keypair::keypair_from_seed_phrase_and_passphrase(&mnemonic, &domain.domain)
+                    .expect("Failed to derive keypair from mnemonic_file");
+            (domain.domain, DomainState { keypair, program_whitelist: domain.program_whitelist })
+        })
+        .collect::<HashMap<_, _>>();
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
@@ -233,12 +288,11 @@ pub async fn run_server(config: Config) {
         )
         .with_state(Arc::new(ServerState {
             mnemonic,
-            rpc: RpcClient::new(config.solana_url),
-            program_whitelist: config.program_whitelist,
-            max_sponsor_spending: config.max_sponsor_spending,
+            rpc: RpcClient::new(solana_url),
+            program_whitelist,
+            max_sponsor_spending,
+            domains,
         }));
-    let listener = tokio::net::TcpListener::bind(config.listen_address)
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
