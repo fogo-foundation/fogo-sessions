@@ -40,7 +40,7 @@ pub struct Config {
     pub solana_url: String,
     pub listen_address: String,
     #[serde(deserialize_with = "deserialize_pubkey_vec")]
-    pub program_whitelist: Vec<Pubkey>,
+    pub global_program_whitelist: Vec<Pubkey>,
     // The maximum amount that the sponsor can spend on a transaction.
     // The value in the struct is expressed in lamports.
     // However, in the config file, specify a number of FOGO -- the deserializer will auto-convert to lamports.

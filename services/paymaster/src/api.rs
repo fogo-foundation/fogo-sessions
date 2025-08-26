@@ -31,7 +31,7 @@ pub struct DomainState {
 }
 pub struct ServerState {
     pub rpc: RpcClient,
-    pub program_whitelist: Vec<Pubkey>,
+    pub global_program_whitelist: Vec<Pubkey>,
     pub max_sponsor_spending: u64,
     pub domains: HashMap<String, DomainState>,
 }
@@ -207,7 +207,7 @@ async fn sponsor_and_send_handler(
 
     validate_transaction(
         &transaction,
-        &state.program_whitelist,
+        &state.global_program_whitelist,
         &program_whitelist,
         &keypair.pubkey(),
         &state.rpc,
@@ -277,7 +277,7 @@ pub async fn run_server(
     Config {
         mnemonic_file,
         solana_url,
-        program_whitelist,
+        global_program_whitelist,
         max_sponsor_spending,
         domains,
         listen_address,
@@ -312,7 +312,7 @@ pub async fn run_server(
         )
         .with_state(Arc::new(ServerState {
             rpc: RpcClient::new(solana_url),
-            program_whitelist,
+            global_program_whitelist,
             max_sponsor_spending,
             domains,
         }));
