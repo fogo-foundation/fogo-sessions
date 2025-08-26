@@ -209,9 +209,7 @@ async fn sponsor_and_send_handler(
         .ok_or_else(|| {
             (
                 StatusCode::BAD_REQUEST,
-                format!(
-                    "The http origin header is not registered with the paymaster: {origin}"
-                ),
+                format!("The http origin header is not registered with the paymaster: {origin}"),
             )
         })?;
 
