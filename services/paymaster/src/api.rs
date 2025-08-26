@@ -199,7 +199,7 @@ async fn sponsor_and_send_handler(
             (
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "The request origin domain has not been registered with the paymaster: {}",
+                    "The http origin header is not registered with the paymaster: {}",
                     origin
                 ),
             )
