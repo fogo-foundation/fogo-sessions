@@ -1,0 +1,27 @@
+[package]
+name = "intent-transfer"
+version = "0.1.0"
+edition = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "intent_transfer"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-spl = { workspace = true }
+chain-id = { path = "../chain-id", features = ["no-entrypoint"] }
+mpl-token-metadata = { workspace = true }
+nom = { workspace = true }
+solana-intents = { path = "../../packages/solana-intents" }
+
+[dev-dependencies]
+indoc = "2.0.6"

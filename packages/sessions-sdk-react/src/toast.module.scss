@@ -1,0 +1,48 @@
+@use "./theme";
+
+.toastRegion {
+  @include theme.reset {
+    position: fixed;
+    top: theme.spacing(4);
+    right: theme.spacing(12);
+    display: flex;
+    flex-flow: column nowrap;
+    gap: theme.spacing(2);
+    outline: none;
+    z-index: theme.layer("toast");
+
+    .toast {
+      display: flex;
+      flex-flow: row nowrap;
+      align-items: center;
+      gap: theme.spacing(4);
+      padding: theme.spacing(1);
+      padding-left: theme.spacing(4);
+      box-shadow: 1px 1px 2px rgb(from black r g b / 40%);
+      border-radius: theme.border-radius("md");
+      max-width: theme.spacing(90);
+
+      .dismissButton {
+        @include theme.button("ghost");
+
+        // stylelint-disable-next-line no-duplicate-selectors
+        & {
+          padding-left: theme.spacing(2);
+          padding-right: theme.spacing(2);
+        }
+      }
+
+      &[data-variant="success"] {
+        border: 1px solid theme.pallette-color("green", 600);
+        background: theme.pallette-color("green", 100);
+        color: theme.pallette-color("green", 900);
+      }
+
+      &[data-variant="error"] {
+        border: 1px solid theme.pallette-color("red", 600);
+        background: theme.pallette-color("red", 100);
+        color: theme.pallette-color("red", 900);
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@ import {
   DomainRegistryIdl,
   SessionManagerProgram,
   SessionManagerIdl,
+  IntentTransferProgram,
 } from "@fogo/sessions-idls";
 import {
   findMetadataPda,
@@ -12,7 +13,12 @@ import {
 import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { sha256 } from "@noble/hashes/sha2";
-import { generateKeyPair, getAddressFromPublicKey } from "@solana/kit";
+import { fromLegacyPublicKey } from "@solana/compat";
+import {
+  generateKeyPair,
+  getAddressFromPublicKey,
+  getProgramDerivedAddress,
+} from "@solana/kit";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
@@ -46,6 +52,8 @@ const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 
 const CURRENT_MAJOR = "0";
 const CURRENT_MINOR = "1";
+const CURRENT_INTENT_TRANSFER_MAJOR = "0";
+const CURRENT_INTENT_TRANSFER_MINOR = "1";
 
 type EstablishSessionOptions = {
   adapter: SessionAdapter;
@@ -259,21 +267,24 @@ export enum AuthorizedTokens {
   Specific,
 }
 
-const SymbolOrMintType = {
-  Symbol: "Symbol",
-  Mint: "Mint",
-} as const;
+enum SymbolOrMintType {
+  Symbol,
+  Mint,
+}
 
 const SymbolOrMint = {
   Symbol: (symbol: string) => ({
-    type: SymbolOrMintType.Symbol,
+    type: SymbolOrMintType.Symbol as const,
     symbol,
   }),
   Mint: (mint: PublicKey) => ({
-    type: SymbolOrMintType.Mint,
+    type: SymbolOrMintType.Mint as const,
     mint,
   }),
 };
+type SymbolOrMint = ReturnType<
+  (typeof SymbolOrMint)[keyof typeof SymbolOrMint]
+>;
 
 const getTokenInfo = async (
   adapter: SessionAdapter,
@@ -488,4 +499,100 @@ export type Session = {
     instructions: Parameters<SessionAdapter["sendTransaction"]>[1],
   ) => Promise<TransactionResult>;
   sessionInfo: z.infer<typeof sessionInfoSchema>;
+};
+
+const TRANSFER_MESSAGE_HEADER = `Fogo Transfer:
+Signing this intent will transfer the tokens as described below.
+`;
+
+type SendTransferOptions = {
+  adapter: SessionAdapter;
+  walletPublicKey: PublicKey;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  mint: PublicKey;
+  amount: bigint;
+  recipient: PublicKey;
+};
+
+export const sendTransfer = async (options: SendTransferOptions) => {
+  const sourceAta = getAssociatedTokenAddressSync(
+    options.mint,
+    options.walletPublicKey,
+  );
+  const destinationAta = getAssociatedTokenAddressSync(
+    options.mint,
+    options.recipient,
+  );
+  const program = new IntentTransferProgram(
+    new AnchorProvider(options.adapter.connection, {} as Wallet, {}),
+  );
+  const umi = createUmi(options.adapter.connection.rpcEndpoint);
+  const metaplexMint = metaplexPublicKey(options.mint.toBase58());
+  const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
+  const metadata = await safeFetchMetadata(umi, metadataAddress);
+  const symbol = metadata?.symbol ?? undefined;
+
+  return options.adapter.sendTransaction(undefined, [
+    createAssociatedTokenAccountIdempotentInstruction(
+      options.adapter.payer,
+      destinationAta,
+      options.recipient,
+      options.mint,
+    ),
+    await buildTransferIntentInstruction(program, options, symbol),
+    await program.methods
+      .sendTokens()
+      .accounts({
+        destination: destinationAta,
+        mint: options.mint,
+        source: sourceAta,
+        sponsor: options.adapter.payer,
+        // eslint-disable-next-line unicorn/no-null
+        metadata: symbol === undefined ? null : new PublicKey(metadataAddress),
+      })
+      .instruction(),
+  ]);
+};
+
+const buildTransferIntentInstruction = async (
+  program: IntentTransferProgram,
+  options: SendTransferOptions,
+  symbol?: string,
+) => {
+  const [nonce, { decimals }] = await Promise.all([
+    getNonce(program, options.walletPublicKey),
+    getMint(options.adapter.connection, options.mint),
+  ]);
+  const message = new TextEncoder().encode(
+    [
+      TRANSFER_MESSAGE_HEADER,
+      serializeKV({
+        version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
+        chain_id: options.adapter.chainId,
+        token: symbol ?? options.mint.toBase58(),
+        amount: amountToString(options.amount, decimals),
+        recipient: options.recipient.toBase58(),
+        nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
+      }),
+    ].join("\n"),
+  );
+
+  const intentSignature = await options.signMessage(message);
+
+  return Ed25519Program.createInstructionWithPublicKey({
+    publicKey: options.walletPublicKey.toBytes(),
+    signature: intentSignature,
+    message: message,
+  });
+};
+
+const getNonce = async (
+  program: IntentTransferProgram,
+  walletPublicKey: PublicKey,
+) => {
+  const [noncePda] = await getProgramDerivedAddress({
+    programAddress: fromLegacyPublicKey(program.programId),
+    seeds: [Buffer.from("nonce"), walletPublicKey.toBuffer()],
+  });
+  return program.account.nonce.fetchNullable(noncePda);
 };

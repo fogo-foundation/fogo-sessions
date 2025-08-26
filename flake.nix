@@ -70,6 +70,9 @@
           final.pnpm
           final.python3
           final.tilt
+          final.rust-analyzer
+          final.rustfmt
+          final.clippy
           solana-nix.packages."${system}".solana-cli
           solana-nix.packages."${system}".anchor-cli
           solana-nix.packages."${system}".solana-rust

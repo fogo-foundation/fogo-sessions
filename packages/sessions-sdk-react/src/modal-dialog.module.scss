@@ -11,7 +11,7 @@
     backdrop-filter: blur(8px);
     display: grid;
     place-content: center;
-    z-index: 999999;
+    z-index: theme.layer("modal-dialog");
 
     &[data-entering] {
       animation: modal-fade 200ms;
