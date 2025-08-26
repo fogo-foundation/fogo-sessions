@@ -37,6 +37,58 @@
       stroke: theme.color("panel", "border");
     }
 
+    .copyWalletAddressButton {
+      @include theme.text("xs", "normal");
+      @include theme.button("ghost");
+
+      // stylelint-disable-next-line no-duplicate-selectors
+      & {
+        display: inline-flex;
+        padding-left: theme.spacing(2);
+        padding-right: theme.spacing(2);
+        margin-left: -#{theme.spacing(2)};
+        margin-right: -#{theme.spacing(2)};
+        cursor: copy;
+      }
+
+      .iconContainer {
+        position: relative;
+        width: 1em;
+        height: 1em;
+
+        .copyIcon,
+        .checkIcon {
+          position: absolute;
+          inset: 0;
+          transition: opacity linear 100ms;
+        }
+
+        .checkIcon {
+          color: theme.pallette-color("green", 700);
+          opacity: 0;
+          transition: opacity linear 100ms;
+        }
+      }
+
+      &[data-disabled] {
+        color: theme.color("ghost", "text", "base");
+      }
+
+      &[data-is-copied] {
+        background: theme.pallette-color("blue", 100);
+
+        .iconContainer {
+          .checkIcon {
+            opacity: 1;
+          }
+
+          .copyIcon {
+            opacity: 0;
+          }
+        }
+      }
+    }
+
     .sessionPanel {
       background: theme.color("panel", "background");
       border: 1px solid theme.color("panel", "border");
@@ -60,58 +112,6 @@
         justify-content: center;
         align-items: baseline;
         gap: theme.spacing(4);
-
-        .copyWalletAddressButton {
-          @include theme.text("xs", "normal");
-          @include theme.button("ghost");
-
-          // stylelint-disable-next-line no-duplicate-selectors
-          & {
-            display: inline-flex;
-            padding-left: theme.spacing(2);
-            padding-right: theme.spacing(2);
-            margin-left: -#{theme.spacing(2)};
-            margin-right: -#{theme.spacing(2)};
-            cursor: copy;
-          }
-
-          .iconContainer {
-            position: relative;
-            width: 1em;
-            height: 1em;
-
-            .copyIcon,
-            .checkIcon {
-              position: absolute;
-              inset: 0;
-              transition: opacity linear 100ms;
-            }
-
-            .checkIcon {
-              color: theme.pallette-color("green", 700);
-              opacity: 0;
-              transition: opacity linear 100ms;
-            }
-          }
-
-          &[data-disabled] {
-            color: theme.color("ghost", "text", "base");
-          }
-
-          &[data-is-copied] {
-            background: theme.pallette-color("blue", 100);
-
-            .iconContainer {
-              .checkIcon {
-                opacity: 1;
-              }
-
-              .copyIcon {
-                opacity: 0;
-              }
-            }
-          }
-        }
       }
 
       .tabs {
@@ -158,25 +158,195 @@
         }
       }
 
-      .tokensPanel,
-      .limitsPanel {
+      .tabPanel {
         background: rgb(from black r g b / 5%);
         border-top: 1px solid theme.color("panel", "border");
         border-bottom: 1px solid theme.color("panel", "border");
-        overflow: auto;
         outline: none;
         display: grid;
-        scrollbar-width: thin;
+        overflow: hidden;
+
+        &[data-panel="session-limits"] {
+          padding: theme.spacing(6) theme.spacing(4);
+        }
       }
 
-      .tokensPanel {
+      .selectTokenPage {
+        display: flex;
+        flex-flow: column nowrap;
+        gap: theme.spacing(4);
+        overflow: auto;
+        scrollbar-width: thin;
+        scrollbar-gutter: stable;
+
+        .backButton {
+          align-self: start;
+          position: relative;
+          left: theme.spacing(2);
+          top: theme.spacing(2);
+
+          @include theme.button("ghost");
+        }
+      }
+
+      .sendPage {
+        display: flex;
+        flex-flow: column nowrap;
+        align-items: center;
+        gap: theme.spacing(2);
+        padding: theme.spacing(2);
+        position: relative;
+
+        .backButton {
+          align-self: start;
+
+          @include theme.button("ghost");
+        }
+
+        .header {
+          @include theme.text("lg", "semibold");
+
+          display: flex;
+          flex-flow: column nowrap;
+          gap: theme.spacing(2);
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+
+          .tokenIcon {
+            width: theme.spacing(12);
+            height: theme.spacing(12);
+            border-radius: theme.border-radius("full");
+            background: rgb(from black r g b / 20%);
+          }
+        }
+
+        .amountInWallet {
+          @include theme.text("xs", "semibold");
+
+          opacity: 0.6;
+          margin-top: -#{theme.spacing(1)};
+          margin-bottom: theme.spacing(4);
+        }
+
+        .field {
+          display: grid;
+          grid-template-columns: theme.spacing(28) 1fr theme.spacing(14);
+
+          .cameraButton,
+          .maxButton {
+            @include theme.button("ghost");
+
+            // stylelint-disable-next-line no-duplicate-selectors
+            & {
+              @include theme.text("xs", "normal");
+
+              height: 100%;
+              padding-left: theme.spacing(1);
+              padding-right: theme.spacing(1);
+            }
+          }
+
+          .cameraButton .label {
+            @include theme.sr-only;
+          }
+        }
+
+        .submitButton {
+          @include theme.button("primary");
+
+          // stylelint-disable-next-line no-duplicate-selectors
+          & {
+            margin-top: theme.spacing(8);
+          }
+        }
+
+        .qrCodeScanner {
+          position: absolute;
+          inset: 0;
+          background: rgb(from black r g b / 50%);
+          display: grid;
+          place-content: center;
+
+          .closeButton {
+            @include theme.button("ghost");
+
+            // stylelint-disable-next-line no-duplicate-selectors
+            & {
+              @include theme.text("2xl", "bold");
+
+              position: absolute;
+              top: theme.spacing(2);
+              right: theme.spacing(2);
+              padding-left: theme.spacing(2);
+              padding-right: theme.spacing(2);
+              z-index: 1;
+            }
+
+            .label {
+              @include theme.sr-only;
+            }
+          }
+
+          .camera {
+            z-index: 0;
+          }
+        }
+      }
+
+      .receivePage {
+        display: grid;
+        grid-template-rows: max-content max-content 1fr;
+        place-items: center;
+        gap: theme.spacing(2);
+        padding: theme.spacing(2);
+
+        .backButton {
+          justify-self: start;
+
+          @include theme.button("ghost");
+        }
+
+        .walletKey {
+          border-radius: theme.border-radius("xl");
+          display: grid;
+          place-items: center;
+          text-align: center;
+          gap: theme.spacing(4);
+          background: rgb(from black r g b / 5%);
+          padding: theme.spacing(4) theme.spacing(8);
+
+          .header {
+            @include theme.text("xl", "semibold");
+          }
+
+          .qrCode {
+            border: theme.spacing(4) solid white;
+            border-radius: theme.border-radius("xl");
+            width: theme.spacing(40);
+            height: theme.spacing(40);
+          }
+
+          .walletAddress {
+            word-break: break-all;
+            max-width: theme.spacing(50);
+          }
+        }
+      }
+
+      .walletPage {
+        overflow: auto;
+        scrollbar-width: thin;
+        scrollbar-gutter: stable;
+        height: 100%;
+        display: grid;
         grid-template-rows: max-content 1fr;
 
         .topButtons {
           display: flex;
           flex-flow: row nowrap;
           justify-content: center;
-          gap: theme.spacing(8);
+          gap: theme.spacing(2);
           margin-top: theme.spacing(2);
 
           .topButton {
@@ -193,6 +363,7 @@
             grid-template-columns: min-content;
             grid-template-rows: repeat(2, max-content);
             gap: theme.spacing(1);
+            justify-items: center;
 
             &[data-hovered] {
               background-color: rgb(from black r g b / 5%);
@@ -222,92 +393,129 @@
             }
           }
         }
+      }
 
-        .tokenList {
-          display: flex;
-          flex-flow: column nowrap;
-          gap: theme.spacing(2);
-          padding: theme.spacing(2);
-          padding-bottom: theme.spacing(4);
-          margin: 0;
+      .tokenList {
+        display: flex;
+        flex-flow: column nowrap;
+        gap: theme.spacing(2);
+        padding: theme.spacing(2);
+        padding-bottom: theme.spacing(4);
+        margin: 0;
 
-          .token {
-            display: grid;
-            grid-template-columns: max-content 1fr max-content;
-            gap: theme.spacing(3);
+        .token,
+        .tokenButton {
+          display: grid;
+          grid-template-columns: max-content 1fr max-content;
+          gap: theme.spacing(3);
+          background: rgb(from black r g b / 5%);
+          border-radius: theme.border-radius("lg");
+          padding: theme.spacing(2) theme.spacing(3);
+          align-items: center;
+          color: theme.color("panel", "text");
+          border: none;
+          text-align: left;
+
+          .tokenIcon {
+            width: theme.spacing(8);
+            height: theme.spacing(8);
+            border-radius: theme.border-radius("full");
             background: rgb(from black r g b / 5%);
-            border-radius: theme.border-radius("lg");
-            padding: theme.spacing(2) theme.spacing(3);
-            align-items: center;
+          }
 
-            .tokenIcon {
-              width: theme.spacing(8);
-              height: theme.spacing(8);
-              border-radius: theme.border-radius("full");
-              background: rgb(from black r g b / 5%);
+          .tokenName {
+            @include theme.text("sm", "medium");
+
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: theme.spacing(8);
+          }
+
+          .amount {
+            @include theme.text("xs", "semibold");
+          }
+
+          &[data-is-loading] {
+            .tokenIcon,
+            .tokenName,
+            .amount {
+              animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+
+            .tokenName,
+            .amount {
+              background: rgb(from black r g b / 10%);
+              height: 1em;
+              border-radius: theme.border-radius("md");
             }
 
             .tokenName {
-              @include theme.text("sm", "medium");
-
-              overflow: hidden;
-              text-overflow: ellipsis;
-              padding-right: theme.spacing(8);
+              width: theme.spacing(30);
             }
 
             .amount {
-              @include theme.text("xs", "semibold");
+              width: theme.spacing(20);
             }
 
-            &[data-is-loading] {
-              .tokenIcon,
-              .tokenName,
-              .amount {
-                animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-              }
-
-              .tokenName,
-              .amount {
-                background: rgb(from black r g b / 10%);
-                height: 1em;
-                border-radius: theme.border-radius("md");
-              }
-
-              .tokenName {
-                width: theme.spacing(30);
-              }
-
-              .amount {
-                width: theme.spacing(20);
-              }
-
-              @keyframes pulse {
-                50% {
-                  opacity: 0.5;
-                }
+            @keyframes pulse {
+              50% {
+                opacity: 0.5;
               }
             }
           }
         }
 
-        .tokenListEmpty {
-          @include theme.text("lg", "bold");
-
-          text-align: center;
-          display: grid;
-          place-content: center;
-          height: 100%;
-          gap: theme.spacing(10);
-          color: rgb(from theme.color("panel", "text") r g b / 60%);
-
-          a {
+        .token {
+          .sendButton {
             @include theme.button("primary");
+
+            // stylelint-disable-next-line no-duplicate-selectors
+            & {
+              display: none;
+              padding-left: theme.spacing(2);
+              padding-right: theme.spacing(2);
+            }
+          }
+
+          &:not([data-is-loading]):hover {
+            .amount {
+              display: none;
+            }
+
+            .sendButton {
+              display: flex;
+            }
+          }
+        }
+
+        .tokenButton {
+          cursor: pointer;
+          transition: background-color 50ms linear;
+          outline: none;
+
+          &[data-hovered] {
+            background: rgb(from black r g b / 10%);
+          }
+
+          &[data-focus-visible] {
+            outline: 2px solid theme.color("primary", "border", "base");
           }
         }
       }
 
-      .limitsPanel {
-        padding: theme.spacing(6) theme.spacing(4);
+      .tokenListEmpty {
+        @include theme.text("lg", "bold");
+
+        text-align: center;
+        display: grid;
+        place-content: center;
+        height: 100%;
+        gap: theme.spacing(10);
+        color: rgb(from theme.color("panel", "text") r g b / 60%);
+
+        a {
+          @include theme.button("primary");
+        }
       }
 
       .footer {

@@ -6,7 +6,7 @@ import {
   fromLegacyTransactionInstruction,
   fromVersionedTransaction,
 } from "@solana/compat";
-import type { Transaction, IInstruction } from "@solana/kit";
+import type { Transaction, IInstruction, Blockhash } from "@solana/kit";
 import {
   createTransactionMessage,
   setTransactionMessageFeePayer,
@@ -21,7 +21,11 @@ import {
   createSignerFromKeyPair,
   partiallySignTransaction,
 } from "@solana/kit";
-import type { Connection, TransactionError } from "@solana/web3.js";
+import type {
+  AddressLookupTableAccount,
+  Connection,
+  TransactionError,
+} from "@solana/web3.js";
 import {
   PublicKey,
   Keypair,
@@ -42,7 +46,7 @@ export type SessionAdapter = {
   payer: PublicKey;
   domain: string;
   sendTransaction: (
-    sessionKey: CryptoKeyPair,
+    sessionKey: CryptoKeyPair | undefined,
     instructions:
       | (TransactionInstruction | IInstruction)[]
       | VersionedTransaction
@@ -99,55 +103,16 @@ export const createSolanaWalletAdapter = async (
     sendTransaction: async (sessionKey, instructions) => {
       const rpc = createSolanaRpc(options.connection.rpcEndpoint);
       const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-      const sessionKeySigner = await createSignerFromKeyPair(sessionKey);
-
-      const transaction = Array.isArray(instructions)
-        ? await partiallySignTransactionMessageWithSigners(
-            pipe(
-              createTransactionMessage({ version: 0 }),
-              (tx) =>
-                setTransactionMessageFeePayer(fromLegacyPublicKey(sponsor), tx),
-              (tx) =>
-                setTransactionMessageLifetimeUsingBlockhash(
-                  latestBlockhash,
-                  tx,
-                ),
-              (tx) =>
-                appendTransactionMessageInstructions(
-                  instructions.map((instruction) =>
-                    instruction instanceof TransactionInstruction
-                      ? fromLegacyTransactionInstruction(instruction)
-                      : instruction,
-                  ),
-                  tx,
-                ),
-              (tx) =>
-                compressTransactionMessageUsingAddressLookupTables(
-                  tx,
-                  Object.fromEntries(
-                    addressLookupTables?.map(
-                      (table) =>
-                        [
-                          fromLegacyPublicKey(table.key),
-                          table.state.addresses.map((address) =>
-                            fromLegacyPublicKey(address),
-                          ),
-                        ] as const,
-                    ) ?? [],
-                  ),
-                ),
-              (tx) => addSignersToTransactionMessage([sessionKeySigner], tx),
-            ),
-          )
-        : await partiallySignTransaction(
-            [sessionKey],
-            instructions instanceof VersionedTransaction
-              ? fromVersionedTransaction(instructions)
-              : instructions,
-          );
-
-      const signature = await sendToPaymaster(options, transaction);
-
+      const signature = await sendToPaymaster(
+        options,
+        await buildTransaction(
+          latestBlockhash,
+          sessionKey,
+          sponsor,
+          instructions,
+          addressLookupTables,
+        ),
+      );
       const lastValidBlockHeight = await rpc.getSlot().send();
       const confirmationResult = await options.connection.confirmTransaction({
         signature,
@@ -160,6 +125,71 @@ export const createSolanaWalletAdapter = async (
         : TransactionResult.Failed(signature, confirmationResult.value.err);
     },
   };
+};
+
+const buildTransaction = async (
+  latestBlockhash: Readonly<{
+    blockhash: Blockhash;
+    lastValidBlockHeight: bigint;
+  }>,
+  sessionKey: CryptoKeyPair | undefined,
+  sponsor: PublicKey,
+  instructions:
+    | (TransactionInstruction | IInstruction)[]
+    | VersionedTransaction
+    | Transaction,
+  addressLookupTables: AddressLookupTableAccount[] | undefined,
+) => {
+  const sessionKeySigner = sessionKey
+    ? await createSignerFromKeyPair(sessionKey)
+    : undefined;
+
+  if (Array.isArray(instructions)) {
+    return partiallySignTransactionMessageWithSigners(
+      pipe(
+        createTransactionMessage({ version: 0 }),
+        (tx) => setTransactionMessageFeePayer(fromLegacyPublicKey(sponsor), tx),
+        (tx) =>
+          setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+        (tx) =>
+          appendTransactionMessageInstructions(
+            instructions.map((instruction) =>
+              instruction instanceof TransactionInstruction
+                ? fromLegacyTransactionInstruction(instruction)
+                : instruction,
+            ),
+            tx,
+          ),
+        (tx) =>
+          compressTransactionMessageUsingAddressLookupTables(
+            tx,
+            Object.fromEntries(
+              addressLookupTables?.map(
+                (table) =>
+                  [
+                    fromLegacyPublicKey(table.key),
+                    table.state.addresses.map((address) =>
+                      fromLegacyPublicKey(address),
+                    ),
+                  ] as const,
+              ) ?? [],
+            ),
+          ),
+        (tx) =>
+          sessionKeySigner === undefined
+            ? tx
+            : addSignersToTransactionMessage([sessionKeySigner], tx),
+      ),
+    );
+  } else {
+    const tx =
+      instructions instanceof VersionedTransaction
+        ? fromVersionedTransaction(instructions)
+        : instructions;
+    return sessionKey === undefined
+      ? tx
+      : partiallySignTransaction([sessionKey], tx);
+  }
 };
 
 const getSponsor = async (
