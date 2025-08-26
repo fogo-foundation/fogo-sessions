@@ -7,6 +7,7 @@ use axum::{
     http::{HeaderName, Method},
     Router,
 };
+use axum_extra::headers::Referer;
 use base64::Engine;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::{
@@ -20,6 +21,7 @@ use solana_transaction::versioned::VersionedTransaction;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
+use axum_extra::TypedHeader;
 
 pub struct ServerState {
     pub mnemonic: String,
@@ -149,9 +151,10 @@ pub async fn validate_transaction(
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
+    TypedHeader(referer): TypedHeader<Referer>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<String, ErrorResponse> {
-    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(&state.mnemonic, "")
+    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(&state.mnemonic, &format!("{}", referer))
         .expect("Failed to derive keypair from mnemonic_file");
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
@@ -203,8 +206,9 @@ async fn sponsor_and_send_handler(
 #[utoipa::path(get, path = "/sponsor_pubkey")]
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
+    TypedHeader(referer): TypedHeader<Referer>,
 ) -> Result<String, ErrorResponse> {
-    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(&state.mnemonic, "")
+    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(&state.mnemonic, &format!("{}", referer))
         .expect("Failed to derive keypair from mnemonic_file");
     Ok(keypair.pubkey().to_string())
 }
