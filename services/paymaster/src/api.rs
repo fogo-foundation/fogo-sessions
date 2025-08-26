@@ -1,5 +1,5 @@
 use crate::config::Config;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
 use axum::Json;
@@ -7,7 +7,7 @@ use axum::{
     http::{HeaderName, Method},
     Router,
 };
-use axum_extra::headers::{Origin, Referer};
+use axum_extra::headers::{Origin};
 use axum_extra::TypedHeader;
 use base64::Engine;
 use solana_client::rpc_client::RpcClient;
@@ -30,7 +30,6 @@ pub struct DomainState {
     pub program_whitelist: Vec<Pubkey>,
 }
 pub struct ServerState {
-    pub mnemonic: String,
     pub rpc: RpcClient,
     pub program_whitelist: Vec<Pubkey>,
     pub max_sponsor_spending: u64,
@@ -236,16 +235,41 @@ async fn sponsor_and_send_handler(
     Ok(signature.to_string())
 }
 
-#[utoipa::path(get, path = "/sponsor_pubkey")]
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SponsorPubkeyQuery {
+    #[serde(default)]
+    domain: Option<String>,
+}
+
+#[utoipa::path(
+    get,
+    path = "/sponsor_pubkey",
+    params(
+        ("domain" = Option<String>, Query, description = "Domain to request the sponsor pubkey for")
+    )
+)]
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
-    TypedHeader(referer): TypedHeader<Referer>,
+    origin: Option<TypedHeader<Origin>>,
+    Query(params): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
-    let keypair = solana_keypair::keypair_from_seed_phrase_and_passphrase(
-        &state.mnemonic,
-        &format!("{}", referer),
-    )
-    .expect("Failed to derive keypair from mnemonic_file");
+    let domain = params.domain.or_else(|| origin.map(|origin| origin.to_string())).ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("The origin header or query parameter domain is required"),
+        )
+    })?;
+
+    let DomainState { keypair, program_whitelist: _ } = state
+        .domains
+        .get(&domain)
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("The request origin domain or query parameter domain has not been registered with the paymaster: {}", domain),
+            )
+        })?;
     Ok(keypair.pubkey().to_string())
 }
 
@@ -287,7 +311,6 @@ pub async fn run_server(
                 )])),
         )
         .with_state(Arc::new(ServerState {
-            mnemonic,
             rpc: RpcClient::new(solana_url),
             program_whitelist,
             max_sponsor_spending,
