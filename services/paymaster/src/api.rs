@@ -210,8 +210,7 @@ async fn sponsor_and_send_handler(
             (
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "The http origin header is not registered with the paymaster: {}",
-                    origin
+                    "The http origin header is not registered with the paymaster: {origin}"
                 ),
             )
         })?;
@@ -219,7 +218,7 @@ async fn sponsor_and_send_handler(
     validate_transaction(
         &transaction,
         &state.global_program_whitelist,
-        &program_whitelist,
+        program_whitelist,
         &keypair.pubkey(),
         &state.rpc,
         state.max_sponsor_spending,
@@ -271,7 +270,7 @@ async fn sponsor_pubkey_handler(
         .ok_or_else(|| {
             (
                 StatusCode::BAD_REQUEST,
-                format!("The http origin header or query parameter domain is required"),
+                "The http origin header or query parameter domain is required".to_string(),
             )
         })?;
 
@@ -281,7 +280,7 @@ async fn sponsor_pubkey_handler(
         .ok_or_else(|| {
             (
                 StatusCode::BAD_REQUEST,
-                format!("The http origin header or query parameter domain is not registered with the paymaster: {}", domain),
+                format!("The http origin header or query parameter domain is not registered with the paymaster: {domain}"),
             )
         })?;
     Ok(keypair.pubkey().to_string())
