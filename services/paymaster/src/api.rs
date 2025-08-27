@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
+use axum::extract::Query;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::extract::Query;
 use axum::response::{ErrorResponse, IntoResponse, Response};
 use axum::Json;
 use axum::{
@@ -20,7 +20,6 @@ use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_signature::Signature;
-use solana_transaction_error::TransactionError;
 use solana_signer::{EncodableKey, Signer};
 use solana_transaction::versioned::VersionedTransaction;
 use std::sync::Arc;
@@ -164,13 +163,11 @@ pub enum SponsorAndSendResponse {
 impl IntoResponse for SponsorAndSendResponse {
     fn into_response(self) -> Response {
         match self {
-            SponsorAndSendResponse::Send(signature) => 
-                signature.to_string().into_response(),
+            SponsorAndSendResponse::Send(signature) => signature.to_string().into_response(),
             SponsorAndSendResponse::Confirm(result) => Json(result).into_response(),
         }
     }
 }
-
 
 #[utoipa::path(
     post,
@@ -213,29 +210,30 @@ async fn sponsor_and_send_handler(
     if query.confirm {
         let confirmation_result = send_and_confirm_transaction(
             &state.rpc,
-                &transaction,
-                RpcSendTransactionConfig {
-                    skip_preflight: true,
-                    ..RpcSendTransactionConfig::default()
-                },
-            ).await?;
-        Ok(SponsorAndSendResponse::Confirm(confirmation_result))
-    } else {
-        let signature = state
-        .rpc
-        .send_transaction_with_config(
             &transaction,
             RpcSendTransactionConfig {
                 skip_preflight: true,
                 ..RpcSendTransactionConfig::default()
             },
         )
-        .map_err(|err| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to broadcast transaction: {err}"),
+        .await?;
+        Ok(SponsorAndSendResponse::Confirm(confirmation_result))
+    } else {
+        let signature = state
+            .rpc
+            .send_transaction_with_config(
+                &transaction,
+                RpcSendTransactionConfig {
+                    skip_preflight: true,
+                    ..RpcSendTransactionConfig::default()
+                },
             )
-        })?;
+            .map_err(|err| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to broadcast transaction: {err}"),
+                )
+            })?;
         Ok(SponsorAndSendResponse::Send(signature))
     }
 }
