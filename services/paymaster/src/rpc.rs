@@ -12,7 +12,9 @@ const GET_STATUS_RETRIES: usize = usize::MAX;
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type")]
 pub enum ConfirmationResult {
+    #[serde(rename = "success")]
     Success { signature: String },
+    #[serde(rename = "failed")]
     Failed { signature: String, error: TransactionError },
 }
 
