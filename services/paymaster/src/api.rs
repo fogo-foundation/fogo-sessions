@@ -3,7 +3,7 @@ use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::extract::Query;
-use axum::response::ErrorResponse;
+use axum::response::{ErrorResponse, IntoResponse, Response};
 use axum::Json;
 use axum::{
     http::{HeaderName, Method},
@@ -161,6 +161,17 @@ pub enum SponsorAndSendResponse {
     Confirm(ConfirmationResult),
 }
 
+impl IntoResponse for SponsorAndSendResponse {
+    fn into_response(self) -> Response {
+        match self {
+            SponsorAndSendResponse::Send(signature) => 
+                signature.to_string().into_response(),
+            SponsorAndSendResponse::Confirm(result) => Json(result).into_response(),
+        }
+    }
+}
+
+
 #[utoipa::path(
     post,
     path = "/sponsor_and_send",
@@ -168,8 +179,8 @@ pub enum SponsorAndSendResponse {
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
-    Json(payload): Json<SponsorAndSendPayload>,
     Query(query): Query<SponsorAndSendQuery>,
+    Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
