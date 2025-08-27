@@ -1,4 +1,5 @@
 use crate::config::Config;
+use crate::rpc::send_and_confirm_transaction;
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -180,15 +181,14 @@ async fn sponsor_and_send_handler(
 
     transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
 
-    let signature = state
-        .rpc
-        .send_transaction_with_config(
+    let signature = send_and_confirm_transaction(
+        &state.rpc,
             &transaction,
             RpcSendTransactionConfig {
                 skip_preflight: true,
                 ..RpcSendTransactionConfig::default()
             },
-        )
+        ).await 
         .map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,

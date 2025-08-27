@@ -1516,6 +1516,8 @@ dependencies = [
  "solana-keypair",
  "solana-packet",
  "solana-pubkey",
+ "solana-rpc-client-api",
+ "solana-signature",
  "solana-signer",
  "solana-transaction",
  "tokio",
