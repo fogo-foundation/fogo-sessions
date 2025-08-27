@@ -9,7 +9,7 @@ use tokio::time::sleep;
 
 const GET_STATUS_RETRIES: usize = usize::MAX;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[serde(tag = "type")]
 pub enum ConfirmationResult {
     #[serde(rename = "success")]
