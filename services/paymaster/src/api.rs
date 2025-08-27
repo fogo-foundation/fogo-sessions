@@ -224,7 +224,12 @@ pub async fn run_server(config: Config) {
         )
         .with_state(Arc::new(ServerState {
             keypair,
-            rpc: RpcClient::new(config.solana_url),
+            rpc: RpcClient::new_with_commitment(
+                config.solana_url,
+                CommitmentConfig {
+                    commitment: CommitmentLevel::Processed,
+                },
+            ),
             program_whitelist: config.program_whitelist,
             max_sponsor_spending: config.max_sponsor_spending,
         }));
