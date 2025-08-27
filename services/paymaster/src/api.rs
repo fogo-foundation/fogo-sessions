@@ -10,7 +10,6 @@ use axum::{
     Router,
 };
 use base64::Engine;
-use serde::Serialize;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
@@ -153,7 +152,7 @@ pub struct SponsorAndSendQuery {
     pub confirm: bool,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize)]
 #[serde(untagged)]
 pub enum SponsorAndSendResponse {
     Send(Signature),
