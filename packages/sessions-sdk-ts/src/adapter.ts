@@ -203,7 +203,7 @@ const sponsorAndSendResponseSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("Failed"),
     signature: z.string(),
-    error: z.string(),
+    error: z.object({}),
   }),
 ]).transform((data) => {
   if (data.type === "Success") {
