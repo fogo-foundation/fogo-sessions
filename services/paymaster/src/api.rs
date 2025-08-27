@@ -175,7 +175,7 @@ impl IntoResponse for SponsorAndSendResponse {
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
-    Query(query): Query<SponsorAndSendQuery>,
+    Query(SponsorAndSendQuery { confirm }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let transaction_bytes = base64::engine::general_purpose::STANDARD
@@ -206,7 +206,7 @@ async fn sponsor_and_send_handler(
 
     transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
 
-    if query.confirm {
+    if confirm {
         let confirmation_result = send_and_confirm_transaction(
             &state.rpc,
             &transaction,
