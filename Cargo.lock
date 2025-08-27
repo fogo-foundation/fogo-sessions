@@ -1520,6 +1520,7 @@ dependencies = [
  "solana-signature",
  "solana-signer",
  "solana-transaction",
+ "solana-transaction-error",
  "tokio",
  "tower-http",
  "utoipa",
