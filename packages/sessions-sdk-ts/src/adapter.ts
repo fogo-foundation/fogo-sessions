@@ -85,7 +85,9 @@ export const createSolanaWalletAdapter = async (
         paymaster?: string | URL | undefined;
       }
     | {
-        sendToPaymaster: (transaction: Transaction) => Promise<TransactionResult>;
+        sendToPaymaster: (
+          transaction: Transaction,
+        ) => Promise<TransactionResult>;
         sponsor: PublicKey;
       }
   ),
@@ -195,23 +197,23 @@ const getSponsor = async (
   }
 };
 
-const sponsorAndSendResponseSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("success"),
-    signature: z.string(),
-  }),
-  z.object({
-    type: z.literal("failed"),
-    signature: z.string(),
-    error: z.object({}),
-  }),
-]).transform((data) => {
-  if (data.type === "success") {
-    return TransactionResult.Success(data.signature);
-  } else {
-    return TransactionResult.Failed(data.signature, data.error);
-  }
-});
+const sponsorAndSendResponseSchema = z
+  .discriminatedUnion("type", [
+    z.object({
+      type: z.literal("success"),
+      signature: z.string(),
+    }),
+    z.object({
+      type: z.literal("failed"),
+      signature: z.string(),
+      error: z.object({}),
+    }),
+  ])
+  .transform((data) => {
+    return data.type === "success"
+      ? TransactionResult.Success(data.signature)
+      : TransactionResult.Failed(data.signature, data.error);
+  });
 
 const sendToPaymaster = async (
   options: Parameters<typeof createSolanaWalletAdapter>[0],
@@ -221,7 +223,10 @@ const sendToPaymaster = async (
     return options.sendToPaymaster(transaction);
   } else {
     const response = await fetch(
-      new URL("/api/sponsor_and_send?confirm=true", options.paymaster ?? DEFAULT_PAYMASTER),
+      new URL(
+        "/api/sponsor_and_send?confirm=true",
+        options.paymaster ?? DEFAULT_PAYMASTER,
+      ),
       {
         method: "POST",
         headers: {
