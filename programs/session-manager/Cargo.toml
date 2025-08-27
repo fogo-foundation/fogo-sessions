@@ -22,10 +22,10 @@ chain-id = { path = "../chain-id", features = ["no-entrypoint"] }
 domain-registry = { path = "../domain-registry", features = ["no-entrypoint"] }
 chrono = "0.4.41"
 fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["anchor"] }
-mpl-token-metadata = "5.1.0"
-rust_decimal = "1.37.2"
+mpl-token-metadata = { workspace = true }
+solana-intents = { path = "../../packages/solana-intents" }
+nom = { workspace = true }
 
 [dev-dependencies]
-rust_decimal = { version = "1.37.2", features = ["macros"] }
 fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["token-program"] }
 indoc = "2.0.6"

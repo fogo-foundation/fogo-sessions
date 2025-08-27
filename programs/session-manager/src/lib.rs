@@ -1,23 +1,27 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 #![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
 
-use crate::intents::body::MessageBody;
-use crate::intents::body::Tokens;
-use crate::intents::body::Version;
-use crate::intents::ed25519::Intent;
+use crate::error::SessionManagerError;
+use crate::message::{Message, Tokens};
 use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::token::Token;
-use fogo_sessions_sdk::session::AuthorizedPrograms;
-use fogo_sessions_sdk::session::AuthorizedTokens;
-use fogo_sessions_sdk::session::Session;
-use fogo_sessions_sdk::session::SessionInfo;
+use anchor_spl::{
+    associated_token::get_associated_token_address,
+    token::{self, spl_token::try_ui_amount_into_amount, ApproveChecked, Mint, Token},
+};
+use domain_registry::{domain::Domain, state::DomainRecordInner};
+use fogo_sessions_sdk::session::{
+    AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens, Session, SessionInfo,
+};
+use mpl_token_metadata::accounts::Metadata;
+use solana_intents::Intent;
+use solana_intents::{SymbolOrMint, Version};
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
 pub mod error;
-pub mod intents;
-pub mod system_program;
+mod message;
+mod system_program;
 
 const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
@@ -29,17 +33,20 @@ pub mod session_manager {
     pub fn start_session<'info>(
         ctx: Context<'_, '_, '_, 'info, StartSession<'info>>,
     ) -> Result<()> {
-        let Intent { signer, message } = ctx.accounts.verify_intent()?;
-        let MessageBody {
-            chain_id,
-            domain,
-            session_key,
-            expires,
-            extra,
-            tokens,
-            version,
-        } = message.parse()?;
-        let Version { major, minor } = version;
+        let Intent {
+            signer,
+            message:
+                Message {
+                    version: Version { major, minor },
+                    chain_id,
+                    domain,
+                    expires,
+                    session_key,
+                    tokens,
+                    extra,
+                },
+        } = Intent::load(ctx.accounts.sysvar_instructions.as_ref())
+            .map_err(Into::<SessionManagerError>::into)?;
         ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
 
@@ -121,6 +128,115 @@ impl<'info> StartSession<'info> {
         let dst: &mut [u8] = &mut data;
         let mut writer = anchor_lang::__private::BpfWriter::new(dst); // This is the writer that Anchor uses internally
         session.try_serialize(&mut writer)?;
+
+        Ok(())
+    }
+
+    pub fn check_session_key(&self, session_key: Pubkey) -> Result<()> {
+        if self.session.key() != session_key {
+            return err!(SessionManagerError::SessionKeyMismatch);
+        }
+        Ok(())
+    }
+
+    pub fn check_chain_id(&self, chain_id: String) -> Result<()> {
+        if self.chain_id.chain_id != chain_id {
+            return err!(SessionManagerError::ChainIdMismatch);
+        }
+        Ok(())
+    }
+
+    pub fn get_domain_programs(&self, domain: Domain) -> Result<Vec<AuthorizedProgram>> {
+        require_eq!(
+            self.domain_registry.key(),
+            domain.get_domain_record_address(),
+            SessionManagerError::DomainRecordMismatch
+        );
+
+        let domain_record = DomainRecordInner::load(
+            self.domain_registry.to_account_info(),
+            self.sponsor.to_account_info(),
+        );
+        domain_record.to_vec::<AuthorizedProgram>()
+    }
+
+    /// Delegate token accounts to the session key.
+    /// Signing an intent with the symbol "SOL" means delegating your token account for a token who has metadata symbol "SOL".
+    /// Although there can be multiple tokens with the same symbol, the worst case scenario is that you're delegating the token with the most value among them, which is probably what you want.
+    pub fn approve_tokens(
+        &self,
+        accounts: &[AccountInfo<'info>],
+        tokens: &[(SymbolOrMint, String)],
+        user: &Pubkey,
+        session_setter_bump: u8,
+    ) -> Result<()> {
+        let mut accounts_iter = accounts.iter();
+        for (symbol_or_mint, amount) in tokens.iter() {
+            let (user_account, mint_account) = match symbol_or_mint {
+                SymbolOrMint::Symbol(symbol) => {
+                    let user_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
+                    let mint_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
+                    let metadata_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
+
+                    require_eq!(
+                        metadata_account.key(),
+                        Metadata::find_pda(&mint_account.key()).0,
+                        SessionManagerError::MetadataMismatch
+                    );
+                    let metadata = Metadata::try_from(metadata_account)?;
+                    require_eq!(
+                        &metadata.symbol,
+                        &format!("{symbol:\0<10}"),
+                        SessionManagerError::SymbolMismatch
+                    ); // Symbols in the metadata account are padded to 10 characters
+                    (user_account, mint_account)
+                }
+                SymbolOrMint::Mint(mint) => {
+                    let user_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
+                    let mint_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
+
+                    require_eq!(mint, &mint_account.key(), SessionManagerError::MintMismatch);
+                    (user_account, mint_account)
+                }
+            };
+
+            require_eq!(
+                user_account.key(),
+                get_associated_token_address(user, &mint_account.key()),
+                SessionManagerError::AssociatedTokenAccountMismatch
+            );
+
+            let mint_data = Mint::try_deserialize(&mut mint_account.data.borrow().as_ref())?;
+            let amount_internal = try_ui_amount_into_amount(amount.clone(), mint_data.decimals)
+                .map_err(|_| SessionManagerError::AmountConversionFailed)?;
+
+            let cpi_accounts = ApproveChecked {
+                to: user_account.to_account_info(),
+                delegate: self.session.to_account_info(),
+                authority: self.session_setter.to_account_info(),
+                mint: mint_account.to_account_info(),
+            };
+
+            token::approve_checked(
+                CpiContext::new_with_signer(
+                    self.token_program.to_account_info(),
+                    cpi_accounts,
+                    &[&[SESSION_SETTER_SEED, &[session_setter_bump]]],
+                ),
+                amount_internal,
+                mint_data.decimals,
+            )?;
+        }
 
         Ok(())
     }
