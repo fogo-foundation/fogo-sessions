@@ -19,13 +19,13 @@ use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
+use solana_seed_derivable::SeedDerivable;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
-use solana_seed_derivable::SeedDerivable;
 
 pub struct DomainState {
     pub keypair: Keypair,
@@ -301,11 +301,15 @@ pub async fn run_server(
     let domains = domains
         .into_iter()
         .map(|domain| {
-            let keypair =
-                Keypair::from_seed_and_derivation_path
-                (&solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase
-                    (&mnemonic, &domain.domain), Some(DerivationPath::new_bip44(Some(0), Some(0)))).expect("Failed to derive keypair from mnemonic_file");
-                    
+            let keypair = Keypair::from_seed_and_derivation_path(
+                &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
+                    &mnemonic,
+                    &domain.domain,
+                ),
+                Some(DerivationPath::new_bip44(Some(0), Some(0))),
+            )
+            .expect("Failed to derive keypair from mnemonic_file");
+
             (
                 domain.domain,
                 DomainState {
