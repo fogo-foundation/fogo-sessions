@@ -155,14 +155,25 @@ pub async fn validate_transaction(
     Ok(())
 }
 
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DomainQueryString {
+    #[serde(default)]
+    domain: Option<String>,
+}
+
 #[utoipa::path(
     post,
     path = "/sponsor_and_send",
     request_body = SponsorAndSendPayload,
+    params(
+        ("domain" = Option<String>, Query, description = "Domain to request the sponsor pubkey for")
+    )
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     TypedHeader(origin): TypedHeader<Origin>,
+    Query(DomainQueryString { domain }): Query<DomainQueryString>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<String, ErrorResponse> {
     let transaction_bytes = base64::engine::general_purpose::STANDARD
@@ -183,35 +194,18 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
+    let domain = domain.unwrap_or(origin.to_string());
+
     let DomainState {
         keypair,
         program_whitelist,
     } = state
         .domains
-        .get(&origin.to_string())
-        .or_else(|| {
-            state
-                .domains
-                .iter()
-                .find(
-                    |(
-                        _,
-                        DomainState {
-                            keypair,
-                            program_whitelist: _,
-                        },
-                    )| {
-                        keypair
-                            .pubkey()
-                            .eq(&transaction.message.static_account_keys()[0])
-                    },
-                )
-                .map(|(_, value)| value)
-        })
+        .get(&domain)
         .ok_or_else(|| {
             (
                 StatusCode::BAD_REQUEST,
-                format!("The http origin header is not registered with the paymaster: {origin}"),
+                format!("The http origin header or query parameter domain is not registered with the paymaster: {domain}")
             )
         })?;
 
@@ -245,13 +239,6 @@ async fn sponsor_and_send_handler(
     Ok(signature.to_string())
 }
 
-#[derive(serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-struct SponsorPubkeyQuery {
-    #[serde(default)]
-    domain: Option<String>,
-}
-
 #[utoipa::path(
     get,
     path = "/sponsor_pubkey",
@@ -262,10 +249,9 @@ struct SponsorPubkeyQuery {
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(params): Query<SponsorPubkeyQuery>,
+    Query(DomainQueryString { domain }): Query<DomainQueryString>,
 ) -> Result<String, ErrorResponse> {
-    let domain = params
-        .domain
+    let domain = domain
         .or_else(|| origin.map(|origin| origin.to_string()))
         .ok_or_else(|| {
             (
