@@ -172,7 +172,7 @@ struct DomainQueryString {
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
-    TypedHeader(origin): TypedHeader<Origin>,
+    origin: Option<TypedHeader<Origin>>,
     Query(DomainQueryString { domain }): Query<DomainQueryString>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<String, ErrorResponse> {
@@ -194,7 +194,14 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    let domain = domain.unwrap_or(origin.to_string());
+    let domain = domain
+        .or_else(|| origin.map(|origin| origin.to_string()))
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "The http origin header or query parameter domain is required".to_string(),
+            )
+        })?;
 
     let DomainState {
         keypair,
