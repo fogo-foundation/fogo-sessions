@@ -189,7 +189,7 @@ fn get_domain_state(
     state: &ServerState,
     domain_query_parameter: Option<String>,
     origin: Option<TypedHeader<Origin>>,
-) -> Result<&DomainState, ErrorResponse> {
+) -> Result<&DomainState, (StatusCode, String)> {
     let domain = domain_query_parameter
         .or_else(|| origin.map(|origin| origin.to_string()))
         .ok_or_else(|| {
