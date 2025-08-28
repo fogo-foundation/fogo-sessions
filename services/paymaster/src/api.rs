@@ -1,7 +1,8 @@
 use crate::config::Config;
 use axum::extract::{Query, State};
+use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::http::StatusCode;
-use axum::response::ErrorResponse;
+use axum::response::{ErrorResponse, IntoResponse, Response};
 use axum::Json;
 use axum::{
     http::{HeaderName, Method},
@@ -21,6 +22,7 @@ use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_seed_derivable::SeedDerivable;
 use solana_signer::Signer;
+use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -155,11 +157,29 @@ pub async fn validate_transaction(
     Ok(())
 }
 
-#[derive(serde::Deserialize)]
+#[derive(utoipa::ToSchema, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-struct DomainQueryString {
+struct SponsorAndSendQuery {
+    #[serde(default)]
+    confirm: bool,
     #[serde(default)]
     domain: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(untagged)]
+pub enum SponsorAndSendResponse {
+    Send(Signature),
+    Confirm(ConfirmationResult),
+}
+
+impl IntoResponse for SponsorAndSendResponse {
+    fn into_response(self) -> Response {
+        match self {
+            SponsorAndSendResponse::Send(signature) => signature.to_string().into_response(),
+            SponsorAndSendResponse::Confirm(result) => Json(result).into_response(),
+        }
+    }
 }
 
 #[utoipa::path(
@@ -167,15 +187,16 @@ struct DomainQueryString {
     path = "/sponsor_and_send",
     request_body = SponsorAndSendPayload,
     params(
-        ("domain" = Option<String>, Query, description = "Domain to request the sponsor pubkey for")
+        ("domain" = Option<String>, Query, description = "Domain to request the sponsor pubkey for"),
+        ("confirm" = Option<bool>, Query, description = "Whether to confirm the transaction")
     )
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(DomainQueryString { domain }): Query<DomainQueryString>,
+    Query(SponsorAndSendQuery { confirm, domain }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
-) -> Result<String, ErrorResponse> {
+) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
@@ -228,22 +249,42 @@ async fn sponsor_and_send_handler(
 
     transaction.signatures[0] = keypair.sign_message(&transaction.message.serialize());
 
-    let signature = state
-        .rpc
-        .send_transaction_with_config(
+    if confirm {
+        let confirmation_result = send_and_confirm_transaction(
+            &state.rpc,
             &transaction,
             RpcSendTransactionConfig {
                 skip_preflight: true,
                 ..RpcSendTransactionConfig::default()
             },
         )
-        .map_err(|err| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to sponsor and send: {err}"),
+        .await?;
+        Ok(SponsorAndSendResponse::Confirm(confirmation_result))
+    } else {
+        let signature = state
+            .rpc
+            .send_transaction_with_config(
+                &transaction,
+                RpcSendTransactionConfig {
+                    skip_preflight: true,
+                    ..RpcSendTransactionConfig::default()
+                },
             )
-        })?;
-    Ok(signature.to_string())
+            .map_err(|err| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to broadcast transaction: {err}"),
+                )
+            })?;
+        Ok(SponsorAndSendResponse::Send(signature))
+    }
+}
+
+#[derive(utoipa::ToSchema, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SponsorPubkeyQuery {
+    #[serde(default)]
+    domain: Option<String>,
 }
 
 #[utoipa::path(
@@ -256,7 +297,7 @@ async fn sponsor_and_send_handler(
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(DomainQueryString { domain }): Query<DomainQueryString>,
+    Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
     let domain = domain
         .or_else(|| origin.map(|origin| origin.to_string()))
@@ -328,10 +369,15 @@ pub async fn run_server(
                 )])),
         )
         .with_state(Arc::new(ServerState {
-            rpc: RpcClient::new(solana_url),
             global_program_whitelist,
             max_sponsor_spending,
             domains,
+            rpc: RpcClient::new_with_commitment(
+                solana_url,
+                CommitmentConfig {
+                    commitment: CommitmentLevel::Processed,
+                },
+            ),
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
