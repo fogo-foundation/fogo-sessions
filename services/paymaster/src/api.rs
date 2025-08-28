@@ -157,12 +157,15 @@ pub async fn validate_transaction(
     Ok(())
 }
 
-#[derive(utoipa::ToSchema, serde::Deserialize)]
+#[derive(serde::Deserialize, utoipa::IntoParams)]
 #[serde(deny_unknown_fields)]
+#[into_params(parameter_in = Query)]
 struct SponsorAndSendQuery {
     #[serde(default)]
+    /// Whether to confirm the transaction
     confirm: bool,
     #[serde(default)]
+    /// Domain to request the sponsor pubkey for
     domain: Option<String>,
 }
 
@@ -186,10 +189,7 @@ impl IntoResponse for SponsorAndSendResponse {
     post,
     path = "/sponsor_and_send",
     request_body = SponsorAndSendPayload,
-    params(
-        ("domain" = Option<String>, Query, description = "Domain to request the sponsor pubkey for"),
-        ("confirm" = Option<bool>, Query, description = "Whether to confirm the transaction")
-    )
+    params(SponsorAndSendQuery)
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
@@ -280,20 +280,16 @@ async fn sponsor_and_send_handler(
     }
 }
 
-#[derive(utoipa::ToSchema, serde::Deserialize)]
+#[derive(serde::Deserialize, utoipa::IntoParams)]
 #[serde(deny_unknown_fields)]
+#[into_params(parameter_in = Query)]
 struct SponsorPubkeyQuery {
     #[serde(default)]
+    /// Domain to request the sponsor pubkey for
     domain: Option<String>,
 }
 
-#[utoipa::path(
-    get,
-    path = "/sponsor_pubkey",
-    params(
-        ("domain" = Option<String>, Query, description = "Domain to request the sponsor pubkey for")
-    )
-)]
+#[utoipa::path(get, path = "/sponsor_pubkey", params(SponsorPubkeyQuery))]
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
