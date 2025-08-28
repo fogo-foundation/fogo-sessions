@@ -37,7 +37,7 @@ local_resource(
 
 local_resource(
     "setup-sponsor",
-    """solana -u l airdrop 1 ./tilt/keypairs/sponsor.json""",
+    """solana -u l airdrop 1 5SKUh8pPXYCa5GroGKgniL1Gjt7XHKQkkjK94nVXfSkF""",
     resource_deps=["svm-localnet"],
 )
 
@@ -55,8 +55,8 @@ LOOKUP_TABLE_ADDRESSES=[
 local_resource(
     "initialize-programs",
     """
-    pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/sponsor.json --chain-id localnet &&
-    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/sponsor.json --domain http://localhost:3000 --program-id Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3
+    pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json --chain-id localnet &&
+    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3
 
     """,
     resource_deps=["svm-localnet"],
@@ -66,7 +66,7 @@ local_resource(
     "setup-address-lookup-table",
     """
     solana address-lookup-table extend -u l \
-    --keypair ./tilt/keypairs/sponsor.json \
+    --keypair ./tilt/keypairs/faucet.json \
     93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3 \
     --addresses %s
     """ % ",".join(LOOKUP_TABLE_ADDRESSES),

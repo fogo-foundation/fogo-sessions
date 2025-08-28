@@ -6,6 +6,7 @@ edition = { workspace = true }
 [dependencies]
 anyhow = "1.0.98"
 axum = "0.8.4"
+axum-extra = {version = "0.10.1", features = ["typed-header"]}
 base64 = "0.22.1"
 bincode = "1.3.3"
 clap ={version = "4.5.41", features = ["derive"]}
@@ -13,10 +14,13 @@ config = "0.15.13"
 serde = "1.0.219"
 solana-client = {workspace = true}
 solana-commitment-config = {workspace = true}
-solana-keypair = {workspace = true}
+solana-derivation-path = {workspace = true}
+solana-keypair = {workspace = true, features = ["seed-derivable"]}
 solana-packet = {workspace = true}
 solana-pubkey = {workspace = true}
 solana-rpc-client-api = {workspace = true}
+solana-seed-derivable = {workspace = true}
+solana-seed-phrase = {workspace = true}
 solana-signature = {workspace = true}
 solana-signer = {workspace = true}
 solana-transaction = {workspace = true}

@@ -1,7 +1,6 @@
 use crate::config::Config;
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
-use axum::extract::Query;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{ErrorResponse, IntoResponse, Response};
 use axum::Json;
@@ -9,27 +8,36 @@ use axum::{
     http::{HeaderName, Method},
     Router,
 };
+use axum_extra::headers::Origin;
+use axum_extra::TypedHeader;
 use base64::Engine;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
 };
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
+use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
+use solana_seed_derivable::SeedDerivable;
 use solana_signature::Signature;
-use solana_signer::{EncodableKey, Signer};
+use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-pub struct ServerState {
+pub struct DomainState {
     pub keypair: Keypair,
-    pub rpc: RpcClient,
     pub program_whitelist: Vec<Pubkey>,
+}
+pub struct ServerState {
+    pub rpc: RpcClient,
+    pub global_program_whitelist: Vec<Pubkey>,
     pub max_sponsor_spending: u64,
+    pub domains: HashMap<String, DomainState>,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -39,7 +47,8 @@ pub struct SponsorAndSendPayload {
 
 pub async fn validate_transaction(
     transaction: &VersionedTransaction,
-    program_whitelist: &[Pubkey],
+    global_program_whitelist: &[Pubkey],
+    domain_program_whitelist: &[Pubkey],
     sponsor: &Pubkey,
     rpc: &RpcClient,
     max_sponsor_spending: u64,
@@ -78,7 +87,9 @@ pub async fn validate_transaction(
         .iter()
         .try_for_each(|instruction| {
             let program_id = instruction.program_id(transaction.message.static_account_keys());
-            if !program_whitelist.contains(program_id) {
+            if !global_program_whitelist.contains(program_id)
+                && !domain_program_whitelist.contains(program_id)
+            {
                 return Err((
                     StatusCode::BAD_REQUEST,
                     format!("Transaction contains unauthorized program ID: {program_id}"),
@@ -146,10 +157,16 @@ pub async fn validate_transaction(
     Ok(())
 }
 
-#[derive(utoipa::ToSchema, serde::Deserialize)]
-pub struct SponsorAndSendQuery {
+#[derive(serde::Deserialize, utoipa::IntoParams)]
+#[serde(deny_unknown_fields)]
+#[into_params(parameter_in = Query)]
+struct SponsorAndSendQuery {
     #[serde(default)]
-    pub confirm: bool,
+    /// Whether to confirm the transaction
+    confirm: bool,
+    #[serde(default)]
+    /// Domain to request the sponsor pubkey for
+    domain: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -168,16 +185,52 @@ impl IntoResponse for SponsorAndSendResponse {
     }
 }
 
+fn get_domain_state(
+    state: &ServerState,
+    domain_query_parameter: Option<String>,
+    origin: Option<TypedHeader<Origin>>,
+) -> Result<&DomainState, (StatusCode, String)> {
+    let domain = domain_query_parameter
+        .or_else(|| origin.map(|origin| origin.to_string()))
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "The http origin header or query parameter domain is required".to_string(),
+            )
+        })?;
+
+    let domain_state = state
+        .domains
+        .get(&domain)
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "The http origin header or query parameter domain is not registered with the paymaster: {domain}"
+                ),
+            )
+        })?;
+
+    Ok(domain_state)
+}
+
 #[utoipa::path(
     post,
     path = "/sponsor_and_send",
     request_body = SponsorAndSendPayload,
+    params(SponsorAndSendQuery)
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
-    Query(SponsorAndSendQuery { confirm }): Query<SponsorAndSendQuery>,
+    origin: Option<TypedHeader<Origin>>,
+    Query(SponsorAndSendQuery { confirm, domain }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
+    let DomainState {
+        keypair,
+        program_whitelist,
+    } = get_domain_state(&state, domain, origin)?;
+
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
@@ -195,16 +248,18 @@ async fn sponsor_and_send_handler(
 
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
+
     validate_transaction(
         &transaction,
-        &state.program_whitelist,
-        &state.keypair.pubkey(),
+        &state.global_program_whitelist,
+        program_whitelist,
+        &keypair.pubkey(),
         &state.rpc,
         state.max_sponsor_spending,
     )
     .await?;
 
-    transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
+    transaction.signatures[0] = keypair.sign_message(&transaction.message.serialize());
 
     if confirm {
         let confirmation_result = send_and_confirm_transaction(
@@ -237,15 +292,61 @@ async fn sponsor_and_send_handler(
     }
 }
 
-#[utoipa::path(get, path = "/sponsor_pubkey")]
-async fn sponsor_pubkey_handler(
-    State(state): State<Arc<ServerState>>,
-) -> Result<String, ErrorResponse> {
-    Ok(state.keypair.pubkey().to_string())
+#[derive(serde::Deserialize, utoipa::IntoParams)]
+#[serde(deny_unknown_fields)]
+#[into_params(parameter_in = Query)]
+struct SponsorPubkeyQuery {
+    #[serde(default)]
+    /// Domain to request the sponsor pubkey for
+    domain: Option<String>,
 }
 
-pub async fn run_server(config: Config) {
-    let keypair = Keypair::read_from_file(&config.keypair_path).unwrap();
+#[utoipa::path(get, path = "/sponsor_pubkey", params(SponsorPubkeyQuery))]
+async fn sponsor_pubkey_handler(
+    State(state): State<Arc<ServerState>>,
+    origin: Option<TypedHeader<Origin>>,
+    Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
+) -> Result<String, ErrorResponse> {
+    let DomainState {
+        keypair,
+        program_whitelist: _,
+    } = get_domain_state(&state, domain, origin)?;
+    Ok(keypair.pubkey().to_string())
+}
+
+pub async fn run_server(
+    Config {
+        mnemonic_file,
+        solana_url,
+        global_program_whitelist,
+        max_sponsor_spending,
+        domains,
+        listen_address,
+    }: Config,
+) {
+    let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
+
+    let domains = domains
+        .into_iter()
+        .map(|domain| {
+            let keypair = Keypair::from_seed_and_derivation_path(
+                &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
+                    &mnemonic,
+                    &domain.domain,
+                ),
+                Some(DerivationPath::new_bip44(Some(0), Some(0))),
+            )
+            .expect("Failed to derive keypair from mnemonic_file");
+
+            (
+                domain.domain,
+                DomainState {
+                    keypair,
+                    program_whitelist: domain.program_whitelist,
+                },
+            )
+        })
+        .collect::<HashMap<_, _>>();
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
@@ -262,18 +363,16 @@ pub async fn run_server(config: Config) {
                 )])),
         )
         .with_state(Arc::new(ServerState {
-            keypair,
+            global_program_whitelist,
+            max_sponsor_spending,
+            domains,
             rpc: RpcClient::new_with_commitment(
-                config.solana_url,
+                solana_url,
                 CommitmentConfig {
                     commitment: CommitmentLevel::Processed,
                 },
             ),
-            program_whitelist: config.program_whitelist,
-            max_sponsor_spending: config.max_sponsor_spending,
         }));
-    let listener = tokio::net::TcpListener::bind(config.listen_address)
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
