@@ -1,7 +1,9 @@
 use crate::config::Config;
+use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
+use axum::extract::Query;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::response::ErrorResponse;
+use axum::response::{ErrorResponse, IntoResponse, Response};
 use axum::Json;
 use axum::{
     http::{HeaderName, Method},
@@ -16,6 +18,7 @@ use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
+use solana_signature::Signature;
 use solana_signer::{EncodableKey, Signer};
 use solana_transaction::versioned::VersionedTransaction;
 use std::sync::Arc;
@@ -143,6 +146,28 @@ pub async fn validate_transaction(
     Ok(())
 }
 
+#[derive(utoipa::ToSchema, serde::Deserialize)]
+pub struct SponsorAndSendQuery {
+    #[serde(default)]
+    pub confirm: bool,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(untagged)]
+pub enum SponsorAndSendResponse {
+    Send(Signature),
+    Confirm(ConfirmationResult),
+}
+
+impl IntoResponse for SponsorAndSendResponse {
+    fn into_response(self) -> Response {
+        match self {
+            SponsorAndSendResponse::Send(signature) => signature.to_string().into_response(),
+            SponsorAndSendResponse::Confirm(result) => Json(result).into_response(),
+        }
+    }
+}
+
 #[utoipa::path(
     post,
     path = "/sponsor_and_send",
@@ -150,8 +175,9 @@ pub async fn validate_transaction(
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
+    Query(SponsorAndSendQuery { confirm }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
-) -> Result<String, ErrorResponse> {
+) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
@@ -180,22 +206,35 @@ async fn sponsor_and_send_handler(
 
     transaction.signatures[0] = state.keypair.sign_message(&transaction.message.serialize());
 
-    let signature = state
-        .rpc
-        .send_transaction_with_config(
+    if confirm {
+        let confirmation_result = send_and_confirm_transaction(
+            &state.rpc,
             &transaction,
             RpcSendTransactionConfig {
                 skip_preflight: true,
                 ..RpcSendTransactionConfig::default()
             },
         )
-        .map_err(|err| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to sponsor and send: {err}"),
+        .await?;
+        Ok(SponsorAndSendResponse::Confirm(confirmation_result))
+    } else {
+        let signature = state
+            .rpc
+            .send_transaction_with_config(
+                &transaction,
+                RpcSendTransactionConfig {
+                    skip_preflight: true,
+                    ..RpcSendTransactionConfig::default()
+                },
             )
-        })?;
-    Ok(signature.to_string())
+            .map_err(|err| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to broadcast transaction: {err}"),
+                )
+            })?;
+        Ok(SponsorAndSendResponse::Send(signature))
+    }
 }
 
 #[utoipa::path(get, path = "/sponsor_pubkey")]
