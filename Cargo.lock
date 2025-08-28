@@ -1397,6 +1397,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ed25519-dalek-bip32"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d2be62a4061b872c8c0873ee4fc6f101ce7b889d039f019c5fa2af471a59908"
+dependencies = [
+ "derivation-path",
+ "ed25519-dalek",
+ "hmac",
+ "sha2 0.10.9",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1537,9 +1549,12 @@ dependencies = [
  "serde",
  "solana-client",
  "solana-commitment-config",
+ "solana-derivation-path",
  "solana-keypair",
  "solana-packet",
  "solana-pubkey",
+ "solana-seed-derivable",
+ "solana-seed-phrase",
  "solana-signer",
  "solana-transaction",
  "tokio",
@@ -4267,9 +4282,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd3f04aa1a05c535e93e121a95f66e7dcccf57e007282e8255535d24bf1e98bb"
 dependencies = [
  "ed25519-dalek",
+ "ed25519-dalek-bip32",
  "five8",
  "rand 0.7.3",
+ "solana-derivation-path",
  "solana-pubkey",
+ "solana-seed-derivable",
  "solana-seed-phrase",
  "solana-signature",
  "solana-signer",
