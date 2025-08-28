@@ -185,6 +185,35 @@ impl IntoResponse for SponsorAndSendResponse {
     }
 }
 
+fn get_domain_state(
+    state: &ServerState,
+    domain_query_parameter: Option<String>,
+    origin: Option<TypedHeader<Origin>>,
+) -> Result<&DomainState, ErrorResponse> {
+    let domain = domain_query_parameter
+        .or_else(|| origin.map(|origin| origin.to_string()))
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "The http origin header or query parameter domain is required".to_string(),
+            )
+        })?;
+
+    let domain_state = state
+        .domains
+        .get(&domain)
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "The http origin header or query parameter domain is not registered with the paymaster: {domain}"
+                ),
+            )
+        })?;
+
+    Ok(domain_state)
+}
+
 #[utoipa::path(
     post,
     path = "/sponsor_and_send",
@@ -197,6 +226,11 @@ async fn sponsor_and_send_handler(
     Query(SponsorAndSendQuery { confirm, domain }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
+    let DomainState {
+        keypair,
+        program_whitelist,
+    } = get_domain_state(&state, domain, origin)?;
+
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
@@ -214,28 +248,6 @@ async fn sponsor_and_send_handler(
 
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
-
-    let domain = domain
-        .or_else(|| origin.map(|origin| origin.to_string()))
-        .ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                "The http origin header or query parameter domain is required".to_string(),
-            )
-        })?;
-
-    let DomainState {
-        keypair,
-        program_whitelist,
-    } = state
-        .domains
-        .get(&domain)
-        .ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!("The http origin header or query parameter domain is not registered with the paymaster: {domain}")
-            )
-        })?;
 
     validate_transaction(
         &transaction,
@@ -295,24 +307,10 @@ async fn sponsor_pubkey_handler(
     origin: Option<TypedHeader<Origin>>,
     Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
-    let domain = domain
-        .or_else(|| origin.map(|origin| origin.to_string()))
-        .ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                "The http origin header or query parameter domain is required".to_string(),
-            )
-        })?;
-
-    let DomainState { keypair, program_whitelist: _ } = state
-        .domains
-        .get(&domain)
-        .ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!("The http origin header or query parameter domain is not registered with the paymaster: {domain}"),
-            )
-        })?;
+    let DomainState {
+        keypair,
+        program_whitelist: _,
+    } = get_domain_state(&state, domain, origin)?;
     Ok(keypair.pubkey().to_string())
 }
 
