@@ -37,7 +37,7 @@ local_resource(
 
 local_resource(
     "setup-sponsor",
-    """solana -u l airdrop 1 FXqNRzJpybpSV5qpcufHmSmU43iWN5iJwNxoKXpDHXZc""",
+    """solana -u l airdrop 1 5SKUh8pPXYCa5GroGKgniL1Gjt7XHKQkkjK94nVXfSkF""",
     resource_deps=["svm-localnet"],
 )
 
