@@ -19,6 +19,7 @@ codegen-units = 1
 anchor-lang = "0.31.1"
 anchor-spl = "0.31.1"
 borsh = "1.5.7"
+bytemuck = "1.23.1"
 mpl-token-metadata = "5.1.0"
 nom = "8.0.0"
 solana-client = "2.2.1"
