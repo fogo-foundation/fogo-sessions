@@ -12,6 +12,7 @@ pub mod domain;
 pub mod error;
 pub mod state;
 pub mod system_program;
+
 declare_id!("DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog");
 
 #[program]
