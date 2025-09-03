@@ -326,7 +326,7 @@ async fn get_on_chain_program_whitelists(
                 .get_domain_record_address()
         })
         .collect::<Vec<_>>();
-    
+
     rpc.get_multiple_accounts(&domain_record_addresses)
         .expect("Failed to get on-chain program whitelists")
         .into_iter()
@@ -381,7 +381,9 @@ pub async fn run_server(
                 )
                 .expect("Failed to derive keypair from mnemonic_file");
 
-                if let Some(x) = on_chain_program_whitelist { program_whitelist.extend(x) }
+                if let Some(x) = on_chain_program_whitelist {
+                    program_whitelist.extend(x)
+                }
                 (
                     domain,
                     DomainState {
