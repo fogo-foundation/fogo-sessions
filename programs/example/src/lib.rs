@@ -19,8 +19,7 @@ pub mod example {
         let user = Session::extract_user_from_signer_or_session(
             &ctx.accounts.signer_or_session,
             &crate::ID,
-        )
-        .map_err(|_| ProgramError::InvalidAccountData)?;
+        )?;
 
         // Check that user_token_account is the user's associated token account
         require_eq!(
