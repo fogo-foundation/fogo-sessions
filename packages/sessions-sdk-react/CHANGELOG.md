@@ -1,5 +1,17 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.16
+
+### Patch Changes
+
+- 12ae7d4: Add support for sending and receiving tokens between wallets
+- 936b8de: Gracefully handle trading with an expired session by prompting the user to extend their session
+- Updated dependencies [99fb073]
+- Updated dependencies [12ae7d4]
+  - @fogo/sessions-sdk@0.0.10
+  - @fogo/sessions-idls@0.0.4
+  - @fogo/sessions-sdk-web@0.0.4
+
 ## 0.0.15
 
 ### Patch Changes
