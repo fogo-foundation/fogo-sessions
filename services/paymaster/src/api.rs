@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::config::{Config, Domain};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -314,6 +314,33 @@ async fn sponsor_pubkey_handler(
     Ok(keypair.pubkey().to_string())
 }
 
+async fn get_on_chain_program_whitelists(
+    rpc: &RpcClient,
+    domain: &[Domain],
+) -> Vec<Option<Vec<Pubkey>>> {
+    let domain_record_addresses = domain
+        .iter()
+        .map(|Domain { domain, .. }| {
+            domain_registry::domain::Domain::new_checked(domain)
+                .unwrap_or_else(|_| panic!("Invalid domain: {domain}"))
+                .get_domain_record_address()
+        })
+        .collect::<Vec<_>>();
+
+    rpc.get_multiple_accounts(&domain_record_addresses)
+        .expect("Failed to get on-chain program whitelists")
+        .into_iter()
+        .map(|account| {
+            account.map(|account| {
+                bytemuck::cast_slice::<_, domain_registry::state::DomainProgram>(&account.data)
+                    .iter()
+                    .map(|program| program.program_id)
+                    .collect()
+            })
+        })
+        .collect::<Vec<Option<Vec<Pubkey>>>>()
+}
+
 pub async fn run_server(
     Config {
         mnemonic_file,
@@ -326,26 +353,46 @@ pub async fn run_server(
 ) {
     let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
 
+    let rpc = RpcClient::new_with_commitment(
+        solana_url,
+        CommitmentConfig {
+            commitment: CommitmentLevel::Processed,
+        },
+    );
+    let on_chain_program_whitelists =
+        get_on_chain_program_whitelists(&rpc, domains.as_slice()).await;
+
     let domains = domains
         .into_iter()
-        .map(|domain| {
-            let keypair = Keypair::from_seed_and_derivation_path(
-                &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
-                    &mnemonic,
-                    &domain.domain,
-                ),
-                Some(DerivationPath::new_bip44(Some(0), Some(0))),
-            )
-            .expect("Failed to derive keypair from mnemonic_file");
-
-            (
-                domain.domain,
-                DomainState {
-                    keypair,
-                    program_whitelist: domain.program_whitelist,
+        .zip(on_chain_program_whitelists.into_iter())
+        .map(
+            |(
+                Domain {
+                    domain,
+                    mut program_whitelist,
                 },
-            )
-        })
+                on_chain_program_whitelist,
+            )| {
+                let keypair = Keypair::from_seed_and_derivation_path(
+                    &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
+                        &mnemonic, &domain,
+                    ),
+                    Some(DerivationPath::new_bip44(Some(0), Some(0))),
+                )
+                .expect("Failed to derive keypair from mnemonic_file");
+
+                if let Some(x) = on_chain_program_whitelist {
+                    program_whitelist.extend(x)
+                }
+                (
+                    domain,
+                    DomainState {
+                        keypair,
+                        program_whitelist,
+                    },
+                )
+            },
+        )
         .collect::<HashMap<_, _>>();
 
     let (router, _) = OpenApiRouter::new()
@@ -366,12 +413,7 @@ pub async fn run_server(
             global_program_whitelist,
             max_sponsor_spending,
             domains,
-            rpc: RpcClient::new_with_commitment(
-                solana_url,
-                CommitmentConfig {
-                    commitment: CommitmentLevel::Processed,
-                },
-            ),
+            rpc,
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
