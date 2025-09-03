@@ -18,6 +18,7 @@ local_resource(
         ../target/deploy/intent_transfer.so \
         --mint $(solana-keygen pubkey ./keypairs/faucet.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
+        --bpf-program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL ./programs/spl_associated_token_account.so \
         --account-dir ./accounts \
         --reset",
     serve_dir="./tilt",
