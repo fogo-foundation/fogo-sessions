@@ -2,7 +2,7 @@
 
 .sessionLimits {
   display: grid;
-  grid-template-rows: max-content 1fr max-content;
+  grid-template-rows: max-content max-content 1fr max-content;
   gap: theme.spacing(6);
 
   .applyLimits {
@@ -45,6 +45,30 @@
     }
   }
 
+  .sessionExpiry {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: theme.spacing(2);
+
+    .label {
+      @include theme.text("sm", "medium");
+    }
+
+    .button {
+      @include theme.button("ghost");
+
+      // stylelint-disable-next-line no-duplicate-selectors
+      & {
+        border: 1px solid theme.color("primary", "border", "base");
+        width: theme.spacing(30);
+        padding-left: theme.spacing(2);
+        padding-right: theme.spacing(2);
+        justify-content: space-between;
+      }
+    }
+  }
+
   .tokenList {
     display: flex;
     flex-flow: column nowrap;
@@ -75,6 +99,35 @@
 
     .submitButton {
       @include theme.button("primary");
+    }
+  }
+}
+
+.selectPopover {
+  @include theme.reset {
+    background: theme.color("panel", "background");
+    border: 1px solid theme.color("panel", "border");
+    border-radius: theme.border-radius("base");
+    box-shadow: 0 8px 20px rgb(from black r g b / 10%);
+    outline: none;
+    color: theme.color("panel", "text");
+    padding: theme.spacing(1) 0;
+    min-width: var(--trigger-width);
+
+    .selectItem {
+      @include theme.text("sm", "normal");
+
+      padding: theme.spacing(1) theme.spacing(4);
+      cursor: pointer;
+
+      &[data-focused] {
+        background: rgb(from black r g b / 10%);
+        outline: none;
+      }
+
+      &[data-focus-visible] {
+        outline: 2px solid theme.color("primary", "border", "base");
+      }
     }
   }
 }

@@ -9,7 +9,6 @@
     flex-flow: column nowrap;
     gap: theme.spacing(2);
     outline: none;
-    z-index: theme.layer("toast");
 
     .toast {
       display: flex;

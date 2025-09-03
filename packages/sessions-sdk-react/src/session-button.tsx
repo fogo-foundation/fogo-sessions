@@ -12,7 +12,7 @@ import { XCircleIcon } from "@phosphor-icons/react/dist/ssr/XCircle";
 import { PublicKey } from "@solana/web3.js";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { QRCodeSVG } from "qrcode.react";
-import type { ComponentProps, FormEvent, ReactNode } from "react";
+import type { ComponentProps, FormEvent, ReactNode, JSX } from "react";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
   Button,
@@ -27,6 +27,8 @@ import {
   Heading,
   Form,
 } from "react-aria-components";
+import type { Props as ReactTimeAgoProps } from "react-timeago";
+import _TimeAgo from "react-timeago";
 import { mutate } from "swr";
 
 import { amountToString, stringToAmount } from "./amount-to-string.js";
@@ -56,6 +58,15 @@ import {
 } from "./use-token-account-data.js";
 
 const FAUCET_URL = "https://gas.zip/faucet/fogo";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore something is broken in the way react-timeago ships esm, which
+// causes the types to not load correctly.  Explicitly setting the types here
+// lets us move on, and if dependency upgrades or something fix the issue, we
+// can just remove this.  Note we can't use a ts-expect-error here because the
+// issue is only present in esm and when running the build with cjs, we'd get an
+// unused ts-expect-error error.
+const TimeAgo: (props: ReactTimeAgoProps) => null | JSX.Element = _TimeAgo;
 
 export const SessionButton = ({
   requestedLimits,
@@ -801,42 +812,61 @@ const SessionLimitsPanel = ({
 
   switch (state.type) {
     case TokenDataStateType.Error: {
-      return <div>{errorToString(state.error)}</div>;
+      return (
+        <div className={styles.sessionLimitsError}>
+          {errorToString(state.error)}
+        </div>
+      );
     }
     case TokenDataStateType.Loaded: {
       return (
-        <SessionLimits
-          className={styles.sessionLimits}
-          tokens={whitelistedTokens}
-          initialLimits={
-            new Map(
-              state.data.sessionLimits.map(({ mint, sessionLimit }) => [
-                mint,
-                sessionLimit,
-              ]),
-            )
-          }
-          onSubmit={
-            sessionState.type === SessionStateType.Established
-              ? sessionState.setLimits
-              : undefined
-          }
-          buttonText="Update limits"
-          error={
-            sessionState.type === SessionStateType.Established
-              ? sessionState.updateLimitsError
-              : undefined
-          }
-          {...(enableUnlimited && {
-            enableUnlimited: true,
-            isSessionUnlimited: !sessionState.isLimited,
-          })}
-        />
+        <div className={styles.sessionLimitsPanel}>
+          <TimeAgo
+            date={sessionState.expiration}
+            formatter={(value: number, unit: string, suffix: string) => (
+              <div
+                className={styles.sessionExpiryBanner}
+                data-expired={suffix === "ago" || value === 0 ? "" : undefined}
+              >
+                {suffix === "ago" || value === 0
+                  ? "Session Expired"
+                  : `Session expires in ${value.toString()} ${unit}${value > 1 ? "s" : ""}`}
+              </div>
+            )}
+          />
+          <SessionLimits
+            className={styles.sessionLimits}
+            tokens={whitelistedTokens}
+            initialLimits={
+              new Map(
+                state.data.sessionLimits.map(({ mint, sessionLimit }) => [
+                  mint,
+                  sessionLimit,
+                ]),
+              )
+            }
+            onSubmit={
+              "updateSession" in sessionState
+                ? sessionState.updateSession
+                : undefined
+            }
+            buttonText="Update limits"
+            error={
+              "updateSessionError" in sessionState
+                ? sessionState.updateSessionError
+                : undefined
+            }
+            {...(enableUnlimited && {
+              enableUnlimited: true,
+              isSessionUnlimited: !sessionState.isLimited,
+            })}
+          />
+        </div>
       );
     }
     case TokenDataStateType.NotLoaded:
     case TokenDataStateType.Loading: {
-      return "Loading...";
+      return <div className={styles.sessionLimitsLoading}>Loading...</div>;
     }
   }
 };

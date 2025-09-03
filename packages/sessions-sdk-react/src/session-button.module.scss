@@ -165,10 +165,6 @@
         outline: none;
         display: grid;
         overflow: hidden;
-
-        &[data-panel="session-limits"] {
-          padding: theme.spacing(6) theme.spacing(4);
-        }
       }
 
       .selectTokenPage {
@@ -515,6 +511,34 @@
 
         a {
           @include theme.button("primary");
+        }
+      }
+
+      .sessionLimitsLoading,
+      .sessionLimitsError,
+      .sessionLimitsPanel .sessionLimits {
+        padding: theme.spacing(6) theme.spacing(4);
+        display: grid;
+      }
+
+      .sessionLimitsPanel {
+        display: grid;
+        grid-template-rows: max-content 1fr;
+
+        .sessionExpiryBanner {
+          @include theme.text("sm", "semibold");
+
+          width: 100%;
+          height: theme.spacing(6);
+          background: rgb(from black r g b / 10%);
+          text-align: center;
+          display: grid;
+          place-content: center;
+
+          &[data-expired] {
+            background: theme.pallette-color("red", 600);
+            color: theme.pallette-color("white");
+          }
         }
       }
 
