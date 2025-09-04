@@ -1,5 +1,13 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.18
+
+### Patch Changes
+
+- Updated dependencies [5167b94]
+  - @fogo/sessions-sdk@0.0.12
+  - @fogo/sessions-sdk-web@0.0.6
+
 ## 0.0.17
 
 ### Patch Changes

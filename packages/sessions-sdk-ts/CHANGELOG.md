@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.12
+
+### Patch Changes
+
+- 5167b94: Don't swallow errors when parsing paymaster response
+
 ## 0.0.11
 
 ### Patch Changes
