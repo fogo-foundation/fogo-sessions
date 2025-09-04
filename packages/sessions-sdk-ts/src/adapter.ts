@@ -193,12 +193,12 @@ const getSponsor = async (
   if ("sponsor" in options) {
     return options.sponsor;
   } else {
-    const response = await fetch(
-      new URL(
-        `/api/sponsor_pubkey?domain=${domain}`,
-        options.paymaster ?? DEFAULT_PAYMASTER,
-      ),
+    const url = new URL(
+      "/api/sponsor_pubkey",
+      options.paymaster ?? DEFAULT_PAYMASTER,
     );
+    url.searchParams.set("domain", domain);
+    const response = await fetch(url);
     return new PublicKey(z.string().parse(await response.text()));
   }
 };
@@ -229,21 +229,21 @@ const sendToPaymaster = async (
   if ("sendToPaymaster" in options) {
     return options.sendToPaymaster(transaction);
   } else {
-    const response = await fetch(
-      new URL(
-        `/api/sponsor_and_send?confirm=true&domain=${domain}`,
-        options.paymaster ?? DEFAULT_PAYMASTER,
-      ),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          transaction: getBase64EncodedWireTransaction(transaction),
-        }),
-      },
+    const url = new URL(
+      "/api/sponsor_and_send",
+      options.paymaster ?? DEFAULT_PAYMASTER,
     );
+    url.searchParams.set("confirm", "true");
+    url.searchParams.set("domain", domain);
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        transaction: getBase64EncodedWireTransaction(transaction),
+      }),
+    });
 
     if (response.status === 200) {
       return sponsorAndSendResponseSchema.parse(await response.json());
