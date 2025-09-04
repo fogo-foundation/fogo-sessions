@@ -189,9 +189,6 @@ catalogs:
     react-dom:
       specifier: ^19.0.1
       version: 19.1.1
-    react-timeago:
-      specifier: ^8.3.0
-      version: 8.3.0
     sass:
       specifier: ^1.89.2
       version: 1.89.2
@@ -548,9 +545,6 @@ importers:
       react-aria-components:
         specifier: 'catalog:'
         version: 1.10.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      react-timeago:
-        specifier: 'catalog:'
-        version: 8.3.0(react@19.1.1)
       swr:
         specifier: 'catalog:'
         version: 2.3.3(react@19.1.1)
@@ -8835,11 +8829,6 @@ packages:
     resolution: {integrity: sha512-/8JC3Tmj7G8fHn47F88c6t5kFNhQAufwqjEKxYeNi7TPz9UL+35BeoH1poMmDHJsPz8qM/z4sWMzaW5AwYK8lQ==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-
-  react-timeago@8.3.0:
-    resolution: {integrity: sha512-BeR0hj/5qqTc2+zxzBSQZMky6MmqwOtKseU3CSmcjKR5uXerej2QY34v2d+cdz11PoeVfAdWLX+qjM/UdZkUUg==}
-    peerDependencies:
-      react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   react@19.1.1:
     resolution: {integrity: sha512-w8nqGImo45dmMIfljjMwOGtbmC/mk4CMYhWIicdSflH91J9TyCyczcPFXJzrZ/ZXcgGRFeP6BU0BEJTw6tZdfQ==}
@@ -21449,10 +21438,6 @@ snapshots:
       '@react-stately/tooltip': 3.5.5(react@19.1.1)
       '@react-stately/tree': 3.9.0(react@19.1.1)
       '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
-  react-timeago@8.3.0(react@19.1.1):
-    dependencies:
       react: 19.1.1
 
   react@19.1.1: {}

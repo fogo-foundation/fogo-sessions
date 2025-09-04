@@ -12,7 +12,7 @@ import { XCircleIcon } from "@phosphor-icons/react/dist/ssr/XCircle";
 import { PublicKey } from "@solana/web3.js";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { QRCodeSVG } from "qrcode.react";
-import type { ComponentProps, FormEvent, ReactNode, JSX } from "react";
+import type { ComponentProps, FormEvent, ReactNode } from "react";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
   Button,
@@ -27,8 +27,6 @@ import {
   Heading,
   Form,
 } from "react-aria-components";
-import type { Props as ReactTimeAgoProps } from "react-timeago";
-import _TimeAgo from "react-timeago";
 import { mutate } from "swr";
 
 import { amountToString, stringToAmount } from "./amount-to-string.js";
@@ -57,16 +55,11 @@ import {
   useTokenAccountData,
 } from "./use-token-account-data.js";
 
+const ONE_SECOND_IN_MS = 1000;
+const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
+const ONE_HOUR_IN_MS = 60 * ONE_MINUTE_IN_MS;
+const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
 const FAUCET_URL = "https://gas.zip/faucet/fogo";
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore something is broken in the way react-timeago ships esm, which
-// causes the types to not load correctly.  Explicitly setting the types here
-// lets us move on, and if dependency upgrades or something fix the issue, we
-// can just remove this.  Note we can't use a ts-expect-error here because the
-// issue is only present in esm and when running the build with cjs, we'd get an
-// unused ts-expect-error error.
-const TimeAgo: (props: ReactTimeAgoProps) => null | JSX.Element = _TimeAgo;
 
 export const SessionButton = ({
   requestedLimits,
@@ -821,19 +814,7 @@ const SessionLimitsPanel = ({
     case TokenDataStateType.Loaded: {
       return (
         <div className={styles.sessionLimitsPanel}>
-          <TimeAgo
-            date={sessionState.expiration}
-            formatter={(value: number, unit: string, suffix: string) => (
-              <div
-                className={styles.sessionExpiryBanner}
-                data-expired={suffix === "ago" || value === 0 ? "" : undefined}
-              >
-                {suffix === "ago" || value === 0
-                  ? "Session Expired"
-                  : `Session expires in ${value.toString()} ${unit}${value > 1 ? "s" : ""}`}
-              </div>
-            )}
-          />
+          <TimeUntilExpiration expiration={sessionState.expiration} />
           <SessionLimits
             className={styles.sessionLimits}
             tokens={whitelistedTokens}
@@ -868,5 +849,60 @@ const SessionLimitsPanel = ({
     case TokenDataStateType.Loading: {
       return <div className={styles.sessionLimitsLoading}>Loading...</div>;
     }
+  }
+};
+
+const relativeTimeFormat = new Intl.RelativeTimeFormat("en", { style: "long" });
+
+const TimeUntilExpiration = ({ expiration }: { expiration: Date }) => {
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const [expired, setExpired] = useState(false);
+  const [formatted, setFormatted] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      const interval = expiration.getTime() - Date.now();
+      const args = getRelativeTimeFormatArgs(interval);
+      if (args === undefined) {
+        setExpired(true);
+        setFormatted("Session is expired");
+      } else {
+        setExpired(false);
+        setFormatted(
+          `Session expires ${relativeTimeFormat.format(Math.floor(interval / args[0]), args[1])}`,
+        );
+        timeoutRef.current = setTimeout(update, args[0]);
+      }
+    };
+    clearTimeout(timeoutRef.current);
+    update();
+    return () => {
+      clearTimeout(timeoutRef.current);
+    };
+  }, [expiration]);
+
+  return (
+    <div
+      className={styles.sessionExpiryBanner}
+      data-expired={expired ? "" : undefined}
+    >
+      {formatted}
+    </div>
+  );
+};
+
+const getRelativeTimeFormatArgs = (interval: number) => {
+  if (interval > ONE_DAY_IN_MS) {
+    return [ONE_DAY_IN_MS, "day"] as const;
+  } else if (interval > ONE_HOUR_IN_MS) {
+    return [ONE_HOUR_IN_MS, "hour"] as const;
+  } else if (interval > ONE_MINUTE_IN_MS) {
+    return [ONE_MINUTE_IN_MS, "minute"] as const;
+  } else if (interval > ONE_SECOND_IN_MS) {
+    return [ONE_SECOND_IN_MS, "second"] as const;
+  } else {
+    return;
   }
 };
