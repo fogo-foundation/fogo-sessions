@@ -212,7 +212,9 @@ const sponsorAndSendResponseSchema = z
     z.object({
       type: z.literal("failed"),
       signature: z.string(),
-      error: z.object({}),
+      error: z.object({
+        InstructionError: z.tuple([z.number(), z.unknown()]),
+      }),
     }),
   ])
   .transform((data) => {
