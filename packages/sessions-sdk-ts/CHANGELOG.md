@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.11
+
+### Patch Changes
+
+- a600f2a: Add domain query string to paymaster http calls
+
 ## 0.0.10
 
 ### Patch Changes
