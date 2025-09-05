@@ -30,6 +30,7 @@
     transition:
       transform 200ms,
       opacity 200ms;
+    z-index: theme.layer("session-panel") !important;
 
     .overlayArrow {
       display: block;
