@@ -4,6 +4,8 @@ use serde::{Deserialize, Deserializer};
 use solana_pubkey::Pubkey;
 use std::str::FromStr;
 
+use crate::constraint::TransactionVariation;
+
 fn deserialize_pubkey_vec<'de, D>(deserializer: D) -> Result<Vec<Pubkey>, D::Error>
 where
     D: Deserializer<'de>,
@@ -30,8 +32,7 @@ where
 #[derive(Deserialize)]
 pub struct Domain {
     pub domain: String,
-    #[serde(deserialize_with = "deserialize_pubkey_vec")]
-    pub program_whitelist: Vec<Pubkey>,
+    pub tx_variations: Vec<TransactionVariation>,
 }
 
 #[derive(Deserialize)]

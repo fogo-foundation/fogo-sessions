@@ -3,6 +3,7 @@ use clap::Parser;
 
 mod api;
 mod config;
+mod constraint;
 mod rpc;
 
 #[derive(Parser)]
