@@ -113,6 +113,7 @@
     color: theme.color("panel", "text");
     padding: theme.spacing(1) 0;
     min-width: var(--trigger-width);
+    z-index: theme.layer("select") !important;
 
     .selectItem {
       @include theme.text("sm", "normal");
