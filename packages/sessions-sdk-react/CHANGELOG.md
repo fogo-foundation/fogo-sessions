@@ -1,5 +1,12 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.19
+
+### Patch Changes
+
+- d916eac: Relpace react-timeago with a custom component
+- 854aa2c: Restore z-index layering
+
 ## 0.0.18
 
 ### Patch Changes
