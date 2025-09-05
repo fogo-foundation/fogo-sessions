@@ -39,8 +39,7 @@ export const RPC = envWithDefaults("RPC", {
   testnet: "https://testnet.fogo.io",
 });
 
-export const FOGO_SESSIONS_DOMAIN =
-  process.env.FOGO_SESSIONS_DOMAIN ?? "https://sessions-example.fogo.io";
+export const FOGO_SESSIONS_DOMAIN = process.env.FOGO_SESSIONS_DOMAIN;
 
 export const FAUCET_KEY = envWithDefaults("FAUCET_KEY", {
   localnet:
