@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.20
+
+### Patch Changes
+
+- 1e3aa67: Apply more z-index fixes
+
 ## 0.0.19
 
 ### Patch Changes
