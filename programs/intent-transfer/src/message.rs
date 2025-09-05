@@ -8,7 +8,7 @@ use nom::{
     sequence::preceded,
     AsChar, Compare, Err, IResult, Input, ParseTo, Parser,
 };
-use solana_intents::{key_value::key_value, symbol_or_mint::SymbolOrMint, version::Version};
+use solana_intents::{line, tag_key_value, SymbolOrMint, Version};
 
 const MESSAGE_PREFIX: &str =
     "Fogo Transfer:\nSigning this intent will transfer the tokens as described below.\n";
@@ -50,14 +50,14 @@ where
         preceded(
             (tag(MESSAGE_PREFIX), line_ending),
             permutation((
-                verify(key_value("version"), |version: &Version| {
+                verify(line(tag_key_value("version")), |version: &Version| {
                     version.major == 0 && version.minor == 1
                 }),
-                key_value("chain_id"),
-                key_value("token"),
-                key_value("amount"),
-                key_value("recipient"),
-                key_value("nonce"),
+                line(tag_key_value("chain_id")),
+                line(tag_key_value("token")),
+                line(tag_key_value("amount")),
+                line(tag_key_value("recipient")),
+                line(tag_key_value("nonce")),
             )),
         ),
         |(version, chain_id, symbol_or_mint, amount, recipient, nonce)| Message {

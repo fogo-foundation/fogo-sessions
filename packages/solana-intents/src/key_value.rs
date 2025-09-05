@@ -1,107 +1,180 @@
 use nom::{
-    branch::alt,
-    bytes::complete::{tag, take_while},
+    bytes::complete::{tag, take_while1},
     character::{
         char,
-        complete::{line_ending, not_line_ending},
+        complete::{not_line_ending, space0},
     },
-    combinator::{eof, map_opt},
+    combinator::{map, map_opt},
     error::ParseError,
-    sequence::{preceded, separated_pair, terminated},
-    AsChar, Compare, Input, ParseTo, Parser,
+    sequence::separated_pair,
+    AsChar, Compare, IResult, Input, ParseTo, Parser,
 };
 
-pub fn key_value<I, O, E, T>(label: T) -> impl Parser<I, Output = O, Error = E>
+pub fn tag_key_value<I, O, E, T>(key: T) -> impl Parser<I, Output = O, Error = E>
 where
     I: Input,
     I: ParseTo<O>,
-    I: Compare<T>,
     I: Compare<&'static str>,
+    I: Compare<T>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
     T: Input,
 {
+    map(key_value_with_key_type(tag(key)), |(_, value)| value)
+}
+
+pub fn key_value<I, O, E>(input: I) -> IResult<I, (I, O), E>
+where
+    I: Input,
+    I: ParseTo<O>,
+    I: Compare<&'static str>,
+    <I as Input>::Item: AsChar,
+    E: ParseError<I>,
+{
+    key_value_with_key_type(take_while1(|c: <I as Input>::Item| {
+        c.is_alphanum() || ['_', '-'].contains(&c.as_char())
+    }))
+    .parse(input)
+}
+
+fn key_value_with_key_type<I, O, E, K, KO>(key: K) -> impl Parser<I, Output = (KO, O), Error = E>
+where
+    I: Input,
+    I: ParseTo<O>,
+    I: Compare<&'static str>,
+    <I as Input>::Item: AsChar,
+    E: ParseError<I>,
+    K: Parser<I, Output = KO, Error = E>,
+{
     map_opt(
-        preceded(
-            separated_pair(tag(label), char(':'), take_while(AsChar::is_space)),
-            terminated(not_line_ending, alt((line_ending, eof))),
-        ),
-        |val: I| val.parse_to(),
+        separated_pair(key, (char(':'), space0), not_line_ending),
+        |(key, val): (KO, I)| val.parse_to().map(|parsed| (key, parsed)),
     )
 }
 
 #[cfg(test)]
 mod tests {
-    use nom::{
-        error::{Error, ErrorKind},
-        Err,
-    };
+    mod key_value {
+        use super::super::*;
+        use nom::{
+            error::{Error, ErrorKind},
+            Err,
+        };
 
-    use super::*;
+        #[test]
+        fn test_parse() {
+            let result = key_value::<_, _, Error<&str>>("foo: bar");
+            assert_eq!(result, Ok(("", ("foo", "bar".to_string()))))
+        }
 
-    #[test]
-    fn test_parse() {
-        let result: Result<_, Err<Error<&str>>> = key_value("foo").parse("foo: bar");
-        assert_eq!(result, Ok(("", "bar".to_string())))
+        #[test]
+        fn test_no_space() {
+            let result = key_value::<_, _, Error<&str>>("foo:bar");
+            assert_eq!(result, Ok(("", ("foo", "bar".to_string()))))
+        }
+
+        #[test]
+        fn test_many_spaces() {
+            let result = key_value::<_, _, Error<&str>>("foo: \t  bar");
+            assert_eq!(result, Ok(("", ("foo", "bar".to_string()))))
+        }
+
+        #[test]
+        fn test_no_value() {
+            let result = key_value::<_, _, Error<&str>>("foo:");
+            assert_eq!(result, Ok(("", ("foo", "".to_string()))))
+        }
+
+        #[test]
+        fn test_empty_string() {
+            let result = key_value::<_, String, _>("");
+            assert_eq!(
+                result.unwrap_err(),
+                Err::Error(Error {
+                    code: ErrorKind::TakeWhile1,
+                    input: ""
+                })
+            );
+        }
+
+        #[test]
+        fn test_no_colon() {
+            let result = key_value::<_, String, _>("foo bla");
+            assert_eq!(
+                result.unwrap_err(),
+                Err::Error(Error {
+                    code: ErrorKind::Char,
+                    input: " bla"
+                })
+            );
+        }
     }
 
-    #[test]
-    fn test_newline_end() {
-        let result: Result<_, Err<Error<&str>>> = key_value("foo").parse("foo: bar\n");
-        assert_eq!(result, Ok(("", "bar".to_string())))
-    }
+    mod tag_key_value {
+        use super::super::*;
+        use nom::{
+            error::{Error, ErrorKind},
+            Err,
+        };
 
-    #[test]
-    fn test_no_space() {
-        let result: Result<_, Err<Error<&str>>> = key_value("foo").parse("foo:bar");
-        assert_eq!(result, Ok(("", "bar".to_string())))
-    }
+        #[test]
+        fn test_parse() {
+            let result = tag_key_value::<_, _, Error<&str>, _>("foo").parse("foo: bar");
+            assert_eq!(result, Ok(("", "bar".to_string())))
+        }
 
-    #[test]
-    fn test_many_spaces() {
-        let result: Result<_, Err<Error<&str>>> = key_value("foo").parse("foo: \t  bar");
-        assert_eq!(result, Ok(("", "bar".to_string())))
-    }
+        #[test]
+        fn test_no_space() {
+            let result = tag_key_value::<_, _, Error<&str>, _>("foo").parse("foo:bar");
+            assert_eq!(result, Ok(("", "bar".to_string())))
+        }
 
-    #[test]
-    fn test_no_value() {
-        let result: Result<_, Err<Error<&str>>> = key_value("foo").parse("foo:");
-        assert_eq!(result, Ok(("", "".to_string())))
-    }
+        #[test]
+        fn test_many_spaces() {
+            let result = tag_key_value::<_, _, Error<&str>, _>("foo").parse("foo: \t  bar");
+            assert_eq!(result, Ok(("", "bar".to_string())))
+        }
 
-    #[test]
-    fn test_empty_string() {
-        let result: Result<(&str, String), Err<Error<&str>>> = key_value("foo").parse("");
-        assert_eq!(
-            result.unwrap_err(),
-            Err::Error(Error {
-                code: ErrorKind::Tag,
-                input: ""
-            })
-        );
-    }
+        #[test]
+        fn test_no_value() {
+            let result = tag_key_value::<_, _, Error<&str>, _>("foo").parse("foo:");
+            assert_eq!(result, Ok(("", "".to_string())))
+        }
 
-    #[test]
-    fn test_wrong_tag() {
-        let result: Result<(&str, String), Err<Error<&str>>> = key_value("foo").parse("bar: baz");
-        assert_eq!(
-            result.unwrap_err(),
-            Err::Error(Error {
-                code: ErrorKind::Tag,
-                input: "bar: baz"
-            })
-        );
-    }
+        #[test]
+        fn test_empty_string() {
+            let result = tag_key_value::<_, String, _, _>("foo").parse("");
+            assert_eq!(
+                result.unwrap_err(),
+                Err::Error(Error {
+                    code: ErrorKind::Tag,
+                    input: ""
+                })
+            );
+        }
 
-    #[test]
-    fn test_no_colon() {
-        let result: Result<(&str, String), Err<Error<&str>>> = key_value("foo").parse("foo bla");
-        assert_eq!(
-            result.unwrap_err(),
-            Err::Error(Error {
-                code: ErrorKind::Char,
-                input: " bla"
-            })
-        );
+        #[test]
+        fn test_wrong_tag() {
+            let result = tag_key_value::<_, String, _, _>("foo").parse("bar: baz");
+            assert_eq!(
+                result.unwrap_err(),
+                Err::Error(Error {
+                    code: ErrorKind::Tag,
+                    input: "bar: baz"
+                })
+            );
+        }
+
+        #[test]
+        fn test_no_colon() {
+            let result = tag_key_value::<_, String, _, _>("foo").parse("foo bla");
+            assert_eq!(
+                result.unwrap_err(),
+                Err::Error(Error {
+                    code: ErrorKind::Char,
+                    input: " bla"
+                })
+            );
+        }
     }
 }

@@ -11,7 +11,7 @@ use anchor_spl::token::{
 };
 use chain_id::ChainId;
 use mpl_token_metadata::accounts::Metadata;
-use solana_intents::{symbol_or_mint::SymbolOrMint, Intent};
+use solana_intents::{Intent, SymbolOrMint};
 
 pub mod error;
 mod message;
@@ -91,7 +91,7 @@ impl<'info> SendTokens<'info> {
             sponsor: _,
             system_program: _,
         } = self;
-        let Intent::<Message> {
+        let Intent {
             message:
                 Message {
                     amount,
@@ -102,7 +102,7 @@ impl<'info> SendTokens<'info> {
                     version: _,
                 },
             signer,
-        } = Intent::<Message>::load(sysvar_instructions.as_ref())
+        } = Intent::load(sysvar_instructions.as_ref())
             .map_err(Into::<IntentTransferError>::into)?;
 
         if chain_id.chain_id != expected_chain_id {
