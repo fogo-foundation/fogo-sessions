@@ -57,8 +57,9 @@ pub async fn validate_transaction(
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
-                "Transaction fee payer must be the sponsor: {}",
-                transaction.message.static_account_keys()[0]
+                "Transaction fee payer must be the sponsor: expected {}, got {}",
+                sponsor,
+                transaction.message.static_account_keys()[0],
             ),
         ));
     }
