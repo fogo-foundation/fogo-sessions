@@ -199,7 +199,12 @@ const getSponsor = async (
     );
     url.searchParams.set("domain", domain);
     const response = await fetch(url);
-    return new PublicKey(z.string().parse(await response.text()));
+
+    if (response.status === 200) {
+      return new PublicKey(z.string().parse(await response.text()));
+    } else {
+      throw new PaymasterResponseError(response.status, await response.text());
+    }
   }
 };
 
