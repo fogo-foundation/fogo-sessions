@@ -14,6 +14,7 @@ pub enum TransactionVariation {
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct TransactionVariationV1 {
 	pub name: String,
+    #[serde(default)]
 	pub instructions: Vec<InstructionConstraint>,
 	pub rate_limits: RateLimits,
 	pub max_gas_spend: u64,
@@ -34,9 +35,11 @@ pub struct InstructionConstraint {
     #[schema(example = "So11111111111111111111111111111111111111111", value_type = String)]
     #[serde_as(as = "DisplayFromStr")]
 	pub program: Pubkey,
+    #[serde(default)]
 	pub accounts: Vec<AccountConstraint>,
+    #[serde(default)]
 	pub data: Vec<DataConstraint>,
-	pub required: bool,
+    pub required: bool,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -92,7 +95,7 @@ pub fn compare_primitive_data_types(a: PrimitiveDataType, constraint: &DataConst
             (PrimitiveDataType::U16(Some(a)), PrimitiveDataType::U16(Some(b))) => a < *b,
             (PrimitiveDataType::U32(Some(a)), PrimitiveDataType::U32(Some(b))) => a < *b,
             (PrimitiveDataType::U64(Some(a)), PrimitiveDataType::U64(Some(b))) => a < *b,
-            (PrimitiveDataType::Bool(Some(_)), PrimitiveDataType::Bool(Some(_))) => false, // LessThan not applicable for bool
+            (PrimitiveDataType::Bool(Some(_)), PrimitiveDataType::Bool(Some(_))) => return Err("LessThan not applicable for bool".into()),
             _ => return Err("Incompatible primitive data types".into()),
         },
        
@@ -101,7 +104,7 @@ pub fn compare_primitive_data_types(a: PrimitiveDataType, constraint: &DataConst
             (PrimitiveDataType::U16(Some(a)), PrimitiveDataType::U16(Some(b))) => a > *b,
             (PrimitiveDataType::U32(Some(a)), PrimitiveDataType::U32(Some(b))) => a > *b,
             (PrimitiveDataType::U64(Some(a)), PrimitiveDataType::U64(Some(b))) => a > *b,
-            (PrimitiveDataType::Bool(Some(_)), PrimitiveDataType::Bool(Some(_))) => false, // GreaterThan not applicable for bool
+            (PrimitiveDataType::Bool(Some(_)), PrimitiveDataType::Bool(Some(_))) => return Err("GreaterThan not applicable for bool".into()),
             _ => return Err("Incompatible primitive data types".into()),
         },
 

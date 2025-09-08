@@ -99,13 +99,9 @@ pub async fn validate_transaction(
             Ok(())
         })?;
 
-    let mut matches_variation = false;
-    for variation in tx_variations {
-        if validate_transaction_against_variation(transaction, variation, sponsor).is_ok() {
-            matches_variation = true;
-            break;
-        }
-    }
+    let matches_variation = tx_variations.iter().any(|variation| {
+        validate_transaction_against_variation(transaction, variation, sponsor).is_ok()
+    });
     if !matches_variation {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -201,7 +197,33 @@ pub fn validate_transaction_against_variation_v1(
         ));
     }
 
-    for (instr, constraint) in instructions.iter().zip(&variation.instructions) {
+    let mut instr_iter = instructions.iter().peekable();
+    let mut constraint_iter = variation.instructions.iter().peekable();
+
+    while let Some(constraint) = constraint_iter.next() {
+        if !constraint.required {
+            while let Some(instr) = instr_iter.peek() {
+                let program_id = instr.program_id(transaction.message.static_account_keys());
+                if *program_id == constraint.program {
+                    break;
+                }
+                instr_iter.next();
+            }
+            if instr_iter.peek().is_none() || instr_iter.peek().map(|instr| instr.program_id(transaction.message.static_account_keys())) != Some(&constraint.program) {
+                continue;
+            }
+        }
+
+        let instr = instr_iter.next().ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction missing instruction for constraint in variation {}",
+                    variation.name
+                ),
+            )
+        })?;
+
         let program_id = instr.program_id(transaction.message.static_account_keys());
         if *program_id != constraint.program {
             return Err((
@@ -285,19 +307,18 @@ pub fn check_account_constraint(
         }
     }
 
-    let mut passes_include = constraint.include.is_empty();
-    for included in &constraint.include {
-        let pk_to_check = match included {
-            ContextualPubkey::Explicit{pubkey: pk} => pk,
-            ContextualPubkey::User => &user,
-            ContextualPubkey::Session => &session,
-            ContextualPubkey::Sponsor => &sponsor,
-        };
-        if account == *pk_to_check {
-            passes_include = true;
-            break;
-        }
-    }
+    let passes_include = constraint.include.is_empty() || constraint
+        .include
+        .iter()
+        .any(|included| {
+            let pk_to_check = match included {
+                ContextualPubkey::Explicit{pubkey: pk} => pk,
+                ContextualPubkey::User => user,
+                ContextualPubkey::Session => session,
+                ContextualPubkey::Sponsor => sponsor,
+            };
+            account == *pk_to_check
+        });
 
     if passes_include {
         Ok(())

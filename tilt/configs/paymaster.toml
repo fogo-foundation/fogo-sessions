@@ -6,4 +6,17 @@ global_program_whitelist = ["Ed25519SigVerify111111111111111111111111111", "Sess
 
 [[domains]]
 domain = "http://localhost:3000"
-program_whitelist = ["ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL","Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3"]
+
+[[domains.tx_variations]]
+version = "v1"
+name = "Sample Variation"
+max_gas_spend = 1000000
+
+[domains.tx_variations.rate_limits]
+user_per_min = 10
+session_per_min = 5
+ip_per_min = 20
+
+[[domains.tx_variations.instructions]]
+program = "So11111111111111111111111111111111111111111"
+required = true
