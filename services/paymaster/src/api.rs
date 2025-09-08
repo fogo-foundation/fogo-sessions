@@ -249,10 +249,9 @@ pub fn validate_transaction_against_variation_v1(
                 )
             })?;
             let account = transaction.message.static_account_keys()[*account_index as usize];
-            // TODO: do fix this...
-            let user_dummy = &Pubkey::new_unique();
+            // TODO: extract session key correctly
             let session_dummy = &Pubkey::new_unique();
-            check_account_constraint(account, account_constraint, user_dummy, session_dummy, sponsor)?;
+            check_account_constraint(account, account_constraint, session_dummy, sponsor)?;
         }
 
         for data_constraint in &constraint.data {
@@ -266,7 +265,6 @@ pub fn validate_transaction_against_variation_v1(
 pub fn check_account_constraint(
     account: Pubkey,
     constraint: &AccountConstraint,
-    user: &Pubkey,
     session: &Pubkey,
     sponsor: &Pubkey,
 ) -> Result<(), (StatusCode, String)> {
@@ -277,14 +275,6 @@ pub fn check_account_constraint(
                     return Err((
                         StatusCode::BAD_REQUEST,
                         format!("Account {account} is explicitly excluded"),
-                    ));
-                }
-            }
-            ContextualPubkey::User => {
-                if account == *user {
-                    return Err((
-                        StatusCode::BAD_REQUEST,
-                        format!("Account {account} is excluded as user"),
                     ));
                 }
             }
@@ -313,7 +303,6 @@ pub fn check_account_constraint(
         .any(|included| {
             let pk_to_check = match included {
                 ContextualPubkey::Explicit{pubkey: pk} => pk,
-                ContextualPubkey::User => user,
                 ContextualPubkey::Session => session,
                 ContextualPubkey::Sponsor => sponsor,
             };

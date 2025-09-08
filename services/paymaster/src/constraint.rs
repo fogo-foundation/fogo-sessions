@@ -23,9 +23,8 @@ pub struct TransactionVariationV1 {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RateLimits {
-	user_per_min: u64,
-	session_per_min: u64,
-	ip_per_min: u64,
+	session_per_min: Option<u64>,
+	ip_per_min: Option<u64>,
 }
 
 
@@ -57,7 +56,6 @@ pub enum ContextualPubkey {
         #[serde_as(as = "DisplayFromStr")]
         pubkey: Pubkey
     },
-	User,
 	Session,
 	Sponsor,
 }
