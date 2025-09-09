@@ -62,9 +62,9 @@ type EstablishSessionOptions = {
   expires: Date;
   extra?: string | undefined;
 } & (
-  | { limits?: Map<PublicKey, bigint>; unlimited?: false }
-  | { unlimited: true }
-);
+    | { limits?: Map<PublicKey, bigint>; unlimited?: false }
+    | { unlimited: true }
+  );
 
 export const establishSession = async (
   options: EstablishSessionOptions,
@@ -121,9 +121,9 @@ const sendSessionEstablishTransaction = async (
       return session
         ? EstablishSessionResult.Success(result.signature, session)
         : EstablishSessionResult.Failed(
-            result.signature,
-            new Error("Transaction succeeded, but the session was not created"),
-          );
+          result.signature,
+          new Error("Transaction succeeded, but the session was not created"),
+        );
     }
     case TransactionResultType.Failed: {
       return EstablishSessionResult.Failed(result.signature, result.error);
@@ -139,9 +139,9 @@ export const replaceSession = async (
     expires: Date;
     extra?: string | undefined;
   } & (
-    | { limits?: Map<PublicKey, bigint>; unlimited?: false }
-    | { unlimited: true }
-  ),
+      | { limits?: Map<PublicKey, bigint>; unlimited?: false }
+      | { unlimited: true }
+    ),
 ) =>
   establishSession({
     ...options,
@@ -163,11 +163,11 @@ export const getSessionAccount = async (
   return result === null
     ? undefined
     : sessionInfoSchema.parse(
-        new BorshAccountsCoder(SessionManagerIdl).decode(
-          "Session",
-          result.data,
-        ),
-      );
+      new BorshAccountsCoder(SessionManagerIdl).decode(
+        "Session",
+        result.data,
+      ),
+    );
 };
 
 const createSession = async (
@@ -185,68 +185,71 @@ const createSession = async (
   return sessionInfo === undefined
     ? undefined
     : {
-        sessionPublicKey,
-        walletPublicKey,
-        sessionKey,
-        payer: adapter.payer,
-        sendTransaction: (instructions) =>
-          adapter.sendTransaction(sessionKey, instructions),
-        sessionInfo,
-      };
+      sessionPublicKey,
+      walletPublicKey,
+      sessionKey,
+      payer: adapter.payer,
+      sendTransaction: (instructions) =>
+        adapter.sendTransaction(sessionKey, instructions),
+      sessionInfo,
+    };
 };
 
 const sessionInfoSchema = z
   .object({
     session_info: z.object({
-      authorized_programs: z.union([
-        z.object({
-          Specific: z.object({
-            0: z.array(
-              z.object({
-                program_id: z.instanceof(PublicKey),
-                signer_pda: z.instanceof(PublicKey),
+      V1: z.object({
+        "0": z.object({
+          authorized_programs: z.union([
+            z.object({
+              Specific: z.object({
+                0: z.array(
+                  z.object({
+                    program_id: z.instanceof(PublicKey),
+                    signer_pda: z.instanceof(PublicKey),
+                  }),
+                ),
               }),
-            ),
+            }),
+            z.object({
+              All: z.object({}),
+            }),
+          ]),
+          authorized_tokens: z.union([
+            z.object({ Specific: z.object({}) }),
+            z.object({ All: z.object({}) }),
+          ]),
+          expiration: z.instanceof(BN),
+          extra: z.object({
+            0: z.unknown(),
           }),
+          user: z.instanceof(PublicKey),
         }),
-        z.object({
-          All: z.object({}),
-        }),
-      ]),
-      authorized_tokens: z.union([
-        z.object({ Specific: z.object({}) }),
-        z.object({ All: z.object({}) }),
-      ]),
-      expiration: z.instanceof(BN),
-      extra: z.object({
-        0: z.unknown(),
       }),
-      major: z.number(),
-      minor: z.number(),
-      user: z.instanceof(PublicKey),
     }),
+    major: z.number(),
   })
-  .transform(({ session_info }) => ({
+  .transform(({ session_info, major }) => ({
     authorizedPrograms:
-      "All" in session_info.authorized_programs
+      "All" in session_info.V1["0"].authorized_programs
         ? AuthorizedPrograms.All()
         : AuthorizedPrograms.Specific(
-            session_info.authorized_programs.Specific[0].map(
-              ({ program_id, signer_pda }) => ({
-                programId: program_id,
-                signerPda: signer_pda,
-              }),
-            ),
+          session_info.V1["0"].authorized_programs.Specific[0].map(
+            ({ program_id, signer_pda }) => ({
+              programId: program_id,
+              signerPda: signer_pda,
+            }),
           ),
+        ),
     authorizedTokens:
-      "All" in session_info.authorized_tokens
+      "All" in session_info.V1["0"].authorized_tokens
         ? AuthorizedTokens.All
         : AuthorizedTokens.Specific,
-    expiration: new Date(Number(session_info.expiration) * 1000),
-    extra: session_info.extra[0],
-    major: session_info.major,
-    minor: session_info.minor,
-    user: session_info.user,
+    expiration: new Date(Number(session_info.V1["0"].expiration) * 1000),
+    extra: session_info.V1["0"].extra[0],
+    major: major,
+    minor: 1,
+    user: session_info.V1["0"].user,
   }));
 
 export enum AuthorizedProgramsType {
@@ -439,33 +442,33 @@ const buildStartSessionInstruction = async (
   return tokens === undefined
     ? instruction.instruction()
     : instruction
-        .remainingAccounts(
-          tokens.flatMap(({ symbolOrMint, mint, metadataAddress }) => [
-            {
-              pubkey: getAssociatedTokenAddressSync(
-                mint,
-                options.walletPublicKey,
-              ),
-              isWritable: true,
-              isSigner: false,
-            },
-            {
-              pubkey: mint,
-              isWritable: false,
-              isSigner: false,
-            },
-            ...(symbolOrMint.type === SymbolOrMintType.Symbol
-              ? [
-                  {
-                    pubkey: metadataAddress,
-                    isWritable: false,
-                    isSigner: false,
-                  },
-                ]
-              : []),
-          ]),
-        )
-        .instruction();
+      .remainingAccounts(
+        tokens.flatMap(({ symbolOrMint, mint, metadataAddress }) => [
+          {
+            pubkey: getAssociatedTokenAddressSync(
+              mint,
+              options.walletPublicKey,
+            ),
+            isWritable: true,
+            isSigner: false,
+          },
+          {
+            pubkey: mint,
+            isWritable: false,
+            isSigner: false,
+          },
+          ...(symbolOrMint.type === SymbolOrMintType.Symbol
+            ? [
+              {
+                pubkey: metadataAddress,
+                isWritable: false,
+                isSigner: false,
+              },
+            ]
+            : []),
+        ]),
+      )
+      .instruction();
 };
 
 export enum SessionResultType {

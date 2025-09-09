@@ -52,10 +52,10 @@ pub struct Session {
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-#[repr(u8)]
 pub enum SessionInfo {
-    V1(ActiveSessionInfo) = 1,
-    V2(V2) = 2,
+    Invalid,
+    V1(ActiveSessionInfo),
+    V2(V2),
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
@@ -169,13 +169,14 @@ impl Session {
         Ok(result)
     }
 
-    fn expiration(&self) -> UnixTimestamp {
+    fn expiration(&self) -> Result<UnixTimestamp, SessionError> {
         match &self.session_info {
-            SessionInfo::V1(session) => session.expiration,
+            SessionInfo::V1(session) => Ok(session.expiration),
             SessionInfo::V2(session) => match session {
-                V2::Revoked(expiration) => *expiration,
-                V2::Active(session) => session.expiration,
+                V2::Revoked(expiration) => Ok(*expiration),
+                V2::Active(session) => Ok(session.expiration),
             },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
         }
     }
 
@@ -186,6 +187,7 @@ impl Session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.authorized_programs),
             },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
         }
     }
 
@@ -196,6 +198,7 @@ impl Session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.authorized_tokens),
             },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
         }
     }
 
@@ -206,6 +209,7 @@ impl Session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.user),
             },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
         }
     }
     fn extra(&self) -> Result<&Extra, SessionError> {
@@ -215,12 +219,13 @@ impl Session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.extra),
             },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
         }
     }
 
     fn is_live(&self) -> Result<bool, SessionError>  {
-        Ok(self.expiration()
-            < Clock::get()
+        Ok(self.expiration()?
+            >= Clock::get()
                 .map_err(|_| SessionError::ClockError)?
                 .unix_timestamp)
     }
