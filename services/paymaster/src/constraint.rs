@@ -39,6 +39,7 @@ pub struct VariationOrderedInstructionConstraints
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RateLimits {
+    user_per_min: Option<u64>,
 	session_per_min: Option<u64>,
 	ip_per_min: Option<u64>,
 }
@@ -78,6 +79,7 @@ pub enum ContextualPubkey {
 	Signer {
         index: i8,
     },
+    UserDelegator,
 }
 
 pub trait ContextualPubkeyTrait {
@@ -124,6 +126,9 @@ impl ContextualPubkeyTrait for ContextualPubkey {
                     (false, false) => None,
                 }
             }
+            
+            // TODO: future implementation for user delegator
+            ContextualPubkey::UserDelegator => Some("UserDelegator matching not implemented".into())
         }
     }
 }
