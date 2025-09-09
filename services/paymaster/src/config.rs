@@ -1,10 +1,9 @@
 use anyhow::Result;
 use config::File;
 use serde::Deserialize;
-use solana_pubkey::Pubkey;
 
 use crate::constraint::TransactionVariation;
-use crate::utils::{deserialize_pubkey_vec, deserialize_sol_to_lamports};
+use crate::utils::deserialize_sol_to_lamports;
 
 #[derive(Deserialize)]
 pub struct Domain {
@@ -17,8 +16,6 @@ pub struct Config {
     pub mnemonic_file: String,
     pub solana_url: String,
     pub listen_address: String,
-    #[serde(deserialize_with = "deserialize_pubkey_vec")]
-    pub global_program_whitelist: Vec<Pubkey>,
     // The maximum amount that the sponsor can spend on a transaction.
     // The value in the struct is expressed in lamports.
     // However, in the config file, specify a number of FOGO -- the deserializer will auto-convert to lamports.

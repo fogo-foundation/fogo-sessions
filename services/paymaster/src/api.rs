@@ -39,7 +39,6 @@ pub struct DomainState {
 }
 pub struct ServerState {
     pub rpc: RpcClient,
-    pub global_program_whitelist: Vec<Pubkey>,
     pub max_sponsor_spending: u64,
     pub domains: HashMap<String, DomainState>,
 }
@@ -51,7 +50,6 @@ pub struct SponsorAndSendPayload {
 
 pub async fn validate_transaction(
     transaction: &VersionedTransaction,
-    global_program_whitelist: &[Pubkey],
     tx_variations: &[TransactionVariation],
     sponsor: &Pubkey,
     rpc: &RpcClient,
@@ -83,22 +81,6 @@ pub async fn validate_transaction(
                         format!("Missing or invalid signature for account {pubkey}").to_string(),
                     )
                 })
-        })?;
-
-    transaction
-        .message
-        .instructions()
-        .iter()
-        .try_for_each(|instruction| {
-            let program_id = instruction.program_id(transaction.message.static_account_keys());
-            if !global_program_whitelist.contains(program_id) {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!("Transaction contains unauthorized program ID: {program_id}"),
-                ));
-            }
-
-            Ok(())
         })?;
 
     let matches_variation = tx_variations.iter().any(|variation| {
@@ -504,7 +486,6 @@ async fn sponsor_and_send_handler(
 
     validate_transaction(
         &transaction,
-        &state.global_program_whitelist,
         tx_variations,
         &keypair.pubkey(),
         &state.rpc,
@@ -571,7 +552,6 @@ pub async fn run_server(
     Config {
         mnemonic_file,
         solana_url,
-        global_program_whitelist,
         max_sponsor_spending,
         domains,
         listen_address,
@@ -627,7 +607,6 @@ pub async fn run_server(
                 )])),
         )
         .with_state(Arc::new(ServerState {
-            global_program_whitelist,
             max_sponsor_spending,
             domains,
             rpc,
