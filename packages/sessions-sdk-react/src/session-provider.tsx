@@ -61,6 +61,10 @@ import {
   useTokenAccountData,
   StateType as TokenDataStateType,
 } from "./use-token-account-data.js";
+import { SessionManagerProgram } from "@fogo/sessions-idls";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import type { Wallet } from "@coral-xyz/anchor";
+
 
 import "@solana/wallet-adapter-react-ui/styles.css";
 
@@ -326,8 +330,15 @@ const useSessionStateContext = ({
         disconnectWallet();
       });
       const establishedOptions: EstablishedOptions = {
-        endSession: () => {
+        endSession: async () => {
           endSession(session.walletPublicKey);
+          const program = new SessionManagerProgram(
+            new AnchorProvider(adapter.connection, {} as Wallet, {}),
+          )
+          await adapter.sendTransaction(session.sessionKey, [await program.methods.revokeSession().accounts({
+            sponsor: session.sessionInfo.sponsor,
+            session: session.sessionPublicKey,
+          }).instruction()])
         },
         payer: session.payer,
         sendTransaction: async (instructions) => {

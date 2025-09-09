@@ -90,8 +90,35 @@ pub mod session_manager {
         Ok(())
     }
 
-    /// This is just to trick anchor into generating the IDL for the Session account since we don't use it in the context for `start_session`
     #[instruction(discriminator = [1])]
+    pub fn revoke_session<'info>(
+        ctx: Context<'_, '_, '_, 'info, RevokeSession<'info>>,
+    ) -> Result<()> {
+        assert_eq!(ctx.accounts.session.sponsor, ctx.accounts.sponsor.key());
+        match &ctx.accounts.session.session_info {
+            SessionInfo::Invalid => return err!(SessionManagerError::InvalidVersion),
+            SessionInfo::V1(_) => return err!(SessionManagerError::InvalidVersion),
+            SessionInfo::V2(V2::Active(active_session_info)) => {
+                ctx.accounts.session.session_info = SessionInfo::V2(V2::Revoked(active_session_info.expiration));
+            }
+            SessionInfo::V2(V2::Revoked(_)) => {}, // Idempotent
+        }
+
+        let new_len = 8 + get_instance_packed_len::<Session>(&ctx.accounts.session)?;
+        ctx.accounts.session.to_account_info().realloc(new_len, false)?;
+
+        let new_rent = Rent::get()?.minimum_balance(new_len as usize);
+        let current_rent = ctx.accounts.session.to_account_info().lamports();
+
+        if new_rent < current_rent {
+            **ctx.accounts.session.to_account_info().try_borrow_mut_lamports()? = new_rent;
+            **ctx.accounts.sponsor.try_borrow_mut_lamports()? += current_rent.saturating_sub(new_rent);
+        }
+        Ok(())
+    }
+
+    /// This is just to trick anchor into generating the IDL for the Session account since we don't use it in the context for `start_session`
+    #[instruction(discriminator = [2])]
     pub fn _unused<'info>(_ctx: Context<'_, '_, '_, 'info, Unused<'info>>) -> Result<()> {
         err!(ErrorCode::InstructionDidNotDeserialize)
     }
@@ -118,6 +145,14 @@ pub struct StartSession<'info> {
 }
 
 #[derive(Accounts)]
+pub struct RevokeSession<'info> {
+    #[account(mut, signer)]
+    pub session: Account<'info, Session>,
+    /// CHECK: we will check against the session's sponsor
+    pub sponsor: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+}
+#[derive(Accounts)]
 pub struct Unused<'info> {
     pub session: Account<'info, Session>,
 }
@@ -141,6 +176,7 @@ impl<'info> StartSession<'info> {
         Ok(())
     }
 }
+
 
 #[cfg(test)]
 mod tests {
