@@ -64,4 +64,4 @@ constraint = { EqualTo = [ {U8 = 4}, {U8 = 5} ] }
 [[domains.tx_variations]]
 version = "v0"
 name = "Sample v0 Variation"
-whitelisted_programs = ["TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"]
+whitelisted_programs = ["ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL", "Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3"]
