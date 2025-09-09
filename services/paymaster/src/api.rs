@@ -1,5 +1,8 @@
 use crate::config::{Config, Domain};
-use crate::constraint::{compare_primitive_data_types, AccountConstraint, ContextualPubkeyTrait, DataConstraint, PrimitiveDataType, PrimitiveDataValue, TransactionVariation};
+use crate::constraint::{
+    compare_primitive_data_types, AccountConstraint, ContextualPubkeyTrait, DataConstraint,
+    PrimitiveDataType, PrimitiveDataValue, TransactionVariation,
+};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -88,8 +91,7 @@ pub async fn validate_transaction(
         .iter()
         .try_for_each(|instruction| {
             let program_id = instruction.program_id(transaction.message.static_account_keys());
-            if !global_program_whitelist.contains(program_id)
-            {
+            if !global_program_whitelist.contains(program_id) {
                 return Err((
                     StatusCode::BAD_REQUEST,
                     format!("Transaction contains unauthorized program ID: {program_id}"),
@@ -174,8 +176,12 @@ pub fn validate_transaction_against_variation(
     sponsor: &Pubkey,
 ) -> Result<(), (StatusCode, String)> {
     match tx_variation {
-        TransactionVariation::V0(variation) => validate_transaction_against_variation_v0(transaction, variation),
-        TransactionVariation::V1(variation) => validate_transaction_against_variation_v1(transaction, variation, sponsor),
+        TransactionVariation::V0(variation) => {
+            validate_transaction_against_variation_v0(transaction, variation)
+        }
+        TransactionVariation::V1(variation) => {
+            validate_transaction_against_variation_v1(transaction, variation, sponsor)
+        }
     }
 }
 
@@ -229,7 +235,12 @@ pub fn validate_transaction_against_variation_v1(
                 }
                 instr_iter.next();
             }
-            if instr_iter.peek().is_none() || instr_iter.peek().map(|instr| instr.program_id(transaction.message.static_account_keys())) != Some(&constraint.program) {
+            if instr_iter.peek().is_none()
+                || instr_iter
+                    .peek()
+                    .map(|instr| instr.program_id(transaction.message.static_account_keys()))
+                    != Some(&constraint.program)
+            {
                 continue;
             }
         }
@@ -259,15 +270,18 @@ pub fn validate_transaction_against_variation_v1(
 
         for (i, account_constraint) in constraint.accounts.iter().enumerate() {
             // TODO: account for lookup tables
-            let account_index = instr.accounts.get(account_constraint.index as usize).ok_or_else(|| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Transaction instruction missing account at index {} for variation {}",
-                        i, variation.name
-                    ),
-                )
-            })?;
+            let account_index = instr
+                .accounts
+                .get(account_constraint.index as usize)
+                .ok_or_else(|| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Transaction instruction missing account at index {} for variation {}",
+                            i, variation.name
+                        ),
+                    )
+                })?;
             let account = transaction.message.static_account_keys()[*account_index as usize];
             let signers = transaction
                 .message
@@ -312,7 +326,10 @@ pub fn check_data_constraint(
     data: &[u8],
     constraint: &DataConstraint,
 ) -> Result<(), (StatusCode, String)> {
-    if constraint.end_byte as usize > data.len() || constraint.start_byte as usize >= data.len() || constraint.start_byte >= constraint.end_byte {
+    if constraint.end_byte as usize > data.len()
+        || constraint.start_byte as usize >= data.len()
+        || constraint.start_byte >= constraint.end_byte
+    {
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
@@ -353,45 +370,53 @@ pub fn check_data_constraint(
         }
 
         PrimitiveDataType::U16 => {
-            let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| (
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Data constraint expects 2 bytes for U16, found {} bytes",
-                    data_to_analyze.len()
-                ),
-            ))?);
+            let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Data constraint expects 2 bytes for U16, found {} bytes",
+                        data_to_analyze.len()
+                    ),
+                )
+            })?);
             PrimitiveDataValue::U16(data_u16)
         }
 
         PrimitiveDataType::U32 => {
-            let data_u32 = u32::from_le_bytes(data_to_analyze.try_into().map_err(|_| (
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Data constraint expects 4 bytes for U32, found {} bytes",
-                    data_to_analyze.len()
-                ),
-            ))?);
+            let data_u32 = u32::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Data constraint expects 4 bytes for U32, found {} bytes",
+                        data_to_analyze.len()
+                    ),
+                )
+            })?);
             PrimitiveDataValue::U32(data_u32)
         }
 
         PrimitiveDataType::U64 => {
-            let data_u64 = u64::from_le_bytes(data_to_analyze.try_into().map_err(|_| (
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Data constraint expects 8 bytes for U64, found {} bytes",
-                    data_to_analyze.len()
-                ),
-            ))?);
+            let data_u64 = u64::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Data constraint expects 8 bytes for U64, found {} bytes",
+                        data_to_analyze.len()
+                    ),
+                )
+            })?);
             PrimitiveDataValue::U64(data_u64)
         }
     };
 
-    compare_primitive_data_types(data_to_analyze_deserialized, &constraint.constraint).map_err(|err| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Data constraint not satisfied: {err}"),
-        )
-    })?;
+    compare_primitive_data_types(data_to_analyze_deserialized, &constraint.constraint).map_err(
+        |err| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Data constraint not satisfied: {err}"),
+            )
+        },
+    )?;
 
     Ok(())
 }
@@ -576,9 +601,9 @@ pub async fn run_server(
         .into_iter()
         .map(
             |Domain {
-                domain,
-                tx_variations,
-            } | {
+                 domain,
+                 tx_variations,
+             }| {
                 let keypair = Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
                         &mnemonic, &domain,
@@ -587,10 +612,13 @@ pub async fn run_server(
                 )
                 .expect("Failed to derive keypair from mnemonic_file");
 
-                (domain, DomainState {
-                    keypair,
-                    tx_variations,
-                })
+                (
+                    domain,
+                    DomainState {
+                        keypair,
+                        tx_variations,
+                    },
+                )
             },
         )
         .collect::<HashMap<_, _>>();
