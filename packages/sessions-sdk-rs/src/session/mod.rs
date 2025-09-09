@@ -47,12 +47,17 @@ pub struct Session {
     pub discriminator: [u8; 8],
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
+    /// The major version of the session account, major version changes are breaking changes
     pub major: u8,
+    /// The session information. The enum variant of `SessionInfo` represents the minor version of the session account. Until 1.0, minor versions may be breaking changes.
     pub session_info: SessionInfo,
 }
 
-#[allow(dead_code, reason = "This module is a hack because the BorshSchema macro generates dead code for `SessionInfo` in this version of borsh, but we don't want to disable dead_code globally.
-/// More info: https://github.com/near/borsh-rs/issues/111")]
+#[allow(
+    dead_code,
+    reason = "This module is a hack because the BorshSchema macro generates dead code for `SessionInfo` in this version of borsh, but we don't want to disable dead_code globally.
+/// More info: https://github.com/near/borsh-rs/issues/111"
+)]
 mod session_info {
     use super::*;
 
@@ -65,8 +70,11 @@ mod session_info {
 }
 pub use session_info::SessionInfo;
 
-#[allow(dead_code, reason = "This module is a hack because the BorshSchema macro generates dead code for `V2` in this version of borsh, but we don't want to disable dead_code globally.
-/// More info: https://github.com/near/borsh-rs/issues/111")]
+#[allow(
+    dead_code,
+    reason = "This module is a hack because the BorshSchema macro generates dead code for `V2` in this version of borsh, but we don't want to disable dead_code globally.
+/// More info: https://github.com/near/borsh-rs/issues/111"
+)]
 #[allow(dead_code)]
 mod v2 {
     use super::*;
@@ -94,8 +102,11 @@ pub struct ActiveSessionInfo {
     pub extra: Extra,
 }
 
-#[allow(dead_code, reason = "This module is a hack because the BorshSchema macro generates dead code for `AuthorizedPrograms` in this version of borsh, but we don't want to disable dead_code globally.
-/// More info: https://github.com/near/borsh-rs/issues/111")]
+#[allow(
+    dead_code,
+    reason = "This module is a hack because the BorshSchema macro generates dead code for `AuthorizedPrograms` in this version of borsh, but we don't want to disable dead_code globally.
+/// More info: https://github.com/near/borsh-rs/issues/111"
+)]
 mod authorized_programs {
     use super::*;
 
