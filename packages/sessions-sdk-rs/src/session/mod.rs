@@ -201,7 +201,7 @@ impl Session {
                 V2::Revoked(expiration) => Ok(*expiration),
                 V2::Active(session) => Ok(session.expiration),
             },
-            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
     }
 
@@ -212,7 +212,7 @@ impl Session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.authorized_programs),
             },
-            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
     }
 
@@ -223,7 +223,7 @@ impl Session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.user),
             },
-            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
     }
     fn extra(&self) -> Result<&Extra, SessionError> {
@@ -264,6 +264,9 @@ impl Session {
     /// For 0.x versions, every new minor version will be a breaking change.
     fn check_version(&self) -> Result<(), SessionError> {
         if self.major != MAJOR {
+            return Err(SessionError::InvalidAccountVersion);
+        }
+        if matches!(self.session_info, SessionInfo::Invalid) {
             return Err(SessionError::InvalidAccountVersion);
         }
         Ok(())
