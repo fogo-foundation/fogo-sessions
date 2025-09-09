@@ -83,11 +83,11 @@ pub enum ContextualPubkey {
 }
 
 pub trait ContextualPubkeyTrait {
-    fn matches_account(&self, account: &Pubkey, signers: &Vec<Pubkey>, sponsor: &Pubkey, expect_include: bool) -> Option<String>;
+    fn matches_account(&self, account: &Pubkey, signers: &[Pubkey], sponsor: &Pubkey, expect_include: bool) -> Option<String>;
 }
 
 impl ContextualPubkeyTrait for ContextualPubkey {
-    fn matches_account(&self, account: &Pubkey, signers: &Vec<Pubkey>, sponsor: &Pubkey, expect_include: bool) -> Option<String> {
+    fn matches_account(&self, account: &Pubkey, signers: &[Pubkey], sponsor: &Pubkey, expect_include: bool) -> Option<String> {
         match self {
             ContextualPubkey::Explicit { pubkey } => {
                 match (account == pubkey, expect_include) {

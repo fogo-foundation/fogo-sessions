@@ -218,9 +218,9 @@ pub fn validate_transaction_against_variation_v1(
     }
 
     let mut instr_iter = instructions.iter().peekable();
-    let mut constraint_iter = variation.instructions.iter().peekable();
+    let constraint_iter = variation.instructions.iter().peekable();
 
-    while let Some(constraint) = constraint_iter.next() {
+    for constraint in constraint_iter {
         if !constraint.required {
             while let Some(instr) = instr_iter.peek() {
                 let program_id = instr.program_id(transaction.message.static_account_keys());
