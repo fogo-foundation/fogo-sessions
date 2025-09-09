@@ -52,4 +52,6 @@ pub enum SessionManagerError {
         "The domain record provided is not the domain record of the domain in the signed intent"
     )]
     DomainRecordMismatch,
+    #[msg("The provided sponsor account doesn't match the session sponsor")]
+    SponsorMismatch,
 }

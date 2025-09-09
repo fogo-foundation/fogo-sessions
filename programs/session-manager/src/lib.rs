@@ -94,7 +94,6 @@ pub mod session_manager {
     pub fn revoke_session<'info>(
         ctx: Context<'_, '_, '_, 'info, RevokeSession<'info>>,
     ) -> Result<()> {
-        assert_eq!(ctx.accounts.session.sponsor, ctx.accounts.sponsor.key());
         match &ctx.accounts.session.session_info {
             SessionInfo::Invalid => return err!(SessionManagerError::InvalidVersion),
             SessionInfo::V1(_) => return err!(SessionManagerError::InvalidVersion),
@@ -104,25 +103,7 @@ pub mod session_manager {
             }
             SessionInfo::V2(V2::Revoked(_)) => {} // Idempotent
         }
-
-        let new_len = 8 + get_instance_packed_len::<Session>(&ctx.accounts.session)?;
-        ctx.accounts
-            .session
-            .to_account_info()
-            .realloc(new_len, false)?;
-
-        let new_rent = Rent::get()?.minimum_balance(new_len as usize);
-        let current_rent = ctx.accounts.session.to_account_info().lamports();
-
-        if new_rent < current_rent {
-            **ctx
-                .accounts
-                .session
-                .to_account_info()
-                .try_borrow_mut_lamports()? = new_rent;
-            **ctx.accounts.sponsor.try_borrow_mut_lamports()? +=
-                current_rent.saturating_sub(new_rent);
-        }
+        ctx.accounts.reallocate_and_refund_rent()?;
         Ok(())
     }
 
@@ -157,7 +138,8 @@ pub struct StartSession<'info> {
 pub struct RevokeSession<'info> {
     #[account(mut, signer)]
     pub session: Account<'info, Session>,
-    /// CHECK: we will check against the session's sponsor
+    #[account(constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
+    /// CHECK: we check it against the session's sponsor
     pub sponsor: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
@@ -182,6 +164,26 @@ impl<'info> StartSession<'info> {
         let mut writer = anchor_lang::__private::BpfWriter::new(dst); // This is the writer that Anchor uses internally
         session.try_serialize(&mut writer)?;
 
+        Ok(())
+    }
+}
+
+impl<'info> RevokeSession<'info> {
+    pub fn reallocate_and_refund_rent(&self) -> Result<()> {
+        let new_len = 8 + get_instance_packed_len::<Session>(&self.session)?;
+        self.session.to_account_info().realloc(new_len, false)?;
+
+        let new_rent = Rent::get()?.minimum_balance(new_len);
+        let current_rent = self.session.to_account_info().lamports();
+
+        if new_rent < current_rent {
+            **self.session.to_account_info().try_borrow_mut_lamports()? = new_rent;
+            **self.sponsor.try_borrow_mut_lamports()? = self
+                .sponsor
+                .lamports()
+                .checked_add(current_rent.saturating_sub(new_rent))
+                .ok_or(ProgramError::ArithmeticOverflow)?;
+        }
         Ok(())
     }
 }

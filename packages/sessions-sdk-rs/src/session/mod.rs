@@ -51,7 +51,6 @@ pub struct Session {
     pub session_info: SessionInfo,
 }
 
-
 #[allow(dead_code)]
 mod session_info {
     use super::*;
@@ -68,11 +67,11 @@ pub use session_info::SessionInfo;
 #[allow(dead_code)]
 mod v2 {
     use super::*;
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub enum V2 {
-    Revoked(UnixTimestamp),
-    Active(ActiveSessionInfo),
-}
+    #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+    pub enum V2 {
+        Revoked(UnixTimestamp),
+        Active(ActiveSessionInfo),
+    }
 }
 
 pub use v2::V2;
@@ -197,7 +196,7 @@ impl Session {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.authorized_programs),
             SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Revoked(_) => Err(SessionError::AlreadyRevoked),
                 V2::Active(session) => Ok(&session.authorized_programs),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
@@ -208,7 +207,7 @@ impl Session {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.user),
             SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Revoked(_) => Err(SessionError::AlreadyRevoked),
                 V2::Active(session) => Ok(&session.user),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
@@ -218,7 +217,7 @@ impl Session {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.extra),
             SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Revoked(_) => Err(SessionError::AlreadyRevoked),
                 V2::Active(session) => Ok(&session.extra),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
