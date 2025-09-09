@@ -51,18 +51,31 @@ pub struct Session {
     pub session_info: SessionInfo,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub enum SessionInfo {
-    Invalid,
-    V1(ActiveSessionInfo),
-    V2(V2),
-}
 
+#[allow(dead_code)]
+mod session_info {
+    use super::*;
+
+    #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+    pub enum SessionInfo {
+        Invalid,
+        V1(ActiveSessionInfo),
+        V2(V2),
+    }
+}
+pub use session_info::SessionInfo;
+
+#[allow(dead_code)]
+mod v2 {
+    use super::*;
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub enum V2 {
     Revoked(UnixTimestamp),
     Active(ActiveSessionInfo),
 }
+}
+
+pub use v2::V2;
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 
@@ -186,17 +199,6 @@ impl Session {
             SessionInfo::V2(session) => match session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.authorized_programs),
-            },
-            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
-        }
-    }
-
-    fn authorized_tokens(&self) -> Result<&AuthorizedTokens, SessionError> {
-        match &self.session_info {
-            SessionInfo::V1(session) => Ok(&session.authorized_tokens),
-            SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::Revoked),
-                V2::Active(session) => Ok(&session.authorized_tokens),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
         }
