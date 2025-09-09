@@ -75,29 +75,24 @@ pub enum ContextualPubkey {
     UserDelegator,
 }
 
-pub trait ContextualPubkeyTrait {
-    fn matches_account(
+impl ContextualPubkey {
+    pub fn matches_account(
         &self,
         account: &Pubkey,
         signers: &[Pubkey],
         sponsor: &Pubkey,
         expect_include: bool,
-    ) -> Option<String>;
-}
-
-impl ContextualPubkeyTrait for ContextualPubkey {
-    fn matches_account(
-        &self,
-        account: &Pubkey,
-        signers: &[Pubkey],
-        sponsor: &Pubkey,
-        expect_include: bool,
+        instruction_index: u8,
     ) -> Option<String> {
         match self {
             ContextualPubkey::Explicit { pubkey } => match (account == pubkey, expect_include) {
                 (true, true) => None,
-                (true, false) => Some(format!("Account {account} is explicitly excluded")),
-                (false, true) => Some(format!("Account {account} is not explicitly included")),
+                (true, false) => Some(format!(
+                    "Instruction {instruction_index}: Account {account} is explicitly excluded"
+                )),
+                (false, true) => Some(format!(
+                    "Instruction {instruction_index}: Account {account} is not explicitly included"
+                )),
                 (false, false) => None,
             },
 
@@ -112,9 +107,9 @@ impl ContextualPubkeyTrait for ContextualPubkey {
                 match signers.get(index_uint) {
                     Some(signer) => match (account == signer, expect_include) {
                         (true, true) => None,
-                        (true, false) => Some(format!("Account {account} is excluded as signer")),
+                        (true, false) => Some(format!("Instruction {instruction_index}: Account {account} is excluded as signer")),
                         (false, true) => {
-                            Some(format!("Account {account} is not the signer account"))
+                            Some(format!("Instruction {instruction_index}: Account {account} is not the signer account"))
                         }
                         (false, false) => None,
                     },
@@ -127,8 +122,12 @@ impl ContextualPubkeyTrait for ContextualPubkey {
 
             ContextualPubkey::Sponsor => match (account == sponsor, expect_include) {
                 (true, true) => None,
-                (true, false) => Some(format!("Account {account} is excluded as sponsor")),
-                (false, true) => Some(format!("Account {account} is not the sponsor account")),
+                (true, false) => Some(format!(
+                    "Instruction {instruction_index}: Account {account} is excluded as sponsor"
+                )),
+                (false, true) => Some(format!(
+                    "Instruction {instruction_index}: Account {account} is not the sponsor account"
+                )),
                 (false, false) => None,
             },
 

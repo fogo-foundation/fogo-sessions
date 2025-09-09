@@ -1,6 +1,6 @@
 use crate::config::{Config, Domain};
 use crate::constraint::{
-    compare_primitive_data_types, AccountConstraint, ContextualPubkeyTrait, DataConstraint,
+    compare_primitive_data_types, AccountConstraint, DataConstraint, InstructionConstraint,
     PrimitiveDataType, PrimitiveDataValue, TransactionVariation,
 };
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
@@ -22,6 +22,7 @@ use solana_client::rpc_config::{
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
+use solana_message::compiled_instruction::CompiledInstruction;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_seed_derivable::SeedDerivable;
@@ -177,8 +178,8 @@ pub fn validate_transaction_against_variation_v0(
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Transaction contains unauthorized program ID {} for variation {}",
-                    program_id, variation.name
+                    "Transaction contains unauthorized program ID {program_id} for variation {}",
+                    variation.name
                 ),
             ));
         }
@@ -194,79 +195,115 @@ pub fn validate_transaction_against_variation_v1(
 ) -> Result<(), (StatusCode, String)> {
     let instructions = transaction.message.instructions();
 
-    let mut instr_iter = instructions.iter().peekable();
-    let constraint_iter = variation.instructions.iter().peekable();
+    let mut instruction_iter = instructions.iter();
+    let mut instruction = instruction_iter.next();
+    let mut instruction_index = 0;
 
-    for constraint in constraint_iter {
-        if !constraint.required {
-            while let Some(instr) = instr_iter.peek() {
-                let program_id = instr.program_id(transaction.message.static_account_keys());
-                if *program_id == constraint.program {
-                    break;
-                }
-                instr_iter.next();
+    let mut constraint_iter = variation.instructions.iter();
+    let mut constraint = constraint_iter.next();
+
+    while let (Some(instr), Some(constr)) = (instruction, constraint) {
+        let result = validate_instruction_against_instruction_constraint(
+            instr,
+            instruction_index,
+            transaction.message.static_account_keys(),
+            &transaction.signatures,
+            sponsor,
+            constr,
+            &variation.name,
+        );
+
+        if result.is_err() {
+            if constr.required {
+                return result;
+            } else {
+                constraint = constraint_iter.next();
             }
-            if instr_iter.peek().is_none()
-                || instr_iter
-                    .peek()
-                    .map(|instr| instr.program_id(transaction.message.static_account_keys()))
-                    != Some(&constraint.program)
-            {
-                continue;
-            }
+        } else {
+            instruction = instruction_iter.next();
+            instruction_index += 1;
+
+            constraint = constraint_iter.next();
         }
+    }
 
-        let instr = instr_iter.next().ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Transaction missing instruction for constraint in variation {}",
-                    variation.name
-                ),
+    if instruction.is_some() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Instruction {instruction_index} in transaction does not match any expected instructions for variation {}",
+                variation.name
             )
-        })?;
-
-        let program_id = instr.program_id(transaction.message.static_account_keys());
-        if *program_id != constraint.program {
+        ));
+    } else if let Some(curr_constraint) = constraint {
+        let remaining_required_constraints: Vec<_> = std::iter::once(curr_constraint)
+            .chain(constraint_iter)
+            .filter(|c| c.required)
+            .collect();
+        if !remaining_required_constraints.is_empty() {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Transaction instruction program ID {} does not match expected ID {} for variation {}",
-                    program_id,
-                    constraint.program,
+                    "Transaction is missing required instructions for variation {}",
                     variation.name
                 ),
             ));
         }
+    }
 
-        for (i, account_constraint) in constraint.accounts.iter().enumerate() {
-            // TODO: account for lookup tables
-            let account_index = instr
-                .accounts
-                .get(account_constraint.index as usize)
-                .ok_or_else(|| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Transaction instruction missing account at index {} for variation {}",
-                            i, variation.name
-                        ),
-                    )
-                })?;
-            let account = transaction.message.static_account_keys()[*account_index as usize];
-            let signers = transaction
-                .message
-                .static_account_keys()
-                .iter()
-                .take(transaction.signatures.len())
-                .cloned()
-                .collect::<Vec<_>>();
-            check_account_constraint(account, account_constraint, signers, sponsor)?;
-        }
+    Ok(())
+}
 
-        for data_constraint in &constraint.data {
-            check_data_constraint(&instr.data, data_constraint)?;
-        }
+pub fn validate_instruction_against_instruction_constraint(
+    instruction: &CompiledInstruction,
+    instruction_index: u8,
+    accounts: &[Pubkey],
+    signatures: &[Signature],
+    sponsor: &Pubkey,
+    constraint: &InstructionConstraint,
+    variation_name: &str,
+) -> Result<(), (StatusCode, String)> {
+    let program_id = instruction.program_id(accounts);
+    if *program_id != constraint.program {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Transaction instruction {instruction_index} program ID {program_id} does not match expected ID {} for variation {variation_name}",
+                constraint.program,
+            ),
+        ));
+    }
+
+    for (i, account_constraint) in constraint.accounts.iter().enumerate() {
+        // TODO: account for lookup tables
+        let account_index = instruction
+            .accounts
+            .get(account_constraint.index as usize)
+            .ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Transaction instruction {instruction_index} missing account at index {i} for variation {variation_name}",
+                    ),
+                )
+            })?;
+        let account = accounts[*account_index as usize];
+        let signers = accounts
+            .iter()
+            .take(signatures.len())
+            .cloned()
+            .collect::<Vec<_>>();
+        check_account_constraint(
+            account,
+            account_constraint,
+            signers,
+            sponsor,
+            instruction_index,
+        )?;
+    }
+
+    for data_constraint in &constraint.data {
+        check_data_constraint(&instruction.data, data_constraint, instruction_index)?;
     }
 
     Ok(())
@@ -277,15 +314,20 @@ pub fn check_account_constraint(
     constraint: &AccountConstraint,
     signers: Vec<Pubkey>,
     sponsor: &Pubkey,
+    instruction_index: u8,
 ) -> Result<(), (StatusCode, String)> {
     for excluded in &constraint.exclude {
-        if let Some(msg) = excluded.matches_account(&account, &signers, sponsor, false) {
+        if let Some(msg) =
+            excluded.matches_account(&account, &signers, sponsor, false, instruction_index)
+        {
             return Err((StatusCode::BAD_REQUEST, msg));
         }
     }
 
     for included in &constraint.include {
-        if let Some(msg) = included.matches_account(&account, &signers, sponsor, true) {
+        if let Some(msg) =
+            included.matches_account(&account, &signers, sponsor, true, instruction_index)
+        {
             return Err((StatusCode::BAD_REQUEST, msg));
         }
     }
@@ -296,6 +338,7 @@ pub fn check_account_constraint(
 pub fn check_data_constraint(
     data: &[u8],
     constraint: &DataConstraint,
+    instruction_index: u8,
 ) -> Result<(), (StatusCode, String)> {
     if constraint.end_byte as usize > data.len()
         || constraint.start_byte as usize >= data.len()
@@ -304,7 +347,7 @@ pub fn check_data_constraint(
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
-                "Data constraint byte range {}-{} is out of bounds for data length {}",
+                "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
                 constraint.start_byte,
                 constraint.end_byte,
                 data.len()
@@ -319,7 +362,7 @@ pub fn check_data_constraint(
                 return Err((
                     StatusCode::BAD_REQUEST,
                     format!(
-                        "Data constraint expects 1 byte for Bool, found {} bytes",
+                        "Instruction {instruction_index}: Data constraint expects 1 byte for Bool, found {} bytes",
                         data_to_analyze.len()
                     ),
                 ));
@@ -332,7 +375,7 @@ pub fn check_data_constraint(
                 return Err((
                     StatusCode::BAD_REQUEST,
                     format!(
-                        "Data constraint expects 1 byte for U8, found {} bytes",
+                        "Instruction {instruction_index}: Data constraint expects 1 byte for U8, found {} bytes",
                         data_to_analyze.len()
                     ),
                 ));
@@ -345,7 +388,7 @@ pub fn check_data_constraint(
                 (
                     StatusCode::BAD_REQUEST,
                     format!(
-                        "Data constraint expects 2 bytes for U16, found {} bytes",
+                        "Instruction {instruction_index}: Data constraint expects 2 bytes for U16, found {} bytes",
                         data_to_analyze.len()
                     ),
                 )
@@ -358,7 +401,7 @@ pub fn check_data_constraint(
                 (
                     StatusCode::BAD_REQUEST,
                     format!(
-                        "Data constraint expects 4 bytes for U32, found {} bytes",
+                        "Instruction {instruction_index}: Data constraint expects 4 bytes for U32, found {} bytes",
                         data_to_analyze.len()
                     ),
                 )
@@ -371,7 +414,7 @@ pub fn check_data_constraint(
                 (
                     StatusCode::BAD_REQUEST,
                     format!(
-                        "Data constraint expects 8 bytes for U64, found {} bytes",
+                        "Instruction {instruction_index}: Data constraint expects 8 bytes for U64, found {} bytes",
                         data_to_analyze.len()
                     ),
                 )
@@ -384,7 +427,7 @@ pub fn check_data_constraint(
         |err| {
             (
                 StatusCode::BAD_REQUEST,
-                format!("Data constraint not satisfied: {err}"),
+                format!("Instruction {instruction_index}: Data constraint not satisfied: {err}"),
             )
         },
     )?;

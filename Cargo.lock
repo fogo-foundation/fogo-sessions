@@ -1562,6 +1562,7 @@ dependencies = [
  "solana-commitment-config",
  "solana-derivation-path",
  "solana-keypair",
+ "solana-message",
  "solana-packet",
  "solana-pubkey",
  "solana-rpc-client-api",
