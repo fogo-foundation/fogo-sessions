@@ -19,7 +19,7 @@ pub enum SessionError {
     InvalidAccountDiscriminator,
     #[error("A session account has the wrong version")]
     InvalidAccountVersion,
-    #[error("This session has been revoked")]
+    #[error("This session was revoked")]
     Revoked,
 }
 
