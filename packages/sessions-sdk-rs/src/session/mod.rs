@@ -75,7 +75,6 @@ pub use session_info::SessionInfo;
     reason = "This module is a hack because the BorshSchema macro generates dead code for `V2` in this version of borsh, but we don't want to disable dead_code globally.
 /// More info: https://github.com/near/borsh-rs/issues/111"
 )]
-#[allow(dead_code)]
 mod v2 {
     use super::*;
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
