@@ -5,6 +5,7 @@ mod api;
 mod config;
 mod constraint;
 mod rpc;
+mod utils;
 
 #[derive(Parser)]
 struct Cli {

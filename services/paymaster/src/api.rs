@@ -1,5 +1,5 @@
 use crate::config::{Config, Domain};
-use crate::constraint::{compare_primitive_data_types, AccountConstraint, ContextualPubkey, DataConstraint, PrimitiveDataType, TransactionVariation};
+use crate::constraint::{compare_primitive_data_types, AccountConstraint, ContextualPubkeyTrait, DataConstraint, PrimitiveDataType, PrimitiveDataValue, TransactionVariation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -174,15 +174,37 @@ pub fn validate_transaction_against_variation(
     sponsor: &Pubkey,
 ) -> Result<(), (StatusCode, String)> {
     match tx_variation {
-        TransactionVariation::V1(variation) => validate_transaction_against_variation_v1(transaction, variation, sponsor),
+        TransactionVariation::V0(variation) => validate_transaction_against_variation_v0(transaction, variation),
+        TransactionVariation::V1Sessionful(variation) => validate_transaction_against_variation_v1(transaction, variation, sponsor, true),
+        TransactionVariation::V1Sessionless(variation) => validate_transaction_against_variation_v1(transaction, variation, sponsor, false),
     }
 }
 
-// TODO: incorporate gas spend and rate limit checks
-pub fn validate_transaction_against_variation_v1(
+pub fn validate_transaction_against_variation_v0(
     transaction: &VersionedTransaction,
-    variation: &crate::constraint::TransactionVariationV1,
+    variation: &crate::constraint::VariationProgramWhitelist,
+) -> Result<(), (StatusCode, String)> {
+    for instruction in transaction.message.instructions() {
+        let program_id = instruction.program_id(transaction.message.static_account_keys());
+        if !variation.whitelisted_programs.contains(program_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction contains unauthorized program ID {} for variation {}",
+                    program_id, variation.name
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
+// TODO: incorporate gas spend and rate limit checks
+pub fn validate_transaction_against_variation_v1<T: ContextualPubkeyTrait>(
+    transaction: &VersionedTransaction,
+    variation: &crate::constraint::VariationOrderedInstructionConstraints<T>,
     sponsor: &Pubkey,
+    sessionful: bool,
 ) -> Result<(), (StatusCode, String)> {
     let instructions = transaction.message.instructions();
     if instructions.len() != variation.instructions.len() {
@@ -249,9 +271,24 @@ pub fn validate_transaction_against_variation_v1(
                 )
             })?;
             let account = transaction.message.static_account_keys()[*account_index as usize];
-            // TODO: extract session key correctly
-            let session_dummy = &Pubkey::new_unique();
-            check_account_constraint(account, account_constraint, session_dummy, sponsor)?;
+            let session = if sessionful {
+                let session_signer = transaction
+                    .message
+                    .static_account_keys()
+                    .iter()
+                    .take(transaction.signatures.len())
+                    .last();
+                session_signer.ok_or_else(|| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        "Transaction missing session signer".to_string(),
+                    )
+                })?;
+                session_signer.cloned()
+            } else {
+                None
+            };
+            check_account_constraint(account, account_constraint, session, sponsor)?;
         }
 
         for data_constraint in &constraint.data {
@@ -262,61 +299,25 @@ pub fn validate_transaction_against_variation_v1(
     Ok(())
 }
 
-pub fn check_account_constraint(
+pub fn check_account_constraint<T: ContextualPubkeyTrait>(
     account: Pubkey,
-    constraint: &AccountConstraint,
-    session: &Pubkey,
+    constraint: &AccountConstraint<T>,
+    session: Option<Pubkey>,
     sponsor: &Pubkey,
 ) -> Result<(), (StatusCode, String)> {
     for excluded in &constraint.exclude {
-        match excluded {
-            ContextualPubkey::Explicit{pubkey: pk} => {
-                if account == *pk {
-                    return Err((
-                        StatusCode::BAD_REQUEST,
-                        format!("Account {account} is explicitly excluded"),
-                    ));
-                }
-            }
-            ContextualPubkey::Session => {
-                if account == *session {
-                    return Err((
-                        StatusCode::BAD_REQUEST,
-                        format!("Account {account} is excluded as session"),
-                    ));
-                }
-            }
-            ContextualPubkey::Sponsor => {
-                if account == *sponsor {
-                    return Err((
-                        StatusCode::BAD_REQUEST,
-                        format!("Account {account} is excluded as sponsor"),
-                    ));
-                }
-            }
+        if let Some(msg) = excluded.matches_account(&account, session.as_ref(), sponsor, false) {
+            return Err((StatusCode::BAD_REQUEST, msg));
         }
     }
 
-    let passes_include = constraint.include.is_empty() || constraint
-        .include
-        .iter()
-        .any(|included| {
-            let pk_to_check = match included {
-                ContextualPubkey::Explicit{pubkey: pk} => pk,
-                ContextualPubkey::Session => session,
-                ContextualPubkey::Sponsor => sponsor,
-            };
-            account == *pk_to_check
-        });
-
-    if passes_include {
-        Ok(())
-    } else {
-        Err((
-            StatusCode::BAD_REQUEST,
-            format!("Account {account} does not match any include constraints"),
-        ))
+    for included in &constraint.include {
+        if let Some(msg) = included.matches_account(&account, session.as_ref(), sponsor, true) {
+            return Err((StatusCode::BAD_REQUEST, msg));
+        }
     }
+
+    Ok(())
 }
 
 pub fn check_data_constraint(
@@ -337,7 +338,7 @@ pub fn check_data_constraint(
 
     let data_to_analyze = &data[constraint.start_byte as usize..constraint.end_byte as usize];
     let data_to_analyze_deserialized = match constraint.data_type {
-        PrimitiveDataType::Bool(_) => {
+        PrimitiveDataType::Bool => {
             if data_to_analyze.len() != 1 {
                 return Err((
                     StatusCode::BAD_REQUEST,
@@ -347,10 +348,10 @@ pub fn check_data_constraint(
                     ),
                 ));
             }
-            PrimitiveDataType::Bool(Some(data_to_analyze[0] != 0))
+            PrimitiveDataValue::Bool(data_to_analyze[0] != 0)
         }
 
-        PrimitiveDataType::U8(_) => {
+        PrimitiveDataType::U8 => {
             if data_to_analyze.len() != 1 {
                 return Err((
                     StatusCode::BAD_REQUEST,
@@ -360,10 +361,10 @@ pub fn check_data_constraint(
                     ),
                 ));
             }
-            PrimitiveDataType::U8(Some(data_to_analyze[0]))
+            PrimitiveDataValue::U8(data_to_analyze[0])
         }
 
-        PrimitiveDataType::U16(_) => {
+        PrimitiveDataType::U16 => {
             let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| (
                 StatusCode::BAD_REQUEST,
                 format!(
@@ -371,10 +372,10 @@ pub fn check_data_constraint(
                     data_to_analyze.len()
                 ),
             ))?);
-            PrimitiveDataType::U16(Some(data_u16))
+            PrimitiveDataValue::U16(data_u16)
         }
 
-        PrimitiveDataType::U32(_) => {
+        PrimitiveDataType::U32 => {
             let data_u32 = u32::from_le_bytes(data_to_analyze.try_into().map_err(|_| (
                 StatusCode::BAD_REQUEST,
                 format!(
@@ -382,10 +383,10 @@ pub fn check_data_constraint(
                     data_to_analyze.len()
                 ),
             ))?);
-            PrimitiveDataType::U32(Some(data_u32))
+            PrimitiveDataValue::U32(data_u32)
         }
 
-        PrimitiveDataType::U64(_) => {
+        PrimitiveDataType::U64 => {
             let data_u64 = u64::from_le_bytes(data_to_analyze.try_into().map_err(|_| (
                 StatusCode::BAD_REQUEST,
                 format!(
@@ -393,7 +394,7 @@ pub fn check_data_constraint(
                     data_to_analyze.len()
                 ),
             ))?);
-            PrimitiveDataType::U64(Some(data_u64))
+            PrimitiveDataValue::U64(data_u64)
         }
     };
 
