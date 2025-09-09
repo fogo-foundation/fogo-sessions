@@ -175,8 +175,7 @@ pub fn validate_transaction_against_variation(
 ) -> Result<(), (StatusCode, String)> {
     match tx_variation {
         TransactionVariation::V0(variation) => validate_transaction_against_variation_v0(transaction, variation),
-        TransactionVariation::V1Sessionful(variation) => validate_transaction_against_variation_v1(transaction, variation, sponsor, true),
-        TransactionVariation::V1Sessionless(variation) => validate_transaction_against_variation_v1(transaction, variation, sponsor, false),
+        TransactionVariation::V1(variation) => validate_transaction_against_variation_v1(transaction, variation, sponsor),
     }
 }
 
@@ -200,11 +199,10 @@ pub fn validate_transaction_against_variation_v0(
 }
 
 // TODO: incorporate gas spend and rate limit checks
-pub fn validate_transaction_against_variation_v1<T: ContextualPubkeyTrait>(
+pub fn validate_transaction_against_variation_v1(
     transaction: &VersionedTransaction,
-    variation: &crate::constraint::VariationOrderedInstructionConstraints<T>,
+    variation: &crate::constraint::VariationOrderedInstructionConstraints,
     sponsor: &Pubkey,
-    sessionful: bool,
 ) -> Result<(), (StatusCode, String)> {
     let instructions = transaction.message.instructions();
     if instructions.len() != variation.instructions.len() {
@@ -271,24 +269,14 @@ pub fn validate_transaction_against_variation_v1<T: ContextualPubkeyTrait>(
                 )
             })?;
             let account = transaction.message.static_account_keys()[*account_index as usize];
-            let session = if sessionful {
-                let session_signer = transaction
-                    .message
-                    .static_account_keys()
-                    .iter()
-                    .take(transaction.signatures.len())
-                    .last();
-                session_signer.ok_or_else(|| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        "Transaction missing session signer".to_string(),
-                    )
-                })?;
-                session_signer.cloned()
-            } else {
-                None
-            };
-            check_account_constraint(account, account_constraint, session, sponsor)?;
+            let signers = transaction
+                .message
+                .static_account_keys()
+                .iter()
+                .take(transaction.signatures.len())
+                .cloned()
+                .collect::<Vec<_>>();
+            check_account_constraint(account, account_constraint, signers, sponsor)?;
         }
 
         for data_constraint in &constraint.data {
@@ -299,20 +287,20 @@ pub fn validate_transaction_against_variation_v1<T: ContextualPubkeyTrait>(
     Ok(())
 }
 
-pub fn check_account_constraint<T: ContextualPubkeyTrait>(
+pub fn check_account_constraint(
     account: Pubkey,
-    constraint: &AccountConstraint<T>,
-    session: Option<Pubkey>,
+    constraint: &AccountConstraint,
+    signers: Vec<Pubkey>,
     sponsor: &Pubkey,
 ) -> Result<(), (StatusCode, String)> {
     for excluded in &constraint.exclude {
-        if let Some(msg) = excluded.matches_account(&account, session.as_ref(), sponsor, false) {
+        if let Some(msg) = excluded.matches_account(&account, &signers, sponsor, false) {
             return Err((StatusCode::BAD_REQUEST, msg));
         }
     }
 
     for included in &constraint.include {
-        if let Some(msg) = included.matches_account(&account, session.as_ref(), sponsor, true) {
+        if let Some(msg) = included.matches_account(&account, &signers, sponsor, true) {
             return Err((StatusCode::BAD_REQUEST, msg));
         }
     }

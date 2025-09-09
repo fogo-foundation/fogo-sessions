@@ -12,13 +12,9 @@ pub enum TransactionVariation {
     #[schema(title = "v0")]
     V0(VariationProgramWhitelist),
 
-    #[serde(rename = "v1_sessionful")]
-    #[schema(title = "v1_sessionful")]
-    V1Sessionful(VariationOrderedInstructionConstraints<ContextualPubkeySessionful>),
-
-    #[serde(rename = "v1_sessionless")]
-    #[schema(title = "v1_sessionless")]
-    V1Sessionless(VariationOrderedInstructionConstraints<ContextualPubkeySessionless>),
+    #[serde(rename = "v1")]
+    #[schema(title = "v1")]
+    V1(VariationOrderedInstructionConstraints),
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -32,12 +28,10 @@ pub struct VariationProgramWhitelist {
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
-pub struct VariationOrderedInstructionConstraints<T>
-where
-    T: ContextualPubkeyTrait,
+pub struct VariationOrderedInstructionConstraints
 {
 	pub name: String,
-	pub instructions: Vec<InstructionConstraint<T>>,
+	pub instructions: Vec<InstructionConstraint>,
 	pub rate_limits: RateLimits,
 	pub max_gas_spend: u64,
 }
@@ -52,61 +46,48 @@ pub struct RateLimits {
 
 #[serde_as]
 #[derive(Serialize, Deserialize, ToSchema)]
-pub struct InstructionConstraint<T> 
-where
-    T: ContextualPubkeyTrait,
+pub struct InstructionConstraint
 {
     #[schema(example = "So11111111111111111111111111111111111111111", value_type = String)]
     #[serde_as(as = "DisplayFromStr")]
 	pub program: Pubkey,
-	pub accounts: Vec<AccountConstraint<T>>,
+	pub accounts: Vec<AccountConstraint>,
 	pub data: Vec<DataConstraint>,
     pub required: bool,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
-pub struct AccountConstraint<T> 
-where
-    T: ContextualPubkeyTrait,
+pub struct AccountConstraint
 {
 	pub index: u16,
-	pub include: Vec<T>,
-	pub exclude: Vec<T>,
+	pub include: Vec<ContextualPubkey>,
+	pub exclude: Vec<ContextualPubkey>,
 }
 
 
 
 #[serde_as]
 #[derive(Serialize, Deserialize, ToSchema)]
-pub enum ContextualPubkeySessionful {
-	Explicit{
-        #[schema(example = "So11111111111111111111111111111111111111111", value_type = String)]
-        #[serde_as(as = "DisplayFromStr")]
-        pubkey: Pubkey
-    },
-	Session,
-	Sponsor,
-}
-
-#[serde_as]
-#[derive(Serialize, Deserialize, ToSchema)]
-pub enum ContextualPubkeySessionless {
+pub enum ContextualPubkey {
 	Explicit{
         #[schema(example = "So11111111111111111111111111111111111111111", value_type = String)]
         #[serde_as(as = "DisplayFromStr")]
         pubkey: Pubkey
     },
 	Sponsor,
+	Signer {
+        index: i8,
+    },
 }
 
 pub trait ContextualPubkeyTrait {
-    fn matches_account(&self, account: &Pubkey, session: Option<&Pubkey>, sponsor: &Pubkey, expect_include: bool) -> Option<String>;
+    fn matches_account(&self, account: &Pubkey, signers: &Vec<Pubkey>, sponsor: &Pubkey, expect_include: bool) -> Option<String>;
 }
 
-impl ContextualPubkeyTrait for ContextualPubkeySessionful {
-    fn matches_account(&self, account: &Pubkey, session: Option<&Pubkey>, sponsor: &Pubkey, expect_include: bool) -> Option<String> {
+impl ContextualPubkeyTrait for ContextualPubkey {
+    fn matches_account(&self, account: &Pubkey, signers: &Vec<Pubkey>, sponsor: &Pubkey, expect_include: bool) -> Option<String> {
         match self {
-            ContextualPubkeySessionful::Explicit { pubkey } => {
+            ContextualPubkey::Explicit { pubkey } => {
                 match (account == pubkey, expect_include) {
                     (true, true) => None,
                     (true, false) => Some(format!("Account {account} is explicitly excluded")),
@@ -115,44 +96,27 @@ impl ContextualPubkeyTrait for ContextualPubkeySessionful {
                 }
             }
 
-            ContextualPubkeySessionful::Session => {
-                match session {
-                    Some(session) => match (account == session, expect_include) {
+            ContextualPubkey::Signer { index } => {
+                let index_uint = if *index >= 0 {
+                    *index as usize
+                } else if (-*index as usize) <= signers.len() {
+                    signers.len() - (-*index as usize)
+                } else {
+                    return Some(format!("Signer index {index} out of bounds"));
+                };
+                match signers.get(index_uint) {
+                    Some(signer) => match (account == signer, expect_include) {
                         (true, true) => None,
-                        (true, false) => Some(format!("Account {account} is excluded as session")),
-                        (false, true) => Some(format!("Account {account} is not the session account")),
+                        (true, false) => Some(format!("Account {account} is excluded as signer")),
+                        (false, true) => Some(format!("Account {account} is not the signer account")),
                         (false, false) => None,
                     }
 
-                    None => Some(format!("Session missing from sessionful transaction"))
+                    None => Some(format!("Signer {index} missing from sessionful transaction"))
                 }
             }
 
-            ContextualPubkeySessionful::Sponsor => {
-                match (account == sponsor, expect_include) {
-                    (true, true) => None,
-                    (true, false) => Some(format!("Account {account} is excluded as sponsor")),
-                    (false, true) => Some(format!("Account {account} is not the sponsor account")),
-                    (false, false) => None,
-                }
-            }
-        }
-    }
-}
-
-impl ContextualPubkeyTrait for ContextualPubkeySessionless {
-    fn matches_account(&self, account: &Pubkey, _session: Option<&Pubkey>, sponsor: &Pubkey, expect_include: bool) -> Option<String> {
-        match self {
-            ContextualPubkeySessionless::Explicit { pubkey } => {
-                match (account == pubkey, expect_include) {
-                    (true, true) => None,
-                    (true, false) => Some(format!("Account {account} is explicitly excluded")),
-                    (false, true) => Some(format!("Account {account} is not explicitly included")),
-                    (false, false) => None,
-                }
-            }
-
-            ContextualPubkeySessionless::Sponsor => {
+            ContextualPubkey::Sponsor => {
                 match (account == sponsor, expect_include) {
                     (true, true) => None,
                     (true, false) => Some(format!("Account {account} is excluded as sponsor")),

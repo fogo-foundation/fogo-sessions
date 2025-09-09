@@ -9,7 +9,7 @@ domain = "http://localhost:3000"
 
 ## Tx Variation 0
 [[domains.tx_variations]]
-version = "v1_sessionful"
+version = "v1"
 name = "Sample v1 Variation"
 max_gas_spend = 1000000
 
@@ -24,7 +24,7 @@ required = true
 
 [[domains.tx_variations.instructions.accounts]]
 index = 2
-include = [ { "Session" = {} } ]
+include = [ { Signer = { index = -1 } } ]
 exclude = []
 
 [[domains.tx_variations.instructions.accounts]]
@@ -32,7 +32,7 @@ index = 1
 include = []
 exclude = [
     { Explicit = { pubkey = "So11111111111111111111111111111111111111111" } },
-    { "Session" = {} }
+    { Signer = { index = -1 } }
 ]
 
 [[domains.tx_variations.instructions.data]]
@@ -49,7 +49,7 @@ required = true
 
 [[domains.tx_variations.instructions.accounts]]
 index = 0
-include = [ { "Session" = {} } ]
+include = [ { Signer = { index = -1 } } ]
 exclude = []
 
 [[domains.tx_variations.instructions.data]]
