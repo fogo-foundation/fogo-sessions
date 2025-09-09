@@ -63,7 +63,7 @@ mod session_info {
 
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum SessionInfo {
-        Invalid,
+        Invalid, // This is a hack for borsh to assign a discriminator of 1 to V1
         V1(ActiveSessionInfo),
         V2(V2),
     }
