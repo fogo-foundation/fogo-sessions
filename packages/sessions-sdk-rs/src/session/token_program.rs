@@ -51,9 +51,7 @@ impl Session {
         signers: &[AccountInfo],
     ) -> Result<AuthorizedTokens, SessionError> {
         self.check_version()?;
-        if !self.is_live()? {
-            return Err(SessionError::Expired);
-        }
+        self.check_is_live()?;
         self.check_user(user)?;
         self.check_authorized_program_signer(signers)?;
         Ok(self.authorized_tokens()?.clone())
