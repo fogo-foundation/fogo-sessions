@@ -51,7 +51,7 @@ const UNLIMITED_TOKEN_PERMISSIONS_VALUE =
 const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 
 const CURRENT_MAJOR = "0";
-const CURRENT_MINOR = "2";
+const CURRENT_MINOR = "1";
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
 const CURRENT_INTENT_TRANSFER_MINOR = "1";
 
