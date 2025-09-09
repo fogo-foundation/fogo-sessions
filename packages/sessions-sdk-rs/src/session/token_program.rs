@@ -18,7 +18,7 @@ impl Session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.authorized_tokens),
             },
-            SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
     }
 
