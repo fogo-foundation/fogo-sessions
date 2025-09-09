@@ -15,7 +15,7 @@ impl Session {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.authorized_tokens),
             SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::AlreadyRevoked),
+                V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.authorized_tokens),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountData),

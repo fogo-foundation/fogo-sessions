@@ -196,7 +196,7 @@ impl Session {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.authorized_programs),
             SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::AlreadyRevoked),
+                V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.authorized_programs),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
@@ -207,7 +207,7 @@ impl Session {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.user),
             SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::AlreadyRevoked),
+                V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.user),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
@@ -217,7 +217,7 @@ impl Session {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.extra),
             SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::AlreadyRevoked),
+                V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.extra),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountData),
