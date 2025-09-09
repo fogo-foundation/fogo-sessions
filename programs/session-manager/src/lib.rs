@@ -1,6 +1,7 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 #![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
 
+use crate::error::SessionManagerError;
 use crate::intents::body::MessageBody;
 use crate::intents::body::Tokens;
 use crate::intents::body::Version;
@@ -12,7 +13,6 @@ use fogo_sessions_sdk::session::AuthorizedPrograms;
 use fogo_sessions_sdk::session::AuthorizedTokens;
 use fogo_sessions_sdk::session::Session;
 use fogo_sessions_sdk::session::SessionInfo;
-use crate::error::SessionManagerError;
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
@@ -99,20 +99,29 @@ pub mod session_manager {
             SessionInfo::Invalid => return err!(SessionManagerError::InvalidVersion),
             SessionInfo::V1(_) => return err!(SessionManagerError::InvalidVersion),
             SessionInfo::V2(V2::Active(active_session_info)) => {
-                ctx.accounts.session.session_info = SessionInfo::V2(V2::Revoked(active_session_info.expiration));
+                ctx.accounts.session.session_info =
+                    SessionInfo::V2(V2::Revoked(active_session_info.expiration));
             }
-            SessionInfo::V2(V2::Revoked(_)) => {}, // Idempotent
+            SessionInfo::V2(V2::Revoked(_)) => {} // Idempotent
         }
 
         let new_len = 8 + get_instance_packed_len::<Session>(&ctx.accounts.session)?;
-        ctx.accounts.session.to_account_info().realloc(new_len, false)?;
+        ctx.accounts
+            .session
+            .to_account_info()
+            .realloc(new_len, false)?;
 
         let new_rent = Rent::get()?.minimum_balance(new_len as usize);
         let current_rent = ctx.accounts.session.to_account_info().lamports();
 
         if new_rent < current_rent {
-            **ctx.accounts.session.to_account_info().try_borrow_mut_lamports()? = new_rent;
-            **ctx.accounts.sponsor.try_borrow_mut_lamports()? += current_rent.saturating_sub(new_rent);
+            **ctx
+                .accounts
+                .session
+                .to_account_info()
+                .try_borrow_mut_lamports()? = new_rent;
+            **ctx.accounts.sponsor.try_borrow_mut_lamports()? +=
+                current_rent.saturating_sub(new_rent);
         }
         Ok(())
     }
@@ -176,7 +185,6 @@ impl<'info> StartSession<'info> {
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

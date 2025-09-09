@@ -223,7 +223,7 @@ impl Session {
         }
     }
 
-    pub fn is_live(&self) -> Result<bool, SessionError>  {
+    pub fn is_live(&self) -> Result<bool, SessionError> {
         Ok(self.expiration()?
             >= Clock::get()
                 .map_err(|_| SessionError::ClockError)?

@@ -1,5 +1,8 @@
 "use client";
 
+import type { Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import { SessionManagerProgram } from "@fogo/sessions-idls";
 import type { Session, SessionAdapter } from "@fogo/sessions-sdk";
 import {
   establishSession as establishSessionImpl,
@@ -61,9 +64,6 @@ import {
   useTokenAccountData,
   StateType as TokenDataStateType,
 } from "./use-token-account-data.js";
-import { SessionManagerProgram } from "@fogo/sessions-idls";
-import { AnchorProvider } from "@coral-xyz/anchor";
-import type { Wallet } from "@coral-xyz/anchor";
 
 
 import "@solana/wallet-adapter-react-ui/styles.css";
