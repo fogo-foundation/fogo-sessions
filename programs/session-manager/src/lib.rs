@@ -13,6 +13,7 @@ use fogo_sessions_sdk::session::AuthorizedPrograms;
 use fogo_sessions_sdk::session::AuthorizedTokens;
 use fogo_sessions_sdk::session::Session;
 use fogo_sessions_sdk::session::SessionInfo;
+use fogo_sessions_sdk::session::{ActiveSessionInfo, V2};
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
@@ -24,8 +25,6 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
-    use fogo_sessions_sdk::session::{ActiveSessionInfo, V2};
-
     use super::*;
 
     #[instruction(discriminator = [0])]
