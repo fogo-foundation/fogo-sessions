@@ -211,17 +211,6 @@ pub fn validate_transaction_against_variation_v1(
     sponsor: &Pubkey,
 ) -> Result<(), (StatusCode, String)> {
     let instructions = transaction.message.instructions();
-    if instructions.len() != variation.instructions.len() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!(
-                "Transaction instruction count {} does not match expected count {} for variation {}",
-                instructions.len(),
-                variation.instructions.len(),
-                variation.name
-            ),
-        ));
-    }
 
     let mut instr_iter = instructions.iter().peekable();
     let constraint_iter = variation.instructions.iter().peekable();
