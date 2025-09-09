@@ -272,59 +272,42 @@ const sessionInfoSchema = z
     sponsor: z.instanceof(PublicKey),
   })
   .transform(({ session_info, major, sponsor }) => {
+    let activeSessionInfo;
+    let minor: 1 | 2;
+
     if ("V1" in session_info) {
-      return {
-        authorizedPrograms:
-          "All" in session_info.V1["0"].authorized_programs
-            ? AuthorizedPrograms.All()
-            : AuthorizedPrograms.Specific(
-                session_info.V1["0"].authorized_programs.Specific[0].map(
-                  ({ program_id, signer_pda }) => ({
-                    programId: program_id,
-                    signerPda: signer_pda,
-                  }),
-                ),
-              ),
-        authorizedTokens:
-          "All" in session_info.V1["0"].authorized_tokens
-            ? AuthorizedTokens.All
-            : AuthorizedTokens.Specific,
-        expiration: new Date(Number(session_info.V1["0"].expiration) * 1000),
-        extra: session_info.V1["0"].extra[0],
-        major: major,
-        minor: 1,
-        user: session_info.V1["0"].user,
-        sponsor,
-      };
+      activeSessionInfo = session_info.V1["0"];
+      minor = 1;
     } else if ("Active" in session_info.V2["0"]) {
-      return {
-        authorizedPrograms:
-          "All" in session_info.V2["0"].Active["0"].authorized_programs
-            ? AuthorizedPrograms.All()
-            : AuthorizedPrograms.Specific(
-                session_info.V2["0"].Active[
-                  "0"
-                ].authorized_programs.Specific[0].map(
-                  ({ program_id, signer_pda }) => ({
-                    programId: program_id,
-                    signerPda: signer_pda,
-                  }),
-                ),
+      activeSessionInfo = session_info.V2["0"].Active["0"];
+      minor = 2;
+    } else {
+      return;
+    }
+
+    return {
+      authorizedPrograms:
+        "All" in activeSessionInfo.authorized_programs
+          ? AuthorizedPrograms.All()
+          : AuthorizedPrograms.Specific(
+              activeSessionInfo.authorized_programs.Specific[0].map(
+                ({ program_id, signer_pda }) => ({
+                  programId: program_id,
+                  signerPda: signer_pda,
+                }),
               ),
-        authorizedTokens:
-          "All" in session_info.V2["0"].Active["0"].authorized_tokens
-            ? AuthorizedTokens.All
-            : AuthorizedTokens.Specific,
-        expiration: new Date(
-          Number(session_info.V2["0"].Active["0"].expiration) * 1000,
-        ),
-        extra: session_info.V2["0"].Active["0"].extra[0],
-        major: major,
-        minor: 2,
-        user: session_info.V2["0"].Active["0"].user,
-        sponsor,
-      };
-    } else return;
+            ),
+      authorizedTokens:
+        "All" in activeSessionInfo.authorized_tokens
+          ? AuthorizedTokens.All
+          : AuthorizedTokens.Specific,
+      expiration: new Date(Number(activeSessionInfo.expiration) * 1000),
+      extra: activeSessionInfo.extra[0],
+      major: major,
+      minor: minor,
+      user: activeSessionInfo.user,
+      sponsor,
+    };
   });
 
 export enum AuthorizedProgramsType {
