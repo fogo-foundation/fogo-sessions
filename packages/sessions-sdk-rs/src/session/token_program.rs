@@ -10,14 +10,14 @@ pub const SESSION_SETTER: Pubkey =
 
 impl Session {
     fn check_user(&self, expected_user: &Pubkey) -> Result<(), SessionError> {
-        if self.session_info.user != *expected_user {
+        if *self.user()? != *expected_user {
             return Err(SessionError::UserMismatch);
         }
         Ok(())
     }
 
     fn check_authorized_program_signer(&self, signers: &[AccountInfo]) -> Result<(), SessionError> {
-        match self.session_info.authorized_programs {
+        match self.authorized_programs()? {
             AuthorizedPrograms::Specific(ref programs) => {
                 let signer_account_info = signers
                     .iter()
@@ -38,9 +38,11 @@ impl Session {
         signers: &[AccountInfo],
     ) -> Result<AuthorizedTokens, SessionError> {
         self.check_version()?;
-        self.check_is_live()?;
+        if !self.is_live()? {
+            return Err(SessionError::Expired);
+        }
         self.check_user(user)?;
         self.check_authorized_program_signer(signers)?;
-        Ok(self.session_info.authorized_tokens.clone())
+        Ok(self.authorized_tokens()?.clone())
     }
 }

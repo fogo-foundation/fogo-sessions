@@ -12,6 +12,7 @@ use fogo_sessions_sdk::session::AuthorizedPrograms;
 use fogo_sessions_sdk::session::AuthorizedTokens;
 use fogo_sessions_sdk::session::Session;
 use fogo_sessions_sdk::session::SessionInfo;
+use crate::error::SessionManagerError;
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
@@ -23,6 +24,8 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
+    use fogo_sessions_sdk::session::{ActiveSessionInfo, V2};
+
     use super::*;
 
     #[instruction(discriminator = [0])]
@@ -58,17 +61,30 @@ pub mod session_manager {
 
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
-        let session = Session {
-            sponsor: ctx.accounts.sponsor.key(),
-            session_info: SessionInfo {
+        let session = match minor {
+            1 => Session {
+                sponsor: ctx.accounts.sponsor.key(),
                 major,
-                minor,
-                user: signer,
-                authorized_programs: AuthorizedPrograms::Specific(program_domains),
-                authorized_tokens,
-                extra: extra.into(),
-                expiration: expires.timestamp(),
+                session_info: SessionInfo::V1(ActiveSessionInfo {
+                    user: signer,
+                    authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                    authorized_tokens,
+                    extra: extra.into(),
+                    expiration: expires.timestamp(),
+                }),
             },
+            2 => Session {
+                sponsor: ctx.accounts.sponsor.key(),
+                major,
+                session_info: SessionInfo::V2(V2::Active(ActiveSessionInfo {
+                    user: signer,
+                    authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                    authorized_tokens,
+                    extra: extra.into(),
+                    expiration: expires.timestamp(),
+                })),
+            },
+            _ => return err!(SessionManagerError::InvalidVersion),
         };
         ctx.accounts.initialize_and_store_session(&session)?;
         Ok(())

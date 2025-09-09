@@ -27,7 +27,7 @@ pub const SESSION_MANAGER_ID: Pubkey =
 /// The current major version of the `Session` structure
 pub const MAJOR: u8 = 0;
 /// The current minor version of the `Session` structure
-pub const MINOR: u8 = 1;
+pub const MINOR: u8 = 2;
 
 type UnixTimestamp = i64;
 
@@ -47,15 +47,26 @@ pub struct Session {
     pub discriminator: [u8; 8],
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
+    pub major: u8,
     pub session_info: SessionInfo,
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub struct SessionInfo {
-    /// The major version of the session account, major version changes are breaking changes
-    pub major: u8,
-    /// The minor version of the session account. Until 1.0, every new minor version will be a breaking change.
-    pub minor: u8,
+#[repr(u8)]
+pub enum SessionInfo {
+    V1(ActiveSessionInfo) = 1,
+    V2(V2) = 2,
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+pub enum V2 {
+    Revoked(UnixTimestamp),
+    Active(ActiveSessionInfo),
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+
+pub struct ActiveSessionInfo {
     /// The user who started this session
     pub user: Pubkey,
     /// The expiration time of the session
@@ -158,19 +169,64 @@ impl Session {
         Ok(result)
     }
 
-    fn check_is_live(&self) -> Result<(), SessionError> {
-        if self.session_info.expiration
+    fn expiration(&self) -> UnixTimestamp {
+        match &self.session_info {
+            SessionInfo::V1(session) => session.expiration,
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(expiration) => *expiration,
+                V2::Active(session) => session.expiration,
+            },
+        }
+    }
+
+    fn authorized_programs(&self) -> Result<&AuthorizedPrograms, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(&session.authorized_programs),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Active(session) => Ok(&session.authorized_programs),
+            },
+        }
+    }
+
+    fn authorized_tokens(&self) -> Result<&AuthorizedTokens, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(&session.authorized_tokens),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Active(session) => Ok(&session.authorized_tokens),
+            },
+        }
+    }
+
+    fn user(&self) -> Result<&Pubkey, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(&session.user),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Active(session) => Ok(&session.user),
+            },
+        }
+    }
+    fn extra(&self) -> Result<&Extra, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(&session.extra),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Active(session) => Ok(&session.extra),
+            },
+        }
+    }
+
+    fn is_live(&self) -> Result<bool, SessionError>  {
+        Ok(self.expiration()
             < Clock::get()
                 .map_err(|_| SessionError::ClockError)?
-                .unix_timestamp
-        {
-            return Err(SessionError::Expired);
-        }
-        Ok(())
+                .unix_timestamp)
     }
 
     fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), SessionError> {
-        match self.session_info.authorized_programs {
+        match self.authorized_programs()? {
             AuthorizedPrograms::Specific(ref programs) => {
                 programs
                     .iter()
@@ -184,7 +240,7 @@ impl Session {
 
     /// For 0.x versions, every new minor version will be a breaking change.
     fn check_version(&self) -> Result<(), SessionError> {
-        if self.session_info.major != MAJOR || self.session_info.minor != MINOR {
+        if self.major != MAJOR {
             return Err(SessionError::InvalidAccountVersion);
         }
         Ok(())
@@ -193,13 +249,15 @@ impl Session {
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
     pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
         self.check_version()?;
-        self.check_is_live()?;
+        if !self.is_live()? {
+            return Err(SessionError::Expired);
+        }
         self.check_authorized_program(program_id)?;
-        Ok(self.session_info.user)
+        Ok(*self.user()?)
     }
 
     /// Returns the value of one of the session's extra fields with the given key, if it exists
-    pub fn get_extra(&self, key: &str) -> Option<&str> {
-        self.session_info.extra.get(key)
+    pub fn get_extra(&self, key: &str) -> Result<Option<&str>, SessionError> {
+        Ok(self.extra()?.get(key))
     }
 }
