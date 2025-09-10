@@ -190,7 +190,7 @@ pub fn validate_transaction_against_variation_v0(
     Ok(())
 }
 
-// TODO: incorporate gas spend and rate limit checks
+// TODO: incorporate rate limit checks
 pub fn validate_transaction_against_variation_v1(
     transaction: &VersionedTransaction,
     variation: &crate::constraint::VariationOrderedInstructionConstraints,
