@@ -1,33 +1,30 @@
+use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_pubkey::Pubkey;
-use utoipa::ToSchema;
 
-use crate::utils::deserialize_pubkey_vec;
+use crate::serde::deserialize_pubkey_vec;
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]
 pub enum TransactionVariation {
     #[serde(rename = "v0")]
-    #[schema(title = "v0")]
     V0(VariationProgramWhitelist),
 
     #[serde(rename = "v1")]
-    #[schema(title = "v1")]
     V1(VariationOrderedInstructionConstraints),
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 #[serde_as]
 pub struct VariationProgramWhitelist {
     pub name: String,
 
-    #[schema(example = "[\"So11111111111111111111111111111111111111111\"]", value_type = Vec<String>)]
     #[serde(deserialize_with = "deserialize_pubkey_vec")]
     pub whitelisted_programs: Vec<Pubkey>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
     pub instructions: Vec<InstructionConstraint>,
@@ -35,16 +32,15 @@ pub struct VariationOrderedInstructionConstraints {
     pub max_gas_spend: u64,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub struct RateLimits {
     session_per_min: Option<u64>,
     ip_per_min: Option<u64>,
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub struct InstructionConstraint {
-    #[schema(example = "So11111111111111111111111111111111111111111", value_type = String)]
     #[serde_as(as = "DisplayFromStr")]
     pub program: Pubkey,
     pub accounts: Vec<AccountConstraint>,
@@ -52,7 +48,7 @@ pub struct InstructionConstraint {
     pub required: bool,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub struct AccountConstraint {
     pub index: u16,
     pub include: Vec<ContextualPubkey>,
@@ -60,10 +56,9 @@ pub struct AccountConstraint {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub enum ContextualPubkey {
     Explicit {
-        #[schema(example = "So11111111111111111111111111111111111111111", value_type = String)]
         #[serde_as(as = "DisplayFromStr")]
         pubkey: Pubkey,
     },
@@ -80,18 +75,20 @@ impl ContextualPubkey {
         signers: &[Pubkey],
         sponsor: &Pubkey,
         expect_include: bool,
-        instruction_index: u8,
-    ) -> Option<String> {
+        instruction_index: usize,
+    ) -> Result<(), (StatusCode, String)> {
         match self {
             ContextualPubkey::Explicit { pubkey } => match (account == pubkey, expect_include) {
-                (true, true) => None,
-                (true, false) => Some(format!(
-                    "Instruction {instruction_index}: Account {account} is explicitly excluded"
+                (true, true) => Ok(()),
+                (true, false) => Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("Instruction {instruction_index}: Account {account} is explicitly excluded"),
                 )),
-                (false, true) => Some(format!(
-                    "Instruction {instruction_index}: Account {account} is not explicitly included"
+                (false, true) => Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("Instruction {instruction_index}: Account {account} is not explicitly included"),
                 )),
-                (false, false) => None,
+                (false, false) => Ok(()),
             },
 
             ContextualPubkey::Signer { index } => {
@@ -100,47 +97,58 @@ impl ContextualPubkey {
                 } else if (-*index as usize) <= signers.len() {
                     signers.len() - (-*index as usize)
                 } else {
-                    return Some(format!("Signer index {index} out of bounds"));
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        format!("Signer index {index} out of bounds"),
+                    ));
                 };
                 match signers.get(index_uint) {
                     Some(signer) => match (account == signer, expect_include) {
-                        (true, true) => None,
-                        (true, false) => Some(format!("Instruction {instruction_index}: Account {account} is excluded as signer")),
+                        (true, true) => Ok(()),
+                        (true, false) => Err((
+                            StatusCode::BAD_REQUEST,
+                            format!("Instruction {instruction_index}: Account {account} is excluded as signer"),
+                        )),
                         (false, true) => {
-                            Some(format!("Instruction {instruction_index}: Account {account} is not the signer account"))
+                            Err((
+                                StatusCode::BAD_REQUEST,
+                                format!("Instruction {instruction_index}: Account {account} is not the signer account"),
+                            ))
                         }
-                        (false, false) => None,
+                        (false, false) => Ok(()),
                     },
 
-                    None => Some(format!(
-                        "Signer {index} missing from sessionful transaction"
+                    None => Err((
+                        StatusCode::BAD_REQUEST,
+                        format!("Signer {index} missing from sessionful transaction"),
                     )),
                 }
             }
 
             ContextualPubkey::Sponsor => match (account == sponsor, expect_include) {
-                (true, true) => None,
-                (true, false) => Some(format!(
-                    "Instruction {instruction_index}: Account {account} is excluded as sponsor"
+                (true, true) => Ok(()),
+                (true, false) => Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("Instruction {instruction_index}: Account {account} is excluded as sponsor"),
                 )),
-                (false, true) => Some(format!(
-                    "Instruction {instruction_index}: Account {account} is not the sponsor account"
+                (false, true) => Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("Instruction {instruction_index}: Account {account} is not the sponsor account"),
                 )),
-                (false, false) => None,
+                (false, false) => Ok(()),
             },
         }
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub struct DataConstraint {
     pub start_byte: u16,
-    pub end_byte: u16,
     pub data_type: PrimitiveDataType,
     pub constraint: DataConstraintSpecification,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub enum PrimitiveDataType {
     U8,
     U16,
@@ -149,7 +157,19 @@ pub enum PrimitiveDataType {
     Bool,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+impl PrimitiveDataType {
+    pub fn byte_length(&self) -> usize {
+        match self {
+            PrimitiveDataType::U8 => 1,
+            PrimitiveDataType::U16 => 2,
+            PrimitiveDataType::U32 => 4,
+            PrimitiveDataType::U64 => 8,
+            PrimitiveDataType::Bool => 1,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 pub enum PrimitiveDataValue {
     U8(u8),
     U16(u16),
@@ -158,7 +178,7 @@ pub enum PrimitiveDataValue {
     Bool(bool),
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize)]
 pub enum DataConstraintSpecification {
     LessThan(PrimitiveDataValue),
     GreaterThan(PrimitiveDataValue),
@@ -176,6 +196,7 @@ pub fn compare_primitive_data_types(
             (PrimitiveDataValue::U16(a), PrimitiveDataValue::U16(b)) => a < *b,
             (PrimitiveDataValue::U32(a), PrimitiveDataValue::U32(b)) => a < *b,
             (PrimitiveDataValue::U64(a), PrimitiveDataValue::U64(b)) => a < *b,
+            // TODO: catch this error when reading config
             (PrimitiveDataValue::Bool(_), PrimitiveDataValue::Bool(_)) => {
                 return Err("LessThan not applicable for bool".into())
             }
@@ -187,6 +208,7 @@ pub fn compare_primitive_data_types(
             (PrimitiveDataValue::U16(a), PrimitiveDataValue::U16(b)) => a > *b,
             (PrimitiveDataValue::U32(a), PrimitiveDataValue::U32(b)) => a > *b,
             (PrimitiveDataValue::U64(a), PrimitiveDataValue::U64(b)) => a > *b,
+            // TODO: catch this error when reading config
             (PrimitiveDataValue::Bool(_), PrimitiveDataValue::Bool(_)) => {
                 return Err("GreaterThan not applicable for bool".into())
             }

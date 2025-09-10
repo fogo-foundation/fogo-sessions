@@ -36,7 +36,6 @@ exclude = [
 
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
-end_byte = 7
 data_type = "U64"
 constraint = { LessThan = { U64 = 1000 } }
 
@@ -53,7 +52,6 @@ exclude = []
 
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
-end_byte = 1
 data_type = "U8"
 constraint = { EqualTo = [ {U8 = 4}, {U8 = 5} ] }
 

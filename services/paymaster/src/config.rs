@@ -3,7 +3,7 @@ use config::File;
 use serde::Deserialize;
 
 use crate::constraint::TransactionVariation;
-use crate::utils::deserialize_sol_to_lamports;
+use crate::serde::deserialize_sol_to_lamports;
 
 #[derive(Deserialize)]
 pub struct Domain {

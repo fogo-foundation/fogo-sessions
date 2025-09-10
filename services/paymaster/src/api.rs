@@ -195,17 +195,16 @@ pub fn validate_transaction_against_variation_v1(
 ) -> Result<(), (StatusCode, String)> {
     let instructions = transaction.message.instructions();
 
-    let mut instruction_iter = instructions.iter();
-    let mut instruction = instruction_iter.next();
-    let mut instruction_index = 0;
+    let mut instruction_iter = instructions.iter().enumerate();
+    let mut instruction_details = instruction_iter.next();
 
     let mut constraint_iter = variation.instructions.iter();
     let mut constraint = constraint_iter.next();
 
-    while let (Some(instr), Some(constr)) = (instruction, constraint) {
+    while let (Some((instr_index, instr)), Some(constr)) = (instruction_details, constraint) {
         let result = validate_instruction_against_instruction_constraint(
             instr,
-            instruction_index,
+            instr_index,
             transaction.message.static_account_keys(),
             &transaction.signatures,
             sponsor,
@@ -220,14 +219,12 @@ pub fn validate_transaction_against_variation_v1(
                 constraint = constraint_iter.next();
             }
         } else {
-            instruction = instruction_iter.next();
-            instruction_index += 1;
-
+            instruction_details = instruction_iter.next();
             constraint = constraint_iter.next();
         }
     }
 
-    if instruction.is_some() {
+    if let Some((instruction_index, _)) = instruction_details {
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
@@ -256,7 +253,7 @@ pub fn validate_transaction_against_variation_v1(
 
 pub fn validate_instruction_against_instruction_constraint(
     instruction: &CompiledInstruction,
-    instruction_index: u8,
+    instruction_index: usize,
     accounts: &[Pubkey],
     signatures: &[Signature],
     sponsor: &Pubkey,
@@ -278,7 +275,7 @@ pub fn validate_instruction_against_instruction_constraint(
         // TODO: account for lookup tables
         let account_index = instruction
             .accounts
-            .get(account_constraint.index as usize)
+            .get(usize::from(account_constraint.index))
             .ok_or_else(|| {
                 (
                     StatusCode::BAD_REQUEST,
@@ -287,7 +284,14 @@ pub fn validate_instruction_against_instruction_constraint(
                     ),
                 )
             })?;
-        let account = accounts[*account_index as usize];
+        let account = accounts.get(*account_index as usize).ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction instruction {instruction_index} account index {account_index} out of bounds for variation {variation_name}",
+                ),
+            )
+        })?;
         let signers = accounts
             .iter()
             .take(signatures.len())
@@ -310,27 +314,19 @@ pub fn validate_instruction_against_instruction_constraint(
 }
 
 pub fn check_account_constraint(
-    account: Pubkey,
+    account: &Pubkey,
     constraint: &AccountConstraint,
     signers: Vec<Pubkey>,
     sponsor: &Pubkey,
-    instruction_index: u8,
+    instruction_index: usize,
 ) -> Result<(), (StatusCode, String)> {
-    for excluded in &constraint.exclude {
-        if let Some(msg) =
-            excluded.matches_account(&account, &signers, sponsor, false, instruction_index)
-        {
-            return Err((StatusCode::BAD_REQUEST, msg));
-        }
-    }
+    constraint.exclude.iter().try_for_each(|excluded| {
+        excluded.matches_account(account, &signers, sponsor, false, instruction_index)
+    })?;
 
-    for included in &constraint.include {
-        if let Some(msg) =
-            included.matches_account(&account, &signers, sponsor, true, instruction_index)
-        {
-            return Err((StatusCode::BAD_REQUEST, msg));
-        }
-    }
+    constraint.include.iter().try_for_each(|included| {
+        included.matches_account(account, &signers, sponsor, true, instruction_index)
+    })?;
 
     Ok(())
 }
@@ -338,51 +334,26 @@ pub fn check_account_constraint(
 pub fn check_data_constraint(
     data: &[u8],
     constraint: &DataConstraint,
-    instruction_index: u8,
+    instruction_index: usize,
 ) -> Result<(), (StatusCode, String)> {
-    if constraint.end_byte as usize > data.len()
-        || constraint.start_byte as usize >= data.len()
-        || constraint.start_byte >= constraint.end_byte
-    {
+    let length = constraint.data_type.byte_length();
+    let end_byte = length + usize::from(constraint.start_byte);
+    if end_byte > data.len() {
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
                 "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
                 constraint.start_byte,
-                constraint.end_byte,
+                end_byte - 1,
                 data.len()
             ),
         ));
     }
 
-    let data_to_analyze = &data[constraint.start_byte as usize..constraint.end_byte as usize];
+    let data_to_analyze = &data[usize::from(constraint.start_byte)..end_byte];
     let data_to_analyze_deserialized = match constraint.data_type {
-        PrimitiveDataType::Bool => {
-            if data_to_analyze.len() != 1 {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Instruction {instruction_index}: Data constraint expects 1 byte for Bool, found {} bytes",
-                        data_to_analyze.len()
-                    ),
-                ));
-            }
-            PrimitiveDataValue::Bool(data_to_analyze[0] != 0)
-        }
-
-        PrimitiveDataType::U8 => {
-            if data_to_analyze.len() != 1 {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Instruction {instruction_index}: Data constraint expects 1 byte for U8, found {} bytes",
-                        data_to_analyze.len()
-                    ),
-                ));
-            }
-            PrimitiveDataValue::U8(data_to_analyze[0])
-        }
-
+        PrimitiveDataType::Bool => PrimitiveDataValue::Bool(data_to_analyze[0] != 0),
+        PrimitiveDataType::U8 => PrimitiveDataValue::U8(data_to_analyze[0]),
         PrimitiveDataType::U16 => {
             let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
                 (
