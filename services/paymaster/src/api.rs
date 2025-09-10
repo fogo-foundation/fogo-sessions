@@ -43,59 +43,66 @@ pub struct ServerState {
     pub rpc: RpcClient,
     pub max_sponsor_spending: u64,
     pub domains: HashMap<String, DomainState>,
-    pub lookup_tables: DashMap<Pubkey, Vec<Pubkey>>,
+    pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
 
 impl ServerState {
+    /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
     pub fn find_and_query_lookup_table(
         &self,
         lookup_accounts: Vec<(Pubkey, u8)>,
-        account_position: usize,
+        account_position_lookups: usize,
     ) -> Result<Pubkey, (StatusCode, String)> {
         let (table_to_query, index_to_query) =
-            lookup_accounts.get(account_position).ok_or_else(|| {
+            lookup_accounts.get(account_position_lookups).ok_or_else(|| {
                 (
                     StatusCode::BAD_REQUEST,
-                    format!("Account position {account_position} out of bounds for lookup tables"),
+                    format!("Account position {account_position_lookups} out of bounds for lookup table invoked accounts"),
                 )
             })?;
-        self.query_lookup_table(table_to_query, *index_to_query as usize)
+        self.query_lookup_table_with_retry(table_to_query, *index_to_query as usize)
+    }
+    
+    /// Queries the lookup table for the pubkey at the given index. 
+    /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying. 
+    pub fn query_lookup_table_with_retry(
+        &self,
+        table: &Pubkey,
+        index: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        self.query_lookup_table(table, index).or_else(|_| {
+            self.update_lookup_table(table)?;
+            self.query_lookup_table(table, index)
+        })
     }
 
+    /// Queries the lookup table for the pubkey at the given index. 
+    /// Returns an error if the table is not cached or the index is out of bounds.
     pub fn query_lookup_table(
         &self,
         table: &Pubkey,
         index: usize,
     ) -> Result<Pubkey, (StatusCode, String)> {
-        if let Some(pubkey) = self
-            .lookup_tables
+        self.lookup_table_cache
             .get(table)
             .and_then(|entry| entry.get(index).copied())
-        {
-            Ok(pubkey)
-        } else {
-            self.update_lookup_table(table, Some(index))
-                .and_then(|opt_pubkey| {
-                    opt_pubkey.ok_or_else(|| {
-                        (
-                            StatusCode::BAD_REQUEST,
-                            format!("Lookup table {table} does not contain index {index}"),
-                        )
-                    })
-                })
-        }
+            .ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("Lookup table {table} does not contain index {index}"),
+                )
+            })
     }
 
-    // Updates the lookup table entry in the dashmap. If index is provided, returns the pubkey at that index for the lookup table if it exists.
+    // Updates the lookup table entry in the dashmap based on pulling from RPC.
     pub fn update_lookup_table(
         &self,
         table: &Pubkey,
-        index: Option<usize>,
-    ) -> Result<Option<Pubkey>, (StatusCode, String)> {
+    ) -> Result<(), (StatusCode, String)> {
         let table_data = self.rpc.get_account(table).map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to fetch lookup table account {table}: {err}"),
+                format!("Failed to fetch lookup table account {table} from RPC: {err}"),
             )
         })?;
         let table_data_deserialized =
@@ -106,23 +113,10 @@ impl ServerState {
                 )
             })?;
 
-        self.lookup_tables
+        self.lookup_table_cache
             .insert(*table, table_data_deserialized.addresses.to_vec());
 
-        if let Some(index) = index {
-            let account = table_data_deserialized
-                .addresses
-                .get(index)
-                .ok_or_else(|| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!("Lookup table {table} does not contain index {index}"),
-                    )
-                })?;
-            return Ok(Some(*account));
-        }
-
-        Ok(None)
+        Ok(())
     }
 }
 
@@ -700,7 +694,7 @@ pub async fn run_server(
             max_sponsor_spending,
             domains,
             rpc,
-            lookup_tables: DashMap::new(),
+            lookup_table_cache: DashMap::new(),
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
