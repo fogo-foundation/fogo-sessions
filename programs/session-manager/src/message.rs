@@ -155,7 +155,7 @@ mod tests {
 
     mod message {
         use super::super::*;
-        use indoc::indoc;
+        use indoc::{formatdoc, indoc};
 
         #[test]
         fn test_parse() {
@@ -180,6 +180,41 @@ mod tests {
                     session_key: Pubkey::from_str("AnDvGGfeXStwG8pfmp98nodbcdeYGNz8r6fPxjrvJxK5")
                         .unwrap(),
                     tokens: Tokens::All,
+                    extra: HashMap::new()
+                }
+            );
+        }
+
+        #[test]
+        pub fn test_parse_message() {
+            let message = indoc!(
+                "Fogo Sessions:
+                Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
+                
+                version: 0.1
+                chain_id: localnet
+                domain: https://app.xyz
+                expires: 2014-11-28T21:00:09+09:00
+                session_key: 2jKr1met2kCteHoTNtkTL51Sgw7rQKcF4YNdP5xfkPRB
+                tokens:
+                -SOL: 100
+                -DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu: 200
+                key1: value1
+                key2: value2"
+            );
+            assert_eq!(
+                TryInto::<Message>::try_into(message.as_bytes().to_vec()).unwrap(),
+                Message {
+                    version: Version { major: 0, minor: 1 },
+                    chain_id: "localnet".to_string(),
+                    domain: Domain::new_checked("https://app.xyz").unwrap(),
+                    expires: DateTime::parse_from_rfc3339("2014-11-28T21:00:09+09:00").unwrap(),
+                    session_key: Pubkey::from_str("2jKr1met2kCteHoTNtkTL51Sgw7rQKcF4YNdP5xfkPRB")
+                        .unwrap(),
+                    tokens: Tokens::Specific(vec![
+                        (SymbolOrMint::Symbol("SOL".to_string()), "100".to_string()),
+                        (SymbolOrMint::Mint(Pubkey::from_str("DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu").unwrap()), "200".to_string()),
+                    ]),
                     extra: HashMap::new()
                 }
             );

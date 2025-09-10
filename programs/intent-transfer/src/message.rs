@@ -70,7 +70,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use indoc::indoc;
+    use indoc::{formatdoc, indoc};
     use std::str::FromStr;
 
     #[test]
