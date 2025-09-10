@@ -1,8 +1,8 @@
 use nom::{
     branch::alt, bytes::complete::{tag, take_while1}, character::{
         char,
-        complete::{alphanumeric1, line_ending, not_line_ending, space0},
-    }, combinator::{map, map_opt, peek, recognize, rest}, error::ParseError, multi::many_till, sequence::{pair, separated_pair}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
+        complete::{alphanumeric1, line_ending, space0},
+    }, combinator::{map, map_opt, peek, recognize, rest}, error::ParseError, multi::many_till, sequence::{pair, preceded, separated_pair}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
 };
 
 pub fn tag_key_value<I, O, E, T>(key: T) -> impl Parser<I, Output = O, Error = E>
@@ -29,7 +29,7 @@ where
     E: ParseError<I>,
 {
     key_value_with_key_type(take_while1(|c: <I as Input>::Item| {
-        c.is_alphanum() || ['_', '-'].contains(&c.as_char())
+        c.is_alphanum() || ['_'].contains(&c.as_char())
     }))
     .parse(input)
 }
@@ -47,13 +47,13 @@ where
     map_opt(
         separated_pair(
             key,
-            (char(':'), space0),
+            char(':'),
             alt((
-                take_while1(|c :<I as Input>::Item| !c.is_newline()),
-                recognize(many_till(
+                preceded(space0, take_while1(|c :<I as Input>::Item| !c.is_newline())),
+                preceded(line_ending, recognize(many_till(
                     take_while1(|_| true),
                     peek(pair(line_ending, alphanumeric1)),
-                )),
+                ))),
                 rest,
             )),
         ),
