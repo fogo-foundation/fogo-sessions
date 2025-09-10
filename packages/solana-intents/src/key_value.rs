@@ -1,9 +1,9 @@
 use nom::{
-    branch::alt, bytes::complete::{tag, take_while1}, character::{
-        char,
-        complete::{alphanumeric1, line_ending, space0},
+    bits::complete::take, branch::alt, bytes::complete::{tag, take_while1}, character::{
+        anychar, char, complete::{alphanumeric1, line_ending, space0}
     }, combinator::{map, map_opt, peek, recognize, rest}, error::ParseError, multi::many_till, sequence::{pair, preceded, separated_pair}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
 };
+use nom::lib::std::fmt::Debug;
 
 pub fn tag_key_value<I, O, E, T>(key: T) -> impl Parser<I, Output = O, Error = E>
 where
@@ -13,6 +13,7 @@ where
     I: Compare<T>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
+    I: Debug,
     I: Offset,
     T: Input,
 {
@@ -27,6 +28,7 @@ where
     I: Offset,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
+    I: Debug,
 {
     key_value_with_key_type(take_while1(|c: <I as Input>::Item| {
         c.is_alphanum() || ['_'].contains(&c.as_char())
@@ -42,6 +44,7 @@ where
     I: Compare<&'static str>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
+    I: Debug,
     K: Parser<I, Output = KO, Error = E>,
 {
     map_opt(
@@ -50,16 +53,39 @@ where
             char(':'),
             alt((
                 preceded(space0, take_while1(|c :<I as Input>::Item| !c.is_newline())),
-                preceded(line_ending, recognize(many_till(
-                    take_while1(|_| true),
-                    peek(pair(line_ending, alphanumeric1)),
-                ))),
-                rest,
+                preceded(
+                    line_ending,
+                    alt((
+                        recognize(many_till(
+                            anychar,
+                            peek(pair(line_ending, alphanumeric1)),
+                        )),
+                        rest,
+                    )),
+                ),
             )),
         ),
-        |(key, val): (KO, I)| val.parse_to().map(|parsed| (key, parsed)),
+        |(key, val): (KO, I)| {
+            println!("val: {:?}", val);
+            return val.parse_to().map(|parsed| (key, parsed))},
     )
 }
+
+pub fn parser_loco<I, E>(input: I) -> IResult<I, I, E>
+where
+    I: Input,
+    I: Offset,
+    I: Compare<&'static str>,
+    <I as Input>::Item: AsChar,
+    E: ParseError<I>,
+    I: Debug,
+{
+    recognize(many_till(
+        take_while1(|_| true),
+        peek(pair(line_ending, alphanumeric1))
+    )).parse(input)
+}
+
 #[cfg(test)]
 mod tests {
     mod key_value {
@@ -185,4 +211,6 @@ mod tests {
             );
         }
     }
+
+
 }
