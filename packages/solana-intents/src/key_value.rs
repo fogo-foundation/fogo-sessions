@@ -1,13 +1,8 @@
 use nom::{
-    bytes::complete::{tag, take_while1},
-    character::{
+    branch::alt, bytes::complete::{tag, take_while1}, character::{
         char,
-        complete::{not_line_ending, space0},
-    },
-    combinator::{map, map_opt},
-    error::ParseError,
-    sequence::separated_pair,
-    AsChar, Compare, IResult, Input, ParseTo, Parser,
+        complete::{alphanumeric1, line_ending, space0},
+    }, combinator::{map, map_opt, peek, recognize, rest}, error::ParseError, multi::many_till, sequence::{pair, separated_pair}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
 };
 
 pub fn tag_key_value<I, O, E, T>(key: T) -> impl Parser<I, Output = O, Error = E>
@@ -18,6 +13,7 @@ where
     I: Compare<T>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
+    I: Offset,
     T: Input,
 {
     map(key_value_with_key_type(tag(key)), |(_, value)| value)
@@ -28,6 +24,7 @@ where
     I: Input,
     I: ParseTo<O>,
     I: Compare<&'static str>,
+    I: Offset,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
 {
@@ -41,17 +38,27 @@ fn key_value_with_key_type<I, O, E, K, KO>(key: K) -> impl Parser<I, Output = (K
 where
     I: Input,
     I: ParseTo<O>,
+    I: Offset,
     I: Compare<&'static str>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
     K: Parser<I, Output = KO, Error = E>,
 {
     map_opt(
-        separated_pair(key, (char(':'), space0), not_line_ending),
+        separated_pair(
+            key,
+            (char(':'), space0),
+            alt((
+                recognize(many_till(
+                    take_while1(|_| true),
+                    peek(pair(line_ending, alphanumeric1)),
+                )),
+                rest,
+            )),
+        ),
         |(key, val): (KO, I)| val.parse_to().map(|parsed| (key, parsed)),
     )
 }
-
 #[cfg(test)]
 mod tests {
     mod key_value {

@@ -2,13 +2,7 @@ use anchor_lang::prelude::Pubkey;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
 use nom::{
-    bytes::complete::tag,
-    character::complete::line_ending,
-    combinator::{map, map_opt, map_res},
-    error::{Error, ParseError},
-    multi::many1,
-    sequence::preceded,
-    AsChar, Compare, Err, IResult, Input, ParseTo, Parser,
+    bytes::complete::tag, character::complete::line_ending, combinator::{map, map_opt, map_res}, error::{Error, ParseError}, multi::many1, sequence::preceded, AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser
 };
 use solana_intents::{key_value, line, list_of, SymbolOrMint, Version};
 use std::{collections::HashMap, str::FromStr};
@@ -48,6 +42,7 @@ where
     I: ParseTo<DateTime<FixedOffset>>,
     I: ParseTo<Pubkey>,
     I: ParseTo<Tokens>,
+    I: Offset,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
 {

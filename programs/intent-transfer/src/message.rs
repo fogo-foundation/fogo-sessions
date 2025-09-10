@@ -1,12 +1,6 @@
 use anchor_lang::prelude::Pubkey;
 use nom::{
-    branch::permutation,
-    bytes::complete::tag,
-    character::complete::line_ending,
-    combinator::{map, verify},
-    error::{Error, ParseError},
-    sequence::preceded,
-    AsChar, Compare, Err, IResult, Input, ParseTo, Parser,
+    branch::permutation, bytes::complete::tag, character::complete::line_ending, combinator::{map, verify}, error::{Error, ParseError}, sequence::preceded, AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser
 };
 use solana_intents::{line, tag_key_value, SymbolOrMint, Version};
 
@@ -43,6 +37,7 @@ where
     I: ParseTo<Version>,
     I: ParseTo<Pubkey>,
     I: ParseTo<u64>,
+    I: Offset,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
 {
