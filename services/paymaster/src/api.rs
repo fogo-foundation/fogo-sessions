@@ -264,7 +264,7 @@ pub fn check_gas_spend(
     max_gas_spend: u64,
 ) -> Result<(), (StatusCode, String)> {
     let n_signatures = transaction.signatures.len() as u64;
-    let priority_fee = get_priority_fee(transaction);
+    let priority_fee = get_priority_fee(transaction)?;
     let gas_spent = n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee;
     if gas_spent > max_gas_spend {
         return Err((
@@ -275,9 +275,12 @@ pub fn check_gas_spend(
     Ok(())
 }
 
-pub fn get_priority_fee(transaction: &VersionedTransaction) -> u64 {
-    let mut cu_limit: u64 = DEFAULT_COMPUTE_UNIT_LIMIT;
-    let mut micro_lamports_per_cu: u64 = 0;
+/// Computes the priority fee from the transaction's compute budget instructions.
+/// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
+/// If multiple compute budget instructions are present, the transaction will fail.
+pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
+    let mut cu_limit = None;
+    let mut micro_lamports_per_cu = None;
 
     let msg = &transaction.message;
     let instructions: Vec<&CompiledInstruction> = match msg {
@@ -285,21 +288,38 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> u64 {
         VersionedMessage::V0(m) => m.instructions.iter().collect(),
     };
 
+    // should not support multiple compute budget instructions: https://github.com/solana-labs/solana/blob/ca115594ff61086d67b4fec8977f5762e526a457/program-runtime/src/compute_budget.rs#L162
     for ix in instructions {
         if let Ok(cu_ix) = bincode::deserialize::<ComputeBudgetInstruction>(&ix.data) {
             match cu_ix {
                 ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
-                    cu_limit = units as u64;
+                    if cu_limit.is_some() {
+                        return Err((
+                            StatusCode::BAD_REQUEST,
+                            "Multiple SetComputeUnitLimit instructions found".to_string(),
+                        ));
+                    }
+                    cu_limit = Some(u64::from(units));
                 }
                 ComputeBudgetInstruction::SetComputeUnitPrice(micro_lamports) => {
-                    micro_lamports_per_cu = micro_lamports;
+                    if micro_lamports_per_cu.is_some() {
+                        return Err((
+                            StatusCode::BAD_REQUEST,
+                            "Multiple SetComputeUnitPrice instructions found".to_string(),
+                        ));
+                    }
+                    micro_lamports_per_cu = Some(micro_lamports);
                 }
                 _ => {}
             }
         }
     }
 
-    cu_limit.saturating_mul(micro_lamports_per_cu) / 1_000_000
+    let priority_fee = cu_limit
+        .unwrap_or(DEFAULT_COMPUTE_UNIT_LIMIT)
+        .saturating_mul(micro_lamports_per_cu.unwrap_or(0))
+        / 1_000_000;
+    Ok(priority_fee)
 }
 
 pub fn validate_instruction_against_instruction_constraint(
