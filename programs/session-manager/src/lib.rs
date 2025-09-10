@@ -1,6 +1,7 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 #![allow(deprecated)] // warning: use of deprecated method `anchor_lang::prelude::AccountInfo::<'a>::realloc`: Use AccountInfo::resize() instead
 
+use crate::error::SessionManagerError;
 use crate::intents::body::MessageBody;
 use crate::intents::body::Tokens;
 use crate::intents::body::Version;
@@ -12,6 +13,7 @@ use fogo_sessions_sdk::session::AuthorizedPrograms;
 use fogo_sessions_sdk::session::AuthorizedTokens;
 use fogo_sessions_sdk::session::Session;
 use fogo_sessions_sdk::session::SessionInfo;
+use fogo_sessions_sdk::session::{ActiveSessionInfo, V2};
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
@@ -58,24 +60,54 @@ pub mod session_manager {
 
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
 
-        let session = Session {
-            sponsor: ctx.accounts.sponsor.key(),
-            session_info: SessionInfo {
+        let session = match minor {
+            1 => Session {
+                sponsor: ctx.accounts.sponsor.key(),
                 major,
-                minor,
-                user: signer,
-                authorized_programs: AuthorizedPrograms::Specific(program_domains),
-                authorized_tokens,
-                extra: extra.into(),
-                expiration: expires.timestamp(),
+                session_info: SessionInfo::V1(ActiveSessionInfo {
+                    user: signer,
+                    authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                    authorized_tokens,
+                    extra: extra.into(),
+                    expiration: expires.timestamp(),
+                }),
             },
+            2 => Session {
+                sponsor: ctx.accounts.sponsor.key(),
+                major,
+                session_info: SessionInfo::V2(V2::Active(ActiveSessionInfo {
+                    user: signer,
+                    authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                    authorized_tokens,
+                    extra: extra.into(),
+                    expiration: expires.timestamp(),
+                })),
+            },
+            _ => return err!(SessionManagerError::InvalidVersion),
         };
         ctx.accounts.initialize_and_store_session(&session)?;
         Ok(())
     }
 
-    /// This is just to trick anchor into generating the IDL for the Session account since we don't use it in the context for `start_session`
     #[instruction(discriminator = [1])]
+    pub fn revoke_session<'info>(
+        ctx: Context<'_, '_, '_, 'info, RevokeSession<'info>>,
+    ) -> Result<()> {
+        match &ctx.accounts.session.session_info {
+            SessionInfo::Invalid => return err!(SessionManagerError::InvalidVersion),
+            SessionInfo::V1(_) => return err!(SessionManagerError::InvalidVersion),
+            SessionInfo::V2(V2::Active(active_session_info)) => {
+                ctx.accounts.session.session_info =
+                    SessionInfo::V2(V2::Revoked(active_session_info.expiration));
+            }
+            SessionInfo::V2(V2::Revoked(_)) => {} // Idempotent
+        }
+        ctx.accounts.reallocate_and_refund_rent()?;
+        Ok(())
+    }
+
+    /// This is just to trick anchor into generating the IDL for the Session account since we don't use it in the context for `start_session`
+    #[instruction(discriminator = [2])]
     pub fn _unused<'info>(_ctx: Context<'_, '_, '_, 'info, Unused<'info>>) -> Result<()> {
         err!(ErrorCode::InstructionDidNotDeserialize)
     }
@@ -102,6 +134,15 @@ pub struct StartSession<'info> {
 }
 
 #[derive(Accounts)]
+pub struct RevokeSession<'info> {
+    #[account(mut, signer)]
+    pub session: Account<'info, Session>,
+    #[account(constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
+    /// CHECK: we check it against the session's sponsor
+    pub sponsor: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+}
+#[derive(Accounts)]
 pub struct Unused<'info> {
     pub session: Account<'info, Session>,
 }
@@ -122,6 +163,26 @@ impl<'info> StartSession<'info> {
         let mut writer = anchor_lang::__private::BpfWriter::new(dst); // This is the writer that Anchor uses internally
         session.try_serialize(&mut writer)?;
 
+        Ok(())
+    }
+}
+
+impl<'info> RevokeSession<'info> {
+    pub fn reallocate_and_refund_rent(&self) -> Result<()> {
+        let new_len = 8 + get_instance_packed_len::<Session>(&self.session)?;
+        self.session.to_account_info().realloc(new_len, false)?;
+
+        let new_rent = Rent::get()?.minimum_balance(new_len);
+        let current_rent = self.session.to_account_info().lamports();
+
+        if new_rent < current_rent {
+            **self.session.to_account_info().try_borrow_mut_lamports()? = new_rent;
+            **self.sponsor.try_borrow_mut_lamports()? = self
+                .sponsor
+                .lamports()
+                .checked_add(current_rent.saturating_sub(new_rent))
+                .ok_or(ProgramError::ArithmeticOverflow)?;
+        }
         Ok(())
     }
 }

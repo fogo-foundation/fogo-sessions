@@ -46,8 +46,7 @@ impl Version {
                 .map_err(|_| error!(SessionManagerError::ParsingErrorVersion))?;
             (major, minor)
         };
-        if major != fogo_sessions_sdk::session::MAJOR || minor != fogo_sessions_sdk::session::MINOR
-        {
+        if major != fogo_sessions_sdk::session::MAJOR {
             return Err(error!(SessionManagerError::InvalidVersion));
         }
         Ok(Self { major, minor })

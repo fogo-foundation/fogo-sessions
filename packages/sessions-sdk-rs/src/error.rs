@@ -21,6 +21,8 @@ pub enum SessionError {
     InvalidAccountVersion,
     #[error("This transfer exceeds your session limits")]
     LimitsExceeded,
+    #[error("This session was revoked")]
+    Revoked,
 }
 
 impl From<SessionError> for u32 {
@@ -35,6 +37,7 @@ impl From<SessionError> for u32 {
             SessionError::InvalidAccountDiscriminator => 4_000_000_006,
             SessionError::InvalidAccountVersion => 4_000_000_007,
             SessionError::LimitsExceeded => 4_000_000_008,
+            SessionError::Revoked => 4_000_000_009,
         }
     }
 }
