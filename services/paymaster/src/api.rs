@@ -20,9 +20,11 @@ use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
 };
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
+use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_message::compiled_instruction::CompiledInstruction;
+use solana_message::VersionedMessage;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_seed_derivable::SeedDerivable;
@@ -194,6 +196,8 @@ pub fn validate_transaction_against_variation_v1(
     variation: &crate::constraint::VariationOrderedInstructionConstraints,
     sponsor: &Pubkey,
 ) -> Result<(), (StatusCode, String)> {
+    check_gas_spend(transaction, variation.max_gas_spend)?;
+
     let instructions = transaction.message.instructions();
 
     let mut instruction_iter = instructions.iter().enumerate();
@@ -250,6 +254,52 @@ pub fn validate_transaction_against_variation_v1(
     }
 
     Ok(())
+}
+
+pub const LAMPORTS_PER_SIGNATURE: u64 = 5000;
+pub const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
+
+pub fn check_gas_spend(
+    transaction: &VersionedTransaction,
+    max_gas_spend: u64,
+) -> Result<(), (StatusCode, String)> {
+    let n_signatures = transaction.signatures.len() as u64;
+    let priority_fee = get_priority_fee(transaction);
+    let gas_spent = n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee;
+    if gas_spent > max_gas_spend {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("Transaction gas spend {gas_spent} exceeds maximum allowed {max_gas_spend}",),
+        ));
+    }
+    Ok(())
+}
+
+pub fn get_priority_fee(transaction: &VersionedTransaction) -> u64 {
+    let mut cu_limit: u64 = DEFAULT_COMPUTE_UNIT_LIMIT;
+    let mut micro_lamports_per_cu: u64 = 0;
+
+    let msg = &transaction.message;
+    let instructions: Vec<&CompiledInstruction> = match msg {
+        VersionedMessage::Legacy(m) => m.instructions.iter().collect(),
+        VersionedMessage::V0(m) => m.instructions.iter().collect(),
+    };
+
+    for ix in instructions {
+        if let Ok(cu_ix) = bincode::deserialize::<ComputeBudgetInstruction>(&ix.data) {
+            match cu_ix {
+                ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
+                    cu_limit = units as u64;
+                }
+                ComputeBudgetInstruction::SetComputeUnitPrice(micro_lamports) => {
+                    micro_lamports_per_cu = micro_lamports;
+                }
+                _ => {}
+            }
+        }
+    }
+
+    cu_limit.saturating_mul(micro_lamports_per_cu) / 1_000_000
 }
 
 pub fn validate_instruction_against_instruction_constraint(
