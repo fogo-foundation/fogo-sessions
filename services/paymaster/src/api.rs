@@ -62,35 +62,52 @@ impl ServerState {
         self.query_lookup_table(table_to_query, *index_to_query as usize)
     }
 
-    pub fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Result<Pubkey, (StatusCode, String)> {
-        if let Some(pubkey) = self.lookup_tables.get(table).and_then(|entry| entry.get(index).copied()) {
+    pub fn query_lookup_table(
+        &self,
+        table: &Pubkey,
+        index: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        if let Some(pubkey) = self
+            .lookup_tables
+            .get(table)
+            .and_then(|entry| entry.get(index).copied())
+        {
             Ok(pubkey)
         } else {
-            self.update_lookup_table(table, Some(index)).and_then(|opt_pubkey| {
-                opt_pubkey.ok_or_else(|| (
-                    StatusCode::BAD_REQUEST,
-                    format!("Lookup table {table} does not contain index {index}"),
-                ))
-            })
+            self.update_lookup_table(table, Some(index))
+                .and_then(|opt_pubkey| {
+                    opt_pubkey.ok_or_else(|| {
+                        (
+                            StatusCode::BAD_REQUEST,
+                            format!("Lookup table {table} does not contain index {index}"),
+                        )
+                    })
+                })
         }
     }
 
     // Updates the lookup table entry in the dashmap. If index is provided, returns the pubkey at that index for the lookup table if it exists.
-    pub fn update_lookup_table(&self, table: &Pubkey, index: Option<usize>) -> Result<Option<Pubkey>, (StatusCode, String)> {
+    pub fn update_lookup_table(
+        &self,
+        table: &Pubkey,
+        index: Option<usize>,
+    ) -> Result<Option<Pubkey>, (StatusCode, String)> {
         let table_data = self.rpc.get_account(table).map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Failed to fetch lookup table account {table}: {err}"),
             )
         })?;
-        let table_data_deserialized = AddressLookupTable::deserialize(&table_data.data).map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to deserialize lookup table account {table}: {e}"),
-            )
-        })?;
-        
-        self.lookup_tables.insert(*table, table_data_deserialized.addresses.to_vec());
+        let table_data_deserialized =
+            AddressLookupTable::deserialize(&table_data.data).map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to deserialize lookup table account {table}: {e}"),
+                )
+            })?;
+
+        self.lookup_tables
+            .insert(*table, table_data_deserialized.addresses.to_vec());
 
         if let Some(index) = index {
             let account = table_data_deserialized
@@ -105,7 +122,7 @@ impl ServerState {
             return Ok(Some(*account));
         }
 
-        return Ok(None);
+        Ok(None)
     }
 }
 
@@ -160,7 +177,8 @@ pub async fn validate_transaction(
     }
 
     // Simulate the transaction to check sponsor SOL spending
-    let simulation_result = state.rpc
+    let simulation_result = state
+        .rpc
         .simulate_transaction_with_config(
             transaction,
             RpcSimulateTransactionConfig {
@@ -272,7 +290,7 @@ pub fn validate_transaction_against_variation_v1(
             &variation.name,
             state,
         );
-        
+
         if result.is_err() {
             if constraint.required {
                 return result;
@@ -330,33 +348,31 @@ pub fn validate_instruction_against_instruction_constraint(
             })?;
         let account = if let Some(acc) = static_accounts.get(*account_index as usize) {
             acc
+        } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
+            let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
+                .iter()
+                .flat_map(|x| {
+                    x.writable_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                })
+                .chain(lookup_tables.iter().flat_map(|x| {
+                    x.readonly_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                }))
+                .collect();
+            let account_position_lookups = (*account_index as usize) - static_accounts.len();
+            &state.find_and_query_lookup_table(lookup_accounts, account_position_lookups)?
         } else {
-            if let Some(lookup_tables) = transaction.message.address_table_lookups() {
-                let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
-                    .iter()
-                    .flat_map(|x| {
-                        x.writable_indexes
-                            .clone()
-                            .into_iter()
-                            .map(|y| (x.account_key, y))
-                    })
-                    .chain(lookup_tables.iter().flat_map(|x| {
-                        x.readonly_indexes
-                            .clone()
-                            .into_iter()
-                            .map(|y| (x.account_key, y))
-                    }))
-                    .collect();
-                let account_position_lookups = (*account_index as usize) - static_accounts.len();
-                &state.find_and_query_lookup_table(lookup_accounts, account_position_lookups)?
-            } else {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Transaction instruction {instruction_index} account index {account_index} out of bounds for variation {variation_name}",
-                    ),
-                ));
-            }
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction instruction {instruction_index} account index {account_index} out of bounds for variation {variation_name}",
+                ),
+            ));
         };
 
         let signers = static_accounts
@@ -565,13 +581,7 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    validate_transaction(
-        &transaction,
-        tx_variations,
-        &keypair.pubkey(),
-        &state
-    )
-    .await?;
+    validate_transaction(&transaction, tx_variations, &keypair.pubkey(), &state).await?;
 
     transaction.signatures[0] = keypair.sign_message(&transaction.message.serialize());
 
