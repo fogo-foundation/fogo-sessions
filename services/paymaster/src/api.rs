@@ -1,4 +1,8 @@
 use crate::config::{Config, Domain};
+use crate::constraint::{
+    compare_primitive_data_types, AccountConstraint, DataConstraint, InstructionConstraint,
+    PrimitiveDataType, PrimitiveDataValue, TransactionVariation,
+};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -18,6 +22,7 @@ use solana_client::rpc_config::{
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
+use solana_message::compiled_instruction::CompiledInstruction;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_seed_derivable::SeedDerivable;
@@ -31,11 +36,10 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
     pub keypair: Keypair,
-    pub program_whitelist: Vec<Pubkey>,
+    pub tx_variations: Vec<TransactionVariation>,
 }
 pub struct ServerState {
     pub rpc: RpcClient,
-    pub global_program_whitelist: Vec<Pubkey>,
     pub max_sponsor_spending: u64,
     pub domains: HashMap<String, DomainState>,
 }
@@ -47,8 +51,7 @@ pub struct SponsorAndSendPayload {
 
 pub async fn validate_transaction(
     transaction: &VersionedTransaction,
-    global_program_whitelist: &[Pubkey],
-    domain_program_whitelist: &[Pubkey],
+    tx_variations: &[TransactionVariation],
     sponsor: &Pubkey,
     rpc: &RpcClient,
     max_sponsor_spending: u64,
@@ -82,22 +85,15 @@ pub async fn validate_transaction(
                 })
         })?;
 
-    transaction
-        .message
-        .instructions()
-        .iter()
-        .try_for_each(|instruction| {
-            let program_id = instruction.program_id(transaction.message.static_account_keys());
-            if !global_program_whitelist.contains(program_id)
-                && !domain_program_whitelist.contains(program_id)
-            {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!("Transaction contains unauthorized program ID: {program_id}"),
-                ));
-            }
-            Ok(())
-        })?;
+    let matches_variation = tx_variations.iter().any(|variation| {
+        validate_transaction_against_variation(transaction, variation, sponsor).is_ok()
+    });
+    if !matches_variation {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Transaction does not match any allowed variations".to_string(),
+        ));
+    }
 
     // Simulate the transaction to check sponsor SOL spending
     let simulation_result = rpc
@@ -154,6 +150,259 @@ pub async fn validate_transaction(
             }
         }
     }
+
+    Ok(())
+}
+
+pub fn validate_transaction_against_variation(
+    transaction: &VersionedTransaction,
+    tx_variation: &TransactionVariation,
+    sponsor: &Pubkey,
+) -> Result<(), (StatusCode, String)> {
+    match tx_variation {
+        TransactionVariation::V0(variation) => {
+            validate_transaction_against_variation_v0(transaction, variation)
+        }
+        TransactionVariation::V1(variation) => {
+            validate_transaction_against_variation_v1(transaction, variation, sponsor)
+        }
+    }
+}
+
+pub fn validate_transaction_against_variation_v0(
+    transaction: &VersionedTransaction,
+    variation: &crate::constraint::VariationProgramWhitelist,
+) -> Result<(), (StatusCode, String)> {
+    for instruction in transaction.message.instructions() {
+        let program_id = instruction.program_id(transaction.message.static_account_keys());
+        if !variation.whitelisted_programs.contains(program_id) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction contains unauthorized program ID {program_id} for variation {}",
+                    variation.name
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
+// TODO: incorporate gas spend and rate limit checks
+pub fn validate_transaction_against_variation_v1(
+    transaction: &VersionedTransaction,
+    variation: &crate::constraint::VariationOrderedInstructionConstraints,
+    sponsor: &Pubkey,
+) -> Result<(), (StatusCode, String)> {
+    let instructions = transaction.message.instructions();
+
+    let mut instruction_iter = instructions.iter().enumerate();
+    let mut instruction_details = instruction_iter.next();
+
+    let mut constraint_iter = variation.instructions.iter();
+    let mut constraint = constraint_iter.next();
+
+    while let (Some((instr_index, instr)), Some(constr)) = (instruction_details, constraint) {
+        let result = validate_instruction_against_instruction_constraint(
+            instr,
+            instr_index,
+            transaction.message.static_account_keys(),
+            &transaction.signatures,
+            sponsor,
+            constr,
+            &variation.name,
+        );
+
+        if result.is_err() {
+            if constr.required {
+                return result;
+            } else {
+                constraint = constraint_iter.next();
+            }
+        } else {
+            instruction_details = instruction_iter.next();
+            constraint = constraint_iter.next();
+        }
+    }
+
+    if let Some((instruction_index, _)) = instruction_details {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Instruction {instruction_index} in transaction does not match any expected instructions for variation {}",
+                variation.name
+            )
+        ));
+    } else if let Some(curr_constraint) = constraint {
+        let remaining_required_constraints: Vec<_> = std::iter::once(curr_constraint)
+            .chain(constraint_iter)
+            .filter(|c| c.required)
+            .collect();
+        if !remaining_required_constraints.is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction is missing required instructions for variation {}",
+                    variation.name
+                ),
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+pub fn validate_instruction_against_instruction_constraint(
+    instruction: &CompiledInstruction,
+    instruction_index: usize,
+    accounts: &[Pubkey],
+    signatures: &[Signature],
+    sponsor: &Pubkey,
+    constraint: &InstructionConstraint,
+    variation_name: &str,
+) -> Result<(), (StatusCode, String)> {
+    let program_id = instruction.program_id(accounts);
+    if *program_id != constraint.program {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Transaction instruction {instruction_index} program ID {program_id} does not match expected ID {} for variation {variation_name}",
+                constraint.program,
+            ),
+        ));
+    }
+
+    for (i, account_constraint) in constraint.accounts.iter().enumerate() {
+        // TODO: account for lookup tables
+        let account_index = instruction
+            .accounts
+            .get(usize::from(account_constraint.index))
+            .ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Transaction instruction {instruction_index} missing account at index {i} for variation {variation_name}",
+                    ),
+                )
+            })?;
+        let account = accounts.get(*account_index as usize).ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction instruction {instruction_index} account index {account_index} out of bounds for variation {variation_name}",
+                ),
+            )
+        })?;
+        let signers = accounts
+            .iter()
+            .take(signatures.len())
+            .cloned()
+            .collect::<Vec<_>>();
+        check_account_constraint(
+            account,
+            account_constraint,
+            signers,
+            sponsor,
+            instruction_index,
+        )?;
+    }
+
+    for data_constraint in &constraint.data {
+        check_data_constraint(&instruction.data, data_constraint, instruction_index)?;
+    }
+
+    Ok(())
+}
+
+pub fn check_account_constraint(
+    account: &Pubkey,
+    constraint: &AccountConstraint,
+    signers: Vec<Pubkey>,
+    sponsor: &Pubkey,
+    instruction_index: usize,
+) -> Result<(), (StatusCode, String)> {
+    constraint.exclude.iter().try_for_each(|excluded| {
+        excluded.matches_account(account, &signers, sponsor, false, instruction_index)
+    })?;
+
+    constraint.include.iter().try_for_each(|included| {
+        included.matches_account(account, &signers, sponsor, true, instruction_index)
+    })?;
+
+    Ok(())
+}
+
+pub fn check_data_constraint(
+    data: &[u8],
+    constraint: &DataConstraint,
+    instruction_index: usize,
+) -> Result<(), (StatusCode, String)> {
+    let length = constraint.data_type.byte_length();
+    let end_byte = length + usize::from(constraint.start_byte);
+    if end_byte > data.len() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
+                constraint.start_byte,
+                end_byte - 1,
+                data.len()
+            ),
+        ));
+    }
+
+    let data_to_analyze = &data[usize::from(constraint.start_byte)..end_byte];
+    let data_to_analyze_deserialized = match constraint.data_type {
+        PrimitiveDataType::Bool => PrimitiveDataValue::Bool(data_to_analyze[0] != 0),
+        PrimitiveDataType::U8 => PrimitiveDataValue::U8(data_to_analyze[0]),
+        PrimitiveDataType::U16 => {
+            let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Instruction {instruction_index}: Data constraint expects 2 bytes for U16, found {} bytes",
+                        data_to_analyze.len()
+                    ),
+                )
+            })?);
+            PrimitiveDataValue::U16(data_u16)
+        }
+
+        PrimitiveDataType::U32 => {
+            let data_u32 = u32::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Instruction {instruction_index}: Data constraint expects 4 bytes for U32, found {} bytes",
+                        data_to_analyze.len()
+                    ),
+                )
+            })?);
+            PrimitiveDataValue::U32(data_u32)
+        }
+
+        PrimitiveDataType::U64 => {
+            let data_u64 = u64::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Instruction {instruction_index}: Data constraint expects 8 bytes for U64, found {} bytes",
+                        data_to_analyze.len()
+                    ),
+                )
+            })?);
+            PrimitiveDataValue::U64(data_u64)
+        }
+    };
+
+    compare_primitive_data_types(data_to_analyze_deserialized, &constraint.constraint).map_err(
+        |err| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Instruction {instruction_index}: Data constraint not satisfied: {err}"),
+            )
+        },
+    )?;
 
     Ok(())
 }
@@ -229,7 +478,7 @@ async fn sponsor_and_send_handler(
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let DomainState {
         keypair,
-        program_whitelist,
+        tx_variations,
     } = get_domain_state(&state, domain, origin)?;
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
@@ -252,8 +501,7 @@ async fn sponsor_and_send_handler(
 
     validate_transaction(
         &transaction,
-        &state.global_program_whitelist,
-        program_whitelist,
+        tx_variations,
         &keypair.pubkey(),
         &state.rpc,
         state.max_sponsor_spending,
@@ -310,43 +558,15 @@ async fn sponsor_pubkey_handler(
 ) -> Result<String, ErrorResponse> {
     let DomainState {
         keypair,
-        program_whitelist: _,
+        tx_variations: _,
     } = get_domain_state(&state, domain, origin)?;
     Ok(keypair.pubkey().to_string())
-}
-
-async fn get_on_chain_program_whitelists(
-    rpc: &RpcClient,
-    domain: &[Domain],
-) -> Vec<Option<Vec<Pubkey>>> {
-    let domain_record_addresses = domain
-        .iter()
-        .map(|Domain { domain, .. }| {
-            domain_registry::domain::Domain::new_checked(domain)
-                .unwrap_or_else(|_| panic!("Invalid domain: {domain}"))
-                .get_domain_record_address()
-        })
-        .collect::<Vec<_>>();
-
-    rpc.get_multiple_accounts(&domain_record_addresses)
-        .expect("Failed to get on-chain program whitelists")
-        .into_iter()
-        .map(|account| {
-            account.map(|account| {
-                bytemuck::cast_slice::<_, domain_registry::state::DomainProgram>(&account.data)
-                    .iter()
-                    .map(|program| program.program_id)
-                    .collect()
-            })
-        })
-        .collect::<Vec<Option<Vec<Pubkey>>>>()
 }
 
 pub async fn run_server(
     Config {
         mnemonic_file,
         solana_url,
-        global_program_whitelist,
         max_sponsor_spending,
         domains,
         listen_address,
@@ -360,20 +580,14 @@ pub async fn run_server(
             commitment: CommitmentLevel::Processed,
         },
     );
-    let on_chain_program_whitelists =
-        get_on_chain_program_whitelists(&rpc, domains.as_slice()).await;
 
     let domains = domains
         .into_iter()
-        .zip(on_chain_program_whitelists.into_iter())
         .map(
-            |(
-                Domain {
-                    domain,
-                    mut program_whitelist,
-                },
-                on_chain_program_whitelist,
-            )| {
+            |Domain {
+                 domain,
+                 tx_variations,
+             }| {
                 let keypair = Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
                         &mnemonic, &domain,
@@ -382,14 +596,11 @@ pub async fn run_server(
                 )
                 .expect("Failed to derive keypair from mnemonic_file");
 
-                if let Some(x) = on_chain_program_whitelist {
-                    program_whitelist.extend(x)
-                }
                 (
                     domain,
                     DomainState {
                         keypair,
-                        program_whitelist,
+                        tx_variations,
                     },
                 )
             },
@@ -411,7 +622,6 @@ pub async fn run_server(
                 )])),
         )
         .with_state(Arc::new(ServerState {
-            global_program_whitelist,
             max_sponsor_spending,
             domains,
             rpc,

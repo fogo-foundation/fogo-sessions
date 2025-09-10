@@ -3,7 +3,9 @@ use clap::Parser;
 
 mod api;
 mod config;
+mod constraint;
 mod rpc;
+mod serde;
 
 #[derive(Parser)]
 struct Cli {
