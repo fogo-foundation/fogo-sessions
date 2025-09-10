@@ -22,8 +22,11 @@ use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
 };
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
+use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
+use solana_message::compiled_instruction::CompiledInstruction;
+use solana_message::VersionedMessage;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_seed_derivable::SeedDerivable;
@@ -263,7 +266,7 @@ pub fn validate_transaction_against_variation_v0(
     Ok(())
 }
 
-// TODO: incorporate gas spend and rate limit checks
+// TODO: incorporate rate limit checks
 pub fn validate_transaction_against_variation_v1(
     transaction: &VersionedTransaction,
     variation: &crate::constraint::VariationOrderedInstructionConstraints,
@@ -271,6 +274,7 @@ pub fn validate_transaction_against_variation_v1(
     state: &ServerState,
 ) -> Result<(), (StatusCode, String)> {
     let mut instruction_index = 0;
+    check_gas_spend(transaction, variation.max_gas_spend)?;
 
     for constraint in variation.instructions.iter() {
         let result = validate_instruction_against_instruction_constraint(
@@ -302,6 +306,72 @@ pub fn validate_transaction_against_variation_v1(
     }
 
     Ok(())
+}
+
+pub const LAMPORTS_PER_SIGNATURE: u64 = 5000;
+pub const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
+
+pub fn check_gas_spend(
+    transaction: &VersionedTransaction,
+    max_gas_spend: u64,
+) -> Result<(), (StatusCode, String)> {
+    let n_signatures = transaction.signatures.len() as u64;
+    let priority_fee = get_priority_fee(transaction)?;
+    let gas_spent = n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee;
+    if gas_spent > max_gas_spend {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("Transaction gas spend {gas_spent} exceeds maximum allowed {max_gas_spend}",),
+        ));
+    }
+    Ok(())
+}
+
+/// Computes the priority fee from the transaction's compute budget instructions.
+/// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
+/// If multiple compute budget instructions are present, the transaction will fail.
+pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
+    let mut cu_limit = None;
+    let mut micro_lamports_per_cu = None;
+
+    let msg = &transaction.message;
+    let instructions: Vec<&CompiledInstruction> = match msg {
+        VersionedMessage::Legacy(m) => m.instructions.iter().collect(),
+        VersionedMessage::V0(m) => m.instructions.iter().collect(),
+    };
+
+    // should not support multiple compute budget instructions: https://github.com/solana-labs/solana/blob/ca115594ff61086d67b4fec8977f5762e526a457/program-runtime/src/compute_budget.rs#L162
+    for ix in instructions {
+        if let Ok(cu_ix) = bincode::deserialize::<ComputeBudgetInstruction>(&ix.data) {
+            match cu_ix {
+                ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
+                    if cu_limit.is_some() {
+                        return Err((
+                            StatusCode::BAD_REQUEST,
+                            "Multiple SetComputeUnitLimit instructions found".to_string(),
+                        ));
+                    }
+                    cu_limit = Some(u64::from(units));
+                }
+                ComputeBudgetInstruction::SetComputeUnitPrice(micro_lamports) => {
+                    if micro_lamports_per_cu.is_some() {
+                        return Err((
+                            StatusCode::BAD_REQUEST,
+                            "Multiple SetComputeUnitPrice instructions found".to_string(),
+                        ));
+                    }
+                    micro_lamports_per_cu = Some(micro_lamports);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    let priority_fee = cu_limit
+        .unwrap_or(DEFAULT_COMPUTE_UNIT_LIMIT)
+        .saturating_mul(micro_lamports_per_cu.unwrap_or(0))
+        / 1_000_000;
+    Ok(priority_fee)
 }
 
 pub fn validate_instruction_against_instruction_constraint(

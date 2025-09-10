@@ -1576,6 +1576,7 @@ dependencies = [
  "solana-address-lookup-table-interface",
  "solana-client",
  "solana-commitment-config",
+ "solana-compute-budget-interface",
  "solana-derivation-path",
  "solana-keypair",
  "solana-message",
@@ -4129,6 +4130,18 @@ checksum = "ac49c4dde3edfa832de1697e9bcdb7c3b3f7cb7a1981b7c62526c8bb6700fb73"
 dependencies = [
  "serde",
  "serde_derive",
+]
+
+[[package]]
+name = "solana-compute-budget-interface"
+version = "2.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8432d2c4c22d0499aa06d62e4f7e333f81777b3d7c96050ae9e5cb71a8c3aee4"
+dependencies = [
+ "serde",
+ "serde_derive",
+ "solana-instruction",
+ "solana-sdk-ids",
 ]
 
 [[package]]
