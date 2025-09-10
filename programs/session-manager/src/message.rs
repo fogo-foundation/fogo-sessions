@@ -6,6 +6,7 @@ use nom::{
 };
 use solana_intents::{key_value, line, list_of, SymbolOrMint, Version};
 use std::{collections::HashMap, str::FromStr};
+use nom::lib::std::fmt::Debug;
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n";
 const UNLIMITED_TOKEN_PERMISSIONS_VALUE: &str = "this app may spend any amount of any token";
@@ -45,6 +46,7 @@ where
     I: Offset,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
+    I: Debug,
 {
     map_opt(
         preceded(
@@ -200,8 +202,7 @@ mod tests {
                 -SOL: 100
                 -DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu: 200
                 key1: value1
-                key2: value2"
-            );
+                key2: value2");
             assert_eq!(
                 TryInto::<Message>::try_into(message.as_bytes().to_vec()).unwrap(),
                 Message {
@@ -215,7 +216,10 @@ mod tests {
                         (SymbolOrMint::Symbol("SOL".to_string()), "100".to_string()),
                         (SymbolOrMint::Mint(Pubkey::from_str("DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu").unwrap()), "200".to_string()),
                     ]),
-                    extra: HashMap::new()
+                    extra: HashMap::from([
+                        ("key1".to_string(), "value1".to_string()),
+                        ("key2".to_string(), "value2".to_string()),
+                    ])
                 }
             );
         }
