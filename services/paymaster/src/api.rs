@@ -294,6 +294,16 @@ pub fn validate_transaction_against_variation_v1(
         }
     }
 
+    if instruction_index != transaction.message.instructions().len() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Instruction {instruction_index} does not match any expected instruction for variation {}",
+                variation.name
+            ),
+        ));
+    }
+
     Ok(())
 }
 
