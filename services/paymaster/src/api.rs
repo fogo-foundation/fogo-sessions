@@ -206,7 +206,7 @@ fn get_domain_state(
             (
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "The http origin header or query parameter domain is not registered with the paymaster: {domain}"
+                    "The domain {domain} is not registered with the paymaster, please either set the domain property in FogoSessionProvider to match your production domain or reach out to the Fogo team to get a paymaster configuration for your app"
                 ),
             )
         })?;
