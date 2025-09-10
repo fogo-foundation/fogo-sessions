@@ -62,9 +62,9 @@ impl ServerState {
             })?;
         self.query_lookup_table_with_retry(table_to_query, *index_to_query as usize)
     }
-    
-    /// Queries the lookup table for the pubkey at the given index. 
-    /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying. 
+
+    /// Queries the lookup table for the pubkey at the given index.
+    /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying.
     pub fn query_lookup_table_with_retry(
         &self,
         table: &Pubkey,
@@ -76,7 +76,7 @@ impl ServerState {
         })
     }
 
-    /// Queries the lookup table for the pubkey at the given index. 
+    /// Queries the lookup table for the pubkey at the given index.
     /// Returns an error if the table is not cached or the index is out of bounds.
     pub fn query_lookup_table(
         &self,
@@ -95,10 +95,7 @@ impl ServerState {
     }
 
     // Updates the lookup table entry in the dashmap based on pulling from RPC.
-    pub fn update_lookup_table(
-        &self,
-        table: &Pubkey,
-    ) -> Result<(), (StatusCode, String)> {
+    pub fn update_lookup_table(&self, table: &Pubkey) -> Result<(), (StatusCode, String)> {
         let table_data = self.rpc.get_account(table).map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -338,7 +335,6 @@ pub fn validate_instruction_against_instruction_constraint(
     }
 
     for (i, account_constraint) in constraint.accounts.iter().enumerate() {
-        // TODO: account for lookup tables
         let account_index = instruction
             .accounts
             .get(usize::from(account_constraint.index))
