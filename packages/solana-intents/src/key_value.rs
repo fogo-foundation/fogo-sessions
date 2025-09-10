@@ -1,7 +1,7 @@
 use nom::{
     branch::alt, bytes::complete::{tag, take_while1}, character::{
         char,
-        complete::{alphanumeric1, line_ending, space0},
+        complete::{alphanumeric1, line_ending, not_line_ending, space0},
     }, combinator::{map, map_opt, peek, recognize, rest}, error::ParseError, multi::many_till, sequence::{pair, separated_pair}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
 };
 
@@ -49,6 +49,7 @@ where
             key,
             (char(':'), space0),
             alt((
+                take_while1(|c :<I as Input>::Item| !c.is_newline()),
                 recognize(many_till(
                     take_while1(|_| true),
                     peek(pair(line_ending, alphanumeric1)),
