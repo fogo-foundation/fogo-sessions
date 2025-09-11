@@ -4,7 +4,7 @@ use domain_registry::domain::Domain;
 use nom::lib::std::fmt::Debug;
 use nom::{
     bytes::complete::tag,
-    character::complete::{line_ending, space0},
+    character::complete::line_ending,
     combinator::{map, map_opt, map_res},
     error::{Error, ParseError},
     multi::many1,
