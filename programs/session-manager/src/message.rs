@@ -11,7 +11,7 @@ use nom::{
     sequence::preceded,
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
-use solana_intents::{key_value, line, list_of, SymbolOrMint, Version};
+use solana_intents::{key_value, SymbolOrMint, Version};
 use std::{collections::HashMap, str::FromStr};
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n";
@@ -102,7 +102,7 @@ impl FromStr for Tokens {
             )
             .parse(s)
             .map(|(_, tokens)| tokens)
-            .map_err(|e| Err::<Error<&str>>::to_owned(e)),
+            .map_err(Err::<Error<&str>>::to_owned),
         }
     }
 }

@@ -1,4 +1,3 @@
-use crate::line::line;
 use nom::{
     bytes::complete::tag, character::complete::space0, error::ParseError, multi::many1,
     sequence::preceded, AsChar, Compare, Input, Parser,

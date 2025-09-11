@@ -9,7 +9,7 @@ use nom::{
     sequence::preceded,
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
-use solana_intents::{line, tag_key_value, SymbolOrMint, Version};
+use solana_intents::{tag_key_value, SymbolOrMint, Version};
 
 const MESSAGE_PREFIX: &str =
     "Fogo Transfer:\nSigning this intent will transfer the tokens as described below.\n";

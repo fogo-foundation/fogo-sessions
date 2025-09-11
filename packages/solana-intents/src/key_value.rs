@@ -1,19 +1,14 @@
-use nom::lib::std::fmt::Debug;
 use nom::{
-    bits::complete::take,
     branch::alt,
-    bytes::{
-        complete::{tag, take_till1, take_while1},
-        take_till,
-    },
+    bytes::complete::{tag, take_till1, take_while1},
     character::{
-        anychar, char,
-        complete::{alphanumeric1, line_ending, not_line_ending, space0, space1},
+        char,
+        complete::{alphanumeric1, line_ending, not_line_ending, space0},
     },
     combinator::{eof, map, map_opt, opt, peek, recognize, rest, value},
     error::ParseError,
-    multi::{many1, many_till},
-    sequence::{pair, preceded, separated_pair, terminated},
+    multi::many_till,
+    sequence::{preceded, separated_pair, terminated},
     AsChar, Compare, IResult, Input, Offset, ParseTo, Parser,
 };
 
@@ -77,7 +72,7 @@ where
                 rest,
             )),
         ),
-        |(key, val): (KO, I)| return val.parse_to().map(|parsed| (key, parsed)),
+        |(key, val): (KO, I)| val.parse_to().map(|parsed| (key, parsed)),
     )
 }
 #[cfg(test)]
