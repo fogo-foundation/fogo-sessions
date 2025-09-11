@@ -1,5 +1,5 @@
 use nom::{
-    bits::complete::take, branch::alt, bytes::complete::{tag, take_while1}, character::{
+    bits::complete::take, branch::alt, bytes::complete::{tag, take_till1, take_while1}, character::{
         anychar, char, complete::{alphanumeric1, line_ending, space0}
     }, combinator::{map, map_opt, peek, recognize, rest}, error::ParseError, multi::many_till, sequence::{pair, preceded, separated_pair}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
 };
@@ -52,7 +52,7 @@ where
             key,
             char(':'),
             alt((
-                preceded(space0, take_while1(|c :<I as Input>::Item| !c.is_newline())),
+                preceded(space0, take_till1(|c :<I as Input>::Item| c.is_newline())),
                 preceded(
                     line_ending,
                     alt((
@@ -63,27 +63,13 @@ where
                         rest,
                     )),
                 ),
+                rest
             )),
         ),
         |(key, val): (KO, I)| {
             println!("val: {:?}", val);
             return val.parse_to().map(|parsed| (key, parsed))},
     )
-}
-
-pub fn parser_loco<I, E>(input: I) -> IResult<I, I, E>
-where
-    I: Input,
-    I: Offset,
-    I: Compare<&'static str>,
-    <I as Input>::Item: AsChar,
-    E: ParseError<I>,
-    I: Debug,
-{
-    recognize(many_till(
-        take_while1(|_| true),
-        peek(pair(line_ending, alphanumeric1))
-    )).parse(input)
 }
 
 #[cfg(test)]
