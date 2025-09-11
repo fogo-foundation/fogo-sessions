@@ -9,6 +9,7 @@ import {
   reestablishSession,
   AuthorizedTokens,
   TransactionResultType,
+  revokeSession,
 } from "@fogo/sessions-sdk";
 import {
   clearStoredSession,
@@ -314,13 +315,23 @@ const useSessionStateContext = ({
   }, [wallet]);
 
   const endSession = useCallback(
-    (walletPublicKey: PublicKey) => {
-      clearStoredSession(walletPublicKey).catch((error: unknown) => {
-        // eslint-disable-next-line no-console
-        console.error("Failed to check stored session", error);
-        disconnectWallet();
-      });
+    (walletPublicKey: PublicKey, session?: Session) => {
+      const doRevokeSession = async () => {
+        return session
+          ? await revokeSession({
+              adapter: await getAdapter(),
+              session,
+            })
+          : undefined;
+      };
       disconnectWallet();
+      Promise.all([
+        doRevokeSession(),
+        clearStoredSession(walletPublicKey),
+      ]).catch((error: unknown) => {
+        // eslint-disable-next-line no-console
+        console.error("Failed to clean up session", error);
+      });
     },
     [disconnectWallet],
   );
@@ -341,7 +352,7 @@ const useSessionStateContext = ({
       });
       const establishedOptions: EstablishedOptions = {
         endSession: () => {
-          endSession(session.walletPublicKey);
+          endSession(session.walletPublicKey, session);
         },
         payer: session.payer,
         sendTransaction: async (instructions) => {

@@ -51,7 +51,7 @@ const UNLIMITED_TOKEN_PERMISSIONS_VALUE =
 const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 
 const CURRENT_MAJOR = "0";
-const CURRENT_MINOR = "1";
+const CURRENT_MINOR = "2";
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
 const CURRENT_INTENT_TRANSFER_MINOR = "1";
 
@@ -147,6 +147,28 @@ export const replaceSession = async (
     ...options,
     walletPublicKey: options.session.walletPublicKey,
   });
+
+export const revokeSession = async (options: {
+  adapter: SessionAdapter;
+  session: Session;
+}) => {
+  if (options.session.sessionInfo.minor >= 2) {
+    const instruction = await new SessionManagerProgram(
+      new AnchorProvider(options.adapter.connection, {} as Wallet, {}),
+    ).methods
+      .revokeSession()
+      .accounts({
+        sponsor: options.session.sessionInfo.sponsor,
+        session: options.session.sessionPublicKey,
+      })
+      .instruction();
+    return options.adapter.sendTransaction(options.session.sessionKey, [
+      instruction,
+    ]);
+  } else {
+    return;
+  }
+};
 
 export const reestablishSession = async (
   adapter: SessionAdapter,
