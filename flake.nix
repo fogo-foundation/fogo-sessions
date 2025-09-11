@@ -4,6 +4,10 @@
     flake-utils.url = "github:numtide/flake-utils";
     mkCli.url = "github:cprussin/mkCli";
     solana-nix.url = "github:cprussin/solana-nix";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -11,6 +15,7 @@
     flake-utils,
     mkCli,
     solana-nix,
+    rust-overlay,
     ...
   }: let
     cli-overlay = nixpkgs.lib.composeExtensions mkCli.overlays.default (final: _: {
@@ -18,6 +23,7 @@
         _noAll = true;
 
         start = "${final.lib.getExe final.tilt} up";
+        start-testnet = "USE_TESTNET=true pnpm turbo start:dev";
         clean = "${final.lib.getExe final.git} clean -fdx";
 
         test = {
@@ -26,7 +32,11 @@
             dead-code = "${final.deadnix}/bin/deadnix --exclude ./node_modules .";
             format = "${final.alejandra}/bin/alejandra --exclude ./node_modules --check .";
           };
-          turbo = "${final.lib.getExe final.pnpm} turbo test -- --ui stream";
+          turbo = "pnpm turbo test -- --ui stream";
+          rust = {
+            format = "cargo fmt --verbose --check";
+            lint = "cargo clippy";
+          };
         };
 
         fix = {
@@ -35,51 +45,54 @@
             dead-code = "${final.deadnix}/bin/deadnix --exclude ./node_modules -e .";
             format = "${final.alejandra}/bin/alejandra --exclude ./node_modules .";
           };
-          turbo = "${final.lib.getExe final.pnpm} turbo fix -- --ui stream";
+          turbo = "pnpm turbo fix -- --ui stream";
+          rust = {
+            format = "cargo fmt --verbose";
+            lint = "cargo clippy --fix";
+          };
         };
       };
     });
 
-    project-shell-overlay = system: final: _: let
-      spl-token-cli = final.rustPlatform.buildRustPackage (finalAttrs: {
-        pname = "spl-token-cli";
-        version = "5.3.0";
+    project-shell-overlay = system:
+      nixpkgs.lib.composeExtensions rust-overlay.overlays.default (final: _: let
+        spl-token-cli = final.rustPlatform.buildRustPackage (finalAttrs: {
+          pname = "spl-token-cli";
+          version = "5.3.0";
 
-        src = final.fetchCrate {
-          inherit (finalAttrs) pname version;
-          hash = "sha256-sUrmtE0xFBTzPRSliVT9UJpPqbGhIBAHTB2XDk7mzw0=";
+          src = final.fetchCrate {
+            inherit (finalAttrs) pname version;
+            hash = "sha256-sUrmtE0xFBTzPRSliVT9UJpPqbGhIBAHTB2XDk7mzw0=";
+          };
+
+          cargoHash = "sha256-W6nioqctxSBsujax1sILHqu/d3I0qEPRQc+hl2gep24=";
+
+          nativeBuildInputs = [final.pkg-config final.perl final.protobuf];
+          buildInputs = [final.openssl final.udev];
+          doCheck = false;
+        });
+      in {
+        project-shell = final.mkShell {
+          FORCE_COLOR = 1;
+          PUPPETEER_SKIP_DOWNLOAD = 1;
+          PUPPETEER_EXECUTABLE_PATH = final.lib.getExe final.chromium;
+          name = "project-shell";
+          buildInputs = [
+            final.cli
+            final.git
+            final.libusb1
+            final.nodejs
+            final.pnpm
+            final.python3
+            final.tilt
+            (final.rust-bin.nightly.latest.default.override {extensions = ["rust-analyzer"];})
+            solana-nix.packages."${system}".solana-cli
+            solana-nix.packages."${system}".anchor-cli
+            solana-nix.packages."${system}".solana-rust
+            spl-token-cli
+          ];
         };
-
-        cargoHash = "sha256-W6nioqctxSBsujax1sILHqu/d3I0qEPRQc+hl2gep24=";
-
-        nativeBuildInputs = [final.pkg-config final.perl final.protobuf];
-        buildInputs = [final.openssl final.udev];
-        doCheck = false;
       });
-    in {
-      project-shell = final.mkShell {
-        FORCE_COLOR = 1;
-        PUPPETEER_SKIP_DOWNLOAD = 1;
-        PUPPETEER_EXECUTABLE_PATH = final.lib.getExe final.chromium;
-        name = "project-shell";
-        buildInputs = [
-          final.cli
-          final.git
-          final.libusb1
-          final.nodejs
-          final.pnpm
-          final.python3
-          final.tilt
-          final.rust-analyzer
-          final.rustfmt
-          final.clippy
-          solana-nix.packages."${system}".solana-cli
-          solana-nix.packages."${system}".anchor-cli
-          solana-nix.packages."${system}".solana-rust
-          spl-token-cli
-        ];
-      };
-    };
   in
     (flake-utils.lib.eachDefaultSystem
       (
