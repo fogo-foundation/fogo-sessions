@@ -1,6 +1,7 @@
 use anchor_lang::prelude::Pubkey;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
+use fogo_sessions_sdk::session::MAJOR;
 use nom::lib::std::fmt::Debug;
 use nom::{
     bytes::complete::tag,
@@ -61,7 +62,7 @@ where
                 .map(|(key, value)| key.parse_to().map(|key| (key, value)))
                 .collect::<Option<HashMap<String, String>>>()?;
             let version: Version = values.remove("version")?.parse().ok()?;
-            if version.major == 0 && version.minor == 1 {
+            if version.major == MAJOR {
                 Some(Message {
                     version,
                     chain_id: values.remove("chain_id")?,
