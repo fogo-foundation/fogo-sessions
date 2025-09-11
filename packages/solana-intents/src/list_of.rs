@@ -22,7 +22,7 @@ mod tests {
     #[test]
     fn test_valid_list() {
         assert_eq!(
-            list_of(alpha1::<_, Error<&str>>).parse("-foo-bar-baz"),
+            list_of(alpha1::<_, Error<&str>>).parse("-foo- bar -baz"),
             Ok(("", vec!["foo", "bar", "baz"]))
         )
     }
