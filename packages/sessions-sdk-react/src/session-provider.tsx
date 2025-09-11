@@ -89,51 +89,46 @@ type Props = ConstrainedOmit<
     | (() => Promise<boolean> | boolean)
     | (() => Promise<void> | void)
     | undefined;
+  wallets?: ComponentProps<typeof WalletProvider>["wallets"];
 };
 
 export const FogoSessionProvider = ({
   endpoint,
   tokens,
   defaultRequestedLimits,
+  wallets = [
+    new NightlyWalletAdapter(),
+    new PhantomWalletAdapter(),
+    new BitgetWalletAdapter(),
+    new BackpackWalletAdapter(),
+    new SolflareWalletAdapter(),
+  ],
   ...props
-}: Props) => {
-  const wallets = useMemo(
-    () => [
-      new NightlyWalletAdapter(),
-      new PhantomWalletAdapter(),
-      new BitgetWalletAdapter(),
-      new BackpackWalletAdapter(),
-      new SolflareWalletAdapter(),
-    ],
-    [],
-  );
-
-  return (
-    <ToastProvider>
-      <ConnectionProvider endpoint={endpoint}>
-        <WalletProvider wallets={wallets} autoConnect>
-          <WalletModalProvider>
-            <SessionProvider
-              tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
-              defaultRequestedLimits={
-                defaultRequestedLimits === undefined
-                  ? undefined
-                  : deserializePublicKeyMap(defaultRequestedLimits)
-              }
-              {...("sponsor" in props && {
-                sponsor:
-                  typeof props.sponsor === "string"
-                    ? deserializePublicKey(props.sponsor)
-                    : props.sponsor,
-              })}
-              {...props}
-            />
-          </WalletModalProvider>
-        </WalletProvider>
-      </ConnectionProvider>
-    </ToastProvider>
-  );
-};
+}: Props) => (
+  <ToastProvider>
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          <SessionProvider
+            tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
+            defaultRequestedLimits={
+              defaultRequestedLimits === undefined
+                ? undefined
+                : deserializePublicKeyMap(defaultRequestedLimits)
+            }
+            {...("sponsor" in props && {
+              sponsor:
+                typeof props.sponsor === "string"
+                  ? deserializePublicKey(props.sponsor)
+                  : props.sponsor,
+            })}
+            {...props}
+          />
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
+  </ToastProvider>
+);
 
 const SessionProvider = ({
   children,
