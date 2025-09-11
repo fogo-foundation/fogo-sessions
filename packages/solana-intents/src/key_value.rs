@@ -1,13 +1,11 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1, take_while1},
-    character::{
-        complete::{alphanumeric1, line_ending, not_line_ending, char},
-    },
+    character::complete::{alphanumeric1, anychar, char, line_ending},
     combinator::{eof, map, map_opt, opt, peek, recognize, value},
     error::ParseError,
     multi::many_till,
-    sequence::{delimited, preceded, separated_pair, terminated},
+    sequence::{delimited, preceded, separated_pair},
     AsChar, Compare, IResult, Input, Offset, ParseTo, Parser,
 };
 
@@ -60,12 +58,16 @@ where
                     take_till1(|c: <I as Input>::Item| c.is_newline()),
                     alt((line_ending, eof)),
                 ),
-                preceded(
+                delimited(
                     line_ending,
                     recognize(many_till(
-                        terminated(not_line_ending, opt(line_ending)),
-                        peek(alt((value((), alphanumeric1), value((), eof)))),
+                        anychar,
+                        peek(alt((
+                            value((), preceded(line_ending, alphanumeric1)),
+                            value((), eof),
+                        ))),
                     )),
+                    opt(line_ending),
                 ),
                 eof,
             )),
@@ -78,7 +80,7 @@ mod tests {
     mod key_value_with_key_type {
         use super::super::*;
         use nom::error::{Error, ErrorKind};
-        use nom::{Err, Needed};
+        use nom::Err;
 
         #[test]
         fn test_no_colon() {
@@ -184,7 +186,7 @@ mod tests {
         fn test_value_after_newline_with_next_key() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo:\n-baz\nbaz");
-            assert_eq!(result, Ok(("baz", ("foo", "-baz\n".to_string())))) 
+            assert_eq!(result, Ok(("baz", ("foo", "-baz".to_string())))) 
         }
 
         #[test]
@@ -198,7 +200,7 @@ mod tests {
         fn test_multiline_value_with_next_key() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo:\n-baz\n-qux\nbaz");
-            assert_eq!(result, Ok(("baz", ("foo", "-baz\n-qux\n".to_string())))) 
+            assert_eq!(result, Ok(("baz", ("foo", "-baz\n-qux".to_string())))) 
         }
     }
 
