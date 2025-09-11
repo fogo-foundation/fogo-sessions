@@ -187,18 +187,6 @@ mod tests {
         };
 
         #[test]
-        fn test_empty_string() {
-            let result = key_value::<_, String, _>("");
-            assert_eq!(
-                result.unwrap_err(),
-                Err::Error(Error {
-                    code: ErrorKind::TakeWhile1,
-                    input: ""
-                })
-            );
-        }
-
-        #[test]
         fn test_parse() {
             let result = key_value::<_, _, Error<&str>>("foo: bar");
             assert_eq!(result, Ok(("", ("foo", "bar".to_string()))))
@@ -212,8 +200,26 @@ mod tests {
 
         #[test]
         fn test_many_spaces() {
-            let result = key_value::<_, _, Error<&str>>("foo:  bar");
+            let result = key_value::<_, _, Error<&str>>("foo: \t  bar");
             assert_eq!(result, Ok(("", ("foo", "bar".to_string()))))
+        }
+
+        #[test]
+        fn test_no_value() {
+            let result = key_value::<_, _, Error<&str>>("foo:");
+            assert_eq!(result, Ok(("", ("foo", "".to_string()))))
+        }
+
+        #[test]
+        fn test_empty_string() {
+            let result = key_value::<_, String, _>("");
+            assert_eq!(
+                result.unwrap_err(),
+                Err::Error(Error {
+                    code: ErrorKind::TakeWhile1,
+                    input: ""
+                })
+            );
         }
 
         #[test]
