@@ -1,3 +1,4 @@
+use crate::line;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1, take_while1},
@@ -11,8 +12,6 @@ use nom::{
     sequence::{preceded, separated_pair, terminated},
     AsChar, Compare, IResult, Input, Offset, ParseTo, Parser,
 };
-
-use crate::line;
 
 pub fn tag_key_value<I, O, E, T>(key: T) -> impl Parser<I, Output = O, Error = E>
 where
