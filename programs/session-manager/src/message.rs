@@ -2,7 +2,7 @@ use anchor_lang::prelude::Pubkey;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
 use nom::{
-    bytes::complete::tag, character::complete::line_ending, combinator::{map, map_opt, map_res}, error::{Error, ParseError}, multi::many1, sequence::preceded, AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser
+    bytes::complete::tag, character::complete::{line_ending, space0}, combinator::{map, map_opt, map_res}, error::{Error, ParseError}, multi::many1, sequence::preceded, AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser
 };
 use solana_intents::{key_value, line, list_of, SymbolOrMint, Version};
 use std::{collections::HashMap, str::FromStr};
@@ -91,17 +91,14 @@ impl FromStr for Tokens {
             UNLIMITED_TOKEN_PERMISSIONS_VALUE => Ok(Tokens::All),
             TOKENLESS_PERMISSIONS_VALUE => Ok(Tokens::Specific(vec![])),
             _ => {
-                let result = map(
-                    list_of(map_res(key_value, |(key, value): (&str, String)| {
+                map(
+                    many1(map_res(preceded((space0, tag("-"), space0), key_value), |(key, value): (&str, String)| {
                         key.parse().map(|token| (token, value))
                     })),
                     Tokens::Specific,
                 )
-                .parse(s);
-                match result {
-                    Ok((_, tokens)) => Ok(tokens),
-                    Err(e) => Err(Err::<Error<&str>>::to_owned(e)),
-                }
+                 .parse(s).map(|(_, tokens)| tokens).map_err(|e| Err::<Error<&str>>::to_owned(e))
+                
             }
         }
     }
