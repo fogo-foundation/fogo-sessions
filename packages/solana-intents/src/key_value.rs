@@ -69,7 +69,7 @@ where
                         peek(alt((value((), alphanumeric1), value((), eof)))),
                     )),
                 ),
-                rest,
+                eof,
             )),
         ),
         |(key, val): (KO, I)| val.parse_to().map(|parsed| (key, parsed)),
@@ -77,12 +77,116 @@ where
 }
 #[cfg(test)]
 mod tests {
+    mod key_value_with_key_type {
+        use super::super::*;
+        use nom::{
+            error::{Error, ErrorKind},
+            Err,
+        };
+
+        #[test]
+        fn test_no_colon() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_no_value() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_no_value_after_space() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: ");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn test_no_space() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:bar");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_same_line_value_eof() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: bar");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_same_line_value_with_space_eof() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: bar ");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_same_line_value_linebreak() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: bar\nbaz");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_empty_value_after_newline() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_value_after_newline() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n-baz");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_value_after_space_and_newline() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: \n-baz");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_empty_value_after_newline_with_next_key() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\nbaz");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_value_after_newline_with_next_key() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n-baz\nbaz");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_multiline_value() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n-baz\n-qux");
+            assert!(result.is_ok());
+        }
+
+        #[test]
+        fn test_multiline_value_with_next_key() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n-baz\n-qux\nbaz");
+            assert!(result.is_ok());
+        }
+
+    }
     mod key_value {
         use super::super::*;
         use nom::{
             error::{Error, ErrorKind},
             Err,
         };
+
+        #[test]
+        fn test_empty_string() {
+            let result = key_value::<_, String, _>("");
+            assert_eq!(
+                result.unwrap_err(),
+                Err::Error(Error {
+                    code: ErrorKind::TakeWhile1,
+                    input: ""
+                })
+            );
+        }
 
         #[test]
         fn test_parse() {
@@ -98,26 +202,8 @@ mod tests {
 
         #[test]
         fn test_many_spaces() {
-            let result = key_value::<_, _, Error<&str>>("foo: \t  bar");
+            let result = key_value::<_, _, Error<&str>>("foo:  bar");
             assert_eq!(result, Ok(("", ("foo", "bar".to_string()))))
-        }
-
-        #[test]
-        fn test_no_value() {
-            let result = key_value::<_, _, Error<&str>>("foo:");
-            assert_eq!(result, Ok(("", ("foo", "".to_string()))))
-        }
-
-        #[test]
-        fn test_empty_string() {
-            let result = key_value::<_, String, _>("");
-            assert_eq!(
-                result.unwrap_err(),
-                Err::Error(Error {
-                    code: ErrorKind::TakeWhile1,
-                    input: ""
-                })
-            );
         }
 
         #[test]
@@ -130,41 +216,6 @@ mod tests {
                     input: " bla"
                 })
             );
-        }
-
-        #[test]
-        fn test_value_with_another_key() {
-            let result = key_value::<_, String, Error<&str>>("foo: bar\nbar:");
-            assert_eq!(result, Ok(("bar:", ("foo", "bar".to_string()))))
-        }
-
-        #[test]
-        fn test_space_linebreak() {
-            let result = key_value::<_, String, Error<&str>>("foo: \nbar");
-            assert_eq!(result, Ok(("bar", ("foo", "".to_string()))))
-        }
-
-        #[test]
-        fn test_empty_value_linebreak() {
-            let result = key_value::<_, String, Error<&str>>("foo:\nbar:");
-            assert_eq!(result, Ok(("bar:", ("foo", "".to_string()))))
-        }
-
-        #[test]
-        fn test_multiline_value() {
-            let result = key_value::<_, String, Error<&str>>("foo:\n-bar\n-baz");
-            assert_eq!(result, Ok(("", ("foo", "-bar\n-baz".to_string()))))
-        }
-
-        #[test]
-        fn test_multiline_value_with_another_key() {
-            let result = key_value::<_, String, Error<&str>>("foo:\n-bar\n-baz\nbar:");
-            assert_eq!(result, Ok(("bar:", ("foo", "-bar\n-baz\n".to_string()))))
-        }
-
-        #[test]
-        fn test_multiline_value_eof() {
-            let result = key_value::<_, String, Error<&str>>("foo:\n-bar\n-baz");
         }
     }
 
