@@ -86,88 +86,101 @@ mod tests {
 
         #[test]
         fn test_no_colon() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo");
+            let result =
+                key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo");
             assert!(result.is_err());
         }
 
         #[test]
         fn test_no_value() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_no_value_after_space() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: ");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo: ");
             assert!(result.is_err());
         }
 
         #[test]
         fn test_no_space() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:bar");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:bar");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_same_line_value_eof() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: bar");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo: bar");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_same_line_value_with_space_eof() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: bar ");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo: bar ");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_same_line_value_linebreak() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: bar\nbaz");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo: bar\nbaz");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_empty_value_after_newline() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:\n");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_value_after_newline() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n-baz");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:\n-baz");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_value_after_space_and_newline() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo: \n-baz");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo: \n-baz");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_empty_value_after_newline_with_next_key() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\nbaz");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:\nbaz");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_value_after_newline_with_next_key() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n-baz\nbaz");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:\n-baz\nbaz");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_multiline_value() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n-baz\n-qux");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:\n-baz\n-qux");
             assert!(result.is_ok());
         }
 
         #[test]
         fn test_multiline_value_with_next_key() {
-            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1).parse("foo:\n-baz\n-qux\nbaz");
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:\n-baz\n-qux\nbaz");
             assert!(result.is_ok());
         }
-
     }
     mod key_value {
         use super::super::*;
