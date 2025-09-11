@@ -55,6 +55,10 @@ import {
   useTokenAccountData,
 } from "./use-token-account-data.js";
 
+const ONE_SECOND_IN_MS = 1000;
+const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
+const ONE_HOUR_IN_MS = 60 * ONE_MINUTE_IN_MS;
+const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
 const FAUCET_URL = "https://gas.zip/faucet/fogo";
 
 export const SessionButton = ({
@@ -801,42 +805,104 @@ const SessionLimitsPanel = ({
 
   switch (state.type) {
     case TokenDataStateType.Error: {
-      return <div>{errorToString(state.error)}</div>;
+      return (
+        <div className={styles.sessionLimitsError}>
+          {errorToString(state.error)}
+        </div>
+      );
     }
     case TokenDataStateType.Loaded: {
       return (
-        <SessionLimits
-          className={styles.sessionLimits}
-          tokens={whitelistedTokens}
-          initialLimits={
-            new Map(
-              state.data.sessionLimits.map(({ mint, sessionLimit }) => [
-                mint,
-                sessionLimit,
-              ]),
-            )
-          }
-          onSubmit={
-            sessionState.type === SessionStateType.Established
-              ? sessionState.setLimits
-              : undefined
-          }
-          buttonText="Update limits"
-          error={
-            sessionState.type === SessionStateType.Established
-              ? sessionState.updateLimitsError
-              : undefined
-          }
-          {...(enableUnlimited && {
-            enableUnlimited: true,
-            isSessionUnlimited: !sessionState.isLimited,
-          })}
-        />
+        <div className={styles.sessionLimitsPanel}>
+          <TimeUntilExpiration expiration={sessionState.expiration} />
+          <SessionLimits
+            className={styles.sessionLimits}
+            tokens={whitelistedTokens}
+            initialLimits={
+              new Map(
+                state.data.sessionLimits.map(({ mint, sessionLimit }) => [
+                  mint,
+                  sessionLimit,
+                ]),
+              )
+            }
+            onSubmit={
+              "updateSession" in sessionState
+                ? sessionState.updateSession
+                : undefined
+            }
+            buttonText="Update limits"
+            error={
+              "updateSessionError" in sessionState
+                ? sessionState.updateSessionError
+                : undefined
+            }
+            {...(enableUnlimited && {
+              enableUnlimited: true,
+              isSessionUnlimited: !sessionState.isLimited,
+            })}
+          />
+        </div>
       );
     }
     case TokenDataStateType.NotLoaded:
     case TokenDataStateType.Loading: {
-      return "Loading...";
+      return <div className={styles.sessionLimitsLoading}>Loading...</div>;
     }
+  }
+};
+
+const relativeTimeFormat = new Intl.RelativeTimeFormat("en", { style: "long" });
+
+const TimeUntilExpiration = ({ expiration }: { expiration: Date }) => {
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+  const [expired, setExpired] = useState(false);
+  const [formatted, setFormatted] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      const interval = expiration.getTime() - Date.now();
+      const args = getRelativeTimeFormatArgs(interval);
+      if (args === undefined) {
+        setExpired(true);
+        setFormatted("Session is expired");
+      } else {
+        setExpired(false);
+        setFormatted(
+          `Session expires ${relativeTimeFormat.format(Math.floor(interval / args[0]), args[1])}`,
+        );
+        timeoutRef.current = setTimeout(update, args[0]);
+      }
+    };
+    clearTimeout(timeoutRef.current);
+    update();
+    return () => {
+      clearTimeout(timeoutRef.current);
+    };
+  }, [expiration]);
+
+  return (
+    <div
+      className={styles.sessionExpiryBanner}
+      data-expired={expired ? "" : undefined}
+    >
+      {formatted}
+    </div>
+  );
+};
+
+const getRelativeTimeFormatArgs = (interval: number) => {
+  if (interval > ONE_DAY_IN_MS) {
+    return [ONE_DAY_IN_MS, "day"] as const;
+  } else if (interval > ONE_HOUR_IN_MS) {
+    return [ONE_HOUR_IN_MS, "hour"] as const;
+  } else if (interval > ONE_MINUTE_IN_MS) {
+    return [ONE_MINUTE_IN_MS, "minute"] as const;
+  } else if (interval > ONE_SECOND_IN_MS) {
+    return [ONE_SECOND_IN_MS, "second"] as const;
+  } else {
+    return;
   }
 };

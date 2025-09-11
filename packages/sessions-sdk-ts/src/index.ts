@@ -51,7 +51,7 @@ const UNLIMITED_TOKEN_PERMISSIONS_VALUE =
 const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 
 const CURRENT_MAJOR = "0";
-const CURRENT_MINOR = "1";
+const CURRENT_MINOR = "2";
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
 const CURRENT_INTENT_TRANSFER_MINOR = "1";
 
@@ -148,6 +148,28 @@ export const replaceSession = async (
     walletPublicKey: options.session.walletPublicKey,
   });
 
+export const revokeSession = async (options: {
+  adapter: SessionAdapter;
+  session: Session;
+}) => {
+  if (options.session.sessionInfo.minor >= 2) {
+    const instruction = await new SessionManagerProgram(
+      new AnchorProvider(options.adapter.connection, {} as Wallet, {}),
+    ).methods
+      .revokeSession()
+      .accounts({
+        sponsor: options.session.sessionInfo.sponsor,
+        session: options.session.sessionPublicKey,
+      })
+      .instruction();
+    return options.adapter.sendTransaction(options.session.sessionKey, [
+      instruction,
+    ]);
+  } else {
+    return;
+  }
+};
+
 export const reestablishSession = async (
   adapter: SessionAdapter,
   walletPublicKey: PublicKey,
@@ -197,57 +219,118 @@ const createSession = async (
 
 const sessionInfoSchema = z
   .object({
-    session_info: z.object({
-      authorized_programs: z.union([
-        z.object({
-          Specific: z.object({
-            0: z.array(
+    session_info: z.union([
+      z.object({
+        V1: z.object({
+          "0": z.object({
+            authorized_programs: z.union([
               z.object({
-                program_id: z.instanceof(PublicKey),
-                signer_pda: z.instanceof(PublicKey),
+                Specific: z.object({
+                  0: z.array(
+                    z.object({
+                      program_id: z.instanceof(PublicKey),
+                      signer_pda: z.instanceof(PublicKey),
+                    }),
+                  ),
+                }),
               }),
-            ),
+              z.object({
+                All: z.object({}),
+              }),
+            ]),
+            authorized_tokens: z.union([
+              z.object({ Specific: z.object({}) }),
+              z.object({ All: z.object({}) }),
+            ]),
+            expiration: z.instanceof(BN),
+            extra: z.object({
+              0: z.unknown(),
+            }),
+            user: z.instanceof(PublicKey),
           }),
         }),
-        z.object({
-          All: z.object({}),
-        }),
-      ]),
-      authorized_tokens: z.union([
-        z.object({ Specific: z.object({}) }),
-        z.object({ All: z.object({}) }),
-      ]),
-      expiration: z.instanceof(BN),
-      extra: z.object({
-        0: z.unknown(),
       }),
-      major: z.number(),
-      minor: z.number(),
-      user: z.instanceof(PublicKey),
-    }),
-  })
-  .transform(({ session_info }) => ({
-    authorizedPrograms:
-      "All" in session_info.authorized_programs
-        ? AuthorizedPrograms.All()
-        : AuthorizedPrograms.Specific(
-            session_info.authorized_programs.Specific[0].map(
-              ({ program_id, signer_pda }) => ({
-                programId: program_id,
-                signerPda: signer_pda,
+      z.object({
+        V2: z.object({
+          "0": z.union([
+            z.object({
+              Revoked: z.instanceof(BN),
+            }),
+            z.object({
+              Active: z.object({
+                "0": z.object({
+                  authorized_programs: z.union([
+                    z.object({
+                      Specific: z.object({
+                        0: z.array(
+                          z.object({
+                            program_id: z.instanceof(PublicKey),
+                            signer_pda: z.instanceof(PublicKey),
+                          }),
+                        ),
+                      }),
+                    }),
+                    z.object({
+                      All: z.object({}),
+                    }),
+                  ]),
+                  authorized_tokens: z.union([
+                    z.object({ Specific: z.object({}) }),
+                    z.object({ All: z.object({}) }),
+                  ]),
+                  expiration: z.instanceof(BN),
+                  extra: z.object({
+                    0: z.unknown(),
+                  }),
+                  user: z.instanceof(PublicKey),
+                }),
               }),
+            }),
+          ]),
+        }),
+      }),
+    ]),
+    major: z.number(),
+    sponsor: z.instanceof(PublicKey),
+  })
+  .transform(({ session_info, major, sponsor }) => {
+    let activeSessionInfo;
+    let minor: 1 | 2;
+
+    if ("V1" in session_info) {
+      activeSessionInfo = session_info.V1["0"];
+      minor = 1;
+    } else if ("Active" in session_info.V2["0"]) {
+      activeSessionInfo = session_info.V2["0"].Active["0"];
+      minor = 2;
+    } else {
+      return;
+    }
+
+    return {
+      authorizedPrograms:
+        "All" in activeSessionInfo.authorized_programs
+          ? AuthorizedPrograms.All()
+          : AuthorizedPrograms.Specific(
+              activeSessionInfo.authorized_programs.Specific[0].map(
+                ({ program_id, signer_pda }) => ({
+                  programId: program_id,
+                  signerPda: signer_pda,
+                }),
+              ),
             ),
-          ),
-    authorizedTokens:
-      "All" in session_info.authorized_tokens
-        ? AuthorizedTokens.All
-        : AuthorizedTokens.Specific,
-    expiration: new Date(Number(session_info.expiration) * 1000),
-    extra: session_info.extra[0],
-    major: session_info.major,
-    minor: session_info.minor,
-    user: session_info.user,
-  }));
+      authorizedTokens:
+        "All" in activeSessionInfo.authorized_tokens
+          ? AuthorizedTokens.All
+          : AuthorizedTokens.Specific,
+      expiration: new Date(Number(activeSessionInfo.expiration) * 1000),
+      extra: activeSessionInfo.extra[0],
+      major: major,
+      minor: minor,
+      user: activeSessionInfo.user,
+      sponsor,
+    };
+  });
 
 export enum AuthorizedProgramsType {
   All,
@@ -498,7 +581,7 @@ export type Session = {
   sendTransaction: (
     instructions: Parameters<SessionAdapter["sendTransaction"]>[1],
   ) => Promise<TransactionResult>;
-  sessionInfo: z.infer<typeof sessionInfoSchema>;
+  sessionInfo: NonNullable<z.infer<typeof sessionInfoSchema>>;
 };
 
 const TRANSFER_MESSAGE_HEADER = `Fogo Transfer:

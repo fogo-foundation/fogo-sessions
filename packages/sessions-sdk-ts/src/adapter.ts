@@ -85,7 +85,9 @@ export const createSolanaWalletAdapter = async (
         paymaster?: string | URL | undefined;
       }
     | {
-        sendToPaymaster: (transaction: Transaction) => Promise<string>;
+        sendToPaymaster: (
+          transaction: Transaction,
+        ) => Promise<TransactionResult>;
         sponsor: PublicKey;
       }
   ),
@@ -94,7 +96,8 @@ export const createSolanaWalletAdapter = async (
     options.connection,
     options.addressLookupTableAddress,
   );
-  const sponsor = await getSponsor(options);
+  const domain = getDomain(options.domain);
+  const sponsor = await getSponsor(options, domain);
   return {
     connection: options.connection,
     payer: sponsor,
@@ -103,7 +106,7 @@ export const createSolanaWalletAdapter = async (
     sendTransaction: async (sessionKey, instructions) => {
       const rpc = createSolanaRpc(options.connection.rpcEndpoint);
       const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-      const signature = await sendToPaymaster(
+      return await sendToPaymaster(
         options,
         await buildTransaction(
           latestBlockhash,
@@ -112,17 +115,8 @@ export const createSolanaWalletAdapter = async (
           instructions,
           addressLookupTables,
         ),
+        domain,
       );
-      const lastValidBlockHeight = await rpc.getSlot().send();
-      const confirmationResult = await options.connection.confirmTransaction({
-        signature,
-        blockhash: latestBlockhash.blockhash.toString(),
-        lastValidBlockHeight: Number(lastValidBlockHeight),
-      });
-
-      return confirmationResult.value.err === null
-        ? TransactionResult.Success(signature)
-        : TransactionResult.Failed(signature, confirmationResult.value.err);
     },
   };
 };
@@ -194,39 +188,72 @@ const buildTransaction = async (
 
 const getSponsor = async (
   options: Parameters<typeof createSolanaWalletAdapter>[0],
+  domain: string,
 ) => {
   if ("sponsor" in options) {
     return options.sponsor;
   } else {
-    const response = await fetch(
-      new URL("/api/sponsor_pubkey", options.paymaster ?? DEFAULT_PAYMASTER),
+    const url = new URL(
+      "/api/sponsor_pubkey",
+      options.paymaster ?? DEFAULT_PAYMASTER,
     );
-    return new PublicKey(z.string().parse(await response.text()));
+    url.searchParams.set("domain", domain);
+    const response = await fetch(url);
+
+    if (response.status === 200) {
+      return new PublicKey(z.string().parse(await response.text()));
+    } else {
+      throw new PaymasterResponseError(response.status, await response.text());
+    }
   }
 };
+
+const sponsorAndSendResponseSchema = z
+  .discriminatedUnion("type", [
+    z.object({
+      type: z.literal("success"),
+      signature: z.string(),
+    }),
+    z.object({
+      type: z.literal("failed"),
+      signature: z.string(),
+      error: z.object({
+        InstructionError: z.tuple([z.number(), z.unknown()]),
+      }),
+    }),
+  ])
+  .transform((data) => {
+    return data.type === "success"
+      ? TransactionResult.Success(data.signature)
+      : TransactionResult.Failed(data.signature, data.error);
+  });
 
 const sendToPaymaster = async (
   options: Parameters<typeof createSolanaWalletAdapter>[0],
   transaction: Transaction,
-) => {
+  domain: string,
+): Promise<TransactionResult> => {
   if ("sendToPaymaster" in options) {
     return options.sendToPaymaster(transaction);
   } else {
-    const response = await fetch(
-      new URL("/api/sponsor_and_send", options.paymaster ?? DEFAULT_PAYMASTER),
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          transaction: getBase64EncodedWireTransaction(transaction),
-        }),
-      },
+    const url = new URL(
+      "/api/sponsor_and_send",
+      options.paymaster ?? DEFAULT_PAYMASTER,
     );
+    url.searchParams.set("confirm", "true");
+    url.searchParams.set("domain", domain);
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        transaction: getBase64EncodedWireTransaction(transaction),
+      }),
+    });
 
     if (response.status === 200) {
-      return response.text();
+      return sponsorAndSendResponseSchema.parse(await response.json());
     } else {
       throw new PaymasterResponseError(response.status, await response.text());
     }

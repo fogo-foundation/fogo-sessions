@@ -20,7 +20,7 @@ pub mod example {
             &ctx.accounts.signer_or_session,
             &crate::ID,
         )
-        .map_err(|_| ProgramError::InvalidAccountData)?;
+        .map_err(ProgramError::from)?;
 
         // Check that user_token_account is the user's associated token account
         require_eq!(

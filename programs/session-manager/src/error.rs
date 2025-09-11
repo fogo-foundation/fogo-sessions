@@ -12,6 +12,8 @@ pub enum SessionManagerError {
     IncorrectInstructionProgramId,
     #[msg("The ed25519 instruction's header is incorrect")]
     SignatureVerificationUnexpectedHeader,
+    #[msg("This signed intent version is not supported")]
+    InvalidVersion,
     #[msg("The intent message was malformed and could not be parsed")]
     ParseFailedError,
     #[msg("The borsh payload of the ed25519 instruction could not be deserialized")]
@@ -36,6 +38,8 @@ pub enum SessionManagerError {
         "The domain record provided is not the domain record of the domain in the signed intent"
     )]
     DomainRecordMismatch,
+    #[msg("The provided sponsor account doesn't match the session sponsor")]
+    SponsorMismatch,
 }
 
 impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for SessionManagerError {

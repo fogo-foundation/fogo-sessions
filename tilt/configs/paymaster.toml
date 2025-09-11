@@ -1,11 +1,70 @@
-keypair_path = "./tilt/keypairs/sponsor.json"
+mnemonic_file = "./tilt/secrets/mnemonic"
 solana_url = "http://127.0.0.1:8899"
 listen_address = "0.0.0.0:4000"
 max_sponsor_spending = 0.01
-program_whitelist = [
-    "Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3",
-    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
-    "Ed25519SigVerify111111111111111111111111111",
-    "SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC",
+
+[[domains]]
+domain = "http://localhost:3000"
+
+## Tx Variation 0
+[[domains.tx_variations]]
+version = "v1"
+name = "Sample v1 Variation"
+max_gas_spend = 1000000
+
+[domains.tx_variations.rate_limits]
+session_per_min = 5
+ip_per_min = 20
+
+# Instruction 0
+[[domains.tx_variations.instructions]]
+program = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+required = true
+
+[[domains.tx_variations.instructions.accounts]]
+index = 2
+include = [ { Signer = { index = -1 } } ]
+exclude = []
+
+[[domains.tx_variations.instructions.accounts]]
+index = 1
+include = []
+exclude = [
+    { Explicit = { pubkey = "So11111111111111111111111111111111111111111" } },
+    { Signer = { index = -1 } }
+]
+
+[[domains.tx_variations.instructions.data]]
+start_byte = 0
+data_type = "U64"
+constraint = { LessThan = { U64 = 1000 } }
+
+
+# Instruction 1
+[[domains.tx_variations.instructions]]
+program = "ambi3LHRUzmU187u4rP46rX6wrYrLtU1Bmi5U2yCTGE"
+required = true
+
+[[domains.tx_variations.instructions.accounts]]
+index = 0
+include = [ { Signer = { index = -1 } } ]
+exclude = []
+
+[[domains.tx_variations.instructions.data]]
+start_byte = 0
+data_type = "U8"
+constraint = { EqualTo = [ {U8 = 4}, {U8 = 5} ] }
+
+
+
+## Tx Variation 1
+[[domains.tx_variations]]
+version = "v0"
+name = "Sample v0 Variation"
+whitelisted_programs = [
+    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL", 
+    "Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3", 
+    "Ed25519SigVerify111111111111111111111111111", 
+    "SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC", 
     "Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD"
 ]

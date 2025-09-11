@@ -8,6 +8,8 @@ import {
   SessionResultType,
   reestablishSession,
   AuthorizedTokens,
+  TransactionResultType,
+  revokeSession,
 } from "@fogo/sessions-sdk";
 import {
   clearStoredSession,
@@ -43,6 +45,7 @@ import {
   use,
 } from "react";
 import { mutate } from "swr";
+import { z } from "zod";
 
 import {
   deserializePublicKey,
@@ -53,7 +56,11 @@ import { errorToString } from "./error-to-string.js";
 import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
 import { ToastProvider, useToast } from "./toast.js";
-import { getCacheKey } from "./use-token-account-data.js";
+import {
+  getCacheKey,
+  useTokenAccountData,
+  StateType as TokenDataStateType,
+} from "./use-token-account-data.js";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
 
@@ -61,7 +68,10 @@ const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
 const ONE_HOUR_IN_MS = 60 * ONE_MINUTE_IN_MS;
 const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
-const SESSION_DURATION = 14 * ONE_DAY_IN_MS;
+const DEFAULT_SESSION_DURATION = 14 * ONE_DAY_IN_MS;
+
+const ERROR_CODE_SESSION_EXPIRED = 4_000_000_000;
+const ERROR_CODE_SESSION_LIMITS_EXCEEDED = 4_000_000_008;
 
 type Props = ConstrainedOmit<
   ComponentProps<typeof SessionProvider>,
@@ -79,51 +89,46 @@ type Props = ConstrainedOmit<
     | (() => Promise<boolean> | boolean)
     | (() => Promise<void> | void)
     | undefined;
+  wallets?: ComponentProps<typeof WalletProvider>["wallets"];
 };
 
 export const FogoSessionProvider = ({
   endpoint,
   tokens,
   defaultRequestedLimits,
+  wallets = [
+    new NightlyWalletAdapter(),
+    new PhantomWalletAdapter(),
+    new BitgetWalletAdapter(),
+    new BackpackWalletAdapter(),
+    new SolflareWalletAdapter(),
+  ],
   ...props
-}: Props) => {
-  const wallets = useMemo(
-    () => [
-      new NightlyWalletAdapter(),
-      new PhantomWalletAdapter(),
-      new BitgetWalletAdapter(),
-      new BackpackWalletAdapter(),
-      new SolflareWalletAdapter(),
-    ],
-    [],
-  );
-
-  return (
-    <ToastProvider>
-      <ConnectionProvider endpoint={endpoint}>
-        <WalletProvider wallets={wallets} autoConnect>
-          <WalletModalProvider>
-            <SessionProvider
-              tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
-              defaultRequestedLimits={
-                defaultRequestedLimits === undefined
-                  ? undefined
-                  : deserializePublicKeyMap(defaultRequestedLimits)
-              }
-              {...("sponsor" in props && {
-                sponsor:
-                  typeof props.sponsor === "string"
-                    ? deserializePublicKey(props.sponsor)
-                    : props.sponsor,
-              })}
-              {...props}
-            />
-          </WalletModalProvider>
-        </WalletProvider>
-      </ConnectionProvider>
-    </ToastProvider>
-  );
-};
+}: Props) => (
+  <ToastProvider>
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          <SessionProvider
+            tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
+            defaultRequestedLimits={
+              defaultRequestedLimits === undefined
+                ? undefined
+                : deserializePublicKeyMap(defaultRequestedLimits)
+            }
+            {...("sponsor" in props && {
+              sponsor:
+                typeof props.sponsor === "string"
+                  ? deserializePublicKey(props.sponsor)
+                  : props.sponsor,
+            })}
+            {...props}
+          />
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
+  </ToastProvider>
+);
 
 const SessionProvider = ({
   children,
@@ -143,6 +148,7 @@ const SessionProvider = ({
   const {
     state: sessionState,
     onSessionLimitsOpenChange,
+    onExtendSessionOpenChange,
     requestedLimits,
   } = useSessionStateContext(args);
 
@@ -190,8 +196,88 @@ const SessionProvider = ({
           />
         </ModalDialog>
       )}
+      <ModalDialog
+        heading="Your session is expired"
+        message="Would you like to extend your session?"
+        isOpen={sessionState.type === StateType.RequestingExtendedExpiry}
+        onOpenChange={onExtendSessionOpenChange}
+      >
+        {isEstablished(sessionState) && (
+          <RenewSessionsContents
+            sessionState={sessionState}
+            enableUnlimited={enableUnlimited}
+            whitelistedTokens={args.tokens ?? []}
+          />
+        )}
+      </ModalDialog>
+      <ModalDialog
+        heading="This trade exceeds your set limits"
+        message="Would you like to increase your session limits?"
+        isOpen={sessionState.type === StateType.RequestingIncreasedLimits}
+        onOpenChange={onExtendSessionOpenChange}
+      >
+        {isEstablished(sessionState) && (
+          <RenewSessionsContents
+            sessionState={sessionState}
+            enableUnlimited={enableUnlimited}
+            whitelistedTokens={args.tokens ?? []}
+          />
+        )}
+      </ModalDialog>
     </>
   );
+};
+
+const RenewSessionsContents = ({
+  sessionState,
+  enableUnlimited,
+  whitelistedTokens,
+}: {
+  sessionState: EstablishedSessionState;
+  enableUnlimited?: boolean | undefined;
+  whitelistedTokens: PublicKey[];
+}) => {
+  const state = useTokenAccountData(sessionState);
+
+  switch (state.type) {
+    case TokenDataStateType.Error: {
+      return <div>{errorToString(state.error)}</div>;
+    }
+    case TokenDataStateType.Loaded: {
+      return (
+        <SessionLimits
+          tokens={whitelistedTokens}
+          initialLimits={
+            new Map(
+              state.data.sessionLimits.map(({ mint, sessionLimit }) => [
+                mint,
+                sessionLimit,
+              ]),
+            )
+          }
+          onSubmit={
+            "updateSession" in sessionState
+              ? sessionState.updateSession
+              : undefined
+          }
+          buttonText="Extend Session"
+          error={
+            "updateSessionError" in sessionState
+              ? sessionState.updateSessionError
+              : undefined
+          }
+          {...(enableUnlimited && {
+            enableUnlimited: true,
+            isSessionUnlimited: !sessionState.isLimited,
+          })}
+        />
+      );
+    }
+    case TokenDataStateType.NotLoaded:
+    case TokenDataStateType.Loading: {
+      return "Loading...";
+    }
+  }
 };
 
 const useSessionStateContext = ({
@@ -224,13 +310,23 @@ const useSessionStateContext = ({
   }, [wallet]);
 
   const endSession = useCallback(
-    (walletPublicKey: PublicKey) => {
-      clearStoredSession(walletPublicKey).catch((error: unknown) => {
-        // eslint-disable-next-line no-console
-        console.error("Failed to check stored session", error);
-        disconnectWallet();
-      });
+    (walletPublicKey: PublicKey, session?: Session) => {
+      const doRevokeSession = async () => {
+        return session
+          ? await revokeSession({
+              adapter: await getAdapter(),
+              session,
+            })
+          : undefined;
+      };
       disconnectWallet();
+      Promise.all([
+        doRevokeSession(),
+        clearStoredSession(walletPublicKey),
+      ]).catch((error: unknown) => {
+        // eslint-disable-next-line no-console
+        console.error("Failed to clean up session", error);
+      });
     },
     [disconnectWallet],
   );
@@ -249,34 +345,64 @@ const useSessionStateContext = ({
         console.error("Failed to store session", error);
         disconnectWallet();
       });
-      const commonStateArgs: Parameters<typeof SessionState.UpdatingLimits>[0] =
-        {
-          endSession: () => {
-            endSession(session.walletPublicKey);
-          },
-          payer: session.payer,
-          sendTransaction: async (instructions) => {
-            const result = await session.sendTransaction(instructions);
-            mutate(getCacheKey(session.walletPublicKey)).catch(
-              (error: unknown) => {
-                // eslint-disable-next-line no-console
-                console.error("Failed to update token account data", error);
-              },
+      const establishedOptions: EstablishedOptions = {
+        endSession: () => {
+          endSession(session.walletPublicKey, session);
+        },
+        payer: session.payer,
+        sendTransaction: async (instructions) => {
+          const result = await session.sendTransaction(instructions);
+          if (result.type === TransactionResultType.Failed) {
+            const parsedError = instructionErrorCustomSchema.safeParse(
+              result.error,
             );
-            return result;
-          },
-          sessionPublicKey: session.sessionPublicKey,
-          isLimited:
-            session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
-          walletPublicKey: session.walletPublicKey,
-          connection: adapter.connection,
-          adapter,
-          signMessage,
-        };
-      const setLimits = (limits?: Map<PublicKey, bigint>) => {
-        setState(SessionState.UpdatingLimits(commonStateArgs));
+            if (parsedError.success) {
+              switch (parsedError.data.InstructionError[1].Custom) {
+                case ERROR_CODE_SESSION_EXPIRED: {
+                  setState(
+                    SessionState.RequestingExtendedExpiry(
+                      establishedOptions,
+                      updateSession,
+                    ),
+                  );
+                  break;
+                }
+                case ERROR_CODE_SESSION_LIMITS_EXCEEDED: {
+                  setState(
+                    SessionState.RequestingIncreasedLimits(
+                      establishedOptions,
+                      updateSession,
+                    ),
+                  );
+                  break;
+                }
+              }
+            }
+          }
+          mutate(getCacheKey(session.walletPublicKey)).catch(
+            (error: unknown) => {
+              // eslint-disable-next-line no-console
+              console.error("Failed to update token account data", error);
+            },
+          );
+          return result;
+        },
+        sessionPublicKey: session.sessionPublicKey,
+        isLimited:
+          session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
+        walletPublicKey: session.walletPublicKey,
+        connection: adapter.connection,
+        adapter,
+        signMessage,
+        expiration: session.sessionInfo.expiration,
+      };
+      const updateSession = (
+        sessionDuration: number,
+        limits?: Map<PublicKey, bigint>,
+      ) => {
+        setState(SessionState.UpdatingSession(establishedOptions));
         replaceSession({
-          expires: new Date(Date.now() + SESSION_DURATION),
+          expires: new Date(Date.now() + sessionDuration),
           adapter,
           signMessage,
           session,
@@ -285,19 +411,16 @@ const useSessionStateContext = ({
           .then((result) => {
             switch (result.type) {
               case SessionResultType.Success: {
-                toast.success("Limits set successfully");
+                toast.success("Session updated successfully");
                 setSessionState(adapter, result.session, signMessage);
                 return;
               }
               case SessionResultType.Failed: {
                 toast.error(
-                  `Failed to set limits: ${errorToString(result.error)}`,
+                  `Failed to update session: ${errorToString(result.error)}`,
                 );
                 setState(
-                  SessionState.Established({
-                    ...commonStateArgs,
-                    setLimits,
-                  }),
+                  SessionState.Established(establishedOptions, updateSession),
                 );
                 return;
               }
@@ -306,11 +429,11 @@ const useSessionStateContext = ({
           .catch((error: unknown) => {
             toast.error(`Failed to replace session: ${errorToString(error)}`);
             setState(
-              SessionState.Established({ ...commonStateArgs, setLimits }),
+              SessionState.Established(establishedOptions, updateSession),
             );
           });
       };
-      setState(SessionState.Established({ ...commonStateArgs, setLimits }));
+      setState(SessionState.Established(establishedOptions, updateSession));
     },
     [disconnectWallet, endSession, toast],
   );
@@ -327,7 +450,7 @@ const useSessionStateContext = ({
           setState(SessionState.SettingLimits());
           try {
             const result = await establishSessionImpl({
-              expires: new Date(Date.now() + SESSION_DURATION),
+              expires: new Date(Date.now() + DEFAULT_SESSION_DURATION),
               adapter,
               limits: new Map(),
               signMessage,
@@ -351,10 +474,13 @@ const useSessionStateContext = ({
             endSession(walletPublicKey);
           }
         } else {
-          const setLimits = (limits?: Map<PublicKey, bigint>) => {
+          const setLimits = (
+            sessionDuration: number,
+            limits?: Map<PublicKey, bigint>,
+          ) => {
             setState(SessionState.SettingLimits());
             establishSessionImpl({
-              expires: new Date(Date.now() + SESSION_DURATION),
+              expires: new Date(Date.now() + sessionDuration),
               adapter,
               signMessage,
               walletPublicKey,
@@ -407,6 +533,35 @@ const useSessionStateContext = ({
     [state, disconnectWallet],
   );
 
+  const onExtendSessionOpenChange = useCallback(
+    (isOpen: boolean) => {
+      if (
+        !isOpen &&
+        (state.type === StateType.RequestingExtendedExpiry ||
+          state.type === StateType.RequestingIncreasedLimits)
+      ) {
+        setState(
+          SessionState.Established(
+            {
+              expiration: state.expiration,
+              adapter: state.adapter,
+              connection: state.connection,
+              endSession: state.endSession,
+              isLimited: state.isLimited,
+              payer: state.payer,
+              sendTransaction: state.sendTransaction,
+              sessionPublicKey: state.sessionPublicKey,
+              signMessage: state.signMessage,
+              walletPublicKey: state.walletPublicKey,
+            },
+            state.updateSession,
+          ),
+        );
+      }
+    },
+    [state],
+  );
+
   useEffect(() => {
     if (!walletModal.visible) {
       setState((prevState) => {
@@ -443,9 +598,10 @@ const useSessionStateContext = ({
     () => ({
       state,
       onSessionLimitsOpenChange,
+      onExtendSessionOpenChange,
       requestedLimits: requestedLimits.current,
     }),
-    [state, onSessionLimitsOpenChange],
+    [state, onSessionLimitsOpenChange, onExtendSessionOpenChange],
   );
 };
 
@@ -489,7 +645,9 @@ const getNextState = (
       case StateType.Established:
       case StateType.RequestingLimits:
       case StateType.SettingLimits:
-      case StateType.UpdatingLimits: {
+      case StateType.UpdatingSession:
+      case StateType.RequestingExtendedExpiry:
+      case StateType.RequestingIncreasedLimits: {
         // This should be impossible
         throw new InvariantFailedError(
           `Invalid state change which should not be possible: wallet changed to connecting while state was ${showSessionState(state)}.`,
@@ -508,7 +666,9 @@ const getNextState = (
         case StateType.WalletConnecting:
         case StateType.SelectingWallet:
         case StateType.RequestingLimits:
-        case StateType.UpdatingLimits: {
+        case StateType.UpdatingSession:
+        case StateType.RequestingExtendedExpiry:
+        case StateType.RequestingIncreasedLimits: {
           return SessionState.CheckingStoredSession(
             wallet.publicKey,
             wallet.signMessage,
@@ -535,7 +695,9 @@ const getNextState = (
       case StateType.Initializing:
       case StateType.RequestingLimits:
       case StateType.SettingLimits:
-      case StateType.UpdatingLimits:
+      case StateType.UpdatingSession:
+      case StateType.RequestingExtendedExpiry:
+      case StateType.RequestingIncreasedLimits:
       case StateType.WalletConnecting:
       case StateType.SelectingWallet: {
         return SessionState.NotEstablished(establishSession);
@@ -580,8 +742,22 @@ export enum StateType {
   RequestingLimits,
   SettingLimits,
   Established,
-  UpdatingLimits,
+  UpdatingSession,
+  RequestingExtendedExpiry,
+  RequestingIncreasedLimits,
 }
+
+type EstablishedOptions = Pick<
+  Session,
+  "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
+> & {
+  expiration: Date;
+  adapter: SessionAdapter;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  connection: ReturnType<typeof useConnection>["connection"];
+  isLimited: boolean;
+  endSession: () => void;
+};
 
 const SessionState = {
   Initializing: () => ({ type: StateType.Initializing as const }),
@@ -607,7 +783,7 @@ const SessionState = {
   }),
 
   RequestingLimits: (
-    onSubmitLimits: (limits?: Map<PublicKey, bigint>) => void,
+    onSubmitLimits: (duration: number, limits?: Map<PublicKey, bigint>) => void,
     error?: unknown,
   ) => ({
     type: StateType.RequestingLimits as const,
@@ -618,36 +794,38 @@ const SessionState = {
   SettingLimits: () => ({ type: StateType.SettingLimits as const }),
 
   Established: (
-    options: Pick<
-      Session,
-      "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
-    > & {
-      adapter: SessionAdapter;
-      signMessage: (message: Uint8Array) => Promise<Uint8Array>;
-      connection: ReturnType<typeof useConnection>["connection"];
-      isLimited: boolean;
-      setLimits: (limits?: Map<PublicKey, bigint>) => void;
-      endSession: () => void;
-    },
-    updateLimitsError?: unknown,
+    options: EstablishedOptions,
+    updateSession: (duration: number, limits?: Map<PublicKey, bigint>) => void,
+    updateSessionError?: unknown,
   ) => ({
     type: StateType.Established as const,
     ...options,
-    updateLimitsError,
+    updateSession,
+    updateSessionError,
   }),
 
-  UpdatingLimits: (
-    options: Pick<
-      Session,
-      "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
-    > & {
-      adapter: SessionAdapter;
-      signMessage: (message: Uint8Array) => Promise<Uint8Array>;
-      connection: ReturnType<typeof useConnection>["connection"];
-      isLimited: boolean;
-      endSession: () => void;
-    },
-  ) => ({ type: StateType.UpdatingLimits as const, ...options }),
+  UpdatingSession: (options: EstablishedOptions) => ({
+    type: StateType.UpdatingSession as const,
+    ...options,
+  }),
+
+  RequestingExtendedExpiry: (
+    options: EstablishedOptions,
+    updateSession: (duration: number, limits?: Map<PublicKey, bigint>) => void,
+  ) => ({
+    type: StateType.RequestingExtendedExpiry as const,
+    ...options,
+    updateSession,
+  }),
+
+  RequestingIncreasedLimits: (
+    options: EstablishedOptions,
+    updateSession: (duration: number, limits?: Map<PublicKey, bigint>) => void,
+  ) => ({
+    type: StateType.RequestingIncreasedLimits as const,
+    ...options,
+    updateSession,
+  }),
 };
 export type SessionStates = {
   [key in keyof typeof SessionState]: ReturnType<(typeof SessionState)[key]>;
@@ -655,7 +833,9 @@ export type SessionStates = {
 export type SessionState = SessionStates[keyof SessionStates];
 export type EstablishedSessionState =
   | SessionStates["Established"]
-  | SessionStates["UpdatingLimits"];
+  | SessionStates["UpdatingSession"]
+  | SessionStates["RequestingExtendedExpiry"]
+  | SessionStates["RequestingIncreasedLimits"];
 
 const SESSION_STATE_NAME = {
   [StateType.Initializing]: "Initializing",
@@ -666,7 +846,9 @@ const SESSION_STATE_NAME = {
   [StateType.RequestingLimits]: "RequestingLimits",
   [StateType.SettingLimits]: "SettingLimits",
   [StateType.Established]: "Established",
-  [StateType.UpdatingLimits]: "UpdatingLimits",
+  [StateType.UpdatingSession]: "UpdatingSession",
+  [StateType.RequestingExtendedExpiry]: "RequestingExtendedExpiry",
+  [StateType.RequestingIncreasedLimits]: "RequestingIncreasedLimits",
 };
 
 const showSessionState = (state: SessionState) =>
@@ -676,7 +858,9 @@ export const isEstablished = (
   sessionState: SessionState,
 ): sessionState is EstablishedSessionState =>
   sessionState.type === StateType.Established ||
-  sessionState.type === StateType.UpdatingLimits;
+  sessionState.type === StateType.UpdatingSession ||
+  sessionState.type === StateType.RequestingExtendedExpiry ||
+  sessionState.type === StateType.RequestingIncreasedLimits;
 
 class NotInitializedError extends Error {
   constructor() {
@@ -696,3 +880,12 @@ type ConstrainedOmit<T, K> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [P in keyof T as Exclude<P, K & keyof any>]: T[P];
 };
+
+const instructionErrorCustomSchema = z.object({
+  InstructionError: z.tuple([
+    z.number(),
+    z.object({
+      Custom: z.number(),
+    }),
+  ]),
+});

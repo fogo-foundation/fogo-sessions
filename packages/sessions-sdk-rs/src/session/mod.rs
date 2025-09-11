@@ -27,7 +27,7 @@ pub const SESSION_MANAGER_ID: Pubkey =
 /// The current major version of the `Session` structure
 pub const MAJOR: u8 = 0;
 /// The current minor version of the `Session` structure
-pub const MINOR: u8 = 1;
+pub const MINOR: u8 = 2;
 
 type UnixTimestamp = i64;
 
@@ -47,15 +47,48 @@ pub struct Session {
     pub discriminator: [u8; 8],
     /// The key that sponsored the session (gas and rent)
     pub sponsor: Pubkey,
+    /// The major version of the session account, major version changes are breaking changes
+    pub major: u8,
+    /// The session information. The enum variant of `SessionInfo` represents the minor version of the session account. Until 1.0, minor versions may be breaking changes.
     pub session_info: SessionInfo,
 }
 
+#[allow(
+    dead_code,
+    reason = "This module is a hack because the BorshSchema macro generates dead code for `SessionInfo` in this version of borsh, but we don't want to disable dead_code globally.
+/// More info: https://github.com/near/borsh-rs/issues/111"
+)]
+mod session_info {
+    use super::*;
+
+    #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+    pub enum SessionInfo {
+        Invalid, // This is a hack for borsh to assign a discriminator of 1 to V1
+        V1(ActiveSessionInfo),
+        V2(V2),
+    }
+}
+pub use session_info::SessionInfo;
+
+#[allow(
+    dead_code,
+    reason = "This module is a hack because the BorshSchema macro generates dead code for `V2` in this version of borsh, but we don't want to disable dead_code globally.
+/// More info: https://github.com/near/borsh-rs/issues/111"
+)]
+mod v2 {
+    use super::*;
+    #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+    pub enum V2 {
+        Revoked(UnixTimestamp),
+        Active(ActiveSessionInfo),
+    }
+}
+
+pub use v2::V2;
+
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub struct SessionInfo {
-    /// The major version of the session account, major version changes are breaking changes
-    pub major: u8,
-    /// The minor version of the session account. Until 1.0, every new minor version will be a breaking change.
-    pub minor: u8,
+
+pub struct ActiveSessionInfo {
     /// The user who started this session
     pub user: Pubkey,
     /// The expiration time of the session
@@ -68,9 +101,11 @@ pub struct SessionInfo {
     pub extra: Extra,
 }
 
-#[allow(dead_code)]
-/// This module is a hack because the BorshSchema macro generates dead code for `AuthorizedPrograms` in this version of borsh, but we don't want to disable dead_code globally.
-/// More info: https://github.com/near/borsh-rs/issues/111
+#[allow(
+    dead_code,
+    reason = "This module is a hack because the BorshSchema macro generates dead code for `AuthorizedPrograms` in this version of borsh, but we don't want to disable dead_code globally.
+/// More info: https://github.com/near/borsh-rs/issues/111"
+)]
 mod authorized_programs {
     use super::*;
 
@@ -158,8 +193,51 @@ impl Session {
         Ok(result)
     }
 
+    fn expiration(&self) -> Result<UnixTimestamp, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(session.expiration),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(expiration) => Ok(*expiration),
+                V2::Active(session) => Ok(session.expiration),
+            },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
+        }
+    }
+
+    fn authorized_programs(&self) -> Result<&AuthorizedPrograms, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(&session.authorized_programs),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Active(session) => Ok(&session.authorized_programs),
+            },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
+        }
+    }
+
+    fn user(&self) -> Result<&Pubkey, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(&session.user),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Active(session) => Ok(&session.user),
+            },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
+        }
+    }
+    fn extra(&self) -> Result<&Extra, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(&session.extra),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Active(session) => Ok(&session.extra),
+            },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
+        }
+    }
+
     fn check_is_live(&self) -> Result<(), SessionError> {
-        if self.session_info.expiration
+        if self.expiration()?
             < Clock::get()
                 .map_err(|_| SessionError::ClockError)?
                 .unix_timestamp
@@ -170,7 +248,7 @@ impl Session {
     }
 
     fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), SessionError> {
-        match self.session_info.authorized_programs {
+        match self.authorized_programs()? {
             AuthorizedPrograms::Specific(ref programs) => {
                 programs
                     .iter()
@@ -184,7 +262,10 @@ impl Session {
 
     /// For 0.x versions, every new minor version will be a breaking change.
     fn check_version(&self) -> Result<(), SessionError> {
-        if self.session_info.major != MAJOR || self.session_info.minor != MINOR {
+        if self.major != MAJOR {
+            return Err(SessionError::InvalidAccountVersion);
+        }
+        if matches!(self.session_info, SessionInfo::Invalid) {
             return Err(SessionError::InvalidAccountVersion);
         }
         Ok(())
@@ -195,11 +276,11 @@ impl Session {
         self.check_version()?;
         self.check_is_live()?;
         self.check_authorized_program(program_id)?;
-        Ok(self.session_info.user)
+        Ok(*self.user()?)
     }
 
     /// Returns the value of one of the session's extra fields with the given key, if it exists
-    pub fn get_extra(&self, key: &str) -> Option<&str> {
-        self.session_info.extra.get(key)
+    pub fn get_extra(&self, key: &str) -> Result<Option<&str>, SessionError> {
+        Ok(self.extra()?.get(key))
     }
 }
