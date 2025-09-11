@@ -32,7 +32,6 @@ import {
   NightlyWalletAdapter,
   BitgetWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import type { TransactionError } from "@solana/web3.js";
 import { PublicKey } from "@solana/web3.js";
 import type { ComponentProps, ReactNode } from "react";
 import {
@@ -71,6 +70,7 @@ const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
 const DEFAULT_SESSION_DURATION = 14 * ONE_DAY_IN_MS;
 
 const ERROR_CODE_SESSION_EXPIRED = 4_000_000_000;
+const ERROR_CODE_SESSION_LIMITS_EXCEEDED = 4_000_000_008;
 
 type Props = ConstrainedOmit<
   ComponentProps<typeof SessionProvider>,
@@ -214,6 +214,20 @@ const SessionProvider = ({
           />
         )}
       </ModalDialog>
+      <ModalDialog
+        heading="This trade exceeds your set limits"
+        message="Would you like to increase your session limits?"
+        isOpen={sessionState.type === StateType.RequestingIncreasedLimits}
+        onOpenChange={onExtendSessionOpenChange}
+      >
+        {isEstablished(sessionState) && (
+          <RenewSessionsContents
+            sessionState={sessionState}
+            enableUnlimited={enableUnlimited}
+            whitelistedTokens={args.tokens ?? []}
+          />
+        )}
+      </ModalDialog>
     </>
   );
 };
@@ -332,16 +346,32 @@ const useSessionStateContext = ({
         payer: session.payer,
         sendTransaction: async (instructions) => {
           const result = await session.sendTransaction(instructions);
-          if (
-            result.type === TransactionResultType.Failed &&
-            isSessionExpired(result.error)
-          ) {
-            setState(
-              SessionState.RequestingExtendedExpiry(
-                establishedOptions,
-                updateSession,
-              ),
+          if (result.type === TransactionResultType.Failed) {
+            const parsedError = instructionErrorCustomSchema.safeParse(
+              result.error,
             );
+            if (parsedError.success) {
+              switch (parsedError.data.InstructionError[1].Custom) {
+                case ERROR_CODE_SESSION_EXPIRED: {
+                  setState(
+                    SessionState.RequestingExtendedExpiry(
+                      establishedOptions,
+                      updateSession,
+                    ),
+                  );
+                  break;
+                }
+                case ERROR_CODE_SESSION_LIMITS_EXCEEDED: {
+                  setState(
+                    SessionState.RequestingIncreasedLimits(
+                      establishedOptions,
+                      updateSession,
+                    ),
+                  );
+                  break;
+                }
+              }
+            }
           }
           mutate(getCacheKey(session.walletPublicKey)).catch(
             (error: unknown) => {
@@ -499,7 +529,11 @@ const useSessionStateContext = ({
 
   const onExtendSessionOpenChange = useCallback(
     (isOpen: boolean) => {
-      if (!isOpen && state.type === StateType.RequestingExtendedExpiry) {
+      if (
+        !isOpen &&
+        (state.type === StateType.RequestingExtendedExpiry ||
+          state.type === StateType.RequestingIncreasedLimits)
+      ) {
         setState(
           SessionState.Established(
             {
@@ -606,7 +640,8 @@ const getNextState = (
       case StateType.RequestingLimits:
       case StateType.SettingLimits:
       case StateType.UpdatingSession:
-      case StateType.RequestingExtendedExpiry: {
+      case StateType.RequestingExtendedExpiry:
+      case StateType.RequestingIncreasedLimits: {
         // This should be impossible
         throw new InvariantFailedError(
           `Invalid state change which should not be possible: wallet changed to connecting while state was ${showSessionState(state)}.`,
@@ -626,7 +661,8 @@ const getNextState = (
         case StateType.SelectingWallet:
         case StateType.RequestingLimits:
         case StateType.UpdatingSession:
-        case StateType.RequestingExtendedExpiry: {
+        case StateType.RequestingExtendedExpiry:
+        case StateType.RequestingIncreasedLimits: {
           return SessionState.CheckingStoredSession(
             wallet.publicKey,
             wallet.signMessage,
@@ -655,6 +691,7 @@ const getNextState = (
       case StateType.SettingLimits:
       case StateType.UpdatingSession:
       case StateType.RequestingExtendedExpiry:
+      case StateType.RequestingIncreasedLimits:
       case StateType.WalletConnecting:
       case StateType.SelectingWallet: {
         return SessionState.NotEstablished(establishSession);
@@ -701,6 +738,7 @@ export enum StateType {
   Established,
   UpdatingSession,
   RequestingExtendedExpiry,
+  RequestingIncreasedLimits,
 }
 
 type EstablishedOptions = Pick<
@@ -773,6 +811,15 @@ const SessionState = {
     ...options,
     updateSession,
   }),
+
+  RequestingIncreasedLimits: (
+    options: EstablishedOptions,
+    updateSession: (duration: number, limits?: Map<PublicKey, bigint>) => void,
+  ) => ({
+    type: StateType.RequestingIncreasedLimits as const,
+    ...options,
+    updateSession,
+  }),
 };
 export type SessionStates = {
   [key in keyof typeof SessionState]: ReturnType<(typeof SessionState)[key]>;
@@ -781,7 +828,8 @@ export type SessionState = SessionStates[keyof SessionStates];
 export type EstablishedSessionState =
   | SessionStates["Established"]
   | SessionStates["UpdatingSession"]
-  | SessionStates["RequestingExtendedExpiry"];
+  | SessionStates["RequestingExtendedExpiry"]
+  | SessionStates["RequestingIncreasedLimits"];
 
 const SESSION_STATE_NAME = {
   [StateType.Initializing]: "Initializing",
@@ -794,6 +842,7 @@ const SESSION_STATE_NAME = {
   [StateType.Established]: "Established",
   [StateType.UpdatingSession]: "UpdatingSession",
   [StateType.RequestingExtendedExpiry]: "RequestingExtendedExpiry",
+  [StateType.RequestingIncreasedLimits]: "RequestingIncreasedLimits",
 };
 
 const showSessionState = (state: SessionState) =>
@@ -804,7 +853,8 @@ export const isEstablished = (
 ): sessionState is EstablishedSessionState =>
   sessionState.type === StateType.Established ||
   sessionState.type === StateType.UpdatingSession ||
-  sessionState.type === StateType.RequestingExtendedExpiry;
+  sessionState.type === StateType.RequestingExtendedExpiry ||
+  sessionState.type === StateType.RequestingIncreasedLimits;
 
 class NotInitializedError extends Error {
   constructor() {
@@ -823,14 +873,6 @@ class InvariantFailedError extends Error {
 type ConstrainedOmit<T, K> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [P in keyof T as Exclude<P, K & keyof any>]: T[P];
-};
-
-const isSessionExpired = (error: TransactionError) => {
-  const parsedError = instructionErrorCustomSchema.safeParse(error);
-  return (
-    parsedError.success &&
-    parsedError.data.InstructionError[1].Custom === ERROR_CODE_SESSION_EXPIRED
-  );
 };
 
 const instructionErrorCustomSchema = z.object({
