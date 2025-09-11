@@ -43,16 +43,15 @@ impl TryFrom<Vec<u8>> for Message {
 fn message_v0<I, E>(input: I) -> IResult<I, Message, E>
 where
     I: Input,
+    I: Offset,
     I: for<'a> Compare<&'a str>,
     I: ParseTo<Version>,
     I: ParseTo<String>,
     I: ParseTo<DateTime<FixedOffset>>,
     I: ParseTo<Pubkey>,
     I: ParseTo<Tokens>,
-    I: Offset,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
-    I: Debug,
 {
     map_opt(
         preceded((tag(MESSAGE_PREFIX), line_ending::<I, E>), many1(key_value)),

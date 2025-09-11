@@ -38,14 +38,13 @@ impl TryFrom<Vec<u8>> for Message {
 fn message_v0<I, E>(input: I) -> IResult<I, Message, E>
 where
     I: Input,
+    I: Offset,
     I: for<'a> Compare<&'a str>,
     I: ParseTo<String>,
     I: ParseTo<SymbolOrMint>,
     I: ParseTo<Version>,
     I: ParseTo<Pubkey>,
     I: ParseTo<u64>,
-    I: Offset,
-    I: Debug,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
 {
