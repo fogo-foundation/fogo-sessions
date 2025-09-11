@@ -1,7 +1,7 @@
 use nom::{
     bits::complete::take, branch::alt, bytes::{complete::{tag, take_till1, take_while1}, take_till}, character::{
         anychar, char, complete::{alphanumeric1, line_ending, not_line_ending, space0, space1}
-    }, combinator::{eof, map, map_opt, peek, recognize, rest, value}, error::ParseError, multi::{many1, many_till}, sequence::{pair, preceded, separated_pair, terminated}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
+    }, combinator::{eof, map, map_opt, opt, peek, recognize, rest, value}, error::ParseError, multi::{many1, many_till}, sequence::{pair, preceded, separated_pair, terminated}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
 };
 use nom::lib::std::fmt::Debug;
 
@@ -58,10 +58,10 @@ where
                 preceded(
                     preceded(space0, line_ending),
                     recognize(many_till(
-                        terminated(not_line_ending, alt((line_ending, eof))),
+                        terminated(not_line_ending, opt(line_ending)),
                         peek(alt((
-                            value((), alphanumeric1), // next line starts a key
-                            value((), eof),           // or we hit EOF
+                            value((), alphanumeric1),
+                            value((), eof),
                         ))),
                     )),
                 ),
@@ -72,17 +72,6 @@ where
             return val.parse_to().map(|parsed| (key, parsed))},
     )
 }
-
-// fn trimmed<I, O, E, K>() -> impl Parser<I, Output = O, Error = E>
-// where
-//     I: Input,
-//     I: ParseTo<O>,
-//     <I as Input>::Item: AsChar,
-//     E: ParseError<I>,
-// {
-//     terminated(preceded(space0, input), space0)
-// }
-
 #[cfg(test)]
 mod tests {
     mod key_value {

@@ -51,7 +51,7 @@ where
     map_opt(
         preceded(
             (tag(MESSAGE_PREFIX), line_ending::<I, E>),
-            many1(line(key_value)),
+            many1(key_value ),
         ),
         |values| {
             let mut values = values

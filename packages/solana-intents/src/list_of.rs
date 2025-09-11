@@ -12,7 +12,7 @@ where
     E: ParseError<I>,
     K: Parser<I, Output = KO, Error = E>,
 {
-    many1(line(preceded((space0, tag("-"), space0), item)))
+    many1(preceded((space0, tag("-"), space0), item))
 }
 
 #[cfg(test)]
@@ -23,7 +23,7 @@ mod tests {
     #[test]
     fn test_valid_list() {
         assert_eq!(
-            list_of(alpha1::<_, Error<&str>>).parse("-foo\n-bar\n \t  - \t   baz"),
+            list_of(alpha1::<_, Error<&str>>).parse("-foo-bar-baz"),
             Ok(("", vec!["foo", "bar", "baz"]))
         )
     }

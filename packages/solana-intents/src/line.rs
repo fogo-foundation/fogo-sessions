@@ -1,3 +1,4 @@
+use nom::combinator::opt;
 use nom::{error::ParseError, AsChar, Compare, Input, Parser};
 
 use nom::{branch::alt, character::complete::line_ending, combinator::eof, sequence::terminated};

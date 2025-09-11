@@ -3,6 +3,7 @@ use nom::{
     branch::permutation, bytes::complete::tag, character::complete::line_ending, combinator::{map, verify}, error::{Error, ParseError}, sequence::preceded, AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser
 };
 use solana_intents::{line, tag_key_value, SymbolOrMint, Version};
+use nom::lib::std::fmt::Debug;
 
 const MESSAGE_PREFIX: &str =
     "Fogo Transfer:\nSigning this intent will transfer the tokens as described below.\n";
@@ -38,6 +39,7 @@ where
     I: ParseTo<Pubkey>,
     I: ParseTo<u64>,
     I: Offset,
+    I: Debug,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
 {
@@ -45,14 +47,14 @@ where
         preceded(
             (tag(MESSAGE_PREFIX), line_ending),
             permutation((
-                verify(line(tag_key_value("version")), |version: &Version| {
+                verify(tag_key_value("version"), |version: &Version| {
                     version.major == 0 && version.minor == 1
                 }),
-                line(tag_key_value("chain_id")),
-                line(tag_key_value("token")),
-                line(tag_key_value("amount")),
-                line(tag_key_value("recipient")),
-                line(tag_key_value("nonce")),
+                tag_key_value("chain_id"),
+                tag_key_value("token"),
+                tag_key_value("amount"),
+            tag_key_value("recipient"),
+                tag_key_value("nonce"),
             )),
         ),
         |(version, chain_id, symbol_or_mint, amount, recipient, nonce)| Message {
