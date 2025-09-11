@@ -63,7 +63,7 @@ impl ServerState {
                     format!("Account position {account_position_lookups} out of bounds for lookup table invoked accounts"),
                 )
             })?;
-        self.query_lookup_table_with_retry(table_to_query, *index_to_query as usize)
+        self.query_lookup_table_with_retry(table_to_query, usize::from(*index_to_query))
     }
 
     /// Queries the lookup table for the pubkey at the given index.
@@ -405,7 +405,7 @@ pub fn validate_instruction_against_instruction_constraint(
     }
 
     for (i, account_constraint) in constraint.accounts.iter().enumerate() {
-        let account_index = instruction
+        let account_index = usize::from(*instruction
             .accounts
             .get(usize::from(account_constraint.index))
             .ok_or_else(|| {
@@ -415,8 +415,8 @@ pub fn validate_instruction_against_instruction_constraint(
                         "Transaction instruction {instruction_index} missing account at index {i} for variation {variation_name}",
                     ),
                 )
-            })?;
-        let account = if let Some(acc) = static_accounts.get(*account_index as usize) {
+            })?);
+        let account = if let Some(acc) = static_accounts.get(account_index) {
             acc
         } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
             let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
@@ -434,7 +434,7 @@ pub fn validate_instruction_against_instruction_constraint(
                         .map(|y| (x.account_key, y))
                 }))
                 .collect();
-            let account_position_lookups = (*account_index as usize) - static_accounts.len();
+            let account_position_lookups = account_index - static_accounts.len();
             &state.find_and_query_lookup_table(lookup_accounts, account_position_lookups)?
         } else {
             return Err((
