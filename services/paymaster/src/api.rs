@@ -3,6 +3,7 @@ use crate::constraint::{
     compare_primitive_data_types, AccountConstraint, DataConstraint, InstructionConstraint,
     PrimitiveDataType, PrimitiveDataValue, TransactionVariation,
 };
+use crate::constraint_templates::{session_establishment_variation, session_revocation_variation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -463,6 +464,19 @@ pub fn check_data_constraint(
             })?);
             PrimitiveDataValue::U64(data_u64)
         }
+
+        PrimitiveDataType::Pubkey => {
+            let data_pubkey = Pubkey::new_from_array(data_to_analyze.try_into().map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Instruction {instruction_index}: Data constraint expects 32 bytes for Pubkey, found {} bytes",
+                        data_to_analyze.len()
+                    ),
+                )
+            })?);
+            PrimitiveDataValue::Pubkey(data_pubkey)
+        }
     };
 
     compare_primitive_data_types(data_to_analyze_deserialized, &constraint.constraint).map_err(
@@ -656,6 +670,7 @@ pub async fn run_server(
         .map(
             |Domain {
                  domain,
+                 enable_session_management,
                  tx_variations,
              }| {
                 let keypair = Keypair::from_seed_and_derivation_path(
@@ -666,6 +681,14 @@ pub async fn run_server(
                 )
                 .expect("Failed to derive keypair from mnemonic_file");
 
+                let tx_variations = if enable_session_management {
+                    let mut variations = tx_variations;
+                    variations.push(session_establishment_variation());
+                    variations.push(session_revocation_variation());
+                    variations
+                } else {
+                    tx_variations
+                };
                 (
                     domain,
                     DomainState {

@@ -8,6 +8,11 @@ use crate::serde::deserialize_sol_to_lamports;
 #[derive(Deserialize)]
 pub struct Domain {
     pub domain: String,
+
+    /// Whether to enable paymaster sponsoring session management (start/revoke) transactions.
+    pub enable_session_management: bool,
+
+    /// The list of transaction types that the paymaster should sponsor.
     pub tx_variations: Vec<TransactionVariation>,
 }
 

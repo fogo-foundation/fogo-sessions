@@ -34,8 +34,8 @@ pub struct VariationOrderedInstructionConstraints {
 
 #[derive(Serialize, Deserialize)]
 pub struct RateLimits {
-    session_per_min: Option<u64>,
-    ip_per_min: Option<u64>,
+    pub session_per_min: Option<u64>,
+    pub ip_per_min: Option<u64>,
 }
 
 #[serde_as]
@@ -48,7 +48,7 @@ pub struct InstructionConstraint {
     pub required: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AccountConstraint {
     pub index: u16,
     pub include: Vec<ContextualPubkey>,
@@ -56,7 +56,7 @@ pub struct AccountConstraint {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum ContextualPubkey {
     Explicit {
         #[serde_as(as = "DisplayFromStr")]
@@ -141,20 +141,21 @@ impl ContextualPubkey {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DataConstraint {
     pub start_byte: u16,
     pub data_type: PrimitiveDataType,
     pub constraint: DataConstraintSpecification,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum PrimitiveDataType {
     U8,
     U16,
     U32,
     U64,
     Bool,
+    Pubkey,
 }
 
 impl PrimitiveDataType {
@@ -165,20 +166,22 @@ impl PrimitiveDataType {
             PrimitiveDataType::U32 => 4,
             PrimitiveDataType::U64 => 8,
             PrimitiveDataType::Bool => 1,
+            PrimitiveDataType::Pubkey => 32,
         }
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum PrimitiveDataValue {
     U8(u8),
     U16(u16),
     U32(u32),
     U64(u64),
     Bool(bool),
+    Pubkey(Pubkey),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum DataConstraintSpecification {
     LessThan(PrimitiveDataValue),
     GreaterThan(PrimitiveDataValue),

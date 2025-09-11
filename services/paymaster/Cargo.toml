@@ -13,15 +13,18 @@ bytemuck = {workspace = true}
 clap ={version = "4.5.41", features = ["derive"]}
 config = "0.15.13"
 domain-registry = { path = "../../programs/domain-registry" }
+fogo-sessions-sdk = {workspace = true}
 serde = "1.0.219"
 serde_with = { version = "3.14.0", features = ["base64"] }
 solana-client = {workspace = true}
 solana-commitment-config = {workspace = true}
 solana-compute-budget-interface = { workspace = true }
 solana-derivation-path = {workspace = true}
+solana-ed25519-program = {workspace = true}
 solana-keypair = {workspace = true, features = ["seed-derivable"]}
 solana-message = {workspace = true}
 solana-packet = {workspace = true}
+solana-program = {workspace = true}
 solana-pubkey = {workspace = true}
 solana-rpc-client-api = {workspace = true}
 solana-seed-derivable = {workspace = true}
@@ -30,6 +33,7 @@ solana-signature = {workspace = true}
 solana-signer = {workspace = true}
 solana-transaction = {workspace = true}
 solana-transaction-error = {workspace = true}
+spl-associated-token-account = {workspace = true}
 tokio = {version = "1.46.1", features = ["full"]}
 tower-http = {version = "0.6.6", features = ["cors"]}
 utoipa = "5.4.0"
