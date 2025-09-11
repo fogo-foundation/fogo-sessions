@@ -78,9 +78,7 @@ where
 mod tests {
     mod key_value_with_key_type {
         use super::super::*;
-        use nom::{
-            error::Error,
-        };
+        use nom::error::Error;
 
         #[test]
         fn test_no_colon() {
@@ -180,7 +178,7 @@ mod tests {
             assert!(result.is_ok());
         }
     }
-    
+
     mod key_value {
         use super::super::*;
         use nom::{
