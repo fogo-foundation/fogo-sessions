@@ -79,8 +79,7 @@ mod tests {
     mod key_value_with_key_type {
         use super::super::*;
         use nom::{
-            error::{Error, ErrorKind},
-            Err,
+            error::Error,
         };
 
         #[test]
@@ -181,6 +180,7 @@ mod tests {
             assert!(result.is_ok());
         }
     }
+    
     mod key_value {
         use super::super::*;
         use nom::{
