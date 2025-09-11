@@ -1,4 +1,3 @@
-use crate::line;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1, take_while1},
@@ -9,7 +8,7 @@ use nom::{
     combinator::{eof, map, map_opt, opt, peek, recognize, value},
     error::ParseError,
     multi::many_till,
-    sequence::{preceded, separated_pair, terminated},
+    sequence::{delimited, preceded, separated_pair, terminated},
     AsChar, Compare, IResult, Input, Offset, ParseTo, Parser,
 };
 
@@ -57,12 +56,13 @@ where
             key,
             char(':'),
             alt((
-                line(terminated(
-                    preceded(space0, take_till1(|c: <I as Input>::Item| c.is_newline())),
+                delimited(
                     space0,
-                )),
+                    take_till1(|c: <I as Input>::Item| c.is_newline()),
+                    (space0, alt((line_ending, eof))),
+                ),
                 preceded(
-                    preceded(space0, line_ending),
+                    (space0, line_ending),
                     recognize(many_till(
                         terminated(not_line_ending, opt(line_ending)),
                         peek(alt((value((), alphanumeric1), value((), eof)))),
