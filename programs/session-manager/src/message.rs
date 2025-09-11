@@ -1,12 +1,18 @@
 use anchor_lang::prelude::Pubkey;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
+use nom::lib::std::fmt::Debug;
 use nom::{
-    bytes::complete::tag, character::complete::{line_ending, space0}, combinator::{map, map_opt, map_res}, error::{Error, ParseError}, multi::many1, sequence::preceded, AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser
+    bytes::complete::tag,
+    character::complete::{line_ending, space0},
+    combinator::{map, map_opt, map_res},
+    error::{Error, ParseError},
+    multi::many1,
+    sequence::preceded,
+    AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
 use solana_intents::{key_value, line, list_of, SymbolOrMint, Version};
 use std::{collections::HashMap, str::FromStr};
-use nom::lib::std::fmt::Debug;
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n";
 const UNLIMITED_TOKEN_PERMISSIONS_VALUE: &str = "this app may spend any amount of any token";
@@ -49,10 +55,7 @@ where
     I: Debug,
 {
     map_opt(
-        preceded(
-            (tag(MESSAGE_PREFIX), line_ending::<I, E>),
-            many1(key_value ),
-        ),
+        preceded((tag(MESSAGE_PREFIX), line_ending::<I, E>), many1(key_value)),
         |values| {
             let mut values = values
                 .into_iter()
@@ -90,16 +93,16 @@ impl FromStr for Tokens {
         match s {
             UNLIMITED_TOKEN_PERMISSIONS_VALUE => Ok(Tokens::All),
             TOKENLESS_PERMISSIONS_VALUE => Ok(Tokens::Specific(vec![])),
-            _ => {
-                map(
-                    many1(map_res(preceded((space0, tag("-"), space0), key_value), |(key, value): (&str, String)| {
-                        key.parse().map(|token| (token, value))
-                    })),
-                    Tokens::Specific,
-                )
-                 .parse(s).map(|(_, tokens)| tokens).map_err(|e| Err::<Error<&str>>::to_owned(e))
-                
-            }
+            _ => map(
+                many1(map_res(
+                    preceded((space0, tag("-"), space0), key_value),
+                    |(key, value): (&str, String)| key.parse().map(|token| (token, value)),
+                )),
+                Tokens::Specific,
+            )
+            .parse(s)
+            .map(|(_, tokens)| tokens)
+            .map_err(|e| Err::<Error<&str>>::to_owned(e)),
         }
     }
 }
@@ -211,7 +214,13 @@ mod tests {
                         .unwrap(),
                     tokens: Tokens::Specific(vec![
                         (SymbolOrMint::Symbol("SOL".to_string()), "100".to_string()),
-                        (SymbolOrMint::Mint(Pubkey::from_str("DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu").unwrap()), "200".to_string()),
+                        (
+                            SymbolOrMint::Mint(
+                                Pubkey::from_str("DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu")
+                                    .unwrap()
+                            ),
+                            "200".to_string()
+                        ),
                     ]),
                     extra: HashMap::from([
                         ("key1".to_string(), "value1".to_string()),

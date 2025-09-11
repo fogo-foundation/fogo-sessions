@@ -1,9 +1,15 @@
 use anchor_lang::prelude::Pubkey;
+use nom::lib::std::fmt::Debug;
 use nom::{
-    branch::permutation, bytes::complete::tag, character::complete::line_ending, combinator::{map, verify}, error::{Error, ParseError}, sequence::preceded, AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser
+    branch::permutation,
+    bytes::complete::tag,
+    character::complete::line_ending,
+    combinator::{map, verify},
+    error::{Error, ParseError},
+    sequence::preceded,
+    AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
 use solana_intents::{line, tag_key_value, SymbolOrMint, Version};
-use nom::lib::std::fmt::Debug;
 
 const MESSAGE_PREFIX: &str =
     "Fogo Transfer:\nSigning this intent will transfer the tokens as described below.\n";
@@ -53,7 +59,7 @@ where
                 tag_key_value("chain_id"),
                 tag_key_value("token"),
                 tag_key_value("amount"),
-            tag_key_value("recipient"),
+                tag_key_value("recipient"),
                 tag_key_value("nonce"),
             )),
         ),

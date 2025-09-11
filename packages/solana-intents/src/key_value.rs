@@ -1,9 +1,21 @@
-use nom::{
-    bits::complete::take, branch::alt, bytes::{complete::{tag, take_till1, take_while1}, take_till}, character::{
-        anychar, char, complete::{alphanumeric1, line_ending, not_line_ending, space0, space1}
-    }, combinator::{eof, map, map_opt, opt, peek, recognize, rest, value}, error::ParseError, multi::{many1, many_till}, sequence::{pair, preceded, separated_pair, terminated}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
-};
 use nom::lib::std::fmt::Debug;
+use nom::{
+    bits::complete::take,
+    branch::alt,
+    bytes::{
+        complete::{tag, take_till1, take_while1},
+        take_till,
+    },
+    character::{
+        anychar, char,
+        complete::{alphanumeric1, line_ending, not_line_ending, space0, space1},
+    },
+    combinator::{eof, map, map_opt, opt, peek, recognize, rest, value},
+    error::ParseError,
+    multi::{many1, many_till},
+    sequence::{pair, preceded, separated_pair, terminated},
+    AsChar, Compare, IResult, Input, Offset, ParseTo, Parser,
+};
 
 use crate::line;
 
@@ -50,23 +62,22 @@ where
         separated_pair(
             key,
             char(':'),
-       alt((
-                line(terminated(preceded(space0, take_till1(|c: <I as Input>::Item| c.is_newline())), space0)),
+            alt((
+                line(terminated(
+                    preceded(space0, take_till1(|c: <I as Input>::Item| c.is_newline())),
+                    space0,
+                )),
                 preceded(
                     preceded(space0, line_ending),
                     recognize(many_till(
                         terminated(not_line_ending, opt(line_ending)),
-                        peek(alt((
-                            value((), alphanumeric1),
-                            value((), eof),
-                        ))),
+                        peek(alt((value((), alphanumeric1), value((), eof)))),
                     )),
                 ),
-                rest
+                rest,
             )),
         ),
-        |(key, val): (KO, I)| {
-            return val.parse_to().map(|parsed| (key, parsed))},
+        |(key, val): (KO, I)| return val.parse_to().map(|parsed| (key, parsed)),
     )
 }
 #[cfg(test)]
@@ -127,7 +138,7 @@ mod tests {
         }
 
         #[test]
-        fn test_value_with_another_key(){
+        fn test_value_with_another_key() {
             let result = key_value::<_, String, Error<&str>>("foo: bar\nbar:");
             assert_eq!(result, Ok(("bar:", ("foo", "bar".to_string()))))
         }
@@ -161,7 +172,6 @@ mod tests {
             let result = key_value::<_, String, Error<&str>>("foo:\n-bar\n-baz");
         }
     }
-
 
     mod tag_key_value {
         use super::super::*;
@@ -230,6 +240,4 @@ mod tests {
             );
         }
     }
-
-
 }
