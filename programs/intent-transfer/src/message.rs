@@ -1,5 +1,4 @@
 use anchor_lang::prelude::Pubkey;
-use nom::lib::std::fmt::Debug;
 use nom::{
     branch::permutation,
     bytes::complete::tag,
