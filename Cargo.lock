@@ -1576,7 +1576,6 @@ dependencies = [
  "solana-signer",
  "solana-transaction",
  "solana-transaction-error",
- "spl-associated-token-account",
  "tokio",
  "tower-http",
  "utoipa",
