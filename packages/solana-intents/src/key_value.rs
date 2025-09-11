@@ -5,7 +5,7 @@ use nom::{
         char,
         complete::{alphanumeric1, line_ending, not_line_ending, space0},
     },
-    combinator::{eof, map, map_opt, opt, peek, recognize, rest, value},
+    combinator::{eof, map, map_opt, opt, peek, recognize, value},
     error::ParseError,
     multi::many_till,
     sequence::{preceded, separated_pair, terminated},
