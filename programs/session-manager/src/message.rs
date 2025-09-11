@@ -94,7 +94,7 @@ impl FromStr for Tokens {
             TOKENLESS_PERMISSIONS_VALUE => Ok(Tokens::Specific(vec![])),
             _ => map(
                 many1(map_res(
-                    preceded((space0, tag("-"), space0), key_value),
+                    preceded(tag("-"), key_value),
                     |(key, value): (&str, String)| key.parse().map(|token| (token, value)),
                 )),
                 Tokens::Specific,
@@ -134,7 +134,7 @@ mod tests {
         #[test]
         fn test_specific() {
             assert_eq!(
-                "- foo: 5467.672\n \t -  \t So11111111111111111111111111111111111111112:  \t 766"
+                "-foo: 5467.672\n-So11111111111111111111111111111111111111112: 766"
                     .parse::<Tokens>()
                     .unwrap(),
                 Tokens::Specific(vec![
