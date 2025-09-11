@@ -11,12 +11,11 @@ pub fn tag_key_value<I, O, E, T>(key: T) -> impl Parser<I, Output = O, Error = E
 where
     I: Input,
     I: ParseTo<O>,
+    I: Offset,
     I: Compare<&'static str>,
     I: Compare<T>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
-    I: Debug,
-    I: Offset,
     T: Input,
 {
     map(key_value_with_key_type(tag(key)), |(_, value)| value)
@@ -26,11 +25,10 @@ pub fn key_value<I, O, E>(input: I) -> IResult<I, (I, O), E>
 where
     I: Input,
     I: ParseTo<O>,
-    I: Compare<&'static str>,
     I: Offset,
+    I: Compare<&'static str>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
-    I: Debug,
 {
     key_value_with_key_type(take_while1(|c: <I as Input>::Item| {
         c.is_alphanum() || ['_'].contains(&c.as_char()) // snake_case
@@ -46,7 +44,6 @@ where
     I: Compare<&'static str>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
-    I: Debug,
     K: Parser<I, Output = KO, Error = E>,
 {
     map_opt(
