@@ -1,9 +1,11 @@
 use nom::{
-    bits::complete::take, branch::alt, bytes::complete::{tag, take_till1, take_while1}, character::{
-        anychar, char, complete::{alphanumeric1, line_ending, space0}
-    }, combinator::{map, map_opt, peek, recognize, rest}, error::ParseError, multi::many_till, sequence::{pair, preceded, separated_pair}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
+    bits::complete::take, branch::alt, bytes::{complete::{tag, take_till1, take_while1}, take_till}, character::{
+        anychar, char, complete::{alphanumeric1, line_ending, not_line_ending, space0, space1}
+    }, combinator::{eof, map, map_opt, peek, recognize, rest, value}, error::ParseError, multi::{many1, many_till}, sequence::{pair, preceded, separated_pair, terminated}, AsChar, Compare, IResult, Input, Offset, ParseTo, Parser
 };
 use nom::lib::std::fmt::Debug;
+
+use crate::line;
 
 pub fn tag_key_value<I, O, E, T>(key: T) -> impl Parser<I, Output = O, Error = E>
 where
@@ -31,7 +33,7 @@ where
     I: Debug,
 {
     key_value_with_key_type(take_while1(|c: <I as Input>::Item| {
-        c.is_alphanum() || ['_'].contains(&c.as_char())
+        c.is_alphanum() || ['_'].contains(&c.as_char()) // snake_case
     }))
     .parse(input)
 }
@@ -51,26 +53,35 @@ where
         separated_pair(
             key,
             char(':'),
-            alt((
-                preceded(space0, take_till1(|c :<I as Input>::Item| c.is_newline())),
+       alt((
+                line(terminated(preceded(space0, take_till1(|c: <I as Input>::Item| c.is_newline())), space0)),
                 preceded(
-                    line_ending,
-                    alt((
-                        recognize(many_till(
-                            anychar,
-                            peek(pair(line_ending, alphanumeric1)),
-                        )),
-                        rest,
+                    preceded(space0, line_ending),
+                    recognize(many_till(
+                        terminated(not_line_ending, alt((line_ending, eof))),
+                        peek(alt((
+                            value((), alphanumeric1), // next line starts a key
+                            value((), eof),           // or we hit EOF
+                        ))),
                     )),
                 ),
                 rest
             )),
         ),
         |(key, val): (KO, I)| {
-            println!("val: {:?}", val);
             return val.parse_to().map(|parsed| (key, parsed))},
     )
 }
+
+// fn trimmed<I, O, E, K>() -> impl Parser<I, Output = O, Error = E>
+// where
+//     I: Input,
+//     I: ParseTo<O>,
+//     <I as Input>::Item: AsChar,
+//     E: ParseError<I>,
+// {
+//     terminated(preceded(space0, input), space0)
+// }
 
 #[cfg(test)]
 mod tests {
@@ -128,7 +139,43 @@ mod tests {
                 })
             );
         }
+
+        #[test]
+        fn test_value_with_another_key(){
+            let result = key_value::<_, String, Error<&str>>("foo: bar\nbar:");
+            assert_eq!(result, Ok(("bar:", ("foo", "bar".to_string()))))
+        }
+
+        #[test]
+        fn test_space_linebreak() {
+            let result = key_value::<_, String, Error<&str>>("foo: \nbar");
+            assert_eq!(result, Ok(("bar", ("foo", "".to_string()))))
+        }
+
+        #[test]
+        fn test_empty_value_linebreak() {
+            let result = key_value::<_, String, Error<&str>>("foo:\nbar:");
+            assert_eq!(result, Ok(("bar:", ("foo", "".to_string()))))
+        }
+
+        #[test]
+        fn test_multiline_value() {
+            let result = key_value::<_, String, Error<&str>>("foo:\n-bar\n-baz");
+            assert_eq!(result, Ok(("", ("foo", "-bar\n-baz".to_string()))))
+        }
+
+        #[test]
+        fn test_multiline_value_with_another_key() {
+            let result = key_value::<_, String, Error<&str>>("foo:\n-bar\n-baz\nbar:");
+            assert_eq!(result, Ok(("bar:", ("foo", "-bar\n-baz\n".to_string()))))
+        }
+
+        #[test]
+        fn test_multiline_value_eof() {
+            let result = key_value::<_, String, Error<&str>>("foo:\n-bar\n-baz");
+        }
     }
+
 
     mod tag_key_value {
         use super::super::*;
