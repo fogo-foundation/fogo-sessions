@@ -74,8 +74,14 @@ impl ServerState {
         index: usize,
     ) -> Result<Pubkey, (StatusCode, String)> {
         self.query_lookup_table(table, index).or_else(|_| {
-            self.update_lookup_table(table)?;
-            self.query_lookup_table(table, index)
+            let addresses = self.update_lookup_table(table)?;
+            // get the key from the returned addresses instead of re-querying and re-locking the map
+            addresses.get(index).copied().ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("Lookup table {table} does not contain index {index}"),
+                )
+            })
         })
     }
 
@@ -97,8 +103,8 @@ impl ServerState {
             })
     }
 
-    // Updates the lookup table entry in the dashmap based on pulling from RPC.
-    pub fn update_lookup_table(&self, table: &Pubkey) -> Result<(), (StatusCode, String)> {
+    // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.
+    pub fn update_lookup_table(&self, table: &Pubkey) -> Result<Vec<Pubkey>, (StatusCode, String)> {
         let table_data = self.rpc.get_account(table).map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -116,7 +122,7 @@ impl ServerState {
         self.lookup_table_cache
             .insert(*table, table_data_deserialized.addresses.to_vec());
 
-        Ok(())
+        Ok(table_data_deserialized.addresses.to_vec())
     }
 }
 
