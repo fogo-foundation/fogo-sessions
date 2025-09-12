@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_pubkey::Pubkey;
 
-use crate::serde::deserialize_pubkey_vec;
+use crate::{api::ContextualDomainKeys, serde::deserialize_pubkey_vec};
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]
@@ -74,24 +74,25 @@ impl ContextualPubkey {
         &self,
         account: &Pubkey,
         signers: &[Pubkey],
-        sponsor: &Pubkey,
-        domain_registry: &Pubkey,
+        contextual_domain_keys: &ContextualDomainKeys,
         expect_include: bool,
         instruction_index: usize,
     ) -> Result<(), (StatusCode, String)> {
         match self {
-            ContextualPubkey::Explicit { pubkey } => if expect_include == (account == pubkey) {
-                Ok(())
-            } else {
-                Err((
-                    StatusCode::BAD_REQUEST,
-                    if expect_include {
-                        format!("Instruction {instruction_index}: Account {account} is not explicitly included")
-                    } else {
-                        format!("Instruction {instruction_index}: Account {account} is explicitly excluded")
-                    },
-                ))
-            },
+            ContextualPubkey::Explicit { pubkey } => {
+                if expect_include == (account == pubkey) {
+                    Ok(())
+                } else {
+                    Err((
+                        StatusCode::BAD_REQUEST,
+                        if expect_include {
+                            format!("Instruction {instruction_index}: Account {account} is not explicitly included")
+                        } else {
+                            format!("Instruction {instruction_index}: Account {account} is explicitly excluded")
+                        },
+                    ))
+                }
+            }
 
             ContextualPubkey::Signer { index } => {
                 let index_uint = if *index >= 0 {
@@ -105,18 +106,20 @@ impl ContextualPubkey {
                     ));
                 };
                 match signers.get(index_uint) {
-                    Some(signer) => if expect_include == (account == signer) {
-                        Ok(())
-                    } else {
-                        Err((
-                            StatusCode::BAD_REQUEST,
-                            if expect_include {
-                                format!("Instruction {instruction_index}: Account {account} is not the {index}th signer account")
-                            } else {
-                                format!("Instruction {instruction_index}: Account {account} should be excluded as the {index}th signer")
-                            },
-                        ))
-                    },
+                    Some(signer) => {
+                        if expect_include == (account == signer) {
+                            Ok(())
+                        } else {
+                            Err((
+                                StatusCode::BAD_REQUEST,
+                                if expect_include {
+                                    format!("Instruction {instruction_index}: Account {account} is not the {index}th signer account")
+                                } else {
+                                    format!("Instruction {instruction_index}: Account {account} should be excluded as the {index}th signer")
+                                },
+                            ))
+                        }
+                    }
 
                     None => Err((
                         StatusCode::BAD_REQUEST,
@@ -125,21 +128,23 @@ impl ContextualPubkey {
                 }
             }
 
-            ContextualPubkey::Sponsor => if expect_include == (account == sponsor) {
-                Ok(())
-            } else {
-                Err((
-                    StatusCode::BAD_REQUEST,
-                    if expect_include {
-                        format!("Instruction {instruction_index}: Account {account} is not the sponsor account")
-                    } else {
-                        format!("Instruction {instruction_index}: Account {account} should be excluded as the sponsor account")
-                    },
-                ))
-            },
+            ContextualPubkey::Sponsor => {
+                if expect_include == (*account == contextual_domain_keys.sponsor) {
+                    Ok(())
+                } else {
+                    Err((
+                        StatusCode::BAD_REQUEST,
+                        if expect_include {
+                            format!("Instruction {instruction_index}: Account {account} is not the sponsor account")
+                        } else {
+                            format!("Instruction {instruction_index}: Account {account} should be excluded as the sponsor account")
+                        },
+                    ))
+                }
+            }
 
             ContextualPubkey::DomainRegistry => {
-                if expect_include == (account == domain_registry) {
+                if expect_include == (*account == contextual_domain_keys.domain_registry) {
                     Ok(())
                 } else {
                     Err((
