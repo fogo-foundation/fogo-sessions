@@ -1,7 +1,5 @@
 use anchor_lang::prelude::Pubkey;
-use nom::sequence::{self, tuple};
 use nom::{
-    branch::permutation,
     bytes::complete::tag,
     character::complete::line_ending,
     combinator::{map, verify},

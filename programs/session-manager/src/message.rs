@@ -2,10 +2,8 @@ use anchor_lang::prelude::Pubkey;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
 use fogo_sessions_sdk::session::MAJOR;
-use nom::branch::permutation;
 use nom::lib::std::fmt::Debug;
-use nom::multi::{many, many0};
-use nom::sequence::{self, tuple};
+use nom::multi::many0;
 use nom::{
     bytes::complete::tag,
     character::complete::line_ending,
