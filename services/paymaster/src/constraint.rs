@@ -1,9 +1,13 @@
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
+use solana_compute_budget_interface::ComputeBudgetInstruction;
+use solana_message::compiled_instruction::CompiledInstruction;
+use solana_message::VersionedMessage;
 use solana_pubkey::Pubkey;
+use solana_transaction::versioned::VersionedTransaction;
 
-use crate::{api::ContextualDomainKeys, serde::deserialize_pubkey_vec};
+use crate::{api::ChainIndex, serde::deserialize_pubkey_vec};
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]
@@ -24,12 +28,81 @@ pub struct VariationProgramWhitelist {
     pub whitelisted_programs: Vec<Pubkey>,
 }
 
+impl VariationProgramWhitelist {
+    pub fn validate_transaction(
+        &self,
+        transaction: &VersionedTransaction,
+    ) -> Result<(), (StatusCode, String)> {
+        for instruction in transaction.message.instructions() {
+            let program_id = instruction.program_id(transaction.message.static_account_keys());
+            if !self.whitelisted_programs.contains(program_id) {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Transaction contains unauthorized program ID {program_id} for variation {}",
+                        self.name
+                    ),
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
     pub instructions: Vec<InstructionConstraint>,
     pub rate_limits: RateLimits,
     pub max_gas_spend: u64,
+}
+
+pub struct ContextualDomainKeys {
+    pub domain_registry: Pubkey,
+    pub sponsor: Pubkey,
+}
+
+impl VariationOrderedInstructionConstraints {
+    // TODO: incorporate rate limit checks
+    pub fn validate_transaction(
+        &self,
+        transaction: &VersionedTransaction,
+        contextual_domain_keys: &ContextualDomainKeys,
+        chain_index: &ChainIndex,
+    ) -> Result<(), (StatusCode, String)> {
+        let mut instruction_index = 0;
+        check_gas_spend(transaction, self.max_gas_spend)?;
+
+        for constraint in self.instructions.iter() {
+            let result = constraint.validate_instruction(
+                transaction,
+                instruction_index,
+                contextual_domain_keys,
+                &self.name,
+                chain_index,
+            );
+
+            if result.is_err() {
+                if constraint.required {
+                    return result;
+                }
+            } else {
+                instruction_index += 1;
+            }
+        }
+
+        if instruction_index != transaction.message.instructions().len() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Instruction {instruction_index} does not match any expected instruction for variation {}",
+                    self.name
+                ),
+            ));
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -48,11 +121,137 @@ pub struct InstructionConstraint {
     pub required: bool,
 }
 
+impl InstructionConstraint {
+    pub fn validate_instruction(
+        &self,
+        transaction: &VersionedTransaction,
+        instruction_index: usize,
+        contextual_domain_keys: &ContextualDomainKeys,
+        variation_name: &str,
+        chain_index: &ChainIndex,
+    ) -> Result<(), (StatusCode, String)> {
+        let instruction = &transaction.message.instructions().get(instruction_index).ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction is missing instruction {instruction_index} for variation {variation_name}",
+                ),
+            )
+        })?;
+        let static_accounts = transaction.message.static_account_keys();
+        let signatures = &transaction.signatures;
+
+        let program_id = instruction.program_id(static_accounts);
+        if *program_id != self.program {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction instruction {instruction_index} program ID {program_id} does not match expected ID {} for variation {variation_name}",
+                    self.program,
+                ),
+            ));
+        }
+
+        for (i, account_constraint) in self.accounts.iter().enumerate() {
+            let account_index = usize::from(*instruction
+                .accounts
+                .get(usize::from(account_constraint.index))
+                .ok_or_else(|| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Transaction instruction {instruction_index} missing account at index {i} for variation {variation_name}",
+                        ),
+                    )
+                })?);
+            let account = if let Some(acc) = static_accounts.get(account_index) {
+                acc
+            } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
+                let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
+                    .iter()
+                    .flat_map(|x| {
+                        x.writable_indexes
+                            .clone()
+                            .into_iter()
+                            .map(|y| (x.account_key, y))
+                    })
+                    .chain(lookup_tables.iter().flat_map(|x| {
+                        x.readonly_indexes
+                            .clone()
+                            .into_iter()
+                            .map(|y| (x.account_key, y))
+                    }))
+                    .collect();
+                let account_position_lookups = account_index - static_accounts.len();
+                &chain_index
+                    .find_and_query_lookup_table(lookup_accounts, account_position_lookups)?
+            } else {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Transaction instruction {instruction_index} account index {account_index} out of bounds for variation {variation_name}",
+                    ),
+                ));
+            };
+
+            let signers = static_accounts
+                .iter()
+                .take(signatures.len())
+                .cloned()
+                .collect::<Vec<_>>();
+            account_constraint.check_account(
+                account,
+                signers,
+                contextual_domain_keys,
+                instruction_index,
+            )?;
+        }
+
+        for data_constraint in &self.data {
+            data_constraint.check_data(&instruction.data, instruction_index)?;
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AccountConstraint {
     pub index: u16,
     pub include: Vec<ContextualPubkey>,
     pub exclude: Vec<ContextualPubkey>,
+}
+
+impl AccountConstraint {
+    pub fn check_account(
+        &self,
+        account: &Pubkey,
+        signers: Vec<Pubkey>,
+        contextual_domain_keys: &ContextualDomainKeys,
+        instruction_index: usize,
+    ) -> Result<(), (StatusCode, String)> {
+        self.exclude.iter().try_for_each(|excluded| {
+            excluded.matches_account(
+                account,
+                &signers,
+                contextual_domain_keys,
+                false,
+                instruction_index,
+            )
+        })?;
+
+        self.include.iter().try_for_each(|included| {
+            included.matches_account(
+                account,
+                &signers,
+                contextual_domain_keys,
+                true,
+                instruction_index,
+            )
+        })?;
+
+        Ok(())
+    }
 }
 
 #[serde_as]
@@ -168,6 +367,98 @@ pub struct DataConstraint {
     pub constraint: DataConstraintSpecification,
 }
 
+impl DataConstraint {
+    pub fn check_data(
+        &self,
+        data: &[u8],
+        instruction_index: usize,
+    ) -> Result<(), (StatusCode, String)> {
+        let length = self.data_type.byte_length();
+        let end_byte = length + usize::from(self.start_byte);
+        if end_byte > data.len() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
+                    self.start_byte,
+                    end_byte - 1,
+                    data.len()
+                ),
+            ));
+        }
+
+        let data_to_analyze = &data[usize::from(self.start_byte)..end_byte];
+        let data_to_analyze_deserialized = match self.data_type {
+            PrimitiveDataType::Bool => PrimitiveDataValue::Bool(data_to_analyze[0] != 0),
+            PrimitiveDataType::U8 => PrimitiveDataValue::U8(data_to_analyze[0]),
+            PrimitiveDataType::U16 => {
+                let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Instruction {instruction_index}: Data constraint expects 2 bytes for U16, found {} bytes",
+                            data_to_analyze.len()
+                        ),
+                    )
+                })?);
+                PrimitiveDataValue::U16(data_u16)
+            }
+
+            PrimitiveDataType::U32 => {
+                let data_u32 = u32::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Instruction {instruction_index}: Data constraint expects 4 bytes for U32, found {} bytes",
+                            data_to_analyze.len()
+                        ),
+                    )
+                })?);
+                PrimitiveDataValue::U32(data_u32)
+            }
+
+            PrimitiveDataType::U64 => {
+                let data_u64 = u64::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Instruction {instruction_index}: Data constraint expects 8 bytes for U64, found {} bytes",
+                            data_to_analyze.len()
+                        ),
+                    )
+                })?);
+                PrimitiveDataValue::U64(data_u64)
+            }
+
+            PrimitiveDataType::Pubkey => {
+                let data_pubkey = Pubkey::new_from_array(data_to_analyze.try_into().map_err(|_| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Instruction {instruction_index}: Data constraint expects 32 bytes for Pubkey, found {} bytes",
+                            data_to_analyze.len()
+                        ),
+                    )
+                })?);
+                PrimitiveDataValue::Pubkey(data_pubkey)
+            }
+        };
+
+        compare_primitive_data_types(data_to_analyze_deserialized, &self.constraint).map_err(
+            |err| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Instruction {instruction_index}: Data constraint not satisfied: {err}"
+                    ),
+                )
+            },
+        )?;
+
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub enum PrimitiveDataType {
     U8,
@@ -278,4 +569,70 @@ pub fn compare_primitive_data_types(
     } else {
         Err("Constraint not met".into())
     }
+}
+
+pub const LAMPORTS_PER_SIGNATURE: u64 = 5000;
+pub const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
+
+pub fn check_gas_spend(
+    transaction: &VersionedTransaction,
+    max_gas_spend: u64,
+) -> Result<(), (StatusCode, String)> {
+    let n_signatures = transaction.signatures.len() as u64;
+    let priority_fee = get_priority_fee(transaction)?;
+    let gas_spent = n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee;
+    if gas_spent > max_gas_spend {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("Transaction gas spend {gas_spent} exceeds maximum allowed {max_gas_spend}",),
+        ));
+    }
+    Ok(())
+}
+
+/// Computes the priority fee from the transaction's compute budget instructions.
+/// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
+/// If multiple compute budget instructions are present, the transaction will fail.
+pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
+    let mut cu_limit = None;
+    let mut micro_lamports_per_cu = None;
+
+    let msg = &transaction.message;
+    let instructions: Vec<&CompiledInstruction> = match msg {
+        VersionedMessage::Legacy(m) => m.instructions.iter().collect(),
+        VersionedMessage::V0(m) => m.instructions.iter().collect(),
+    };
+
+    // should not support multiple compute budget instructions: https://github.com/solana-labs/solana/blob/ca115594ff61086d67b4fec8977f5762e526a457/program-runtime/src/compute_budget.rs#L162
+    for ix in instructions {
+        if let Ok(cu_ix) = bincode::deserialize::<ComputeBudgetInstruction>(&ix.data) {
+            match cu_ix {
+                ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
+                    if cu_limit.is_some() {
+                        return Err((
+                            StatusCode::BAD_REQUEST,
+                            "Multiple SetComputeUnitLimit instructions found".to_string(),
+                        ));
+                    }
+                    cu_limit = Some(u64::from(units));
+                }
+                ComputeBudgetInstruction::SetComputeUnitPrice(micro_lamports) => {
+                    if micro_lamports_per_cu.is_some() {
+                        return Err((
+                            StatusCode::BAD_REQUEST,
+                            "Multiple SetComputeUnitPrice instructions found".to_string(),
+                        ));
+                    }
+                    micro_lamports_per_cu = Some(micro_lamports);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    let priority_fee = cu_limit
+        .unwrap_or(DEFAULT_COMPUTE_UNIT_LIMIT)
+        .saturating_mul(micro_lamports_per_cu.unwrap_or(0))
+        / 1_000_000;
+    Ok(priority_fee)
 }
