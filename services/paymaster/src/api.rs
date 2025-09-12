@@ -39,6 +39,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
     pub keypair: Keypair,
+    pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
 }
 pub struct ServerState {
@@ -562,6 +563,7 @@ async fn sponsor_and_send_handler(
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let DomainState {
         keypair,
+        enable_preflight_simulation,
         tx_variations,
     } = get_domain_state(&state, domain, origin)?;
 
@@ -599,7 +601,7 @@ async fn sponsor_and_send_handler(
             &state.rpc,
             &transaction,
             RpcSendTransactionConfig {
-                skip_preflight: true,
+                skip_preflight: !enable_preflight_simulation,
                 ..RpcSendTransactionConfig::default()
             },
         )
@@ -642,6 +644,7 @@ async fn sponsor_pubkey_handler(
 ) -> Result<String, ErrorResponse> {
     let DomainState {
         keypair,
+        enable_preflight_simulation: _,
         tx_variations: _,
     } = get_domain_state(&state, domain, origin)?;
     Ok(keypair.pubkey().to_string())
@@ -671,6 +674,7 @@ pub async fn run_server(
             |Domain {
                  domain,
                  enable_session_management,
+                 enable_preflight_simulation,
                  tx_variations,
              }| {
                 let keypair = Keypair::from_seed_and_derivation_path(
@@ -693,6 +697,7 @@ pub async fn run_server(
                     domain,
                     DomainState {
                         keypair,
+                        enable_preflight_simulation,
                         tx_variations,
                     },
                 )

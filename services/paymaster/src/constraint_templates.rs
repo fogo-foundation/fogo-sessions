@@ -65,16 +65,6 @@ pub fn intent_instruction_constraint() -> InstructionConstraint {
                     u16::MAX,
                 )]),
             },
-            // TODO: do we need a constraint on the user account??
-            // DataConstraint {
-            //     start_byte: 16,
-            //     data_type: PrimitiveDataType::Pubkey,
-            //     constraint: DataConstraintSpecification::EqualTo([
-            //         PrimitiveDataValue::Pubkey(
-            //
-            //         )
-            //     ]),
-            // }
         ],
         required: true,
     }
