@@ -10,13 +10,13 @@ use anchor_spl::{
     token::{self, spl_token::try_ui_amount_into_amount, ApproveChecked, Mint, Token},
 };
 use domain_registry::{domain::Domain, state::DomainRecordInner};
+use fogo_sessions_sdk::session::{ActiveSessionInfo, V2};
 use fogo_sessions_sdk::session::{
     AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens, Session, SessionInfo,
 };
 use mpl_token_metadata::accounts::Metadata;
 use solana_intents::Intent;
 use solana_intents::{SymbolOrMint, Version};
-use fogo_sessions_sdk::session::{ActiveSessionInfo, V2};
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 

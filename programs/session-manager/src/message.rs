@@ -67,22 +67,25 @@ where
     E: ParseError<I>,
 {
     map_opt(
-        preceded((tag(MESSAGE_PREFIX), line_ending::<I, E>),  (
-            tag_key_value::<_, Version, _, _>("version"),
-            tag_key_value("chain_id"),
-            tag_key_value::<_, String, _, _>("domain"),
-            tag_key_value::<_, DateTime<FixedOffset>, _, _>("expires"),
-            tag_key_value("session_key"),
-            tag_key_value("tokens"),
-            many0(key_value::<_, String , _>))
+        preceded(
+            (tag(MESSAGE_PREFIX), line_ending::<I, E>),
+            (
+                tag_key_value::<_, Version, _, _>("version"),
+                tag_key_value("chain_id"),
+                tag_key_value::<_, String, _, _>("domain"),
+                tag_key_value::<_, DateTime<FixedOffset>, _, _>("expires"),
+                tag_key_value("session_key"),
+                tag_key_value("tokens"),
+                many0(key_value::<_, String, _>),
+            ),
         ),
         |(version, chain_id, domain, expires, session_key, tokens, extra)| {
+            let extra = extra
+                .into_iter()
+                .map(|(key, value)| key.parse_to().map(|k| (k, value)))
+                .collect::<Option<HashMap<_, _>>>()?;
 
-            let extra = extra.into_iter().map(|(key, value)| key.parse_to().map(|k| (k, value))).collect::<Option<HashMap<_, _>>>()?;
-
-            if version.major == MAJOR 
-            && !RESERVED_KEYS.iter().any(|key| extra.contains_key(*key))
-            {
+            if version.major == MAJOR && !RESERVED_KEYS.iter().any(|key| extra.contains_key(*key)) {
                 Some(Message {
                     version,
                     chain_id,
@@ -90,7 +93,7 @@ where
                     expires,
                     session_key,
                     tokens,
-                    extra
+                    extra,
                 })
             } else {
                 None
@@ -177,7 +180,7 @@ mod tests {
 
     mod message {
         use super::super::*;
-        use indoc::{indoc};
+        use indoc::indoc;
         use nom::error::ErrorKind;
 
         #[test]
@@ -269,11 +272,13 @@ mod tests {
                 key2: value2");
 
             let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
-            assert!(matches!(result, Err(                Err::Error(Error {
-                code: ErrorKind::MapOpt,
-                input: _
-            })))
-            )
+            assert!(matches!(
+                result,
+                Err(Err::Error(Error {
+                    code: ErrorKind::MapOpt,
+                    input: _
+                }))
+            ))
         }
 
         #[test]
@@ -294,11 +299,13 @@ mod tests {
                 key2: value2");
 
             let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
-            assert!(matches!(result, Err(                Err::Error(Error {
-                code: ErrorKind::MapOpt,
-                input: _
-            })))
-            )
+            assert!(matches!(
+                result,
+                Err(Err::Error(Error {
+                    code: ErrorKind::MapOpt,
+                    input: _
+                }))
+            ))
         }
     }
 }

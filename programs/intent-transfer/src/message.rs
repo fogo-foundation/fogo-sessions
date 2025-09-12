@@ -6,7 +6,7 @@ use nom::{
     character::complete::line_ending,
     combinator::{map, verify},
     error::{Error, ParseError},
-    sequence::{preceded},
+    sequence::preceded,
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
 use solana_intents::{tag_key_value, SymbolOrMint, Version};
