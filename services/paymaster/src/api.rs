@@ -1,8 +1,5 @@
 use crate::config::{Config, Domain};
-use crate::constraint::{
-    compare_primitive_data_types, AccountConstraint, DataConstraint, InstructionConstraint,
-    PrimitiveDataType, PrimitiveDataValue, TransactionVariation,
-};
+use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -22,11 +19,8 @@ use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
 };
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
-use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
-use solana_message::compiled_instruction::CompiledInstruction;
-use solana_message::VersionedMessage;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_seed_derivable::SeedDerivable;
@@ -40,18 +34,23 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
-    pub keypair: Keypair,
+    pub sponsor: Keypair,
     pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
 }
-pub struct ServerState {
+
+pub struct ChainIndex {
     pub rpc: RpcClient,
-    pub max_sponsor_spending: u64,
-    pub domains: HashMap<String, DomainState>,
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
 
-impl ServerState {
+pub struct ServerState {
+    pub max_sponsor_spending: u64,
+    pub domains: HashMap<String, DomainState>,
+    pub chain_index: ChainIndex,
+}
+
+impl ChainIndex {
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
     pub fn find_and_query_lookup_table(
         &self,
@@ -133,480 +132,133 @@ pub struct SponsorAndSendPayload {
     pub transaction: String,
 }
 
-pub struct ContextualDomainKeys {
-    pub sponsor: Pubkey,
-    pub domain_registry: Pubkey,
-}
-
-pub async fn validate_transaction(
-    transaction: &VersionedTransaction,
-    tx_variations: &[TransactionVariation],
-    contextual_domain_keys: &ContextualDomainKeys,
-    state: &ServerState,
-) -> Result<(), (StatusCode, String)> {
-    if transaction.message.static_account_keys()[0] != contextual_domain_keys.sponsor {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!(
-                "Transaction fee payer must be the sponsor: expected {}, got {}",
-                contextual_domain_keys.sponsor,
-                transaction.message.static_account_keys()[0],
-            ),
-        ));
-    }
-
-    let message_bytes = transaction.message.serialize();
-    transaction
-        .signatures
-        .iter()
-        .zip(transaction.message.static_account_keys())
-        .skip(1)
-        .try_for_each(|(signature, pubkey)| {
-            signature
-                .verify(pubkey.as_ref(), &message_bytes)
-                .then_some(())
-                .ok_or_else(|| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!("Missing or invalid signature for account {pubkey}").to_string(),
-                    )
-                })
-        })?;
-
-    let matches_variation = tx_variations.iter().any(|variation| {
-        validate_transaction_against_variation(
-            transaction,
-            variation,
-            contextual_domain_keys,
-            state,
-        )
-        .is_ok()
-    });
-    if !matches_variation {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Transaction does not match any allowed variations".to_string(),
-        ));
-    }
-
-    // Simulate the transaction to check sponsor SOL spending
-    let simulation_result = state
-        .rpc
-        .simulate_transaction_with_config(
-            transaction,
-            RpcSimulateTransactionConfig {
-                sig_verify: false,
-                replace_recent_blockhash: true,
-                commitment: Some(CommitmentConfig {
-                    commitment: CommitmentLevel::Processed,
-                }),
-                accounts: Some(RpcSimulateTransactionAccountsConfig {
-                    encoding: None,
-                    addresses: vec![contextual_domain_keys.sponsor.to_string()],
-                }),
-                ..RpcSimulateTransactionConfig::default()
-            },
-        )
-        .map_err(|err| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to simulate transaction: {err}"),
-            )
-        })?;
-
-    if let Some(_err) = simulation_result.value.err {
-        // The paymaster succeeds when the transaction simulation successfully determines that the
-        // transaction returns an error. This is a stopgap measure to unblock 3rd parties while we figure
-        // out the underlying problems with transaction simulation.
-        return Ok(());
-    }
-
-    // Check if the sponsor account balance change exceeds the maximum permissible value
-    if let Some(accounts) = simulation_result.value.accounts {
-        if let Some(Some(account)) = accounts.first() {
-            let current_balance = account.lamports;
-            // We need to get the pre-transaction balance to calculate the change
-            let pre_balance = state
-                .rpc
-                .get_balance(&contextual_domain_keys.sponsor)
-                .map_err(|err| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to get sponsor balance: {err}"),
-                    )
-                })?;
-
-            let balance_change = pre_balance.saturating_sub(current_balance);
-
-            if balance_change > state.max_sponsor_spending {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Sponsor spending exceeds limit: {balance_change} lamports (max: {})",
-                        state.max_sponsor_spending
-                    ),
-                ));
-            }
-        }
-    }
-
-    Ok(())
-}
-
-pub fn validate_transaction_against_variation(
-    transaction: &VersionedTransaction,
-    tx_variation: &TransactionVariation,
-    contextual_domain_keys: &ContextualDomainKeys,
-    state: &ServerState,
-) -> Result<(), (StatusCode, String)> {
-    match tx_variation {
-        TransactionVariation::V0(variation) => {
-            validate_transaction_against_variation_v0(transaction, variation)
-        }
-        TransactionVariation::V1(variation) => validate_transaction_against_variation_v1(
-            transaction,
-            variation,
-            contextual_domain_keys,
-            state,
-        ),
-    }
-}
-
-pub fn validate_transaction_against_variation_v0(
-    transaction: &VersionedTransaction,
-    variation: &crate::constraint::VariationProgramWhitelist,
-) -> Result<(), (StatusCode, String)> {
-    for instruction in transaction.message.instructions() {
-        let program_id = instruction.program_id(transaction.message.static_account_keys());
-        if !variation.whitelisted_programs.contains(program_id) {
+impl DomainState {
+    pub async fn validate_transaction(
+        &self,
+        transaction: &VersionedTransaction,
+        chain_index: &ChainIndex,
+        max_sponsor_spending: u64,
+    ) -> Result<(), (StatusCode, String)> {
+        if transaction.message.static_account_keys()[0] != self.sponsor.pubkey() {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Transaction contains unauthorized program ID {program_id} for variation {}",
-                    variation.name
+                    "Transaction fee payer must be the sponsor: expected {}, got {}",
+                    self.sponsor.pubkey(),
+                    transaction.message.static_account_keys()[0],
                 ),
             ));
         }
-    }
-    Ok(())
-}
 
-// TODO: incorporate rate limit checks
-pub fn validate_transaction_against_variation_v1(
-    transaction: &VersionedTransaction,
-    variation: &crate::constraint::VariationOrderedInstructionConstraints,
-    contextual_domain_keys: &ContextualDomainKeys,
-    state: &ServerState,
-) -> Result<(), (StatusCode, String)> {
-    let mut instruction_index = 0;
-    check_gas_spend(transaction, variation.max_gas_spend)?;
-
-    for constraint in variation.instructions.iter() {
-        let result = validate_instruction_against_instruction_constraint(
-            transaction,
-            instruction_index,
-            contextual_domain_keys,
-            constraint,
-            &variation.name,
-            state,
-        );
-
-        if result.is_err() {
-            if constraint.required {
-                return result;
-            }
-        } else {
-            instruction_index += 1;
-        }
-    }
-
-    if instruction_index != transaction.message.instructions().len() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!(
-                "Instruction {instruction_index} does not match any expected instruction for variation {}",
-                variation.name
-            ),
-        ));
-    }
-
-    Ok(())
-}
-
-pub const LAMPORTS_PER_SIGNATURE: u64 = 5000;
-pub const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
-
-pub fn check_gas_spend(
-    transaction: &VersionedTransaction,
-    max_gas_spend: u64,
-) -> Result<(), (StatusCode, String)> {
-    let n_signatures = transaction.signatures.len() as u64;
-    let priority_fee = get_priority_fee(transaction)?;
-    let gas_spent = n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee;
-    if gas_spent > max_gas_spend {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!("Transaction gas spend {gas_spent} exceeds maximum allowed {max_gas_spend}",),
-        ));
-    }
-    Ok(())
-}
-
-/// Computes the priority fee from the transaction's compute budget instructions.
-/// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
-/// If multiple compute budget instructions are present, the transaction will fail.
-pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
-    let mut cu_limit = None;
-    let mut micro_lamports_per_cu = None;
-
-    let msg = &transaction.message;
-    let instructions: Vec<&CompiledInstruction> = match msg {
-        VersionedMessage::Legacy(m) => m.instructions.iter().collect(),
-        VersionedMessage::V0(m) => m.instructions.iter().collect(),
-    };
-
-    // should not support multiple compute budget instructions: https://github.com/solana-labs/solana/blob/ca115594ff61086d67b4fec8977f5762e526a457/program-runtime/src/compute_budget.rs#L162
-    for ix in instructions {
-        if let Ok(cu_ix) = bincode::deserialize::<ComputeBudgetInstruction>(&ix.data) {
-            match cu_ix {
-                ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
-                    if cu_limit.is_some() {
-                        return Err((
-                            StatusCode::BAD_REQUEST,
-                            "Multiple SetComputeUnitLimit instructions found".to_string(),
-                        ));
-                    }
-                    cu_limit = Some(u64::from(units));
-                }
-                ComputeBudgetInstruction::SetComputeUnitPrice(micro_lamports) => {
-                    if micro_lamports_per_cu.is_some() {
-                        return Err((
-                            StatusCode::BAD_REQUEST,
-                            "Multiple SetComputeUnitPrice instructions found".to_string(),
-                        ));
-                    }
-                    micro_lamports_per_cu = Some(micro_lamports);
-                }
-                _ => {}
-            }
-        }
-    }
-
-    let priority_fee = cu_limit
-        .unwrap_or(DEFAULT_COMPUTE_UNIT_LIMIT)
-        .saturating_mul(micro_lamports_per_cu.unwrap_or(0))
-        / 1_000_000;
-    Ok(priority_fee)
-}
-
-pub fn validate_instruction_against_instruction_constraint(
-    transaction: &VersionedTransaction,
-    instruction_index: usize,
-    contextual_domain_keys: &ContextualDomainKeys,
-    constraint: &InstructionConstraint,
-    variation_name: &str,
-    state: &ServerState,
-) -> Result<(), (StatusCode, String)> {
-    let instruction = &transaction.message.instructions().get(instruction_index).ok_or_else(|| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!(
-                "Transaction is missing instruction {instruction_index} for variation {variation_name}",
-            ),
-        )
-    })?;
-    let static_accounts = transaction.message.static_account_keys();
-    let signatures = &transaction.signatures;
-
-    let program_id = instruction.program_id(static_accounts);
-    if *program_id != constraint.program {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!(
-                "Transaction instruction {instruction_index} program ID {program_id} does not match expected ID {} for variation {variation_name}",
-                constraint.program,
-            ),
-        ));
-    }
-
-    for (i, account_constraint) in constraint.accounts.iter().enumerate() {
-        let account_index = usize::from(*instruction
-            .accounts
-            .get(usize::from(account_constraint.index))
-            .ok_or_else(|| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Transaction instruction {instruction_index} missing account at index {i} for variation {variation_name}",
-                    ),
-                )
-            })?);
-        let account = if let Some(acc) = static_accounts.get(account_index) {
-            acc
-        } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
-            let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
-                .iter()
-                .flat_map(|x| {
-                    x.writable_indexes
-                        .clone()
-                        .into_iter()
-                        .map(|y| (x.account_key, y))
-                })
-                .chain(lookup_tables.iter().flat_map(|x| {
-                    x.readonly_indexes
-                        .clone()
-                        .into_iter()
-                        .map(|y| (x.account_key, y))
-                }))
-                .collect();
-            let account_position_lookups = account_index - static_accounts.len();
-            &state.find_and_query_lookup_table(lookup_accounts, account_position_lookups)?
-        } else {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Transaction instruction {instruction_index} account index {account_index} out of bounds for variation {variation_name}",
-                ),
-            ));
-        };
-
-        let signers = static_accounts
+        let message_bytes = transaction.message.serialize();
+        transaction
+            .signatures
             .iter()
-            .take(signatures.len())
-            .cloned()
-            .collect::<Vec<_>>();
-        check_account_constraint(
-            account,
-            account_constraint,
-            signers,
-            contextual_domain_keys,
-            instruction_index,
-        )?;
-    }
+            .zip(transaction.message.static_account_keys())
+            .skip(1)
+            .try_for_each(|(signature, pubkey)| {
+                signature
+                    .verify(pubkey.as_ref(), &message_bytes)
+                    .then_some(())
+                    .ok_or_else(|| {
+                        (
+                            StatusCode::BAD_REQUEST,
+                            format!("Missing or invalid signature for account {pubkey}")
+                                .to_string(),
+                        )
+                    })
+            })?;
 
-    for data_constraint in &constraint.data {
-        check_data_constraint(&instruction.data, data_constraint, instruction_index)?;
-    }
-
-    Ok(())
-}
-
-pub fn check_account_constraint(
-    account: &Pubkey,
-    constraint: &AccountConstraint,
-    signers: Vec<Pubkey>,
-    contextual_domain_keys: &ContextualDomainKeys,
-    instruction_index: usize,
-) -> Result<(), (StatusCode, String)> {
-    constraint.exclude.iter().try_for_each(|excluded| {
-        excluded.matches_account(
-            account,
-            &signers,
-            contextual_domain_keys,
-            false,
-            instruction_index,
-        )
-    })?;
-
-    constraint.include.iter().try_for_each(|included| {
-        included.matches_account(
-            account,
-            &signers,
-            contextual_domain_keys,
-            true,
-            instruction_index,
-        )
-    })?;
-
-    Ok(())
-}
-
-pub fn check_data_constraint(
-    data: &[u8],
-    constraint: &DataConstraint,
-    instruction_index: usize,
-) -> Result<(), (StatusCode, String)> {
-    let length = constraint.data_type.byte_length();
-    let end_byte = length + usize::from(constraint.start_byte);
-    if end_byte > data.len() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!(
-                "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
-                constraint.start_byte,
-                end_byte - 1,
-                data.len()
-            ),
-        ));
-    }
-
-    let data_to_analyze = &data[usize::from(constraint.start_byte)..end_byte];
-    let data_to_analyze_deserialized = match constraint.data_type {
-        PrimitiveDataType::Bool => PrimitiveDataValue::Bool(data_to_analyze[0] != 0),
-        PrimitiveDataType::U8 => PrimitiveDataValue::U8(data_to_analyze[0]),
-        PrimitiveDataType::U16 => {
-            let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Instruction {instruction_index}: Data constraint expects 2 bytes for U16, found {} bytes",
-                        data_to_analyze.len()
-                    ),
-                )
-            })?);
-            PrimitiveDataValue::U16(data_u16)
-        }
-
-        PrimitiveDataType::U32 => {
-            let data_u32 = u32::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Instruction {instruction_index}: Data constraint expects 4 bytes for U32, found {} bytes",
-                        data_to_analyze.len()
-                    ),
-                )
-            })?);
-            PrimitiveDataValue::U32(data_u32)
-        }
-
-        PrimitiveDataType::U64 => {
-            let data_u64 = u64::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Instruction {instruction_index}: Data constraint expects 8 bytes for U64, found {} bytes",
-                        data_to_analyze.len()
-                    ),
-                )
-            })?);
-            PrimitiveDataValue::U64(data_u64)
-        }
-
-        PrimitiveDataType::Pubkey => {
-            let data_pubkey = Pubkey::new_from_array(data_to_analyze.try_into().map_err(|_| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Instruction {instruction_index}: Data constraint expects 32 bytes for Pubkey, found {} bytes",
-                        data_to_analyze.len()
-                    ),
-                )
-            })?);
-            PrimitiveDataValue::Pubkey(data_pubkey)
-        }
-    };
-
-    compare_primitive_data_types(data_to_analyze_deserialized, &constraint.constraint).map_err(
-        |err| {
-            (
+        let matches_variation = self.tx_variations.iter().any(|variation| {
+            self.validate_transaction_against_variation(transaction, variation, chain_index)
+                .is_ok()
+        });
+        if !matches_variation {
+            return Err((
                 StatusCode::BAD_REQUEST,
-                format!("Instruction {instruction_index}: Data constraint not satisfied: {err}"),
-            )
-        },
-    )?;
+                "Transaction does not match any allowed variations".to_string(),
+            ));
+        }
 
-    Ok(())
+        // Simulate the transaction to check sponsor SOL spending
+        let simulation_result = chain_index
+            .rpc
+            .simulate_transaction_with_config(
+                transaction,
+                RpcSimulateTransactionConfig {
+                    sig_verify: false,
+                    replace_recent_blockhash: true,
+                    commitment: Some(CommitmentConfig {
+                        commitment: CommitmentLevel::Processed,
+                    }),
+                    accounts: Some(RpcSimulateTransactionAccountsConfig {
+                        encoding: None,
+                        addresses: vec![self.sponsor.pubkey().to_string()],
+                    }),
+                    ..RpcSimulateTransactionConfig::default()
+                },
+            )
+            .map_err(|err| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to simulate transaction: {err}"),
+                )
+            })?;
+
+        if let Some(_err) = simulation_result.value.err {
+            // The paymaster succeeds when the transaction simulation successfully determines that the
+            // transaction returns an error. This is a stopgap measure to unblock 3rd parties while we figure
+            // out the underlying problems with transaction simulation.
+            return Ok(());
+        }
+
+        // Check if the sponsor account balance change exceeds the maximum permissible value
+        if let Some(accounts) = simulation_result.value.accounts {
+            if let Some(Some(account)) = accounts.first() {
+                let current_balance = account.lamports;
+                // We need to get the pre-transaction balance to calculate the change
+                let pre_balance = chain_index
+                    .rpc
+                    .get_balance(&self.sponsor.pubkey())
+                    .map_err(|err| {
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            format!("Failed to get sponsor balance: {err}"),
+                        )
+                    })?;
+
+                let balance_change = pre_balance.saturating_sub(current_balance);
+
+                if balance_change > max_sponsor_spending {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        format!("Sponsor spending exceeds limit: {balance_change} lamports (max: {max_sponsor_spending})"),
+                    ));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn validate_transaction_against_variation(
+        &self,
+        transaction: &VersionedTransaction,
+        tx_variation: &TransactionVariation,
+        chain_index: &ChainIndex,
+    ) -> Result<(), (StatusCode, String)> {
+        match tx_variation {
+            TransactionVariation::V0(variation) => variation.validate_transaction(transaction),
+            TransactionVariation::V1(variation) => variation.validate_transaction(
+                transaction,
+                &ContextualDomainKeys {
+                    domain_registry: self.domain_registry_key,
+                    sponsor: self.sponsor.pubkey(),
+                },
+                chain_index,
+            ),
+        }
+    }
 }
 
 #[derive(serde::Deserialize, utoipa::IntoParams)]
@@ -678,12 +330,7 @@ async fn sponsor_and_send_handler(
     Query(SponsorAndSendQuery { confirm, domain }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
-    let DomainState {
-        domain_registry_key,
-        keypair,
-        enable_preflight_simulation,
-        tx_variations,
-    } = get_domain_state(&state, domain, origin)?;
+    let domain_state = get_domain_state(&state, domain, origin)?;
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
@@ -703,22 +350,20 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    let contextual_domain_keys = ContextualDomainKeys {
-        sponsor: keypair.pubkey(),
-        domain_registry: *domain_registry_key,
-    };
+    domain_state
+        .validate_transaction(&transaction, &state.chain_index, state.max_sponsor_spending)
+        .await?;
 
-    // TODO: this should probably be an associated function
-    validate_transaction(&transaction, tx_variations, &contextual_domain_keys, &state).await?;
-
-    transaction.signatures[0] = keypair.sign_message(&transaction.message.serialize());
+    transaction.signatures[0] = domain_state
+        .sponsor
+        .sign_message(&transaction.message.serialize());
 
     if confirm {
         let confirmation_result = send_and_confirm_transaction(
-            &state.rpc,
+            &state.chain_index.rpc,
             &transaction,
             RpcSendTransactionConfig {
-                skip_preflight: !enable_preflight_simulation,
+                skip_preflight: !domain_state.enable_preflight_simulation,
                 ..RpcSendTransactionConfig::default()
             },
         )
@@ -726,6 +371,7 @@ async fn sponsor_and_send_handler(
         Ok(SponsorAndSendResponse::Confirm(confirmation_result))
     } else {
         let signature = state
+            .chain_index
             .rpc
             .send_transaction_with_config(
                 &transaction,
@@ -761,11 +407,11 @@ async fn sponsor_pubkey_handler(
 ) -> Result<String, ErrorResponse> {
     let DomainState {
         domain_registry_key: _,
-        keypair,
+        sponsor,
         enable_preflight_simulation: _,
         tx_variations: _,
     } = get_domain_state(&state, domain, origin)?;
-    Ok(keypair.pubkey().to_string())
+    Ok(sponsor.pubkey().to_string())
 }
 
 pub async fn run_server(
@@ -798,7 +444,7 @@ pub async fn run_server(
                 let domain_registry_key = domain_registry::domain::Domain::new_checked(&domain)
                     .expect("Failed to derive domain registry key")
                     .get_domain_record_address();
-                let keypair = Keypair::from_seed_and_derivation_path(
+                let sponsor = Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
                         &mnemonic, &domain,
                     ),
@@ -818,7 +464,7 @@ pub async fn run_server(
                     domain,
                     DomainState {
                         domain_registry_key,
-                        keypair,
+                        sponsor,
                         enable_preflight_simulation,
                         tx_variations,
                     },
@@ -844,8 +490,10 @@ pub async fn run_server(
         .with_state(Arc::new(ServerState {
             max_sponsor_spending,
             domains,
-            rpc,
-            lookup_table_cache: DashMap::new(),
+            chain_index: ChainIndex {
+                rpc,
+                lookup_table_cache: DashMap::new(),
+            },
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
