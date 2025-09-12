@@ -3,7 +3,6 @@ use crate::constraint::{
     compare_primitive_data_types, AccountConstraint, DataConstraint, InstructionConstraint,
     PrimitiveDataType, PrimitiveDataValue, TransactionVariation,
 };
-use crate::constraint_templates::{session_establishment_variation, session_revocation_variation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -699,8 +698,8 @@ pub async fn run_server(
 
                 let tx_variations = if enable_session_management {
                     let mut variations = tx_variations;
-                    variations.push(session_establishment_variation());
-                    variations.push(session_revocation_variation());
+                    variations.push(TransactionVariation::session_establishment_variation());
+                    variations.push(TransactionVariation::session_revocation_variation());
                     variations
                 } else {
                     tx_variations
