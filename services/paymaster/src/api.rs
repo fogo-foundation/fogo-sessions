@@ -174,8 +174,13 @@ pub async fn validate_transaction(
         })?;
 
     let matches_variation = tx_variations.iter().any(|variation| {
-        validate_transaction_against_variation(transaction, variation, &contextual_domain_keys, state)
-            .is_ok()
+        validate_transaction_against_variation(
+            transaction,
+            variation,
+            contextual_domain_keys,
+            state,
+        )
+        .is_ok()
     });
     if !matches_variation {
         return Err((
@@ -221,12 +226,15 @@ pub async fn validate_transaction(
         if let Some(Some(account)) = accounts.first() {
             let current_balance = account.lamports;
             // We need to get the pre-transaction balance to calculate the change
-            let pre_balance = state.rpc.get_balance(&contextual_domain_keys.sponsor).map_err(|err| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to get sponsor balance: {err}"),
-                )
-            })?;
+            let pre_balance = state
+                .rpc
+                .get_balance(&contextual_domain_keys.sponsor)
+                .map_err(|err| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to get sponsor balance: {err}"),
+                    )
+                })?;
 
             let balance_change = pre_balance.saturating_sub(current_balance);
 
@@ -259,7 +267,7 @@ pub fn validate_transaction_against_variation(
             transaction,
             variation,
             contextual_domain_keys,
-            state
+            state,
         ),
     }
 }
@@ -701,13 +709,7 @@ async fn sponsor_and_send_handler(
     };
 
     // TODO: this should probably be an associated function
-    validate_transaction(
-        &transaction,
-        tx_variations,
-        &contextual_domain_keys,
-        &state,
-    )
-    .await?;
+    validate_transaction(&transaction, tx_variations, &contextual_domain_keys, &state).await?;
 
     transaction.signatures[0] = keypair.sign_message(&transaction.message.serialize());
 
