@@ -80,8 +80,13 @@ where
         |(version, chain_id, domain, expires, session_key, tokens, extra)| {
             let extra = extra
                 .into_iter()
-                .map(|(key, value)| key.parse_to().map(|k| (k, value)))
-                .collect::<Option<HashMap<_, _>>>()?;
+                .try_fold(HashMap::new(), |mut m, (key, value)| {
+                    let key: String = key.parse_to()?;
+                    if m.insert(key, value).is_some() {
+                        return None;
+                    }
+                    Some(m)
+                })?;
 
             if version.major == MAJOR && !RESERVED_KEYS.iter().any(|key| extra.contains_key(*key)) {
                 Some(Message {
@@ -295,6 +300,33 @@ mod tests {
                 -DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu: 200
                 key1: value1
                 key2: value2");
+
+            let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
+            assert!(matches!(
+                result,
+                Err(Err::Error(Error {
+                    code: ErrorKind::MapOpt,
+                    input: _
+                }))
+            ))
+        }
+
+        #[test]
+        pub fn test_parse_message_with_duplicate_keys() {
+            let message = indoc!(
+                "Fogo Sessions:
+                Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
+                
+                version: 0.1
+                chain_id: localnet
+                domain: https://app.xyz
+                expires: 2014-11-28T21:00:09+09:00
+                session_key: 2jKr1met2kCteHoTNtkTL51Sgw7rQKcF4YNdP5xfkPRB
+                tokens:
+                -SOL: 100
+                -DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu: 200
+                key1: value1
+                key1: value2");
 
             let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
             assert!(matches!(
