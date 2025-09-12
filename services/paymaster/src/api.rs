@@ -38,6 +38,7 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
+    pub domain_registry_key: Pubkey,
     pub keypair: Keypair,
     pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
@@ -57,6 +58,7 @@ pub async fn validate_transaction(
     transaction: &VersionedTransaction,
     tx_variations: &[TransactionVariation],
     sponsor: &Pubkey,
+    domain_registry_key: &Pubkey,
     rpc: &RpcClient,
     max_sponsor_spending: u64,
 ) -> Result<(), (StatusCode, String)> {
@@ -90,7 +92,7 @@ pub async fn validate_transaction(
         })?;
 
     let matches_variation = tx_variations.iter().any(|variation| {
-        validate_transaction_against_variation(transaction, variation, sponsor).is_ok()
+        validate_transaction_against_variation(transaction, variation, sponsor, domain_registry_key).is_ok()
     });
     if !matches_variation {
         return Err((
@@ -162,13 +164,14 @@ pub fn validate_transaction_against_variation(
     transaction: &VersionedTransaction,
     tx_variation: &TransactionVariation,
     sponsor: &Pubkey,
+    domain_registry: &Pubkey,
 ) -> Result<(), (StatusCode, String)> {
     match tx_variation {
         TransactionVariation::V0(variation) => {
             validate_transaction_against_variation_v0(transaction, variation)
         }
         TransactionVariation::V1(variation) => {
-            validate_transaction_against_variation_v1(transaction, variation, sponsor)
+            validate_transaction_against_variation_v1(transaction, variation, sponsor, domain_registry)
         }
     }
 }
@@ -197,6 +200,7 @@ pub fn validate_transaction_against_variation_v1(
     transaction: &VersionedTransaction,
     variation: &crate::constraint::VariationOrderedInstructionConstraints,
     sponsor: &Pubkey,
+    domain_registry: &Pubkey,
 ) -> Result<(), (StatusCode, String)> {
     check_gas_spend(transaction, variation.max_gas_spend)?;
 
@@ -215,6 +219,7 @@ pub fn validate_transaction_against_variation_v1(
             transaction.message.static_account_keys(),
             &transaction.signatures,
             sponsor,
+            domain_registry,
             constr,
             &variation.name,
         );
@@ -330,6 +335,7 @@ pub fn validate_instruction_against_instruction_constraint(
     accounts: &[Pubkey],
     signatures: &[Signature],
     sponsor: &Pubkey,
+    domain_registry: &Pubkey,
     constraint: &InstructionConstraint,
     variation_name: &str,
 ) -> Result<(), (StatusCode, String)> {
@@ -375,6 +381,7 @@ pub fn validate_instruction_against_instruction_constraint(
             account_constraint,
             signers,
             sponsor,
+            domain_registry,
             instruction_index,
         )?;
     }
@@ -391,14 +398,15 @@ pub fn check_account_constraint(
     constraint: &AccountConstraint,
     signers: Vec<Pubkey>,
     sponsor: &Pubkey,
+    domain_registry: &Pubkey,
     instruction_index: usize,
 ) -> Result<(), (StatusCode, String)> {
     constraint.exclude.iter().try_for_each(|excluded| {
-        excluded.matches_account(account, &signers, sponsor, false, instruction_index)
+        excluded.matches_account(account, &signers, sponsor, domain_registry, false, instruction_index)
     })?;
 
     constraint.include.iter().try_for_each(|included| {
-        included.matches_account(account, &signers, sponsor, true, instruction_index)
+        included.matches_account(account, &signers, sponsor, domain_registry, true, instruction_index)
     })?;
 
     Ok(())
@@ -562,6 +570,7 @@ async fn sponsor_and_send_handler(
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let DomainState {
+        domain_registry_key,
         keypair,
         enable_preflight_simulation,
         tx_variations,
@@ -589,6 +598,7 @@ async fn sponsor_and_send_handler(
         &transaction,
         tx_variations,
         &keypair.pubkey(),
+        domain_registry_key,
         &state.rpc,
         state.max_sponsor_spending,
     )
@@ -643,6 +653,7 @@ async fn sponsor_pubkey_handler(
     Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
     let DomainState {
+        domain_registry_key: _,
         keypair,
         enable_preflight_simulation: _,
         tx_variations: _,
@@ -677,6 +688,7 @@ pub async fn run_server(
                  enable_preflight_simulation,
                  tx_variations,
              }| {
+                let domain_registry_key = domain_registry::domain::Domain::new_checked(&domain).expect("Failed to derive domain registry key").get_domain_record_address();
                 let keypair = Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
                         &mnemonic, &domain,
@@ -696,6 +708,7 @@ pub async fn run_server(
                 (
                     domain,
                     DomainState {
+                        domain_registry_key,
                         keypair,
                         enable_preflight_simulation,
                         tx_variations,

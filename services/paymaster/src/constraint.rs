@@ -66,6 +66,7 @@ pub enum ContextualPubkey {
     Signer {
         index: i8,
     },
+    DomainRegistry,
 }
 
 impl ContextualPubkey {
@@ -74,6 +75,7 @@ impl ContextualPubkey {
         account: &Pubkey,
         signers: &[Pubkey],
         sponsor: &Pubkey,
+        domain_registry: &Pubkey,
         expect_include: bool,
         instruction_index: usize,
     ) -> Result<(), (StatusCode, String)> {
@@ -134,6 +136,19 @@ impl ContextualPubkey {
                 (false, true) => Err((
                     StatusCode::BAD_REQUEST,
                     format!("Instruction {instruction_index}: Account {account} is not the sponsor account"),
+                )),
+                (false, false) => Ok(()),
+            },
+
+            ContextualPubkey::DomainRegistry => match (account == domain_registry, expect_include) {
+                (true, true) => Ok(()),
+                (true, false) => Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("Instruction {instruction_index}: Account {account} is excluded as domain registry"),
+                )),
+                (false, true) => Err((
+                    StatusCode::BAD_REQUEST,
+                    format!("Instruction {instruction_index}: Account {account} is not the domain registry account"),
                 )),
                 (false, false) => Ok(()),
             },
