@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_pubkey::Pubkey;
 
-use crate::serde::deserialize_pubkey_vec;
+use crate::{api::ContextualDomainKeys, serde::deserialize_pubkey_vec};
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]
@@ -34,8 +34,8 @@ pub struct VariationOrderedInstructionConstraints {
 
 #[derive(Serialize, Deserialize)]
 pub struct RateLimits {
-    session_per_min: Option<u64>,
-    ip_per_min: Option<u64>,
+    pub session_per_min: Option<u64>,
+    pub ip_per_min: Option<u64>,
 }
 
 #[serde_as]
@@ -48,7 +48,7 @@ pub struct InstructionConstraint {
     pub required: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AccountConstraint {
     pub index: u16,
     pub include: Vec<ContextualPubkey>,
@@ -56,7 +56,7 @@ pub struct AccountConstraint {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum ContextualPubkey {
     Explicit {
         #[serde_as(as = "DisplayFromStr")]
@@ -66,6 +66,7 @@ pub enum ContextualPubkey {
     Signer {
         index: i8,
     },
+    DomainRegistry,
 }
 
 impl ContextualPubkey {
@@ -73,23 +74,25 @@ impl ContextualPubkey {
         &self,
         account: &Pubkey,
         signers: &[Pubkey],
-        sponsor: &Pubkey,
+        contextual_domain_keys: &ContextualDomainKeys,
         expect_include: bool,
         instruction_index: usize,
     ) -> Result<(), (StatusCode, String)> {
         match self {
-            ContextualPubkey::Explicit { pubkey } => match (account == pubkey, expect_include) {
-                (true, true) => Ok(()),
-                (true, false) => Err((
-                    StatusCode::BAD_REQUEST,
-                    format!("Instruction {instruction_index}: Account {account} is explicitly excluded"),
-                )),
-                (false, true) => Err((
-                    StatusCode::BAD_REQUEST,
-                    format!("Instruction {instruction_index}: Account {account} is not explicitly included"),
-                )),
-                (false, false) => Ok(()),
-            },
+            ContextualPubkey::Explicit { pubkey } => {
+                if expect_include == (account == pubkey) {
+                    Ok(())
+                } else {
+                    Err((
+                        StatusCode::BAD_REQUEST,
+                        if expect_include {
+                            format!("Instruction {instruction_index}: Account {account} is not explicitly included")
+                        } else {
+                            format!("Instruction {instruction_index}: Account {account} is explicitly excluded")
+                        },
+                    ))
+                }
+            }
 
             ContextualPubkey::Signer { index } => {
                 let index_uint = if *index >= 0 {
@@ -103,20 +106,20 @@ impl ContextualPubkey {
                     ));
                 };
                 match signers.get(index_uint) {
-                    Some(signer) => match (account == signer, expect_include) {
-                        (true, true) => Ok(()),
-                        (true, false) => Err((
-                            StatusCode::BAD_REQUEST,
-                            format!("Instruction {instruction_index}: Account {account} is excluded as signer"),
-                        )),
-                        (false, true) => {
+                    Some(signer) => {
+                        if expect_include == (account == signer) {
+                            Ok(())
+                        } else {
                             Err((
                                 StatusCode::BAD_REQUEST,
-                                format!("Instruction {instruction_index}: Account {account} is not the signer account"),
+                                if expect_include {
+                                    format!("Instruction {instruction_index}: Account {account} is not the {index}th signer account")
+                                } else {
+                                    format!("Instruction {instruction_index}: Account {account} should be excluded as the {index}th signer")
+                                },
                             ))
                         }
-                        (false, false) => Ok(()),
-                    },
+                    }
 
                     None => Err((
                         StatusCode::BAD_REQUEST,
@@ -125,36 +128,54 @@ impl ContextualPubkey {
                 }
             }
 
-            ContextualPubkey::Sponsor => match (account == sponsor, expect_include) {
-                (true, true) => Ok(()),
-                (true, false) => Err((
-                    StatusCode::BAD_REQUEST,
-                    format!("Instruction {instruction_index}: Account {account} is excluded as sponsor"),
-                )),
-                (false, true) => Err((
-                    StatusCode::BAD_REQUEST,
-                    format!("Instruction {instruction_index}: Account {account} is not the sponsor account"),
-                )),
-                (false, false) => Ok(()),
-            },
+            ContextualPubkey::Sponsor => {
+                if expect_include == (*account == contextual_domain_keys.sponsor) {
+                    Ok(())
+                } else {
+                    Err((
+                        StatusCode::BAD_REQUEST,
+                        if expect_include {
+                            format!("Instruction {instruction_index}: Account {account} is not the sponsor account")
+                        } else {
+                            format!("Instruction {instruction_index}: Account {account} should be excluded as the sponsor account")
+                        },
+                    ))
+                }
+            }
+
+            ContextualPubkey::DomainRegistry => {
+                if expect_include == (*account == contextual_domain_keys.domain_registry) {
+                    Ok(())
+                } else {
+                    Err((
+                        StatusCode::BAD_REQUEST,
+                        if expect_include {
+                            format!("Instruction {instruction_index}: Account {account} is not the domain registry account")
+                        } else {
+                            format!("Instruction {instruction_index}: Account {account} should be excluded as the domain registry account")
+                        },
+                    ))
+                }
+            }
         }
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DataConstraint {
     pub start_byte: u16,
     pub data_type: PrimitiveDataType,
     pub constraint: DataConstraintSpecification,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum PrimitiveDataType {
     U8,
     U16,
     U32,
     U64,
     Bool,
+    Pubkey,
 }
 
 impl PrimitiveDataType {
@@ -165,20 +186,22 @@ impl PrimitiveDataType {
             PrimitiveDataType::U32 => 4,
             PrimitiveDataType::U64 => 8,
             PrimitiveDataType::Bool => 1,
+            PrimitiveDataType::Pubkey => 32,
         }
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum PrimitiveDataValue {
     U8(u8),
     U16(u16),
     U32(u32),
     U64(u64),
     Bool(bool),
+    Pubkey(Pubkey),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum DataConstraintSpecification {
     LessThan(PrimitiveDataValue),
     GreaterThan(PrimitiveDataValue),

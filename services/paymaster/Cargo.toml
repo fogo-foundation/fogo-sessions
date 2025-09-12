@@ -14,6 +14,7 @@ clap ={version = "4.5.41", features = ["derive"]}
 config = "0.15.13"
 dashmap = "6.1.0"
 domain-registry = { path = "../../programs/domain-registry" }
+fogo-sessions-sdk = {workspace = true}
 serde = "1.0.219"
 serde_with = { version = "3.14.0", features = ["base64"] }
 solana-address-lookup-table-interface = {workspace = true}
@@ -21,9 +22,11 @@ solana-client = {workspace = true}
 solana-commitment-config = {workspace = true}
 solana-compute-budget-interface = { workspace = true }
 solana-derivation-path = {workspace = true}
+solana-ed25519-program = {workspace = true}
 solana-keypair = {workspace = true, features = ["seed-derivable"]}
 solana-message = {workspace = true}
 solana-packet = {workspace = true}
+solana-program = {workspace = true}
 solana-pubkey = {workspace = true}
 solana-rpc-client-api = {workspace = true}
 solana-seed-derivable = {workspace = true}

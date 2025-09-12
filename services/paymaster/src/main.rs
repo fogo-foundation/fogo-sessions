@@ -4,6 +4,7 @@ use clap::Parser;
 mod api;
 mod config;
 mod constraint;
+mod constraint_templates;
 mod rpc;
 mod serde;
 
