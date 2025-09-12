@@ -39,7 +39,9 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
+    pub domain_registry_key: Pubkey,
     pub keypair: Keypair,
+    pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
 }
 pub struct ServerState {
@@ -131,18 +133,23 @@ pub struct SponsorAndSendPayload {
     pub transaction: String,
 }
 
+pub struct ContextualDomainKeys {
+    pub sponsor: Pubkey,
+    pub domain_registry: Pubkey,
+}
+
 pub async fn validate_transaction(
     transaction: &VersionedTransaction,
     tx_variations: &[TransactionVariation],
-    sponsor: &Pubkey,
+    contextual_domain_keys: &ContextualDomainKeys,
     state: &ServerState,
 ) -> Result<(), (StatusCode, String)> {
-    if transaction.message.static_account_keys()[0] != *sponsor {
+    if transaction.message.static_account_keys()[0] != contextual_domain_keys.sponsor {
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
                 "Transaction fee payer must be the sponsor: expected {}, got {}",
-                sponsor,
+                contextual_domain_keys.sponsor,
                 transaction.message.static_account_keys()[0],
             ),
         ));
@@ -167,7 +174,13 @@ pub async fn validate_transaction(
         })?;
 
     let matches_variation = tx_variations.iter().any(|variation| {
-        validate_transaction_against_variation(transaction, variation, sponsor, state).is_ok()
+        validate_transaction_against_variation(
+            transaction,
+            variation,
+            contextual_domain_keys,
+            state,
+        )
+        .is_ok()
     });
     if !matches_variation {
         return Err((
@@ -189,7 +202,7 @@ pub async fn validate_transaction(
                 }),
                 accounts: Some(RpcSimulateTransactionAccountsConfig {
                     encoding: None,
-                    addresses: vec![sponsor.to_string()],
+                    addresses: vec![contextual_domain_keys.sponsor.to_string()],
                 }),
                 ..RpcSimulateTransactionConfig::default()
             },
@@ -213,12 +226,15 @@ pub async fn validate_transaction(
         if let Some(Some(account)) = accounts.first() {
             let current_balance = account.lamports;
             // We need to get the pre-transaction balance to calculate the change
-            let pre_balance = state.rpc.get_balance(sponsor).map_err(|err| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to get sponsor balance: {err}"),
-                )
-            })?;
+            let pre_balance = state
+                .rpc
+                .get_balance(&contextual_domain_keys.sponsor)
+                .map_err(|err| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to get sponsor balance: {err}"),
+                    )
+                })?;
 
             let balance_change = pre_balance.saturating_sub(current_balance);
 
@@ -240,16 +256,19 @@ pub async fn validate_transaction(
 pub fn validate_transaction_against_variation(
     transaction: &VersionedTransaction,
     tx_variation: &TransactionVariation,
-    sponsor: &Pubkey,
+    contextual_domain_keys: &ContextualDomainKeys,
     state: &ServerState,
 ) -> Result<(), (StatusCode, String)> {
     match tx_variation {
         TransactionVariation::V0(variation) => {
             validate_transaction_against_variation_v0(transaction, variation)
         }
-        TransactionVariation::V1(variation) => {
-            validate_transaction_against_variation_v1(transaction, variation, sponsor, state)
-        }
+        TransactionVariation::V1(variation) => validate_transaction_against_variation_v1(
+            transaction,
+            variation,
+            contextual_domain_keys,
+            state,
+        ),
     }
 }
 
@@ -276,7 +295,7 @@ pub fn validate_transaction_against_variation_v0(
 pub fn validate_transaction_against_variation_v1(
     transaction: &VersionedTransaction,
     variation: &crate::constraint::VariationOrderedInstructionConstraints,
-    sponsor: &Pubkey,
+    contextual_domain_keys: &ContextualDomainKeys,
     state: &ServerState,
 ) -> Result<(), (StatusCode, String)> {
     let mut instruction_index = 0;
@@ -286,7 +305,7 @@ pub fn validate_transaction_against_variation_v1(
         let result = validate_instruction_against_instruction_constraint(
             transaction,
             instruction_index,
-            sponsor,
+            contextual_domain_keys,
             constraint,
             &variation.name,
             state,
@@ -383,7 +402,7 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
 pub fn validate_instruction_against_instruction_constraint(
     transaction: &VersionedTransaction,
     instruction_index: usize,
-    sponsor: &Pubkey,
+    contextual_domain_keys: &ContextualDomainKeys,
     constraint: &InstructionConstraint,
     variation_name: &str,
     state: &ServerState,
@@ -460,7 +479,7 @@ pub fn validate_instruction_against_instruction_constraint(
             account,
             account_constraint,
             signers,
-            sponsor,
+            contextual_domain_keys,
             instruction_index,
         )?;
     }
@@ -476,15 +495,27 @@ pub fn check_account_constraint(
     account: &Pubkey,
     constraint: &AccountConstraint,
     signers: Vec<Pubkey>,
-    sponsor: &Pubkey,
+    contextual_domain_keys: &ContextualDomainKeys,
     instruction_index: usize,
 ) -> Result<(), (StatusCode, String)> {
     constraint.exclude.iter().try_for_each(|excluded| {
-        excluded.matches_account(account, &signers, sponsor, false, instruction_index)
+        excluded.matches_account(
+            account,
+            &signers,
+            contextual_domain_keys,
+            false,
+            instruction_index,
+        )
     })?;
 
     constraint.include.iter().try_for_each(|included| {
-        included.matches_account(account, &signers, sponsor, true, instruction_index)
+        included.matches_account(
+            account,
+            &signers,
+            contextual_domain_keys,
+            true,
+            instruction_index,
+        )
     })?;
 
     Ok(())
@@ -550,6 +581,19 @@ pub fn check_data_constraint(
                 )
             })?);
             PrimitiveDataValue::U64(data_u64)
+        }
+
+        PrimitiveDataType::Pubkey => {
+            let data_pubkey = Pubkey::new_from_array(data_to_analyze.try_into().map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Instruction {instruction_index}: Data constraint expects 32 bytes for Pubkey, found {} bytes",
+                        data_to_analyze.len()
+                    ),
+                )
+            })?);
+            PrimitiveDataValue::Pubkey(data_pubkey)
         }
     };
 
@@ -635,7 +679,9 @@ async fn sponsor_and_send_handler(
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let DomainState {
+        domain_registry_key,
         keypair,
+        enable_preflight_simulation,
         tx_variations,
     } = get_domain_state(&state, domain, origin)?;
 
@@ -657,7 +703,13 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    validate_transaction(&transaction, tx_variations, &keypair.pubkey(), &state).await?;
+    let contextual_domain_keys = ContextualDomainKeys {
+        sponsor: keypair.pubkey(),
+        domain_registry: *domain_registry_key,
+    };
+
+    // TODO: this should probably be an associated function
+    validate_transaction(&transaction, tx_variations, &contextual_domain_keys, &state).await?;
 
     transaction.signatures[0] = keypair.sign_message(&transaction.message.serialize());
 
@@ -666,7 +718,7 @@ async fn sponsor_and_send_handler(
             &state.rpc,
             &transaction,
             RpcSendTransactionConfig {
-                skip_preflight: true,
+                skip_preflight: !enable_preflight_simulation,
                 ..RpcSendTransactionConfig::default()
             },
         )
@@ -708,7 +760,9 @@ async fn sponsor_pubkey_handler(
     Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
     let DomainState {
+        domain_registry_key: _,
         keypair,
+        enable_preflight_simulation: _,
         tx_variations: _,
     } = get_domain_state(&state, domain, origin)?;
     Ok(keypair.pubkey().to_string())
@@ -737,8 +791,13 @@ pub async fn run_server(
         .map(
             |Domain {
                  domain,
+                 enable_session_management,
+                 enable_preflight_simulation,
                  tx_variations,
              }| {
+                let domain_registry_key = domain_registry::domain::Domain::new_checked(&domain)
+                    .expect("Failed to derive domain registry key")
+                    .get_domain_record_address();
                 let keypair = Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
                         &mnemonic, &domain,
@@ -747,10 +806,20 @@ pub async fn run_server(
                 )
                 .expect("Failed to derive keypair from mnemonic_file");
 
+                let tx_variations = if enable_session_management {
+                    let mut variations = tx_variations;
+                    variations.push(TransactionVariation::session_establishment_variation());
+                    variations.push(TransactionVariation::session_revocation_variation());
+                    variations
+                } else {
+                    tx_variations
+                };
                 (
                     domain,
                     DomainState {
+                        domain_registry_key,
                         keypair,
+                        enable_preflight_simulation,
                         tx_variations,
                     },
                 )
