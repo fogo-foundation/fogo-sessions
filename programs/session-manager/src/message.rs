@@ -231,7 +231,7 @@ mod tests {
                     version: Version { major: 0, minor: 1 },
                     chain_id: "localnet".to_string(),
                     domain: Domain::new_checked("https://app.xyz").unwrap(),
-                    expires: DateTime::parse_from_rfc3339("2014-11-28T21:00:09+09:00").unwrap(),
+                    expires: DateTime::parse_from_rfc3339("2014-11-28T12:00:09Z").unwrap(),
                     session_key: Pubkey::from_str("2jKr1met2kCteHoTNtkTL51Sgw7rQKcF4YNdP5xfkPRB")
                         .unwrap(),
                     tokens: Tokens::Specific(vec![
