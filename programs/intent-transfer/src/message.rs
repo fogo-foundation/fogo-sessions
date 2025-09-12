@@ -1,14 +1,13 @@
 use anchor_lang::prelude::Pubkey;
 use nom::{
-    branch::permutation,
     bytes::complete::tag,
     character::complete::line_ending,
     combinator::{map, verify},
     error::{Error, ParseError},
     sequence::preceded,
-    AsChar, Compare, Err, IResult, Input, ParseTo, Parser,
+    AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
-use solana_intents::{key_value::key_value, symbol_or_mint::SymbolOrMint, version::Version};
+use solana_intents::{tag_key_value, SymbolOrMint, Version};
 
 const MESSAGE_PREFIX: &str =
     "Fogo Transfer:\nSigning this intent will transfer the tokens as described below.\n";
@@ -37,28 +36,29 @@ impl TryFrom<Vec<u8>> for Message {
 fn message_v0<I, E>(input: I) -> IResult<I, Message, E>
 where
     I: Input,
-    I: for<'a> Compare<&'a str>,
     I: ParseTo<String>,
     I: ParseTo<SymbolOrMint>,
     I: ParseTo<Version>,
     I: ParseTo<Pubkey>,
     I: ParseTo<u64>,
+    I: Offset,
+    I: for<'a> Compare<&'a str>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
 {
     map(
         preceded(
             (tag(MESSAGE_PREFIX), line_ending),
-            permutation((
-                verify(key_value("version"), |version: &Version| {
+            (
+                verify(tag_key_value("version"), |version: &Version| {
                     version.major == 0 && version.minor == 1
                 }),
-                key_value("chain_id"),
-                key_value("token"),
-                key_value("amount"),
-                key_value("recipient"),
-                key_value("nonce"),
-            )),
+                tag_key_value("chain_id"),
+                tag_key_value("token"),
+                tag_key_value("amount"),
+                tag_key_value("recipient"),
+                tag_key_value("nonce"),
+            ),
         ),
         |(version, chain_id, symbol_or_mint, amount, recipient, nonce)| Message {
             version,
@@ -86,10 +86,11 @@ mod tests {
 
             version: 0.1
             chain_id: foo
+            token: FOGO
             amount: 42.676
-            nonce: 1
             recipient: Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ
-            token: FOGO"};
+            nonce: 1
+        "};
 
         assert_eq!(
             TryInto::<Message>::try_into(message.as_bytes().to_vec()).unwrap(),
