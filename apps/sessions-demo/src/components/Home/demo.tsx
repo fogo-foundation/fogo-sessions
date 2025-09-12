@@ -135,6 +135,7 @@ const SESSION_STATE_TO_BADGE_STATE: Record<SessionStateType, string> = {
   [SessionStateType.UpdatingSession]: "loading",
   [SessionStateType.WalletConnecting]: "loading",
   [SessionStateType.RequestingExtendedExpiry]: "established",
+  [SessionStateType.RequestingIncreasedLimits]: "established",
 };
 
 const SESSION_STATE_TO_DESCRIPTION: Record<SessionStateType, string> = {
@@ -148,6 +149,8 @@ const SESSION_STATE_TO_DESCRIPTION: Record<SessionStateType, string> = {
   [SessionStateType.UpdatingSession]: "Updating session...",
   [SessionStateType.WalletConnecting]: "Connecting Solana wallet...",
   [SessionStateType.RequestingExtendedExpiry]: "Requesting extended expiry...",
+  [SessionStateType.RequestingIncreasedLimits]:
+    "Requesting increased limits...",
 };
 
 const Truncate = ({ value }: { value: string }) => useTruncated(value);

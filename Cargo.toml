@@ -23,6 +23,7 @@ bytemuck = "1.23.1"
 fogo-sessions-sdk = { path = "packages/sessions-sdk-rs" }
 mpl-token-metadata = "5.1.0"
 nom = "8.0.0"
+solana-address-lookup-table-interface = "2.2.1"
 solana-client = "2.2.1"
 solana-commitment-config = "2.2.1"
 solana-compute-budget-interface = { version = "2.2.1", features = ["serde"] }

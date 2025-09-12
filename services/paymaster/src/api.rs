@@ -15,6 +15,8 @@ use axum::{
 use axum_extra::headers::Origin;
 use axum_extra::TypedHeader;
 use base64::Engine;
+use dashmap::DashMap;
+use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::{
     RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
@@ -46,6 +48,84 @@ pub struct ServerState {
     pub rpc: RpcClient,
     pub max_sponsor_spending: u64,
     pub domains: HashMap<String, DomainState>,
+    pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
+}
+
+impl ServerState {
+    /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
+    pub fn find_and_query_lookup_table(
+        &self,
+        lookup_accounts: Vec<(Pubkey, u8)>,
+        account_position_lookups: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        let (table_to_query, index_to_query) =
+            lookup_accounts.get(account_position_lookups).ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("Account position {account_position_lookups} out of bounds for lookup table invoked accounts"),
+                )
+            })?;
+        self.query_lookup_table_with_retry(table_to_query, usize::from(*index_to_query))
+    }
+
+    /// Queries the lookup table for the pubkey at the given index.
+    /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying.
+    pub fn query_lookup_table_with_retry(
+        &self,
+        table: &Pubkey,
+        index: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        self.query_lookup_table(table, index).or_else(|_| {
+            let addresses = self.update_lookup_table(table)?;
+            // get the key from the returned addresses instead of re-querying and re-locking the map
+            addresses.get(index).copied().ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("Lookup table {table} does not contain index {index}"),
+                )
+            })
+        })
+    }
+
+    /// Queries the lookup table for the pubkey at the given index.
+    /// Returns an error if the table is not cached or the index is out of bounds.
+    pub fn query_lookup_table(
+        &self,
+        table: &Pubkey,
+        index: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        self.lookup_table_cache
+            .get(table)
+            .and_then(|entry| entry.get(index).copied())
+            .ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("Lookup table {table} does not contain index {index}"),
+                )
+            })
+    }
+
+    // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.
+    pub fn update_lookup_table(&self, table: &Pubkey) -> Result<Vec<Pubkey>, (StatusCode, String)> {
+        let table_data = self.rpc.get_account(table).map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to fetch lookup table account {table} from RPC: {err}"),
+            )
+        })?;
+        let table_data_deserialized =
+            AddressLookupTable::deserialize(&table_data.data).map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to deserialize lookup table account {table}: {e}"),
+                )
+            })?;
+
+        self.lookup_table_cache
+            .insert(*table, table_data_deserialized.addresses.to_vec());
+
+        Ok(table_data_deserialized.addresses.to_vec())
+    }
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -62,8 +142,7 @@ pub async fn validate_transaction(
     transaction: &VersionedTransaction,
     tx_variations: &[TransactionVariation],
     contextual_domain_keys: &ContextualDomainKeys,
-    rpc: &RpcClient,
-    max_sponsor_spending: u64,
+    state: &ServerState,
 ) -> Result<(), (StatusCode, String)> {
     if transaction.message.static_account_keys()[0] != contextual_domain_keys.sponsor {
         return Err((
@@ -94,12 +173,8 @@ pub async fn validate_transaction(
                 })
         })?;
 
-    let contextual_domain_keys = ContextualDomainKeys {
-        sponsor: contextual_domain_keys.sponsor,
-        domain_registry: contextual_domain_keys.domain_registry,
-    };
     let matches_variation = tx_variations.iter().any(|variation| {
-        validate_transaction_against_variation(transaction, variation, &contextual_domain_keys)
+        validate_transaction_against_variation(transaction, variation, &contextual_domain_keys, state)
             .is_ok()
     });
     if !matches_variation {
@@ -110,7 +185,8 @@ pub async fn validate_transaction(
     }
 
     // Simulate the transaction to check sponsor SOL spending
-    let simulation_result = rpc
+    let simulation_result = state
+        .rpc
         .simulate_transaction_with_config(
             transaction,
             RpcSimulateTransactionConfig {
@@ -145,22 +221,21 @@ pub async fn validate_transaction(
         if let Some(Some(account)) = accounts.first() {
             let current_balance = account.lamports;
             // We need to get the pre-transaction balance to calculate the change
-            let pre_balance = rpc
-                .get_balance(&contextual_domain_keys.sponsor)
-                .map_err(|err| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to get sponsor balance: {err}"),
-                    )
-                })?;
+            let pre_balance = state.rpc.get_balance(&contextual_domain_keys.sponsor).map_err(|err| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to get sponsor balance: {err}"),
+                )
+            })?;
 
             let balance_change = pre_balance.saturating_sub(current_balance);
 
-            if balance_change > max_sponsor_spending {
+            if balance_change > state.max_sponsor_spending {
                 return Err((
                     StatusCode::BAD_REQUEST,
                     format!(
-                        "Sponsor spending exceeds limit: {balance_change} lamports (max: {max_sponsor_spending})"
+                        "Sponsor spending exceeds limit: {balance_change} lamports (max: {})",
+                        state.max_sponsor_spending
                     ),
                 ));
             }
@@ -174,6 +249,7 @@ pub fn validate_transaction_against_variation(
     transaction: &VersionedTransaction,
     tx_variation: &TransactionVariation,
     contextual_domain_keys: &ContextualDomainKeys,
+    state: &ServerState,
 ) -> Result<(), (StatusCode, String)> {
     match tx_variation {
         TransactionVariation::V0(variation) => {
@@ -183,6 +259,7 @@ pub fn validate_transaction_against_variation(
             transaction,
             variation,
             contextual_domain_keys,
+            state
         ),
     }
 }
@@ -211,62 +288,38 @@ pub fn validate_transaction_against_variation_v1(
     transaction: &VersionedTransaction,
     variation: &crate::constraint::VariationOrderedInstructionConstraints,
     contextual_domain_keys: &ContextualDomainKeys,
+    state: &ServerState,
 ) -> Result<(), (StatusCode, String)> {
+    let mut instruction_index = 0;
     check_gas_spend(transaction, variation.max_gas_spend)?;
 
-    let instructions = transaction.message.instructions();
-
-    let mut instruction_iter = instructions.iter().enumerate();
-    let mut instruction_details = instruction_iter.next();
-
-    let mut constraint_iter = variation.instructions.iter();
-    let mut constraint = constraint_iter.next();
-
-    while let (Some((instr_index, instr)), Some(constr)) = (instruction_details, constraint) {
+    for constraint in variation.instructions.iter() {
         let result = validate_instruction_against_instruction_constraint(
-            instr,
-            instr_index,
-            transaction.message.static_account_keys(),
-            &transaction.signatures,
+            transaction,
+            instruction_index,
             contextual_domain_keys,
-            constr,
+            constraint,
             &variation.name,
+            state,
         );
 
         if result.is_err() {
-            if constr.required {
+            if constraint.required {
                 return result;
-            } else {
-                constraint = constraint_iter.next();
             }
         } else {
-            instruction_details = instruction_iter.next();
-            constraint = constraint_iter.next();
+            instruction_index += 1;
         }
     }
 
-    if let Some((instruction_index, _)) = instruction_details {
+    if instruction_index != transaction.message.instructions().len() {
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
-                "Instruction {instruction_index} in transaction does not match any expected instructions for variation {}",
+                "Instruction {instruction_index} does not match any expected instruction for variation {}",
                 variation.name
-            )
+            ),
         ));
-    } else if let Some(curr_constraint) = constraint {
-        let remaining_required_constraints: Vec<_> = std::iter::once(curr_constraint)
-            .chain(constraint_iter)
-            .filter(|c| c.required)
-            .collect();
-        if !remaining_required_constraints.is_empty() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Transaction is missing required instructions for variation {}",
-                    variation.name
-                ),
-            ));
-        }
     }
 
     Ok(())
@@ -339,15 +392,25 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
 }
 
 pub fn validate_instruction_against_instruction_constraint(
-    instruction: &CompiledInstruction,
+    transaction: &VersionedTransaction,
     instruction_index: usize,
-    accounts: &[Pubkey],
-    signatures: &[Signature],
     contextual_domain_keys: &ContextualDomainKeys,
     constraint: &InstructionConstraint,
     variation_name: &str,
+    state: &ServerState,
 ) -> Result<(), (StatusCode, String)> {
-    let program_id = instruction.program_id(accounts);
+    let instruction = &transaction.message.instructions().get(instruction_index).ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Transaction is missing instruction {instruction_index} for variation {variation_name}",
+            ),
+        )
+    })?;
+    let static_accounts = transaction.message.static_account_keys();
+    let signatures = &transaction.signatures;
+
+    let program_id = instruction.program_id(static_accounts);
     if *program_id != constraint.program {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -359,8 +422,7 @@ pub fn validate_instruction_against_instruction_constraint(
     }
 
     for (i, account_constraint) in constraint.accounts.iter().enumerate() {
-        // TODO: account for lookup tables
-        let account_index = instruction
+        let account_index = usize::from(*instruction
             .accounts
             .get(usize::from(account_constraint.index))
             .ok_or_else(|| {
@@ -370,16 +432,37 @@ pub fn validate_instruction_against_instruction_constraint(
                         "Transaction instruction {instruction_index} missing account at index {i} for variation {variation_name}",
                     ),
                 )
-            })?;
-        let account = accounts.get(*account_index as usize).ok_or_else(|| {
-            (
+            })?);
+        let account = if let Some(acc) = static_accounts.get(account_index) {
+            acc
+        } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
+            let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
+                .iter()
+                .flat_map(|x| {
+                    x.writable_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                })
+                .chain(lookup_tables.iter().flat_map(|x| {
+                    x.readonly_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                }))
+                .collect();
+            let account_position_lookups = account_index - static_accounts.len();
+            &state.find_and_query_lookup_table(lookup_accounts, account_position_lookups)?
+        } else {
+            return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
                     "Transaction instruction {instruction_index} account index {account_index} out of bounds for variation {variation_name}",
                 ),
-            )
-        })?;
-        let signers = accounts
+            ));
+        };
+
+        let signers = static_accounts
             .iter()
             .take(signatures.len())
             .cloned()
@@ -622,8 +705,7 @@ async fn sponsor_and_send_handler(
         &transaction,
         tx_variations,
         &contextual_domain_keys,
-        &state.rpc,
-        state.max_sponsor_spending,
+        &state,
     )
     .await?;
 
@@ -761,6 +843,7 @@ pub async fn run_server(
             max_sponsor_spending,
             domains,
             rpc,
+            lookup_table_cache: DashMap::new(),
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
