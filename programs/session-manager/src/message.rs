@@ -2,7 +2,10 @@ use anchor_lang::prelude::Pubkey;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
 use fogo_sessions_sdk::session::MAJOR;
+use nom::branch::permutation;
 use nom::lib::std::fmt::Debug;
+use nom::multi::{many, many0};
+use nom::sequence::{self, tuple};
 use nom::{
     bytes::complete::tag,
     character::complete::line_ending,
@@ -12,12 +15,21 @@ use nom::{
     sequence::preceded,
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
-use solana_intents::{key_value, SymbolOrMint, Version};
+use solana_intents::{key_value, tag_key_value, SymbolOrMint, Version};
 use std::{collections::HashMap, str::FromStr};
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n";
 const UNLIMITED_TOKEN_PERMISSIONS_VALUE: &str = "this app may spend any amount of any token";
 const TOKENLESS_PERMISSIONS_VALUE: &str = "this app may not spend any tokens";
+
+const RESERVED_KEYS: [&str; 6] = [
+    "version",
+    "chain_id",
+    "domain",
+    "expires",
+    "session_key",
+    "tokens",
+];
 
 #[derive(Debug, PartialEq)]
 pub struct Message {
@@ -55,22 +67,30 @@ where
     E: ParseError<I>,
 {
     map_opt(
-        preceded((tag(MESSAGE_PREFIX), line_ending::<I, E>), many1(key_value)),
-        |values| {
-            let mut values = values
-                .into_iter()
-                .map(|(key, value)| key.parse_to().map(|key| (key, value)))
-                .collect::<Option<HashMap<String, String>>>()?;
-            let version: Version = values.remove("version")?.parse().ok()?;
-            if version.major == MAJOR {
+        preceded((tag(MESSAGE_PREFIX), line_ending::<I, E>),  (
+            tag_key_value::<_, Version, _, _>("version"),
+            tag_key_value("chain_id"),
+            tag_key_value::<_, String, _, _>("domain"),
+            tag_key_value::<_, DateTime<FixedOffset>, _, _>("expires"),
+            tag_key_value("session_key"),
+            tag_key_value("tokens"),
+            many0(key_value::<_, String , _>))
+        ),
+        |(version, chain_id, domain, expires, session_key, tokens, extra)| {
+
+            let extra = extra.into_iter().map(|(key, value)| key.parse_to().map(|k| (k, value))).collect::<Option<HashMap<_, _>>>()?;
+
+            if version.major == MAJOR 
+            && !RESERVED_KEYS.iter().any(|key| extra.contains_key(*key))
+            {
                 Some(Message {
                     version,
-                    chain_id: values.remove("chain_id")?,
-                    domain: Domain::new_checked(&values.remove("domain")?).ok()?,
-                    expires: values.remove("expires")?.parse().ok()?,
-                    session_key: values.remove("session_key")?.parse().ok()?,
-                    tokens: values.remove("tokens")?.parse().ok()?,
-                    extra: values,
+                    chain_id,
+                    domain: Domain::new_checked(domain.as_str()).ok()?,
+                    expires,
+                    session_key,
+                    tokens,
+                    extra
                 })
             } else {
                 None
@@ -157,7 +177,8 @@ mod tests {
 
     mod message {
         use super::super::*;
-        use indoc::{formatdoc, indoc};
+        use indoc::{indoc};
+        use nom::error::ErrorKind;
 
         #[test]
         fn test_parse() {
@@ -228,6 +249,56 @@ mod tests {
                     ])
                 }
             );
+        }
+
+        #[test]
+        pub fn test_parse_message_with_reserved_keys() {
+            let message = indoc!(
+                "Fogo Sessions:
+                Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
+                
+                version: 0.1
+                chain_id: localnet
+                domain: https://app.xyz
+                expires: 2014-11-28T21:00:09+09:00
+                session_key: 2jKr1met2kCteHoTNtkTL51Sgw7rQKcF4YNdP5xfkPRB
+                tokens:
+                -SOL: 100
+                -DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu: 200
+                version: value1
+                key2: value2");
+
+            let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
+            assert!(matches!(result, Err(                Err::Error(Error {
+                code: ErrorKind::MapOpt,
+                input: _
+            })))
+            )
+        }
+
+        #[test]
+        pub fn test_parse_message_with_invalid_version() {
+            let message = indoc!(
+                "Fogo Sessions:
+                Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
+                
+                version: 2.1
+                chain_id: localnet
+                domain: https://app.xyz
+                expires: 2014-11-28T21:00:09+09:00
+                session_key: 2jKr1met2kCteHoTNtkTL51Sgw7rQKcF4YNdP5xfkPRB
+                tokens:
+                -SOL: 100
+                -DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu: 200
+                key1: value1
+                key2: value2");
+
+            let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
+            assert!(matches!(result, Err(                Err::Error(Error {
+                code: ErrorKind::MapOpt,
+                input: _
+            })))
+            )
         }
     }
 }
