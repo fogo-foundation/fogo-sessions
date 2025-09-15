@@ -62,10 +62,7 @@ where
                     line_ending,
                     recognize(many_till(
                         anychar,
-                        peek(alt((
-                            value((), preceded(line_ending, alphanumeric1)),
-                            value((), eof),
-                        ))),
+                        peek(alt((preceded(line_ending, alphanumeric1), eof))),
                     )),
                     opt(line_ending),
                 ),
