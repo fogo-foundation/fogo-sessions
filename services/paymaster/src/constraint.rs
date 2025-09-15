@@ -574,6 +574,8 @@ pub fn compare_primitive_data_types(
 pub const LAMPORTS_PER_SIGNATURE: u64 = 5000;
 pub const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
 
+/// Checks that the transaction's gas spend (signatures + priority fee) does not exceed the maximum allowed.
+/// Does not account for spend on account creation or other outlets, since those cannot be determined from the transaction data alone.
 pub fn check_gas_spend(
     transaction: &VersionedTransaction,
     max_gas_spend: u64,
