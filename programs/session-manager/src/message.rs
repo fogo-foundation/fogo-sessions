@@ -2,6 +2,7 @@ use anchor_lang::prelude::Pubkey;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
 use fogo_sessions_sdk::session::MAJOR;
+use nom::error::FromExternalError;
 use nom::lib::std::fmt::Debug;
 use nom::multi::many0;
 use nom::{
@@ -63,44 +64,49 @@ where
     I: for<'a> Compare<&'a str>,
     <I as Input>::Item: AsChar,
     E: ParseError<I>,
+    E: FromExternalError<I, anchor_lang::error::Error>,
 {
-    map_opt(
+    map(
         preceded(
             (tag(MESSAGE_PREFIX), line_ending::<I, E>),
             (
-                tag_key_value::<_, Version, _, _>("version"),
+                map_opt(tag_key_value::<_, Version, _, _>("version"), |version| {
+                    if version.major == MAJOR {
+                        Some(version)
+                    } else {
+                        None
+                    }
+                }),
                 tag_key_value("chain_id"),
-                tag_key_value::<_, String, _, _>("domain"),
+                map_res(tag_key_value::<_, String, _, _>("domain"), |domain| {
+                    Domain::new_checked(domain.as_str())
+                }),
                 tag_key_value::<_, DateTime<FixedOffset>, _, _>("expires"),
                 tag_key_value("session_key"),
                 tag_key_value("tokens"),
-                many0(key_value::<_, String, _>),
+                map_opt(many0(key_value::<I, String, _>), |extra| {
+                    extra
+                        .into_iter()
+                        .try_fold(HashMap::new(), |mut m, (key, value)| {
+                            let key: String = key.parse_to()?;
+                            if RESERVED_KEYS.contains(&key.as_str())
+                                || m.insert(key, value).is_some()
+                            {
+                                return None;
+                            }
+                            Some(m)
+                        })
+                }),
             ),
         ),
-        |(version, chain_id, domain, expires, session_key, tokens, extra)| {
-            let extra = extra
-                .into_iter()
-                .try_fold(HashMap::new(), |mut m, (key, value)| {
-                    let key: String = key.parse_to()?;
-                    if m.insert(key, value).is_some() {
-                        return None;
-                    }
-                    Some(m)
-                })?;
-
-            if version.major == MAJOR && !RESERVED_KEYS.iter().any(|key| extra.contains_key(*key)) {
-                Some(Message {
-                    version,
-                    chain_id,
-                    domain: Domain::new_checked(domain.as_str()).ok()?,
-                    expires,
-                    session_key,
-                    tokens,
-                    extra,
-                })
-            } else {
-                None
-            }
+        |(version, chain_id, domain, expires, session_key, tokens, extra)| Message {
+            version,
+            chain_id,
+            domain,
+            expires,
+            session_key,
+            tokens,
+            extra,
         },
     )
     .parse(input)
@@ -302,6 +308,7 @@ mod tests {
                 key2: value2");
 
             let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
+            println!("{:?}", result);
             assert!(matches!(
                 result,
                 Err(Err::Error(Error {
