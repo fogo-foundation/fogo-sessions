@@ -364,6 +364,7 @@ async fn sponsor_and_send_handler(
             &transaction,
             RpcSendTransactionConfig {
                 skip_preflight: !domain_state.enable_preflight_simulation,
+                preflight_commitment: Some(CommitmentLevel::Processed),
                 ..RpcSendTransactionConfig::default()
             },
         )
