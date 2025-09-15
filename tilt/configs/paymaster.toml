@@ -2,6 +2,7 @@ mnemonic_file = "./tilt/secrets/mnemonic"
 solana_url = "http://127.0.0.1:8899"
 listen_address = "0.0.0.0:4000"
 max_sponsor_spending = 0.01
+redis_url = "redis://127.0.0.1:6379"
 
 [[domains]]
 domain = "http://localhost:3000"
@@ -16,7 +17,6 @@ max_gas_spend = 1000000
 
 [domains.tx_variations.rate_limits]
 session_per_min = 5
-ip_per_min = 20
 
 # Instruction 0
 [[domains.tx_variations.instructions]]
