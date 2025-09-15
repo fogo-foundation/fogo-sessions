@@ -5,6 +5,7 @@ use crate::constraint::{
 };
 
 impl InstructionConstraint {
+    /// The template for the constraint for the ed25519_program instruction used to verify the intent signature.
     pub fn intent_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: solana_program::ed25519_program::id(),
@@ -79,6 +80,7 @@ impl InstructionConstraint {
         }
     }
 
+    /// The template for the constraint for the StartSession instruction from the session manager program.
     pub fn start_session_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: fogo_sessions_sdk::session::SESSION_MANAGER_ID,
@@ -108,6 +110,7 @@ impl InstructionConstraint {
         }
     }
 
+    /// The template for the constraint for the RevokeSession instruction from the session manager program.
     pub fn revoke_session_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: fogo_sessions_sdk::session::SESSION_MANAGER_ID,
@@ -139,6 +142,7 @@ impl InstructionConstraint {
 }
 
 impl TransactionVariation {
+    /// The template for the transaction variation that establishes a session.
     pub fn session_establishment_variation() -> TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Session Establishment".to_string(),
@@ -154,6 +158,7 @@ impl TransactionVariation {
         })
     }
 
+    /// The template for the transaction variation that revokes a session.
     pub fn session_revocation_variation() -> TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Session Revocation".to_string(),
