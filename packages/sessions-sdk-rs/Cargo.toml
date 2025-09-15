@@ -3,7 +3,7 @@ name = "fogo-sessions-sdk"
 description = "A set of utilities for SVM on-chain programs integrating with Fogo sessions"
 edition = { workspace = true }
 license = { workspace = true }
-version = "0.4.1"
+version = "0.5.0"
 
 [lib]
 crate-type = ["rlib"]
