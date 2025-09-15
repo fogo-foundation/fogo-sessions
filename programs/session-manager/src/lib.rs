@@ -46,7 +46,7 @@ pub mod session_manager {
                     tokens,
                     extra,
                 },
-        } = Intent::load(ctx.accounts.sysvar_instructions.as_ref())
+        } = Intent::load(&ctx.accounts.sysvar_instructions)
             .map_err(Into::<SessionManagerError>::into)?;
         ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
