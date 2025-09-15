@@ -1,37 +1,23 @@
+use crate::Message;
 use anchor_lang::prelude::*;
+use solana_intents::IntentError;
 
 #[error_code]
 pub enum SessionManagerError {
-    #[msg("Signature verification must be performed by the ed25519 program")]
-    SignatureVerificationErrorProgram,
-    #[msg("The header of the ed25519 instruction is not what was expected")]
+    #[msg("This transaction is missing the required intent message instruction")]
+    NoIntentMessageInstruction,
+    #[msg(
+        "The instruction preceding the intent transfer instruction is not an ed25519 instruction"
+    )]
+    IncorrectInstructionProgramId,
+    #[msg("The ed25519 instruction's header is incorrect")]
     SignatureVerificationUnexpectedHeader,
-    #[msg("The signed intent is not a valid UTF-8 string")]
-    InvalidMessageString,
-    #[msg("The signed intent header text is not what was expected")]
-    IntentHeaderMismatch,
-    #[msg("We couldn't parse a required key from the signed intent")]
-    ParsingErrorRequiredKey,
-    #[msg("A required key was not found in the signed intent")]
-    RequiredKeyNotFound,
-    #[msg("Error while parsing the version field")]
-    ParsingErrorVersion,
     #[msg("This signed intent version is not supported")]
     InvalidVersion,
-    #[msg("We couldn't parse the expiration date from the signed intent")]
-    ParsingErrorDate,
-    #[msg("We couldn't parse the session key from the signed intent")]
-    ParsingErrorSessionKey,
-    #[msg("We couldn't parse the token section from the signed intent")]
-    ParsingErrorTokenSection,
-    #[msg("The signed intent contains a duplicate token")]
-    DuplicateToken,
-    #[msg("We couldn't parse a decimal amount in the token section of the signed intent")]
-    ParsingErrorDecimal,
-    #[msg("We couldn't parse the extra section from the signed intent")]
-    ParsingErrorExtraSection,
-    #[msg("A reserved key was found in the extra section of the signed intent")]
-    ReservedKey,
+    #[msg("The intent message was malformed and could not be parsed")]
+    ParseFailedError,
+    #[msg("The borsh payload of the ed25519 instruction could not be deserialized")]
+    DeserializeFailedError,
     #[msg("This blockchain's id doesn't match the chain id in the signed intent")]
     ChainIdMismatch,
     #[msg("The session key provided doesn't match the session key in the signed intent")]
@@ -54,4 +40,22 @@ pub enum SessionManagerError {
     DomainRecordMismatch,
     #[msg("The provided sponsor account doesn't match the session sponsor")]
     SponsorMismatch,
+}
+
+impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for SessionManagerError {
+    fn from(err: IntentError<<Message as TryFrom<Vec<u8>>>::Error>) -> Self {
+        match err {
+            IntentError::NoIntentMessageInstruction(_) => {
+                SessionManagerError::NoIntentMessageInstruction
+            }
+            IntentError::IncorrectInstructionProgramId => {
+                SessionManagerError::IncorrectInstructionProgramId
+            }
+            IntentError::SignatureVerificationUnexpectedHeader => {
+                SessionManagerError::SignatureVerificationUnexpectedHeader
+            }
+            IntentError::ParseFailedError(_) => SessionManagerError::ParseFailedError,
+            IntentError::DeserializeFailedError(_) => SessionManagerError::DeserializeFailedError,
+        }
+    }
 }
