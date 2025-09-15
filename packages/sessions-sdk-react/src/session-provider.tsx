@@ -92,6 +92,8 @@ type Props = ConstrainedOmit<
     | (() => Promise<void> | void)
     | undefined;
   wallets?: ComponentProps<typeof WalletProvider>["wallets"];
+  onOpenExtendSessionExpiry?: (() => void) | undefined;
+  onOpenSessionLimitsReached?: (() => void) | undefined;
 };
 
 export const FogoSessionProvider = ({
@@ -150,7 +152,8 @@ const SessionProvider = ({
   const {
     state: sessionState,
     onSessionLimitsOpenChange,
-    onExtendSessionOpenChange,
+    onExtendSessionExpiryOpenChange,
+    onSessionLimitsReachedOpenChange,
     requestedLimits,
   } = useSessionStateContext(args);
 
@@ -197,7 +200,7 @@ const SessionProvider = ({
         heading="Your session is expired"
         message="Would you like to extend your session?"
         isOpen={sessionState.type === StateType.RequestingExtendedExpiry}
-        onOpenChange={onExtendSessionOpenChange}
+        onOpenChange={onExtendSessionExpiryOpenChange}
       >
         {isEstablished(sessionState) && (
           <RenewSessionsContents
@@ -211,7 +214,7 @@ const SessionProvider = ({
         heading="This trade exceeds your set limits"
         message="Would you like to increase your session limits?"
         isOpen={sessionState.type === StateType.RequestingIncreasedLimits}
-        onOpenChange={onExtendSessionOpenChange}
+        onOpenChange={onSessionLimitsReachedOpenChange}
       >
         {isEstablished(sessionState) && (
           <RenewSessionsContents
@@ -274,9 +277,13 @@ const RenewSessionsContents = ({
 
 const useSessionStateContext = ({
   tokens,
+  onOpenExtendSessionExpiry,
+  onOpenSessionLimitsReached,
   ...adapterArgs
 }: Parameters<typeof useSessionAdapter>[0] & {
   tokens?: PublicKey[] | undefined;
+  onOpenExtendSessionExpiry?: (() => void) | undefined;
+  onOpenSessionLimitsReached?: (() => void) | undefined;
 }) => {
   const [state, setState] = useState<SessionState>(SessionState.Initializing());
   const wallet = useWallet();
@@ -351,6 +358,7 @@ const useSessionStateContext = ({
             if (parsedError.success) {
               switch (parsedError.data.InstructionError[1].Custom) {
                 case ERROR_CODE_SESSION_EXPIRED: {
+                  onOpenExtendSessionExpiry?.();
                   setState(
                     SessionState.RequestingExtendedExpiry(
                       establishedOptions,
@@ -360,6 +368,7 @@ const useSessionStateContext = ({
                   break;
                 }
                 case ERROR_CODE_SESSION_LIMITS_EXCEEDED: {
+                  onOpenSessionLimitsReached?.();
                   setState(
                     SessionState.RequestingIncreasedLimits(
                       establishedOptions,
@@ -430,7 +439,13 @@ const useSessionStateContext = ({
       };
       setState(SessionState.Established(establishedOptions, updateSession));
     },
-    [disconnectWallet, endSession, toast],
+    [
+      disconnectWallet,
+      endSession,
+      toast,
+      onOpenSessionLimitsReached,
+      onOpenExtendSessionExpiry,
+    ],
   );
 
   const checkStoredSession = useCallback(
@@ -536,36 +551,53 @@ const useSessionStateContext = ({
     [state, disconnectWallet],
   );
 
-  const onExtendSessionOpenChange = useCallback(
-    (isOpen: boolean) => {
-      if (
-        !isOpen &&
-        (state.type === StateType.RequestingExtendedExpiry ||
-          state.type === StateType.RequestingIncreasedLimits)
-      ) {
-        setState(
-          SessionState.Established(
+  const onExtendSessionExpiryOpenChange = useCallback((isOpen: boolean) => {
+    setState((prev) => {
+      return prev.type === StateType.RequestingExtendedExpiry && !isOpen
+        ? SessionState.Established(
             {
-              expiration: state.expiration,
-              adapter: state.adapter,
-              connection: state.connection,
-              endSession: state.endSession,
-              isLimited: state.isLimited,
-              payer: state.payer,
-              sendTransaction: state.sendTransaction,
-              sessionKey: state.sessionKey,
-              sessionPublicKey: state.sessionPublicKey,
-              signMessage: state.signMessage,
-              createLogInToken: state.createLogInToken,
-              walletPublicKey: state.walletPublicKey,
+              expiration: prev.expiration,
+              adapter: prev.adapter,
+              connection: prev.connection,
+              endSession: prev.endSession,
+              isLimited: prev.isLimited,
+              payer: prev.payer,
+              sendTransaction: prev.sendTransaction,
+              sessionKey: prev.sessionKey,
+              sessionPublicKey: prev.sessionPublicKey,
+              signMessage: prev.signMessage,
+              createLogInToken: prev.createLogInToken,
+              walletPublicKey: prev.walletPublicKey,
             },
-            state.updateSession,
-          ),
-        );
-      }
-    },
-    [state],
-  );
+            prev.updateSession,
+          )
+        : prev;
+    });
+  }, []);
+
+  const onSessionLimitsReachedOpenChange = useCallback((isOpen: boolean) => {
+    setState((prev) =>
+      prev.type === StateType.RequestingIncreasedLimits && !isOpen
+        ? SessionState.Established(
+            {
+              expiration: prev.expiration,
+              adapter: prev.adapter,
+              connection: prev.connection,
+              endSession: prev.endSession,
+              isLimited: prev.isLimited,
+              payer: prev.payer,
+              sendTransaction: prev.sendTransaction,
+              sessionKey: prev.sessionKey,
+              sessionPublicKey: prev.sessionPublicKey,
+              signMessage: prev.signMessage,
+              createLogInToken: prev.createLogInToken,
+              walletPublicKey: prev.walletPublicKey,
+            },
+            prev.updateSession,
+          )
+        : prev,
+    );
+  }, []);
 
   useEffect(() => {
     if (!walletModal.visible) {
@@ -603,10 +635,16 @@ const useSessionStateContext = ({
     () => ({
       state,
       onSessionLimitsOpenChange,
-      onExtendSessionOpenChange,
+      onExtendSessionExpiryOpenChange,
+      onSessionLimitsReachedOpenChange,
       requestedLimits: requestedLimits.current,
     }),
-    [state, onSessionLimitsOpenChange, onExtendSessionOpenChange],
+    [
+      state,
+      onSessionLimitsOpenChange,
+      onExtendSessionExpiryOpenChange,
+      onSessionLimitsReachedOpenChange,
+    ],
   );
 };
 
