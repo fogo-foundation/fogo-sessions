@@ -18,13 +18,13 @@ There are no constraints on instruction ordering, accounts, or data.
 
 ### v1: `VariationOrderedInstructionConstraints`
 
-v1 is a more fleshed out constraint set. It introduces constraints on each instruction in the transaction as well as a max gas spend (this checks the signature gas cost plus the priority fee). A list of instruction constraints is specified in order, with each instruction constraint containing: 
+v1 is a more fleshed out constraint set. It introduces constraints on each instruction in the transaction as well as a max gas spend (this checks the signature gas cost plus the priority fee). A list of instruction constraints is specified in order, with each instruction constraint containing:
 
 - a program ID to match against
 - a list of account constraints
-    - each of these specifies the account in the instruction to check and a set of accounts to include and exclude from matching against
+  - each of these specifies the account in the instruction to check and a set of accounts to include and exclude from matching against
 - a list of data constraints
-    - each of these specifies the location of the data and a type, value(s), and (in)equality to match against
+  - each of these specifies the location of the data and a type, value(s), and (in)equality to match against
 - a boolean indicating whether this instruction is explicitly required in the transaction.
 
 v1 does not enforce relationships across instructions (e.g. require instruction Y if instruction X is present, constrain data in instruction Y based on the value of data in instruction X). In this way, it is relatively stateless and allows for simple absolute constraints on the instructions.
