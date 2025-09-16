@@ -415,7 +415,9 @@ impl DataConstraint {
                 PrimitiveDataValue::Pubkey(data_pubkey)
             }
 
-            PrimitiveDataType::Bytes { length: expected_length } => {
+            PrimitiveDataType::Bytes {
+                length: expected_length,
+            } => {
                 if data_to_analyze.len() != expected_length {
                     return Err((
                         StatusCode::BAD_REQUEST,
@@ -454,7 +456,9 @@ pub enum PrimitiveDataType {
     Bool,
     Pubkey,
     /// Fixed-size byte array
-    Bytes { length: usize },
+    Bytes {
+        length: usize,
+    },
 }
 
 impl PrimitiveDataType {
