@@ -262,11 +262,12 @@ impl Session {
         Ok(())
     }
 
-    /// Returns whether the session is live
+    /// Returns whether the session is live. Revoked sessions are considered live until their expiration time.
     pub fn is_live(&self) -> Result<bool, SessionError> {
         Ok(Clock::get()
-                .map_err(|_| SessionError::ClockError)?
-                .unix_timestamp <= self.expiration()?)
+            .map_err(|_| SessionError::ClockError)?
+            .unix_timestamp
+            <= self.expiration()?)
     }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
