@@ -1,6 +1,6 @@
 use crate::constraint::{
     AccountConstraint, ContextualPubkey, DataConstraint, DataConstraintSpecification,
-    InstructionConstraint, PrimitiveDataType, PrimitiveDataValue, RateLimits, TransactionVariation,
+    InstructionConstraint, PrimitiveDataType, PrimitiveDataValue, TransactionVariation,
     VariationOrderedInstructionConstraints,
 };
 
@@ -92,7 +92,7 @@ impl InstructionConstraint {
                 },
                 AccountConstraint {
                     index: 2,
-                    include: vec![ContextualPubkey::Signer { index: -1 }],
+                    include: vec![ContextualPubkey::NonFeePayerSigner],
                     exclude: vec![],
                 },
             ],
@@ -117,7 +117,7 @@ impl InstructionConstraint {
             accounts: vec![
                 AccountConstraint {
                     index: 0,
-                    include: vec![ContextualPubkey::Signer { index: -1 }],
+                    include: vec![ContextualPubkey::NonFeePayerSigner],
                     exclude: vec![],
                 },
                 AccountConstraint {
@@ -150,10 +150,6 @@ impl TransactionVariation {
                 InstructionConstraint::intent_instruction_constraint(),
                 InstructionConstraint::start_session_instruction_constraint(),
             ],
-            rate_limits: RateLimits {
-                session_per_min: None,
-                ip_per_min: None,
-            },
             max_gas_spend: 100_000,
         })
     }
@@ -163,10 +159,6 @@ impl TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Session Revocation".to_string(),
             instructions: vec![InstructionConstraint::revoke_session_instruction_constraint()],
-            rate_limits: RateLimits {
-                session_per_min: None,
-                ip_per_min: None,
-            },
             max_gas_spend: 100_000,
         })
     }

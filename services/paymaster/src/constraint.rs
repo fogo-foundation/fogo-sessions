@@ -53,7 +53,6 @@ impl VariationProgramWhitelist {
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
     pub instructions: Vec<InstructionConstraint>,
-    pub rate_limits: RateLimits,
     pub max_gas_spend: u64,
 }
 
@@ -103,12 +102,6 @@ impl VariationOrderedInstructionConstraints {
 
         Ok(())
     }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct RateLimits {
-    pub session_per_min: Option<u64>,
-    pub ip_per_min: Option<u64>,
 }
 
 #[serde_as]
@@ -262,9 +255,7 @@ pub enum ContextualPubkey {
         pubkey: Pubkey,
     },
     Sponsor,
-    Signer {
-        index: i8,
-    },
+    NonFeePayerSigner,
     DomainRegistry,
 }
 
@@ -293,37 +284,18 @@ impl ContextualPubkey {
                 }
             }
 
-            ContextualPubkey::Signer { index } => {
-                let index_uint = if *index >= 0 {
-                    *index as usize
-                } else if (-*index as usize) <= signers.len() {
-                    signers.len() - (-*index as usize)
+            ContextualPubkey::NonFeePayerSigner => {
+                if expect_include == (signers.iter().skip(1).any(|s| s == account)) {
+                    Ok(())
                 } else {
-                    return Err((
+                    Err((
                         StatusCode::BAD_REQUEST,
-                        format!("Signer index {index} out of bounds"),
-                    ));
-                };
-                match signers.get(index_uint) {
-                    Some(signer) => {
-                        if expect_include == (account == signer) {
-                            Ok(())
+                        if expect_include {
+                            format!("Instruction {instruction_index}: Account {account} is not a non-fee-payer signer")
                         } else {
-                            Err((
-                                StatusCode::BAD_REQUEST,
-                                if expect_include {
-                                    format!("Instruction {instruction_index}: Account {account} is not the {index}th signer account")
-                                } else {
-                                    format!("Instruction {instruction_index}: Account {account} should be excluded as the {index}th signer")
-                                },
-                            ))
-                        }
-                    }
-
-                    None => Err((
-                        StatusCode::BAD_REQUEST,
-                        format!("Signer {index} missing from sessionful transaction"),
-                    )),
+                            format!("Instruction {instruction_index}: Account {account} should be excluded as a non-fee-payer signer")
+                        },
+                    ))
                 }
             }
 
