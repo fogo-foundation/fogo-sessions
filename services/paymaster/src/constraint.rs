@@ -414,6 +414,22 @@ impl DataConstraint {
                 })?);
                 PrimitiveDataValue::Pubkey(data_pubkey)
             }
+
+            PrimitiveDataType::Bytes {
+                length: expected_length,
+            } => {
+                if data_to_analyze.len() != expected_length {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Instruction {instruction_index}: Data constraint expects {expected_length} bytes for Bytes, found {} bytes",
+                            data_to_analyze.len()
+                        ),
+                    ));
+                }
+                let data_to_analyze_string = hex::encode(data_to_analyze);
+                PrimitiveDataValue::Bytes(data_to_analyze_string)
+            }
         };
 
         compare_primitive_data_types(data_to_analyze_deserialized, &self.constraint).map_err(
@@ -439,6 +455,10 @@ pub enum PrimitiveDataType {
     U64,
     Bool,
     Pubkey,
+    /// Fixed-size byte array
+    Bytes {
+        length: usize,
+    },
 }
 
 impl PrimitiveDataType {
@@ -450,6 +470,7 @@ impl PrimitiveDataType {
             PrimitiveDataType::U64 => 8,
             PrimitiveDataType::Bool => 1,
             PrimitiveDataType::Pubkey => 32,
+            PrimitiveDataType::Bytes { length } => *length,
         }
     }
 }
@@ -462,6 +483,8 @@ pub enum PrimitiveDataValue {
     U64(u64),
     Bool(bool),
     Pubkey(Pubkey),
+    /// Fixed-size byte array specified as hex-encoded string
+    Bytes(String),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -486,6 +509,12 @@ pub fn compare_primitive_data_types(
             (PrimitiveDataValue::Bool(_), PrimitiveDataValue::Bool(_)) => {
                 return Err("LessThan not applicable for bool".into())
             }
+            (PrimitiveDataValue::Pubkey(_), PrimitiveDataValue::Pubkey(_)) => {
+                return Err("LessThan not applicable for pubkey".into())
+            }
+            (PrimitiveDataValue::Bytes(_), PrimitiveDataValue::Bytes(_)) => {
+                return Err("LessThan not applicable for bytes".into())
+            }
             _ => return Err("Incompatible primitive data types".into()),
         },
 
@@ -498,6 +527,12 @@ pub fn compare_primitive_data_types(
             (PrimitiveDataValue::Bool(_), PrimitiveDataValue::Bool(_)) => {
                 return Err("GreaterThan not applicable for bool".into())
             }
+            (PrimitiveDataValue::Pubkey(_), PrimitiveDataValue::Pubkey(_)) => {
+                return Err("GreaterThan not applicable for pubkey".into())
+            }
+            (PrimitiveDataValue::Bytes(_), PrimitiveDataValue::Bytes(_)) => {
+                return Err("GreaterThan not applicable for bytes".into())
+            }
             _ => return Err("Incompatible primitive data types".into()),
         },
 
@@ -509,6 +544,8 @@ pub fn compare_primitive_data_types(
                     (PrimitiveDataValue::U32(a), PrimitiveDataValue::U32(b)) => a == b,
                     (PrimitiveDataValue::U64(a), PrimitiveDataValue::U64(b)) => a == b,
                     (PrimitiveDataValue::Bool(a), PrimitiveDataValue::Bool(b)) => a == b,
+                    (PrimitiveDataValue::Pubkey(a), PrimitiveDataValue::Pubkey(b)) => a == b,
+                    (PrimitiveDataValue::Bytes(a), PrimitiveDataValue::Bytes(b)) => a == b,
                     _ => return Err("Incompatible primitive data types".into()),
                 };
                 if is_equal {
@@ -526,6 +563,8 @@ pub fn compare_primitive_data_types(
                     (PrimitiveDataValue::U32(a), PrimitiveDataValue::U32(b)) => a == b,
                     (PrimitiveDataValue::U64(a), PrimitiveDataValue::U64(b)) => a == b,
                     (PrimitiveDataValue::Bool(a), PrimitiveDataValue::Bool(b)) => a == b,
+                    (PrimitiveDataValue::Pubkey(a), PrimitiveDataValue::Pubkey(b)) => a == b,
+                    (PrimitiveDataValue::Bytes(a), PrimitiveDataValue::Bytes(b)) => a == b,
                     _ => return Err("Incompatible primitive data types".into()),
                 };
                 if is_equal {
