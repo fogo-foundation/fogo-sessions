@@ -283,7 +283,7 @@ impl ContextualPubkey {
                     ))
                 }
             }
-            
+
             ContextualPubkey::NonFeePayerSigner => {
                 if expect_include == (signers.iter().skip(1).any(|s| s == account)) {
                     Ok(())
