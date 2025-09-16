@@ -52,6 +52,7 @@ impl VariationProgramWhitelist {
 #[derive(Serialize, Deserialize)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
+    #[serde(default)]
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
 }
@@ -109,7 +110,9 @@ impl VariationOrderedInstructionConstraints {
 pub struct InstructionConstraint {
     #[serde_as(as = "DisplayFromStr")]
     pub program: Pubkey,
+    #[serde(default)]
     pub accounts: Vec<AccountConstraint>,
+    #[serde(default)]
     pub data: Vec<DataConstraint>,
     pub required: bool,
 }
@@ -211,7 +214,9 @@ impl InstructionConstraint {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AccountConstraint {
     pub index: u16,
+    #[serde(default)]
     pub include: Vec<ContextualPubkey>,
+    #[serde(default)]
     pub exclude: Vec<ContextualPubkey>,
 }
 
