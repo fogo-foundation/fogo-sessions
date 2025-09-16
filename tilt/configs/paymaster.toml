@@ -13,10 +13,6 @@ version = "v1"
 name = "Sample v1 Variation"
 max_gas_spend = 1000000
 
-[domains.tx_variations.rate_limits]
-session_per_min = 5
-ip_per_min = 20
-
 # Instruction 0
 [[domains.tx_variations.instructions]]
 program = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"

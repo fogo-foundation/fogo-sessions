@@ -53,7 +53,6 @@ impl VariationProgramWhitelist {
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
     pub instructions: Vec<InstructionConstraint>,
-    pub rate_limits: RateLimits,
     pub max_gas_spend: u64,
 }
 
@@ -103,12 +102,6 @@ impl VariationOrderedInstructionConstraints {
 
         Ok(())
     }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct RateLimits {
-    pub session_per_min: Option<u64>,
-    pub ip_per_min: Option<u64>,
 }
 
 #[serde_as]
