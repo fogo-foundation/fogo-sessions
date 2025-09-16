@@ -112,8 +112,15 @@ pub mod session_manager {
         Ok(())
     }
 
-    /// This is just to trick anchor into generating the IDL for the Session account since we don't use it in the context for `start_session`
     #[instruction(discriminator = [2])]
+    pub fn close_session<'info>(
+        _ctx: Context<'_, '_, '_, 'info, CloseSession<'info>>,
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    /// This is just to trick anchor into generating the IDL for the Session account since we don't use it in the context for `start_session`
+    #[instruction(discriminator = [3])]
     pub fn _unused<'info>(_ctx: Context<'_, '_, '_, 'info, Unused<'info>>) -> Result<()> {
         err!(ErrorCode::InstructionDidNotDeserialize)
     }
@@ -148,6 +155,17 @@ pub struct RevokeSession<'info> {
     pub sponsor: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
+
+#[derive(Accounts)]
+pub struct CloseSession<'info> {
+    #[account(mut, close = sponsor, constraint = !session.is_live()? @ SessionManagerError::SessionIsLive)]
+    pub session: Account<'info, Session>,
+    #[account(constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
+    /// CHECK: we check it against the session's sponsor
+    pub sponsor: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+}
+
 #[derive(Accounts)]
 pub struct Unused<'info> {
     pub session: Account<'info, Session>,

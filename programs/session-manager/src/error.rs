@@ -40,6 +40,8 @@ pub enum SessionManagerError {
     DomainRecordMismatch,
     #[msg("The provided sponsor account doesn't match the session sponsor")]
     SponsorMismatch,
+    #[msg("Only expired session accounts can be closed")]
+    SessionIsLive,
 }
 
 impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for SessionManagerError {

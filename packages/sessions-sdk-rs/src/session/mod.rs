@@ -231,14 +231,11 @@ impl Session {
     }
 
     fn check_is_live(&self) -> Result<(), SessionError> {
-        if self.expiration()?
-            < Clock::get()
-                .map_err(|_| SessionError::ClockError)?
-                .unix_timestamp
-        {
-            return Err(SessionError::Expired);
+        if self.is_live()? {
+            Ok(())
+        } else {
+            Err(SessionError::Expired)
         }
-        Ok(())
     }
 
     fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), SessionError> {
@@ -263,6 +260,14 @@ impl Session {
             return Err(SessionError::InvalidAccountVersion);
         }
         Ok(())
+    }
+
+    /// Returns whether the session is live. Revoked sessions are considered live until their expiration time.
+    pub fn is_live(&self) -> Result<bool, SessionError> {
+        Ok(Clock::get()
+            .map_err(|_| SessionError::ClockError)?
+            .unix_timestamp
+            <= self.expiration()?)
     }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
