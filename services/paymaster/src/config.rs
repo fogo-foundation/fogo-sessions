@@ -29,6 +29,7 @@ pub struct Config {
     // However, in the config file, specify a number of FOGO -- the deserializer will auto-convert to lamports.
     #[serde(deserialize_with = "deserialize_sol_to_lamports")]
     pub max_sponsor_spending: u64,
+    pub redis_url: String,
     pub domains: Vec<Domain>,
 }
 

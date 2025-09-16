@@ -45,6 +45,8 @@ To jump straight to examples, go to [here](https://github.com/fogo-foundation/fo
 tilt up # Starts local test validators, starts demo app
 ```
 
+As part of tilt, to run the redis server locally, you should make sure you have `redis-server` installed (`brew install redis` or `apt-get install redis-server`).
+
 ### Programs
 
 ```

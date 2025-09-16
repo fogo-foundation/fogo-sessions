@@ -1,4 +1,5 @@
 use axum::http::StatusCode;
+use redis::Commands;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
@@ -63,16 +64,17 @@ pub struct ContextualDomainKeys {
 }
 
 impl VariationOrderedInstructionConstraints {
-    // TODO: incorporate rate limit checks
     pub fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
+        client: &redis::Client,
     ) -> Result<(), (StatusCode, String)> {
-        let mut instruction_index = 0;
+        self.check_rate_limits(client, transaction, contextual_domain_keys)?;
         check_gas_spend(transaction, self.max_gas_spend)?;
 
+        let mut instruction_index = 0;
         for constraint in self.instructions.iter() {
             let result = constraint.validate_instruction(
                 transaction,
@@ -99,6 +101,62 @@ impl VariationOrderedInstructionConstraints {
                     self.name
                 ),
             ));
+        }
+
+        Ok(())
+    }
+
+    pub fn check_rate_limits(
+        &self,
+        client: &redis::Client,
+        transaction: &VersionedTransaction,
+        contextual_domain_keys: &ContextualDomainKeys,
+    ) -> Result<(), (StatusCode, String)> {
+        let mut conn = client.get_connection().map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to connect to Redis: {err}"),
+            )
+        })?;
+
+        if let Some(session_limit) = self.rate_limits.session_per_min {
+            let n_signatures = transaction.signatures.len();
+            let session = transaction
+                .message
+                .static_account_keys()
+                .get(n_signatures - 1)
+                .ok_or_else(|| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        "Transaction missing signer for session rate limit".to_string(),
+                    )
+                })?;
+            let key_session = format!(
+                "(domain_registry,session):({},{})",
+                contextual_domain_keys.domain_registry, session
+            );
+
+            let count: u64 = conn.incr(&key_session, 1).map_err(|err| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to increment rate limit in Redis: {err}"),
+                )
+            })?;
+            if count == 1 {
+                let _: () = conn.expire(&key_session, 60).map_err(|err| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to set expiration on rate limit key in Redis: {err}"),
+                    )
+                })?;
+            }
+
+            if count > session_limit {
+                return Err((
+                    StatusCode::TOO_MANY_REQUESTS,
+                    "Rate limit exceeded for session".to_string(),
+                ));
+            }
         }
 
         Ok(())

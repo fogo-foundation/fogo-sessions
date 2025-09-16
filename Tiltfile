@@ -75,9 +75,14 @@ local_resource(
 )
 
 local_resource(
+    "redis",
+    serve_cmd="redis-server --port 6379 --save '' --appendonly no",
+)
+
+local_resource(
     "paymaster",
     serve_cmd="cargo run -p fogo-paymaster",
-    resource_deps=["svm-localnet"],
+    resource_deps=["svm-localnet", "redis"],
 )
 
 local_resource(

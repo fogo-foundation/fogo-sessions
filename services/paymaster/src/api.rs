@@ -48,6 +48,7 @@ pub struct ServerState {
     pub max_sponsor_spending: u64,
     pub domains: HashMap<String, DomainState>,
     pub chain_index: ChainIndex,
+    pub redis_client: redis::Client,
 }
 
 impl ChainIndex {
@@ -140,6 +141,7 @@ impl DomainState {
         transaction: &VersionedTransaction,
         chain_index: &ChainIndex,
         max_sponsor_spending: u64,
+        client: &redis::Client,
     ) -> Result<(), (StatusCode, String)> {
         if transaction.message.static_account_keys()[0] != self.sponsor.pubkey() {
             return Err((
@@ -172,7 +174,7 @@ impl DomainState {
             })?;
 
         let matches_variation = self.tx_variations.iter().any(|variation| {
-            self.validate_transaction_against_variation(transaction, variation, chain_index)
+            self.validate_transaction_against_variation(transaction, variation, chain_index, client)
                 .is_ok()
         });
         if !matches_variation {
@@ -248,6 +250,7 @@ impl DomainState {
         transaction: &VersionedTransaction,
         tx_variation: &TransactionVariation,
         chain_index: &ChainIndex,
+        client: &redis::Client,
     ) -> Result<(), (StatusCode, String)> {
         match tx_variation {
             TransactionVariation::V0(variation) => variation.validate_transaction(transaction),
@@ -258,6 +261,7 @@ impl DomainState {
                     sponsor: self.sponsor.pubkey(),
                 },
                 chain_index,
+                client,
             ),
         }
     }
@@ -353,7 +357,12 @@ async fn sponsor_and_send_handler(
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
     domain_state
-        .validate_transaction(&transaction, &state.chain_index, state.max_sponsor_spending)
+        .validate_transaction(
+            &transaction,
+            &state.chain_index,
+            state.max_sponsor_spending,
+            &state.redis_client,
+        )
         .await?;
 
     transaction.signatures[0] = domain_state
@@ -422,6 +431,7 @@ pub async fn run_server(
         mnemonic_file,
         solana_url,
         max_sponsor_spending,
+        redis_url,
         domains,
         listen_address,
     }: Config,
@@ -497,6 +507,7 @@ pub async fn run_server(
                 rpc,
                 lookup_table_cache: DashMap::new(),
             },
+            redis_client: redis::Client::open(redis_url).expect("Failed to create Redis client"),
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
