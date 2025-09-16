@@ -15,9 +15,7 @@ use base64::Engine;
 use dashmap::DashMap;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::rpc_client::RpcClient;
-use solana_client::rpc_config::{
-    RpcSendTransactionConfig, RpcSimulateTransactionAccountsConfig, RpcSimulateTransactionConfig,
-};
+use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
@@ -45,7 +43,6 @@ pub struct ChainIndex {
 }
 
 pub struct ServerState {
-    pub max_sponsor_spending: u64,
     pub domains: HashMap<String, DomainState>,
     pub chain_index: ChainIndex,
 }
@@ -139,7 +136,6 @@ impl DomainState {
         &self,
         transaction: &VersionedTransaction,
         chain_index: &ChainIndex,
-        max_sponsor_spending: u64,
     ) -> Result<(), (StatusCode, String)> {
         if transaction.message.static_account_keys()[0] != self.sponsor.pubkey() {
             return Err((
@@ -180,64 +176,6 @@ impl DomainState {
                 StatusCode::BAD_REQUEST,
                 "Transaction does not match any allowed variations".to_string(),
             ));
-        }
-
-        // Simulate the transaction to check sponsor SOL spending
-        let simulation_result = chain_index
-            .rpc
-            .simulate_transaction_with_config(
-                transaction,
-                RpcSimulateTransactionConfig {
-                    sig_verify: false,
-                    replace_recent_blockhash: true,
-                    commitment: Some(CommitmentConfig {
-                        commitment: CommitmentLevel::Processed,
-                    }),
-                    accounts: Some(RpcSimulateTransactionAccountsConfig {
-                        encoding: None,
-                        addresses: vec![self.sponsor.pubkey().to_string()],
-                    }),
-                    ..RpcSimulateTransactionConfig::default()
-                },
-            )
-            .map_err(|err| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to simulate transaction: {err}"),
-                )
-            })?;
-
-        if let Some(_err) = simulation_result.value.err {
-            // The paymaster succeeds when the transaction simulation successfully determines that the
-            // transaction returns an error. This is a stopgap measure to unblock 3rd parties while we figure
-            // out the underlying problems with transaction simulation.
-            return Ok(());
-        }
-
-        // Check if the sponsor account balance change exceeds the maximum permissible value
-        if let Some(accounts) = simulation_result.value.accounts {
-            if let Some(Some(account)) = accounts.first() {
-                let current_balance = account.lamports;
-                // We need to get the pre-transaction balance to calculate the change
-                let pre_balance = chain_index
-                    .rpc
-                    .get_balance(&self.sponsor.pubkey())
-                    .map_err(|err| {
-                        (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            format!("Failed to get sponsor balance: {err}"),
-                        )
-                    })?;
-
-                let balance_change = pre_balance.saturating_sub(current_balance);
-
-                if balance_change > max_sponsor_spending {
-                    return Err((
-                        StatusCode::BAD_REQUEST,
-                        format!("Sponsor spending exceeds limit: {balance_change} lamports (max: {max_sponsor_spending})"),
-                    ));
-                }
-            }
         }
 
         Ok(())
@@ -353,7 +291,7 @@ async fn sponsor_and_send_handler(
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
     domain_state
-        .validate_transaction(&transaction, &state.chain_index, state.max_sponsor_spending)
+        .validate_transaction(&transaction, &state.chain_index)
         .await?;
 
     transaction.signatures[0] = domain_state
@@ -421,7 +359,6 @@ pub async fn run_server(
     Config {
         mnemonic_file,
         solana_url,
-        max_sponsor_spending,
         domains,
         listen_address,
     }: Config,
@@ -491,7 +428,6 @@ pub async fn run_server(
                 )])),
         )
         .with_state(Arc::new(ServerState {
-            max_sponsor_spending,
             domains,
             chain_index: ChainIndex {
                 rpc,
