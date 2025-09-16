@@ -15,6 +15,7 @@ config = "0.15.13"
 dashmap = "6.1.0"
 domain-registry = { path = "../../programs/domain-registry" }
 fogo-sessions-sdk = {workspace = true}
+hex = "0.4.3"
 serde = "1.0.219"
 serde_with = { version = "3.14.0", features = ["base64"] }
 solana-address-lookup-table-interface = {workspace = true}

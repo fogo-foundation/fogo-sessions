@@ -1527,6 +1527,7 @@ dependencies = [
  "dashmap 6.1.0",
  "domain-registry",
  "fogo-sessions-sdk",
+ "hex",
  "serde",
  "serde_with",
  "solana-address-lookup-table-interface",
