@@ -255,7 +255,6 @@ pub enum ContextualPubkey {
         pubkey: Pubkey,
     },
     Sponsor,
-    FeePayer,
     NonFeePayerSigner,
     DomainRegistry,
 }
@@ -280,21 +279,6 @@ impl ContextualPubkey {
                             format!("Instruction {instruction_index}: Account {account} is not explicitly included")
                         } else {
                             format!("Instruction {instruction_index}: Account {account} is explicitly excluded")
-                        },
-                    ))
-                }
-            }
-
-            ContextualPubkey::FeePayer => {
-                if expect_include == (account == signers.first().expect("No signatures in transaction")) {
-                    Ok(())
-                } else {
-                    Err((
-                        StatusCode::BAD_REQUEST,
-                        if expect_include {
-                            format!("Instruction {instruction_index}: Account {account} is not the fee payer")
-                        } else {
-                            format!("Instruction {instruction_index}: Account {account} should be excluded as the fee payer")
                         },
                     ))
                 }
