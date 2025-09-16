@@ -20,7 +20,7 @@ required = true
 
 [[domains.tx_variations.instructions.accounts]]
 index = 2
-include = [ { Signer = { index = -1 } } ]
+include = [ { NonFeePayerSigner = {} } ]
 exclude = []
 
 [[domains.tx_variations.instructions.accounts]]
@@ -28,7 +28,7 @@ index = 1
 include = []
 exclude = [
     { Explicit = { pubkey = "So11111111111111111111111111111111111111111" } },
-    { Signer = { index = -1 } }
+    { NonFeePayerSigner = {} }
 ]
 
 [[domains.tx_variations.instructions.data]]
@@ -44,7 +44,7 @@ required = true
 
 [[domains.tx_variations.instructions.accounts]]
 index = 0
-include = [ { Signer = { index = -1 } } ]
+include = [ { NonFeePayerSigner = {} } ]
 exclude = []
 
 [[domains.tx_variations.instructions.data]]

@@ -92,7 +92,7 @@ impl InstructionConstraint {
                 },
                 AccountConstraint {
                     index: 2,
-                    include: vec![ContextualPubkey::Signer { index: -1 }],
+                    include: vec![ContextualPubkey::NonFeePayerSigner],
                     exclude: vec![],
                 },
             ],
@@ -117,7 +117,7 @@ impl InstructionConstraint {
             accounts: vec![
                 AccountConstraint {
                     index: 0,
-                    include: vec![ContextualPubkey::Signer { index: -1 }],
+                    include: vec![ContextualPubkey::NonFeePayerSigner],
                     exclude: vec![],
                 },
                 AccountConstraint {

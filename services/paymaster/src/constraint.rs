@@ -255,9 +255,8 @@ pub enum ContextualPubkey {
         pubkey: Pubkey,
     },
     Sponsor,
-    Signer {
-        index: i8,
-    },
+    FeePayer,
+    NonFeePayerSigner,
     DomainRegistry,
 }
 
@@ -286,37 +285,33 @@ impl ContextualPubkey {
                 }
             }
 
-            ContextualPubkey::Signer { index } => {
-                let index_uint = if *index >= 0 {
-                    *index as usize
-                } else if (-*index as usize) <= signers.len() {
-                    signers.len() - (-*index as usize)
+            ContextualPubkey::FeePayer => {
+                if expect_include == (account == signers.first().expect("No signatures in transaction")) {
+                    Ok(())
                 } else {
-                    return Err((
+                    Err((
                         StatusCode::BAD_REQUEST,
-                        format!("Signer index {index} out of bounds"),
-                    ));
-                };
-                match signers.get(index_uint) {
-                    Some(signer) => {
-                        if expect_include == (account == signer) {
-                            Ok(())
+                        if expect_include {
+                            format!("Instruction {instruction_index}: Account {account} is not the fee payer")
                         } else {
-                            Err((
-                                StatusCode::BAD_REQUEST,
-                                if expect_include {
-                                    format!("Instruction {instruction_index}: Account {account} is not the {index}th signer account")
-                                } else {
-                                    format!("Instruction {instruction_index}: Account {account} should be excluded as the {index}th signer")
-                                },
-                            ))
-                        }
-                    }
-
-                    None => Err((
+                            format!("Instruction {instruction_index}: Account {account} should be excluded as the fee payer")
+                        },
+                    ))
+                }
+            }
+            
+            ContextualPubkey::NonFeePayerSigner => {
+                if expect_include == (signers.iter().skip(1).any(|s| s == account)) {
+                    Ok(())
+                } else {
+                    Err((
                         StatusCode::BAD_REQUEST,
-                        format!("Signer {index} missing from sessionful transaction"),
-                    )),
+                        if expect_include {
+                            format!("Instruction {instruction_index}: Account {account} is not a non-fee-payer signer")
+                        } else {
+                            format!("Instruction {instruction_index}: Account {account} should be excluded as a non-fee-payer signer")
+                        },
+                    ))
                 }
             }
 
