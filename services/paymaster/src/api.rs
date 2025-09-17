@@ -11,6 +11,7 @@ use axum::{
 };
 use axum_extra::headers::Origin;
 use axum_extra::TypedHeader;
+use axum_prometheus::metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use base64::Engine;
 use dashmap::DashMap;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
@@ -296,7 +297,7 @@ async fn sponsor_and_send_handler(
         .await
     {
         Ok(name) => {
-            obs_validation(domain_str.clone(), name.to_owned(), "Success".to_string());
+            obs_validation(domain_str.clone(), name.to_owned(), "success".to_string());
             name
         }
         Err(e) => {
@@ -322,8 +323,8 @@ async fn sponsor_and_send_handler(
         .await?;
 
         let confirmation_status = match &confirmation_result {
-            ConfirmationResult::Success { .. } => "Success".to_string(),
-            ConfirmationResult::Failed { .. } => "Failure".to_string(),
+            ConfirmationResult::Success { .. } => "success".to_string(),
+            ConfirmationResult::Failed { .. } => "failed".to_string(),
         };
 
         obs_send(domain_str.clone(), matched_variation_name.clone(), Some(confirmation_status.clone()));
@@ -445,11 +446,20 @@ pub async fn run_server(
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
         .split_for_parts();
 
-    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
+    let handle = PrometheusBuilder::new()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::GAS_SPEND_HISTOGRAM.to_string()),
+            crate::metrics::GAS_SPEND_BUCKETS,
+        )
+        .unwrap()
+        .install_recorder()
+        .expect("install metrics recorder");
+
+    let (prometheus_layer, _) = PrometheusMetricLayer::pair();
 
     let app = Router::new()
         .route("/metrics", axum::routing::get(move || {
-            let handle = metric_handle.clone();
+            let handle = handle.clone();
             async move { handle.render() }
         }))
         .nest("/api", router)
