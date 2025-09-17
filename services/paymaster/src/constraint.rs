@@ -599,13 +599,11 @@ pub fn check_gas_spend(
     transaction: &VersionedTransaction,
     max_gas_spend: u64,
 ) -> Result<(), (StatusCode, String)> {
-    let n_signatures = transaction.signatures.len() as u64;
-    let priority_fee = get_priority_fee(transaction)?;
-    let gas_spent = n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee;
-    if gas_spent > max_gas_spend {
+    let gas_spend = compute_gas_spent(transaction);
+    if gas_spend > max_gas_spend {
         return Err((
             StatusCode::BAD_REQUEST,
-            format!("Transaction gas spend {gas_spent} exceeds maximum allowed {max_gas_spend}",),
+            format!("Transaction gas spend {gas_spend} exceeds maximum allowed {max_gas_spend}",),
         ));
     }
     Ok(())
@@ -659,7 +657,6 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
 }
 
 /// Computes the gas spend (in lamports) for a transaction based on signatures and priority fee.
-/// This does not validate against any max; use `check_gas_spend` elsewhere for limits.
 pub fn compute_gas_spent(transaction: &VersionedTransaction) -> u64 {
     let n_signatures = transaction.signatures.len() as u64;
     let priority_fee = get_priority_fee(transaction).unwrap_or(0);

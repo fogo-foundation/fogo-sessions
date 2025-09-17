@@ -134,7 +134,8 @@ pub struct SponsorAndSendPayload {
 
 impl DomainState {
     /// Checks that the transaction meets at least one of the specified variations for this domain.
-    /// If so, returns Ok(()). Otherwise, returns an error with a message indicating why the transaction is invalid.
+    /// If so, returns the string name of the variation this transaction matched against.
+    /// Otherwise, returns an error with a message indicating why the transaction is invalid.
     pub async fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
