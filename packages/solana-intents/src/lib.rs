@@ -1,3 +1,5 @@
+use std::io::Read;
+
 use borsh::BorshDeserialize;
 use solana_program::{
     account_info::AccountInfo, ed25519_program, instruction::Instruction,
@@ -43,11 +45,12 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
     type Error = IntentError<E>;
 
     fn try_from(data: Ed25519InstructionData) -> Result<Self, Self::Error> {
-        if data.header.check() {
+        if data.header.check() && data.message.check() {
             Ok(Intent {
                 signer: data.public_key,
-                message: data
+                message: Vec::<u8>::from(data
                     .message
+                     )
                     .try_into()
                     .map_err(IntentError::ParseFailedError)?,
             })
@@ -61,7 +64,7 @@ struct Ed25519InstructionData {
     header: Ed25519InstructionHeader,
     public_key: Pubkey,
     _signature: [u8; 64], // We don't check the signature here, the ed25519 program is responsible for that
-    message: Vec<u8>,
+    message: OffchainMessage,
 }
 
 impl BorshDeserialize for Ed25519InstructionData {
@@ -70,8 +73,9 @@ impl BorshDeserialize for Ed25519InstructionData {
         let public_key = Pubkey::deserialize_reader(reader)?;
         let mut signature = [0u8; 64];
         reader.read_exact(&mut signature)?;
-        let mut message: Vec<u8> = vec![0u8; header.message_data_size as usize];
-        reader.read_exact(&mut message)?;
+        let mut message_bytes: Vec<u8> = vec![0u8; header.message_data_size as usize];
+        reader.read_exact(&mut message_bytes)?;
+        let message = OffchainMessage::deserialize_reader(&mut message_bytes.as_slice())?;
         Ok(Self {
             header,
             public_key,
@@ -112,6 +116,67 @@ impl Ed25519InstructionHeader {
         self == &expected_header
     }
 }
+
+const LEDGER_PREFIX: &[u8] = b"\xffsolana offchain";
+
+enum OffchainMessage {
+    Raw(Vec<u8>),
+    Ledger(LedgerOffchainMessage),
+}
+
+impl From<OffchainMessage> for Vec<u8> {
+    fn from(message: OffchainMessage) -> Self {
+        match message {
+            OffchainMessage::Raw(message) => message,
+            OffchainMessage::Ledger(message) => message.message.0,
+        }
+    }
+}
+
+impl OffchainMessage {
+    pub fn check(&self) -> bool {
+        match self {
+            Self::Raw(_) => true,
+            Self::Ledger(message) => message.version == 0 && message.format == 0,
+        }
+    }
+}
+
+impl BorshDeserialize for OffchainMessage {
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let mut maybe_ledger_prefix = [0u8; 16];
+        reader.read_exact(&mut maybe_ledger_prefix)?;
+        if maybe_ledger_prefix == LEDGER_PREFIX {
+            Ok(Self::Ledger(LedgerOffchainMessage::deserialize_reader(reader)?))
+        } else {
+            let mut message = vec![];
+            (&mut maybe_ledger_prefix.chain(reader)).read_to_end(&mut message)?;
+            Ok(Self::Raw(message))
+        }
+    }
+}
+
+#[derive(BorshDeserialize)]
+struct LedgerOffchainMessage {
+    version: u8,
+    format: u8,
+    message: ShortVec<u8>,
+}
+
+struct ShortVec<T> (Vec<T>);
+
+impl<T> BorshDeserialize for ShortVec<T> where T: BorshDeserialize {
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let length = u16::deserialize_reader(reader)?;
+        let mut result = Vec::with_capacity(length as usize);
+        for _ in 0..length {
+            result.push(T::deserialize_reader(reader)?);
+        }
+        Ok(Self(result))
+    }
+}
+
+
 
 #[derive(Debug)]
 pub enum IntentError<P> {
