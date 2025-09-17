@@ -1,5 +1,6 @@
 use crate::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
+use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -12,6 +13,7 @@ use axum::{
 use axum_extra::headers::Origin;
 use axum_extra::TypedHeader;
 use axum_prometheus::metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
+use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
@@ -30,8 +32,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
-use axum_prometheus::PrometheusMetricLayer;
-use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
@@ -171,15 +171,16 @@ impl DomainState {
             })?;
 
         let matched = self.tx_variations.iter().find(|variation| {
-            self.validate_transaction_against_variation(transaction, variation, chain_index).is_ok()
+            self.validate_transaction_against_variation(transaction, variation, chain_index)
+                .is_ok()
         });
         if let Some(variation) = matched {
             Ok(variation.name())
         } else {
-            return Err((
+            Err((
                 StatusCode::BAD_REQUEST,
                 "Transaction does not match any allowed variations".to_string(),
-            ));
+            ))
         }
     }
 
@@ -304,7 +305,8 @@ async fn sponsor_and_send_handler(
             obs_validation(domain_str.clone(), "None".to_string(), e.0.to_string());
             return Err(e.into());
         }
-    }.to_owned();
+    }
+    .to_owned();
 
     transaction.signatures[0] = domain_state
         .sponsor
@@ -327,10 +329,19 @@ async fn sponsor_and_send_handler(
             ConfirmationResult::Failed { .. } => "failed".to_string(),
         };
 
-        obs_send(domain_str.clone(), matched_variation_name.clone(), Some(confirmation_status.clone()));
+        obs_send(
+            domain_str.clone(),
+            matched_variation_name.clone(),
+            Some(confirmation_status.clone()),
+        );
 
         let gas = crate::constraint::compute_gas_spent(&transaction);
-        obs_gas_spend(domain_str, matched_variation_name, Some(confirmation_status), gas);
+        obs_gas_spend(
+            domain_str,
+            matched_variation_name,
+            Some(confirmation_status),
+            gas,
+        );
 
         Ok(SponsorAndSendResponse::Confirm(confirmation_result))
     } else {
@@ -349,7 +360,7 @@ async fn sponsor_and_send_handler(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     format!("Failed to broadcast transaction: {err}"),
                 )
-        })?;
+            })?;
 
         obs_send(domain_str.clone(), matched_variation_name.clone(), None);
 
@@ -375,12 +386,15 @@ async fn sponsor_pubkey_handler(
     origin: Option<TypedHeader<Origin>>,
     Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
-    let (_, DomainState {
-        domain_registry_key: _,
-        sponsor,
-        enable_preflight_simulation: _,
-        tx_variations: _,
-    }) = get_domain_state(&state, domain, origin)?;
+    let (
+        _,
+        DomainState {
+            domain_registry_key: _,
+            sponsor,
+            enable_preflight_simulation: _,
+            tx_variations: _,
+        },
+    ) = get_domain_state(&state, domain, origin)?;
     Ok(sponsor.pubkey().to_string())
 }
 
@@ -458,10 +472,13 @@ pub async fn run_server(
     let (prometheus_layer, _) = PrometheusMetricLayer::pair();
 
     let app = Router::new()
-        .route("/metrics", axum::routing::get(move || {
-            let handle = handle.clone();
-            async move { handle.render() }
-        }))
+        .route(
+            "/metrics",
+            axum::routing::get(move || {
+                let handle = handle.clone();
+                async move { handle.render() }
+            }),
+        )
         .nest("/api", router)
         .layer(
             CorsLayer::new()
