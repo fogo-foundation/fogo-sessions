@@ -469,7 +469,7 @@ pub async fn run_server(
         .install_recorder()
         .expect("install metrics recorder");
 
-    let (prometheus_layer, _) = PrometheusMetricLayer::pair();
+    let prometheus_layer = PrometheusMetricLayer::new();
 
     let app = Router::new()
         .route(
