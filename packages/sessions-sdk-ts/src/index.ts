@@ -37,7 +37,6 @@ import { z } from "zod";
 
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
 import { TransactionResultType } from "./adapter.js";
-import { verify } from "crypto";
 
 export {
   type SessionAdapter,

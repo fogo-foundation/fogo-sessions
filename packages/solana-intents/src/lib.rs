@@ -45,7 +45,12 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
     type Error = IntentError<E>;
 
     fn try_from(data: Ed25519InstructionData) -> Result<Self, Self::Error> {
-        if data.header.check() && data.message.check() {
+        if !data.header.check() {
+            return Err(IntentError::SignatureVerificationUnexpectedHeader);
+        }
+        if !data.message.check() {
+            return Err(IntentError::SignatureVerificationUnexpectedHeader);
+        }
             Ok(Intent {
                 signer: data.public_key,
                 message: Vec::<u8>::from(data
@@ -54,9 +59,6 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
                     .try_into()
                     .map_err(IntentError::ParseFailedError)?,
             })
-        } else {
-            Err(IntentError::SignatureVerificationUnexpectedHeader)
-        }
     }
 }
 
@@ -137,7 +139,7 @@ impl OffchainMessage {
     pub fn check(&self) -> bool {
         match self {
             Self::Raw(_) => true,
-            Self::Ledger(message) => message.version == 0 && message.format == 1,
+            Self::Ledger(message) => message.version == 0 && (message.format == 1 || message.format == 0),
         }
     }
 }
@@ -183,6 +185,7 @@ pub enum IntentError<P> {
     NoIntentMessageInstruction(ProgramError),
     IncorrectInstructionProgramId,
     SignatureVerificationUnexpectedHeader,
+    LedgerOffchainMessageUnexpectedHeader,
     ParseFailedError(P),
     DeserializeFailedError(borsh::io::Error),
 }
