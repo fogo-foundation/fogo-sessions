@@ -18,6 +18,8 @@ import {
   generateKeyPair,
   getAddressFromPublicKey,
   getProgramDerivedAddress,
+  verifySignature,
+  type SignatureBytes,
 } from "@solana/kit";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -35,6 +37,7 @@ import { z } from "zod";
 
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
 import { TransactionResultType } from "./adapter.js";
+import { verify } from "crypto";
 
 export {
   type SessionAdapter,
@@ -414,11 +417,28 @@ const buildIntentInstruction = async (
 
   const intentSignature = await options.signMessage(message);
 
+  const signedByPublicKey = await crypto.subtle.importKey('raw', options.walletPublicKey.toBytes(), { name: 'Ed25519' }, true, [
+    'verify',
+]);
+
+  if (await verifySignature(signedByPublicKey, intentSignature as SignatureBytes,  message)) {
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
-    signature: intentSignature,
-    message: message,
-  });
+      signature: intentSignature,
+      message: message,
+    });
+  } else {
+    const ledgerMessageWithPrefix = Uint8Array.from([0xff, ...new TextEncoder().encode("solana offchain"), 0, 1, message.length & 0xff, (message.length >> 8) & 0xff, ...message]);
+      if (await verifySignature(signedByPublicKey, intentSignature as SignatureBytes, ledgerMessageWithPrefix)) {
+        return Ed25519Program.createInstructionWithPublicKey({
+          publicKey: options.walletPublicKey.toBytes(),
+          signature: intentSignature,
+          message: ledgerMessageWithPrefix,
+        });
+      } else {
+        throw new Error("The signature provided by the browser wallet is not valid")
+      }
+    }
 };
 
 const buildMessage = async (
