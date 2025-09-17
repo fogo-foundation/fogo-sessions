@@ -7,6 +7,7 @@ mod constraint;
 mod constraint_templates;
 mod rpc;
 mod serde;
+mod metrics;
 
 #[derive(Parser)]
 struct Cli {

@@ -29,6 +29,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
+use axum_prometheus::PrometheusMetricLayer;
+use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
@@ -136,7 +138,7 @@ impl DomainState {
         &self,
         transaction: &VersionedTransaction,
         chain_index: &ChainIndex,
-    ) -> Result<(), (StatusCode, String)> {
+    ) -> Result<&str, (StatusCode, String)> {
         if transaction.message.static_account_keys()[0] != self.sponsor.pubkey() {
             return Err((
                 StatusCode::BAD_REQUEST,
@@ -167,18 +169,17 @@ impl DomainState {
                     })
             })?;
 
-        let matches_variation = self.tx_variations.iter().any(|variation| {
-            self.validate_transaction_against_variation(transaction, variation, chain_index)
-                .is_ok()
+        let matched = self.tx_variations.iter().find(|variation| {
+            self.validate_transaction_against_variation(transaction, variation, chain_index).is_ok()
         });
-        if !matches_variation {
+        if let Some(variation) = matched {
+            Ok(variation.name())
+        } else {
             return Err((
                 StatusCode::BAD_REQUEST,
                 "Transaction does not match any allowed variations".to_string(),
             ));
         }
-
-        Ok(())
     }
 
     pub fn validate_transaction_against_variation(
@@ -233,7 +234,7 @@ fn get_domain_state(
     state: &ServerState,
     domain_query_parameter: Option<String>,
     origin: Option<TypedHeader<Origin>>,
-) -> Result<&DomainState, (StatusCode, String)> {
+) -> Result<(String, &DomainState), (StatusCode, String)> {
     let domain = domain_query_parameter
         .or_else(|| origin.map(|origin| origin.to_string()))
         .ok_or_else(|| {
@@ -255,7 +256,7 @@ fn get_domain_state(
             )
         })?;
 
-    Ok(domain_state)
+    Ok((domain, domain_state))
 }
 
 #[utoipa::path(
@@ -270,7 +271,7 @@ async fn sponsor_and_send_handler(
     Query(SponsorAndSendQuery { confirm, domain }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
-    let domain_state = get_domain_state(&state, domain, origin)?;
+    let (domain_str, domain_state) = get_domain_state(&state, domain.clone(), origin)?;
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
@@ -290,9 +291,19 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    domain_state
+    let matched_variation_name = match domain_state
         .validate_transaction(&transaction, &state.chain_index)
-        .await?;
+        .await
+    {
+        Ok(name) => {
+            obs_validation(domain_str.clone(), name.to_owned(), "Success".to_string());
+            name
+        }
+        Err(e) => {
+            obs_validation(domain_str.clone(), "None".to_string(), e.0.to_string());
+            return Err(e.into());
+        }
+    }.to_owned();
 
     transaction.signatures[0] = domain_state
         .sponsor
@@ -309,6 +320,17 @@ async fn sponsor_and_send_handler(
             },
         )
         .await?;
+
+        let confirmation_status = match &confirmation_result {
+            ConfirmationResult::Success { .. } => "Success".to_string(),
+            ConfirmationResult::Failed { .. } => "Failure".to_string(),
+        };
+
+        obs_send(domain_str.clone(), matched_variation_name.clone(), Some(confirmation_status.clone()));
+
+        let gas = crate::constraint::compute_gas_spent(&transaction);
+        obs_gas_spend(domain_str, matched_variation_name, Some(confirmation_status), gas);
+
         Ok(SponsorAndSendResponse::Confirm(confirmation_result))
     } else {
         let signature = state
@@ -326,7 +348,13 @@ async fn sponsor_and_send_handler(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     format!("Failed to broadcast transaction: {err}"),
                 )
-            })?;
+        })?;
+
+        obs_send(domain_str.clone(), matched_variation_name.clone(), None);
+
+        let gas = crate::constraint::compute_gas_spent(&transaction);
+        obs_gas_spend(domain_str, matched_variation_name, None, gas);
+
         Ok(SponsorAndSendResponse::Send(signature))
     }
 }
@@ -346,12 +374,12 @@ async fn sponsor_pubkey_handler(
     origin: Option<TypedHeader<Origin>>,
     Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
-    let DomainState {
+    let (_, DomainState {
         domain_registry_key: _,
         sponsor,
         enable_preflight_simulation: _,
         tx_variations: _,
-    } = get_domain_state(&state, domain, origin)?;
+    }) = get_domain_state(&state, domain, origin)?;
     Ok(sponsor.pubkey().to_string())
 }
 
@@ -417,7 +445,13 @@ pub async fn run_server(
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
         .split_for_parts();
 
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayer::pair();
+
     let app = Router::new()
+        .route("/metrics", axum::routing::get(move || {
+            let handle = metric_handle.clone();
+            async move { handle.render() }
+        }))
         .nest("/api", router)
         .layer(
             CorsLayer::new()
@@ -427,6 +461,7 @@ pub async fn run_server(
                     "content-type",
                 )])),
         )
+        .layer(prometheus_layer)
         .with_state(Arc::new(ServerState {
             domains,
             chain_index: ChainIndex {
