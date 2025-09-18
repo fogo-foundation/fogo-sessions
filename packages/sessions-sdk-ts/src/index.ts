@@ -404,10 +404,13 @@ const addLedgerPrefixToMessageIfNeeded = async (walletPublicKey: PublicKey, sign
   const publicKey = await crypto.subtle.importKey('raw', walletPublicKey.toBytes(), { name: 'Ed25519' }, true, [
     'verify',
   ]);
+  const ledgerPrefixMessageWithPrefix = Uint8Array.from([0xff, ...new TextEncoder().encode("solana offchain"), 0, 1, message.length & 0xff, (message.length >> 8) & 0xff, ...message]);
   if (await verifySignature(publicKey, signature as SignatureBytes, message)) {
     return message;
+  } else if (await verifySignature(publicKey, signature as SignatureBytes, ledgerPrefixMessageWithPrefix)) {
+    return ledgerPrefixMessageWithPrefix;
   } else {
-    return Uint8Array.from([0xff, ...new TextEncoder().encode("solana offchain"), 0, 1, message.length & 0xff, (message.length >> 8) & 0xff, ...message]);
+    throw new Error("The signature provided by the browser wallet is not valid");
   }
 };
 
