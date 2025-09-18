@@ -302,6 +302,14 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
+    let gas = crate::constraint::compute_gas_spent(&transaction)?;
+    let gas_f64 = gas.to_f64().ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            "Gas spend could not be converted to f64".to_string(),
+        )
+    })?;
+
     let matched_variation_name = match domain_state
         .validate_transaction(&transaction, &state.chain_index)
         .await
@@ -324,13 +332,6 @@ async fn sponsor_and_send_handler(
     transaction.signatures[0] = domain_state
         .sponsor
         .sign_message(&transaction.message.serialize());
-    let gas = crate::constraint::compute_gas_spent(&transaction);
-    let gas_f64 = gas.to_f64().ok_or_else(|| {
-        (
-            StatusCode::BAD_REQUEST,
-            "Gas spend could not be converted to f64".to_string(),
-        )
-    })?;
 
     if confirm {
         let confirmation_result = send_and_confirm_transaction(
