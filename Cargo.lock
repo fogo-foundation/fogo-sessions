@@ -1606,6 +1606,7 @@ dependencies = [
  "domain-registry",
  "fogo-sessions-sdk",
  "hex",
+ "num-traits",
  "serde",
  "serde_with",
  "solana-address-lookup-table-interface",

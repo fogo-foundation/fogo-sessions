@@ -1,4 +1,5 @@
 use axum_prometheus::metrics;
+use num_traits::cast::ToPrimitive;
 
 pub const TRANSACTION_VALIDATION_COUNT: &str = "paymaster_transaction_validation_total";
 pub fn obs_validation(domain: String, variation: String, result_validation: String) {
@@ -19,7 +20,6 @@ pub fn obs_send(domain: String, variation: String, result_confirmation: Option<S
     metrics::counter!(TRANSACTION_SEND_COUNT, &labels).increment(1);
 }
 
-pub const GAS_SPEND_COUNT: &str = "paymaster_gas_spend_total";
 pub const GAS_SPEND_HISTOGRAM: &str = "paymaster_gas_spend_hist";
 pub const GAS_SPEND_BUCKETS: &[f64] = &[
     10_000.0,
@@ -41,6 +41,6 @@ pub fn obs_gas_spend(
     if let Some(result) = result_confirmation {
         labels.push(("result", result));
     }
-    metrics::counter!(GAS_SPEND_COUNT, &labels).increment(lamports);
-    metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels).record(lamports as f64);
+    metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels)
+        .record(lamports.to_f64().expect("u64 to f64 conversion failed"));
 }

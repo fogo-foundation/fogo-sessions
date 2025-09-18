@@ -41,3 +41,4 @@ tower-http = {version = "0.6.6", features = ["cors"]}
 utoipa = "5.4.0"
 utoipa-axum = "0.2.0"
 axum-prometheus = "0.6.1"
+num-traits = "0.2.19"
