@@ -16,6 +16,7 @@ use axum_prometheus::metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
+use num_traits::ToPrimitive;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
@@ -323,6 +324,13 @@ async fn sponsor_and_send_handler(
     transaction.signatures[0] = domain_state
         .sponsor
         .sign_message(&transaction.message.serialize());
+    let gas = crate::constraint::compute_gas_spent(&transaction);
+    let gas_f64 = gas.to_f64().ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            "Gas spend could not be converted to f64".to_string(),
+        )
+    })?;
 
     if confirm {
         let confirmation_result = send_and_confirm_transaction(
@@ -343,13 +351,11 @@ async fn sponsor_and_send_handler(
             matched_variation_name.clone(),
             Some(confirmation_status.clone()),
         );
-
-        let gas = crate::constraint::compute_gas_spent(&transaction);
         obs_gas_spend(
             domain,
             matched_variation_name,
             Some(confirmation_status),
-            gas,
+            gas_f64,
         );
 
         Ok(SponsorAndSendResponse::Confirm(confirmation_result))
@@ -372,9 +378,7 @@ async fn sponsor_and_send_handler(
             })?;
 
         obs_send(domain.clone(), matched_variation_name.clone(), None);
-
-        let gas = crate::constraint::compute_gas_spent(&transaction);
-        obs_gas_spend(domain, matched_variation_name, None, gas);
+        obs_gas_spend(domain, matched_variation_name, None, gas_f64);
 
         Ok(SponsorAndSendResponse::Send(signature))
     }
