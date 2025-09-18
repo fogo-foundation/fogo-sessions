@@ -143,7 +143,7 @@ impl Message {
             let message = OffchainMessage::deserialize(data).map_err(|_| {
                 std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
-                    "Invalid ledger offchain message",
+                    "Invalid offchain message",
                 )
             })?;
             if data.len() > get_length_with_header(&message) {
