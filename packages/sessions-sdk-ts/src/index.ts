@@ -14,12 +14,12 @@ import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { sha256 } from "@noble/hashes/sha2";
 import { fromLegacyPublicKey } from "@solana/compat";
+import type { SignatureBytes } from "@solana/kit";
 import {
   generateKeyPair,
   getAddressFromPublicKey,
   getProgramDerivedAddress,
   verifySignature,
-  type SignatureBytes,
 } from "@solana/kit";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -400,17 +400,41 @@ const getTokenInfo = async (
 
 type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 
-const addLedgerPrefixToMessageIfNeeded = async (walletPublicKey: PublicKey, signature: Uint8Array, message: Uint8Array) => {
-  const publicKey = await crypto.subtle.importKey('raw', walletPublicKey.toBytes(), { name: 'Ed25519' }, true, [
-    'verify',
+const addLedgerPrefixToMessageIfNeeded = async (
+  walletPublicKey: PublicKey,
+  signature: Uint8Array,
+  message: Uint8Array,
+) => {
+  const publicKey = await crypto.subtle.importKey(
+    "raw",
+    walletPublicKey.toBytes(),
+    { name: "Ed25519" },
+    true,
+    ["verify"],
+  );
+  const ledgerPrefixMessageWithPrefix = Uint8Array.from([
+    0xff,
+    ...new TextEncoder().encode("solana offchain"),
+    0,
+    1,
+    message.length & 0xff,
+    (message.length >> 8) & 0xff,
+    ...message,
   ]);
-  const ledgerPrefixMessageWithPrefix = Uint8Array.from([0xff, ...new TextEncoder().encode("solana offchain"), 0, 1, message.length & 0xff, (message.length >> 8) & 0xff, ...message]);
   if (await verifySignature(publicKey, signature as SignatureBytes, message)) {
     return message;
-  } else if (await verifySignature(publicKey, signature as SignatureBytes, ledgerPrefixMessageWithPrefix)) {
+  } else if (
+    await verifySignature(
+      publicKey,
+      signature as SignatureBytes,
+      ledgerPrefixMessageWithPrefix,
+    )
+  ) {
     return ledgerPrefixMessageWithPrefix;
   } else {
-    throw new Error("The signature provided by the browser wallet is not valid");
+    throw new Error(
+      "The signature provided by the browser wallet is not valid",
+    );
   }
 };
 
@@ -432,9 +456,13 @@ const buildIntentInstruction = async (
 
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
-      signature: intentSignature,
-      message: await addLedgerPrefixToMessageIfNeeded(options.walletPublicKey, intentSignature, message),
-    });
+    signature: intentSignature,
+    message: await addLedgerPrefixToMessageIfNeeded(
+      options.walletPublicKey,
+      intentSignature,
+      message,
+    ),
+  });
 };
 
 const buildMessage = async (
@@ -681,7 +709,11 @@ const buildTransferIntentInstruction = async (
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
     signature: intentSignature,
-    message: await addLedgerPrefixToMessageIfNeeded(options.walletPublicKey, intentSignature, message),
+    message: await addLedgerPrefixToMessageIfNeeded(
+      options.walletPublicKey,
+      intentSignature,
+      message,
+    ),
   });
 };
 
