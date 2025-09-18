@@ -48,7 +48,7 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
             return Err(IntentError::SignatureVerificationUnexpectedHeader);
         }
         if !data.message.check() {
-            return Err(IntentError::SignatureVerificationUnexpectedHeader);
+            return Err(IntentError::LedgerOffchainMessageUnexpectedHeader);
         }
             Ok(Intent {
                 signer: data.public_key,
