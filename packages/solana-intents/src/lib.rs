@@ -4,10 +4,12 @@ use solana_program::{
     program_error::ProgramError, pubkey::Pubkey, sysvar::instructions::get_instruction_relative,
 };
 use std::io::Read;
+use crate::ledger::LedgerOffchainMessage;
 
 mod key_value;
 mod symbol_or_mint;
 mod version;
+mod ledger;
 
 pub use key_value::{key_value, tag_key_value};
 pub use symbol_or_mint::SymbolOrMint;
@@ -155,64 +157,6 @@ impl BorshDeserialize for OffchainMessage {
                 .chain(reader)
                 .read_to_end(&mut message)?;
             Ok(Self::Raw(message))
-        }
-    }
-}
-
-use ledger_offchain_message::Message as LedgerOffchainMessage;
-
-// source: https://github.com/LedgerHQ/app-solana/blob/bdb2fd6d6bf52ba1fe9f216bcf00b6eebd118308/src/handle_sign_offchain_message.c#L85
-mod ledger_offchain_message {
-    use super::*;
-
-    #[derive(BorshDeserialize)]
-    pub struct Message {
-        _version: Version,
-        format: Format,
-        message: ShortVec<u8>,
-    }
-
-    #[derive(BorshDeserialize)]
-    enum Version {
-        V0,
-    }
-
-    #[derive(BorshDeserialize, PartialEq)]
-    enum Format {
-        Ascii,
-        Utf8,
-    }
-
-    struct ShortVec<T>(Vec<T>);
-
-    impl<T> BorshDeserialize for ShortVec<T>
-    where
-        T: BorshDeserialize,
-    {
-        fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
-            let length = u16::deserialize_reader(reader)?;
-            let mut result = Vec::with_capacity(usize::from(length));
-            for _ in 0..length {
-                result.push(T::deserialize_reader(reader)?);
-            }
-            Ok(Self(result))
-        }
-    }
-
-    impl LedgerOffchainMessage {
-        pub const MAX_MESSAGE_LENGTH: usize = 1212;
-
-        pub fn check(&self) -> bool {
-            self.message.0.len() <= Self::MAX_MESSAGE_LENGTH
-                && ((self.format == Format::Ascii && self.message.0.is_ascii())
-                    || (self.format == Format::Utf8
-                        && std::str::from_utf8(&self.message.0).is_ok()))
-        }
-    }
-
-    impl From<LedgerOffchainMessage> for Vec<u8> {
-        fn from(message: LedgerOffchainMessage) -> Self {
-            message.message.0
         }
     }
 }
