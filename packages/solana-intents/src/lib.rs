@@ -1,9 +1,9 @@
-use std::io::Read;
 use borsh::BorshDeserialize;
 use solana_program::{
     account_info::AccountInfo, ed25519_program, instruction::Instruction,
     program_error::ProgramError, pubkey::Pubkey, sysvar::instructions::get_instruction_relative,
 };
+use std::io::Read;
 
 mod key_value;
 mod symbol_or_mint;
@@ -50,14 +50,12 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
         if !data.message.check() {
             return Err(IntentError::InvalidLedgerOffchainMessage);
         }
-            Ok(Intent {
-                signer: data.public_key,
-                message: Vec::<u8>::from(data
-                    .message
-                     )
-                    .try_into()
-                    .map_err(IntentError::ParseFailedError)?,
-            })
+        Ok(Intent {
+            signer: data.public_key,
+            message: Vec::<u8>::from(data.message)
+                .try_into()
+                .map_err(IntentError::ParseFailedError)?,
+        })
     }
 }
 
@@ -148,15 +146,18 @@ impl BorshDeserialize for OffchainMessage {
         let mut maybe_ledger_prefix = [0u8; 16];
         reader.read_exact(&mut maybe_ledger_prefix)?;
         if maybe_ledger_prefix == LEDGER_PREFIX {
-            Ok(Self::Ledger(LedgerOffchainMessage::deserialize_reader(reader)?))
+            Ok(Self::Ledger(LedgerOffchainMessage::deserialize_reader(
+                reader,
+            )?))
         } else {
             let mut message = vec![];
-            maybe_ledger_prefix.chain(reader).read_to_end(&mut message)?;
+            maybe_ledger_prefix
+                .chain(reader)
+                .read_to_end(&mut message)?;
             Ok(Self::Raw(message))
         }
     }
 }
-
 
 use ledger_offchain_message::Message as LedgerOffchainMessage;
 
@@ -165,14 +166,14 @@ mod ledger_offchain_message {
 
     #[derive(BorshDeserialize)]
     pub struct Message {
-    _version: Version,
-    format: Format,
-    message: ShortVec<u8>,
-}
+        _version: Version,
+        format: Format,
+        message: ShortVec<u8>,
+    }
 
     #[derive(BorshDeserialize)]
     enum Version {
-        V0
+        V0,
     }
 
     #[derive(BorshDeserialize, PartialEq)]
@@ -181,24 +182,30 @@ mod ledger_offchain_message {
         Utf8,
     }
 
-    struct ShortVec<T> (Vec<T>);
+    struct ShortVec<T>(Vec<T>);
 
-impl<T> BorshDeserialize for ShortVec<T> where T: BorshDeserialize {
-    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
-        let length = u16::deserialize_reader(reader)?;
-        let mut result = Vec::with_capacity(usize::from(length));
-        for _ in 0..length {
-            result.push(T::deserialize_reader(reader)?);
+    impl<T> BorshDeserialize for ShortVec<T>
+    where
+        T: BorshDeserialize,
+    {
+        fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+            let length = u16::deserialize_reader(reader)?;
+            let mut result = Vec::with_capacity(usize::from(length));
+            for _ in 0..length {
+                result.push(T::deserialize_reader(reader)?);
+            }
+            Ok(Self(result))
         }
-        Ok(Self(result))
     }
-}
 
     impl LedgerOffchainMessage {
         pub const MAX_MESSAGE_LENGTH: usize = 1212;
 
         pub fn check(&self) -> bool {
-            self.message.0.len() <= Self::MAX_MESSAGE_LENGTH && ((self.format == Format::Ascii && self.message.0.is_ascii()) || (self.format == Format::Utf8 && std::str::from_utf8(&self.message.0).is_ok()))
+            self.message.0.len() <= Self::MAX_MESSAGE_LENGTH
+                && ((self.format == Format::Ascii && self.message.0.is_ascii())
+                    || (self.format == Format::Utf8
+                        && std::str::from_utf8(&self.message.0).is_ok()))
         }
     }
 
