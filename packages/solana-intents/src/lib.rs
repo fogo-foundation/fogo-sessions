@@ -136,8 +136,8 @@ fn get_length_with_header(message: &OffchainMessage) -> usize {
 
 impl Message {
     fn deserialize(data: &[u8]) -> std::io::Result<Self> {
-        if data.len() <= OffchainMessage::SIGNING_DOMAIN.len()
-            && &data[0..OffchainMessage::SIGNING_DOMAIN.len()] == OffchainMessage::SIGNING_DOMAIN
+        if OffchainMessage::SIGNING_DOMAIN.len() <= data.len()
+            && data[0..OffchainMessage::SIGNING_DOMAIN.len()] == *OffchainMessage::SIGNING_DOMAIN
         {
             let message =
                 OffchainMessage::deserialize(&data[OffchainMessage::SIGNING_DOMAIN.len()..])
