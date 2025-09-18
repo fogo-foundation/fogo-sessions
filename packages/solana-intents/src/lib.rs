@@ -141,10 +141,7 @@ impl Message {
             && data[0..OffchainMessage::SIGNING_DOMAIN.len()] == *OffchainMessage::SIGNING_DOMAIN
         {
             let message = OffchainMessage::deserialize(data).map_err(|_| {
-                std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "Invalid offchain message",
-                )
+                std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid offchain message")
             })?;
             if data.len() > get_length_with_header(&message) {
                 return Err(std::io::Error::new(
