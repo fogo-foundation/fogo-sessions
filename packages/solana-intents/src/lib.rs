@@ -44,16 +44,13 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
     type Error = IntentError<E>;
 
     fn try_from(data: Ed25519InstructionData) -> Result<Self, Self::Error> {
-        if data.header.check() {
-            Ok(Intent {
-                signer: data.public_key,
-                message: Vec::<u8>::from(data.message)
-                    .try_into()
-                    .map_err(IntentError::ParseFailedError)?,
-            })
-        } else {
-            Err(IntentError::SignatureVerificationUnexpectedHeader)
-        }
+        data.header.check()?;
+        Ok(Intent {
+            signer: data.public_key,
+            message: Vec::<u8>::from(data.message)
+                .try_into()
+                .map_err(IntentError::ParseFailedError)?,
+        })
     }
 }
 
@@ -98,7 +95,7 @@ struct Ed25519InstructionHeader {
 impl Ed25519InstructionHeader {
     const LEN: u16 = 1 + 1 + 2 + 2 + 2 + 2 + 2 + 2 + 2;
 
-    fn check(&self) -> bool {
+    fn check<E>(&self) -> Result<(), IntentError<E>> {
         let expected_header = Self {
             num_signatures: 1,
             padding: 0,
@@ -110,7 +107,11 @@ impl Ed25519InstructionHeader {
             message_instruction_index: u16::MAX,
             message_data_size: self.message_data_size,
         };
-        self == &expected_header
+        if self == &expected_header {
+            Ok(())
+        } else {
+            Err(IntentError::SignatureVerificationUnexpectedHeader)
+        }
     }
 }
 
@@ -139,14 +140,12 @@ impl Message {
         if OffchainMessage::SIGNING_DOMAIN.len() <= data.len()
             && data[0..OffchainMessage::SIGNING_DOMAIN.len()] == *OffchainMessage::SIGNING_DOMAIN
         {
-            let message =
-                OffchainMessage::deserialize(&data)
-                    .map_err(|_| {
-                        std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            "Invalid ledger offchain message",
-                        )
-                    })?;
+            let message = OffchainMessage::deserialize(data).map_err(|_| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Invalid ledger offchain message",
+                )
+            })?;
             if data.len() > get_length_with_header(&message) {
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
