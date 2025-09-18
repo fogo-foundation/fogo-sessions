@@ -40,6 +40,5 @@ pub fn obs_gas_spend(
     if let Some(result) = result_confirmation {
         labels.push(("result", result));
     }
-    metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels)
-        .record(lamports);
+    metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels).record(lamports);
 }

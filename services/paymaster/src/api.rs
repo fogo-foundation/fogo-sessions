@@ -486,9 +486,7 @@ pub async fn run_server(
     let app = Router::new()
         .route(
             "/metrics",
-            axum::routing::get(move || {
-                async move { handle.render() }
-            }),
+            axum::routing::get(move || async move { handle.render() }),
         )
         .nest("/api", router)
         .layer(
