@@ -414,12 +414,12 @@ const addLedgerPrefixToMessageIfNeeded = async (
   );
   /// Source: https://github.com/LedgerHQ/app-solana/blob/bdb2fd6d6bf52ba1fe9f216bcf00b6eebd118308/src/handle_sign_offchain_message.c#L85
   const ledgerPrefixMessageWithPrefix = Uint8Array.from([
-    0xff,
+    0xFF,
     ...new TextEncoder().encode("solana offchain"),
     0,
     1,
-    message.length & 0xff,
-    (message.length >> 8) & 0xff,
+    message.length & 0xFF,
+    (message.length >> 8) & 0xFF,
     ...message,
   ]);
   if (await verifySignature(publicKey, signature as SignatureBytes, message)) {
