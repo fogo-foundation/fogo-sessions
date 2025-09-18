@@ -151,7 +151,7 @@ impl BorshDeserialize for OffchainMessage {
             Ok(Self::Ledger(LedgerOffchainMessage::deserialize_reader(reader)?))
         } else {
             let mut message = vec![];
-            (&mut maybe_ledger_prefix.chain(reader)).read_to_end(&mut message)?;
+            maybe_ledger_prefix.chain(reader).read_to_end(&mut message)?;
             Ok(Self::Raw(message))
         }
     }
