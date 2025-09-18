@@ -45,15 +45,16 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
     type Error = IntentError<E>;
 
     fn try_from(data: Ed25519InstructionData) -> Result<Self, Self::Error> {
-        if !data.header.check() {
-            return Err(IntentError::SignatureVerificationUnexpectedHeader);
+        if data.header.check() {
+            Ok(Intent {
+                signer: data.public_key,
+                message: Vec::<u8>::from(data.message)
+                    .try_into()
+                    .map_err(IntentError::ParseFailedError)?,
+            })
+        } else {
+            Err(IntentError::SignatureVerificationUnexpectedHeader)
         }
-        Ok(Intent {
-            signer: data.public_key,
-            message: Vec::<u8>::from(data.message)
-                .try_into()
-                .map_err(IntentError::ParseFailedError)?,
-        })
     }
 }
 
@@ -128,7 +129,7 @@ impl From<Message> for Vec<u8> {
     }
 }
 
-fn get_total_length(message: &OffchainMessage) -> usize {
+fn get_length_with_header(message: &OffchainMessage) -> usize {
     match message {
         OffchainMessage::V0(_) => message.get_message().len() + OffchainMessage::HEADER_LEN + 3,
     }
@@ -151,7 +152,7 @@ impl BorshDeserialize for Message {
                 )
             })?;
 
-            if message_bytes.len() > get_total_length(&message) {
+            if message_bytes.len() > get_length_with_header(&message) {
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
                     "Not all bytes read",
