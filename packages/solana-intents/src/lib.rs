@@ -74,7 +74,7 @@ impl BorshDeserialize for Ed25519InstructionData {
         reader.read_exact(&mut signature)?;
         let mut message_bytes: Vec<u8> = vec![0u8; usize::from(header.message_data_size)];
         reader.read_exact(&mut message_bytes)?;
-        let message = OffchainMessage::try_from_slice(message_bytes.as_slice())?; // try_from_slice so it fails it all bytes are not read
+        let message = OffchainMessage::try_from_slice(message_bytes.as_slice())?; // try_from_slice so it fails if all bytes are not read
         Ok(Self {
             header,
             public_key,
