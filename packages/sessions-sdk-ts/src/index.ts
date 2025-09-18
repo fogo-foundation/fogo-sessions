@@ -400,6 +400,17 @@ const getTokenInfo = async (
 
 type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 
+const addLedgerPrefixToMessageIfNeeded = async (walletPublicKey: PublicKey, signature: Uint8Array, message: Uint8Array) => {
+  const publicKey = await crypto.subtle.importKey('raw', walletPublicKey.toBytes(), { name: 'Ed25519' }, true, [
+    'verify',
+  ]);
+  if (await verifySignature(publicKey, signature as SignatureBytes, message)) {
+    return message;
+  } else {
+    return Uint8Array.from([0xff, ...new TextEncoder().encode("solana offchain"), 0, 1, message.length & 0xff, (message.length >> 8) & 0xff, ...message]);
+  }
+};
+
 const buildIntentInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
@@ -416,28 +427,11 @@ const buildIntentInstruction = async (
 
   const intentSignature = await options.signMessage(message);
 
-  const signedByPublicKey = await crypto.subtle.importKey('raw', options.walletPublicKey.toBytes(), { name: 'Ed25519' }, true, [
-    'verify',
-]);
-
-  if (await verifySignature(signedByPublicKey, intentSignature as SignatureBytes,  message)) {
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
       signature: intentSignature,
-      message: message,
+      message: await addLedgerPrefixToMessageIfNeeded(options.walletPublicKey, intentSignature, message),
     });
-  } else {
-    const ledgerMessageWithPrefix = Uint8Array.from([0xff, ...new TextEncoder().encode("solana offchain"), 0, 1, message.length & 0xff, (message.length >> 8) & 0xff, ...message]);
-      if (await verifySignature(signedByPublicKey, intentSignature as SignatureBytes, ledgerMessageWithPrefix)) {
-        return Ed25519Program.createInstructionWithPublicKey({
-          publicKey: options.walletPublicKey.toBytes(),
-          signature: intentSignature,
-          message: ledgerMessageWithPrefix,
-        });
-      } else {
-        throw new Error("The signature provided by the browser wallet is not valid")
-      }
-    }
 };
 
 const buildMessage = async (
@@ -684,7 +678,7 @@ const buildTransferIntentInstruction = async (
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
     signature: intentSignature,
-    message: message,
+    message: await addLedgerPrefixToMessageIfNeeded(options.walletPublicKey, intentSignature, message),
   });
 };
 
