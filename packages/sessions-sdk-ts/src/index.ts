@@ -400,7 +400,7 @@ const getTokenInfo = async (
 
 type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 
-// Some wallets add a prefix to the message, for example Ledger through Phantom
+// Some wallets add a prefix to the messag before signing, for example Ledger through Phantom
 const addOffchainMessagePrefixToMessageIfNeeded = async (
   walletPublicKey: PublicKey,
   signature: Uint8Array,
@@ -413,36 +413,38 @@ const addOffchainMessagePrefixToMessageIfNeeded = async (
     true,
     ["verify"],
   );
-  /// Source: https://github.com/anza-xyz/solana-sdk/blob/master/offchain-message/src/lib.rs#L162
-  const messageWithOffchainMessagePrefix = Uint8Array.from([
-    // eslint-disable-next-line unicorn/number-literal-case
-    0xff,
-    ...new TextEncoder().encode("solana offchain"),
-    0,
-    1,
-    // eslint-disable-next-line unicorn/number-literal-case
-    message.length & 0xff,
-    // eslint-disable-next-line unicorn/number-literal-case
-    (message.length >> 8) & 0xff,
-    ...message,
-  ]);
+
   if (await verifySignature(publicKey, signature as SignatureBytes, message)) {
     return message;
-  } else if (
-    await verifySignature(
-      publicKey,
-      signature as SignatureBytes,
-      messageWithOffchainMessagePrefix,
-    )
-  ) {
-    return messageWithOffchainMessagePrefix;
   } else {
-    throw new Error(
-      "The signature provided by the browser wallet is not valid",
-    );
+    // Source: https://github.com/anza-xyz/solana-sdk/blob/master/offchain-message/src/lib.rs#L162
+    const messageWithOffchainMessagePrefix = Uint8Array.from([
+      // eslint-disable-next-line unicorn/number-literal-case
+      0xff,
+      ...new TextEncoder().encode("solana offchain"),
+      0,
+      1,
+      // eslint-disable-next-line unicorn/number-literal-case
+      message.length & 0xff,
+      // eslint-disable-next-line unicorn/number-literal-case
+      (message.length >> 8) & 0xff,
+      ...message,
+    ]);
+    if (
+      await verifySignature(
+        publicKey,
+        signature as SignatureBytes,
+        messageWithOffchainMessagePrefix,
+      )
+    ) {
+      return messageWithOffchainMessagePrefix;
+    } else {
+      throw new Error(
+        "The signature provided by the browser wallet is not valid",
+      );
+    }
   }
 };
-
 const buildIntentInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
