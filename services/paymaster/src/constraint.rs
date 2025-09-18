@@ -19,6 +19,15 @@ pub enum TransactionVariation {
     V1(VariationOrderedInstructionConstraints),
 }
 
+impl TransactionVariation {
+    pub fn name(&self) -> &str {
+        match self {
+            TransactionVariation::V0(v) => &v.name,
+            TransactionVariation::V1(v) => &v.name,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde_as]
 pub struct VariationProgramWhitelist {
@@ -63,7 +72,6 @@ pub struct ContextualDomainKeys {
 }
 
 impl VariationOrderedInstructionConstraints {
-    // TODO: incorporate rate limit checks
     pub fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
@@ -596,13 +604,11 @@ pub fn check_gas_spend(
     transaction: &VersionedTransaction,
     max_gas_spend: u64,
 ) -> Result<(), (StatusCode, String)> {
-    let n_signatures = transaction.signatures.len() as u64;
-    let priority_fee = get_priority_fee(transaction)?;
-    let gas_spent = n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee;
-    if gas_spent > max_gas_spend {
+    let gas_spend = compute_gas_spent(transaction);
+    if gas_spend > max_gas_spend {
         return Err((
             StatusCode::BAD_REQUEST,
-            format!("Transaction gas spend {gas_spent} exceeds maximum allowed {max_gas_spend}",),
+            format!("Transaction gas spend {gas_spend} exceeds maximum allowed {max_gas_spend}",),
         ));
     }
     Ok(())
@@ -653,4 +659,11 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
         .saturating_mul(micro_lamports_per_cu.unwrap_or(0))
         / 1_000_000;
     Ok(priority_fee)
+}
+
+/// Computes the gas spend (in lamports) for a transaction based on signatures and priority fee.
+pub fn compute_gas_spent(transaction: &VersionedTransaction) -> u64 {
+    let n_signatures = transaction.signatures.len() as u64;
+    let priority_fee = get_priority_fee(transaction).unwrap_or(0);
+    n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee
 }

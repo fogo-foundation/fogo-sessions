@@ -2,6 +2,8 @@
 
 The Sessions Paymaster service provides apps with a way to fund user transactions on their frontends. This allows users to conduct these transactions without needing to hold native FOGO.
 
+You can view metrics for the service at port 4000.
+
 ## Constraints
 
 The constraints API enables apps to set up filters for what kinds of transactions they wish to permit their paymasters to pay for. The paymaster filters are intended to regulate what transactions apps pay for, rather than constrain actions on the frontend to a non-exploitable surface. Accordingly, the constraints should be designed to outline appropriate use of the app's funds toward relevant user actions. This will help to ensure that these funds are only spent on legitimate use of the app's relevant frontend functions by retail users.

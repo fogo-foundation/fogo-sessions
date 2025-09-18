@@ -1,5 +1,6 @@
 use crate::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
+use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -11,6 +12,8 @@ use axum::{
 };
 use axum_extra::headers::Origin;
 use axum_extra::TypedHeader;
+use axum_prometheus::metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
+use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
@@ -131,12 +134,13 @@ pub struct SponsorAndSendPayload {
 
 impl DomainState {
     /// Checks that the transaction meets at least one of the specified variations for this domain.
-    /// If so, returns Ok(()). Otherwise, returns an error with a message indicating why the transaction is invalid.
+    /// If so, returns the variation this transaction matched against.
+    /// Otherwise, returns an error with a message indicating why the transaction is invalid.
     pub async fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
         chain_index: &ChainIndex,
-    ) -> Result<(), (StatusCode, String)> {
+    ) -> Result<&TransactionVariation, (StatusCode, String)> {
         if transaction.message.static_account_keys()[0] != self.sponsor.pubkey() {
             return Err((
                 StatusCode::BAD_REQUEST,
@@ -167,18 +171,18 @@ impl DomainState {
                     })
             })?;
 
-        let matches_variation = self.tx_variations.iter().any(|variation| {
+        let matched = self.tx_variations.iter().find(|variation| {
             self.validate_transaction_against_variation(transaction, variation, chain_index)
                 .is_ok()
         });
-        if !matches_variation {
-            return Err((
+        if let Some(variation) = matched {
+            Ok(variation)
+        } else {
+            Err((
                 StatusCode::BAD_REQUEST,
                 "Transaction does not match any allowed variations".to_string(),
-            ));
+            ))
         }
-
-        Ok(())
     }
 
     pub fn validate_transaction_against_variation(
@@ -229,12 +233,11 @@ impl IntoResponse for SponsorAndSendResponse {
     }
 }
 
-fn get_domain_state(
-    state: &ServerState,
-    domain_query_parameter: Option<String>,
+fn get_domain_name(
+    domain_explicit: Option<String>,
     origin: Option<TypedHeader<Origin>>,
-) -> Result<&DomainState, (StatusCode, String)> {
-    let domain = domain_query_parameter
+) -> Result<String, (StatusCode, String)> {
+    let domain = domain_explicit
         .or_else(|| origin.map(|origin| origin.to_string()))
         .ok_or_else(|| {
             (
@@ -243,14 +246,21 @@ fn get_domain_state(
             )
         })?;
 
+    Ok(domain)
+}
+
+fn get_domain_state(
+    state: &ServerState,
+    domain_query_parameter: String,
+) -> Result<&DomainState, (StatusCode, String)> {
     let domain_state = state
         .domains
-        .get(&domain)
+        .get(&domain_query_parameter)
         .ok_or_else(|| {
             (
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "The domain {domain} is not registered with the paymaster, please either set the domain property in FogoSessionProvider to match your production domain or reach out to the Fogo team to get a paymaster configuration for your app"
+                    "The domain {domain_query_parameter} is not registered with the paymaster, please either set the domain property in FogoSessionProvider to match your production domain or reach out to the Fogo team to get a paymaster configuration for your app"
                 ),
             )
         })?;
@@ -270,7 +280,8 @@ async fn sponsor_and_send_handler(
     Query(SponsorAndSendQuery { confirm, domain }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
-    let domain_state = get_domain_state(&state, domain, origin)?;
+    let domain = get_domain_name(domain, origin)?;
+    let domain_state = get_domain_state(&state, domain.clone())?;
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
@@ -290,9 +301,24 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    domain_state
+    let matched_variation_name = match domain_state
         .validate_transaction(&transaction, &state.chain_index)
-        .await?;
+        .await
+    {
+        Ok(variation) => {
+            obs_validation(
+                domain.clone(),
+                variation.name().to_owned(),
+                "success".to_string(),
+            );
+            variation.name()
+        }
+        Err(e) => {
+            obs_validation(domain.clone(), "None".to_string(), e.0.to_string());
+            return Err(e.into());
+        }
+    }
+    .to_owned();
 
     transaction.signatures[0] = domain_state
         .sponsor
@@ -309,6 +335,23 @@ async fn sponsor_and_send_handler(
             },
         )
         .await?;
+
+        let confirmation_status = confirmation_result.status_string();
+
+        obs_send(
+            domain.clone(),
+            matched_variation_name.clone(),
+            Some(confirmation_status.clone()),
+        );
+
+        let gas = crate::constraint::compute_gas_spent(&transaction);
+        obs_gas_spend(
+            domain,
+            matched_variation_name,
+            Some(confirmation_status),
+            gas,
+        );
+
         Ok(SponsorAndSendResponse::Confirm(confirmation_result))
     } else {
         let signature = state
@@ -327,6 +370,12 @@ async fn sponsor_and_send_handler(
                     format!("Failed to broadcast transaction: {err}"),
                 )
             })?;
+
+        obs_send(domain.clone(), matched_variation_name.clone(), None);
+
+        let gas = crate::constraint::compute_gas_spent(&transaction);
+        obs_gas_spend(domain, matched_variation_name, None, gas);
+
         Ok(SponsorAndSendResponse::Send(signature))
     }
 }
@@ -346,12 +395,13 @@ async fn sponsor_pubkey_handler(
     origin: Option<TypedHeader<Origin>>,
     Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
+    let domain = get_domain_name(domain, origin)?;
     let DomainState {
         domain_registry_key: _,
         sponsor,
         enable_preflight_simulation: _,
         tx_variations: _,
-    } = get_domain_state(&state, domain, origin)?;
+    } = get_domain_state(&state, domain)?;
     Ok(sponsor.pubkey().to_string())
 }
 
@@ -417,7 +467,25 @@ pub async fn run_server(
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
         .split_for_parts();
 
+    let handle = PrometheusBuilder::new()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::GAS_SPEND_HISTOGRAM.to_string()),
+            crate::metrics::GAS_SPEND_BUCKETS,
+        )
+        .unwrap()
+        .install_recorder()
+        .expect("install metrics recorder");
+
+    let prometheus_layer = PrometheusMetricLayer::new();
+
     let app = Router::new()
+        .route(
+            "/metrics",
+            axum::routing::get(move || {
+                let handle = handle.clone();
+                async move { handle.render() }
+            }),
+        )
         .nest("/api", router)
         .layer(
             CorsLayer::new()
@@ -427,6 +495,7 @@ pub async fn run_server(
                     "content-type",
                 )])),
         )
+        .layer(prometheus_layer)
         .with_state(Arc::new(ServerState {
             domains,
             chain_index: ChainIndex {

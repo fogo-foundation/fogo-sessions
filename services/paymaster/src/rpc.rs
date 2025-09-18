@@ -21,6 +21,15 @@ pub enum ConfirmationResult {
     },
 }
 
+impl ConfirmationResult {
+    pub fn status_string(&self) -> String {
+        match self {
+            ConfirmationResult::Success { .. } => "success".to_string(),
+            ConfirmationResult::Failed { .. } => "failed".to_string(),
+        }
+    }
+}
+
 fn to_error_response(err: Error) -> ErrorResponse {
     (
         StatusCode::BAD_GATEWAY,
