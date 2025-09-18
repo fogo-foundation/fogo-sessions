@@ -1,7 +1,8 @@
 use borsh::BorshDeserialize;
-use solana_offchain_message::{v0, OffchainMessage};
+use solana_offchain_message::{OffchainMessage};
 use solana_program::{
-    account_info::AccountInfo, ed25519_program, instruction::Instruction, message, msg, program_error::ProgramError, pubkey::Pubkey, sysvar::instructions::get_instruction_relative
+    account_info::AccountInfo, ed25519_program, instruction::Instruction,
+    program_error::ProgramError, pubkey::Pubkey, sysvar::instructions::get_instruction_relative,
 };
 use std::io::Read;
 
@@ -140,17 +141,23 @@ impl BorshDeserialize for Message {
         if maybe_offchain_message_prefix == OffchainMessage::SIGNING_DOMAIN {
             let mut message_bytes = vec![];
             maybe_offchain_message_prefix
-            .chain(reader)
-            .read_to_end(&mut message_bytes)?;
+                .chain(reader)
+                .read_to_end(&mut message_bytes)?;
 
-            let message = OffchainMessage::deserialize(
-                &message_bytes
-            ).map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid ledger offchain message"))?;
+            let message = OffchainMessage::deserialize(&message_bytes).map_err(|_| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Invalid ledger offchain message",
+                )
+            })?;
 
             if message_bytes.len() > get_total_length(&message) {
-                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Not all bytes read")); // make it behave like try_from_slice, so it fails if all bytes are not read
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Not all bytes read",
+                )); // make it behave like try_from_slice, so it fails if all bytes are not read
             }
-            return Ok(Self::OffchainMessage(message));
+            Ok(Self::OffchainMessage(message))
         } else {
             let mut message = vec![];
             maybe_offchain_message_prefix

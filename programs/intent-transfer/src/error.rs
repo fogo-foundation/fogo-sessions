@@ -51,7 +51,7 @@ impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for IntentTransferE
                 IntentTransferError::SignatureVerificationUnexpectedHeader
             }
             IntentError::ParseFailedError(_) => IntentTransferError::ParseFailedError,
-            IntentError::DeserializeFailedError(_) => IntentTransferError::DeserializeFailedError
+            IntentError::DeserializeFailedError(_) => IntentTransferError::DeserializeFailedError,
         }
     }
 }
