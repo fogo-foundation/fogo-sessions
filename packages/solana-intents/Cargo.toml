@@ -13,3 +13,4 @@ name = "solana_intents"
 nom = { workspace = true }
 solana-program = { workspace = true }
 borsh = { workspace = true }
+solana-offchain-message = { workspace = true }

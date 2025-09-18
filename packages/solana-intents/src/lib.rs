@@ -1,15 +1,13 @@
 use borsh::BorshDeserialize;
+use solana_offchain_message::{v0, OffchainMessage};
 use solana_program::{
-    account_info::AccountInfo, ed25519_program, instruction::Instruction,
-    program_error::ProgramError, pubkey::Pubkey, sysvar::instructions::get_instruction_relative,
+    account_info::AccountInfo, ed25519_program, instruction::Instruction, message, msg, program_error::ProgramError, pubkey::Pubkey, sysvar::instructions::get_instruction_relative
 };
 use std::io::Read;
-use crate::ledger::LedgerOffchainMessage;
 
 mod key_value;
 mod symbol_or_mint;
 mod version;
-mod ledger;
 
 pub use key_value::{key_value, tag_key_value};
 pub use symbol_or_mint::SymbolOrMint;
@@ -49,9 +47,6 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
         if !data.header.check() {
             return Err(IntentError::SignatureVerificationUnexpectedHeader);
         }
-        if !data.message.check() {
-            return Err(IntentError::InvalidLedgerOffchainMessage);
-        }
         Ok(Intent {
             signer: data.public_key,
             message: Vec::<u8>::from(data.message)
@@ -65,7 +60,7 @@ struct Ed25519InstructionData {
     header: Ed25519InstructionHeader,
     public_key: Pubkey,
     _signature: [u8; 64], // We don't check the signature here, the ed25519 program is responsible for that
-    message: OffchainMessage,
+    message: Message,
 }
 
 impl BorshDeserialize for Ed25519InstructionData {
@@ -76,7 +71,7 @@ impl BorshDeserialize for Ed25519InstructionData {
         reader.read_exact(&mut signature)?;
         let mut message_bytes: Vec<u8> = vec![0u8; usize::from(header.message_data_size)];
         reader.read_exact(&mut message_bytes)?;
-        let message = OffchainMessage::try_from_slice(message_bytes.as_slice())?; // try_from_slice so it fails if all bytes are not read
+        let message = Message::try_from_slice(message_bytes.as_slice())?; // try_from_slice so it fails if all bytes are not read
         Ok(Self {
             header,
             public_key,
@@ -118,42 +113,47 @@ impl Ed25519InstructionHeader {
     }
 }
 
-const LEDGER_PREFIX: &[u8] = b"\xffsolana offchain";
-
-enum OffchainMessage {
+enum Message {
     Raw(Vec<u8>),
-    Ledger(LedgerOffchainMessage),
+    OffchainMessage(OffchainMessage),
 }
 
-impl From<OffchainMessage> for Vec<u8> {
-    fn from(message: OffchainMessage) -> Self {
+impl From<Message> for Vec<u8> {
+    fn from(message: Message) -> Self {
         match message {
-            OffchainMessage::Raw(message) => message,
-            OffchainMessage::Ledger(message) => message.into(),
+            Message::Raw(message) => message,
+            Message::OffchainMessage(message) => message.get_message().to_vec(),
         }
     }
 }
 
-impl OffchainMessage {
-    pub fn check(&self) -> bool {
-        match self {
-            Self::Raw(_) => true,
-            Self::Ledger(message) => message.check(),
-        }
+fn get_total_length(message: &OffchainMessage) -> usize {
+    match message {
+        OffchainMessage::V0(_) => message.get_message().len() + OffchainMessage::HEADER_LEN + 3,
     }
 }
 
-impl BorshDeserialize for OffchainMessage {
+impl BorshDeserialize for Message {
     fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
-        let mut maybe_ledger_prefix = [0u8; 16];
-        reader.read_exact(&mut maybe_ledger_prefix)?;
-        if maybe_ledger_prefix == LEDGER_PREFIX {
-            Ok(Self::Ledger(LedgerOffchainMessage::deserialize_reader(
-                reader,
-            )?))
+        let mut maybe_offchain_message_prefix = [0u8; 16];
+        reader.read_exact(&mut maybe_offchain_message_prefix)?;
+        if maybe_offchain_message_prefix == OffchainMessage::SIGNING_DOMAIN {
+            let mut message_bytes = vec![];
+            maybe_offchain_message_prefix
+            .chain(reader)
+            .read_to_end(&mut message_bytes)?;
+
+            let message = OffchainMessage::deserialize(
+                &message_bytes
+            ).map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid ledger offchain message"))?;
+
+            if message_bytes.len() > get_total_length(&message) {
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Not all bytes read")); // make it behave like try_from_slice, so it fails if all bytes are not read
+            }
+            return Ok(Self::OffchainMessage(message));
         } else {
             let mut message = vec![];
-            maybe_ledger_prefix
+            maybe_offchain_message_prefix
                 .chain(reader)
                 .read_to_end(&mut message)?;
             Ok(Self::Raw(message))
@@ -166,7 +166,6 @@ pub enum IntentError<P> {
     NoIntentMessageInstruction(ProgramError),
     IncorrectInstructionProgramId,
     SignatureVerificationUnexpectedHeader,
-    InvalidLedgerOffchainMessage,
     ParseFailedError(P),
     DeserializeFailedError(borsh::io::Error),
 }

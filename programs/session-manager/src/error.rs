@@ -42,8 +42,6 @@ pub enum SessionManagerError {
     SponsorMismatch,
     #[msg("Only expired session accounts can be closed")]
     SessionIsLive,
-    #[msg("The ledger offchain message format is invalid")]
-    InvalidLedgerOffchainMessage,
 }
 
 impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for SessionManagerError {
@@ -60,9 +58,6 @@ impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for SessionManagerE
             }
             IntentError::ParseFailedError(_) => SessionManagerError::ParseFailedError,
             IntentError::DeserializeFailedError(_) => SessionManagerError::DeserializeFailedError,
-            IntentError::InvalidLedgerOffchainMessage => {
-                SessionManagerError::InvalidLedgerOffchainMessage
-            }
         }
     }
 }
