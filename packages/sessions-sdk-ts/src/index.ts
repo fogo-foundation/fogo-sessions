@@ -424,8 +424,7 @@ const addLedgerPrefixToMessageIfNeeded = async (
   ]);
   if (await verifySignature(publicKey, signature as SignatureBytes, message)) {
     return message;
-  } else
-   if (
+  } else if (
     await verifySignature(
       publicKey,
       signature as SignatureBytes,
