@@ -1,10 +1,9 @@
 use borsh::BorshDeserialize;
-use solana_offchain_message::{OffchainMessage};
+use solana_offchain_message::OffchainMessage;
 use solana_program::{
     account_info::AccountInfo, ed25519_program, instruction::Instruction,
     program_error::ProgramError, pubkey::Pubkey, sysvar::instructions::get_instruction_relative,
 };
-use std::io::Read;
 
 mod key_value;
 mod symbol_or_mint;
@@ -73,7 +72,7 @@ impl BorshDeserialize for Ed25519InstructionData {
         reader.read_exact(&mut signature)?;
         let mut message_bytes: Vec<u8> = vec![0u8; usize::from(header.message_data_size)];
         reader.read_exact(&mut message_bytes)?;
-        let message = Message::try_from_slice(message_bytes.as_slice())?; // try_from_slice so it fails if all bytes are not read
+        let message = Message::deserialize(&message_bytes)?;
         Ok(Self {
             header,
             public_key,
@@ -135,24 +134,20 @@ fn get_length_with_header(message: &OffchainMessage) -> usize {
     }
 }
 
-impl BorshDeserialize for Message {
-    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
-        let mut maybe_offchain_message_prefix = [0u8; 16];
-        reader.read_exact(&mut maybe_offchain_message_prefix)?;
-        if maybe_offchain_message_prefix == OffchainMessage::SIGNING_DOMAIN {
-            let mut message_bytes = vec![];
-            maybe_offchain_message_prefix
-                .chain(reader)
-                .read_to_end(&mut message_bytes)?;
-
-            let message = OffchainMessage::deserialize(&message_bytes).map_err(|_| {
-                std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "Invalid ledger offchain message",
-                )
-            })?;
-
-            if message_bytes.len() > get_length_with_header(&message) {
+impl Message {
+    fn deserialize(data: &[u8]) -> std::io::Result<Self> {
+        if data.len() <= OffchainMessage::SIGNING_DOMAIN.len()
+            && &data[0..OffchainMessage::SIGNING_DOMAIN.len()] == OffchainMessage::SIGNING_DOMAIN
+        {
+            let message =
+                OffchainMessage::deserialize(&data[OffchainMessage::SIGNING_DOMAIN.len()..])
+                    .map_err(|_| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Invalid ledger offchain message",
+                        )
+                    })?;
+            if data.len() > get_length_with_header(&message) {
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidData,
                     "Not all bytes read",
@@ -160,11 +155,7 @@ impl BorshDeserialize for Message {
             }
             Ok(Self::OffchainMessage(message))
         } else {
-            let mut message = vec![];
-            maybe_offchain_message_prefix
-                .chain(reader)
-                .read_to_end(&mut message)?;
-            Ok(Self::Raw(message))
+            Ok(Self::Raw(data.to_vec()))
         }
     }
 }
