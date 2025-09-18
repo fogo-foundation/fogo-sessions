@@ -74,7 +74,7 @@ impl BorshDeserialize for Ed25519InstructionData {
         let public_key = Pubkey::deserialize_reader(reader)?;
         let mut signature = [0u8; 64];
         reader.read_exact(&mut signature)?;
-        let mut message_bytes: Vec<u8> = vec![0u8; header.message_data_size as usize];
+        let mut message_bytes: Vec<u8> = vec![0u8; usize::from(header.message_data_size)];
         reader.read_exact(&mut message_bytes)?;
         let message = OffchainMessage::try_from_slice(message_bytes.as_slice())?; // try_from_slice so it fails it all bytes are not read
         Ok(Self {
@@ -169,7 +169,7 @@ struct ShortVec<T> (Vec<T>);
 impl<T> BorshDeserialize for ShortVec<T> where T: BorshDeserialize {
     fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let length = u16::deserialize_reader(reader)?;
-        let mut result = Vec::with_capacity(length as usize);
+        let mut result = Vec::with_capacity(usize::from(length));
         for _ in 0..length {
             result.push(T::deserialize_reader(reader)?);
         }
