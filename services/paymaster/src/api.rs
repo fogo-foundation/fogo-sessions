@@ -306,7 +306,7 @@ async fn sponsor_and_send_handler(
     let gas_f64 = gas.to_f64().ok_or_else(|| {
         (
             StatusCode::BAD_REQUEST,
-            "Gas spend could not be converted to f64".to_string(),
+            "Invalid gas spend: could not be converted to f64".to_string(),
         )
     })?;
 
