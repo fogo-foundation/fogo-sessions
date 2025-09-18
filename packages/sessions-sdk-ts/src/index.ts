@@ -400,7 +400,8 @@ const getTokenInfo = async (
 
 type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 
-const addLedgerPrefixToMessageIfNeeded = async (
+// Some wallets add a prefix to the message, for example Ledger through Phantom
+const addOffchainMessagePrefixToMessageIfNeeded = async (
   walletPublicKey: PublicKey,
   signature: Uint8Array,
   message: Uint8Array,
@@ -412,8 +413,8 @@ const addLedgerPrefixToMessageIfNeeded = async (
     true,
     ["verify"],
   );
-  /// Source: https://github.com/LedgerHQ/app-solana/blob/bdb2fd6d6bf52ba1fe9f216bcf00b6eebd118308/src/handle_sign_offchain_message.c#L85
-  const ledgerPrefixMessageWithPrefix = Uint8Array.from([
+  /// Source: https://github.com/anza-xyz/solana-sdk/blob/master/offchain-message/src/lib.rs#L162
+  const messageWithOffchainMessagePrefix = Uint8Array.from([
     // eslint-disable-next-line unicorn/number-literal-case
     0xff,
     ...new TextEncoder().encode("solana offchain"),
@@ -431,10 +432,10 @@ const addLedgerPrefixToMessageIfNeeded = async (
     await verifySignature(
       publicKey,
       signature as SignatureBytes,
-      ledgerPrefixMessageWithPrefix,
+      messageWithOffchainMessagePrefix,
     )
   ) {
-    return ledgerPrefixMessageWithPrefix;
+    return messageWithOffchainMessagePrefix;
   } else {
     throw new Error(
       "The signature provided by the browser wallet is not valid",
@@ -461,7 +462,7 @@ const buildIntentInstruction = async (
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
     signature: intentSignature,
-    message: await addLedgerPrefixToMessageIfNeeded(
+    message: await addOffchainMessagePrefixToMessageIfNeeded(
       options.walletPublicKey,
       intentSignature,
       message,
@@ -713,7 +714,7 @@ const buildTransferIntentInstruction = async (
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
     signature: intentSignature,
-    message: await addLedgerPrefixToMessageIfNeeded(
+    message: await addOffchainMessagePrefixToMessageIfNeeded(
       options.walletPublicKey,
       intentSignature,
       message,
