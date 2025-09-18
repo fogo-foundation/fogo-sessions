@@ -48,7 +48,7 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
             return Err(IntentError::SignatureVerificationUnexpectedHeader);
         }
         if !data.message.check() {
-            return Err(IntentError::LedgerOffchainMessageUnexpectedHeader);
+            return Err(IntentError::InvalidLedgerOffchainMessage);
         }
             Ok(Intent {
                 signer: data.public_key,
@@ -129,7 +129,7 @@ impl From<OffchainMessage> for Vec<u8> {
     fn from(message: OffchainMessage) -> Self {
         match message {
             OffchainMessage::Raw(message) => message,
-            OffchainMessage::Ledger(message) => message.message.0,
+            OffchainMessage::Ledger(message) => message.into(),
         }
     }
 }
@@ -138,7 +138,7 @@ impl OffchainMessage {
     pub fn check(&self) -> bool {
         match self {
             Self::Raw(_) => true,
-            Self::Ledger(message) => message.version == 0 && ((message.format == 0 && message.message.0.is_ascii()) || (message.format == 1 && std::str::from_utf8(&message.message.0).is_ok())),
+            Self::Ledger(message) => message.check(),
         }
     }
 }
@@ -157,14 +157,31 @@ impl BorshDeserialize for OffchainMessage {
     }
 }
 
-#[derive(BorshDeserialize)]
-struct LedgerOffchainMessage {
-    version: u8,
-    format: u8,
+
+use ledger_offchain_message::Message as LedgerOffchainMessage;
+
+mod ledger_offchain_message {
+    use super::*;
+
+    #[derive(BorshDeserialize)]
+    pub struct Message {
+    _version: Version,
+    format: Format,
     message: ShortVec<u8>,
 }
 
-struct ShortVec<T> (Vec<T>);
+    #[derive(BorshDeserialize)]
+    enum Version {
+        V0
+    }
+
+    #[derive(BorshDeserialize, PartialEq)]
+    enum Format {
+        Ascii,
+        Utf8,
+    }
+
+    struct ShortVec<T> (Vec<T>);
 
 impl<T> BorshDeserialize for ShortVec<T> where T: BorshDeserialize {
     fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
@@ -177,14 +194,27 @@ impl<T> BorshDeserialize for ShortVec<T> where T: BorshDeserialize {
     }
 }
 
+    impl LedgerOffchainMessage {
+        pub const MAX_MESSAGE_LENGTH: usize = 1212;
 
+        pub fn check(&self) -> bool {
+            self.message.0.len() <= Self::MAX_MESSAGE_LENGTH && ((self.format == Format::Ascii && self.message.0.is_ascii()) || (self.format == Format::Utf8 && std::str::from_utf8(&self.message.0).is_ok()))
+        }
+    }
+
+    impl From<LedgerOffchainMessage> for Vec<u8> {
+        fn from(message: LedgerOffchainMessage) -> Self {
+            message.message.0
+        }
+    }
+}
 
 #[derive(Debug)]
 pub enum IntentError<P> {
     NoIntentMessageInstruction(ProgramError),
     IncorrectInstructionProgramId,
     SignatureVerificationUnexpectedHeader,
-    LedgerOffchainMessageUnexpectedHeader,
+    InvalidLedgerOffchainMessage,
     ParseFailedError(P),
     DeserializeFailedError(borsh::io::Error),
 }

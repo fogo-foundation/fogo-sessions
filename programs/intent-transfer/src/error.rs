@@ -36,8 +36,8 @@ pub enum IntentTransferError {
     SymbolMismatch,
     #[msg("The message's nonce is not one more than the previous nonce")]
     NonceFailure,
-    #[msg("The ledger offchain message's header is incorrect")]
-    LedgerOffchainMessageUnexpectedHeader,
+    #[msg("The ledger offchain message format is invalid")]
+    InvalidLedgerOffchainMessage,
 }
 
 impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for IntentTransferError {
@@ -54,8 +54,8 @@ impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for IntentTransferE
             }
             IntentError::ParseFailedError(_) => IntentTransferError::ParseFailedError,
             IntentError::DeserializeFailedError(_) => IntentTransferError::DeserializeFailedError,
-            IntentError::LedgerOffchainMessageUnexpectedHeader => {
-                IntentTransferError::LedgerOffchainMessageUnexpectedHeader
+            IntentError::InvalidLedgerOffchainMessage => {
+                IntentTransferError::InvalidLedgerOffchainMessage
             }
         }
     }
