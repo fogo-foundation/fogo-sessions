@@ -139,7 +139,7 @@ impl OffchainMessage {
     pub fn check(&self) -> bool {
         match self {
             Self::Raw(_) => true,
-            Self::Ledger(message) => message.version == 0 && (message.format == 1 || message.format == 0),
+            Self::Ledger(message) => message.version == 0 && ((message.format == 0 && message.message.0.is_ascii()) || (message.format == 1 && std::str::from_utf8(&message.message.0).is_ok())),
         }
     }
 }
