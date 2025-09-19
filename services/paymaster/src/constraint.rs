@@ -1,4 +1,5 @@
 use axum::http::StatusCode;
+use borsh::BorshDeserialize;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
@@ -633,7 +634,7 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
             continue;
         }
 
-        if let Ok(cu_ix) = bincode::deserialize::<ComputeBudgetInstruction>(&ix.data) {
+        if let Ok(cu_ix) = ComputeBudgetInstruction::try_from_slice(&ix.data) {
             match cu_ix {
                 ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
                     if cu_limit.is_some() {
