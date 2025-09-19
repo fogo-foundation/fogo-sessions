@@ -204,7 +204,7 @@ mod tests {
             .serialize()
             .unwrap()
             .into_iter()
-            .chain(std::iter::once(0 as u8))
+            .chain(std::iter::once(0u8))
             .collect();
         assert_eq!(
             Message::deserialize(&message_serialized_long)
