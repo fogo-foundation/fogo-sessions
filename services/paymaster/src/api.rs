@@ -16,7 +16,6 @@ use axum_prometheus::metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
-use num_traits::ToPrimitive;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
@@ -302,12 +301,6 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    let gas = crate::constraint::compute_gas_spent(&transaction)?;
-    let gas_f64 = gas.to_f64().ok_or_else(|| {
-        // If the gas cannot be converted to f64, that means it is larger than f64::MAX, which is excessive and we can reject the validation on that basis.
-        (StatusCode::BAD_REQUEST, "Excessive gas spend".to_string())
-    })?;
-
     let matched_variation_name = match domain_state
         .validate_transaction(&transaction, &state.chain_index)
         .await
@@ -350,11 +343,13 @@ async fn sponsor_and_send_handler(
             matched_variation_name.clone(),
             Some(confirmation_status.clone()),
         );
+
+        let gas = crate::constraint::compute_gas_spent(&transaction)?;
         obs_gas_spend(
             domain,
             matched_variation_name,
             Some(confirmation_status),
-            gas_f64,
+            gas,
         );
 
         Ok(SponsorAndSendResponse::Confirm(confirmation_result))
@@ -377,7 +372,9 @@ async fn sponsor_and_send_handler(
             })?;
 
         obs_send(domain.clone(), matched_variation_name.clone(), None);
-        obs_gas_spend(domain, matched_variation_name, None, gas_f64);
+
+        let gas = crate::constraint::compute_gas_spent(&transaction)?;
+        obs_gas_spend(domain, matched_variation_name, None, gas);
 
         Ok(SponsorAndSendResponse::Send(signature))
     }
