@@ -10,6 +10,7 @@ crate-type = ["rlib"]
 name = "solana_intents"
 
 [dependencies]
-nom = { workspace = true }
-solana-program = { workspace = true }
 borsh = { workspace = true }
+nom = { workspace = true }
+solana-offchain-message = { workspace = true }
+solana-program = { workspace = true }

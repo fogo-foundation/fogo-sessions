@@ -1,4 +1,5 @@
 use borsh::BorshDeserialize;
+use solana_offchain_message::OffchainMessage;
 use solana_program::{
     account_info::AccountInfo, ed25519_program, instruction::Instruction,
     program_error::ProgramError, pubkey::Pubkey, sysvar::instructions::get_instruction_relative,
@@ -43,17 +44,13 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
     type Error = IntentError<E>;
 
     fn try_from(data: Ed25519InstructionData) -> Result<Self, Self::Error> {
-        if data.header.check() {
-            Ok(Intent {
-                signer: data.public_key,
-                message: data
-                    .message
-                    .try_into()
-                    .map_err(IntentError::ParseFailedError)?,
-            })
-        } else {
-            Err(IntentError::SignatureVerificationUnexpectedHeader)
-        }
+        data.header.check()?;
+        Ok(Intent {
+            signer: data.public_key,
+            message: Vec::<u8>::from(data.message)
+                .try_into()
+                .map_err(IntentError::ParseFailedError)?,
+        })
     }
 }
 
@@ -61,7 +58,7 @@ struct Ed25519InstructionData {
     header: Ed25519InstructionHeader,
     public_key: Pubkey,
     _signature: [u8; 64], // We don't check the signature here, the ed25519 program is responsible for that
-    message: Vec<u8>,
+    message: Message,
 }
 
 impl BorshDeserialize for Ed25519InstructionData {
@@ -70,8 +67,9 @@ impl BorshDeserialize for Ed25519InstructionData {
         let public_key = Pubkey::deserialize_reader(reader)?;
         let mut signature = [0u8; 64];
         reader.read_exact(&mut signature)?;
-        let mut message: Vec<u8> = vec![0u8; header.message_data_size as usize];
-        reader.read_exact(&mut message)?;
+        let mut message_bytes: Vec<u8> = vec![0u8; usize::from(header.message_data_size)];
+        reader.read_exact(&mut message_bytes)?;
+        let message = Message::deserialize(&message_bytes)?;
         Ok(Self {
             header,
             public_key,
@@ -97,7 +95,7 @@ struct Ed25519InstructionHeader {
 impl Ed25519InstructionHeader {
     const LEN: u16 = 1 + 1 + 2 + 2 + 2 + 2 + 2 + 2 + 2;
 
-    fn check(&self) -> bool {
+    fn check<E>(&self) -> Result<(), IntentError<E>> {
         let expected_header = Self {
             num_signatures: 1,
             padding: 0,
@@ -109,7 +107,52 @@ impl Ed25519InstructionHeader {
             message_instruction_index: u16::MAX,
             message_data_size: self.message_data_size,
         };
-        self == &expected_header
+        if self == &expected_header {
+            Ok(())
+        } else {
+            Err(IntentError::SignatureVerificationUnexpectedHeader)
+        }
+    }
+}
+
+enum Message {
+    Raw(Vec<u8>),
+    OffchainMessage(OffchainMessage),
+}
+
+impl From<Message> for Vec<u8> {
+    fn from(message: Message) -> Self {
+        match message {
+            Message::Raw(message) => message,
+            Message::OffchainMessage(message) => message.get_message().to_vec(),
+        }
+    }
+}
+
+fn get_length_with_header(message: &OffchainMessage) -> usize {
+    match message {
+        OffchainMessage::V0(_) => message.get_message().len() + OffchainMessage::HEADER_LEN + 3,
+    }
+}
+
+impl Message {
+    fn deserialize(data: &[u8]) -> std::io::Result<Self> {
+        if OffchainMessage::SIGNING_DOMAIN.len() <= data.len()
+            && data[0..OffchainMessage::SIGNING_DOMAIN.len()] == *OffchainMessage::SIGNING_DOMAIN
+        {
+            let message = OffchainMessage::deserialize(data).map_err(|_| {
+                std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid offchain message")
+            })?;
+            if data.len() > get_length_with_header(&message) {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Not all bytes read",
+                )); // make it behave like try_from_slice, so it fails if all bytes are not read
+            }
+            Ok(Self::OffchainMessage(message))
+        } else {
+            Ok(Self::Raw(data.to_vec()))
+        }
     }
 }
 

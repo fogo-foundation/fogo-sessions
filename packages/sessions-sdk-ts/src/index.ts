@@ -14,10 +14,12 @@ import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { sha256 } from "@noble/hashes/sha2";
 import { fromLegacyPublicKey } from "@solana/compat";
+import type { SignatureBytes } from "@solana/kit";
 import {
   generateKeyPair,
   getAddressFromPublicKey,
   getProgramDerivedAddress,
+  verifySignature,
 } from "@solana/kit";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
@@ -398,6 +400,51 @@ const getTokenInfo = async (
 
 type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 
+// Some wallets add a prefix to the messag before signing, for example Ledger through Phantom
+const addOffchainMessagePrefixToMessageIfNeeded = async (
+  walletPublicKey: PublicKey,
+  signature: Uint8Array,
+  message: Uint8Array,
+) => {
+  const publicKey = await crypto.subtle.importKey(
+    "raw",
+    walletPublicKey.toBytes(),
+    { name: "Ed25519" },
+    true,
+    ["verify"],
+  );
+
+  if (await verifySignature(publicKey, signature as SignatureBytes, message)) {
+    return message;
+  } else {
+    // Source: https://github.com/anza-xyz/solana-sdk/blob/master/offchain-message/src/lib.rs#L162
+    const messageWithOffchainMessagePrefix = Uint8Array.from([
+      // eslint-disable-next-line unicorn/number-literal-case
+      0xff,
+      ...new TextEncoder().encode("solana offchain"),
+      0,
+      1,
+      // eslint-disable-next-line unicorn/number-literal-case
+      message.length & 0xff,
+      // eslint-disable-next-line unicorn/number-literal-case
+      (message.length >> 8) & 0xff,
+      ...message,
+    ]);
+    if (
+      await verifySignature(
+        publicKey,
+        signature as SignatureBytes,
+        messageWithOffchainMessagePrefix,
+      )
+    ) {
+      return messageWithOffchainMessagePrefix;
+    } else {
+      throw new Error(
+        "The signature provided by the browser wallet is not valid",
+      );
+    }
+  }
+};
 const buildIntentInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
@@ -417,7 +464,11 @@ const buildIntentInstruction = async (
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
     signature: intentSignature,
-    message: message,
+    message: await addOffchainMessagePrefixToMessageIfNeeded(
+      options.walletPublicKey,
+      intentSignature,
+      message,
+    ),
   });
 };
 
@@ -665,7 +716,11 @@ const buildTransferIntentInstruction = async (
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
     signature: intentSignature,
-    message: message,
+    message: await addOffchainMessagePrefixToMessageIfNeeded(
+      options.walletPublicKey,
+      intentSignature,
+      message,
+    ),
   });
 };
 
