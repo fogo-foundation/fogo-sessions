@@ -1,5 +1,16 @@
 # @fogo/sessions-sdk-web
 
+## 0.0.7
+
+### Patch Changes
+
+- f482ab4: Ignore polyfill-generated stored session keys
+- Updated dependencies [f67d1e6]
+- Updated dependencies [5b62cfa]
+- Updated dependencies [4f85152]
+- Updated dependencies [b12481e]
+  - @fogo/sessions-sdk@0.0.13
+
 ## 0.0.6
 
 ### Patch Changes

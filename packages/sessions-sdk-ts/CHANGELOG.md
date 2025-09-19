@@ -1,5 +1,16 @@
 # @fogo/sessions-sdk
 
+## 0.0.13
+
+### Patch Changes
+
+- f67d1e6: Add support for the Solana Offchain Message Format (currently used by Ledger wallets)
+- 5b62cfa: Propagate paymaster errors in getSponsor
+- 4f85152: Add revokable sessions
+- b12481e: Revoke sessions when logging out
+- Updated dependencies [4f85152]
+  - @fogo/sessions-idls@0.0.5
+
 ## 0.0.12
 
 ### Patch Changes
