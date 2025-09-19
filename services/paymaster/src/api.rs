@@ -305,10 +305,7 @@ async fn sponsor_and_send_handler(
     let gas = crate::constraint::compute_gas_spent(&transaction)?;
     let gas_f64 = gas.to_f64().ok_or_else(|| {
         // If the gas cannot be converted to f64, that means it is larger than f64::MAX, which is excessive and we can reject the validation on that basis.
-        (
-            StatusCode::BAD_REQUEST,
-            "Excessive gas spend".to_string(),
-        )
+        (StatusCode::BAD_REQUEST, "Excessive gas spend".to_string())
     })?;
 
     let matched_variation_name = match domain_state
