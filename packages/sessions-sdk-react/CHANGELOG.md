@@ -1,5 +1,21 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.21
+
+### Patch Changes
+
+- d4c8216: Expose option to apps to set wallet adapters
+- fbbaba6: Gracefully handle trading past limits
+- b12481e: Revoke sessions when logging out
+- Updated dependencies [f67d1e6]
+- Updated dependencies [5b62cfa]
+- Updated dependencies [4f85152]
+- Updated dependencies [f482ab4]
+- Updated dependencies [b12481e]
+  - @fogo/sessions-sdk@0.0.13
+  - @fogo/sessions-idls@0.0.5
+  - @fogo/sessions-sdk-web@0.0.7
+
 ## 0.0.20
 
 ### Patch Changes
