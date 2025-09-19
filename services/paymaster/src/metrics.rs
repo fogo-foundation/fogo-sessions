@@ -41,6 +41,8 @@ pub fn obs_gas_spend(
     if let Some(result) = result_confirmation {
         labels.push(("result", result));
     }
-    metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels)
-        .record(lamports.to_f64().expect("u64 to f64 conversion failed"));
+    metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels).record(
+        // Default to f64::MAX if conversion fails. This only happens if lamports is extremely large.
+        lamports.to_f64().unwrap_or(f64::MAX),
+    );
 }
