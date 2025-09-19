@@ -400,6 +400,15 @@ const getTokenInfo = async (
 
 type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 
+const serializeU16LE = (value: number) => {
+  return Uint8Array.from([
+    // eslint-disable-next-line unicorn/number-literal-case
+    value & 0xff,
+    // eslint-disable-next-line unicorn/number-literal-case
+    (value >> 8) & 0xff,
+  ]);
+};
+
 // Some wallets add a prefix to the messag before signing, for example Ledger through Phantom
 const addOffchainMessagePrefixToMessageIfNeeded = async (
   walletPublicKey: PublicKey,
@@ -424,10 +433,7 @@ const addOffchainMessagePrefixToMessageIfNeeded = async (
       ...new TextEncoder().encode("solana offchain"),
       0,
       1,
-      // eslint-disable-next-line unicorn/number-literal-case
-      message.length & 0xff,
-      // eslint-disable-next-line unicorn/number-literal-case
-      (message.length >> 8) & 0xff,
+      ...serializeU16LE(message.length),
       ...message,
     ]);
     if (
