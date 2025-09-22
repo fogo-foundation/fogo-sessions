@@ -1,4 +1,5 @@
 use axum::http::StatusCode;
+use borsh::BorshDeserialize;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
@@ -604,7 +605,7 @@ pub fn check_gas_spend(
     transaction: &VersionedTransaction,
     max_gas_spend: u64,
 ) -> Result<(), (StatusCode, String)> {
-    let gas_spend = compute_gas_spent(transaction);
+    let gas_spend = compute_gas_spent(transaction)?;
     if gas_spend > max_gas_spend {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -629,7 +630,11 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
 
     // should not support multiple compute budget instructions: https://github.com/solana-labs/solana/blob/ca115594ff61086d67b4fec8977f5762e526a457/program-runtime/src/compute_budget.rs#L162
     for ix in instructions {
-        if let Ok(cu_ix) = bincode::deserialize::<ComputeBudgetInstruction>(&ix.data) {
+        if ix.program_id(msg.static_account_keys()) != &solana_compute_budget_interface::id() {
+            continue;
+        }
+
+        if let Ok(cu_ix) = ComputeBudgetInstruction::try_from_slice(&ix.data) {
             match cu_ix {
                 ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
                     if cu_limit.is_some() {
@@ -662,8 +667,8 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
 }
 
 /// Computes the gas spend (in lamports) for a transaction based on signatures and priority fee.
-pub fn compute_gas_spent(transaction: &VersionedTransaction) -> u64 {
+pub fn compute_gas_spent(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
     let n_signatures = transaction.signatures.len() as u64;
-    let priority_fee = get_priority_fee(transaction).unwrap_or(0);
-    n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee
+    let priority_fee = get_priority_fee(transaction)?;
+    Ok(n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee)
 }

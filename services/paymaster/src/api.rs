@@ -249,13 +249,13 @@ fn get_domain_name(
     Ok(domain)
 }
 
-fn get_domain_state(
-    state: &ServerState,
-    domain_query_parameter: String,
-) -> Result<&DomainState, (StatusCode, String)> {
+fn get_domain_state<'a>(
+    state: &'a ServerState,
+    domain_query_parameter: &str,
+) -> Result<&'a DomainState, (StatusCode, String)> {
     let domain_state = state
         .domains
-        .get(&domain_query_parameter)
+        .get(domain_query_parameter)
         .ok_or_else(|| {
             (
                 StatusCode::BAD_REQUEST,
@@ -281,7 +281,7 @@ async fn sponsor_and_send_handler(
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
-    let domain_state = get_domain_state(&state, domain.clone())?;
+    let domain_state = get_domain_state(&state, &domain)?;
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
@@ -344,7 +344,7 @@ async fn sponsor_and_send_handler(
             Some(confirmation_status.clone()),
         );
 
-        let gas = crate::constraint::compute_gas_spent(&transaction);
+        let gas = crate::constraint::compute_gas_spent(&transaction)?;
         obs_gas_spend(
             domain,
             matched_variation_name,
@@ -373,7 +373,7 @@ async fn sponsor_and_send_handler(
 
         obs_send(domain.clone(), matched_variation_name.clone(), None);
 
-        let gas = crate::constraint::compute_gas_spent(&transaction);
+        let gas = crate::constraint::compute_gas_spent(&transaction)?;
         obs_gas_spend(domain, matched_variation_name, None, gas);
 
         Ok(SponsorAndSendResponse::Send(signature))
@@ -401,7 +401,7 @@ async fn sponsor_pubkey_handler(
         sponsor,
         enable_preflight_simulation: _,
         tx_variations: _,
-    } = get_domain_state(&state, domain)?;
+    } = get_domain_state(&state, &domain)?;
     Ok(sponsor.pubkey().to_string())
 }
 
@@ -481,10 +481,7 @@ pub async fn run_server(
     let app = Router::new()
         .route(
             "/metrics",
-            axum::routing::get(move || {
-                let handle = handle.clone();
-                async move { handle.render() }
-            }),
+            axum::routing::get(move || async move { handle.render() }),
         )
         .nest("/api", router)
         .layer(
