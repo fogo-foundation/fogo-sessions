@@ -1,5 +1,4 @@
 use axum_prometheus::metrics;
-use num_traits::cast::ToPrimitive;
 
 pub const TRANSACTION_VALIDATION_COUNT: &str = "paymaster_transaction_validation_total";
 pub fn obs_validation(domain: String, variation: String, result_validation: String) {
@@ -41,8 +40,5 @@ pub fn obs_gas_spend(
     if let Some(result) = result_confirmation {
         labels.push(("result", result));
     }
-    metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels).record(
-        // Default to f64::MAX if conversion fails. This only happens if lamports is extremely large.
-        lamports.to_f64().unwrap_or(f64::MAX),
-    );
+    metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels).record(lamports as f64);
 }
