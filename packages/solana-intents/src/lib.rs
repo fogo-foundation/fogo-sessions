@@ -115,6 +115,7 @@ impl Ed25519InstructionHeader {
     }
 }
 
+#[derive(Debug, PartialEq)]
 enum Message {
     Raw(Vec<u8>),
     OffchainMessage(OffchainMessage),
@@ -174,5 +175,71 @@ impl<P> From<ProgramError> for IntentError<P> {
 impl<P> From<borsh::io::Error> for IntentError<P> {
     fn from(err: borsh::io::Error) -> Self {
         IntentError::DeserializeFailedError(err)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_offchain_message_roundtrip() {
+        let offchain_message = OffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
+        assert_eq!(
+            Message::deserialize(&offchain_message.serialize().unwrap()).unwrap(),
+            Message::OffchainMessage(offchain_message.clone())
+        );
+    }
+
+    #[test]
+    fn test_offchain_message_short() {
+        let offchain_message = OffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
+
+        let mut message_serialized_short: Vec<u8> = offchain_message.serialize().unwrap();
+        message_serialized_short.pop();
+
+        assert_eq!(
+            Message::deserialize(&message_serialized_short)
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::InvalidData
+        );
+    }
+
+    #[test]
+    fn test_offchain_message_long() {
+        let offchain_message = OffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
+
+        let message_serialized_long: Vec<u8> = offchain_message
+            .serialize()
+            .unwrap()
+            .into_iter()
+            .chain(std::iter::once(0u8))
+            .collect();
+
+        assert_eq!(
+            Message::deserialize(&message_serialized_long)
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::InvalidData
+        );
+    }
+
+    #[test]
+    fn test_raw_message() {
+        let message = b"Fogo Sessions"; // shorter than SIGNING_DOMAIN
+        assert_eq!(
+            Message::deserialize(message).unwrap(),
+            Message::Raw(message.to_vec())
+        );
+    }
+
+    #[test]
+    fn test_raw_message_long() {
+        let message = b"Fogo Sessions Fogo Sessions Fogo Sessions";
+        assert_eq!(
+            Message::deserialize(message).unwrap(),
+            Message::Raw(message.to_vec())
+        );
     }
 }
