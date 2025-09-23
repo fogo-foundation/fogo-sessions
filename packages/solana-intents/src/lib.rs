@@ -185,7 +185,6 @@ mod tests {
     #[test]
     fn test_offchain_message_roundtrip() {
         let offchain_message = OffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
-
         assert_eq!(
             Message::deserialize(&offchain_message.serialize().unwrap()).unwrap(),
             Message::OffchainMessage(offchain_message.clone())
