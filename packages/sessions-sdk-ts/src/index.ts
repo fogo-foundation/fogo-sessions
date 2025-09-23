@@ -401,12 +401,9 @@ const getTokenInfo = async (
 type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 
 const serializeU16LE = (value: number) => {
-  return Uint8Array.from([
-    // eslint-disable-next-line unicorn/number-literal-case
-    value & 0xff,
-    // eslint-disable-next-line unicorn/number-literal-case
-    (value >> 8) & 0xff,
-  ]);
+  const result = new ArrayBuffer(2);
+  new DataView(result).setUint16(0, value, true); // littleEndian = true
+  return new Uint8Array(result);
 };
 
 // Some wallets add a prefix to the messag before signing, for example Ledger through Phantom

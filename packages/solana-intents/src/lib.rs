@@ -190,15 +190,26 @@ mod tests {
             Message::deserialize(&offchain_message.serialize().unwrap()).unwrap(),
             Message::OffchainMessage(offchain_message.clone())
         );
+    }
+
+    #[test]
+    fn test_offchain_message_short() {
+        let offchain_message = OffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
 
         let mut message_serialized_short: Vec<u8> = offchain_message.serialize().unwrap();
         message_serialized_short.pop();
+
         assert_eq!(
             Message::deserialize(&message_serialized_short)
                 .unwrap_err()
                 .kind(),
             std::io::ErrorKind::InvalidData
         );
+    }
+
+    #[test]
+    fn test_offchain_message_long() {
+        let offchain_message = OffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
 
         let message_serialized_long: Vec<u8> = offchain_message
             .serialize()
@@ -206,6 +217,7 @@ mod tests {
             .into_iter()
             .chain(std::iter::once(0u8))
             .collect();
+
         assert_eq!(
             Message::deserialize(&message_serialized_long)
                 .unwrap_err()
@@ -216,16 +228,21 @@ mod tests {
 
     #[test]
     fn test_raw_message() {
-        let message = b"Fogo Sessions";
+        let message = b"Fogo Sessions"; // shorter than SIGNING_DOMAIN
         assert_eq!(
             Message::deserialize(message).unwrap(),
             Message::Raw(message.to_vec())
         );
+    }
 
-        let message_long = b"Fogo Sessions Fogo Sessions Fogo Sessions";
+    #[test]
+    fn test_raw_message_long() {
+        let message = b"Fogo Sessions Fogo Sessions Fogo Sessions";
         assert_eq!(
-            Message::deserialize(message_long).unwrap(),
-            Message::Raw(message_long.to_vec())
+            Message::deserialize(message).unwrap(),
+            Message::Raw(message.to_vec())
         );
     }
 }
+
+
