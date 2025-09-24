@@ -7,7 +7,7 @@ const generateKeyPair = async () => {
   ]);
 };
 
-describe("signMessageWithSessionKey", () => {
+describe("signMessageWithKey", () => {
   it("signs a message with a session key", async () => {
     const sessionKey = await generateKeyPair();
     const message = "Hello";
@@ -16,7 +16,7 @@ describe("signMessageWithSessionKey", () => {
   });
 });
 
-describe("verifyMessageWithSessionKey", () => {
+describe("verifyMessageWithKey", () => {
   it("returns true if the message and signature are valid", async () => {
     const sessionKey = await generateKeyPair();
     const message = "Hello";

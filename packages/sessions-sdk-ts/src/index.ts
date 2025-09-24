@@ -744,7 +744,6 @@ const getNonce = async (
 const loginTokenPayloadSchema = z.object({
   iat: z.number(),
   sessionPublicKey: z.string(),
-  walletPublicKey: z.string(),
 });
 
 /**
@@ -757,7 +756,6 @@ export const createLogInToken = async (session: Session) => {
     // ...we can pass any arbitrary data we want to sign here...
     iat: Date.now(),
     sessionPublicKey: session.sessionPublicKey.toBase58(),
-    walletPublicKey: session.walletPublicKey.toBase58(),
   };
 
   const message = JSON.stringify(payload);
