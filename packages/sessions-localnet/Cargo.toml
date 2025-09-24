@@ -1,0 +1,17 @@
+[package]
+name = "sessions-localnet"
+version = "0.1.0"
+edition = { workspace = true }
+
+[dependencies]
+anyhow = {workspace = true}
+clap = {workspace = true}
+serde = {workspace = true}
+solana-derivation-path = {workspace = true}
+solana-keypair = {workspace = true}
+solana-rpc-client = {workspace = true}
+solana-seed-derivable = {workspace = true}
+solana-seed-phrase = {workspace = true}
+solana-signer = {workspace = true}
+
+fogo-paymaster = { path = "../../services/paymaster" }

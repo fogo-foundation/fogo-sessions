@@ -407,14 +407,12 @@ async fn sponsor_pubkey_handler(
 
 pub async fn run_server(
     Config {
-        mnemonic_file,
         solana_url,
         domains,
         listen_address,
     }: Config,
+    mnemonic: String,
 ) {
-    let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
-
     let rpc = RpcClient::new_with_commitment(
         solana_url,
         CommitmentConfig {

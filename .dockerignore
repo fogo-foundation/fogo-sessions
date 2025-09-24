@@ -1,0 +1,16 @@
+target
+**/target
+
+.git
+.gitignore
+
+**/node_modules
+
+*.log
+*.env
+*.secrets
+
+*.swp
+*.swo
+*.idea
+.vscode
