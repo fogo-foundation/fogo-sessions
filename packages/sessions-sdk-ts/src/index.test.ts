@@ -1,11 +1,12 @@
-import { signMessageWithKey, verifyMessageWithKey } from "./index.js";
+import {
+  generateKeyPair,
+  signMessageWithKey,
+  verifyMessageWithKey,
+} from "./crypto.js";
 
 describe("signMessageWithSessionKey", () => {
   it("signs a message with a session key", async () => {
-    const sessionKey = await crypto.subtle.generateKey("Ed25519", true, [
-      "sign",
-      "verify",
-    ]);
+    const sessionKey = await generateKeyPair();
     const message = "Hello";
     const signature = await signMessageWithKey(sessionKey, message);
     expect(signature).toBeDefined();
@@ -14,10 +15,7 @@ describe("signMessageWithSessionKey", () => {
 
 describe("verifyMessageWithSessionKey", () => {
   it("returns true if the message and signature are valid", async () => {
-    const sessionKey = await crypto.subtle.generateKey("Ed25519", true, [
-      "sign",
-      "verify",
-    ]);
+    const sessionKey = await generateKeyPair();
     const message = "Hello";
     const signature = await signMessageWithKey(sessionKey, message);
     const isValid = await verifyMessageWithKey(
@@ -28,10 +26,7 @@ describe("verifyMessageWithSessionKey", () => {
     expect(isValid).toBe(true);
   });
   it("returns false if the message or signature are invalid", async () => {
-    const sessionKey = await crypto.subtle.generateKey("Ed25519", true, [
-      "sign",
-      "verify",
-    ]);
+    const sessionKey = await generateKeyPair();
     const message = "Hello";
     const signature = await signMessageWithKey(sessionKey, message);
     const isValid = await verifyMessageWithKey(
@@ -42,10 +37,7 @@ describe("verifyMessageWithSessionKey", () => {
     expect(isValid).toBe(false);
 
     // check with another key pair
-    const sessionKey2 = await crypto.subtle.generateKey("Ed25519", true, [
-      "sign",
-      "verify",
-    ]);
+    const sessionKey2 = await generateKeyPair();
     const isValid2 = await verifyMessageWithKey(
       sessionKey2.publicKey,
       message,

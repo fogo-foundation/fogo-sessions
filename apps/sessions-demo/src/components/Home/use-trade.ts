@@ -39,7 +39,7 @@ export const useTrade = (
       ).methods
         .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
         .accountsPartial({
-          signerOrSession: sessionState.sessionKey.publicKey,
+          signerOrSession: sessionState.sessionPublicKey,
           sink: sinkAta,
           userTokenAccount,
           mint,
