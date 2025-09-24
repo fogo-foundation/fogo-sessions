@@ -2,9 +2,9 @@ import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider, BorshAccountsCoder } from "@coral-xyz/anchor";
 import {
   DomainRegistryIdl,
-  SessionManagerProgram,
-  SessionManagerIdl,
   IntentTransferProgram,
+  SessionManagerIdl,
+  SessionManagerProgram,
 } from "@fogo/sessions-idls";
 import {
   findMetadataPda,
@@ -27,22 +27,28 @@ import {
   getMint,
 } from "@solana/spl-token";
 import type {
+  Connection,
   TransactionError,
   TransactionInstruction,
-  Connection,
 } from "@solana/web3.js";
 import { Ed25519Program, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
+import bs58 from "bs58";
 import { z } from "zod";
 
 import type { SessionAdapter, TransactionResult } from "./adapter.js";
 import { TransactionResultType } from "./adapter.js";
+import {
+  importKey,
+  signMessageWithKey,
+  verifyMessageWithKey,
+} from "./crypto.js";
 
 export {
+  createSolanaWalletAdapter,
+  TransactionResultType,
   type SessionAdapter,
   type TransactionResult,
-  TransactionResultType,
-  createSolanaWalletAdapter,
 } from "./adapter.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
@@ -736,4 +742,59 @@ const getNonce = async (
     seeds: [Buffer.from("nonce"), walletPublicKey.toBuffer()],
   });
   return program.account.nonce.fetchNullable(noncePda);
+};
+
+const loginTokenPayloadSchema = z.object({
+  iat: z.number(),
+  sessionPublicKey: z.string(),
+});
+
+/**
+ * Create a login token signed with the session key
+ * @param session - The session to create a login token for
+ * @returns The login token
+ */
+export const createLogInToken = async (session: Session) => {
+  const payload = {
+    // ...we can pass any arbitrary data we want to sign here...
+    iat: Date.now(),
+    sessionPublicKey: session.sessionPublicKey.toBase58(),
+  };
+
+  const message = JSON.stringify(payload);
+
+  // Sign the payload with the session private key
+  const signature = await signMessageWithKey(session.sessionKey, message);
+
+  // Return base58(message) + base58(signature)
+  return `${bs58.encode(new TextEncoder().encode(message))}.${signature}`;
+};
+
+/**
+ * Verify a login token
+ * @param token - The login token to verify against the session public key
+ * @param connection - The connection to use to get the session account
+ * @returns The session account if the token is valid, otherwise undefined
+ */
+export const verifyLogInToken = async (
+  token: string,
+  connection: Connection,
+) => {
+  const [rawMessage, signature] = token.split(".");
+  if (!rawMessage || !signature) return;
+
+  // Decode + parse payload
+  const messageStr = new TextDecoder().decode(bs58.decode(rawMessage));
+  const payload = loginTokenPayloadSchema.parse(JSON.parse(messageStr));
+
+  // Verify signature with sessionPublicKey
+  const sessionCryptoKey = await importKey(payload.sessionPublicKey);
+  const isValid = await verifyMessageWithKey(
+    sessionCryptoKey,
+    messageStr,
+    signature,
+  );
+  if (!isValid) return;
+
+  return getSessionAccount(connection, new PublicKey(payload.sessionPublicKey));
 };
