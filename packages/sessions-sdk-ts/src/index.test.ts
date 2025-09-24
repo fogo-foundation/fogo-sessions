@@ -27,7 +27,7 @@ describe("verifyMessageWithSessionKey", () => {
     );
     expect(isValid).toBe(true);
   });
-  it("returns false if the message and signature are invalid", async () => {
+  it("returns false if the message or signature are invalid", async () => {
     const sessionKey = await crypto.subtle.generateKey("Ed25519", true, [
       "sign",
       "verify",
@@ -40,5 +40,17 @@ describe("verifyMessageWithSessionKey", () => {
       signature,
     );
     expect(isValid).toBe(false);
+
+    // check with another key pair
+    const sessionKey2 = await crypto.subtle.generateKey("Ed25519", true, [
+      "sign",
+      "verify",
+    ]);
+    const isValid2 = await verifyMessageWithKey(
+      sessionKey2.publicKey,
+      message,
+      signature,
+    );
+    expect(isValid2).toBe(false);
   });
 });
