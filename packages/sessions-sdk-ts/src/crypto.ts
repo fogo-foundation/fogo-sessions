@@ -54,14 +54,3 @@ export const importKey = async (publicKey: string) => {
     ["verify"],
   );
 };
-
-/**
- * Generate a new CryptoKeyPair. Used for testing.
- * @returns The generated CryptoKeyPair
- */
-export const generateKeyPair = async () => {
-  return await crypto.subtle.generateKey({ name: "Ed25519" }, true, [
-    "sign",
-    "verify",
-  ]);
-};

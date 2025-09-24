@@ -68,8 +68,7 @@ const getTokenAccounts = async (
     sessionLimits: accounts
       .filter(
         ({ delegate, delegateAmount }) =>
-          delegate ===
-            new PublicKey(sessionState.sessionKey.publicKey).toBase58() &&
+          delegate === sessionState.sessionPublicKey.toBase58() &&
           delegateAmount !== 0n,
       )
       .map(({ mint, delegateAmount, decimals }) =>
