@@ -1,8 +1,4 @@
-import {
-  signMessageWithKey,
-  verifyMessageWithKey,
-} from "./crypto.js";
-
+import { signMessageWithKey, verifyMessageWithKey } from "./crypto.js";
 
 const generateKeyPair = async () => {
   return await crypto.subtle.generateKey({ name: "Ed25519" }, true, [
@@ -10,7 +6,6 @@ const generateKeyPair = async () => {
     "verify",
   ]);
 };
-
 
 describe("signMessageWithSessionKey", () => {
   it("signs a message with a session key", async () => {
