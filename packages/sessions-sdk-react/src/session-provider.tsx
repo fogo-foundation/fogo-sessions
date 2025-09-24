@@ -10,6 +10,7 @@ import {
   AuthorizedTokens,
   TransactionResultType,
   revokeSession,
+  signMessageWithKey,
 } from "@fogo/sessions-sdk";
 import {
   clearStoredSession,
@@ -387,13 +388,15 @@ const useSessionStateContext = ({
           );
           return result;
         },
-        sessionPublicKey: session.sessionPublicKey,
+        sessionKey: session.sessionKey,
         isLimited:
           session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
         walletPublicKey: session.walletPublicKey,
         connection: adapter.connection,
         adapter,
         signMessage,
+        signMessageWithSessionKey: (message: string) =>
+          signMessageWithKey(session.sessionKey, message),
         expiration: session.sessionInfo.expiration,
       };
       const updateSession = (
@@ -550,8 +553,9 @@ const useSessionStateContext = ({
               isLimited: state.isLimited,
               payer: state.payer,
               sendTransaction: state.sendTransaction,
-              sessionPublicKey: state.sessionPublicKey,
+              sessionKey: state.sessionKey,
               signMessage: state.signMessage,
+              signMessageWithSessionKey: state.signMessageWithSessionKey,
               walletPublicKey: state.walletPublicKey,
             },
             state.updateSession,
@@ -749,11 +753,12 @@ export enum StateType {
 
 type EstablishedOptions = Pick<
   Session,
-  "walletPublicKey" | "sessionPublicKey" | "sendTransaction" | "payer"
+  "walletPublicKey" | "sessionKey" | "sendTransaction" | "payer"
 > & {
   expiration: Date;
   adapter: SessionAdapter;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  signMessageWithSessionKey: (message: string) => Promise<string>;
   connection: ReturnType<typeof useConnection>["connection"];
   isLimited: boolean;
   endSession: () => void;
