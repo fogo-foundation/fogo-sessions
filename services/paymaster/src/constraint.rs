@@ -72,6 +72,20 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
+fn is_compute_budget_instruction(transaction: &VersionedTransaction, instruction_index: usize) -> bool {
+    if let Some(instruction) = transaction.message.instructions().get(instruction_index) {
+        let static_accounts = transaction.message.static_account_keys();
+        let program_id = instruction.program_id(static_accounts);
+        if program_id == &solana_compute_budget_interface::id() {
+            if let Ok(_) = ComputeBudgetInstruction::try_from_slice(&instruction.data) {
+                return true;
+            }
+        }
+    }
+    
+    false
+}
+
 impl VariationOrderedInstructionConstraints {
     pub fn validate_transaction(
         &self,
@@ -80,9 +94,16 @@ impl VariationOrderedInstructionConstraints {
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
         let mut instruction_index = 0;
+        let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
 
-        for constraint in self.instructions.iter() {
+        while constraint_index < self.instructions.len() {
+            if is_compute_budget_instruction(transaction, instruction_index) {
+                instruction_index += 1;
+                continue;
+            }
+
+            let constraint = &self.instructions[constraint_index];
             let result = constraint.validate_instruction(
                 transaction,
                 instruction_index,
@@ -95,8 +116,10 @@ impl VariationOrderedInstructionConstraints {
                 if constraint.required {
                     return result;
                 }
+                constraint_index += 1;
             } else {
                 instruction_index += 1;
+                constraint_index += 1;
             }
         }
 
@@ -147,10 +170,6 @@ impl InstructionConstraint {
         let signatures = &transaction.signatures;
 
         let program_id = instruction.program_id(static_accounts);
-        // we allow Compute Budget instructions anywhere. Compute Budget is implicitly checked for v1 variations in check_gas_spend.
-        if program_id == &solana_compute_budget_interface::id() {
-            return Ok(());
-        }
         if *program_id != self.program {
             return Err((
                 StatusCode::BAD_REQUEST,
