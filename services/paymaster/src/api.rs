@@ -268,6 +268,10 @@ fn get_domain_state<'a>(
     Ok(domain_state)
 }
 
+async fn health_handler() -> StatusCode {
+    StatusCode::OK
+}
+
 #[utoipa::path(
     post,
     path = "/sponsor_and_send",
@@ -479,6 +483,7 @@ pub async fn run_server(
     let prometheus_layer = PrometheusMetricLayer::new();
 
     let app = Router::new()
+        .route("/health", axum::routing::get(health_handler))
         .route(
             "/metrics",
             axum::routing::get(move || async move { handle.render() }),
