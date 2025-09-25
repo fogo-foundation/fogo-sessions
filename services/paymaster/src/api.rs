@@ -268,7 +268,7 @@ fn get_domain_state<'a>(
     Ok(domain_state)
 }
 
-async fn health_handler() -> StatusCode {
+async fn readiness_handler() -> StatusCode {
     StatusCode::OK
 }
 
@@ -483,7 +483,7 @@ pub async fn run_server(
     let prometheus_layer = PrometheusMetricLayer::new();
 
     let app = Router::new()
-        .route("/health", axum::routing::get(health_handler))
+        .route("/ready", axum::routing::get(readiness_handler))
         .route(
             "/metrics",
             axum::routing::get(move || async move { handle.render() }),
