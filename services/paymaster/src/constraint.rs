@@ -97,6 +97,12 @@ impl VariationOrderedInstructionConstraints {
         let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
 
+        // Note: this validation algorithm is technically incorrect, because of optional constraints.
+        // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
+        // is optional, it might be possible that matching against j leads to failure due to later 
+        // constraints failing while matching against j+1 would result in a valid transaction match.
+        // Technically, the correct way to validate this is via branching (efficiently via DP), but given
+        // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         while constraint_index < self.instructions.len() {
             if is_compute_budget_instruction(transaction, instruction_index) {
                 instruction_index += 1;
