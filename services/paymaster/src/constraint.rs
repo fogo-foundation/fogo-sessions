@@ -147,11 +147,11 @@ impl InstructionConstraint {
         let signatures = &transaction.signatures;
 
         let program_id = instruction.program_id(static_accounts);
+        // we allow Compute Budget instructions anywhere. Compute Budget is implicitly checked for v1 variations in check_gas_spend.
+        if program_id == &solana_compute_budget_interface::id() {
+            return Ok(());
+        }
         if *program_id != self.program {
-            // we allow Compute Budget instructions anywhere. Compute Budget is implicitly checked for v1 variations in check_gas_spend.
-            if program_id == &solana_compute_budget_interface::id() {
-                return Ok(());
-            }
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
