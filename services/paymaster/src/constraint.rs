@@ -72,17 +72,20 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
-fn is_compute_budget_instruction(transaction: &VersionedTransaction, instruction_index: usize) -> bool {
+fn is_compute_budget_instruction(
+    transaction: &VersionedTransaction,
+    instruction_index: usize,
+) -> bool {
     if let Some(instruction) = transaction.message.instructions().get(instruction_index) {
         let static_accounts = transaction.message.static_account_keys();
         let program_id = instruction.program_id(static_accounts);
-        if program_id == &solana_compute_budget_interface::id() {
-            if let Ok(_) = ComputeBudgetInstruction::try_from_slice(&instruction.data) {
-                return true;
-            }
+        if program_id == &solana_compute_budget_interface::id()
+            && ComputeBudgetInstruction::try_from_slice(&instruction.data).is_ok()
+        {
+            return true;
         }
     }
-    
+
     false
 }
 
@@ -99,7 +102,7 @@ impl VariationOrderedInstructionConstraints {
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
-        // is optional, it might be possible that matching against j leads to failure due to later 
+        // is optional, it might be possible that matching against j leads to failure due to later
         // constraints failing while matching against j+1 would result in a valid transaction match.
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
