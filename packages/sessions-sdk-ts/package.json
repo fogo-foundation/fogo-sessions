@@ -25,16 +25,6 @@
         "types": "./dist/cjs/index.d.ts",
         "default": "./dist/cjs/index.js"
       }
-    },
-    "./paymaster": {
-      "import": {
-        "types": "./dist/esm/paymaster.d.ts",
-        "default": "./dist/esm/paymaster.js"
-      },
-      "require": {
-        "types": "./dist/cjs/paymaster.d.ts",
-        "default": "./dist/cjs/paymaster.js"
-      }
     }
   },
   "scripts": {
