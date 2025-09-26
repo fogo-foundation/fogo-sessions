@@ -46,20 +46,18 @@ pub async fn send_and_confirm_transaction(
 ) -> Result<ConfirmationResult, ErrorResponse> {
     let recent_blockhash = transaction.message.recent_blockhash();
     let signature = transaction.signatures[0];
-    match rpc
-        .send_transaction_with_config(transaction, config)
-         {
-            Ok(signature) => signature,
-            Err(err) => {
-                if let Some(error) = err.get_transaction_error() {
-                    return Ok(ConfirmationResult::Failed {
-                        signature: signature.to_string(),
-                        error,
-                    });
-                }
-                return Err(to_error_response(err));
+    match rpc.send_transaction_with_config(transaction, config) {
+        Ok(signature) => signature,
+        Err(err) => {
+            if let Some(error) = err.get_transaction_error() {
+                return Ok(ConfirmationResult::Failed {
+                    signature: signature.to_string(),
+                    error,
+                });
             }
-        };
+            return Err(to_error_response(err));
+        }
+    };
 
     for status_retry in 0..GET_STATUS_RETRIES {
         match rpc
