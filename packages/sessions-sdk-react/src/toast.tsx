@@ -1,8 +1,7 @@
-import { XCircleIcon } from "@phosphor-icons/react/dist/ssr/XCircle";
+import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import type { ReactNode } from "react";
 import { createContext, use, useMemo } from "react";
 import {
-  Button,
   Text,
   UNSTABLE_Toast as ReactAriaToast,
   UNSTABLE_ToastContent as ToastContent,
@@ -10,6 +9,7 @@ import {
   UNSTABLE_ToastQueue as ToastQueue,
 } from "react-aria-components";
 
+import { Button } from "./button.js";
 import styles from "./toast.module.css";
 
 const ONE_SECOND_IN_MS = 1000;
@@ -27,11 +27,23 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
             toast={toast}
             data-variant={TOAST_TYPE_TO_VARIANT[toast.content.type]}
           >
-            <ToastContent>
-              <Text slot="description">{toast.content.contents}</Text>
+            <ToastContent className={styles.toastContent}>
+              <Text slot="title" className={styles.title}>
+                {toast.content.title}
+              </Text>
+              {toast.content.description && (
+                <Text slot="description" className={styles.description}>
+                  {toast.content.description}
+                </Text>
+              )}
             </ToastContent>
-            <Button slot="close" className={styles.dismissButton ?? ""}>
-              <XCircleIcon size={16} />
+            <Button
+              slot="close"
+              variant="ghost"
+              size="sm"
+              className={styles.dismissButton ?? ""}
+            >
+              <XIcon size={16} />
             </Button>
           </ReactAriaToast>
         )}
@@ -43,30 +55,27 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
 export const useToast = () => {
   const queue = use(ToastContext);
   if (queue) {
+    const mkToastFn =
+      (toastType: ToastType) =>
+      (
+        title: ReactNode,
+        description?: ReactNode,
+        {
+          timeout = DEFAULT_TOAST_TIMEOUT,
+          ...opts
+        }: Parameters<typeof queue.add>[1] | undefined = {},
+      ) =>
+        queue.add(
+          { type: toastType, title, description },
+          { timeout, ...opts },
+        );
     return useMemo(
       () => ({
         queue,
-        success: (
-          contents: ReactNode,
-          {
-            timeout = DEFAULT_TOAST_TIMEOUT,
-            ...opts
-          }: Parameters<typeof queue.add>[1] | undefined = {},
-        ) =>
-          queue.add(
-            { contents, type: ToastType.Success },
-            { timeout, ...opts },
-          ),
-        error: (
-          contents: ReactNode,
-          {
-            timeout = DEFAULT_TOAST_TIMEOUT,
-            ...opts
-          }: Parameters<typeof queue.add>[1] | undefined = {},
-        ) =>
-          queue.add({ contents, type: ToastType.Error }, { timeout, ...opts }),
+        success: mkToastFn(ToastType.Success),
+        error: mkToastFn(ToastType.Error),
       }),
-      [queue],
+      [queue, mkToastFn],
     );
   } else {
     throw new Error("Toast queue not initialized");
@@ -79,7 +88,8 @@ const ToastContext = createContext<undefined | ToastQueue<ToastContents>>(
 
 type ToastContents = {
   type: ToastType;
-  contents: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
 };
 
 enum ToastType {

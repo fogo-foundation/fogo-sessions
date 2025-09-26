@@ -1,70 +1,124 @@
 @use "./theme";
 
 .sessionLimits {
-  display: grid;
-  grid-template-rows: max-content max-content 1fr max-content;
+  display: flex;
+  flex-flow: column nowrap;
   gap: theme.spacing(6);
 
-  .applyLimits {
-    @include theme.text("sm", "medium");
+  .body {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: theme.spacing(6);
+  }
 
+  .applyLimits {
+    @include theme.text("xs", "semibold");
+
+    color: theme.color("paragraph");
     display: flex;
     position: relative;
     align-items: center;
-    gap: theme.spacing(2);
+    gap: theme.spacing(3);
     cursor: pointer;
 
     .checkbox {
-      width: theme.spacing(4);
-      height: theme.spacing(4);
-      border: 2px solid theme.color("panel", "border");
-      border-radius: theme.border-radius("md");
+      width: theme.spacing(6);
+      height: theme.spacing(6);
       display: grid;
       place-content: center;
-      flex: none;
+      border-radius: theme.border-radius("lg");
+      background-color: transparent;
+      transition: background-color 50ms linear;
 
-      svg {
-        width: theme.spacing(3);
-        height: theme.spacing(3);
-        fill: none;
-        stroke: theme.color("primary", "border", "base");
-        stroke-width: 3px;
-        stroke-dasharray: 22px;
-        stroke-dashoffset: 66;
-        transition: stroke-dashoffset 200ms;
+      .check {
+        width: theme.spacing(4);
+        height: theme.spacing(4);
+        border-radius: theme.border-radius();
+        border: 1px solid theme.color("border");
+        color: transparent;
+        padding: theme.spacing(0.5);
+        outline: 2px solid transparent;
+        outline-offset: theme.spacing(0.5);
+        transition:
+          outline-color 50ms linear,
+          background-color 100ms linear,
+          border-color 100ms linear,
+          color 100ms linear;
       }
     }
 
-    &[data-focus-visible] .checkbox {
-      outline: 2px solid theme.color("primary", "border", "base");
-      outline-offset: theme.spacing(0.5);
+    &[data-hovered] .checkbox {
+      background-color: theme.color("checkbox-hover");
     }
 
-    &[data-selected] svg {
-      stroke-dashoffset: 44;
+    &[data-selected] .check {
+      background-color: theme.color("accent");
+      border-color: theme.color("accent");
+      color: theme.color("background");
+    }
+
+    &[data-focus-visible] .check {
+      outline-color: theme.color("accent");
     }
   }
 
   .sessionExpiry {
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-    gap: theme.spacing(2);
-
     .label {
-      @include theme.text("sm", "medium");
+      @include theme.text("xs", "medium");
+
+      color: theme.color("paragraph");
+      margin-bottom: theme.spacing(3);
+      display: block;
     }
 
     .button {
-      @include theme.button("ghost");
+      width: 100%;
+      border: 1px solid theme.color("border");
+      background-color: theme.color("background");
+      border-radius: theme.border-radius("lg");
+      height: theme.spacing(9);
+      display: grid;
+      grid-template-columns: 1fr max-content;
+      align-items: center;
+      padding-left: theme.spacing(2.5);
+      padding-right: theme.spacing(2.5);
+      cursor: pointer;
+      outline: 2px solid transparent;
+      outline-offset: theme.spacing(0.5);
+      transition:
+        background-color 50ms linear,
+        outline-color 50ms linear;
 
-      // stylelint-disable-next-line no-duplicate-selectors
-      & {
-        border: 1px solid theme.color("primary", "border", "base");
-        width: theme.spacing(30);
-        padding-left: theme.spacing(2);
-        padding-right: theme.spacing(2);
-        justify-content: space-between;
+      .value,
+      .arrow {
+        color: theme.color("foreground");
+      }
+
+      .value {
+        @include theme.text("sm", "medium");
+
+        text-align: left;
+      }
+
+      .arrow {
+        transition: transform 300ms;
+        transform-origin: center;
+      }
+
+      &[data-hovered] {
+        background-color: theme.color("button-hover");
+      }
+
+      &[data-pressed] {
+        background-color: theme.color("button-pressed");
+
+        .arrow {
+          transform: rotateX(180deg);
+        }
+      }
+
+      &[data-focus-visible] {
+        outline-color: theme.color("accent");
       }
     }
   }
@@ -78,15 +132,72 @@
     padding: 0;
     list-style-type: none;
 
-    .token {
-      display: grid;
-      grid-template-columns: theme.spacing(40) 1fr theme.spacing(14);
+    & > li {
+      width: 100%;
+    }
+
+    .tokenAmountInput {
+      width: 100%;
+
+      &,
+      .label {
+        display: flex;
+        flex-flow: row nowrap;
+        gap: theme.spacing(3);
+        align-items: center;
+      }
+
+      .label {
+        @include theme.text("sm", "medium");
+
+        color: theme.color("heading");
+        width: 100%;
+
+        .icon {
+          width: theme.spacing(8);
+          height: theme.spacing(8);
+          align-items: center;
+          border-radius: theme.border-radius("full");
+          background: rgb(from white r g b / 40%);
+        }
+
+        .name {
+          word-break: break-all;
+        }
+      }
+
+      .inputGroup {
+        width: theme.spacing(32);
+        flex-shrink: 0;
+      }
+
+      &[data-pending] {
+        .label {
+          .icon,
+          .name {
+            background: rgb(from white r g b / 10%);
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+            @keyframes pulse {
+              50% {
+                opacity: 0.5;
+              }
+            }
+          }
+
+          .name {
+            height: 1em;
+            border-radius: theme.border-radius("md");
+            width: theme.spacing(20);
+          }
+        }
+      }
     }
   }
 
   .footer {
-    display: grid;
-    grid-template-columns: 1fr max-content;
+    display: flex;
+    place-content: space-between;
     gap: theme.spacing(8);
     align-items: center;
 
@@ -96,21 +207,17 @@
       color: theme.color("error");
       text-align: right;
     }
-
-    .submitButton {
-      @include theme.button("primary");
-    }
   }
 }
 
 .selectPopover {
   @include theme.reset {
-    background: theme.color("panel", "background");
-    border: 1px solid theme.color("panel", "border");
+    background: theme.color("demo-bg");
+    color: theme.color("foreground");
+    box-shadow: 0 4px 12px 0 theme.color("utils-widget-shadow");
+    border: 1px solid theme.color("widget-border");
     border-radius: theme.border-radius("base");
-    box-shadow: 0 8px 20px rgb(from black r g b / 10%);
     outline: none;
-    color: theme.color("panel", "text");
     padding: theme.spacing(1) 0;
     min-width: var(--trigger-width);
     z-index: theme.layer("select") !important;
@@ -118,16 +225,20 @@
     .selectItem {
       @include theme.text("sm", "normal");
 
-      padding: theme.spacing(1) theme.spacing(4);
+      padding: theme.spacing(2) theme.spacing(4);
       cursor: pointer;
+      outline: 2px solid transparent;
+      outline-offset: -#{theme.spacing(0.5)};
+      transition:
+        background-color 50ms linear,
+        outline-color 50ms linear;
 
       &[data-focused] {
-        background: rgb(from black r g b / 10%);
-        outline: none;
+        background-color: rgb(from white r g b / 10%);
       }
 
       &[data-focus-visible] {
-        outline: 2px solid theme.color("primary", "border", "base");
+        outline-color: theme.color("accent");
       }
     }
   }

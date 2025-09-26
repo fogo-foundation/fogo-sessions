@@ -1,0 +1,78 @@
+@use "./theme";
+
+.sendTokenPage {
+  height: 100%;
+  position: relative;
+
+  .sendTokenForm {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: theme.spacing(8);
+    padding: theme.spacing(8);
+    align-items: center;
+
+    .backButton {
+      position: absolute;
+      top: theme.spacing(4);
+      left: theme.spacing(4);
+    }
+
+    .header {
+      display: flex;
+      flex-flow: column nowrap;
+      gap: theme.spacing(4);
+      text-align: center;
+      align-items: center;
+
+      .tokenIcon {
+        width: theme.spacing(12);
+        height: theme.spacing(12);
+        border-radius: theme.border-radius("full");
+      }
+
+      .tokenName {
+        @include theme.text("lg", "medium");
+
+        color: theme.color("heading");
+        word-break: break-all;
+      }
+
+      .amountInWallet {
+        @include theme.text("sm");
+
+        color: theme.color("paragraph");
+        word-break: break-all;
+      }
+    }
+
+    .field {
+      width: 100%;
+
+      .action {
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .qrCodeScanner {
+    position: absolute;
+    inset: 0;
+    background: rgb(from black r g b / 50%);
+    display: grid;
+    place-content: center;
+
+    .closeButton {
+      position: absolute;
+      top: theme.spacing(2);
+      right: theme.spacing(2);
+      z-index: 1;
+    }
+
+    .camera {
+      z-index: 0;
+      height: 100%;
+      position: absolute !important;
+      inset: 0;
+    }
+  }
+}

@@ -421,6 +421,74 @@ $color-pallette: (
 }
 
 $color: (
+  "button-signin-bg": #333,
+  "button-hover": #404144,
+  "button-pressed": #3a3a3b,
+  "foreground": pallette-color("white"),
+  "heading": rgb(from pallette-color("white") r g b / 90%),
+  "paragraph": rgb(from pallette-color("white") r g b / 80%),
+  "card": #1f1f24,
+  "widget-border": #33333d,
+  "utils-widget-shadow": rgb(from black r g b / 50%),
+  "border": #3e3e47,
+  "border-hover": #565662,
+  "background": #27272c,
+  "checkbox-hover": #24252b,
+  "accent": #66ceff,
+  "accent-opaque": rgb(102 206 255 / 10%),
+  "spinner": #b9bad9,
+  "demo-bg": #141418,
+  "input-bg": #151519,
+  "muted": rgb(from pallette-color("white") r g b / 65%),
+  "button": (
+    "primary": (
+      "foreground": pallette-color("white"),
+      "background": (
+        "normal": #ff3d00,
+        "hover": #f3582b,
+        "pressed": #cc3100,
+      ),
+    ),
+    "solid": (
+      "foreground": pallette-color("black"),
+      "background": (
+        "normal": pallette-color("white"),
+        "hover": #f3f3f7,
+        "pressed": #ccc,
+      ),
+    ),
+    "secondary": (
+      "foreground": pallette-color("black"),
+      "background": (
+        "normal": #66ceff,
+        "hover": #79ccf7,
+        "pressed": #52a5cc,
+      ),
+    ),
+    "ghost": (
+      "foreground": pallette-color("white"),
+      "background": (
+        "normal": transparent,
+        "hover": #b9bad91a,
+        "pressed": #c3c4d50d,
+      ),
+    ),
+    "outline": (
+      "border": rgb(195 196 213 / 30%),
+      "foreground": pallette-color("white"),
+      "background": (
+        "normal": transparent,
+        "hover": #b9bad91a,
+        "pressed": #c3c4d50d,
+      ),
+    ),
+  ),
+
+  "states": (
+    "error": #ff5227,
+    "success": #38e97c,
+  ),
+
   "mainButton": (
     "background": (
       "base": pallette-color("slate", 800),
@@ -497,6 +565,13 @@ $color: (
     font-optical-sizing: auto;
     font-style: normal;
     color-scheme: dark;
+    color: purple;
+
+    *::selection {
+      color: pallette-color("black");
+      background: color("accent");
+    }
+
     @content;
   }
 }
@@ -518,91 +593,6 @@ $color: (
   font-weight: font-weight($weight);
   margin: 0;
   font-style: normal;
-}
-
-@mixin button($variant) {
-  @include text("sm", "semibold");
-
-  background-color: color($variant, "background", "base");
-  border: 2px solid color($variant, "border", "base");
-  color: color($variant, "text", "base");
-  border-radius: border-radius("md");
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-  justify-content: center;
-  gap: spacing(2);
-  transition:
-    background-color linear 50ms,
-    border-color linear 50ms,
-    color linear 50ms;
-  position: relative;
-  padding: spacing(1) spacing(10);
-  cursor: pointer;
-
-  &::before {
-    position: absolute;
-    top: calc((100% - spacing(4)) / 2 - 2px);
-    left: spacing(3);
-    content: "";
-    display: block;
-    width: spacing(4);
-    height: spacing(4);
-    border: 2px solid color($variant, "border", "base");
-    border-radius: border-radius("full");
-    border-top-color: color($variant, "border", "disabled");
-    animation: spin 1s linear infinite;
-    opacity: 0;
-    transition: opacity linear 100ms;
-
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      20% {
-        transform: rotate(40deg);
-      }
-
-      80% {
-        transform: rotate(320deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-  }
-
-  &[data-hovered] {
-    background-color: color($variant, "background", "hovered");
-  }
-
-  &[data-pressed] {
-    background-color: color($variant, "background", "pressed");
-  }
-
-  &[data-disabled],
-  &[data-pending] {
-    background-color: color($variant, "background", "disabled");
-    color: color($variant, "text", "disabled");
-    border-color: color($variant, "border", "disabled");
-  }
-
-  &[data-disabled] {
-    cursor: not-allowed;
-  }
-
-  &[data-pending] {
-    cursor: wait;
-
-    &::before {
-      opacity: 1;
-    }
-  }
-
-  &[data-focus-visible] {
-    outline: 2px solid color("primary", "border", "base");
-    outline-offset: spacing(0.5);
-  }
+  text-box-trim: trim-both;
+  text-box-edge: cap alphabetic;
 }

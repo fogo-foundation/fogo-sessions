@@ -3,66 +3,53 @@ import type { ReactNode, ComponentProps } from "react";
 import {
   FieldError,
   Input,
+  TextArea,
   Label,
   TextField as TextFieldImpl,
-  NumberField as NumberFieldImpl,
-  Text,
   Group,
-  Button,
 } from "react-aria-components";
 
 import styles from "./field.module.css";
 
 export const TextField = ({
   label,
-  description,
   className,
-  controls,
+  labelExtra,
+  placeholder,
+  inputGroupClassName,
+  isPending,
   ...props
 }: ComponentProps<typeof TextFieldImpl> & {
   label?: ReactNode | undefined;
-  description?: ReactNode | undefined;
-  controls?: ReactNode;
-}) => (
-  <TextFieldImpl className={clsx(styles.textField, className)} {...props}>
-    <Field label={label} description={description}>
-      <Input className={styles.input ?? ""} />
-      {controls && <div className={styles.controls}>{controls}</div>}
-    </Field>
-  </TextFieldImpl>
-);
-
-export const NumberField = ({
-  label,
-  description,
-  className,
-  ...props
-}: ComponentProps<typeof NumberFieldImpl> & {
-  label?: ReactNode | undefined;
-  description?: ReactNode | undefined;
-}) => (
-  <NumberFieldImpl className={clsx(styles.numberField, className)} {...props}>
-    <Field label={label} description={description}>
-      <Input className={styles.input ?? ""} />
-      <Button slot="increment">+</Button>
-      <Button slot="decrement">-</Button>
-    </Field>
-  </NumberFieldImpl>
-);
-
-const Field = ({
-  label,
-  description,
-  children,
-}: {
-  label?: ReactNode | undefined;
-  description?: ReactNode | undefined;
-  children: ReactNode;
-}) => (
-  <>
-    {label && <Label className={styles.label ?? ""}>{label}</Label>}
-    <Group className={styles.inputGroup ?? ""}>
-      {children}
+  labelExtra?: ReactNode;
+  placeholder?: ComponentProps<typeof Input>["placeholder"] | undefined;
+  inputGroupClassName?: string | undefined;
+  isPending?: boolean | undefined;
+} & (
+    | {
+        double?: false | undefined;
+      }
+    | {
+        double: true;
+      }
+  )) => (
+  <TextFieldImpl
+    className={clsx(styles.textField, className)}
+    data-double={props.double ? "" : undefined}
+    data-pending={isPending ? "" : undefined}
+    isDisabled={isPending ?? props.isDisabled ?? false}
+    {...props}
+  >
+    <div className={styles.labelLine}>
+      {label && <Label className={styles.label ?? ""}>{label}</Label>}
+      {labelExtra && <div className={styles.labelExtra}>{labelExtra}</div>}
+    </div>
+    <Group className={clsx(styles.inputGroup, inputGroupClassName)}>
+      {props.double ? (
+        <TextArea placeholder={placeholder} className={styles.input ?? ""} />
+      ) : (
+        <Input placeholder={placeholder} className={styles.input ?? ""} />
+      )}
       <FieldError className={styles.error ?? ""}>
         {({ defaultChildren }) => (
           <>
@@ -79,10 +66,5 @@ const Field = ({
         )}
       </FieldError>
     </Group>
-    {description && (
-      <Text className={styles.description} slot="description">
-        {description}
-      </Text>
-    )}
-  </>
+  </TextFieldImpl>
 );

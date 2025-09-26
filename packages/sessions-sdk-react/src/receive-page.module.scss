@@ -1,0 +1,59 @@
+@use "./theme";
+
+.receivePage {
+  display: flex;
+  flex-flow: column nowrap;
+  height: 100%;
+
+  .header {
+    padding: theme.spacing(2);
+    padding-right: theme.spacing(3);
+
+    &,
+    .title {
+      display: flex;
+      flex-flow: row nowrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: theme.spacing(2);
+    }
+
+    .title {
+      margin: 0;
+
+      .icon {
+        color: theme.color("accent");
+        font-size: theme.spacing(4);
+        margin: theme.spacing(1.5) theme.spacing(2);
+      }
+
+      .text {
+        @include theme.text("base", "medium");
+
+        color: theme.color("heading");
+      }
+    }
+  }
+
+  .body {
+    flex-grow: 1;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    padding-top: theme.spacing(12);
+    text-align: center;
+    gap: theme.spacing(4);
+
+    .qrCode {
+      padding: theme.spacing(4);
+      background: theme.pallette-color("white");
+      width: theme.spacing(50);
+      height: theme.spacing(50);
+      border-radius: theme.border-radius("xl");
+    }
+
+    .copyWalletKeyButton {
+      width: theme.spacing(50);
+    }
+  }
+}
