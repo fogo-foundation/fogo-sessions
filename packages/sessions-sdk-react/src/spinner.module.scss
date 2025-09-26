@@ -1,0 +1,36 @@
+@use "./theme";
+
+.spinnerContainer {
+  display: grid;
+  place-content: center;
+
+  .spinner {
+    display: block;
+    width: theme.spacing(18);
+    height: theme.spacing(18);
+    border: 2px solid theme.color("spinner");
+    border-top-color: transparent;
+    border-radius: theme.border-radius("full");
+    animation: spin 1s linear infinite;
+    transition: opacity linear 100ms;
+    margin-left: theme.spacing(1);
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      20% {
+        transform: rotate(40deg);
+      }
+
+      80% {
+        transform: rotate(320deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  }
+}

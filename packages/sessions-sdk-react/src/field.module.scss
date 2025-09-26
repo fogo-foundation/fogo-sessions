@@ -1,124 +1,132 @@
 @use "./theme";
 
-.textField,
-.numberField {
-  display: grid;
-  grid-template-columns: repeat(3, max-content);
-  gap: theme.spacing(2);
-  align-items: center;
-  position: relative;
+.textField {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: theme.spacing(3);
 
-  .label {
-    @include theme.text("sm", "semibold");
+  .labelLine {
+    @include theme.text("xs", "medium");
 
-    text-align: right;
-    margin-right: theme.spacing(2);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    flex-grow: 1;
+
+    .label {
+      color: theme.color("paragraph");
+      width: 100%;
+    }
   }
 
   .inputGroup {
     position: relative;
-    background: rgb(from white r g b / 50%);
-    display: flex;
-    flex-flow: row nowrap;
-    border-radius: theme.border-radius("md");
-    border: 1px solid theme.color("panel", "border");
+    display: grid;
 
     .input {
-      padding: theme.spacing(1) theme.spacing(2);
-      text-overflow: ellipsis;
-      color: theme.color("panel", "text");
-      outline: none;
-      min-width: 0;
-      width: 100%;
-      background: transparent;
-      border: none;
-    }
+      @include theme.text("sm");
 
-    .controls {
-      padding: theme.spacing(0.5);
+      padding: theme.spacing(3);
+      border-radius: theme.border-radius("lg");
+      border: 1px solid theme.color("border");
+      background: theme.color("input-bg");
+      outline: 3px solid transparent;
+      color: theme.color("foreground");
+      height: theme.spacing(8);
+      width: 100%;
+      text-box-trim: none;
+      text-overflow: ellipsis;
+      transition:
+        border-color 50ms linear,
+        outline-color 50ms linear;
+
+      &::placeholder {
+        color: theme.color("muted");
+        opacity: 0.5;
+      }
+
+      &[data-hovered] {
+        border-color: theme.color("border-hover");
+      }
+
+      &[data-focused] {
+        border-color: theme.color("accent");
+        outline-color: theme.color("accent-opaque");
+      }
     }
 
     .error {
-      @include theme.text("xs", "normal");
+      @include theme.text("sm", "normal");
 
       position: absolute;
-      background: white;
-      color: theme.color("error");
-      padding: theme.spacing(0.5) theme.spacing(2);
+      background: theme.color("demo-bg");
+      color: theme.color("states", "error");
+      padding: theme.spacing(3);
       border: 1px solid theme.color("error");
       left: theme.spacing(4);
-      bottom: theme.spacing(9);
+      bottom: theme.spacing(10);
       display: none;
       border-radius: theme.border-radius("md");
-      box-shadow: 1px 1px 2px rgb(from black r g b / 40%);
+      box-shadow: 0 4px 12px 0 theme.color("utils-widget-shadow");
 
       .overlayArrow {
-        fill: white;
+        fill: theme.color("demo-bg");
         stroke: theme.color("error");
         position: absolute;
         bottom: -#{theme.spacing(3)};
         left: theme.spacing(4);
       }
     }
+  }
 
-    &:has(.input[data-focused]) {
-      outline: 2px solid theme.color("primary", "border", "base");
+  &[data-double] {
+    .input {
+      height: theme.spacing(14);
+      text-overflow: unset;
+      resize: none;
+      overflow: hidden;
     }
 
-    &:has(.input[data-focused]) .error {
-      display: block;
+    .error {
+      bottom: theme.spacing(16);
     }
   }
 
-  .description {
-    @include theme.text("xs", "semibold");
+  &[data-disabled],
+  &[data-pending] {
+    .input {
+      background: rgb(from white r g b / 30%);
 
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  // stylelint-disable-next-line no-descending-specificity
-  &[data-invalid] .inputGroup {
-    border-color: theme.color("error");
-
-    &:has(.input[data-focused]) {
-      outline-color: theme.color("error");
+      &,
+      &[data-hovered] {
+        border: 1px solid rgb(from white r g b / 40%);
+      }
     }
   }
 
   &[data-disabled] {
-    color: theme.color("primary", "text", "disabled");
-
     &,
-    .name,
     .input {
       cursor: not-allowed;
     }
   }
-}
 
-.numberField .inputGroup {
-  .input {
-    padding-right: theme.spacing(14);
+  &[data-pending] {
+    &,
+    .input {
+      cursor: wait;
+    }
   }
 
-  button {
-    @include theme.button("ghost");
+  &[data-invalid] {
+    .input:not([data-focused]) {
+      border-color: theme.color("states", "error");
+    }
 
-    // stylelint-disable-next-line no-duplicate-selectors
-    & {
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      padding-left: theme.spacing(1);
-      padding-right: theme.spacing(1);
-      width: theme.spacing(6);
-
-      &[slot="increment"] {
-        right: theme.spacing(6);
+    .inputGroup:has(.input[data-hovered]),
+    .inputGroup:has(.input[data-focused]) {
+      .error {
+        display: block;
       }
     }
   }
