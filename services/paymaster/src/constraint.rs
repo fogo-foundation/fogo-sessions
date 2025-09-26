@@ -72,16 +72,15 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
-fn is_compute_budget_instruction(
+fn instruction_matches_program(
     transaction: &VersionedTransaction,
     instruction_index: usize,
+    program_to_match: &Pubkey,
 ) -> bool {
     if let Some(instruction) = transaction.message.instructions().get(instruction_index) {
         let static_accounts = transaction.message.static_account_keys();
         let program_id = instruction.program_id(static_accounts);
-        if program_id == &solana_compute_budget_interface::id()
-            && ComputeBudgetInstruction::try_from_slice(&instruction.data).is_ok()
-        {
+        if program_id == program_to_match {
             return true;
         }
     }
@@ -107,7 +106,11 @@ impl VariationOrderedInstructionConstraints {
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         while constraint_index < self.instructions.len() {
-            if is_compute_budget_instruction(transaction, instruction_index) {
+            if instruction_matches_program(
+                transaction,
+                instruction_index,
+                &solana_compute_budget_interface::id(),
+            ) {
                 instruction_index += 1;
                 continue;
             }
@@ -649,8 +652,9 @@ pub fn check_gas_spend(
 
 /// Computes the priority fee from the transaction's compute budget instructions.
 /// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
-/// If multiple compute budget instructions are present, the transaction will fail.
-pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
+/// If multiple compute budget instructions are present, the validation will fail.
+/// If compute budget instructions have invalid data, the validation will fail.
+pub fn process_compute_budget_instructions(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
     let mut cu_limit = None;
     let mut micro_lamports_per_cu = None;
 
@@ -688,6 +692,11 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
                 }
                 _ => {}
             }
+        } else {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid compute budget instruction data".to_string(),
+            ));
         }
     }
 
@@ -701,6 +710,6 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
 /// Computes the gas spend (in lamports) for a transaction based on signatures and priority fee.
 pub fn compute_gas_spent(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
     let n_signatures = transaction.signatures.len() as u64;
-    let priority_fee = get_priority_fee(transaction)?;
+    let priority_fee = process_compute_budget_instructions(transaction)?;
     Ok(n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee)
 }
