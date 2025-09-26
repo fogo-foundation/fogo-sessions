@@ -654,7 +654,9 @@ pub fn check_gas_spend(
 /// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
 /// If multiple compute budget instructions are present, the validation will fail.
 /// If compute budget instructions have invalid data, the validation will fail.
-pub fn process_compute_budget_instructions(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
+pub fn process_compute_budget_instructions(
+    transaction: &VersionedTransaction,
+) -> Result<u64, (StatusCode, String)> {
     let mut cu_limit = None;
     let mut micro_lamports_per_cu = None;
 
