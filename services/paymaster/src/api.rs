@@ -1,7 +1,7 @@
 use crate::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
-use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
+use crate::rpc::{send_and_confirm_transaction, send_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{ErrorResponse, IntoResponse, Response};
@@ -136,6 +136,7 @@ impl DomainState {
     /// Checks that the transaction meets at least one of the specified variations for this domain.
     /// If so, returns the variation this transaction matched against.
     /// Otherwise, returns an error with a message indicating why the transaction is invalid.
+    #[tracing::instrument(skip_all, fields(variation,))]
     pub async fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
@@ -176,6 +177,7 @@ impl DomainState {
                 .is_ok()
         });
         if let Some(variation) = matched {
+            tracing::Span::current().record("variation", variation.name().to_string());
             Ok(variation)
         } else {
             Err((
@@ -278,6 +280,11 @@ async fn readiness_handler() -> StatusCode {
     request_body = SponsorAndSendPayload,
     params(SponsorAndSendQuery)
 )]
+#[tracing::instrument(
+    skip_all,
+    name = "sponsor_and_send",
+    fields(domain, variation, tx_hash)
+)]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
@@ -285,6 +292,7 @@ async fn sponsor_and_send_handler(
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
+    tracing::Span::current().record("domain", domain.as_str());
     let domain_state = get_domain_state(&state, &domain)?;
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
@@ -310,6 +318,7 @@ async fn sponsor_and_send_handler(
         .await
     {
         Ok(variation) => {
+            tracing::Span::current().record("variation", variation.name());
             obs_validation(
                 domain.clone(),
                 variation.name().to_owned(),
@@ -327,6 +336,7 @@ async fn sponsor_and_send_handler(
     transaction.signatures[0] = domain_state
         .sponsor
         .sign_message(&transaction.message.serialize());
+    tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
     if confirm {
         let confirmation_result = send_and_confirm_transaction(
@@ -358,22 +368,21 @@ async fn sponsor_and_send_handler(
 
         Ok(SponsorAndSendResponse::Confirm(confirmation_result))
     } else {
-        let signature = state
-            .chain_index
-            .rpc
-            .send_transaction_with_config(
-                &transaction,
-                RpcSendTransactionConfig {
-                    skip_preflight: true,
-                    ..RpcSendTransactionConfig::default()
-                },
+        let signature = send_transaction(
+            &state.chain_index.rpc,
+            &transaction,
+            RpcSendTransactionConfig {
+                skip_preflight: !domain_state.enable_preflight_simulation,
+                preflight_commitment: Some(CommitmentLevel::Processed),
+                ..RpcSendTransactionConfig::default()
+            },
+        )
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to broadcast transaction: {err}"),
             )
-            .map_err(|err| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to broadcast transaction: {err}"),
-                )
-            })?;
+        })?;
 
         obs_send(domain.clone(), matched_variation_name.clone(), None);
 
