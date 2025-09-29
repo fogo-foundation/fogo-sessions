@@ -25,14 +25,8 @@ export const TextField = ({
   placeholder?: ComponentProps<typeof Input>["placeholder"] | undefined;
   inputGroupClassName?: string | undefined;
   isPending?: boolean | undefined;
-} & (
-    | {
-        double?: false | undefined;
-      }
-    | {
-        double: true;
-      }
-  )) => (
+  double?: boolean | undefined;
+}) => (
   <TextFieldImpl
     className={clsx(styles.textField, className)}
     data-double={props.double ? "" : undefined}

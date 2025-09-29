@@ -39,6 +39,7 @@
         height: theme.spacing(8);
         border-radius: theme.border-radius("full");
         background: rgb(from white r g b / 40%);
+        flex-shrink: 0;
       }
 
       .nameAndSymbol {
@@ -52,7 +53,7 @@
         .symbol {
           white-space: nowrap;
           text-overflow: ellipsis;
-          overflow: hidden;
+          overflow-x: clip;
           width: 100%;
         }
 

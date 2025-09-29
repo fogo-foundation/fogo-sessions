@@ -135,6 +135,7 @@ export const SendTokenPage = ({
           autoFocus
           placeholder="Enter recipient address"
           double
+          data-1p-ignore
           labelExtra={
             <Link
               excludeFromTabOrder={showScanner}
