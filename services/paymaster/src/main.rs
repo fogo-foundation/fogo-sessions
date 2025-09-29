@@ -23,9 +23,10 @@ async fn main() -> anyhow::Result<()> {
     let config = load_config(&cli.config).unwrap();
 
     let resource = opentelemetry_sdk::Resource::builder()
-        .with_attributes(vec![
-            opentelemetry::KeyValue::new("service.name", "paymaster-service"),
-        ])
+        .with_attributes(vec![opentelemetry::KeyValue::new(
+            "service.name",
+            "paymaster-service",
+        )])
         .build();
 
     let exporter = opentelemetry_otlp::SpanExporter::builder()
@@ -34,7 +35,9 @@ async fn main() -> anyhow::Result<()> {
 
     let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
         .with_resource(resource)
-        .with_span_processor(opentelemetry_sdk::trace::BatchSpanProcessor::builder(exporter).build())
+        .with_span_processor(
+            opentelemetry_sdk::trace::BatchSpanProcessor::builder(exporter).build(),
+        )
         .build();
 
     let tracer = provider.tracer("paymaster-service");
@@ -47,9 +50,10 @@ async fn main() -> anyhow::Result<()> {
                 .with_target(false)
                 .with_level(true),
         )
-        .with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(
-            |_| "info,paymaster=trace".parse().unwrap(),
-        ))
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info,paymaster=trace".parse().unwrap()),
+        )
         .with(telemetry)
         .init();
 

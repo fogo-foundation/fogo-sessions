@@ -72,6 +72,7 @@ pub async fn send_and_confirm_transaction(
     skip_all,
     fields(tx_hash = %transaction.signatures[0])
 )]
+#[allow(clippy::result_large_err)]
 pub fn send_transaction(
     rpc: &RpcClient,
     transaction: &VersionedTransaction,
