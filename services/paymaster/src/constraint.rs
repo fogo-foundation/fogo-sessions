@@ -76,16 +76,19 @@ fn instruction_matches_program(
     transaction: &VersionedTransaction,
     instruction_index: usize,
     program_to_match: &Pubkey,
-) -> bool {
-    if let Some(instruction) = transaction.message.instructions().get(instruction_index) {
+) -> anyhow::Result<bool> {
+    let instruction = transaction.message.instructions().get(instruction_index);
+    if let Some(instruction) = instruction {
         let static_accounts = transaction.message.static_account_keys();
         let program_id = instruction.program_id(static_accounts);
         if program_id == program_to_match {
-            return true;
+            return Ok(true);
         }
+    } else {
+        anyhow::bail!("Instruction index {instruction_index} out of bounds");
     }
 
-    false
+    Ok(false)
 }
 
 impl VariationOrderedInstructionConstraints {
@@ -106,11 +109,13 @@ impl VariationOrderedInstructionConstraints {
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         while constraint_index < self.instructions.len() {
-            if instruction_matches_program(
+            let is_compute_budget_ix = instruction_matches_program(
                 transaction,
                 instruction_index,
                 &solana_compute_budget_interface::id(),
-            ) {
+            ).unwrap_or(false);
+
+            if is_compute_budget_ix {
                 instruction_index += 1;
                 continue;
             }
