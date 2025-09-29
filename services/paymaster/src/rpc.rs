@@ -1,7 +1,9 @@
 use axum::{http::StatusCode, response::ErrorResponse};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcSendTransactionConfig};
 use solana_commitment_config::CommitmentConfig;
-use solana_rpc_client_api::client_error::Error;
+use solana_hash::Hash;
+use solana_rpc_client_api::{client_error::Error, client_error::Result as ClientResult};
+use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::time::Duration;
@@ -39,19 +41,22 @@ fn to_error_response(err: Error) -> ErrorResponse {
 }
 
 // Inspired by send_and_confirm_transaction from solana-rpc-client, but accepts a config
+#[tracing::instrument(
+    skip_all,
+    fields(tx_hash = %transaction.signatures[0])
+)]
 pub async fn send_and_confirm_transaction(
     rpc: &RpcClient,
     transaction: &VersionedTransaction,
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResult, ErrorResponse> {
     let recent_blockhash = transaction.message.recent_blockhash();
-    let signature = transaction.signatures[0];
-    match rpc.send_transaction_with_config(transaction, config) {
-        Ok(signature) => signature,
+    let signature = match send_transaction(rpc, transaction, config) {
+        Ok(sig) => sig,
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
                 return Ok(ConfirmationResult::Failed {
-                    signature: signature.to_string(),
+                    signature: transaction.signatures[0].to_string(),
                     error,
                 });
             }
@@ -59,9 +64,35 @@ pub async fn send_and_confirm_transaction(
         }
     };
 
+    confirm_transaction(rpc, &signature, recent_blockhash).await
+}
+
+// Wrapper for send_transaction_with_config to add tracing
+#[tracing::instrument(
+    skip_all,
+    fields(tx_hash = %transaction.signatures[0])
+)]
+#[allow(clippy::result_large_err)]
+pub fn send_transaction(
+    rpc: &RpcClient,
+    transaction: &VersionedTransaction,
+    config: RpcSendTransactionConfig,
+) -> ClientResult<Signature> {
+    rpc.send_transaction_with_config(transaction, config)
+}
+
+#[tracing::instrument(
+    skip_all,
+    fields(tx_hash = %signature)
+)]
+pub async fn confirm_transaction(
+    rpc: &RpcClient,
+    signature: &Signature,
+    recent_blockhash: &Hash,
+) -> Result<ConfirmationResult, ErrorResponse> {
     for status_retry in 0..GET_STATUS_RETRIES {
         match rpc
-            .get_signature_status(&signature)
+            .get_signature_status(signature)
             .map_err(to_error_response)?
         {
             Some(Ok(_)) => {

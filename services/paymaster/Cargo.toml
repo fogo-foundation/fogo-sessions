@@ -18,6 +18,9 @@ dashmap = "6.1.0"
 domain-registry = { path = "../../programs/domain-registry" }
 fogo-sessions-sdk = {workspace = true}
 hex = "0.4.3"
+opentelemetry = "0.30.0"
+opentelemetry-otlp = {version = "0.30.0", features = ["grpc-tonic"]}
+opentelemetry_sdk = {version = "0.30.0", features = ["rt-tokio"]}
 reqwest = "0.11"
 serde = "1.0.219"
 serde_with = { version = "3.14.0", features = ["base64"] }
@@ -27,6 +30,7 @@ solana-commitment-config = {workspace = true}
 solana-compute-budget-interface = { workspace = true, features = ["borsh"] }
 solana-derivation-path = {workspace = true}
 solana-ed25519-program = {workspace = true}
+solana-hash = {workspace = true}
 solana-keypair = {workspace = true, features = ["seed-derivable"]}
 solana-message = {workspace = true}
 solana-packet = {workspace = true}
@@ -42,6 +46,9 @@ solana-transaction-error = {workspace = true}
 solana-transaction-status-client-types = {workspace = true}
 tokio = {version = "1.46.1", features = ["full"]}
 tower-http = {version = "0.6.6", features = ["cors"]}
+tracing = "0.1.41"
+tracing-opentelemetry = "0.31.0"
+tracing-subscriber = {version = "0.3.20", features = ["env-filter", "json"]}
 utoipa = "5.4.0"
 utoipa-axum = "0.2.0"
 
