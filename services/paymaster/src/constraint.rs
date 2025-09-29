@@ -72,6 +72,25 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
+fn instruction_matches_program(
+    transaction: &VersionedTransaction,
+    instruction_index: usize,
+    program_to_match: &Pubkey,
+) -> anyhow::Result<bool> {
+    let instruction = transaction.message.instructions().get(instruction_index);
+    if let Some(instruction) = instruction {
+        let static_accounts = transaction.message.static_account_keys();
+        let program_id = instruction.program_id(static_accounts);
+        if program_id == program_to_match {
+            return Ok(true);
+        }
+    } else {
+        anyhow::bail!("Instruction index {instruction_index} out of bounds");
+    }
+
+    Ok(false)
+}
+
 impl VariationOrderedInstructionConstraints {
     pub fn validate_transaction(
         &self,
@@ -80,9 +99,29 @@ impl VariationOrderedInstructionConstraints {
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
         let mut instruction_index = 0;
+        let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
 
-        for constraint in self.instructions.iter() {
+        // Note: this validation algorithm is technically incorrect, because of optional constraints.
+        // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
+        // is optional, it might be possible that matching against j leads to failure due to later
+        // constraints failing while matching against j+1 would result in a valid transaction match.
+        // Technically, the correct way to validate this is via branching (efficiently via DP), but given
+        // the expected variation space and a desire to avoid complexity, we use this greedy approach.
+        while constraint_index < self.instructions.len() {
+            let is_compute_budget_ix = instruction_matches_program(
+                transaction,
+                instruction_index,
+                &solana_compute_budget_interface::id(),
+            )
+            .unwrap_or(false);
+
+            if is_compute_budget_ix {
+                instruction_index += 1;
+                continue;
+            }
+
+            let constraint = &self.instructions[constraint_index];
             let result = constraint.validate_instruction(
                 transaction,
                 instruction_index,
@@ -95,8 +134,10 @@ impl VariationOrderedInstructionConstraints {
                 if constraint.required {
                     return result;
                 }
+                constraint_index += 1;
             } else {
                 instruction_index += 1;
+                constraint_index += 1;
             }
         }
 
@@ -617,8 +658,11 @@ pub fn check_gas_spend(
 
 /// Computes the priority fee from the transaction's compute budget instructions.
 /// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
-/// If multiple compute budget instructions are present, the transaction will fail.
-pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
+/// If multiple compute budget instructions are present, the validation will fail.
+/// If compute budget instructions have invalid data, the validation will fail.
+pub fn process_compute_budget_instructions(
+    transaction: &VersionedTransaction,
+) -> Result<u64, (StatusCode, String)> {
     let mut cu_limit = None;
     let mut micro_lamports_per_cu = None;
 
@@ -656,6 +700,11 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
                 }
                 _ => {}
             }
+        } else {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid compute budget instruction data".to_string(),
+            ));
         }
     }
 
@@ -669,6 +718,6 @@ pub fn get_priority_fee(transaction: &VersionedTransaction) -> Result<u64, (Stat
 /// Computes the gas spend (in lamports) for a transaction based on signatures and priority fee.
 pub fn compute_gas_spent(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
     let n_signatures = transaction.signatures.len() as u64;
-    let priority_fee = get_priority_fee(transaction)?;
+    let priority_fee = process_compute_budget_instructions(transaction)?;
     Ok(n_signatures * LAMPORTS_PER_SIGNATURE + priority_fee)
 }
