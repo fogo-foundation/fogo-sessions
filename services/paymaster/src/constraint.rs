@@ -113,7 +113,8 @@ impl VariationOrderedInstructionConstraints {
                 transaction,
                 instruction_index,
                 &solana_compute_budget_interface::id(),
-            ).unwrap_or(false);
+            )
+            .unwrap_or(false);
 
             if is_compute_budget_ix {
                 instruction_index += 1;
