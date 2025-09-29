@@ -385,7 +385,12 @@ async fn sponsor_and_send_handler(
                 ..RpcSendTransactionConfig::default()
             },  
         )
-        .await?;
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to broadcast transaction: {err}"),
+            )
+        })?;
 
         obs_send(domain.clone(), matched_variation_name.clone(), None);
 

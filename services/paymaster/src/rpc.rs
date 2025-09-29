@@ -2,7 +2,7 @@ use axum::{http::StatusCode, response::ErrorResponse};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcSendTransactionConfig};
 use solana_commitment_config::CommitmentConfig;
 use solana_hash::Hash;
-use solana_rpc_client_api::client_error::Error;
+use solana_rpc_client_api::{client_error::Error, client_error::Result as ClientResult};
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
@@ -51,26 +51,33 @@ pub async fn send_and_confirm_transaction(
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResult, ErrorResponse> {
     let recent_blockhash = transaction.message.recent_blockhash();
-    let signature = send_transaction(rpc, transaction, config).await?;
+    let signature = match send_transaction(rpc, transaction, config) {
+        Ok(sig) => sig,
+        Err(err) => {
+            if let Some(error) = err.get_transaction_error() {
+                return Ok(ConfirmationResult::Failed {
+                    signature: transaction.signatures[0].to_string(),
+                    error,
+                });
+            }
+            return Err(to_error_response(err));
+        }
+    };
 
     confirm_transaction(rpc, &signature, recent_blockhash).await
 }
 
+// Wrapper for send_transaction_with_config to add tracing
 #[tracing::instrument(
     skip_all,
     fields(tx_hash = %transaction.signatures[0])
 )]
-pub async fn send_transaction(
+pub fn send_transaction(
     rpc: &RpcClient,
     transaction: &VersionedTransaction,
     config: RpcSendTransactionConfig,
-) -> Result<Signature, ErrorResponse> {
-    // TODO: fix this error management (merge PR 179)
-    let signature = rpc
-        .send_transaction_with_config(transaction, config)
-        .map_err(to_error_response)?;
-
-    Ok(signature)
+) -> ClientResult<Signature> {
+    rpc.send_transaction_with_config(transaction, config)
 }
 
 #[tracing::instrument(
