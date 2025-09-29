@@ -59,7 +59,5 @@ async fn main() -> anyhow::Result<()> {
 
     api::run_server(config).await;
 
-    provider.shutdown()?;
-
     Ok(())
 }
