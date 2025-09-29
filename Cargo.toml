@@ -29,6 +29,7 @@ solana-commitment-config = "2.2.1"
 solana-compute-budget-interface = { version = "2.2.1", features = ["serde"] }
 solana-derivation-path = "2.2.1"
 solana-ed25519-program = "2.2.1"
+solana-hash = "2.2.1"
 solana-keypair = "2.2.1"
 solana-message = "2.2.1"
 solana-offchain-message = "2.2.1"

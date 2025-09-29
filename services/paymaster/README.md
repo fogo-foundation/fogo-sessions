@@ -30,3 +30,17 @@ v1 is a more fleshed out constraint set. It introduces constraints on each instr
 - a boolean indicating whether this instruction is explicitly required in the transaction.
 
 v1 does not enforce relationships across instructions (e.g. require instruction Y if instruction X is present, constrain data in instruction Y based on the value of data in instruction X). In this way, it is relatively stateless and allows for simple absolute constraints on the instructions.
+
+## Metrics and Logs
+
+The paymaster service records some metrics via Prometheus and some spans for timing of the transaction validation/submission/confirmation flow via OpenTelemetry. The service exports these OpenTelemetry spans to `localhost:4317`.
+
+You can run a local all in one jaeger instance to collect and visualize these spans by running:
+
+```bash
+docker run --name jaeger \
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  jaegertracing/all-in-one:1.63.0
+```
