@@ -1,5 +1,6 @@
 use crate::config::load_config;
 use clap::Parser;
+use opentelemetry::trace::TracerProvider;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
@@ -21,19 +22,22 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let config = load_config(&cli.config).unwrap();
 
-    let otlp_exporter = opentelemetry_otlp::new_exporter()
-        .tonic();
+    let resource = opentelemetry_sdk::Resource::builder()
+        .with_attributes(vec![
+            opentelemetry::KeyValue::new("service.name", "paymaster-service"),
+        ])
+        .build();
 
-    let tracer = opentelemetry_otlp::new_pipeline()
-        .tracing()
-        .with_exporter(otlp_exporter)
-        .with_trace_config(
-            opentelemetry_sdk::trace::Config::default()
-                .with_resource(opentelemetry_sdk::Resource::new(vec![
-                    opentelemetry::KeyValue::new("service.name", "paymaster-service"),
-                ])),
-        )
-        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+    let exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_tonic()
+        .build()?;
+
+    let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+        .with_resource(resource)
+        .with_span_processor(opentelemetry_sdk::trace::BatchSpanProcessor::builder(exporter).build())
+        .build();
+
+    let tracer = provider.tracer("paymaster-service");
 
     let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
 
@@ -51,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
 
     api::run_server(config).await;
 
-    opentelemetry::global::shutdown_tracer_provider();
+    provider.shutdown()?;
 
     Ok(())
 }
