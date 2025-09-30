@@ -3,6 +3,7 @@ use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use dashmap::DashMap;
 use solana_client::rpc_client::RpcClient;
+use solana_client::rpc_config::RpcTransactionConfig;
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_seed_derivable::SeedDerivable;
@@ -174,8 +175,14 @@ async fn fetch_transaction_from_rpc(tx_hash: &str, rpc_url: &str) -> Result<Vers
 
     let rpc_client = RpcClient::new(rpc_url.to_string());
 
+    let config = RpcTransactionConfig {
+        encoding: Some(UiTransactionEncoding::Base64),
+        max_supported_transaction_version: Some(0),
+        ..Default::default()
+    };
+
     let transaction = rpc_client
-        .get_transaction(&signature, UiTransactionEncoding::Base64)
+        .get_transaction_with_config(&signature, config)
         .with_context(|| format!("Failed to fetch transaction from RPC: {}", tx_hash))?;
 
     let versioned_transaction = transaction
