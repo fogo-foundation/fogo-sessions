@@ -4,7 +4,7 @@ use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
-use axum::response::{ErrorResponse, IntoResponse, Response};
+use axum::response::ErrorResponse;
 use axum::Json;
 use axum::{
     http::{HeaderName, Method},
@@ -219,20 +219,6 @@ struct SponsorAndSendQuery {
     domain: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(untagged)]
-pub enum SponsorAndSendResponse {
-    Confirm(ConfirmationResult),
-}
-
-impl IntoResponse for SponsorAndSendResponse {
-    fn into_response(self) -> Response {
-        match self {
-            SponsorAndSendResponse::Confirm(result) => Json(result).into_response(),
-        }
-    }
-}
-
 fn get_domain_name(
     domain_explicit: Option<String>,
     origin: Option<TypedHeader<Origin>>,
@@ -288,7 +274,7 @@ async fn sponsor_and_send_handler(
     origin: Option<TypedHeader<Origin>>,
     Query(SponsorAndSendQuery { domain, .. }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
-) -> Result<SponsorAndSendResponse, ErrorResponse> {
+) -> Result<ConfirmationResult, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
     tracing::Span::current().record("domain", domain.as_str());
     let domain_state = get_domain_state(&state, &domain)?;
@@ -364,7 +350,7 @@ async fn sponsor_and_send_handler(
         gas,
     );
 
-    Ok(SponsorAndSendResponse::Confirm(confirmation_result))
+    Ok(confirmation_result)
 }
 
 #[derive(serde::Deserialize, utoipa::IntoParams)]

@@ -1,4 +1,4 @@
-use axum::{http::StatusCode, response::ErrorResponse};
+use axum::{http::StatusCode, response::{ErrorResponse, IntoResponse, Response}, Json};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcSendTransactionConfig};
 use solana_commitment_config::CommitmentConfig;
 use solana_hash::Hash;
@@ -21,6 +21,12 @@ pub enum ConfirmationResult {
         signature: String,
         error: TransactionError,
     },
+}
+
+impl IntoResponse for ConfirmationResult {
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
 }
 
 impl ConfirmationResult {
