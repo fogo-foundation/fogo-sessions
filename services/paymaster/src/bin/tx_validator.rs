@@ -16,9 +16,9 @@ use std::fs;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use fogo_paymaster::config::{load_config, Config, Domain};
-use fogo_paymaster::constraint::{TransactionVariation, ContextualDomainKeys};
 use fogo_paymaster::api::ChainIndex;
+use fogo_paymaster::config::{load_config, Config, Domain};
+use fogo_paymaster::constraint::{ContextualDomainKeys, TransactionVariation};
 
 #[derive(Debug)]
 enum TransactionInput {
@@ -79,16 +79,32 @@ async fn main() -> Result<()> {
             // Ensure exactly one of transaction or transaction_hash is provided
             match (transaction, transaction_hash) {
                 (Some(tx), None) => {
-                    validate_transaction(config, domain, TransactionInput::Serialized(tx), manually_compute_sponsor).await?;
+                    validate_transaction(
+                        config,
+                        domain,
+                        TransactionInput::Serialized(tx),
+                        manually_compute_sponsor,
+                    )
+                    .await?;
                 }
                 (None, Some(hash)) => {
-                    validate_transaction(config, domain, TransactionInput::Hash(hash), manually_compute_sponsor).await?;
+                    validate_transaction(
+                        config,
+                        domain,
+                        TransactionInput::Hash(hash),
+                        manually_compute_sponsor,
+                    )
+                    .await?;
                 }
                 (None, None) => {
-                    return Err(anyhow!("Either --transaction or --transaction-hash must be provided"));
+                    return Err(anyhow!(
+                        "Either --transaction or --transaction-hash must be provided"
+                    ));
                 }
                 (Some(_), Some(_)) => {
-                    return Err(anyhow!("Cannot provide both --transaction and --transaction-hash"));
+                    return Err(anyhow!(
+                        "Cannot provide both --transaction and --transaction-hash"
+                    ));
                 }
             }
         }
@@ -104,12 +120,10 @@ async fn validate_transaction(
     manually_compute_sponsor: bool,
 ) -> Result<()> {
     let config = load_config(&config_path)
-        .with_context(|| format!("Failed to load config from {}", config_path))?;
+        .with_context(|| format!("Failed to load config from {config_path}"))?;
 
     let transaction = match transaction_input {
-        TransactionInput::Serialized(encoded_tx) => {
-            parse_transaction_from_base64(&encoded_tx)?
-        }
+        TransactionInput::Serialized(encoded_tx) => parse_transaction_from_base64(&encoded_tx)?,
         TransactionInput::Hash(tx_hash) => {
             fetch_transaction_from_rpc(&tx_hash, &config.solana_url).await?
         }
@@ -117,40 +131,57 @@ async fn validate_transaction(
 
     let mut cache = ValidationCache {
         contextual_keys: HashMap::new(),
-        chain_index: Arc::new(
-            ChainIndex {
-                rpc: RpcClient::new(config.solana_url.to_string()),
-                lookup_table_cache: DashMap::new(),
-            }
-        ),
+        chain_index: Arc::new(ChainIndex {
+            rpc: RpcClient::new(config.solana_url.to_string()),
+            lookup_table_cache: DashMap::new(),
+        }),
     };
 
     if let Some(domain_name) = domain_name {
         let domain = find_domain(&config, &domain_name)
             .ok_or_else(|| anyhow!("Domain '{}' not found in config", domain_name))?;
 
-        let matching_variations = check_transaction_variations(&transaction, &domain.tx_variations, &config, domain, &mut cache, manually_compute_sponsor).await?;
+        let matching_variations = check_transaction_variations(
+            &transaction,
+            &domain.tx_variations,
+            &config,
+            domain,
+            &mut cache,
+            manually_compute_sponsor,
+        )
+        .await?;
 
         if matching_variations.is_empty() {
-            println!("❌ Transaction does not match any variations for domain '{}'", domain_name);
+            println!("❌ Transaction does not match any variations for domain '{domain_name}'");
             std::process::exit(1);
         } else {
-            println!("✅ Transaction matches the following variations for domain '{}':", domain_name);
+            println!("✅ Transaction matches the following variations for domain '{domain_name}':");
             for variation_name in matching_variations {
-                println!("  - {}", variation_name);
+                println!("  - {variation_name}");
             }
         }
     } else {
         let mut any_matches = false;
 
         for domain in &config.domains {
-            let matching_variations = check_transaction_variations(&transaction, &domain.tx_variations, &config, domain, &mut cache, manually_compute_sponsor).await?;
+            let matching_variations = check_transaction_variations(
+                &transaction,
+                &domain.tx_variations,
+                &config,
+                domain,
+                &mut cache,
+                manually_compute_sponsor,
+            )
+            .await?;
 
             if !matching_variations.is_empty() {
                 any_matches = true;
-                println!("✅ Transaction matches variations for domain '{}':", domain.domain);
+                println!(
+                    "✅ Transaction matches variations for domain '{}':",
+                    domain.domain
+                );
                 for variation_name in matching_variations {
-                    println!("  - {}", variation_name);
+                    println!("  - {variation_name}");
                 }
                 println!();
             }
@@ -171,7 +202,7 @@ fn find_domain<'a>(config: &'a Config, domain_name: &str) -> Option<&'a Domain> 
 
 async fn fetch_transaction_from_rpc(tx_hash: &str, rpc_url: &str) -> Result<VersionedTransaction> {
     let signature = Signature::from_str(tx_hash)
-        .with_context(|| format!("Invalid transaction signature: {}", tx_hash))?;
+        .with_context(|| format!("Invalid transaction signature: {tx_hash}"))?;
 
     let rpc_client = RpcClient::new(rpc_url.to_string());
 
@@ -183,7 +214,7 @@ async fn fetch_transaction_from_rpc(tx_hash: &str, rpc_url: &str) -> Result<Vers
 
     let transaction = rpc_client
         .get_transaction_with_config(&signature, config)
-        .with_context(|| format!("Failed to fetch transaction from RPC: {}", tx_hash))?;
+        .with_context(|| format!("Failed to fetch transaction from RPC: {tx_hash}"))?;
 
     let versioned_transaction = transaction
         .transaction
@@ -225,7 +256,8 @@ async fn check_transaction_variations(
                     &config.mnemonic_file,
                     &domain.domain,
                     manually_compute_sponsor,
-                ).await?;
+                )
+                .await?;
 
                 v1_variation
                     .validate_transaction(transaction, contextual_keys, &cache.chain_index)
@@ -248,20 +280,25 @@ async fn get_contextual_keys<'a>(
     manually_compute_sponsor: bool,
 ) -> Result<&'a ContextualDomainKeys> {
     if !cache.contains_key(domain) {
-        let contextual_keys = compute_contextual_keys(mnemonic_file, domain, manually_compute_sponsor).await?;
+        let contextual_keys =
+            compute_contextual_keys(mnemonic_file, domain, manually_compute_sponsor).await?;
         cache.insert(domain.to_string(), contextual_keys);
     }
     Ok(cache.get(domain).unwrap())
 }
 
-async fn compute_contextual_keys(mnemonic_file: &str, domain: &str, manually_compute_sponsor: bool) -> Result<ContextualDomainKeys> {
+async fn compute_contextual_keys(
+    mnemonic_file: &str,
+    domain: &str,
+    manually_compute_sponsor: bool,
+) -> Result<ContextualDomainKeys> {
     let domain_registry = domain_registry::domain::Domain::new_checked(domain)
-        .with_context(|| format!("Failed to derive domain registry key for domain: {}", domain))?
+        .with_context(|| format!("Failed to derive domain registry key for domain: {domain}"))?
         .get_domain_record_address();
 
     let sponsor = if manually_compute_sponsor {
         let mnemonic = fs::read_to_string(mnemonic_file)
-            .with_context(|| format!("Failed to read mnemonic file: {}", mnemonic_file))?
+            .with_context(|| format!("Failed to read mnemonic file: {mnemonic_file}"))?
             .trim()
             .to_string();
 
@@ -269,33 +306,37 @@ async fn compute_contextual_keys(mnemonic_file: &str, domain: &str, manually_com
             &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(&mnemonic, domain),
             Some(DerivationPath::new_bip44(Some(0), Some(0))),
         )
-        .map_err(|e| anyhow!("Failed to derive keypair from mnemonic for domain {}: {}", domain, e))?;
+        .map_err(|e| {
+            anyhow!(
+                "Failed to derive keypair from mnemonic for domain {}: {}",
+                domain,
+                e
+            )
+        })?;
 
         sponsor_keypair.pubkey()
     } else {
-        let url = format!("https://paymaster.fogo.io/api/sponsor_pubkey?domain={}", domain);
+        let url = format!("https://paymaster.fogo.io/api/sponsor_pubkey?domain={domain}");
         let client = reqwest::Client::new();
-        let response = client
-            .get(&url)
-            .send()
-            .await
-            .with_context(|| format!("Failed to fetch sponsor pubkey from API for domain: {}", domain))?;
+        let response = client.get(&url).send().await.with_context(|| {
+            format!("Failed to fetch sponsor pubkey from API for domain: {domain}")
+        })?;
 
         if !response.status().is_success() {
             return Err(anyhow!(
-                "API returned error status {} when fetching sponsor pubkey for domain: {}",
-                response.status(),
-                domain
+                "API returned error status {} when fetching sponsor pubkey for domain: {domain}",
+                response.status()
             ));
         }
 
         let sponsor_str = response
             .text()
             .await
-            .with_context(|| format!("Failed to read response body for domain: {}", domain))?;
+            .with_context(|| format!("Failed to read response body for domain: {domain}"))?;
 
-        let sponsor = solana_pubkey::Pubkey::from_str(sponsor_str.trim())
-            .with_context(|| format!("Failed to parse sponsor pubkey from API response for domain: {}", domain))?;
+        let sponsor = solana_pubkey::Pubkey::from_str(sponsor_str.trim()).with_context(|| {
+            format!("Failed to parse sponsor pubkey from API response for domain: {domain}")
+        })?;
 
         sponsor
     };
