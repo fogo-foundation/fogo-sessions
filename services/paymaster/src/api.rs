@@ -210,7 +210,7 @@ impl DomainState {
 #[serde(deny_unknown_fields)]
 #[into_params(parameter_in = Query)]
 struct SponsorAndSendQuery {
-    #[serde(default)]
+    #[serde(default, rename = "confirm")]
     #[deprecated]
     /// Whether to confirm the transaction
     _confirm: bool,
