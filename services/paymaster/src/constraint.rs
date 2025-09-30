@@ -278,6 +278,7 @@ impl AccountConstraint {
         contextual_domain_keys: &ContextualDomainKeys,
         instruction_index: usize,
     ) -> Result<(), (StatusCode, String)> {
+        // excludes are AND-gated: all excludes must be satisfied
         self.exclude.iter().try_for_each(|excluded| {
             excluded.matches_account(
                 account,
@@ -288,19 +289,19 @@ impl AccountConstraint {
             )
         })?;
 
+        // includes are OR-gated: at least one include must be satisfied
         if !self.include.is_empty() {
-            let matches_any = self
-                .include
-                .iter()
-                .any(|included| {
-                    included.matches_account(
+            let matches_any = self.include.iter().any(|included| {
+                included
+                    .matches_account(
                         account,
                         &signers,
                         contextual_domain_keys,
                         true,
                         instruction_index,
-                    ).is_ok()
-                });
+                    )
+                    .is_ok()
+            });
 
             if !matches_any {
                 return Err((
