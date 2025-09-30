@@ -2,8 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use dashmap::DashMap;
-use solana_client::rpc_client::RpcClient;
-use solana_client::rpc_config::RpcTransactionConfig;
+use solana_client::{rpc_client::RpcClient, rpc_config::RpcTransactionConfig};
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_seed_derivable::SeedDerivable;
@@ -11,14 +10,13 @@ use solana_signature::Signature;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
-use std::collections::HashMap;
-use std::fs;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{collections::HashMap, fs, str::FromStr, sync::Arc};
 
-use fogo_paymaster::api::ChainIndex;
-use fogo_paymaster::config::{load_config, Config, Domain};
-use fogo_paymaster::constraint::{ContextualDomainKeys, TransactionVariation};
+use fogo_paymaster::{
+    api::ChainIndex,
+    config::{load_config, Config, Domain},
+    constraint::{ContextualDomainKeys, TransactionVariation},
+};
 
 #[derive(Debug)]
 enum TransactionInput {
