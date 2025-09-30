@@ -69,6 +69,7 @@ type EstablishSessionOptions = {
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   expires: Date;
   extra?: string | undefined;
+  createUnsafeExtractableSessionKey?: boolean | undefined;
 } & (
   | { limits?: Map<PublicKey, bigint>; unlimited?: false }
   | { unlimited: true }
@@ -77,7 +78,9 @@ type EstablishSessionOptions = {
 export const establishSession = async (
   options: EstablishSessionOptions,
 ): Promise<EstablishSessionResult> => {
-  const sessionKey = await generateKeyPair();
+  const sessionKey = options.createUnsafeExtractableSessionKey
+    ? await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"])
+    : await generateKeyPair();
 
   if (options.unlimited) {
     return sendSessionEstablishTransaction(
