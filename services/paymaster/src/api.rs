@@ -353,14 +353,14 @@ async fn sponsor_and_send_handler(
     obs_send(
         domain.clone(),
         matched_variation_name.clone(),
-        Some(confirmation_status.clone()),
+        confirmation_status.clone(),
     );
 
     let gas = crate::constraint::compute_gas_spent(&transaction)?;
     obs_gas_spend(
         domain,
         matched_variation_name,
-        Some(confirmation_status),
+        confirmation_status,
         gas,
     );
 
