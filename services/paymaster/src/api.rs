@@ -322,7 +322,6 @@ async fn sponsor_and_send_handler(
         .sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
-
     let confirmation_result = send_and_confirm_transaction(
         &state.chain_index.rpc,
         &transaction,
@@ -343,12 +342,7 @@ async fn sponsor_and_send_handler(
     );
 
     let gas = crate::constraint::compute_gas_spent(&transaction)?;
-    obs_gas_spend(
-        domain,
-        matched_variation_name,
-        confirmation_status,
-        gas,
-    );
+    obs_gas_spend(domain, matched_variation_name, confirmation_status, gas);
 
     Ok(confirmation_result)
 }
