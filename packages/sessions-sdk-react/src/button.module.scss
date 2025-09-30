@@ -79,8 +79,8 @@
   &[data-pending],
   &[data-disabled] {
     border: none;
-    background-color: rgb(185 186 217 / 25%);
-    color: rgb(185 186 217 / 45%);
+    background-color: theme.color("button", "disabled", "background");
+    color: theme.color("button", "disabled", "foreground");
   }
 
   &[data-disabled] {

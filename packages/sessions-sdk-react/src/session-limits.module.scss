@@ -158,7 +158,7 @@
           height: theme.spacing(8);
           align-items: center;
           border-radius: theme.border-radius("full");
-          background: rgb(from white r g b / 40%);
+          background: theme.color("image-placeholder");
         }
 
         .name {
@@ -175,7 +175,7 @@
         .label {
           .icon,
           .name {
-            background: rgb(from white r g b / 10%);
+            background: theme.color("skeleton");
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
             @keyframes pulse {
@@ -200,13 +200,6 @@
     place-content: space-between;
     gap: theme.spacing(8);
     align-items: center;
-
-    .errorMessage {
-      @include theme.text("sm", "normal");
-
-      color: theme.color("error");
-      text-align: right;
-    }
   }
 }
 
@@ -214,7 +207,7 @@
   @include theme.reset {
     background: theme.color("demo-bg");
     color: theme.color("foreground");
-    box-shadow: 0 4px 12px 0 theme.color("utils-widget-shadow");
+    box-shadow: theme.shadow();
     border: 1px solid theme.color("widget-border");
     border-radius: theme.border-radius("base");
     outline: none;
@@ -234,7 +227,7 @@
         outline-color 50ms linear;
 
       &[data-focused] {
-        background-color: rgb(from white r g b / 10%);
+        background-color: theme.color("button", "ghost", "background", "hover");
       }
 
       &[data-focus-visible] {

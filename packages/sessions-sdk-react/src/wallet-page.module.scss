@@ -19,7 +19,7 @@
       padding-top: theme.spacing(3);
       padding-bottom: theme.spacing(3);
       gap: theme.spacing(2);
-      background-color: rgb(from white r g b / 5%);
+      background-color: theme.color("button-base");
       border: none;
       border-radius: theme.border-radius("lg");
       flex: 0;

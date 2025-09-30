@@ -21,7 +21,7 @@
       padding: theme.spacing(1);
       border-radius: theme.border-radius();
       border: 1px solid theme.color("widget-border");
-      box-shadow: 0 4px 12px 0 theme.color("utils-widget-shadow");
+      box-shadow: theme.shadow();
       background-color: theme.color("card");
 
       &::before {
@@ -53,11 +53,11 @@
       @each $state in ("success", "error") {
         &[data-variant="#{$state}"] {
           &::before {
-            background: theme.color("states", $state);
+            background: theme.color("states", $state, "foreground");
           }
 
           .title {
-            color: theme.color("states", $state);
+            color: theme.color("states", $state, "foreground");
           }
         }
       }

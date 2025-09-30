@@ -21,7 +21,7 @@
     }
 
     &[data-expired] {
-      background: rgb(from theme.color("states", "error") r g b / 40%);
+      background: theme.color("states", "error", "background");
       font-weight: theme.font-weight("bold");
     }
   }
@@ -82,7 +82,7 @@
 
     .icon,
     .headline {
-      color: theme.color("states", "error");
+      color: theme.color("states", "error", "foreground");
     }
 
     .icon {

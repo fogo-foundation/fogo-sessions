@@ -6,7 +6,7 @@
   align-items: center;
   border-radius: theme.border-radius();
   cursor: copy;
-  background-color: rgb(from white r g b / 5%);
+  background-color: theme.color("button-base");
   outline: 2px solid transparent;
   outline-offset: theme.spacing(0.5);
   transition:
@@ -48,7 +48,7 @@
     .checkIcon,
     .checkHint {
       opacity: 0;
-      color: theme.color("states", "success");
+      color: theme.color("states", "success", "foreground");
     }
   }
 
@@ -92,10 +92,10 @@
     cursor: default;
 
     &[data-variant="inline"] {
-      background-color: rgb(56 233 124 / 15%);
+      background-color: theme.color("states", "success", "background");
 
       .contents {
-        color: theme.color("states", "success");
+        color: theme.color("states", "success", "foreground");
       }
     }
 

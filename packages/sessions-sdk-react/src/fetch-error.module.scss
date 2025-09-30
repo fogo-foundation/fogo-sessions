@@ -10,7 +10,7 @@
 
   .icon,
   .headline {
-    color: theme.color("states", "error");
+    color: theme.color("states", "error", "foreground");
   }
 
   .icon {

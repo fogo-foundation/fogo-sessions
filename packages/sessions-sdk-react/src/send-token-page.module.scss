@@ -57,7 +57,7 @@
   .qrCodeScanner {
     position: absolute;
     inset: 0;
-    background: rgb(from black r g b / 50%);
+    background: theme.color("qr-code-scanner-overlay");
     display: grid;
     place-content: center;
 

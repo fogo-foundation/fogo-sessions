@@ -87,9 +87,10 @@
 
     &[data-pending] {
       cursor: wait;
+      background-color: theme.color("button", "disabled", "background");
 
       .contents {
-        color: rgb(from theme.color("heading") r g b / 30%);
+        color: theme.color("button", "disabled", "foreground");
       }
 
       .fogoLogoContainer {
@@ -100,7 +101,7 @@
           display: block;
           width: theme.spacing(4);
           height: theme.spacing(4);
-          border: 1px solid theme.color("spinner");
+          border: 1px solid theme.color("button", "disabled", "foreground");
           border-top-color: transparent;
           border-radius: theme.border-radius("full");
           animation: spin 1s linear infinite;
@@ -147,7 +148,7 @@
       border-radius: theme.border-radius("xl");
       background: theme.color("card");
       border: 1px solid theme.color("widget-border");
-      box-shadow: 0 4px 12px 0 theme.color("utils-widget-shadow");
+      box-shadow: theme.shadow();
       display: grid;
       grid-template-rows: theme.spacing(12) 1fr theme.spacing(12);
       outline: none;

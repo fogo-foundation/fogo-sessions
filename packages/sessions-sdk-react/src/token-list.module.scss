@@ -9,7 +9,7 @@
 
   .token {
     height: theme.spacing(14);
-    background: rgb(from white r g b / 5%);
+    background-color: theme.color("button-base");
     border-radius: theme.border-radius("lg");
     display: flex;
     flex-flow: row nowrap;
@@ -38,7 +38,7 @@
         width: theme.spacing(8);
         height: theme.spacing(8);
         border-radius: theme.border-radius("full");
-        background: rgb(from white r g b / 40%);
+        background: theme.color("image-placeholder");
         flex-shrink: 0;
       }
 
@@ -96,13 +96,13 @@
       .nameAndIcon .nameAndSymbol .name,
       .nameAndIcon .nameAndSymbol .symbol,
       .amountAndActions .amount {
-        background: rgb(from white r g b / 10%);
+        background: theme.color("skeleton");
         height: 1em;
         border-radius: theme.border-radius("md");
       }
 
       .nameAndIcon .icon {
-        background: rgb(from white r g b / 10%);
+        background: theme.color("skeleton");
       }
 
       .nameAndIcon .nameAndSymbol .name {
@@ -155,7 +155,7 @@
           padding-left: theme.spacing(3);
           padding-right: theme.spacing(6);
           border-left: 1px solid theme.color("border");
-          background: rgb(31 31 36 / 60%);
+          background: theme.color("card-opaque");
           height: 100%;
         }
       }

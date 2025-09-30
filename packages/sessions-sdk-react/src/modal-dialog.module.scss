@@ -7,7 +7,7 @@
     left: 0;
     width: 100vw;
     height: var(--visual-viewport-height);
-    background: rgb(from black r g b / 90%);
+    background: theme.color("modal-overlay");
     backdrop-filter: blur(8px);
     display: grid;
     justify-content: center;
@@ -39,7 +39,7 @@
       padding: theme.spacing(6);
       border-radius: theme.border-radius("xl");
       border: 1px solid theme.color("widget-border");
-      box-shadow: 0 4px 12px 0 theme.color("utils-widget-shadow");
+      box-shadow: theme.shadow();
       width: theme.spacing(94);
       max-width: 70dvw;
 

@@ -60,18 +60,18 @@
 
       position: absolute;
       background: theme.color("demo-bg");
-      color: theme.color("states", "error");
+      color: theme.color("states", "error", "foreground");
       padding: theme.spacing(3);
-      border: 1px solid theme.color("error");
+      border: 1px solid theme.color("states", "error", "foreground");
       left: theme.spacing(4);
       bottom: theme.spacing(10);
       display: none;
       border-radius: theme.border-radius("md");
-      box-shadow: 0 4px 12px 0 theme.color("utils-widget-shadow");
+      box-shadow: theme.shadow();
 
       .overlayArrow {
         fill: theme.color("demo-bg");
-        stroke: theme.color("error");
+        stroke: theme.color("states", "error", "foreground");
         position: absolute;
         bottom: -#{theme.spacing(3)};
         left: theme.spacing(4);
@@ -95,11 +95,16 @@
   &[data-disabled],
   &[data-pending] {
     .input {
-      background: rgb(from white r g b / 30%);
+      background: theme.color("button", "disabled", "background");
+
+      &::placeholder {
+        color: theme.color("button", "disabled", "foreground");
+        opacity: 1;
+      }
 
       &,
       &[data-hovered] {
-        border: 1px solid rgb(from white r g b / 40%);
+        border: theme.color("button", "disabled", "foreground");
       }
     }
   }
@@ -120,7 +125,7 @@
 
   &[data-invalid] {
     .input:not([data-focused]) {
-      border-color: theme.color("states", "error");
+      border-color: theme.color("states", "error", "foreground");
     }
 
     .inputGroup:has(.input[data-hovered]),
