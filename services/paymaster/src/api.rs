@@ -211,6 +211,10 @@ impl DomainState {
 #[into_params(parameter_in = Query)]
 struct SponsorAndSendQuery {
     #[serde(default)]
+    #[deprecated]
+    /// Whether to confirm the transaction
+    _confirm: bool,
+    #[serde(default)]
     /// Domain to request the sponsor pubkey for
     domain: Option<String>,
 }
@@ -282,7 +286,7 @@ async fn readiness_handler() -> StatusCode {
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(SponsorAndSendQuery { domain }): Query<SponsorAndSendQuery>,
+    Query(SponsorAndSendQuery { domain, .. }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;

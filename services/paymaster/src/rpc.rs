@@ -2,7 +2,7 @@ use axum::{http::StatusCode, response::ErrorResponse};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcSendTransactionConfig};
 use solana_commitment_config::CommitmentConfig;
 use solana_hash::Hash;
-use solana_rpc_client_api::{client_error::Error, client_error::Result as ClientResult};
+use solana_rpc_client_api::client_error::Error;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
@@ -51,7 +51,7 @@ pub async fn send_and_confirm_transaction(
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResult, ErrorResponse> {
     let recent_blockhash = transaction.message.recent_blockhash();
-    let signature = match send_transaction(rpc, transaction, config) {
+    let signature = match rpc.send_transaction_with_config(transaction, config) {
         Ok(sig) => sig,
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
@@ -65,20 +65,6 @@ pub async fn send_and_confirm_transaction(
     };
 
     confirm_transaction(rpc, &signature, recent_blockhash).await
-}
-
-// Wrapper for send_transaction_with_config to add tracing
-#[tracing::instrument(
-    skip_all,
-    fields(tx_hash = %transaction.signatures[0])
-)]
-#[allow(clippy::result_large_err)]
-pub fn send_transaction(
-    rpc: &RpcClient,
-    transaction: &VersionedTransaction,
-    config: RpcSendTransactionConfig,
-) -> ClientResult<Signature> {
-    rpc.send_transaction_with_config(transaction, config)
 }
 
 #[tracing::instrument(
