@@ -2,24 +2,134 @@
 
 .sessionButton {
   @include theme.reset {
-    width: theme.spacing(60);
+    width: theme.spacing(48);
     height: theme.spacing(10);
+    padding: theme.spacing(1);
+    display: grid;
+    grid-template-columns: theme.spacing(8) 1fr;
+    border: none;
+    border-radius: theme.border-radius("lg");
+    cursor: pointer;
+    background-color: theme.color("button-signin-bg");
+    outline: 2px solid transparent;
+    outline-offset: theme.spacing(0.5);
+    align-items: center;
+    transition:
+      background-color 50ms linear,
+      outline-color 50ms linear;
 
-    @include theme.button("mainButton");
+    .fogoLogoContainer {
+      width: theme.spacing(8);
+      height: theme.spacing(8);
+      background-color: theme.color(
+        "button",
+        "primary",
+        "background",
+        "normal"
+      );
+      display: grid;
+      place-content: center;
+      border-radius: theme.border-radius();
 
-    .fogoWordmark {
-      height: 1.4em;
+      .fogoLogo {
+        color: theme.pallette-color("white");
+        height: theme.spacing(4);
+      }
     }
 
-    .chevron {
-      margin-left: theme.spacing(2);
-      transition: transform 300ms;
-      transform-origin: center;
+    .contents {
+      @include theme.text("sm", "medium");
+
+      color: theme.color("heading");
     }
 
+    .arrowContainer {
+      display: none;
+
+      .arrow {
+        transition: transform 300ms;
+        transform-origin: center;
+        color: theme.color("heading");
+      }
+    }
+
+    &[data-hovered] {
+      background-color: theme.color("button-hover");
+    }
+
+    &[data-pressed],
     &[data-session-panel-open] {
-      .chevron {
-        transform: rotateZ(180deg);
+      background-color: theme.color("button-pressed");
+    }
+
+    &[data-is-signed-in] {
+      grid-template-columns: theme.spacing(8) 1fr theme.spacing(6);
+
+      .arrowContainer {
+        display: grid;
+        place-content: center;
+
+        .arrow {
+          font-size: theme.spacing(4);
+        }
+      }
+
+      &[data-session-panel-open] {
+        .arrow {
+          transform: rotateX(180deg);
+        }
+      }
+    }
+
+    &[data-focus-visible] {
+      outline-color: theme.color("accent");
+    }
+
+    &[data-pending] {
+      cursor: wait;
+      background-color: theme.color("button", "disabled", "background");
+
+      .contents {
+        color: theme.color("button", "disabled", "foreground");
+      }
+
+      .fogoLogoContainer {
+        background: transparent;
+
+        &::after {
+          content: "";
+          display: block;
+          width: theme.spacing(4);
+          height: theme.spacing(4);
+          border: 1px solid theme.color("button", "disabled", "foreground");
+          border-top-color: transparent;
+          border-radius: theme.border-radius("full");
+          animation: spin 1s linear infinite;
+          transition: opacity linear 100ms;
+          margin-left: theme.spacing(1);
+
+          @keyframes spin {
+            0% {
+              transform: rotate(0deg);
+            }
+
+            20% {
+              transform: rotate(40deg);
+            }
+
+            80% {
+              transform: rotate(320deg);
+            }
+
+            100% {
+              transform: rotate(360deg);
+            }
+          }
+        }
+
+        .fogoLogo {
+          display: none;
+        }
       }
     }
   }
@@ -32,547 +142,110 @@
       opacity 200ms;
     z-index: theme.layer("session-panel") !important;
 
-    .overlayArrow {
-      display: block;
-      fill: theme.color("panel", "background");
-      stroke: theme.color("panel", "border");
-    }
-
-    .copyWalletAddressButton {
-      @include theme.text("xs", "normal");
-      @include theme.button("ghost");
-
-      // stylelint-disable-next-line no-duplicate-selectors
-      & {
-        display: inline-flex;
-        padding-left: theme.spacing(2);
-        padding-right: theme.spacing(2);
-        margin-left: -#{theme.spacing(2)};
-        margin-right: -#{theme.spacing(2)};
-        cursor: copy;
-      }
-
-      .iconContainer {
-        position: relative;
-        width: 1em;
-        height: 1em;
-
-        .copyIcon,
-        .checkIcon {
-          position: absolute;
-          inset: 0;
-          transition: opacity linear 100ms;
-        }
-
-        .checkIcon {
-          color: theme.pallette-color("green", 700);
-          opacity: 0;
-          transition: opacity linear 100ms;
-        }
-      }
-
-      &[data-disabled] {
-        color: theme.color("ghost", "text", "base");
-      }
-
-      &[data-is-copied] {
-        background: theme.pallette-color("blue", 100);
-
-        .iconContainer {
-          .checkIcon {
-            opacity: 1;
-          }
-
-          .copyIcon {
-            opacity: 0;
-          }
-        }
-      }
-    }
-
     .sessionPanel {
-      background: theme.color("panel", "background");
-      border: 1px solid theme.color("panel", "border");
-      border-radius: theme.border-radius("base");
-      box-shadow: 0 8px 20px rgb(from black r g b / 10%);
-      width: theme.spacing(100);
-      height: theme.spacing(120);
-      outline: none;
-      color: theme.color("panel", "text");
+      width: theme.spacing(88);
+      height: theme.spacing(148);
+      border-radius: theme.border-radius("xl");
+      background: theme.color("card");
+      border: 1px solid theme.color("widget-border");
+      box-shadow: theme.shadow();
       display: grid;
-      grid-template-rows: max-content 1fr max-content;
+      grid-template-rows: theme.spacing(12) 1fr theme.spacing(12);
+      outline: none;
 
-      .heading {
-        @include theme.text("base", "semibold");
-
-        text-align: center;
-        margin-top: theme.spacing(4);
-        margin-bottom: theme.spacing(2);
+      .header {
+        border-bottom: 1px solid theme.color("border");
         display: flex;
         flex-flow: row nowrap;
-        justify-content: center;
-        align-items: baseline;
-        gap: theme.spacing(4);
+        padding: theme.spacing(2);
+        padding-left: theme.spacing(4);
+        gap: theme.spacing(2);
+        align-items: center;
+
+        .title {
+          @include theme.text("sm", "medium");
+
+          color: theme.color("heading");
+          flex-grow: 1;
+        }
       }
 
       .tabs {
         display: grid;
-        grid-template-rows: max-content 1fr;
+        grid-template-rows: theme.spacing(10) 1fr;
         overflow: hidden;
 
         .tabList {
           display: flex;
           flex-flow: row nowrap;
-          align-items: center;
-          width: 100%;
+          gap: theme.spacing(1);
+          border-bottom: 1px solid theme.color("widget-border");
 
           .tab {
-            @include theme.text("sm", "medium");
+            @include theme.text("xs", "semibold");
 
+            color: theme.color("muted");
             flex-grow: 1;
-            text-align: center;
-            padding-top: theme.spacing(1);
-            padding-bottom: theme.spacing(1);
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-            transition: background-color 50ms linear;
-            outline: none;
+            display: grid;
+            place-content: center;
+            position: relative;
+            outline: 2px solid transparent;
+            outline-offset: -#{theme.spacing(0.5)};
+            transition:
+              color 50ms linear,
+              background-color 50ms linear,
+              outline-color 50ms linear;
 
-            &[data-selected] {
-              border-color: theme.color("mainButton", "border", "base");
-              cursor: unset;
+            .underline {
+              position: absolute;
+              bottom: 0;
+              left: theme.spacing(3);
+              right: theme.spacing(3);
+              height: theme.spacing(0.5);
+              background: theme.color("accent");
+              border-top-left-radius: theme.border-radius("sm");
+              border-top-right-radius: theme.border-radius("sm");
+            }
+
+            &:not([data-selected]) {
+              cursor: pointer;
 
               &[data-hovered] {
-                background-color: unset;
+                background: theme.color("button-hover");
+                color: theme.color("foreground");
+              }
+
+              &[data-pressed] {
+                background: theme.color("button-pressed");
+                color: theme.color("foreground");
               }
             }
 
             &[data-focus-visible] {
-              outline: 2px solid theme.color("primary", "border", "base");
-              outline-offset: -2px;
-            }
-
-            &[data-hovered] {
-              background-color: rgb(from black r g b / 3%);
-            }
-          }
-        }
-      }
-
-      .tabPanel {
-        background: rgb(from black r g b / 5%);
-        border-top: 1px solid theme.color("panel", "border");
-        border-bottom: 1px solid theme.color("panel", "border");
-        outline: none;
-        display: grid;
-        overflow: hidden;
-      }
-
-      .selectTokenPage {
-        display: flex;
-        flex-flow: column nowrap;
-        gap: theme.spacing(4);
-        overflow: auto;
-        scrollbar-width: thin;
-        scrollbar-gutter: stable;
-
-        .backButton {
-          align-self: start;
-          position: relative;
-          left: theme.spacing(2);
-          top: theme.spacing(2);
-
-          @include theme.button("ghost");
-        }
-      }
-
-      .sendPage {
-        display: flex;
-        flex-flow: column nowrap;
-        align-items: center;
-        gap: theme.spacing(2);
-        padding: theme.spacing(2);
-        position: relative;
-
-        .backButton {
-          align-self: start;
-
-          @include theme.button("ghost");
-        }
-
-        .header {
-          @include theme.text("lg", "semibold");
-
-          display: flex;
-          flex-flow: column nowrap;
-          gap: theme.spacing(2);
-          justify-content: center;
-          align-items: center;
-          text-align: center;
-
-          .tokenIcon {
-            width: theme.spacing(12);
-            height: theme.spacing(12);
-            border-radius: theme.border-radius("full");
-            background: rgb(from black r g b / 20%);
-          }
-        }
-
-        .amountInWallet {
-          @include theme.text("xs", "semibold");
-
-          opacity: 0.6;
-          margin-top: -#{theme.spacing(1)};
-          margin-bottom: theme.spacing(4);
-        }
-
-        .field {
-          display: grid;
-          grid-template-columns: theme.spacing(28) 1fr theme.spacing(14);
-
-          .cameraButton,
-          .maxButton {
-            @include theme.button("ghost");
-
-            // stylelint-disable-next-line no-duplicate-selectors
-            & {
-              @include theme.text("xs", "normal");
-
-              height: 100%;
-              padding-left: theme.spacing(1);
-              padding-right: theme.spacing(1);
-            }
-          }
-
-          .cameraButton .label {
-            @include theme.sr-only;
-          }
-        }
-
-        .submitButton {
-          @include theme.button("primary");
-
-          // stylelint-disable-next-line no-duplicate-selectors
-          & {
-            margin-top: theme.spacing(8);
-          }
-        }
-
-        .qrCodeScanner {
-          position: absolute;
-          inset: 0;
-          background: rgb(from black r g b / 50%);
-          display: grid;
-          place-content: center;
-
-          .closeButton {
-            @include theme.button("ghost");
-
-            // stylelint-disable-next-line no-duplicate-selectors
-            & {
-              @include theme.text("2xl", "bold");
-
-              position: absolute;
-              top: theme.spacing(2);
-              right: theme.spacing(2);
-              padding-left: theme.spacing(2);
-              padding-right: theme.spacing(2);
-              z-index: 1;
-            }
-
-            .label {
-              @include theme.sr-only;
-            }
-          }
-
-          .camera {
-            z-index: 0;
-          }
-        }
-      }
-
-      .receivePage {
-        display: grid;
-        grid-template-rows: max-content max-content 1fr;
-        place-items: center;
-        gap: theme.spacing(2);
-        padding: theme.spacing(2);
-
-        .backButton {
-          justify-self: start;
-
-          @include theme.button("ghost");
-        }
-
-        .walletKey {
-          border-radius: theme.border-radius("xl");
-          display: grid;
-          place-items: center;
-          text-align: center;
-          gap: theme.spacing(4);
-          background: rgb(from black r g b / 5%);
-          padding: theme.spacing(4) theme.spacing(8);
-
-          .header {
-            @include theme.text("xl", "semibold");
-          }
-
-          .qrCode {
-            border: theme.spacing(4) solid white;
-            border-radius: theme.border-radius("xl");
-            width: theme.spacing(40);
-            height: theme.spacing(40);
-          }
-
-          .walletAddress {
-            word-break: break-all;
-            max-width: theme.spacing(50);
-          }
-        }
-      }
-
-      .walletPage {
-        overflow: auto;
-        scrollbar-width: thin;
-        scrollbar-gutter: stable;
-        height: 100%;
-        display: grid;
-        grid-template-rows: max-content 1fr;
-
-        .topButtons {
-          display: flex;
-          flex-flow: row nowrap;
-          justify-content: center;
-          gap: theme.spacing(2);
-          margin-top: theme.spacing(2);
-
-          .topButton {
-            outline: none;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            transition: background-color 100ms linear;
-            border-radius: theme.border-radius("lg");
-            padding: theme.spacing(3) theme.spacing(6);
-            display: grid;
-            grid-template-columns: min-content;
-            grid-template-rows: repeat(2, max-content);
-            gap: theme.spacing(1);
-            justify-items: center;
-
-            &[data-hovered] {
-              background-color: rgb(from black r g b / 5%);
-            }
-
-            &[data-pressed] {
-              background-color: rgb(from black r g b / 10%);
-            }
-
-            &[data-focus-visible] {
-              outline: 2px solid theme.color("primary", "border", "base");
-            }
-
-            .icon {
-              background: theme.color("primary", "background", "base");
-              border-radius: theme.border-radius("full");
-              padding: theme.spacing(1.5);
-              font-size: theme.spacing(12);
-              color: theme.color("primary", "text", "base");
-            }
-
-            .text {
-              @include theme.text("sm", "semibold");
-
-              text-align: center;
-              color: theme.color("panel", "text");
-            }
-          }
-        }
-      }
-
-      .tokenList {
-        display: flex;
-        flex-flow: column nowrap;
-        gap: theme.spacing(2);
-        padding: theme.spacing(2);
-        padding-bottom: theme.spacing(4);
-        margin: 0;
-
-        .token,
-        .tokenButton {
-          display: grid;
-          grid-template-columns: max-content 1fr max-content;
-          gap: theme.spacing(3);
-          background: rgb(from black r g b / 5%);
-          border-radius: theme.border-radius("lg");
-          padding: theme.spacing(2) theme.spacing(3);
-          align-items: center;
-          color: theme.color("panel", "text");
-          border: none;
-          text-align: left;
-
-          .tokenIcon {
-            width: theme.spacing(8);
-            height: theme.spacing(8);
-            border-radius: theme.border-radius("full");
-            background: rgb(from black r g b / 5%);
-          }
-
-          .tokenName {
-            @include theme.text("sm", "medium");
-
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding-right: theme.spacing(8);
-          }
-
-          .amount {
-            @include theme.text("xs", "semibold");
-          }
-
-          &[data-is-loading] {
-            .tokenIcon,
-            .tokenName,
-            .amount {
-              animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-            }
-
-            .tokenName,
-            .amount {
-              background: rgb(from black r g b / 10%);
-              height: 1em;
-              border-radius: theme.border-radius("md");
-            }
-
-            .tokenName {
-              width: theme.spacing(30);
-            }
-
-            .amount {
-              width: theme.spacing(20);
-            }
-
-            @keyframes pulse {
-              50% {
-                opacity: 0.5;
-              }
+              outline-color: theme.color("accent");
             }
           }
         }
 
-        .token {
-          .sendButton {
-            @include theme.button("primary");
-
-            // stylelint-disable-next-line no-duplicate-selectors
-            & {
-              display: none;
-              padding-left: theme.spacing(2);
-              padding-right: theme.spacing(2);
-            }
-          }
-
-          &:not([data-is-loading]):hover {
-            .amount {
-              display: none;
-            }
-
-            .sendButton {
-              display: flex;
-            }
-          }
-        }
-
-        .tokenButton {
-          cursor: pointer;
-          transition: background-color 50ms linear;
-          outline: none;
-
-          &[data-hovered] {
-            background: rgb(from black r g b / 10%);
-          }
-
-          &[data-focus-visible] {
-            outline: 2px solid theme.color("primary", "border", "base");
-          }
-        }
-      }
-
-      .tokenListEmpty {
-        @include theme.text("lg", "bold");
-
-        text-align: center;
-        display: grid;
-        place-content: center;
-        height: 100%;
-        gap: theme.spacing(10);
-        color: rgb(from theme.color("panel", "text") r g b / 60%);
-
-        a {
-          @include theme.button("primary");
-        }
-      }
-
-      .sessionLimitsLoading,
-      .sessionLimitsError,
-      .sessionLimitsPanel .sessionLimits {
-        padding: theme.spacing(6) theme.spacing(4);
-        display: grid;
-      }
-
-      .sessionLimitsPanel {
-        display: grid;
-        grid-template-rows: max-content 1fr;
-
-        .sessionExpiryBanner {
-          @include theme.text("sm", "semibold");
-
-          width: 100%;
-          height: theme.spacing(6);
-          background: rgb(from black r g b / 10%);
-          text-align: center;
-          display: grid;
-          place-content: center;
-
-          &[data-expired] {
-            background: theme.pallette-color("red", 600);
-            color: theme.pallette-color("white");
-          }
+        .tabPanel {
+          overflow: hidden;
         }
       }
 
       .footer {
-        @include theme.text("sm", "normal");
-
+        border-top: 1px solid theme.color("border");
+        background: theme.color("demo-bg");
         display: flex;
-        flex-flow: row nowrap;
-        justify-content: space-between;
         align-items: center;
-        padding: theme.spacing(2) theme.spacing(4);
+        justify-content: space-between;
+        padding: theme.spacing(2);
+        padding-left: theme.spacing(4);
+        border-bottom-left-radius: theme.border-radius("xl");
+        border-bottom-right-radius: theme.border-radius("xl");
 
         .fogoWordmark {
-          height: 1.4em;
-          display: inline;
-        }
-
-        .logoutButton {
-          border: none;
-          background: transparent;
-          cursor: pointer;
-          padding: theme.spacing(1) theme.spacing(4);
-          position: relative;
-          margin-right: -#{theme.spacing(4)};
-          color: theme.color("panel", "text");
-
-          &[data-hovered] {
-            text-decoration: underline;
-          }
-
-          &[data-focus-visible] {
-            outline: 2px solid theme.color("primary", "border", "base");
-          }
+          height: theme.spacing(5);
+          color: theme.pallette-color("white");
         }
       }
     }
@@ -593,30 +266,18 @@
       --origin: translateY(-8px);
 
       margin-top: 6px;
-
-      .overlayArrow {
-        transform: rotate(180deg);
-      }
     }
 
     &[data-placement="right"] {
       --origin: translateX(-8px);
 
       margin-left: 6px;
-
-      .overlayArrow {
-        transform: rotate(90deg);
-      }
     }
 
     &[data-placement="left"] {
       --origin: translateX(8px);
 
       margin-right: 6px;
-
-      .overlayArrow {
-        transform: rotate(-90deg);
-      }
     }
   }
 }

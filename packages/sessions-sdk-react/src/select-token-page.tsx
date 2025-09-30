@@ -1,0 +1,44 @@
+import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
+
+import { Button } from "./button.js";
+import styles from "./select-token-page.module.css";
+import type { EstablishedSessionState } from "./session-provider.js";
+import { TokenList } from "./token-list.js";
+import type { Token } from "./use-token-account-data.js";
+
+type Props = {
+  onPressBack: () => void;
+  onPressSend: (token: Token) => void;
+  onPressReceive: () => void;
+  sessionState: EstablishedSessionState;
+};
+
+export const SelectTokenPage = ({
+  onPressBack,
+  onPressSend,
+  onPressReceive,
+  sessionState,
+}: Props) => (
+  <div className={styles.selectTokenPage}>
+    <div className={styles.header}>
+      <h1 className={styles.title}>
+        <PaperPlaneTiltIcon className={styles.icon} />
+        <span className={styles.text}>Send</span>
+      </h1>
+      <Button
+        variant="outline"
+        size="sm"
+        onPress={onPressBack}
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus
+      >
+        Back
+      </Button>
+    </div>
+    <TokenList
+      onPressReceiveTokens={onPressReceive}
+      sessionState={sessionState}
+      onPressToken={onPressSend}
+    />
+  </div>
+);

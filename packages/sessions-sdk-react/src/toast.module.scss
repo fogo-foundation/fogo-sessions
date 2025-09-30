@@ -3,45 +3,63 @@
 .toastRegion {
   @include theme.reset {
     position: fixed;
-    top: theme.spacing(4);
-    right: theme.spacing(12);
+    top: theme.spacing(6);
+    right: theme.spacing(6);
+    width: theme.spacing(92);
     display: flex;
     flex-flow: column nowrap;
-    gap: theme.spacing(2);
+    gap: theme.spacing(3.5);
     outline: none;
     z-index: theme.layer("toast");
 
     .toast {
-      display: flex;
-      flex-flow: row nowrap;
-      align-items: center;
-      gap: theme.spacing(4);
+      outline: none;
+      width: 100%;
+      display: grid;
+      grid-template-columns: max-content 1fr max-content;
+      gap: theme.spacing(3) theme.spacing(1);
       padding: theme.spacing(1);
-      padding-left: theme.spacing(4);
-      box-shadow: 1px 1px 2px rgb(from black r g b / 40%);
-      border-radius: theme.border-radius("md");
-      max-width: theme.spacing(90);
+      border-radius: theme.border-radius();
+      border: 1px solid theme.color("widget-border");
+      box-shadow: theme.shadow();
+      background-color: theme.color("card");
 
-      .dismissButton {
-        @include theme.button("ghost");
+      &::before {
+        content: "";
+        display: block;
+        width: theme.spacing(0.5);
+        height: 100%;
+        border-radius: theme.border-radius("sm");
+        opacity: 0.4;
+      }
 
-        // stylelint-disable-next-line no-duplicate-selectors
-        & {
-          padding-left: theme.spacing(2);
-          padding-right: theme.spacing(2);
+      .toastContent {
+        display: flex;
+        flex-flow: column nowrap;
+        gap: theme.spacing(3);
+        padding: theme.spacing(2) theme.spacing(1.5);
+
+        .title {
+          @include theme.text("xs", "normal");
+        }
+
+        .description {
+          @include theme.text("xxs", "normal");
+
+          color: theme.color("paragraph");
         }
       }
 
-      &[data-variant="success"] {
-        border: 1px solid theme.pallette-color("green", 600);
-        background: theme.pallette-color("green", 100);
-        color: theme.pallette-color("green", 900);
-      }
+      @each $state in ("success", "error") {
+        &[data-variant="#{$state}"] {
+          &::before {
+            background: theme.color("states", $state, "foreground");
+          }
 
-      &[data-variant="error"] {
-        border: 1px solid theme.pallette-color("red", 600);
-        background: theme.pallette-color("red", 100);
-        color: theme.pallette-color("red", 900);
+          .title {
+            color: theme.color("states", $state, "foreground");
+          }
+        }
       }
     }
   }
