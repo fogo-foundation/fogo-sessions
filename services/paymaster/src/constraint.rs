@@ -288,15 +288,29 @@ impl AccountConstraint {
             )
         })?;
 
-        self.include.iter().try_for_each(|included| {
-            included.matches_account(
-                account,
-                &signers,
-                contextual_domain_keys,
-                true,
-                instruction_index,
-            )
-        })?;
+        if !self.include.is_empty() {
+            let matches_any = self
+                .include
+                .iter()
+                .any(|included| {
+                    included.matches_account(
+                        account,
+                        &signers,
+                        contextual_domain_keys,
+                        true,
+                        instruction_index,
+                    ).is_ok()
+                });
+
+            if !matches_any {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Instruction {instruction_index}: Account {account} does not match any include constraints",
+                    ),
+                ));
+            }
+        }
 
         Ok(())
     }
