@@ -1,7 +1,7 @@
 use crate::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
-use crate::rpc::{send_and_confirm_transaction, send_transaction, ConfirmationResult};
+use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::{ErrorResponse, IntoResponse, Response};
@@ -25,7 +25,6 @@ use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_seed_derivable::SeedDerivable;
-use solana_signature::Signature;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
@@ -212,9 +211,6 @@ impl DomainState {
 #[into_params(parameter_in = Query)]
 struct SponsorAndSendQuery {
     #[serde(default)]
-    /// Whether to confirm the transaction
-    confirm: bool,
-    #[serde(default)]
     /// Domain to request the sponsor pubkey for
     domain: Option<String>,
 }
@@ -222,14 +218,12 @@ struct SponsorAndSendQuery {
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(untagged)]
 pub enum SponsorAndSendResponse {
-    Send(Signature),
     Confirm(ConfirmationResult),
 }
 
 impl IntoResponse for SponsorAndSendResponse {
     fn into_response(self) -> Response {
         match self {
-            SponsorAndSendResponse::Send(signature) => signature.to_string().into_response(),
             SponsorAndSendResponse::Confirm(result) => Json(result).into_response(),
         }
     }
@@ -288,7 +282,7 @@ async fn readiness_handler() -> StatusCode {
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(SponsorAndSendQuery { confirm, domain }): Query<SponsorAndSendQuery>,
+    Query(SponsorAndSendQuery { domain }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<SponsorAndSendResponse, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
@@ -338,59 +332,35 @@ async fn sponsor_and_send_handler(
         .sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
-    if confirm {
-        let confirmation_result = send_and_confirm_transaction(
-            &state.chain_index.rpc,
-            &transaction,
-            RpcSendTransactionConfig {
-                skip_preflight: !domain_state.enable_preflight_simulation,
-                preflight_commitment: Some(CommitmentLevel::Processed),
-                ..RpcSendTransactionConfig::default()
-            },
-        )
-        .await?;
 
-        let confirmation_status = confirmation_result.status_string();
+    let confirmation_result = send_and_confirm_transaction(
+        &state.chain_index.rpc,
+        &transaction,
+        RpcSendTransactionConfig {
+            skip_preflight: !domain_state.enable_preflight_simulation,
+            preflight_commitment: Some(CommitmentLevel::Processed),
+            ..RpcSendTransactionConfig::default()
+        },
+    )
+    .await?;
 
-        obs_send(
-            domain.clone(),
-            matched_variation_name.clone(),
-            Some(confirmation_status.clone()),
-        );
+    let confirmation_status = confirmation_result.status_string();
 
-        let gas = crate::constraint::compute_gas_spent(&transaction)?;
-        obs_gas_spend(
-            domain,
-            matched_variation_name,
-            Some(confirmation_status),
-            gas,
-        );
+    obs_send(
+        domain.clone(),
+        matched_variation_name.clone(),
+        Some(confirmation_status.clone()),
+    );
 
-        Ok(SponsorAndSendResponse::Confirm(confirmation_result))
-    } else {
-        let signature = send_transaction(
-            &state.chain_index.rpc,
-            &transaction,
-            RpcSendTransactionConfig {
-                skip_preflight: !domain_state.enable_preflight_simulation,
-                preflight_commitment: Some(CommitmentLevel::Processed),
-                ..RpcSendTransactionConfig::default()
-            },
-        )
-        .map_err(|err| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to broadcast transaction: {err}"),
-            )
-        })?;
+    let gas = crate::constraint::compute_gas_spent(&transaction)?;
+    obs_gas_spend(
+        domain,
+        matched_variation_name,
+        Some(confirmation_status),
+        gas,
+    );
 
-        obs_send(domain.clone(), matched_variation_name.clone(), None);
-
-        let gas = crate::constraint::compute_gas_spent(&transaction)?;
-        obs_gas_spend(domain, matched_variation_name, None, gas);
-
-        Ok(SponsorAndSendResponse::Send(signature))
-    }
+    Ok(SponsorAndSendResponse::Confirm(confirmation_result))
 }
 
 #[derive(serde::Deserialize, utoipa::IntoParams)]
