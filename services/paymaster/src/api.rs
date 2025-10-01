@@ -274,7 +274,7 @@ async fn sponsor_and_send_handler(
     origin: Option<TypedHeader<Origin>>,
     Query(SponsorAndSendQuery { domain, .. }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
-) -> Result<ConfirmationResult, ErrorResponse> {
+) -> Result<Json<ConfirmationResult>, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
     tracing::Span::current().record("domain", domain.as_str());
     let domain_state = get_domain_state(&state, &domain)?;
@@ -344,7 +344,7 @@ async fn sponsor_and_send_handler(
     let gas = crate::constraint::compute_gas_spent(&transaction)?;
     obs_gas_spend(domain, matched_variation_name, confirmation_status, gas);
 
-    Ok(confirmation_result)
+    Ok(Json(confirmation_result))
 }
 
 #[derive(serde::Deserialize, utoipa::IntoParams)]
