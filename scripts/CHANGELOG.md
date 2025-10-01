@@ -1,5 +1,19 @@
 # @fogo/scripts
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [fcfada1]
+- Updated dependencies [f67d1e6]
+- Updated dependencies [5b62cfa]
+- Updated dependencies [9e33d0c]
+- Updated dependencies [4f85152]
+- Updated dependencies [02e0139]
+- Updated dependencies [b12481e]
+  - @fogo/sessions-sdk@0.0.13
+  - @fogo/sessions-idls@0.0.5
+
 ## 0.0.4
 
 ### Patch Changes
