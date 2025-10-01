@@ -325,7 +325,11 @@ const sessionInfoSchema = z
                     }),
                   ]),
                   authorized_tokens: z.union([
-                    z.object({ Specific: z.object({"0": z.array(z.instanceof(PublicKey))}) }),
+                    z.object({
+                      Specific: z.object({
+                        "0": z.array(z.instanceof(PublicKey)),
+                      }),
+                    }),
                     z.object({ All: z.object({}) }),
                   ]),
                   expiration: z.instanceof(BN),
@@ -338,7 +342,7 @@ const sessionInfoSchema = z
             }),
           ]),
         }),
-      })
+      }),
     ]),
     major: z.number(),
     sponsor: z.instanceof(PublicKey),
@@ -357,7 +361,7 @@ const sessionInfoSchema = z
       activeSessionInfo = session_info.V3["0"].Active["0"];
       minor = 3;
     } else {
-      throw new Error("Invalid session info");
+      return;
     }
 
     return {
