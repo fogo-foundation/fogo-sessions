@@ -3,14 +3,22 @@
 .toastRegion {
   @include theme.reset {
     position: fixed;
-    top: theme.spacing(6);
-    right: theme.spacing(6);
-    width: theme.spacing(92);
+    bottom: theme.spacing(4);
+    left: theme.spacing(4);
+    right: theme.spacing(4);
     display: flex;
     flex-flow: column nowrap;
     gap: theme.spacing(3.5);
     outline: none;
     z-index: theme.layer("toast");
+
+    @include theme.breakpoint("sm") {
+      bottom: unset;
+      left: unset;
+      top: theme.spacing(6);
+      right: theme.spacing(6);
+      width: theme.spacing(92);
+    }
 
     .toast {
       outline: none;
