@@ -2,8 +2,8 @@ use crate::error::SessionManagerError;
 use crate::{CloseSession, SESSION_SETTER_SEED};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
-use anchor_spl::token::{revoke, Revoke, TokenAccount};
 use anchor_spl::associated_token::get_associated_token_address;
+use anchor_spl::token::{revoke, Revoke, TokenAccount};
 
 impl<'info> CloseSession<'info> {
     /// Delegate token accounts to the session key.
@@ -23,7 +23,8 @@ impl<'info> CloseSession<'info> {
         );
         mints_to_revoke
             .iter()
-            .zip(accounts.iter()).try_for_each(|(mint, user_account)| {
+            .zip(accounts.iter())
+            .try_for_each(|(mint, user_account)| {
                 require_eq!(
                     user_account.key(),
                     get_associated_token_address(user, mint),
