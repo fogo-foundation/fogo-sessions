@@ -1,6 +1,7 @@
 "use client";
 
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
+import { LockIcon } from "@phosphor-icons/react/dist/ssr/Lock";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { PublicKey } from "@solana/web3.js";
 import { motion } from "motion/react";
@@ -39,11 +40,12 @@ import {
 import { TruncateKey } from "./truncate-key.js";
 import { WalletPage } from "./wallet-page.js";
 
-export const SessionButton = ({
-  requestedLimits,
-}: {
+type Props = {
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
-}) => {
+  compact?: boolean | undefined;
+};
+
+export const SessionButton = ({ requestedLimits, compact }: Props) => {
   const { whitelistedTokens, onStartSessionInit } = useSessionContext();
   const sessionState = useSession();
   const prevSessionState = useRef(sessionState);
@@ -127,17 +129,23 @@ export const SessionButton = ({
         onPress={handlePress}
         data-session-panel-open={sessionPanelOpen ? "" : undefined}
         data-is-signed-in={isEstablished(sessionState) ? "" : undefined}
+        data-compact={compact ? "" : undefined}
       >
         <div className={styles.fogoLogoContainer}>
           <FogoLogo className={styles.fogoLogo} />
         </div>
-        <span className={styles.contents}>
-          {isEstablished(sessionState) ? (
-            <TruncateKey keyValue={sessionState.walletPublicKey} />
-          ) : (
-            "Sign in"
-          )}
-        </span>
+        {!compact && (
+          <span className={styles.contents}>
+            {isEstablished(sessionState) ? (
+              <TruncateKey keyValue={sessionState.walletPublicKey} />
+            ) : (
+              "Sign in"
+            )}
+          </span>
+        )}
+        {compact && !isEstablished(sessionState) && (
+          <LockIcon className={styles.lockIcon} />
+        )}
         <div className={styles.arrowContainer}>
           <CaretDownIcon className={styles.arrow} />
         </div>

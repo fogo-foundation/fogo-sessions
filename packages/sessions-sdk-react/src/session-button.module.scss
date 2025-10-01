@@ -5,8 +5,9 @@
     width: theme.spacing(48);
     height: theme.spacing(10);
     padding: theme.spacing(1);
-    display: grid;
-    grid-template-columns: theme.spacing(8) 1fr;
+    display: flex;
+    flex-flow: row nowrap;
+    gap: theme.spacing(2);
     border: none;
     border-radius: theme.border-radius("lg");
     cursor: pointer;
@@ -41,15 +42,32 @@
       @include theme.text("sm", "medium");
 
       color: theme.color("heading");
+      text-align: center;
+      flex-grow: 1;
     }
 
     .arrowContainer {
       display: none;
+      width: theme.spacing(6);
 
       .arrow {
         transition: transform 300ms;
         transform-origin: center;
         color: theme.color("heading");
+      }
+    }
+
+    .lockIcon {
+      font-size: theme.font-size();
+      color: theme.color("foreground");
+    }
+
+    &[data-compact] {
+      width: auto;
+      padding-right: theme.spacing(3);
+
+      .arrowContainer {
+        width: auto;
       }
     }
 
@@ -63,8 +81,6 @@
     }
 
     &[data-is-signed-in] {
-      grid-template-columns: theme.spacing(8) 1fr theme.spacing(6);
-
       .arrowContainer {
         display: grid;
         place-content: center;
@@ -138,20 +154,41 @@
 .sessionPanelPopover {
   @include theme.reset {
     transition:
-      transform 200ms,
+      transform 400ms ease-in-out,
       opacity 200ms;
     z-index: theme.layer("session-panel") !important;
 
+    @media (max-width: theme.map-get-strict(theme.$breakpoints, "sm")) {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      top: unset !important;
+    }
+
+    @include theme.breakpoint("sm") {
+      transition:
+        transform 200ms,
+        opacity 200ms;
+    }
+
     .sessionPanel {
-      width: theme.spacing(88);
-      height: theme.spacing(148);
-      border-radius: theme.border-radius("xl");
+      width: 100%;
+      max-height: 80dvh;
+      border-top-left-radius: theme.border-radius("xl");
+      border-top-right-radius: theme.border-radius("xl");
       background: theme.color("card");
       border: 1px solid theme.color("widget-border");
       box-shadow: theme.shadow();
       display: grid;
       grid-template-rows: theme.spacing(12) 1fr theme.spacing(12);
       outline: none;
+
+      @include theme.breakpoint("sm") {
+        width: theme.spacing(88);
+        height: theme.spacing(148);
+        border-radius: theme.border-radius("xl");
+      }
 
       .header {
         border-bottom: 1px solid theme.color("border");
@@ -252,32 +289,39 @@
 
     &[data-entering],
     &[data-exiting] {
-      transform: var(--origin);
-      opacity: 0;
+      transform: translateY(100%);
     }
 
-    &[data-placement="top"] {
-      --origin: translateY(8px);
+    @include theme.breakpoint("sm") {
+      &[data-entering],
+      &[data-exiting] {
+        transform: var(--origin);
+        opacity: 0;
+      }
 
-      margin-bottom: 6px;
-    }
+      &[data-placement="top"] {
+        --origin: translateY(8px);
 
-    &[data-placement="bottom"] {
-      --origin: translateY(-8px);
+        margin-bottom: 6px;
+      }
 
-      margin-top: 6px;
-    }
+      &[data-placement="bottom"] {
+        --origin: translateY(-8px);
 
-    &[data-placement="right"] {
-      --origin: translateX(-8px);
+        margin-top: 6px;
+      }
 
-      margin-left: 6px;
-    }
+      &[data-placement="right"] {
+        --origin: translateX(-8px);
 
-    &[data-placement="left"] {
-      --origin: translateX(8px);
+        margin-left: 6px;
+      }
 
-      margin-right: 6px;
+      &[data-placement="left"] {
+        --origin: translateX(8px);
+
+        margin-right: 6px;
+      }
     }
   }
 }
