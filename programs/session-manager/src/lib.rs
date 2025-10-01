@@ -134,31 +134,27 @@ pub mod session_manager {
         ctx: Context<'_, '_, '_, 'info, CloseSession<'info>>,
     ) -> Result<()> {
         let (user, mints_to_revoke) = match &ctx.accounts.session.session_info {
-            SessionInfo::V3(V3::Active(active_session_info)) => match &active_session_info
-                .authorized_tokens
-            {
-                AuthorizedTokensWithMints::Specific(mints) => (&active_session_info.user, mints),
-                AuthorizedTokensWithMints::All => (&active_session_info.user, &vec![]),
+            // V3 sessions can be all be closed
+            SessionInfo::V3(V3::Active(ActiveSessionInfo {
+                authorized_tokens: authorized_tokens_with_mints,
+                user,
+                ..
+            }))
+            | SessionInfo::V3(V3::Revoked(RevokedSessionInfo {
+                authorized_tokens_with_mints,
+                user,
+                ..
+            })) => match &authorized_tokens_with_mints {
+                AuthorizedTokensWithMints::Specific(mints) => (user, mints),
+                AuthorizedTokensWithMints::All => (user, &vec![]),
             },
-            SessionInfo::V3(V3::Revoked(revoked_info)) => {
-                match &revoked_info.authorized_tokens_with_mints {
-                    AuthorizedTokensWithMints::Specific(mints) => (&revoked_info.user, mints),
-                    AuthorizedTokensWithMints::All => (&revoked_info.user, &vec![]),
-                }
-            }
-            SessionInfo::V2(V2::Active(active_session_info)) => {
-                match active_session_info.authorized_tokens {
-                    AuthorizedTokens::Specific => {
-                        return Err(error!(SessionManagerError::InvalidVersion))
-                    }
-                    AuthorizedTokens::All => (&active_session_info.user, &vec![]),
-                }
-            }
-            SessionInfo::V1(v1) => match v1.authorized_tokens {
+            // V2 and V1 sessions can only be closed if they don't have token limits
+            SessionInfo::V2(V2::Active(active_session_info))
+            | SessionInfo::V1(active_session_info) => match active_session_info.authorized_tokens {
                 AuthorizedTokens::Specific => {
                     return Err(error!(SessionManagerError::InvalidVersion))
                 }
-                AuthorizedTokens::All => (&v1.user, &vec![]),
+                AuthorizedTokens::All => (&active_session_info.user, &vec![]),
             },
             _ => return Err(error!(SessionManagerError::InvalidVersion)),
         };
