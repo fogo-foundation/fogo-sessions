@@ -76,7 +76,7 @@ local_resource(
 
 local_resource(
     "paymaster",
-    serve_cmd="cargo run -p fogo-paymaster",
+    serve_cmd="cargo run --bin fogo-paymaster",
     resource_deps=["svm-localnet"],
 )
 
