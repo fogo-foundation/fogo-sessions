@@ -6,9 +6,9 @@ use anchor_spl::associated_token::get_associated_token_address;
 use anchor_spl::token::{revoke, Revoke, TokenAccount};
 
 impl<'info> CloseSession<'info> {
-    /// Delegate token accounts to the session key.
-    /// Signing an intent with the symbol "SOL" means delegating your token account for a token who has metadata symbol "SOL".
-    /// Although there can be multiple tokens with the same symbol, the worst case scenario is that you're delegating the token with the most value among them, which is probably what you want.
+    /// Revoke token accounts from the session key.
+    /// When closing a session, the session account is returned to the system program.
+    /// We need to revoke all token delegations to the session key, otherwise the session key could still have power to spend tokens from the user accounts even if the session had expired or been revoked.
     pub fn revoke_tokens(
         &self,
         accounts: &[AccountInfo<'info>],
