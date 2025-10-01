@@ -36,6 +36,7 @@ solana-packet = {workspace = true}
 solana-program = {workspace = true}
 solana-pubkey = {workspace = true}
 solana-rpc-client-api = {workspace = true}
+solana-sdk-ids = {workspace = true}
 solana-seed-derivable = {workspace = true}
 solana-seed-phrase = {workspace = true}
 solana-signature = {workspace = true}
