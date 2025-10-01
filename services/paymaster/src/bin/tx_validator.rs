@@ -10,7 +10,7 @@ use std::str::FromStr;
 
 use fogo_paymaster::{
     api::ChainIndex,
-    config::{load_config, Config, Domain},
+    config::{load_config, Domain},
     constraint::{ContextualDomainKeys, TransactionVariation},
 };
 
@@ -55,6 +55,13 @@ async fn main() -> Result<()> {
             transaction,
         } => {
             let config = load_config(&config).with_context(|| format!("Failed to load config from {config}"))?;
+            let domains = if let Some(ref domain_name) = domain {
+                vec![config.domains.iter().find(|d| d.domain == *domain_name).ok_or_else(|| {
+                    anyhow!("Domain '{domain_name}' not found in config")
+                })?]
+            } else {
+                config.domains.iter().collect()
+            };
             let tx = match (transaction_hash, transaction) {
                 (Some(hash), _) => fetch_transaction_from_rpc(&hash, &config.solana_url).await?,
                 (None, Some(tx)) => parse_transaction_from_base64(&tx)?,
@@ -64,61 +71,31 @@ async fn main() -> Result<()> {
                     ));
                 }
             };
-
-            validate_transaction(&tx, &config, domain).await?;
-        }
-    }
-
-    Ok(())
-}
-
-async fn validate_transaction(
-    transaction: &VersionedTransaction,
-    config: &Config,
-    domain_name: Option<String>,
-) -> Result<()> {
-    let chain_index = ChainIndex {
-        rpc: RpcClient::new(config.solana_url.to_string()),
-        lookup_table_cache: DashMap::new(),
-    };
-
-    let domains = if let Some(ref domain_name_specified) = domain_name {
-        vec![config.domains.iter().find(|d| d.domain == *domain_name_specified).ok_or_else(|| {
-            anyhow!("Domain '{domain_name_specified}' not found in config")
-        })?]
-    } else {
-        config.domains.iter().collect()
-    };
-    let mut any_matches = false;
-    for domain in domains {
-        let matching_variations = check_transaction_variations(
-            transaction,
-            &domain.tx_variations,
-            domain,
-            &chain_index,
-        )
-        .await?;
-
-        if !matching_variations.is_empty() {
-            any_matches = true;
-            println!(
-                "✅ Transaction matches variations for domain '{}':",
-                domain.domain
-            );
-            for variation_name in matching_variations {
-                println!("  - {variation_name}");
+            let chain_index = ChainIndex {
+                rpc: RpcClient::new(config.solana_url),
+                lookup_table_cache: DashMap::new(),
+            };
+            
+            let mut successful_validations = Vec::new();
+            for domain in domains {
+                successful_validations.extend(
+                    get_matching_variations(&tx, domain, &chain_index).await?,
+                );
             }
-            println!();
-        }
-    }
 
-    if !any_matches {
-        let error_message = match domain_name {
-            Some(name) => format!("❌ Transaction does not match any variations for domain '{name}'"),
-            None => "❌ Transaction does not match any variations for any configured domain".to_string(),
-        };
-        println!("{error_message}");
-        std::process::exit(1);
+            if successful_validations.is_empty() {
+                if let Some(ref domain_name) = domain {
+                    println!("❌ Transaction does not match any variations for domain '{domain_name}'");
+                } else {
+                    println!("❌ Transaction does not match any variations for any configured domain");
+                }
+            } else {
+                println!("✅ Transaction matches the following variations:");
+                for (domain_name, variation_name) in successful_validations {
+                    println!(" - Domain: {domain_name}, Variation: {variation_name}");
+                }
+            }
+        }
     }
 
     Ok(())
@@ -157,17 +134,16 @@ fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransactio
     bincode::deserialize(&tx_bytes).context("Failed to deserialize transaction")
 }
 
-async fn check_transaction_variations(
+async fn get_matching_variations(
     transaction: &VersionedTransaction,
-    variations: &[TransactionVariation],
     domain: &Domain,
     chain_index: &ChainIndex,
-) -> Result<Vec<String>> {
+) -> Result<Vec<(String, String)>> {
     let mut matching_variations = Vec::new();
 
     let contextual_keys = compute_contextual_keys(&domain.domain).await?;
 
-    for variation in variations {
+    for variation in &domain.tx_variations {
         let variation_name = variation.name().to_string();
 
         let matches = match variation {
@@ -182,7 +158,7 @@ async fn check_transaction_variations(
         };
 
         if matches {
-            matching_variations.push(variation_name);
+            matching_variations.push((domain.domain.clone(), variation_name));
         }
     }
 
