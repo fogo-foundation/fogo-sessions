@@ -110,9 +110,7 @@ pub struct RevokedSessionInfo {
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 
-pub struct ActiveSessionInfo<
-    T: Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema,
-> {
+pub struct ActiveSessionInfo<T: Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema> {
     /// The user who started this session
     pub user: Pubkey,
     /// The expiration time of the session
