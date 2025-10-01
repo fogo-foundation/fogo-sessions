@@ -137,7 +137,7 @@ mod authorized_programs {
 
 pub use authorized_programs::AuthorizedPrograms;
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema, PartialEq)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub enum AuthorizedTokens {
     Specific,
     All,
