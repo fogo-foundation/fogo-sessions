@@ -7,10 +7,9 @@ use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
 use domain_registry::{domain::Domain, state::DomainRecordInner};
-use fogo_sessions_sdk::session::{ActiveSessionInfo, V2, V3};
 use fogo_sessions_sdk::session::{
-    AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens, RevokedSessionInfo, Session,
-    SessionInfo,
+    ActiveSessionInfo, AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens,
+    AuthorizedTokensWithMints, RevokedSessionInfo, Session, SessionInfo, V2, V3,
 };
 use solana_intents::Intent;
 use solana_intents::Version;
@@ -26,8 +25,6 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
-    use fogo_sessions_sdk::session::AuthorizedTokensWithMints;
-
     use super::*;
 
     #[instruction(discriminator = [0])]
