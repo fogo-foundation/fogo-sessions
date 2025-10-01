@@ -1,13 +1,13 @@
 use crate::error::SessionManagerError;
-use anchor_lang::{prelude::*};
+use crate::{StartSession, SESSION_SETTER_SEED};
+use anchor_lang::prelude::*;
 use anchor_spl::token::approve_checked;
 use anchor_spl::{
     associated_token::get_associated_token_address,
     token::{spl_token::try_ui_amount_into_amount, ApproveChecked, Mint},
 };
 use mpl_token_metadata::accounts::Metadata;
-use solana_intents::{SymbolOrMint};
-use crate::{StartSession, SESSION_SETTER_SEED};
+use solana_intents::SymbolOrMint;
 
 impl<'info> StartSession<'info> {
     /// Delegate token accounts to the session key.
@@ -19,7 +19,8 @@ impl<'info> StartSession<'info> {
         tokens: &[(SymbolOrMint, String)],
         user: &Pubkey,
         session_setter_bump: u8,
-    ) -> Result<()> {
+    ) -> Result<Vec<Pubkey>> {
+        let mut approved_mints = vec![];
         let mut accounts_iter = accounts.iter();
         for (symbol_or_mint, amount) in tokens.iter() {
             let (user_account, mint_account) = match symbol_or_mint {
@@ -86,8 +87,9 @@ impl<'info> StartSession<'info> {
                 amount_internal,
                 mint_data.decimals,
             )?;
+            approved_mints.push(mint_account.key());
         }
 
-        Ok(())
+        Ok(approved_mints)
     }
 }

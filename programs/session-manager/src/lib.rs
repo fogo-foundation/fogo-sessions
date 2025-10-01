@@ -5,16 +5,14 @@ use crate::error::SessionManagerError;
 use crate::message::{Message, Tokens};
 use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::{
-    token::Token,
-};
+use anchor_spl::token::Token;
 use domain_registry::{domain::Domain, state::DomainRecordInner};
 use fogo_sessions_sdk::session::{ActiveSessionInfo, V2, V3};
 use fogo_sessions_sdk::session::{
-    AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens, Session, SessionInfo, RevokedInfo
+    AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens, RevokedInfo, Session, SessionInfo,
 };
 use solana_intents::Intent;
-use solana_intents::{Version};
+use solana_intents::Version;
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
@@ -27,6 +25,8 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
+    use fogo_sessions_sdk::session::AuthorizedTokensWithMints;
+
     use super::*;
 
     #[instruction(discriminator = [0])]
@@ -50,17 +50,17 @@ pub mod session_manager {
         ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
 
-        let authorized_tokens = match tokens {
+        let authorized_tokens_with_mints = match tokens {
             Tokens::Specific(tokens) => {
-                ctx.accounts.approve_tokens(
+                let approved_mints = ctx.accounts.approve_tokens(
                     ctx.remaining_accounts,
                     &tokens,
                     &signer,
                     ctx.bumps.session_setter,
                 )?;
-                AuthorizedTokens::Specific
+                AuthorizedTokensWithMints::Specific(approved_mints)
             }
-            Tokens::All => AuthorizedTokens::All,
+            Tokens::All => AuthorizedTokensWithMints::All,
         };
 
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
@@ -72,7 +72,7 @@ pub mod session_manager {
                 session_info: SessionInfo::V1(ActiveSessionInfo {
                     user: signer,
                     authorized_programs: AuthorizedPrograms::Specific(program_domains),
-                    authorized_tokens,
+                    authorized_tokens: authorized_tokens_with_mints.as_ref().clone(),
                     extra: extra.into(),
                     expiration: expires.timestamp(),
                 }),
@@ -83,7 +83,18 @@ pub mod session_manager {
                 session_info: SessionInfo::V2(V2::Active(ActiveSessionInfo {
                     user: signer,
                     authorized_programs: AuthorizedPrograms::Specific(program_domains),
-                    authorized_tokens,
+                    authorized_tokens: authorized_tokens_with_mints.as_ref().clone(),
+                    extra: extra.into(),
+                    expiration: expires.timestamp(),
+                })),
+            },
+            3 => Session {
+                sponsor: ctx.accounts.sponsor.key(),
+                major,
+                session_info: SessionInfo::V3(V3::Active(ActiveSessionInfo {
+                    user: signer,
+                    authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                    authorized_tokens: authorized_tokens_with_mints,
                     extra: extra.into(),
                     expiration: expires.timestamp(),
                 })),
@@ -107,12 +118,11 @@ pub mod session_manager {
             }
             SessionInfo::V2(V2::Revoked(_)) => {} // Idempotent
             SessionInfo::V3(V3::Active(active_session_info)) => {
-                ctx.accounts.session.session_info =
-                    SessionInfo::V3(V3::Revoked(RevokedInfo {
-                        user: active_session_info.user,
-                        expiration: active_session_info.expiration,
-                        authorized_tokens: active_session_info.authorized_tokens.clone(),
-                    }));
+                ctx.accounts.session.session_info = SessionInfo::V3(V3::Revoked(RevokedInfo {
+                    user: active_session_info.user,
+                    expiration: active_session_info.expiration,
+                    authorized_tokens: active_session_info.authorized_tokens.clone(),
+                }));
             }
             SessionInfo::V3(V3::Revoked(_)) => {} // Idempotent
         }
@@ -124,7 +134,33 @@ pub mod session_manager {
     pub fn close_session<'info>(
         ctx: Context<'_, '_, '_, 'info, CloseSession<'info>>,
     ) -> Result<()> {
-        ctx.accounts.revoke_tokens(ctx.remaining_accounts, ctx.bumps.session_setter)?;
+        let (user, mints_to_revoke) = match &ctx.accounts.session.session_info {
+            SessionInfo::V3(V3::Revoked(revoked_info)) => match &revoked_info.authorized_tokens {
+                AuthorizedTokensWithMints::Specific(mints) => (&revoked_info.user, mints),
+                AuthorizedTokensWithMints::All => (&revoked_info.user, &vec![]),
+            },
+            SessionInfo::V2(V2::Active(active_session_info)) => {
+                match active_session_info.authorized_tokens {
+                    AuthorizedTokens::Specific => {
+                        return Err(error!(SessionManagerError::InvalidVersion))
+                    }
+                    AuthorizedTokens::All => (&active_session_info.user, &vec![]),
+                }
+            }
+            SessionInfo::V1(v1) => match v1.authorized_tokens {
+                AuthorizedTokens::Specific => {
+                    return Err(error!(SessionManagerError::InvalidVersion))
+                }
+                AuthorizedTokens::All => (&v1.user, &vec![]),
+            },
+            _ => return Err(error!(SessionManagerError::InvalidVersion)),
+        };
+        ctx.accounts.revoke_tokens(
+            ctx.remaining_accounts,
+            mints_to_revoke,
+            user,
+            ctx.bumps.session_setter,
+        )?;
         Ok(())
     }
 
