@@ -91,8 +91,8 @@ async fn main() -> Result<()> {
                 }
             } else {
                 println!("✅ Transaction matches the following variations:");
-                for (domain_name, variation_name) in successful_validations {
-                    println!(" - Domain: {domain_name}, Variation: {variation_name}");
+                for (domain_name, variation) in successful_validations {
+                    println!(" - Domain: {domain_name}, Variation: {}", variation.name());
                 }
             }
         }
@@ -134,18 +134,16 @@ fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransactio
     bincode::deserialize(&tx_bytes).context("Failed to deserialize transaction")
 }
 
-async fn get_matching_variations(
+async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
-    domain: &Domain,
+    domain: &'a Domain,
     chain_index: &ChainIndex,
-) -> Result<Vec<(String, String)>> {
+) -> Result<Vec<(String, &'a TransactionVariation)>> {
     let mut matching_variations = Vec::new();
 
     let contextual_keys = compute_contextual_keys(&domain.domain).await?;
 
     for variation in &domain.tx_variations {
-        let variation_name = variation.name().to_string();
-
         let matches = match variation {
             TransactionVariation::V0(v0_variation) => {
                 v0_variation.validate_transaction(transaction).is_ok()
@@ -158,7 +156,7 @@ async fn get_matching_variations(
         };
 
         if matches {
-            matching_variations.push((domain.domain.clone(), variation_name));
+            matching_variations.push((domain.domain.clone(), variation));
         }
     }
 
