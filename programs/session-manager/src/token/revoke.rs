@@ -16,9 +16,9 @@ impl<'info> CloseSession<'info> {
         user: &Pubkey,
         session_setter_bump: u8,
     ) -> Result<()> {
-        require_eq!(
-            mints_to_revoke.len(),
+        require_gte!(
             accounts.len(),
+            mints_to_revoke.len(),
             SessionManagerError::MissingAccount
         );
         mints_to_revoke

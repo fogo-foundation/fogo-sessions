@@ -135,6 +135,11 @@ pub mod session_manager {
         ctx: Context<'_, '_, '_, 'info, CloseSession<'info>>,
     ) -> Result<()> {
         let (user, mints_to_revoke) = match &ctx.accounts.session.session_info {
+            SessionInfo::V3(V3::Active(active_session_info)) => 
+                match &active_session_info.authorized_tokens {
+                    AuthorizedTokensWithMints::Specific(mints) => (&active_session_info.user, mints),
+                    AuthorizedTokensWithMints::All => (&active_session_info.user, &vec![]),
+            }
             SessionInfo::V3(V3::Revoked(revoked_info)) => match &revoked_info.authorized_tokens {
                 AuthorizedTokensWithMints::Specific(mints) => (&revoked_info.user, mints),
                 AuthorizedTokensWithMints::All => (&revoked_info.user, &vec![]),
@@ -208,6 +213,7 @@ pub struct CloseSession<'info> {
     #[account(constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
     /// CHECK: we check it against the session's sponsor
     pub sponsor: AccountInfo<'info>,
+    /// CHECK: this is just a signer for token program CPIs
     #[account(seeds = [SESSION_SETTER_SEED], bump)]
     pub session_setter: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
