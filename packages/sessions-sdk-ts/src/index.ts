@@ -59,7 +59,7 @@ const UNLIMITED_TOKEN_PERMISSIONS_VALUE =
 const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 
 const CURRENT_MAJOR = "0";
-const CURRENT_MINOR = "2";
+const CURRENT_MINOR = "3";
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
 const CURRENT_INTENT_TRANSFER_MINOR = "1";
 
@@ -300,22 +300,64 @@ const sessionInfoSchema = z
           ]),
         }),
       }),
+      z.object({
+        V3: z.object({
+          "0": z.union([
+            z.object({
+              Revoked: z.instanceof(BN),
+            }),
+            z.object({
+              Active: z.object({
+                "0": z.object({
+                  authorized_programs: z.union([
+                    z.object({
+                      Specific: z.object({
+                        0: z.array(
+                          z.object({
+                            program_id: z.instanceof(PublicKey),
+                            signer_pda: z.instanceof(PublicKey),
+                          }),
+                        ),
+                      }),
+                    }),
+                    z.object({
+                      All: z.object({}),
+                    }),
+                  ]),
+                  authorized_tokens: z.union([
+                    z.object({ Specific: z.object({"0": z.array(z.instanceof(PublicKey))}) }),
+                    z.object({ All: z.object({}) }),
+                  ]),
+                  expiration: z.instanceof(BN),
+                  extra: z.object({
+                    0: z.unknown(),
+                  }),
+                  user: z.instanceof(PublicKey),
+                }),
+              }),
+            }),
+          ]),
+        }),
+      })
     ]),
     major: z.number(),
     sponsor: z.instanceof(PublicKey),
   })
   .transform(({ session_info, major, sponsor }) => {
     let activeSessionInfo;
-    let minor: 1 | 2;
+    let minor: 1 | 2 | 3;
 
     if ("V1" in session_info) {
       activeSessionInfo = session_info.V1["0"];
       minor = 1;
-    } else if ("Active" in session_info.V2["0"]) {
+    } else if ("V2" in session_info && "Active" in session_info.V2["0"]) {
       activeSessionInfo = session_info.V2["0"].Active["0"];
       minor = 2;
+    } else if ("V3" in session_info && "Active" in session_info.V3["0"]) {
+      activeSessionInfo = session_info.V3["0"].Active["0"];
+      minor = 3;
     } else {
-      return;
+      throw new Error("Invalid session info");
     }
 
     return {
