@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.22
+
+### Patch Changes
+
+- 8137849: Fix overflow issue with tokenless sessions
+
 ## 0.0.21
 
 ### Patch Changes
