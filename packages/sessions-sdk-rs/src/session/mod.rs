@@ -62,8 +62,9 @@ mod session_info {
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum SessionInfo {
         Invalid, // This is a hack for borsh to assign a discriminator of 1 to V1
-        V1(ActiveSessionInfo),
+        V1(ActiveSessionInfo<AuthorizedTokens>),
         V2(V2),
+        V3(V3),
     }
 }
 pub use session_info::SessionInfo;
@@ -76,15 +77,37 @@ mod v2 {
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum V2 {
         Revoked(UnixTimestamp),
-        Active(ActiveSessionInfo),
+        Active(ActiveSessionInfo<AuthorizedTokens>),
     }
 }
 
 pub use v2::V2;
 
+/// This module is a hack because the BorshSchema macro generates dead code for `V3` in this version of borsh, but we don't want to disable dead_code globally.
+/// More info: https://github.com/near/borsh-rs/issues/111"
+#[allow(dead_code)]
+mod v3 {
+    use super::*;
+
+    #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+    pub enum V3 {
+        Revoked(RevokedInfo),
+        Active(ActiveSessionInfo<AuthorizedTokensWithMints>),
+    }
+}
+
+pub use v3::V3;
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+pub struct RevokedInfo {
+    pub user: Pubkey,
+    pub expiration: UnixTimestamp,
+    pub authorized_tokens: AuthorizedTokensWithMints,
+}
+
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 
-pub struct ActiveSessionInfo {
+pub struct ActiveSessionInfo<T : BorshDeserialize + BorshSerialize + BorshSchema + std::fmt::Debug + Clone> {
     /// The user who started this session
     pub user: Pubkey,
     /// The expiration time of the session
@@ -92,7 +115,7 @@ pub struct ActiveSessionInfo {
     /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
     pub authorized_programs: AuthorizedPrograms,
     /// Tokens the session key is allowed to interact with. If `Specific`, the spend limits are stored in each individual token account in the usual `delegated_amount` field.
-    pub authorized_tokens: AuthorizedTokens,
+    pub authorized_tokens: T,
     /// Extra (key, value)'s provided by the user, they can be used to store extra arbitrary information about the session
     pub extra: Extra,
 }
@@ -112,10 +135,25 @@ mod authorized_programs {
 
 pub use authorized_programs::AuthorizedPrograms;
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema, PartialEq)]
 pub enum AuthorizedTokens {
     Specific,
     All,
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+pub enum AuthorizedTokensWithMints {
+    Specific(Vec<Pubkey>),
+    All,
+}
+
+impl AsRef<AuthorizedTokens> for AuthorizedTokensWithMints {
+    fn as_ref(&self) -> &AuthorizedTokens {
+        match self {
+            AuthorizedTokensWithMints::Specific(_) => &AuthorizedTokens::Specific,
+            AuthorizedTokensWithMints::All => &AuthorizedTokens::All,
+        }
+    }
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
@@ -194,6 +232,10 @@ impl Session {
                 V2::Revoked(expiration) => Ok(*expiration),
                 V2::Active(session) => Ok(session.expiration),
             },
+            SessionInfo::V3(session) => match session {
+                V3::Revoked(revoked_info) => Ok(revoked_info.expiration),
+                V3::Active(session) => Ok(session.expiration),
+            },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
     }
@@ -204,6 +246,10 @@ impl Session {
             SessionInfo::V2(session) => match session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.authorized_programs),
+            },
+            SessionInfo::V3(session) => match session {
+                V3::Revoked(_) => Err(SessionError::Revoked),
+                V3::Active(session) => Ok(&session.authorized_programs),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
@@ -216,6 +262,10 @@ impl Session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.user),
             },
+            SessionInfo::V3(session) => match session {
+                V3::Revoked(_) => Err(SessionError::Revoked),
+                V3::Active(session) => Ok(&session.user),
+            },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
     }
@@ -225,6 +275,10 @@ impl Session {
             SessionInfo::V2(session) => match session {
                 V2::Revoked(_) => Err(SessionError::Revoked),
                 V2::Active(session) => Ok(&session.extra),
+            },
+            SessionInfo::V3(session) => match session {
+                V3::Revoked(_) => Err(SessionError::Revoked),
+                V3::Active(session) => Ok(&session.extra),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
