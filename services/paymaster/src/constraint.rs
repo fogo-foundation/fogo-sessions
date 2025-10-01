@@ -741,17 +741,22 @@ pub const PRECOMPILE_SIGNATURE_PROGRAMS: &[Pubkey] = &[
 /// Counts the number of signatures verified by precompile programs in the transaction.
 /// Based on core solana fee calc logic: https://github.com/dourolabs/agave/blob/cb32984a9b0d5c2c6f7775bed39b66d3a22e3c46/fee/src/lib.rs#L65-L83
 pub fn get_number_precompile_signatures(transaction: &VersionedTransaction) -> u64 {
-    transaction.message.instructions().iter().filter(|ix| {
-        let program_id = ix.program_id(transaction.message.static_account_keys());
-        PRECOMPILE_SIGNATURE_PROGRAMS.contains(program_id)
-    })
-    .map(|ix| u64::from(ix.data.first().copied().unwrap_or(0)))
-    .fold(0u64, |acc, x| acc.saturating_add(x))
+    transaction
+        .message
+        .instructions()
+        .iter()
+        .filter(|ix| {
+            let program_id = ix.program_id(transaction.message.static_account_keys());
+            PRECOMPILE_SIGNATURE_PROGRAMS.contains(program_id)
+        })
+        .map(|ix| u64::from(ix.data.first().copied().unwrap_or(0)))
+        .fold(0u64, |acc, x| acc.saturating_add(x))
 }
 
 /// Computes the gas spend (in lamports) for a transaction based on signatures and priority fee.
 pub fn compute_gas_spent(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
-    let n_signatures = (transaction.signatures.len() as u64).saturating_add(get_number_precompile_signatures(transaction));
+    let n_signatures = (transaction.signatures.len() as u64)
+        .saturating_add(get_number_precompile_signatures(transaction));
     let priority_fee = process_compute_budget_instructions(transaction)?;
     Ok((n_signatures.saturating_mul(LAMPORTS_PER_SIGNATURE)).saturating_add(priority_fee))
 }

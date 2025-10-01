@@ -99,7 +99,7 @@ impl InstructionConstraint {
                     index: 4,
                     include: vec![ContextualPubkey::DomainRegistry],
                     exclude: vec![],
-                }
+                },
             ],
             data: vec![
                 // instruction = 0 (StartSession)
