@@ -1581,6 +1581,7 @@ dependencies = [
  "dashmap 6.1.0",
  "domain-registry",
  "fogo-sessions-sdk",
+ "futures",
  "hex",
  "opentelemetry",
  "opentelemetry-otlp",

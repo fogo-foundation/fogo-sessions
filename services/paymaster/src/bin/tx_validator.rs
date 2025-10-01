@@ -79,11 +79,20 @@ async fn main() -> Result<()> {
                 lookup_table_cache: DashMap::new(),
             };
 
-            let mut successful_validations = Vec::new();
-            for domain in domains {
-                successful_validations
-                    .extend(get_matching_variations(&tx, domain, &chain_index).await?);
-            }
+            let successful_validations =
+                futures::future::try_join_all(domains.into_iter().map(async |domain| {
+                    let variations = get_matching_variations(&tx, domain, &chain_index).await?;
+                    Ok::<_, anyhow::Error>(
+                        variations
+                            .into_iter()
+                            .map(|v| (domain.domain.as_str(), v))
+                            .collect::<Vec<_>>(),
+                    )
+                }))
+                .await?
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>();
 
             if successful_validations.is_empty() {
                 if let Some(ref domain_name) = domain {
@@ -144,7 +153,7 @@ async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
     domain: &'a Domain,
     chain_index: &ChainIndex,
-) -> Result<Vec<(String, &'a TransactionVariation)>> {
+) -> Result<Vec<&'a TransactionVariation>> {
     let mut matching_variations = Vec::new();
 
     let contextual_keys = compute_contextual_keys(&domain.domain).await?;
@@ -160,7 +169,7 @@ async fn get_matching_variations<'a>(
         };
 
         if matches {
-            matching_variations.push((domain.domain.clone(), variation));
+            matching_variations.push(variation);
         }
     }
 
