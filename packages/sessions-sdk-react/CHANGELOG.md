@@ -1,5 +1,28 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.21
+
+### Patch Changes
+
+- d4c8216: Expose option to apps to set wallet adapters
+- fbbaba6: Gracefully handle trading past limits
+- 439c1a6: Add callbacks before session sdk modals open
+- fa9e0b0: Optimize components for mobile & add compact main button variant
+- 02e0139: Add utility functions to generate and verify a login token
+- 840580d: Update look & feel of all sessions components
+- b12481e: Revoke sessions when logging out
+- Updated dependencies [fcfada1]
+- Updated dependencies [f67d1e6]
+- Updated dependencies [5b62cfa]
+- Updated dependencies [9e33d0c]
+- Updated dependencies [4f85152]
+- Updated dependencies [02e0139]
+- Updated dependencies [f482ab4]
+- Updated dependencies [b12481e]
+  - @fogo/sessions-sdk@0.0.13
+  - @fogo/sessions-idls@0.0.5
+  - @fogo/sessions-sdk-web@0.0.7
+
 ## 0.0.20
 
 ### Patch Changes
