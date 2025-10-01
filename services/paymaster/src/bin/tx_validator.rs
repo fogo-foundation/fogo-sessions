@@ -54,11 +54,14 @@ async fn main() -> Result<()> {
             transaction_hash,
             transaction,
         } => {
-            let config = load_config(&config).with_context(|| format!("Failed to load config from {config}"))?;
+            let config = load_config(&config)
+                .with_context(|| format!("Failed to load config from {config}"))?;
             let domains = if let Some(ref domain_name) = domain {
-                vec![config.domains.iter().find(|d| d.domain == *domain_name).ok_or_else(|| {
-                    anyhow!("Domain '{domain_name}' not found in config")
-                })?]
+                vec![config
+                    .domains
+                    .iter()
+                    .find(|d| d.domain == *domain_name)
+                    .ok_or_else(|| anyhow!("Domain '{domain_name}' not found in config"))?]
             } else {
                 config.domains.iter().collect()
             };
@@ -75,19 +78,22 @@ async fn main() -> Result<()> {
                 rpc: RpcClient::new(config.solana_url),
                 lookup_table_cache: DashMap::new(),
             };
-            
+
             let mut successful_validations = Vec::new();
             for domain in domains {
-                successful_validations.extend(
-                    get_matching_variations(&tx, domain, &chain_index).await?,
-                );
+                successful_validations
+                    .extend(get_matching_variations(&tx, domain, &chain_index).await?);
             }
 
             if successful_validations.is_empty() {
                 if let Some(ref domain_name) = domain {
-                    println!("❌ Transaction does not match any variations for domain '{domain_name}'");
+                    println!(
+                        "❌ Transaction does not match any variations for domain '{domain_name}'"
+                    );
                 } else {
-                    println!("❌ Transaction does not match any variations for any configured domain");
+                    println!(
+                        "❌ Transaction does not match any variations for any configured domain"
+                    );
                 }
             } else {
                 println!("✅ Transaction matches the following variations:");
@@ -148,11 +154,9 @@ async fn get_matching_variations<'a>(
             TransactionVariation::V0(v0_variation) => {
                 v0_variation.validate_transaction(transaction).is_ok()
             }
-            TransactionVariation::V1(v1_variation) => {
-                v1_variation
-                    .validate_transaction(transaction, &contextual_keys, chain_index)
-                    .is_ok()
-            }
+            TransactionVariation::V1(v1_variation) => v1_variation
+                .validate_transaction(transaction, &contextual_keys, chain_index)
+                .is_ok(),
         };
 
         if matches {
@@ -163,18 +167,17 @@ async fn get_matching_variations<'a>(
     Ok(matching_variations)
 }
 
-async fn compute_contextual_keys(
-    domain: &str,
-) -> Result<ContextualDomainKeys> {
+async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
     let domain_registry = domain_registry::domain::Domain::new_checked(domain)
         .with_context(|| format!("Failed to derive domain registry key for domain: {domain}"))?
         .get_domain_record_address();
 
     let url = format!("https://paymaster.fogo.io/api/sponsor_pubkey?domain={domain}");
     let client = reqwest::Client::new();
-    let response = client.get(&url).send().await.with_context(|| {
-        format!("Failed to fetch sponsor pubkey from API for domain: {domain}")
-    })?;
+    let response =
+        client.get(&url).send().await.with_context(|| {
+            format!("Failed to fetch sponsor pubkey from API for domain: {domain}")
+        })?;
 
     if !response.status().is_success() {
         return Err(anyhow!(
