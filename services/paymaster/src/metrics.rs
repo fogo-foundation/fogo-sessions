@@ -11,11 +11,12 @@ pub fn obs_validation(domain: String, variation: String, result_validation: Stri
 }
 
 pub const TRANSACTION_SEND_COUNT: &str = "paymaster_transaction_send_total";
-pub fn obs_send(domain: String, variation: String, result_confirmation: Option<String>) {
-    let mut labels = vec![("domain", domain), ("variation", variation)];
-    if let Some(result) = result_confirmation {
-        labels.push(("result", result));
-    }
+pub fn obs_send(domain: String, variation: String, result_confirmation: String) {
+    let labels = vec![
+        ("domain", domain),
+        ("variation", variation),
+        ("result", result_confirmation),
+    ];
     metrics::counter!(TRANSACTION_SEND_COUNT, &labels).increment(1);
 }
 
@@ -33,12 +34,13 @@ pub const GAS_SPEND_BUCKETS: &[f64] = &[
 pub fn obs_gas_spend(
     domain: String,
     variation: String,
-    result_confirmation: Option<String>,
+    result_confirmation: String,
     lamports: u64,
 ) {
-    let mut labels = vec![("domain", domain), ("variation", variation)];
-    if let Some(result) = result_confirmation {
-        labels.push(("result", result));
-    }
+    let labels = vec![
+        ("domain", domain),
+        ("variation", variation),
+        ("result", result_confirmation),
+    ];
     metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels).record(lamports as f64);
 }
