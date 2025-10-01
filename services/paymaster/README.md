@@ -33,7 +33,7 @@ v1 does not enforce relationships across instructions (e.g. require instruction 
 
 ## Metrics and Logs
 
-The paymaster service records some metrics via Prometheus and some spans for timing of the transaction validation/submission/confirmation flow via OpenTelemetry. The service exports these OpenTelemetry spans to `localhost:4317`.
+The paymaster service records some metrics via Prometheus and some spans for timing of the transaction validation/submission/confirmation flow via OpenTelemetry. The service exports these OpenTelemetry spans to `localhost:4317` by default. You can configure sending these to a different destination by setting the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
 
 You can run a local all in one jaeger instance to collect and visualize these spans by running:
 
