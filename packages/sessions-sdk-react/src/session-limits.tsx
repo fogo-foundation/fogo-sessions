@@ -1,10 +1,11 @@
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
+import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
-import type { FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useCallback, useState } from "react";
 import {
-  Button,
+  Button as UnstyledButton,
   Checkbox,
   Form,
   Select,
@@ -16,7 +17,8 @@ import {
 } from "react-aria-components";
 
 import { stringToAmount, amountToString } from "./amount-to-string.js";
-import { errorToString } from "./error-to-string.js";
+import { Button } from "./button.js";
+import { TextField } from "./field.js";
 import styles from "./session-limits.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { StateType, useTokenMetadata } from "./use-token-metadata.js";
@@ -31,21 +33,27 @@ export const SessionLimits = <Token extends PublicKey>({
   initialLimits,
   onSubmit,
   buttonText = "Log in",
-  error,
   className,
   enableUnlimited,
   isSessionUnlimited,
   autoFocus,
+  hideCancel,
+  header,
+  bodyClassName,
+  footerClassName,
 }: {
   tokens: Token[];
   initialLimits: Map<Token, bigint>;
   onSubmit?:
     | ((duration: number, tokens?: Map<Token, bigint>) => void)
     | undefined;
-  buttonText?: string;
-  error?: unknown;
+  buttonText?: string | undefined;
   className?: string | undefined;
-  autoFocus?: boolean;
+  autoFocus?: boolean | undefined;
+  hideCancel?: boolean | undefined;
+  header?: ReactNode | undefined;
+  bodyClassName?: ReactNode | undefined;
+  footerClassName?: ReactNode | undefined;
 } & (
   | { enableUnlimited?: false | undefined; isSessionUnlimited?: undefined }
   | { enableUnlimited: true; isSessionUnlimited?: boolean }
@@ -92,70 +100,67 @@ export const SessionLimits = <Token extends PublicKey>({
 
   return (
     <Form className={clsx(styles.sessionLimits, className)} onSubmit={doSubmit}>
-      <Select
-        name="duration"
-        defaultSelectedKey="one-week"
-        className={styles.sessionExpiry ?? ""}
-      >
-        <Label className={styles.label ?? ""}>
-          Allow transactions with this app for
-        </Label>
-        <Button className={styles.button ?? ""}>
-          <SelectValue />
-          <CaretDownIcon />
-        </Button>
-        <Popover offset={4} className={styles.selectPopover ?? ""}>
-          <ListBox items={Object.entries(DURATION)}>
-            {([key, { label }]) => (
-              <ListBoxItem id={key} className={styles.selectItem ?? ""}>
-                {label}
-              </ListBoxItem>
-            )}
-          </ListBox>
-        </Popover>
-      </Select>
-      {enableUnlimited ? (
-        <Checkbox
-          name="applyLimits"
-          className={styles.applyLimits ?? ""}
-          isSelected={applyLimits}
-          onChange={setApplyLimits}
+      <div className={clsx(styles.body, bodyClassName)}>
+        {header}
+        <Select
+          name="duration"
+          defaultSelectedKey="one-week"
+          className={styles.sessionExpiry ?? ""}
         >
-          <div className={styles.checkbox ?? ""}>
-            <svg viewBox="0 0 18 18" aria-hidden="true">
-              <polyline points="1 9 7 14 15 4" />
-            </svg>
-          </div>
-          {"Limit this app's access to tokens"}
-        </Checkbox>
-      ) : (
-        <div />
-      )}
-      {applyLimits ? (
-        <ul className={styles.tokenList}>
-          {tokens.map((mint) => (
-            <li key={mint.toBase58()}>
-              <Token
-                mint={mint}
-                initialAmount={
-                  initialLimits
-                    .entries()
-                    .find(([limitMint]) => limitMint.equals(mint))?.[1] ?? 0n
-                }
-              />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div />
-      )}
-      <div className={styles.footer}>
-        <p className={styles.errorMessage}>
-          {error !== undefined && errorToString(error)}
-        </p>
+          <Label className={styles.label ?? ""}>Session duration</Label>
+          <UnstyledButton className={styles.button ?? ""}>
+            <SelectValue className={styles.value ?? ""} />
+            <CaretDownIcon className={styles.arrow ?? ""} />
+          </UnstyledButton>
+          <Popover offset={4} className={styles.selectPopover ?? ""}>
+            <ListBox items={Object.entries(DURATION)}>
+              {([key, { label }]) => (
+                <ListBoxItem id={key} className={styles.selectItem ?? ""}>
+                  {label}
+                </ListBoxItem>
+              )}
+            </ListBox>
+          </Popover>
+        </Select>
+        {enableUnlimited && (
+          <Checkbox
+            name="applyLimits"
+            className={styles.applyLimits ?? ""}
+            isSelected={applyLimits}
+            onChange={setApplyLimits}
+          >
+            <div className={styles.checkbox}>
+              <CheckIcon className={styles.check} weight="bold" />
+            </div>
+            {"Limit this app's access to tokens"}
+          </Checkbox>
+        )}
+        {applyLimits && (
+          <ul className={styles.tokenList}>
+            {tokens.map((mint) => (
+              <li key={mint.toBase58()}>
+                <Token
+                  mint={mint}
+                  initialAmount={
+                    initialLimits
+                      .entries()
+                      .find(([limitMint]) => limitMint.equals(mint))?.[1] ?? 0n
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className={clsx(styles.footer, footerClassName)}>
+        {!hideCancel && (
+          <Button variant="outline" slot="close">
+            Cancel
+          </Button>
+        )}
         <Button
-          className={styles.submitButton ?? ""}
           type="submit"
+          variant="secondary"
           isDisabled={onSubmit === undefined}
           isPending={onSubmit === undefined}
           {...(autoFocus && { autoFocus })}
@@ -190,9 +195,25 @@ const Token = ({
             value={metadata.data.decimals}
           />
           <TokenAmountInput
-            className={styles.token ?? ""}
+            className={styles.tokenAmountInput ?? ""}
+            inputGroupClassName={styles.inputGroup}
             label={
-              "name" in metadata.data ? metadata.data.name : mint.toBase58()
+              <div className={styles.label}>
+                {metadata.data.image ? (
+                  <img
+                    alt=""
+                    src={metadata.data.image}
+                    className={styles.icon}
+                  />
+                ) : (
+                  <div className={styles.icon} />
+                )}
+                <span className={styles.name}>
+                  {"name" in metadata.data
+                    ? metadata.data.name
+                    : mint.toBase58()}
+                </span>
+              </div>
             }
             decimals={metadata.data.decimals}
             symbol={metadata.data.symbol}
@@ -206,7 +227,19 @@ const Token = ({
 
     case StateType.Loading:
     case StateType.NotLoaded: {
-      return "Loading..."; // TODO
+      return (
+        <TextField
+          className={styles.tokenAmountInput ?? ""}
+          inputGroupClassName={styles.inputGroup}
+          label={
+            <div className={styles.label}>
+              <div className={styles.icon} />
+              <div className={styles.name} />
+            </div>
+          }
+          isPending
+        />
+      );
     }
   }
 };

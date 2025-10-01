@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-react",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "private": true,
   "description": "React components and hooks for integrating with Fogo sessions",
   "keywords": [
@@ -65,6 +65,7 @@
     "clsx": "catalog:",
     "idb": "catalog:",
     "modern-normalize": "catalog:",
+    "motion": "catalog:",
     "qrcode.react": "catalog:",
     "react-aria-components": "catalog:",
     "swr": "catalog:",

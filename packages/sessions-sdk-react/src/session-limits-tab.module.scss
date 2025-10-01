@@ -1,0 +1,106 @@
+@use "./theme";
+
+.sessionLimitsTab {
+  height: 100%;
+  display: grid;
+  grid-template-rows: max-content 1fr;
+
+  .sessionExpiryBanner {
+    @include theme.text("xs");
+
+    color: theme.color("heading");
+    padding: theme.spacing(2);
+    width: 100%;
+    height: theme.spacing(7);
+    display: grid;
+    place-content: center;
+    background: theme.color("accent-opaque");
+
+    .expiry {
+      font-weight: theme.font-weight("bold");
+    }
+
+    &[data-expired] {
+      background: theme.color("states", "error", "background");
+      font-weight: theme.font-weight("bold");
+    }
+  }
+
+  .sessionLimits {
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 0;
+
+    .header {
+      display: flex;
+      flex-flow: column nowrap;
+      gap: theme.spacing(6);
+
+      .title {
+        @include theme.text("lg", "medium");
+
+        color: theme.color("heading");
+      }
+
+      .description {
+        @include theme.text("sm");
+
+        color: theme.color("paragraph");
+        padding-bottom: theme.spacing(4);
+      }
+    }
+
+    .body {
+      padding: theme.spacing(4);
+      padding-top: theme.spacing(5);
+      flex-grow: 1;
+      overflow: auto;
+      scrollbar-width: thin;
+      scrollbar-gutter: stable;
+    }
+
+    .footer {
+      position: sticky;
+      bottom: 0;
+      border-top: 1px solid theme.color("border");
+      padding: theme.spacing(2);
+      display: grid;
+      place-content: center;
+      background: theme.color("card");
+    }
+  }
+
+  .sessionLimitsError {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    gap: theme.spacing(3);
+
+    .icon,
+    .headline {
+      color: theme.color("states", "error", "foreground");
+    }
+
+    .icon {
+      font-size: theme.spacing(8);
+    }
+
+    .headline {
+      @include theme.text;
+    }
+
+    .message {
+      @include theme.text("xs");
+
+      color: theme.color("muted");
+    }
+
+    .retryButton {
+      margin-top: theme.spacing(2);
+    }
+  }
+}

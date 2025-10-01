@@ -1,6 +1,7 @@
 use crate::config::load_config;
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
+use opentelemetry_otlp::WithExportConfig;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
@@ -29,8 +30,12 @@ async fn main() -> anyhow::Result<()> {
         )])
         .build();
 
+    let otlp_endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
+        .unwrap_or_else(|_| "http://localhost:4317".to_string());
+
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
+        .with_endpoint(otlp_endpoint)
         .build()?;
 
     let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()

@@ -240,7 +240,6 @@ const sendToPaymaster = async (
       "/api/sponsor_and_send",
       options.paymaster ?? DEFAULT_PAYMASTER,
     );
-    url.searchParams.set("confirm", "true");
     url.searchParams.set("domain", domain);
     const response = await fetch(url, {
       method: "POST",

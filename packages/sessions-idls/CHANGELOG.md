@@ -1,5 +1,11 @@
 # @fogo/sessions-idls
 
+## 0.0.5
+
+### Patch Changes
+
+- 4f85152: Add revokable sessions
+
 ## 0.0.4
 
 ### Patch Changes

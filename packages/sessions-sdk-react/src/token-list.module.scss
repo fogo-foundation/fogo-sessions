@@ -1,0 +1,206 @@
+@use "./theme";
+
+.tokenList {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: theme.spacing(1);
+  padding: theme.spacing(2);
+  margin: 0;
+
+  .token {
+    height: theme.spacing(14);
+    background-color: theme.color("button-base");
+    border-radius: theme.border-radius("lg");
+    display: flex;
+    flex-flow: row nowrap;
+    gap: theme.spacing(3);
+    align-items: center;
+    justify-content: space-between;
+    padding-left: theme.spacing(3);
+    padding-right: theme.spacing(3);
+    overflow: hidden;
+    outline: 2px solid transparent;
+    outline-offset: theme.spacing(0.5);
+    transition:
+      color 50ms linear,
+      background-color 50ms linear,
+      outline-color 50ms linear;
+
+    .nameAndIcon {
+      display: flex;
+      flex-flow: row nowrap;
+      gap: theme.spacing(3);
+      align-items: center;
+      overflow: hidden;
+      flex-grow: 1;
+
+      .icon {
+        width: theme.spacing(8);
+        height: theme.spacing(8);
+        border-radius: theme.border-radius("full");
+        background: theme.color("image-placeholder");
+        flex-shrink: 0;
+      }
+
+      .nameAndSymbol {
+        display: flex;
+        flex-flow: column nowrap;
+        align-items: flex-start;
+        gap: theme.spacing(2);
+        overflow: hidden;
+
+        .name,
+        .symbol {
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow-x: clip;
+          width: 100%;
+        }
+
+        .name {
+          @include theme.text("sm", "medium");
+
+          color: theme.color("heading");
+        }
+
+        .symbol {
+          @include theme.text("xs");
+
+          color: theme.color("muted");
+          opacity: 0.65;
+        }
+      }
+    }
+
+    .amount {
+      @include theme.text("sm", "medium");
+
+      color: theme.color("heading");
+    }
+
+    &[data-is-loading] {
+      .nameAndIcon .icon,
+      .nameAndIcon .nameAndSymbol .name,
+      .nameAndIcon .nameAndSymbol .symbol,
+      .amountAndActions .amount {
+        display: inline-block;
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      @keyframes pulse {
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .nameAndIcon .nameAndSymbol .name,
+      .nameAndIcon .nameAndSymbol .symbol,
+      .amountAndActions .amount {
+        background: theme.color("skeleton");
+        height: 1em;
+        border-radius: theme.border-radius("md");
+      }
+
+      .nameAndIcon .icon {
+        background: theme.color("skeleton");
+      }
+
+      .nameAndIcon .nameAndSymbol .name {
+        width: theme.spacing(20);
+      }
+
+      .nameAndIcon .nameAndSymbol .symbol {
+        width: theme.spacing(14);
+      }
+
+      .amountAndActions .amount {
+        width: theme.spacing(30);
+      }
+    }
+
+    &[data-focus-visible] {
+      outline-color: theme.color("accent");
+    }
+
+    &[data-is-button] {
+      border: none;
+      cursor: pointer;
+
+      &[data-hovered] {
+        background-color: theme.color("button-hover");
+      }
+
+      &[data-pressed] {
+        background-color: theme.color("button-pressed");
+      }
+    }
+
+    &:not([data-is-button], [data-is-loading]) {
+      .amountAndActions {
+        position: relative;
+        transform: translateX(calc(theme.spacing(15) + 1px));
+        transition: transform 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        flex-flow: row nowrap;
+        gap: theme.spacing(3);
+        align-items: center;
+        height: 100%;
+        margin: 0;
+        margin-right: -#{theme.spacing(4)};
+
+        .actions {
+          display: flex;
+          flex-flow: row nowrap;
+          align-items: center;
+          padding-left: theme.spacing(3);
+          padding-right: theme.spacing(6);
+          border-left: 1px solid theme.color("border");
+          background: theme.color("card-opaque");
+          height: 100%;
+        }
+      }
+
+      &:hover,
+      &[data-focus-visible],
+      &:has(button[data-focus-visible]) {
+        .amountAndActions {
+          transform: translateX(theme.spacing(2));
+        }
+      }
+    }
+  }
+}
+
+.tokenListEmpty {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  gap: theme.spacing(3);
+  flex-grow: 1;
+
+  .emptyIcon,
+  .message {
+    color: theme.color("foreground");
+    opacity: 0.5;
+  }
+
+  .emptyIcon {
+    font-size: theme.spacing(8);
+  }
+
+  .message {
+    @include theme.text;
+  }
+
+  .hints {
+    @include theme.text("xs");
+
+    color: theme.color("foreground");
+  }
+}
+
+.tokenListError {
+  flex-grow: 1;
+}

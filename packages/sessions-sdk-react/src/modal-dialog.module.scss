@@ -7,10 +7,12 @@
     left: 0;
     width: 100vw;
     height: var(--visual-viewport-height);
-    background: rgb(from black r g b / 40%);
+    background: theme.color("modal-overlay");
     backdrop-filter: blur(8px);
     display: grid;
-    place-content: center;
+    justify-content: center;
+    align-items: start;
+    padding-top: theme.spacing(40);
     z-index: theme.layer("modal-dialog");
 
     &[data-entering] {
@@ -33,25 +35,30 @@
 
     .modal {
       outline: none;
-      background: theme.color("panel", "background");
-      padding: theme.spacing(8);
-      border-radius: theme.border-radius("md");
-      color: theme.color("panel", "text");
-      border: 1px solid theme.color("panel", "border");
-      min-width: theme.spacing(140);
+      background-color: theme.color("card");
+      padding: theme.spacing(6);
+      border-radius: theme.border-radius("xl");
+      border: 1px solid theme.color("widget-border");
+      box-shadow: theme.shadow();
+      width: theme.spacing(94);
+      max-width: 70dvw;
 
       .dialog {
         outline: none;
         display: grid;
-        gap: theme.spacing(2);
+        gap: theme.spacing(6);
 
         .heading {
-          @include theme.text("lg", "semibold");
+          @include theme.text("lg", "medium");
+
+          color: theme.color("heading");
         }
 
         .message {
           @include theme.text("sm", "normal");
 
+          line-height: 140%;
+          color: theme.color("paragraph");
           margin-bottom: theme.spacing(4);
         }
       }
