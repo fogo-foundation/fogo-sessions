@@ -4,6 +4,7 @@ use solana_program::pubkey::Pubkey;
 use solana_program::sysvar::clock::Clock;
 use solana_program::sysvar::Sysvar;
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 #[cfg(not(feature = "anchor"))]
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -88,10 +89,9 @@ pub use v2::V2;
 #[allow(dead_code)]
 mod v3 {
     use super::*;
-
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum V3 {
-        Revoked(RevokedInfo),
+        Revoked(RevokedSessionInfo),
         Active(ActiveSessionInfo<AuthorizedTokensWithMints>),
     }
 }
@@ -99,16 +99,19 @@ mod v3 {
 pub use v3::V3;
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub struct RevokedInfo {
+pub struct RevokedSessionInfo {
+    /// The user who started this session
     pub user: Pubkey,
+    /// The expiration time of the session
     pub expiration: UnixTimestamp,
-    pub authorized_tokens: AuthorizedTokensWithMints,
+    /// Tokens the session key is allowed to interact with. We need to store this in revoked sessions so that we know which token account delegations to revoke when the session is closed
+    pub authorized_tokens_with_mints: AuthorizedTokensWithMints,
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 
 pub struct ActiveSessionInfo<
-    T: BorshDeserialize + BorshSerialize + BorshSchema + std::fmt::Debug + Clone,
+    T: Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema,
 > {
     /// The user who started this session
     pub user: Pubkey,
@@ -143,11 +146,20 @@ pub enum AuthorizedTokens {
     All,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub enum AuthorizedTokensWithMints {
-    Specific(Vec<Pubkey>),
-    All,
+///This module is a hack because the BorshSchema macro generates dead code for `AuthorizedTokensWithMints` in this version of borsh, but we don't want to disable dead_code globally.
+/// More info: https://github.com/near/borsh-rs/issues/111"
+#[allow(dead_code)]
+mod authorized_tokens_with_mints {
+    use super::*;
+
+    #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+    pub enum AuthorizedTokensWithMints {
+        Specific(Vec<Pubkey>),
+        All,
+    }
 }
+
+pub use authorized_tokens_with_mints::AuthorizedTokensWithMints;
 
 impl AsRef<AuthorizedTokens> for AuthorizedTokensWithMints {
     fn as_ref(&self) -> &AuthorizedTokens {
@@ -235,7 +247,7 @@ impl Session {
                 V2::Active(session) => Ok(session.expiration),
             },
             SessionInfo::V3(session) => match session {
-                V3::Revoked(revoked_info) => Ok(revoked_info.expiration),
+                V3::Revoked(session) => Ok(session.expiration),
                 V3::Active(session) => Ok(session.expiration),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),

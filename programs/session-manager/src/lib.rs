@@ -9,7 +9,7 @@ use anchor_spl::token::Token;
 use domain_registry::{domain::Domain, state::DomainRecordInner};
 use fogo_sessions_sdk::session::{ActiveSessionInfo, V2, V3};
 use fogo_sessions_sdk::session::{
-    AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens, RevokedInfo, Session, SessionInfo,
+    AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens, RevokedSessionInfo, Session, SessionInfo,
 };
 use solana_intents::Intent;
 use solana_intents::Version;
@@ -118,10 +118,10 @@ pub mod session_manager {
             }
             SessionInfo::V2(V2::Revoked(_)) => {} // Idempotent
             SessionInfo::V3(V3::Active(active_session_info)) => {
-                ctx.accounts.session.session_info = SessionInfo::V3(V3::Revoked(RevokedInfo {
+                ctx.accounts.session.session_info = SessionInfo::V3(V3::Revoked(RevokedSessionInfo {
                     user: active_session_info.user,
                     expiration: active_session_info.expiration,
-                    authorized_tokens: active_session_info.authorized_tokens.clone(),
+                    authorized_tokens_with_mints: active_session_info.authorized_tokens.clone(),
                 }));
             }
             SessionInfo::V3(V3::Revoked(_)) => {} // Idempotent
@@ -140,7 +140,7 @@ pub mod session_manager {
                     AuthorizedTokensWithMints::Specific(mints) => (&active_session_info.user, mints),
                     AuthorizedTokensWithMints::All => (&active_session_info.user, &vec![]),
             }
-            SessionInfo::V3(V3::Revoked(revoked_info)) => match &revoked_info.authorized_tokens {
+            SessionInfo::V3(V3::Revoked(revoked_info)) => match &revoked_info.authorized_tokens_with_mints {
                 AuthorizedTokensWithMints::Specific(mints) => (&revoked_info.user, mints),
                 AuthorizedTokensWithMints::All => (&revoked_info.user, &vec![]),
             },
