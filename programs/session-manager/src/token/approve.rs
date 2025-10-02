@@ -85,7 +85,7 @@ pub fn resolve_pending_approvals<'a, 'info>(
                 amount,
             })
         })
-        .collect::<Result<Vec<PendingApproval<'a, 'info>>>>()
+        .collect()
 }
 
 impl<'info> StartSession<'info> {
@@ -115,7 +115,7 @@ impl<'info> StartSession<'info> {
                         cpi_accounts,
                         &[&[SESSION_SETTER_SEED, &[session_setter_bump]]],
                     ),
-                    amount.to_amount_internal(mint_data.decimals)?,
+                    amount.into_amount_internal(mint_data.decimals)?,
                     mint_data.decimals,
                 )
             },

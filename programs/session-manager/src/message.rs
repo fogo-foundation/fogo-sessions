@@ -122,7 +122,7 @@ impl UiTokenAmount {
         Self(amount)
     }
 
-    pub fn to_amount_internal(self, decimals: u8) -> Result<u64, SessionManagerError> {
+    pub fn into_amount_internal(self, decimals: u8) -> Result<u64, SessionManagerError> {
         try_ui_amount_into_amount(self.0, decimals)
             .map_err(|_| SessionManagerError::AmountConversionFailed)
     }
