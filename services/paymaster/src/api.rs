@@ -395,6 +395,7 @@ pub async fn run_server(
             |Domain {
                  domain,
                  enable_session_management,
+                 enable_intent_transfers,
                  enable_preflight_simulation,
                  tx_variations,
              }| {
@@ -409,14 +410,19 @@ pub async fn run_server(
                 )
                 .expect("Failed to derive keypair from mnemonic_file");
 
-                let tx_variations = if enable_session_management {
-                    let mut variations = tx_variations;
-                    variations.push(TransactionVariation::session_establishment_variation());
-                    variations.push(TransactionVariation::session_revocation_variation());
-                    variations
-                } else {
-                    tx_variations
-                };
+                let tx_variations = tx_variations
+                    .into_iter()
+                    .chain(
+                        enable_session_management
+                            .then(|| [
+                                TransactionVariation::session_establishment_variation(),
+                                TransactionVariation::session_revocation_variation(),
+                            ])
+                            .into_iter()
+                            .flatten(),
+                    )
+                    .chain(enable_intent_transfers.then(TransactionVariation::intent_transfer_variation))
+                    .collect();
                 (
                     domain,
                     DomainState {
