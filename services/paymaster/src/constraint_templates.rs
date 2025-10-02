@@ -144,7 +144,7 @@ impl InstructionConstraint {
             required: true,
         }
     }
-        
+
     pub fn create_ata_idempotent_instruction_constraint(required: bool) -> InstructionConstraint {
         InstructionConstraint {
             program: spl_associated_token_account::id(),
@@ -163,7 +163,7 @@ impl InstructionConstraint {
         }
     }
 
-     /// The template for the constraint for the IntentTransfer instruction.
+    /// The template for the constraint for the IntentTransfer instruction.
     pub fn intent_transfer_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: intent_transfer::ID,
@@ -179,7 +179,7 @@ impl InstructionConstraint {
                 },
             ],
             required: true,
-        }   
+        }
     }
 }
 
@@ -212,13 +212,13 @@ impl TransactionVariation {
 
     /// The template for the transaction variation that conducts intent transfers.
     pub fn intent_transfer_variation() -> TransactionVariation {
-        TransactionVariation::V1(VariationOrderedInstructionConstraints { 
-            name: "Intent Transfer".to_string(), 
+        TransactionVariation::V1(VariationOrderedInstructionConstraints {
+            name: "Intent Transfer".to_string(),
             instructions: vec![
                 InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
                 InstructionConstraint::intent_instruction_constraint(),
                 InstructionConstraint::intent_transfer_instruction_constraint(),
-            ], 
+            ],
             max_gas_spend: 100_000,
         })
     }

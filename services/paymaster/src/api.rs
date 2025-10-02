@@ -414,14 +414,19 @@ pub async fn run_server(
                     .into_iter()
                     .chain(
                         enable_session_management
-                            .then(|| [
-                                TransactionVariation::session_establishment_variation(),
-                                TransactionVariation::session_revocation_variation(),
-                            ])
+                            .then(|| {
+                                [
+                                    TransactionVariation::session_establishment_variation(),
+                                    TransactionVariation::session_revocation_variation(),
+                                ]
+                            })
                             .into_iter()
                             .flatten(),
                     )
-                    .chain(enable_intent_transfers.then(TransactionVariation::intent_transfer_variation))
+                    .chain(
+                        enable_intent_transfers
+                            .then(TransactionVariation::intent_transfer_variation),
+                    )
                     .collect();
                 (
                     domain,
