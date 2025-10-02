@@ -122,7 +122,9 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
     pub extra: Extra,
 }
 
-pub trait IsAuthorizedTokens : Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema {
+pub trait IsAuthorizedTokens:
+    Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema
+{
 }
 
 ///This module is a hack because the BorshSchema macro generates dead code for `AuthorizedPrograms` in this version of borsh, but we don't want to disable dead_code globally.
@@ -146,8 +148,7 @@ pub enum AuthorizedTokens {
     All,
 }
 
-impl IsAuthorizedTokens for AuthorizedTokens {
-}
+impl IsAuthorizedTokens for AuthorizedTokens {}
 
 ///This module is a hack because the BorshSchema macro generates dead code for `AuthorizedTokensWithMints` in this version of borsh, but we don't want to disable dead_code globally.
 /// More info: https://github.com/near/borsh-rs/issues/111"
@@ -164,8 +165,7 @@ mod authorized_tokens_with_mints {
 
 pub use authorized_tokens_with_mints::AuthorizedTokensWithMints;
 
-impl IsAuthorizedTokens for AuthorizedTokensWithMints {
-}
+impl IsAuthorizedTokens for AuthorizedTokensWithMints {}
 
 impl AsRef<AuthorizedTokens> for AuthorizedTokensWithMints {
     fn as_ref(&self) -> &AuthorizedTokens {
@@ -338,8 +338,12 @@ impl Session {
 
     fn check_is_unrevoked(&self) -> Result<(), SessionError> {
         match &self.session_info {
-            SessionInfo::V1(_) | SessionInfo::V2(V2::Active(_)) | SessionInfo::V3(V3::Active(_)) => Ok(()),
-            SessionInfo::V2(V2::Revoked(_)) | SessionInfo::V3(V3::Revoked(_)) => Err(SessionError::Revoked),
+            SessionInfo::V1(_)
+            | SessionInfo::V2(V2::Active(_))
+            | SessionInfo::V3(V3::Active(_)) => Ok(()),
+            SessionInfo::V2(V2::Revoked(_)) | SessionInfo::V3(V3::Revoked(_)) => {
+                Err(SessionError::Revoked)
+            }
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
     }
