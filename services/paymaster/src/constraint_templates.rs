@@ -5,7 +5,7 @@ use crate::constraint::{
 };
 
 impl InstructionConstraint {
-    /// The template for the constraint for the ed25519_program instruction used to verify the intent signature.
+    /// The template for the constraint for the ed25519_program instruction used to verify a single intent signature.
     pub fn intent_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: solana_program::ed25519_program::id(),
@@ -162,6 +162,25 @@ impl InstructionConstraint {
             required,
         }
     }
+
+    /// The template for the constraint for the IntentTransfer instruction.
+    pub fn intent_transfer_instruction_constraint() -> InstructionConstraint {
+        InstructionConstraint {
+            program: intent_transfer::ID,
+            accounts: vec![],
+            data: vec![
+                // instruction = 0 (SendTokens)
+                DataConstraint {
+                    start_byte: 0,
+                    data_type: PrimitiveDataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![PrimitiveDataValue::U8(
+                        0,
+                    )]),
+                },
+            ],
+            required: true,
+        }
+    }
 }
 
 impl TransactionVariation {
@@ -187,6 +206,19 @@ impl TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Session Revocation".to_string(),
             instructions: vec![InstructionConstraint::revoke_session_instruction_constraint()],
+            max_gas_spend: 100_000,
+        })
+    }
+
+    /// The template for the transaction variation that conducts intent transfers.
+    pub fn intent_transfer_variation() -> TransactionVariation {
+        TransactionVariation::V1(VariationOrderedInstructionConstraints {
+            name: "Intent Transfer".to_string(),
+            instructions: vec![
+                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
+                InstructionConstraint::intent_instruction_constraint(),
+                InstructionConstraint::intent_transfer_instruction_constraint(),
+            ],
             max_gas_spend: 100_000,
         })
     }

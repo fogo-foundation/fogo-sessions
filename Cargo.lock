@@ -1583,6 +1583,7 @@ dependencies = [
  "fogo-sessions-sdk",
  "futures",
  "hex",
+ "intent-transfer",
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",

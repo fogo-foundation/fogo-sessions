@@ -21,6 +21,7 @@ anchor-spl = "0.31.1"
 borsh = "1.5.7"
 bytemuck = "1.23.1"
 fogo-sessions-sdk = { path = "packages/sessions-sdk-rs" }
+intent-transfer = { path = "programs/intent-transfer" }
 mpl-token-metadata = "5.1.0"
 nom = "8.0.0"
 solana-address-lookup-table-interface = "2.2.1"
