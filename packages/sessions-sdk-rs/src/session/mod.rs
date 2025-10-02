@@ -109,7 +109,7 @@ pub struct RevokedSessionInfo {
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub struct ActiveSessionInfo<T: Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema> {
+pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
     /// The user who started this session
     pub user: Pubkey,
     /// The expiration time of the session
@@ -120,6 +120,9 @@ pub struct ActiveSessionInfo<T: Debug + Clone + BorshDeserialize + BorshSerializ
     pub authorized_tokens: T,
     /// Extra (key, value)'s provided by the user, they can be used to store extra arbitrary information about the session
     pub extra: Extra,
+}
+
+pub trait IsAuthorizedTokens : Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema {
 }
 
 ///This module is a hack because the BorshSchema macro generates dead code for `AuthorizedPrograms` in this version of borsh, but we don't want to disable dead_code globally.
@@ -143,6 +146,9 @@ pub enum AuthorizedTokens {
     All,
 }
 
+impl IsAuthorizedTokens for AuthorizedTokens {
+}
+
 ///This module is a hack because the BorshSchema macro generates dead code for `AuthorizedTokensWithMints` in this version of borsh, but we don't want to disable dead_code globally.
 /// More info: https://github.com/near/borsh-rs/issues/111"
 #[allow(dead_code)]
@@ -157,6 +163,9 @@ mod authorized_tokens_with_mints {
 }
 
 pub use authorized_tokens_with_mints::AuthorizedTokensWithMints;
+
+impl IsAuthorizedTokens for AuthorizedTokensWithMints {
+}
 
 impl AsRef<AuthorizedTokens> for AuthorizedTokensWithMints {
     fn as_ref(&self) -> &AuthorizedTokens {
