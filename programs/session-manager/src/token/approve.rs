@@ -17,7 +17,7 @@ pub struct PendingApproval<'a, 'info> {
 }
 
 impl<'a, 'info> PendingApproval<'a, 'info> {
-    pub fn mint(&self) -> Pubkey{
+    pub fn mint(&self) -> Pubkey {
         self.mint_account.key()
     }
 }
@@ -27,57 +27,66 @@ impl<'a, 'info> PendingApproval<'a, 'info> {
 /// If the symbol is provided, additionally to those two accounts, the caller needs to provide the metadata account for the mint which we use to check the mint account corresponds to the symbol.
 /// This behavior means that signing an intent with the symbol "SOL" means delegating your token account for a token who has metadata symbol "SOL".
 /// Although there can be multiple tokens with the same symbol, the worst case scenario is that you're delegating the token with the most value among them, which is probably what you want.
-pub fn resolve_pending_approvals<'a, 'info>(accounts: &'a [AccountInfo<'info>], tokens: Vec<(SymbolOrMint, UiTokenAmount)>, user: &Pubkey) -> Result<Vec<PendingApproval<'a, 'info>>> {
+pub fn resolve_pending_approvals<'a, 'info>(
+    accounts: &'a [AccountInfo<'info>],
+    tokens: Vec<(SymbolOrMint, UiTokenAmount)>,
+    user: &Pubkey,
+) -> Result<Vec<PendingApproval<'a, 'info>>> {
     let mut accounts_iter = accounts.iter();
     tokens
-            .into_iter()
-            .map(|(symbol_or_mint, amount)| {
-                let (user_account, mint_account) = match symbol_or_mint {
-                    SymbolOrMint::Symbol(symbol) => {
-                        let user_account = accounts_iter
-                            .next()
-                            .ok_or(error!(SessionManagerError::MissingAccount))?;
-                        let mint_account = accounts_iter
-                            .next()
-                            .ok_or(error!(SessionManagerError::MissingAccount))?;
-                        let metadata_account = accounts_iter
-                            .next()
-                            .ok_or(error!(SessionManagerError::MissingAccount))?;
+        .into_iter()
+        .map(|(symbol_or_mint, amount)| {
+            let (user_account, mint_account) = match symbol_or_mint {
+                SymbolOrMint::Symbol(symbol) => {
+                    let user_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
+                    let mint_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
+                    let metadata_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
 
-                        require_eq!(
-                            metadata_account.key(),
-                            Metadata::find_pda(&mint_account.key()).0,
-                            SessionManagerError::MetadataMismatch
-                        );
-                        let metadata = Metadata::try_from(metadata_account)?;
-                        require_eq!(
-                            &metadata.symbol,
-                            &format!("{symbol:\0<10}"),
-                            SessionManagerError::SymbolMismatch
-                        ); // Symbols in the metadata account are padded to 10 characters
-                        (user_account, mint_account)
-                    }
-                    SymbolOrMint::Mint(mint) => {
-                        let user_account = accounts_iter
-                            .next()
-                            .ok_or(error!(SessionManagerError::MissingAccount))?;
-                        let mint_account = accounts_iter
-                            .next()
-                            .ok_or(error!(SessionManagerError::MissingAccount))?;
+                    require_eq!(
+                        metadata_account.key(),
+                        Metadata::find_pda(&mint_account.key()).0,
+                        SessionManagerError::MetadataMismatch
+                    );
+                    let metadata = Metadata::try_from(metadata_account)?;
+                    require_eq!(
+                        &metadata.symbol,
+                        &format!("{symbol:\0<10}"),
+                        SessionManagerError::SymbolMismatch
+                    ); // Symbols in the metadata account are padded to 10 characters
+                    (user_account, mint_account)
+                }
+                SymbolOrMint::Mint(mint) => {
+                    let user_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
+                    let mint_account = accounts_iter
+                        .next()
+                        .ok_or(error!(SessionManagerError::MissingAccount))?;
 
-                        require_eq!(mint, mint_account.key(), SessionManagerError::MintMismatch);
-                        (user_account, mint_account)
-                    }
-                };
+                    require_eq!(mint, mint_account.key(), SessionManagerError::MintMismatch);
+                    (user_account, mint_account)
+                }
+            };
 
-                require_eq!(
-                    user_account.key(),
-                    get_associated_token_address(user, &mint_account.key()),
-                    SessionManagerError::AssociatedTokenAccountMismatch
-                );
-                Ok(PendingApproval { user_account, mint_account, amount })
-            }).collect::<Result<Vec<PendingApproval<'a, 'info>>>>()
-        }
+            require_eq!(
+                user_account.key(),
+                get_associated_token_address(user, &mint_account.key()),
+                SessionManagerError::AssociatedTokenAccountMismatch
+            );
+            Ok(PendingApproval {
+                user_account,
+                mint_account,
+                amount,
+            })
+        })
+        .collect::<Result<Vec<PendingApproval<'a, 'info>>>>()
+}
 
 impl<'info> StartSession<'info> {
     /// Delegate token accounts to the session key.
@@ -86,7 +95,12 @@ impl<'info> StartSession<'info> {
         pending_approvals: Vec<PendingApproval<'a, 'info>>,
         session_setter_bump: u8,
     ) -> Result<()> {
-        pending_approvals.into_iter().try_for_each(|PendingApproval { user_account, mint_account, amount }| {
+        pending_approvals.into_iter().try_for_each(
+            |PendingApproval {
+                 user_account,
+                 mint_account,
+                 amount,
+             }| {
                 let mint_data = Mint::try_deserialize(&mut mint_account.data.borrow().as_ref())?;
                 let cpi_accounts = ApproveChecked {
                     to: user_account.to_account_info(),
@@ -104,7 +118,7 @@ impl<'info> StartSession<'info> {
                     amount.to_amount_internal(mint_data.decimals)?,
                     mint_data.decimals,
                 )
-            })
-        
+            },
+        )
     }
 }

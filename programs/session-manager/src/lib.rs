@@ -52,9 +52,13 @@ pub mod session_manager {
 
         let authorized_tokens_with_mints = match tokens {
             Tokens::Specific(tokens) => {
-                let pending_approvals = resolve_pending_approvals(ctx.remaining_accounts, tokens, &signer)?;
-                let authorized_tokens_with_mints = AuthorizedTokensWithMints::Specific(pending_approvals.iter().map(|p| p.mint()).collect());
-                ctx.accounts.approve_tokens(pending_approvals, ctx.bumps.session_setter)?;
+                let pending_approvals =
+                    resolve_pending_approvals(ctx.remaining_accounts, tokens, &signer)?;
+                let authorized_tokens_with_mints = AuthorizedTokensWithMints::Specific(
+                    pending_approvals.iter().map(|p| p.mint()).collect(),
+                );
+                ctx.accounts
+                    .approve_tokens(pending_approvals, ctx.bumps.session_setter)?;
                 authorized_tokens_with_mints
             }
             Tokens::All => AuthorizedTokensWithMints::All,
