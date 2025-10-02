@@ -22,7 +22,7 @@ impl<'a, 'info> PendingApproval<'a, 'info> {
     }
 }
 
-/// Resolve the pending approvals from the remaning accounts and the tokens section of the intent.
+/// Resolve the pending approvals from the remaining accounts and the tokens section of the intent.
 /// In the token section of the intent, tokens are designated by their symbol or mint address. If the mint address is provided, the caller needs to provide the user associated token account and the mint account.
 /// If the symbol is provided, additionally to those two accounts, the caller needs to provide the metadata account for the mint which we use to check the mint account corresponds to the symbol.
 /// This behavior means that signing an intent with the symbol "SOL" means delegating your token account for a token who has metadata symbol "SOL".
