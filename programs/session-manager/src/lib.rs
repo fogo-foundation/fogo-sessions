@@ -25,6 +25,8 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
+    use crate::token::approve::resolve_pending_approvals;
+
     use super::*;
 
     #[instruction(discriminator = [0])]
@@ -50,13 +52,10 @@ pub mod session_manager {
 
         let authorized_tokens_with_mints = match tokens {
             Tokens::Specific(tokens) => {
-                let approved_mints = ctx.accounts.approve_tokens(
-                    ctx.remaining_accounts,
-                    tokens,
-                    &signer,
-                    ctx.bumps.session_setter,
-                )?;
-                AuthorizedTokensWithMints::Specific(approved_mints)
+                let pending_approvals = resolve_pending_approvals(ctx.remaining_accounts, tokens, &signer)?;
+                let authorized_tokens_with_mints = AuthorizedTokensWithMints::Specific(pending_approvals.iter().map(|p| p.mint()).collect());
+                ctx.accounts.approve_tokens(pending_approvals, ctx.bumps.session_setter)?;
+                authorized_tokens_with_mints
             }
             Tokens::All => AuthorizedTokensWithMints::All,
         };

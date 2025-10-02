@@ -1,2 +1,2 @@
-mod approve;
+pub mod approve;
 mod revoke;
