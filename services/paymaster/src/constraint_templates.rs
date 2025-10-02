@@ -139,6 +139,24 @@ impl InstructionConstraint {
             required: true,
         }
     }
+
+    pub fn create_ata_idempotent_instruction_constraint(required: bool) -> InstructionConstraint {
+        InstructionConstraint {
+            program: spl_associated_token_account::id(),
+            accounts: vec![],
+            data: vec![
+                // instruction = 1 (CreateAssociatedTokenAccountIdempotent)
+                DataConstraint {
+                    start_byte: 0,
+                    data_type: PrimitiveDataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![PrimitiveDataValue::U8(
+                        1,
+                    )]),
+                },
+            ],
+            required,
+        }
+    }
 }
 
 impl TransactionVariation {
@@ -147,6 +165,11 @@ impl TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Session Establishment".to_string(),
             instructions: vec![
+                // Allow for idempotent associated token account creation. For now, we allow up to 4 such optional instructions.
+                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
+                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
+                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
+                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
                 InstructionConstraint::intent_instruction_constraint(),
                 InstructionConstraint::start_session_instruction_constraint(),
             ],

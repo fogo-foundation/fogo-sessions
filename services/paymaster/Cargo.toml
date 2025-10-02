@@ -42,6 +42,7 @@ solana-signature = {workspace = true}
 solana-signer = {workspace = true}
 solana-transaction = {workspace = true}
 solana-transaction-error = {workspace = true}
+spl-associated-token-account = {workspace = true}
 tokio = {version = "1.46.1", features = ["full"]}
 tower-http = {version = "0.6.6", features = ["cors"]}
 tracing = "0.1.41"
