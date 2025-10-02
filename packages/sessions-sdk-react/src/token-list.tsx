@@ -5,10 +5,12 @@ import { GridList, GridListItem } from "react-aria-components";
 
 import { amountToString } from "./amount-to-string.js";
 import { Button } from "./button.js";
+import { CopyButton } from "./copy-button.js";
 import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";
 import type { EstablishedSessionState } from "./session-provider.js";
 import styles from "./token-list.module.css";
+import { TruncateKey } from "./truncate-key.js";
 import { useFaucet } from "./use-faucet.js";
 import type { Token } from "./use-token-account-data.js";
 import {
@@ -92,15 +94,23 @@ export const TokenList = ({
                   ) : (
                     <div className={styles.icon} />
                   )}
-                  <div className={styles.nameAndSymbol}>
+                  <div className={styles.nameAndMint}>
                     <span className={styles.name}>
                       {name ?? mint.toBase58()}
                     </span>
-                    {symbol && <span className={styles.symbol}>{symbol}</span>}
+                    <CopyButton
+                      className={styles.mint ?? ""}
+                      text={mint.toBase58()}
+                    >
+                      <TruncateKey keyValue={mint} />
+                    </CopyButton>
                   </div>
                 </div>
                 <div className={styles.amountAndActions}>
-                  <span className={styles.amount}>{amountAsString}</span>
+                  <div className={styles.amountAndSymbol}>
+                    <span className={styles.amount}>{amountAsString}</span>
+                    {symbol && <span className={styles.symbol}>{symbol}</span>}
+                  </div>
                   {"onPressSend" in props && (
                     <div className={styles.actions}>
                       <Button
@@ -152,13 +162,16 @@ const LoadingToken = () => (
   <div data-is-loading="" className={styles.token}>
     <div className={styles.nameAndIcon}>
       <div className={styles.icon} />
-      <div className={styles.nameAndSymbol}>
+      <div className={styles.nameAndMint}>
         <span className={styles.name} />
-        <span className={styles.symbol} />
+        <span className={styles.mint} />
       </div>
     </div>
     <div className={styles.amountAndActions}>
-      <span className={styles.amount} />
+      <div className={styles.amountAndSymbol}>
+        <span className={styles.amount} />
+        <span className={styles.symbol} />
+      </div>
     </div>
   </div>
 );

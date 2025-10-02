@@ -33,6 +33,7 @@
       align-items: center;
       overflow: hidden;
       flex-grow: 1;
+      flex-shrink: 0;
 
       .icon {
         width: theme.spacing(8);
@@ -42,25 +43,47 @@
         flex-shrink: 0;
       }
 
-      .nameAndSymbol {
+      .nameAndMint {
         display: flex;
         flex-flow: column nowrap;
         align-items: flex-start;
-        gap: theme.spacing(2);
+        gap: theme.spacing(1);
         overflow: hidden;
-
-        .name,
-        .symbol {
-          white-space: nowrap;
-          text-overflow: ellipsis;
-          overflow-x: clip;
-          width: 100%;
-        }
+        flex: 1 1 0;
+        margin-top: theme.spacing(2);
+        text-overflow: ellipsis;
+        width: theme.spacing(26);
 
         .name {
           @include theme.text("sm", "medium");
 
           color: theme.color("heading");
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow-x: clip;
+          min-width: 0;
+          width: auto;
+          max-width: 100%;
+        }
+      }
+    }
+
+    .amountAndActions {
+      overflow: hidden;
+
+      .amountAndSymbol {
+        display: flex;
+        flex-flow: column nowrap;
+        gap: theme.spacing(2);
+        overflow: hidden;
+        text-align: right;
+
+        .amount {
+          @include theme.text("sm", "medium");
+
+          color: theme.color("heading");
+          overflow-x: clip;
+          text-overflow: ellipsis;
         }
 
         .symbol {
@@ -72,17 +95,12 @@
       }
     }
 
-    .amount {
-      @include theme.text("sm", "medium");
-
-      color: theme.color("heading");
-    }
-
     &[data-is-loading] {
       .nameAndIcon .icon,
-      .nameAndIcon .nameAndSymbol .name,
-      .nameAndIcon .nameAndSymbol .symbol,
-      .amountAndActions .amount {
+      .nameAndIcon .nameAndMint .name,
+      .nameAndIcon .nameAndMint .mint,
+      .amountAndSymbol .amount,
+      .amountAndSymbol .symbol {
         display: inline-block;
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
       }
@@ -93,28 +111,41 @@
         }
       }
 
-      .nameAndIcon .nameAndSymbol .name,
-      .nameAndIcon .nameAndSymbol .symbol,
-      .amountAndActions .amount {
+      .nameAndIcon .nameAndMint .name,
+      .nameAndIcon .nameAndMint .mint,
+      .amountAndSymbol .amount,
+      .amountAndSymbol .symbol {
         background: theme.color("skeleton");
-        height: 1em;
+        height: 0.8em;
         border-radius: theme.border-radius("md");
+      }
+
+      .nameAndMint {
+        margin-top: 0;
+      }
+
+      .amountAndSymbol {
+        align-items: flex-end;
       }
 
       .nameAndIcon .icon {
         background: theme.color("skeleton");
       }
 
-      .nameAndIcon .nameAndSymbol .name {
-        width: theme.spacing(20);
+      .nameAndIcon .nameAndMint .name {
+        width: theme.spacing(16);
       }
 
-      .nameAndIcon .nameAndSymbol .symbol {
-        width: theme.spacing(14);
+      .nameAndIcon .nameAndMint .mint {
+        width: theme.spacing(24);
       }
 
       .amountAndActions .amount {
         width: theme.spacing(30);
+      }
+
+      .amountAndActions .symbol {
+        width: theme.spacing(14);
       }
     }
 
