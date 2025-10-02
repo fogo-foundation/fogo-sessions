@@ -3,6 +3,7 @@
 
 use crate::error::SessionManagerError;
 use crate::message::{Message, Tokens};
+use crate::token::approve::resolve_pending_approvals;
 use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
@@ -25,8 +26,6 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
-    use crate::token::approve::resolve_pending_approvals;
-
     use super::*;
 
     #[instruction(discriminator = [0])]
