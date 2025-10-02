@@ -52,7 +52,7 @@ pub mod session_manager {
             Tokens::Specific(tokens) => {
                 let approved_mints = ctx.accounts.approve_tokens(
                     ctx.remaining_accounts,
-                    &tokens,
+                    tokens,
                     &signer,
                     ctx.bumps.session_setter,
                 )?;

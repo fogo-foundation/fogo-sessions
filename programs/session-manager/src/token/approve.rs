@@ -1,10 +1,11 @@
 use crate::error::SessionManagerError;
+use crate::message::UiTokenAmount;
 use crate::{StartSession, SESSION_SETTER_SEED};
 use anchor_lang::prelude::*;
 use anchor_spl::token::approve_checked;
 use anchor_spl::{
     associated_token::get_associated_token_address,
-    token::{spl_token::try_ui_amount_into_amount, ApproveChecked, Mint},
+    token::{ApproveChecked, Mint},
 };
 use mpl_token_metadata::accounts::Metadata;
 use solana_intents::SymbolOrMint;
@@ -16,13 +17,13 @@ impl<'info> StartSession<'info> {
     pub fn approve_tokens(
         &self,
         accounts: &[AccountInfo<'info>],
-        tokens: &[(SymbolOrMint, String)],
+        tokens: Vec<(SymbolOrMint, UiTokenAmount)>,
         user: &Pubkey,
         session_setter_bump: u8,
     ) -> Result<Vec<Pubkey>> {
         let mut accounts_iter = accounts.iter();
         let approved_mints = tokens
-            .iter()
+            .into_iter()
             .map(|(symbol_or_mint, amount)| {
                 let (user_account, mint_account) = match symbol_or_mint {
                     SymbolOrMint::Symbol(symbol) => {
@@ -57,7 +58,7 @@ impl<'info> StartSession<'info> {
                             .next()
                             .ok_or(error!(SessionManagerError::MissingAccount))?;
 
-                        require_eq!(mint, &mint_account.key(), SessionManagerError::MintMismatch);
+                        require_eq!(mint, mint_account.key(), SessionManagerError::MintMismatch);
                         (user_account, mint_account)
                     }
                 };
@@ -69,9 +70,6 @@ impl<'info> StartSession<'info> {
                 );
 
                 let mint_data = Mint::try_deserialize(&mut mint_account.data.borrow().as_ref())?;
-                let amount_internal = try_ui_amount_into_amount(amount.clone(), mint_data.decimals)
-                    .map_err(|_| SessionManagerError::AmountConversionFailed)?;
-
                 let cpi_accounts = ApproveChecked {
                     to: user_account.to_account_info(),
                     delegate: self.session.to_account_info(),
@@ -85,7 +83,7 @@ impl<'info> StartSession<'info> {
                         cpi_accounts,
                         &[&[SESSION_SETTER_SEED, &[session_setter_bump]]],
                     ),
-                    amount_internal,
+                    amount.to_amount_internal(mint_data.decimals)?,
                     mint_data.decimals,
                 )?;
                 Ok(mint_account.key())
