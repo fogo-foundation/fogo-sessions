@@ -206,11 +206,11 @@ pub struct RevokeSession<'info> {
 
 #[derive(Accounts)]
 pub struct CloseSession<'info> {
+    #[account(mut, close = sponsor, constraint = !session.is_live()? @ SessionManagerError::SessionIsLive)]
+    pub session: Account<'info, Session>,
     #[account(constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
     /// CHECK: we check it against the session's sponsor
     pub sponsor: AccountInfo<'info>,
-    #[account(mut, close = sponsor, constraint = !session.is_live()? @ SessionManagerError::SessionIsLive)]
-    pub session: Account<'info, Session>,
     /// CHECK: this is just a signer for token program CPIs
     #[account(seeds = [SESSION_SETTER_SEED], bump)]
     pub session_setter: AccountInfo<'info>,
