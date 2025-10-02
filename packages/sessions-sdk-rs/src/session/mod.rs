@@ -283,7 +283,7 @@ impl Session {
                 V2::Active(session) => Ok(&session.user),
             },
             SessionInfo::V3(session) => match session {
-                V3::Revoked(_) => Err(SessionError::Revoked),
+                V3::Revoked(session) => Ok(&session.user),
                 V3::Active(session) => Ok(&session.user),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
@@ -336,6 +336,14 @@ impl Session {
         Ok(())
     }
 
+    fn check_is_unrevoked(&self) -> Result<(), SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(_) | SessionInfo::V2(V2::Active(_)) | SessionInfo::V3(V3::Active(_)) => Ok(()),
+            SessionInfo::V2(V2::Revoked(_)) | SessionInfo::V3(V3::Revoked(_)) => Err(SessionError::Revoked),
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
+        }
+    }
+
     /// Returns whether the session is live. Revoked sessions are considered live until their expiration time.
     pub fn is_live(&self) -> Result<bool, SessionError> {
         Ok(Clock::get()
@@ -347,6 +355,7 @@ impl Session {
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
     pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
         self.check_version()?;
+        self.check_is_unrevoked()?;
         self.check_is_live()?;
         self.check_authorized_program(program_id)?;
         Ok(*self.user()?)
