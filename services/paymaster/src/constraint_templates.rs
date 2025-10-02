@@ -95,6 +95,11 @@ impl InstructionConstraint {
                     include: vec![ContextualPubkey::NonFeePayerSigner],
                     exclude: vec![],
                 },
+                AccountConstraint {
+                    index: 4,
+                    include: vec![ContextualPubkey::DomainRegistry],
+                    exclude: vec![],
+                },
             ],
             data: vec![
                 // instruction = 0 (StartSession)

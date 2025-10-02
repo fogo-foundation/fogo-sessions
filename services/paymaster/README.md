@@ -33,7 +33,7 @@ v1 does not enforce relationships across instructions (e.g. require instruction 
 
 ## Metrics and Logs
 
-The paymaster service records some metrics via Prometheus and some spans for timing of the transaction validation/submission/confirmation flow via OpenTelemetry. The service exports these OpenTelemetry spans to `localhost:4317`.
+The paymaster service records some metrics via Prometheus and some spans for timing of the transaction validation/submission/confirmation flow via OpenTelemetry. The service exports these OpenTelemetry spans to `localhost:4317` by default. You can configure sending these to a different destination by setting the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
 
 You can run a local all in one jaeger instance to collect and visualize these spans by running:
 
@@ -44,3 +44,13 @@ docker run --name jaeger \
   -p 4317:4317 \
   jaegertracing/all-in-one:1.63.0
 ```
+
+## Transaction Validator Tool
+
+The crate also exposes a cli tool to validate arbitrary transactions against a specified config. You can run this via the following command:
+
+```
+cargo run --bin tx-validator validate -c <CONFIG_PATH> --transaction-hash <ONCHAIN_TRANSACTION_HASH>
+```
+
+Alternatively, you can provide a serialized transaction as a base64 string via the `--transaction` argument in place of the hash. You can optionally provide the name of the domain you wish to match against via `--domain`. The tool will print out the set of transaction variations that the provided transaction matches against.

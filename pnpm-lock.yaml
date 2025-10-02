@@ -651,6 +651,9 @@ importers:
       '@metaplex-foundation/umi-bundle-defaults':
         specifier: 'catalog:'
         version: 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
+      '@noble/hashes':
+        specifier: 'catalog:'
+        version: 1.8.0
       '@solana/compat':
         specifier: 'catalog:'
         version: 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
@@ -688,9 +691,6 @@ importers:
       '@cprussin/tsconfig':
         specifier: 'catalog:'
         version: 4.0.1(typescript@5.8.3)
-      '@noble/hashes':
-        specifier: 'catalog:'
-        version: 1.8.0
       '@types/bn.js':
         specifier: 'catalog:'
         version: 4.11.6
