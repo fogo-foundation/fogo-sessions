@@ -45,10 +45,7 @@ import {
 } from "./crypto.js";
 import type { SingleLine, SnakeCase } from "./extra.js";
 
-export {
-  snakeCase,
-  singleLine,
-} from "./extra.js";
+export { snakeCase, singleLine } from "./extra.js";
 
 export {
   createSolanaWalletAdapter,
@@ -74,7 +71,7 @@ type EstablishSessionOptions = {
   walletPublicKey: PublicKey;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   expires: Date;
-  extra?: Record<SnakeCase,SingleLine> | undefined;
+  extra?: Record<SnakeCase, SingleLine> | undefined;
   createUnsafeExtractableSessionKey?: boolean | undefined;
 } & (
   | { limits?: Map<PublicKey, bigint>; unlimited?: false }
@@ -154,7 +151,7 @@ export const replaceSession = async (
     session: Session;
     signMessage: (message: Uint8Array) => Promise<Uint8Array>;
     expires: Date;
-    extra?: Record<SnakeCase,SingleLine> | undefined;
+    extra?: Record<SnakeCase, SingleLine> | undefined;
   } & (
     | { limits?: Map<PublicKey, bigint>; unlimited?: false }
     | { unlimited: true }
