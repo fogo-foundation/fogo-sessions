@@ -395,7 +395,6 @@ pub async fn run_server(
             |Domain {
                  domain,
                  enable_session_management,
-                 enable_intent_transfers,
                  enable_preflight_simulation,
                  tx_variations,
              }| {
@@ -423,10 +422,7 @@ pub async fn run_server(
                             .into_iter()
                             .flatten(),
                     )
-                    .chain(
-                        enable_intent_transfers
-                            .then(TransactionVariation::intent_transfer_variation),
-                    )
+                    .chain([TransactionVariation::intent_transfer_variation()])
                     .collect();
                 (
                     domain,

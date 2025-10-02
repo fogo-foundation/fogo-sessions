@@ -16,10 +16,6 @@ pub struct Domain {
     #[serde(default = "default_true")]
     pub enable_session_management: bool,
 
-    /// Whether to enable paymaster sponsoring intent-based token transfer transactions.
-    #[serde(default = "default_true")]
-    pub enable_intent_transfers: bool,
-
     /// Whether to enable preflight simulation for transactions before submitting them.
     #[serde(default = "default_true")]
     pub enable_preflight_simulation: bool,
