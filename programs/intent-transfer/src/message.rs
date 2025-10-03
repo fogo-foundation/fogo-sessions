@@ -77,6 +77,7 @@ where
 mod tests {
     use super::*;
     use indoc::indoc;
+    use nom::error::ErrorKind;
     use std::str::FromStr;
 
     #[test]
@@ -105,5 +106,26 @@ mod tests {
                 nonce: 1
             }
         );
+    }
+
+    #[test]
+    fn test_parse_with_unexpected_data_after_end() {
+        let message = indoc! {"
+            Fogo Transfer:
+            Signing this intent will transfer the tokens as described below.
+
+            version: 0.1
+            chain_id: foo
+            token: FOGO
+            amount: 42.676
+            recipient: Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ
+            nonce: 1
+            this data should not be here"};
+
+        let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
+        assert_eq!(result, Err(Err::Error(Error {
+            code: ErrorKind::Eof,
+            input: "this data should not be here".as_bytes().to_vec()
+        })));
     }
 }
