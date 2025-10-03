@@ -76,7 +76,7 @@ async fn main() -> Result<()> {
                 rpc: RpcClient::new(config.solana_url),
                 lookup_table_cache: DashMap::new(),
             };
-            
+
             let (transactions, is_batch) = if let Some(limit) = recent_sponsor_txs {
                 let domain_for_sponsor = if let Some(domain_name) = &domain {
                     domain_name.as_str()
@@ -90,8 +90,13 @@ async fn main() -> Result<()> {
                     ));
                 };
                 let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
-                let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc).await?;
-                println!("Fetched {} recent transactions from sponsor {}\n", txs.len(), sponsor);
+                let txs =
+                    fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc).await?;
+                println!(
+                    "Fetched {} recent transactions from sponsor {}\n",
+                    txs.len(),
+                    sponsor
+                );
                 (txs, true)
             } else if let Some(tx_hash) = transaction_hash {
                 let tx = fetch_transaction_from_rpc(&tx_hash, &chain_index.rpc).await?;
@@ -104,7 +109,7 @@ async fn main() -> Result<()> {
                     "Either --transaction-hash, --transaction, or --recent-sponsor-txs must be provided"
                 ));
             };
-            
+
             let mut validation_stream = transactions
                 .iter()
                 .enumerate()
@@ -112,19 +117,20 @@ async fn main() -> Result<()> {
                     let domains = &domains;
                     let chain_index = &chain_index;
                     async move {
-                        let results = futures::future::join_all(domains.iter().map(|domain| async {
-                            let variations = get_matching_variations(tx, domain, &chain_index)
-                                .await
-                                .unwrap_or_default();
-                            variations
-                                .into_iter()
-                                .map(|v| (domain.domain.as_str(), v))
-                                .collect::<Vec<_>>()
-                        }))
-                        .await
-                        .into_iter()
-                        .flatten()
-                        .collect::<Vec<_>>();
+                        let results =
+                            futures::future::join_all(domains.iter().map(|domain| async {
+                                let variations = get_matching_variations(tx, domain, chain_index)
+                                    .await
+                                    .unwrap_or_default();
+                                variations
+                                    .into_iter()
+                                    .map(|v| (domain.domain.as_str(), v))
+                                    .collect::<Vec<_>>()
+                            }))
+                            .await
+                            .into_iter()
+                            .flatten()
+                            .collect::<Vec<_>>();
 
                         (idx, tx, results)
                     }
@@ -134,7 +140,7 @@ async fn main() -> Result<()> {
             let indent = if is_batch { "  " } else { "" };
             let mut validation_counts = HashMap::new();
             let mut failure_count = 0;
-            
+
             while let Some((idx, tx, validations)) = validation_stream.next().await {
                 if is_batch {
                     println!("Transaction {} ({})", idx + 1, tx.signatures[0]);
@@ -146,7 +152,11 @@ async fn main() -> Result<()> {
                 } else {
                     println!("{}✅ Matches:", indent);
                     for (domain_name, variation) in &validations {
-                        println!("{}  - Domain: {domain_name}, Variation: {}", indent, variation.name());
+                        println!(
+                            "{}  - Domain: {domain_name}, Variation: {}",
+                            indent,
+                            variation.name()
+                        );
                         *validation_counts
                             .entry((domain_name.to_string(), variation.name().to_string()))
                             .or_insert(0) += 1;
@@ -207,7 +217,10 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn fetch_transaction_from_rpc(tx_hash: &str, rpc_client: &RpcClient) -> Result<VersionedTransaction> {
+async fn fetch_transaction_from_rpc(
+    tx_hash: &str,
+    rpc_client: &RpcClient,
+) -> Result<VersionedTransaction> {
     let signature = Signature::from_str(tx_hash)
         .with_context(|| format!("Invalid transaction signature: {tx_hash}"))?;
 
