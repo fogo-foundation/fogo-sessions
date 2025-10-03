@@ -192,7 +192,7 @@ export const getSessionAccount = async (
   connection: Connection,
   sessionPublicKey: PublicKey,
 ) => {
-  const result = await connection.getAccountInfo(sessionPublicKey,"confirmed");
+  const result = await connection.getAccountInfo(sessionPublicKey, "confirmed");
   return result === null
     ? undefined
     : sessionInfoSchema.parse(
