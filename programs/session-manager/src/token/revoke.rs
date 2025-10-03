@@ -9,6 +9,9 @@ pub struct PendingRevocation<'a, 'info> {
     pub user_account: &'a AccountInfo<'info>,
 }
 
+/// Resolve the pending revocations from the remaining accounts and the mints to revoke.
+/// When closing a session, the session account is returned to the system program. We need to revoke all token delegations to the session key, otherwise the session key could still have power to spend tokens from the user accounts even if the session is expired or was revoked.
+/// The caller is reponsible for providing the user associated token accounts in the same order as the mints in the `authorized_tokens` section of the session account.
 pub fn convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations<'a, 'info>(
     accounts: &'a [AccountInfo<'info>],
     mints_to_revoke: &[Pubkey],
@@ -45,8 +48,6 @@ pub fn convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations<'a,
 
 impl<'info> CloseSession<'info> {
     /// Revoke token accounts from the session key.
-    /// When closing a session, the session account is returned to the system program.
-    /// We need to revoke all token delegations to the session key, otherwise the session key could still have power to spend tokens from the user accounts even if the session had expired or been revoked.
     pub fn revoke_tokens<'a>(
         &self,
         pending_revocations: Vec<PendingRevocation<'a, 'info>>,
