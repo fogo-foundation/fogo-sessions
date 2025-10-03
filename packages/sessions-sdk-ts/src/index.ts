@@ -857,7 +857,10 @@ export const verifyLogInToken = async (
   );
   if (!isValid) return;
 
-  const sessionAccount = await getSessionAccount(connection, new PublicKey(payload.sessionPublicKey));
+  const sessionAccount = await getSessionAccount(
+    connection,
+    new PublicKey(payload.sessionPublicKey),
+  );
   if (!sessionAccount) return;
 
   if (sessionAccount.expiration.getTime() < Date.now()) {
