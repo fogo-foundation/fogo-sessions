@@ -1,8 +1,8 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1, take_while1},
-    character::complete::{alphanumeric1, anychar, char, line_ending},
-    combinator::{eof, map, map_opt, not, opt, peek, recognize},
+    character::complete::{anychar, char, line_ending},
+    combinator::{eof, map, map_opt, opt, peek, recognize},
     error::ParseError,
     multi::many_till,
     sequence::{delimited, preceded, separated_pair},
