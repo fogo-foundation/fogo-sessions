@@ -53,4 +53,10 @@ The crate also exposes a cli tool to validate arbitrary transactions against a s
 cargo run --bin tx-validator validate -c <CONFIG_PATH> --transaction-hash <ONCHAIN_TRANSACTION_HASH>
 ```
 
-Alternatively, you can provide a serialized transaction as a base64 string via the `--transaction` argument in place of the hash. You can optionally provide the name of the domain you wish to match against via `--domain`. The tool will print out the set of transaction variations that the provided transaction matches against.
+Alternatively, you can provide a serialized transaction as a base64 string via the `--transaction` argument in place of the hash. Additionally, you could ask the tool to validate a specified number of the most recent transactions that interacted with this domain's sponsor pubkey via:
+
+```
+cargo run --bin tx-validator validate -c <CONFIG_PATH> --recent_sponsor_txs <NUMBER_OF_RECENT_TXS>
+```
+
+You can optionally provide the name of the domain you wish to match against via `--domain`. The tool will print out the set of transaction variations that the provided transaction matches against.
