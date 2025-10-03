@@ -55,7 +55,7 @@ where
             alt((
                 delimited(
                     tag(" "),
-                    take_till1(|c: <I as Input>::Item| c.is_newline()),
+                    take_till1(|c: <I as Input>::Item| c.is_newline() || c.as_char() == '\r'),
                     alt((line_ending, eof)),
                 ),
                 delimited(
@@ -140,9 +140,26 @@ mod tests {
         }
 
         #[test]
+        fn test_same_line_value_with_carriage_return_eof() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo: bar\r"); // The parser expects a \n after the \r
+            assert_eq!(result, Err(Err::Error(Error {
+                code: ErrorKind::Eof,
+                input: " bar\r"
+            })))
+        }
+
+        #[test]
         fn test_same_line_value_linebreak() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo: bar\nbaz");
+            assert_eq!(result, Ok(("baz", ("foo", "bar".to_string()))))
+        }
+
+        #[test]
+        fn test_same_line_value_linebreak_crlf() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo: bar\r\nbaz");
             assert_eq!(result, Ok(("baz", ("foo", "bar".to_string()))))
         }
 

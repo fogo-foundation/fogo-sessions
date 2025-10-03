@@ -550,7 +550,7 @@ const buildMessage = async (
         tokens: serializeTokenList(body.tokens),
         ...(body.extra && { extra: body.extra }),
       }),
-    ].join("\n"),
+    ].join("\r\n"),
   );
 
 const serializeKV = (data: Record<string, string>) =>
@@ -558,7 +558,7 @@ const serializeKV = (data: Record<string, string>) =>
     .map(([key, value]) =>
       [key, ":", value.startsWith("\n") ? "" : " ", value].join(""),
     )
-    .join("\n");
+    .join("\r\n");
 
 const serializeTokenList = (tokens?: TokenInfo[]) => {
   if (tokens === undefined) {
