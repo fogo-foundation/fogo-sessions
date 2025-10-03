@@ -2,11 +2,12 @@ use anyhow::{anyhow, Context, Result};
 use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use dashmap::DashMap;
+use futures::stream::{FuturesOrdered, StreamExt};
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcTransactionConfig};
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use fogo_paymaster::{
     api::ChainIndex,
@@ -34,12 +35,16 @@ enum Commands {
         domain: Option<String>,
 
         /// Transaction hash to fetch from RPC
-        #[arg(long, conflicts_with = "transaction")]
+        #[arg(long, conflicts_with_all = ["transaction", "recent_sponsor_txs"])]
         transaction_hash: Option<String>,
 
         /// Base64 encoded serialized transaction
-        #[arg(short, long, conflicts_with = "transaction_hash")]
+        #[arg(short, long, conflicts_with_all = ["transaction_hash", "recent_sponsor_txs"])]
         transaction: Option<String>,
+
+        /// Number of recent sponsor transactions to fetch and validate
+        #[arg(long, conflicts_with_all = ["transaction", "transaction_hash"])]
+        recent_sponsor_txs: Option<usize>,
     },
 }
 
@@ -53,62 +58,31 @@ async fn main() -> Result<()> {
             domain,
             transaction_hash,
             transaction,
+            recent_sponsor_txs,
         } => {
-            let config = load_config(&config)
-                .with_context(|| format!("Failed to load config from {config}"))?;
-            let domains = if let Some(ref domain_name) = domain {
-                vec![config
-                    .domains
-                    .iter()
-                    .find(|d| d.domain == *domain_name)
-                    .ok_or_else(|| anyhow!("Domain '{domain_name}' not found in config"))?]
-            } else {
-                config.domains.iter().collect()
-            };
-            let tx = match (transaction_hash, transaction) {
-                (Some(hash), _) => fetch_transaction_from_rpc(&hash, &config.solana_url).await?,
-                (None, Some(tx)) => parse_transaction_from_base64(&tx)?,
-                (None, None) => {
-                    return Err(anyhow!(
-                        "Either --transaction-hash or --transaction must be provided"
-                    ));
-                }
-            };
+            let config = load_and_filter_config(&config, &domain)?;
+            let domains = get_domains_for_validation(&config, &domain);
+            let solana_url = &config.solana_url;
             let chain_index = ChainIndex {
-                rpc: RpcClient::new(config.solana_url),
+                rpc: RpcClient::new(solana_url),
                 lookup_table_cache: DashMap::new(),
             };
 
-            let successful_validations =
-                futures::future::try_join_all(domains.into_iter().map(async |domain| {
-                    let variations = get_matching_variations(&tx, domain, &chain_index).await?;
-                    Ok::<_, anyhow::Error>(
-                        variations
-                            .into_iter()
-                            .map(|v| (domain.domain.as_str(), v))
-                            .collect::<Vec<_>>(),
-                    )
-                }))
-                .await?
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>();
+            let (transactions, is_batch) = fetch_transactions(
+                recent_sponsor_txs,
+                transaction_hash,
+                transaction,
+                &domain,
+                &domains,
+                &chain_index,
+            )
+            .await?;
 
-            if successful_validations.is_empty() {
-                if let Some(ref domain_name) = domain {
-                    println!(
-                        "❌ Transaction does not match any variations for domain '{domain_name}'"
-                    );
-                } else {
-                    println!(
-                        "❌ Transaction does not match any variations for any configured domain"
-                    );
-                }
-            } else {
-                println!("✅ Transaction matches the following variations:");
-                for (domain_name, variation) in successful_validations {
-                    println!(" - Domain: {domain_name}, Variation: {}", variation.name());
-                }
+            let (validation_counts, failure_count) =
+                validate_transactions(&transactions, &domains, &chain_index, is_batch, true).await;
+
+            if is_batch {
+                print_summary(validation_counts, failure_count);
             }
         }
     }
@@ -116,11 +90,192 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn fetch_transaction_from_rpc(tx_hash: &str, rpc_url: &str) -> Result<VersionedTransaction> {
+fn load_and_filter_config(
+    config_path: &str,
+    domain: &Option<String>,
+) -> Result<fogo_paymaster::config::Config> {
+    let config = load_config(config_path)
+        .with_context(|| format!("Failed to load config from {config_path}"))?;
+
+    if let Some(domain_name) = domain {
+        if !config.domains.iter().any(|d| d.domain == *domain_name) {
+            return Err(anyhow!("Domain '{domain_name}' not found in config"));
+        }
+    }
+
+    Ok(config)
+}
+
+fn get_domains_for_validation<'a>(
+    config: &'a fogo_paymaster::config::Config,
+    domain: &Option<String>,
+) -> Vec<&'a Domain> {
+    if let Some(domain_name) = domain {
+        vec![config
+            .domains
+            .iter()
+            .find(|d| d.domain == *domain_name)
+            .expect("Domain should exist - validated in load_and_filter_config")]
+    } else {
+        config.domains.iter().collect()
+    }
+}
+
+async fn fetch_transactions(
+    recent_sponsor_txs: Option<usize>,
+    transaction_hash: Option<String>,
+    transaction: Option<String>,
+    domain: &Option<String>,
+    domains: &[&Domain],
+    chain_index: &ChainIndex,
+) -> Result<(Vec<VersionedTransaction>, bool)> {
+    if let Some(limit) = recent_sponsor_txs {
+        let domain_for_sponsor = if let Some(domain_name) = domain {
+            domain_name.as_str()
+        } else if domains.len() == 1 {
+            &domains[0].domain
+        } else if domains.is_empty() {
+            return Err(anyhow!("No domains found in config"));
+        } else {
+            return Err(anyhow!(
+                "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
+            ));
+        };
+        let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
+        let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc).await?;
+        println!(
+            "Fetched {} recent transactions from sponsor {}\n",
+            txs.len(),
+            sponsor
+        );
+        Ok((txs, true))
+    } else if let Some(tx_hash) = transaction_hash {
+        let tx = fetch_transaction_from_rpc(&tx_hash, &chain_index.rpc).await?;
+        Ok((vec![tx], false))
+    } else if let Some(tx) = transaction {
+        let tx = parse_transaction_from_base64(&tx)?;
+        Ok((vec![tx], false))
+    } else {
+        Err(anyhow!(
+            "Either --transaction-hash, --transaction, or --recent-sponsor-txs must be provided"
+        ))
+    }
+}
+
+async fn validate_transactions(
+    transactions: &[VersionedTransaction],
+    domains: &[&Domain],
+    chain_index: &ChainIndex,
+    is_batch: bool,
+    verbose: bool,
+) -> (HashMap<(String, String), usize>, usize) {
+    let mut validation_stream = transactions
+        .iter()
+        .enumerate()
+        .map(|(idx, tx)| async move {
+            let results = futures::future::join_all(domains.iter().map(|domain| async {
+                let variations = get_matching_variations(tx, domain, chain_index)
+                    .await
+                    .unwrap_or_default();
+                variations
+                    .into_iter()
+                    .map(|v| (domain.domain.as_str(), v))
+                    .collect::<Vec<_>>()
+            }))
+            .await
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
+
+            (idx, tx, results)
+        })
+        .collect::<FuturesOrdered<_>>();
+
+    let indent = if is_batch { "  " } else { "" };
+    let mut validation_counts = HashMap::new();
+    let mut failure_count = 0;
+
+    while let Some((idx, tx, validations)) = validation_stream.next().await {
+        if validations.is_empty() {
+            failure_count += 1;
+        } else {
+            for (domain_name, variation) in &validations {
+                *validation_counts
+                    .entry((domain_name.to_string(), variation.name().to_string()))
+                    .or_insert(0) += 1;
+            }
+        }
+
+        if verbose {
+            if is_batch {
+                println!("Transaction {} ({})", idx + 1, tx.signatures[0]);
+            }
+
+            if validations.is_empty() {
+                println!("{indent}❌ Does not match any variations");
+            } else {
+                println!("{indent}✅ Matches:");
+                for (domain_name, variation) in &validations {
+                    println!(
+                        "{}  - Domain: {domain_name}, Variation: {}",
+                        indent,
+                        variation.name()
+                    );
+                }
+            }
+
+            if is_batch {
+                println!();
+            }
+        }
+    }
+
+    (validation_counts, failure_count)
+}
+
+fn print_summary(validation_counts: HashMap<(String, String), usize>, failure_count: usize) {
+    println!("Summary:");
+    println!("========");
+
+    let mut sorted_counts: Vec<_> = validation_counts.into_iter().collect();
+    sorted_counts.sort_by(|a, b| b.1.cmp(&a.1));
+
+    let max_domain_len = sorted_counts
+        .iter()
+        .map(|((domain_name, _), _)| domain_name.len())
+        .chain(std::iter::once("-".len()))
+        .max()
+        .unwrap_or(0);
+
+    let max_variation_len = sorted_counts
+        .iter()
+        .map(|((_, variation_name), _)| variation_name.len())
+        .chain(std::iter::once("Failures".len()))
+        .max()
+        .unwrap_or(0);
+
+    for ((domain_name, variation_name), count) in sorted_counts {
+        println!("✅ {domain_name:max_domain_len$}  {variation_name:max_variation_len$}  {count}");
+    }
+
+    if failure_count > 0 {
+        println!(
+            "❌ {:domain_width$}  {:variation_width$}  {}",
+            "-",
+            "Failures",
+            failure_count,
+            domain_width = max_domain_len,
+            variation_width = max_variation_len
+        );
+    }
+}
+
+async fn fetch_transaction_from_rpc(
+    tx_hash: &str,
+    rpc_client: &RpcClient,
+) -> Result<VersionedTransaction> {
     let signature = Signature::from_str(tx_hash)
         .with_context(|| format!("Invalid transaction signature: {tx_hash}"))?;
-
-    let rpc_client = RpcClient::new(rpc_url.to_string());
 
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Base64),
@@ -139,6 +294,40 @@ async fn fetch_transaction_from_rpc(tx_hash: &str, rpc_url: &str) -> Result<Vers
         .ok_or_else(|| anyhow!("Failed to decode transaction from RPC response"))?;
 
     Ok(versioned_transaction)
+}
+
+async fn fetch_recent_sponsor_transactions(
+    sponsor_pubkey: &solana_pubkey::Pubkey,
+    limit: usize,
+    rpc_client: &RpcClient,
+) -> Result<Vec<VersionedTransaction>> {
+    let signatures = rpc_client
+        .get_signatures_for_address(sponsor_pubkey)
+        .with_context(|| format!("Failed to fetch signatures for sponsor {sponsor_pubkey}"))?;
+
+    let signatures_to_fetch = signatures.into_iter().take(limit).collect::<Vec<_>>();
+
+    let mut transactions = Vec::new();
+    for sig_info in signatures_to_fetch {
+        let signature = Signature::from_str(&sig_info.signature)
+            .with_context(|| format!("Invalid signature: {}", sig_info.signature))?;
+
+        let config = RpcTransactionConfig {
+            encoding: Some(UiTransactionEncoding::Base64),
+            max_supported_transaction_version: Some(0),
+            ..Default::default()
+        };
+
+        let transaction = rpc_client
+            .get_transaction_with_config(&signature, config)
+            .with_context(|| format!("Failed to fetch transaction {}", sig_info.signature))?;
+
+        if let Some(versioned_transaction) = transaction.transaction.transaction.decode() {
+            transactions.push(versioned_transaction);
+        }
+    }
+
+    Ok(transactions)
 }
 
 fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransaction> {
