@@ -60,156 +60,214 @@ async fn main() -> Result<()> {
             transaction,
             recent_sponsor_txs,
         } => {
-            let config = load_config(&config)
-                .with_context(|| format!("Failed to load config from {config}"))?;
-            let domains = if let Some(ref domain_name) = domain {
-                vec![config
-                    .domains
-                    .iter()
-                    .find(|d| d.domain == *domain_name)
-                    .ok_or_else(|| anyhow!("Domain '{domain_name}' not found in config"))?]
-            } else {
-                config.domains.iter().collect()
-            };
-
+            let config = load_and_filter_config(&config, &domain)?;
+            let domains = get_domains_for_validation(&config, &domain);
+            let solana_url = &config.solana_url;
             let chain_index = ChainIndex {
-                rpc: RpcClient::new(config.solana_url),
+                rpc: RpcClient::new(solana_url),
                 lookup_table_cache: DashMap::new(),
             };
 
-            let (transactions, is_batch) = if let Some(limit) = recent_sponsor_txs {
-                let domain_for_sponsor = if let Some(domain_name) = &domain {
-                    domain_name.as_str()
-                } else if domains.len() == 1 {
-                    &domains[0].domain
-                } else if domains.is_empty() {
-                    return Err(anyhow!("No domains found in config"));
-                } else {
-                    return Err(anyhow!(
-                        "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
-                    ));
-                };
-                let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
-                let txs =
-                    fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc).await?;
-                println!(
-                    "Fetched {} recent transactions from sponsor {}\n",
-                    txs.len(),
-                    sponsor
-                );
-                (txs, true)
-            } else if let Some(tx_hash) = transaction_hash {
-                let tx = fetch_transaction_from_rpc(&tx_hash, &chain_index.rpc).await?;
-                (vec![tx], false)
-            } else if let Some(tx) = transaction {
-                let tx = parse_transaction_from_base64(&tx)?;
-                (vec![tx], false)
-            } else {
-                return Err(anyhow!(
-                    "Either --transaction-hash, --transaction, or --recent-sponsor-txs must be provided"
-                ));
-            };
+            let (transactions, is_batch) = fetch_transactions(
+                recent_sponsor_txs,
+                transaction_hash,
+                transaction,
+                &domain,
+                &domains,
+                &chain_index,
+            )
+            .await?;
 
-            let mut validation_stream = transactions
-                .iter()
-                .enumerate()
-                .map(|(idx, tx)| {
-                    let domains = &domains;
-                    let chain_index = &chain_index;
-                    async move {
-                        let results =
-                            futures::future::join_all(domains.iter().map(|domain| async {
-                                let variations = get_matching_variations(tx, domain, chain_index)
-                                    .await
-                                    .unwrap_or_default();
-                                variations
-                                    .into_iter()
-                                    .map(|v| (domain.domain.as_str(), v))
-                                    .collect::<Vec<_>>()
-                            }))
-                            .await
-                            .into_iter()
-                            .flatten()
-                            .collect::<Vec<_>>();
-
-                        (idx, tx, results)
-                    }
-                })
-                .collect::<FuturesOrdered<_>>();
-
-            let indent = if is_batch { "  " } else { "" };
-            let mut validation_counts = HashMap::new();
-            let mut failure_count = 0;
-
-            while let Some((idx, tx, validations)) = validation_stream.next().await {
-                if is_batch {
-                    println!("Transaction {} ({})", idx + 1, tx.signatures[0]);
-                }
-
-                if validations.is_empty() {
-                    println!("{indent}❌ Does not match any variations");
-                    failure_count += 1;
-                } else {
-                    println!("{indent}✅ Matches:");
-                    for (domain_name, variation) in &validations {
-                        println!(
-                            "{}  - Domain: {domain_name}, Variation: {}",
-                            indent,
-                            variation.name()
-                        );
-                        *validation_counts
-                            .entry((domain_name.to_string(), variation.name().to_string()))
-                            .or_insert(0) += 1;
-                    }
-                }
-
-                if is_batch {
-                    println!();
-                }
-            }
+            let (validation_counts, failure_count) =
+                validate_transactions(&transactions, &domains, &chain_index, is_batch, true).await;
 
             if is_batch {
-                println!("Summary:");
-                println!("========");
-
-                let mut sorted_counts: Vec<_> = validation_counts.into_iter().collect();
-                sorted_counts.sort_by(|a, b| b.1.cmp(&a.1));
-
-                let max_domain_len = sorted_counts
-                    .iter()
-                    .map(|((domain_name, _), _)| domain_name.len())
-                    .chain(std::iter::once("-".len()))
-                    .max()
-                    .unwrap_or(0);
-
-                let max_variation_len = sorted_counts
-                    .iter()
-                    .map(|((_, variation_name), _)| variation_name.len())
-                    .chain(std::iter::once("Failures".len()))
-                    .max()
-                    .unwrap_or(0);
-
-                for ((domain_name, variation_name), count) in sorted_counts {
-                    println!(
-                        "✅ {domain_name:max_domain_len$}  {variation_name:max_variation_len$}  {count}"
-                    );
-                }
-
-                if failure_count > 0 {
-                    println!(
-                        "❌ {:domain_width$}  {:variation_width$}  {}",
-                        "-",
-                        "Failures",
-                        failure_count,
-                        domain_width = max_domain_len,
-                        variation_width = max_variation_len
-                    );
-                }
+                print_summary(validation_counts, failure_count);
             }
         }
     }
 
     Ok(())
+}
+
+fn load_and_filter_config(
+    config_path: &str,
+    domain: &Option<String>,
+) -> Result<fogo_paymaster::config::Config> {
+    let config = load_config(config_path)
+        .with_context(|| format!("Failed to load config from {config_path}"))?;
+
+    if let Some(domain_name) = domain {
+        if !config.domains.iter().any(|d| d.domain == *domain_name) {
+            return Err(anyhow!("Domain '{domain_name}' not found in config"));
+        }
+    }
+
+    Ok(config)
+}
+
+fn get_domains_for_validation<'a>(
+    config: &'a fogo_paymaster::config::Config,
+    domain: &Option<String>,
+) -> Vec<&'a Domain> {
+    if let Some(domain_name) = domain {
+        vec![config
+            .domains
+            .iter()
+            .find(|d| d.domain == *domain_name)
+            .expect("Domain should exist - validated in load_and_filter_config")]
+    } else {
+        config.domains.iter().collect()
+    }
+}
+
+async fn fetch_transactions(
+    recent_sponsor_txs: Option<usize>,
+    transaction_hash: Option<String>,
+    transaction: Option<String>,
+    domain: &Option<String>,
+    domains: &[&Domain],
+    chain_index: &ChainIndex,
+) -> Result<(Vec<VersionedTransaction>, bool)> {
+    if let Some(limit) = recent_sponsor_txs {
+        let domain_for_sponsor = if let Some(domain_name) = domain {
+            domain_name.as_str()
+        } else if domains.len() == 1 {
+            &domains[0].domain
+        } else if domains.is_empty() {
+            return Err(anyhow!("No domains found in config"));
+        } else {
+            return Err(anyhow!(
+                "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
+            ));
+        };
+        let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
+        let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc).await?;
+        println!(
+            "Fetched {} recent transactions from sponsor {}\n",
+            txs.len(),
+            sponsor
+        );
+        Ok((txs, true))
+    } else if let Some(tx_hash) = transaction_hash {
+        let tx = fetch_transaction_from_rpc(&tx_hash, &chain_index.rpc).await?;
+        Ok((vec![tx], false))
+    } else if let Some(tx) = transaction {
+        let tx = parse_transaction_from_base64(&tx)?;
+        Ok((vec![tx], false))
+    } else {
+        Err(anyhow!(
+            "Either --transaction-hash, --transaction, or --recent-sponsor-txs must be provided"
+        ))
+    }
+}
+
+async fn validate_transactions(
+    transactions: &[VersionedTransaction],
+    domains: &[&Domain],
+    chain_index: &ChainIndex,
+    is_batch: bool,
+    verbose: bool,
+) -> (HashMap<(String, String), usize>, usize) {
+    let mut validation_stream = transactions
+        .iter()
+        .enumerate()
+        .map(|(idx, tx)| async move {
+            let results = futures::future::join_all(domains.iter().map(|domain| async {
+                let variations = get_matching_variations(tx, domain, chain_index)
+                    .await
+                    .unwrap_or_default();
+                variations
+                    .into_iter()
+                    .map(|v| (domain.domain.as_str(), v))
+                    .collect::<Vec<_>>()
+            }))
+            .await
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
+
+            (idx, tx, results)
+        })
+        .collect::<FuturesOrdered<_>>();
+
+    let indent = if is_batch { "  " } else { "" };
+    let mut validation_counts = HashMap::new();
+    let mut failure_count = 0;
+
+    while let Some((idx, tx, validations)) = validation_stream.next().await {
+        if validations.is_empty() {
+            failure_count += 1;
+        } else {
+            for (domain_name, variation) in &validations {
+                *validation_counts
+                    .entry((domain_name.to_string(), variation.name().to_string()))
+                    .or_insert(0) += 1;
+            }
+        }
+
+        if verbose {
+            if is_batch {
+                println!("Transaction {} ({})", idx + 1, tx.signatures[0]);
+            }
+
+            if validations.is_empty() {
+                println!("{indent}❌ Does not match any variations");
+            } else {
+                println!("{indent}✅ Matches:");
+                for (domain_name, variation) in &validations {
+                    println!(
+                        "{}  - Domain: {domain_name}, Variation: {}",
+                        indent,
+                        variation.name()
+                    );
+                }
+            }
+
+            if is_batch {
+                println!();
+            }
+        }
+    }
+
+    (validation_counts, failure_count)
+}
+
+fn print_summary(validation_counts: HashMap<(String, String), usize>, failure_count: usize) {
+    println!("Summary:");
+    println!("========");
+
+    let mut sorted_counts: Vec<_> = validation_counts.into_iter().collect();
+    sorted_counts.sort_by(|a, b| b.1.cmp(&a.1));
+
+    let max_domain_len = sorted_counts
+        .iter()
+        .map(|((domain_name, _), _)| domain_name.len())
+        .chain(std::iter::once("-".len()))
+        .max()
+        .unwrap_or(0);
+
+    let max_variation_len = sorted_counts
+        .iter()
+        .map(|((_, variation_name), _)| variation_name.len())
+        .chain(std::iter::once("Failures".len()))
+        .max()
+        .unwrap_or(0);
+
+    for ((domain_name, variation_name), count) in sorted_counts {
+        println!("✅ {domain_name:max_domain_len$}  {variation_name:max_variation_len$}  {count}");
+    }
+
+    if failure_count > 0 {
+        println!(
+            "❌ {:domain_width$}  {:variation_width$}  {}",
+            "-",
+            "Failures",
+            failure_count,
+            domain_width = max_domain_len,
+            variation_width = max_variation_len
+        );
+    }
 }
 
 async fn fetch_transaction_from_rpc(
