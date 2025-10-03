@@ -68,7 +68,7 @@ type EstablishSessionOptions = {
   walletPublicKey: PublicKey;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   expires: Date;
-  extra?: string | undefined;
+  extra?: Record<string, string> | undefined;
   createUnsafeExtractableSessionKey?: boolean | undefined;
 } & (
   | { limits?: Map<PublicKey, bigint>; unlimited?: false }
@@ -148,7 +148,7 @@ export const replaceSession = async (
     session: Session;
     signMessage: (message: Uint8Array) => Promise<Uint8Array>;
     expires: Date;
-    extra?: string | undefined;
+    extra?: Record<string, string> | undefined;
   } & (
     | { limits?: Map<PublicKey, bigint>; unlimited?: false }
     | { unlimited: true }
@@ -548,17 +548,29 @@ const buildMessage = async (
         expires: body.expires.toISOString(),
         session_key: await getAddressFromPublicKey(body.sessionKey.publicKey),
         tokens: serializeTokenList(body.tokens),
-        ...(body.extra && { extra: body.extra }),
       }),
-    ].join("\r\n"),
+      body.extra && serializeExtra(body.extra),
+    ].join("\n"),
   );
+
+const serializeExtra = (extra: Record<string, string>) => {
+  for (const [key, value] of Object.entries(extra)) {
+    if (!/^[a-z]+(_[a-z0-9]+)*$/.test(key)) {
+      throw new Error(`Extra key must be a snake_case string: ${key}`);
+    }
+    if (value.includes("\n")) {
+      throw new Error(`Extra value must not contain a line break: ${value}`);
+    }
+  }
+  return serializeKV(extra);
+};
 
 const serializeKV = (data: Record<string, string>) =>
   Object.entries(data)
     .map(([key, value]) =>
       [key, ":", value.startsWith("\n") ? "" : " ", value].join(""),
     )
-    .join("\r\n");
+    .join("\n");
 
 const serializeTokenList = (tokens?: TokenInfo[]) => {
   if (tokens === undefined) {
