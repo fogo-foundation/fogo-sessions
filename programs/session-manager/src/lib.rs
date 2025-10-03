@@ -3,26 +3,25 @@
 
 use crate::error::SessionManagerError;
 use crate::message::{Message, Tokens};
+use crate::token::approve::convert_remaning_accounts_and_token_limits_to_pending_approvals;
+use crate::token::revoke::convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations;
 use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::{
-    associated_token::get_associated_token_address,
-    token::{self, spl_token::try_ui_amount_into_amount, ApproveChecked, Mint, Token},
-};
+use anchor_spl::token::Token;
 use domain_registry::{domain::Domain, state::DomainRecordInner};
-use fogo_sessions_sdk::session::{ActiveSessionInfo, V2};
 use fogo_sessions_sdk::session::{
-    AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens, Session, SessionInfo,
+    ActiveSessionInfo, AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens,
+    AuthorizedTokensWithMints, RevokedSessionInfo, Session, SessionInfo, V2, V3,
 };
-use mpl_token_metadata::accounts::Metadata;
 use solana_intents::Intent;
-use solana_intents::{SymbolOrMint, Version};
+use solana_intents::Version;
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
 pub mod error;
 mod message;
 mod system_program;
+mod token;
 
 const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
@@ -51,17 +50,22 @@ pub mod session_manager {
         ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
 
-        let authorized_tokens = match tokens {
+        let authorized_tokens_with_mints = match tokens {
             Tokens::Specific(tokens) => {
-                ctx.accounts.approve_tokens(
-                    ctx.remaining_accounts,
-                    &tokens,
-                    &signer,
-                    ctx.bumps.session_setter,
-                )?;
-                AuthorizedTokens::Specific
+                let pending_approvals =
+                    convert_remaning_accounts_and_token_limits_to_pending_approvals(
+                        ctx.remaining_accounts,
+                        tokens,
+                        &signer,
+                    )?;
+                let authorized_tokens_with_mints = AuthorizedTokensWithMints::Specific(
+                    pending_approvals.iter().map(|p| p.mint()).collect(),
+                );
+                ctx.accounts
+                    .approve_tokens(pending_approvals, ctx.bumps.session_setter)?;
+                authorized_tokens_with_mints
             }
-            Tokens::All => AuthorizedTokens::All,
+            Tokens::All => AuthorizedTokensWithMints::All,
         };
 
         let program_domains = ctx.accounts.get_domain_programs(domain)?;
@@ -73,7 +77,7 @@ pub mod session_manager {
                 session_info: SessionInfo::V1(ActiveSessionInfo {
                     user: signer,
                     authorized_programs: AuthorizedPrograms::Specific(program_domains),
-                    authorized_tokens,
+                    authorized_tokens: authorized_tokens_with_mints.as_ref().clone(),
                     extra: extra.into(),
                     expiration: expires.timestamp(),
                 }),
@@ -84,7 +88,18 @@ pub mod session_manager {
                 session_info: SessionInfo::V2(V2::Active(ActiveSessionInfo {
                     user: signer,
                     authorized_programs: AuthorizedPrograms::Specific(program_domains),
-                    authorized_tokens,
+                    authorized_tokens: authorized_tokens_with_mints.as_ref().clone(),
+                    extra: extra.into(),
+                    expiration: expires.timestamp(),
+                })),
+            },
+            3 => Session {
+                sponsor: ctx.accounts.sponsor.key(),
+                major,
+                session_info: SessionInfo::V3(V3::Active(ActiveSessionInfo {
+                    user: signer,
+                    authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                    authorized_tokens: authorized_tokens_with_mints,
                     extra: extra.into(),
                     expiration: expires.timestamp(),
                 })),
@@ -107,6 +122,15 @@ pub mod session_manager {
                     SessionInfo::V2(V2::Revoked(active_session_info.expiration));
             }
             SessionInfo::V2(V2::Revoked(_)) => {} // Idempotent
+            SessionInfo::V3(V3::Active(active_session_info)) => {
+                ctx.accounts.session.session_info =
+                    SessionInfo::V3(V3::Revoked(RevokedSessionInfo {
+                        user: active_session_info.user,
+                        expiration: active_session_info.expiration,
+                        authorized_tokens_with_mints: active_session_info.authorized_tokens.clone(),
+                    }));
+            }
+            SessionInfo::V3(V3::Revoked(_)) => {} // Idempotent
         }
         ctx.accounts.reallocate_and_refund_rent()?;
         Ok(())
@@ -114,8 +138,42 @@ pub mod session_manager {
 
     #[instruction(discriminator = [2])]
     pub fn close_session<'info>(
-        _ctx: Context<'_, '_, '_, 'info, CloseSession<'info>>,
+        ctx: Context<'_, '_, '_, 'info, CloseSession<'info>>,
     ) -> Result<()> {
+        let (user, mints_to_revoke) = match &ctx.accounts.session.session_info {
+            // V3 sessions can be all be closed
+            SessionInfo::V3(V3::Active(ActiveSessionInfo {
+                authorized_tokens: authorized_tokens_with_mints,
+                user,
+                ..
+            }))
+            | SessionInfo::V3(V3::Revoked(RevokedSessionInfo {
+                authorized_tokens_with_mints,
+                user,
+                ..
+            })) => match &authorized_tokens_with_mints {
+                AuthorizedTokensWithMints::Specific(mints) => (user, mints),
+                AuthorizedTokensWithMints::All => (user, &vec![]),
+            },
+            // V2 and V1 sessions can only be closed if they don't have token limits
+            SessionInfo::V2(V2::Active(active_session_info))
+            | SessionInfo::V1(active_session_info) => match active_session_info.authorized_tokens {
+                AuthorizedTokens::Specific => {
+                    return Err(error!(SessionManagerError::InvalidVersion))
+                }
+                AuthorizedTokens::All => (&active_session_info.user, &vec![]),
+            },
+            _ => return Err(error!(SessionManagerError::InvalidVersion)),
+        };
+        let pending_revocations =
+            convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations(
+                ctx.remaining_accounts,
+                mints_to_revoke,
+                user,
+                &ctx.accounts.session.key(),
+            )?;
+        ctx.accounts
+            .revoke_tokens(pending_revocations, ctx.bumps.session_setter)?;
         Ok(())
     }
 
@@ -163,6 +221,10 @@ pub struct CloseSession<'info> {
     #[account(constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
     /// CHECK: we check it against the session's sponsor
     pub sponsor: AccountInfo<'info>,
+    /// CHECK: this is just a signer for token program CPIs
+    #[account(seeds = [SESSION_SETTER_SEED], bump)]
+    pub session_setter: AccountInfo<'info>,
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
@@ -216,87 +278,6 @@ impl<'info> StartSession<'info> {
             self.sponsor.to_account_info(),
         );
         domain_record.to_vec::<AuthorizedProgram>()
-    }
-
-    /// Delegate token accounts to the session key.
-    /// Signing an intent with the symbol "SOL" means delegating your token account for a token who has metadata symbol "SOL".
-    /// Although there can be multiple tokens with the same symbol, the worst case scenario is that you're delegating the token with the most value among them, which is probably what you want.
-    pub fn approve_tokens(
-        &self,
-        accounts: &[AccountInfo<'info>],
-        tokens: &[(SymbolOrMint, String)],
-        user: &Pubkey,
-        session_setter_bump: u8,
-    ) -> Result<()> {
-        let mut accounts_iter = accounts.iter();
-        for (symbol_or_mint, amount) in tokens.iter() {
-            let (user_account, mint_account) = match symbol_or_mint {
-                SymbolOrMint::Symbol(symbol) => {
-                    let user_account = accounts_iter
-                        .next()
-                        .ok_or(error!(SessionManagerError::MissingAccount))?;
-                    let mint_account = accounts_iter
-                        .next()
-                        .ok_or(error!(SessionManagerError::MissingAccount))?;
-                    let metadata_account = accounts_iter
-                        .next()
-                        .ok_or(error!(SessionManagerError::MissingAccount))?;
-
-                    require_eq!(
-                        metadata_account.key(),
-                        Metadata::find_pda(&mint_account.key()).0,
-                        SessionManagerError::MetadataMismatch
-                    );
-                    let metadata = Metadata::try_from(metadata_account)?;
-                    require_eq!(
-                        &metadata.symbol,
-                        &format!("{symbol:\0<10}"),
-                        SessionManagerError::SymbolMismatch
-                    ); // Symbols in the metadata account are padded to 10 characters
-                    (user_account, mint_account)
-                }
-                SymbolOrMint::Mint(mint) => {
-                    let user_account = accounts_iter
-                        .next()
-                        .ok_or(error!(SessionManagerError::MissingAccount))?;
-                    let mint_account = accounts_iter
-                        .next()
-                        .ok_or(error!(SessionManagerError::MissingAccount))?;
-
-                    require_eq!(mint, &mint_account.key(), SessionManagerError::MintMismatch);
-                    (user_account, mint_account)
-                }
-            };
-
-            require_eq!(
-                user_account.key(),
-                get_associated_token_address(user, &mint_account.key()),
-                SessionManagerError::AssociatedTokenAccountMismatch
-            );
-
-            let mint_data = Mint::try_deserialize(&mut mint_account.data.borrow().as_ref())?;
-            let amount_internal = try_ui_amount_into_amount(amount.clone(), mint_data.decimals)
-                .map_err(|_| SessionManagerError::AmountConversionFailed)?;
-
-            let cpi_accounts = ApproveChecked {
-                to: user_account.to_account_info(),
-                delegate: self.session.to_account_info(),
-                authority: self.session_setter.to_account_info(),
-                mint: mint_account.to_account_info(),
-            };
-
-            token::approve_checked(
-                CpiContext::new_with_signer(
-                    self.token_program.to_account_info(),
-                    cpi_accounts,
-                    &[&[SESSION_SETTER_SEED, &[session_setter_bump]]],
-                ),
-                amount_internal,
-                mint_data.decimals,
-            )?;
-        }
-
-        Ok(())
     }
 }
 

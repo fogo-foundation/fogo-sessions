@@ -1,4 +1,6 @@
+use crate::error::SessionManagerError;
 use anchor_lang::prelude::Pubkey;
+use anchor_spl::token::spl_token::try_ui_amount_into_amount;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
 use fogo_sessions_sdk::session::MAJOR;
@@ -113,8 +115,22 @@ where
 }
 
 #[derive(Debug, PartialEq)]
+pub struct UiTokenAmount(String);
+
+impl UiTokenAmount {
+    pub fn new(amount: String) -> Self {
+        Self(amount)
+    }
+
+    pub fn into_amount_internal(self, decimals: u8) -> Result<u64, SessionManagerError> {
+        try_ui_amount_into_amount(self.0, decimals)
+            .map_err(|_| SessionManagerError::AmountConversionFailed)
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Tokens {
-    Specific(Vec<(SymbolOrMint, String)>),
+    Specific(Vec<(SymbolOrMint, UiTokenAmount)>),
     All,
 }
 
@@ -128,7 +144,9 @@ impl FromStr for Tokens {
             _ => map(
                 many1(map_res(
                     preceded(tag("-"), key_value),
-                    |(key, value): (&str, String)| key.parse().map(|token| (token, value)),
+                    |(key, value): (&str, String)| {
+                        key.parse().map(|token| (token, UiTokenAmount::new(value)))
+                    },
                 )),
                 Tokens::Specific,
             )
@@ -173,14 +191,14 @@ mod tests {
                 Tokens::Specific(vec![
                     (
                         SymbolOrMint::Symbol("foo".to_string()),
-                        "5467.672".to_string()
+                        UiTokenAmount::new("5467.672".to_string())
                     ),
                     (
                         SymbolOrMint::Mint(
                             Pubkey::from_str("So11111111111111111111111111111111111111112")
                                 .unwrap()
                         ),
-                        "766".to_string()
+                        UiTokenAmount::new("766".to_string())
                     )
                 ])
             )
@@ -246,13 +264,16 @@ mod tests {
                     session_key: Pubkey::from_str("2jKr1met2kCteHoTNtkTL51Sgw7rQKcF4YNdP5xfkPRB")
                         .unwrap(),
                     tokens: Tokens::Specific(vec![
-                        (SymbolOrMint::Symbol("SOL".to_string()), "100".to_string()),
+                        (
+                            SymbolOrMint::Symbol("SOL".to_string()),
+                            UiTokenAmount::new("100".to_string())
+                        ),
                         (
                             SymbolOrMint::Mint(
                                 Pubkey::from_str("DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu")
                                     .unwrap()
                             ),
-                            "200".to_string()
+                            UiTokenAmount::new("200".to_string())
                         ),
                     ]),
                     extra: HashMap::from([
