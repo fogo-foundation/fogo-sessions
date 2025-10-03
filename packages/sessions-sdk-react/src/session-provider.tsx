@@ -403,14 +403,12 @@ const useSessionStateContext = ({
         sessionDuration: number,
         limits?: Map<PublicKey, bigint>,
       ) => {
-        const extra = { foo: "bar" };
         setState(SessionState.UpdatingSession(establishedOptions));
         replaceSession({
           expires: new Date(Date.now() + sessionDuration),
           adapter,
           signMessage,
           session,
-          extra,
           ...(limits === undefined ? { unlimited: true } : { limits }),
         })
           .then((result) => {

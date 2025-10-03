@@ -509,7 +509,7 @@ const buildMessage = async (
 
 const serializeExtra = (extra: Record<string, string>) => {
   for (const [key, value] of Object.entries(extra)) {
-    if (!(/^[a-z]+(_[a-z0-9]+)*$/.test(key))) {
+    if (!/^[a-z]+(_[a-z0-9]+)*$/.test(key)) {
       throw new Error(`Extra key must be a snake_case string: ${key}`);
     }
     if (value.includes("\n")) {
@@ -517,7 +517,7 @@ const serializeExtra = (extra: Record<string, string>) => {
     }
   }
   return serializeKV(extra);
-}
+};
 
 const serializeKV = (data: Record<string, string>) =>
   Object.entries(data)
