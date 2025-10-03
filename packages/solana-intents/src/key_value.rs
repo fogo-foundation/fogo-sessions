@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take_till1, take_while1},
     character::complete::{alphanumeric1, anychar, char, line_ending},
-    combinator::{eof, map, map_opt, opt, peek, recognize},
+    combinator::{eof, map, map_opt, not, opt, peek, recognize},
     error::ParseError,
     multi::many_till,
     sequence::{delimited, preceded, separated_pair},
@@ -62,7 +62,13 @@ where
                     line_ending,
                     recognize(many_till(
                         anychar,
-                        peek(alt((preceded(line_ending, alphanumeric1), eof))),
+                        peek(alt((
+                            preceded(
+                                line_ending,
+                                take_while1(|c: <I as Input>::Item| c.as_char() != '-'),
+                            ),
+                            eof,
+                        ))),
                     )),
                     opt(line_ending),
                 ),
@@ -219,6 +225,13 @@ mod tests {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo:\n-baz\n-qux\nbaz");
             assert_eq!(result, Ok(("baz", ("foo", "-baz\n-qux".to_string()))))
+        }
+
+        #[test]
+        fn test_multiline_value_stops_at_next_line_without_dash() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:\n-baz\n-qux\n\nbaz");
+            assert_eq!(result, Ok(("\nbaz", ("foo", "-baz\n-qux".to_string()))))
         }
     }
 

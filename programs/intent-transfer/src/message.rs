@@ -123,9 +123,12 @@ mod tests {
             this data should not be here"};
 
         let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
-        assert_eq!(result, Err(Err::Error(Error {
-            code: ErrorKind::Eof,
-            input: "this data should not be here".as_bytes().to_vec()
-        })));
+        assert_eq!(
+            result,
+            Err(Err::Error(Error {
+                code: ErrorKind::Eof,
+                input: "this data should not be here".as_bytes().to_vec()
+            }))
+        );
     }
 }
