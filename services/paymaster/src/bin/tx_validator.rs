@@ -147,10 +147,10 @@ async fn main() -> Result<()> {
                 }
 
                 if validations.is_empty() {
-                    println!("{}❌ Does not match any variations", indent);
+                    println!("{indent}❌ Does not match any variations");
                     failure_count += 1;
                 } else {
-                    println!("{}✅ Matches:", indent);
+                    println!("{indent}✅ Matches:");
                     for (domain_name, variation) in &validations {
                         println!(
                             "{}  - Domain: {domain_name}, Variation: {}",
@@ -191,12 +191,7 @@ async fn main() -> Result<()> {
 
                 for ((domain_name, variation_name), count) in sorted_counts {
                     println!(
-                        "✅ {:domain_width$}  {:variation_width$}  {}",
-                        domain_name,
-                        variation_name,
-                        count,
-                        domain_width = max_domain_len,
-                        variation_width = max_variation_len
+                        "✅ {domain_name:max_domain_len$}  {variation_name:max_variation_len$}  {count}"
                     );
                 }
 
