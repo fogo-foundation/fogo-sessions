@@ -43,9 +43,6 @@ import {
   signMessageWithKey,
   verifyMessageWithKey,
 } from "./crypto.js";
-import type { SingleLine, SnakeCase } from "./extra.js";
-
-export { snakeCase, singleLine } from "./extra.js";
 
 export {
   createSolanaWalletAdapter,
@@ -71,7 +68,7 @@ type EstablishSessionOptions = {
   walletPublicKey: PublicKey;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   expires: Date;
-  extra?: Record<SnakeCase, SingleLine> | undefined;
+  extra?: Record<string, string> | undefined;
   createUnsafeExtractableSessionKey?: boolean | undefined;
 } & (
   | { limits?: Map<PublicKey, bigint>; unlimited?: false }
@@ -151,7 +148,7 @@ export const replaceSession = async (
     session: Session;
     signMessage: (message: Uint8Array) => Promise<Uint8Array>;
     expires: Date;
-    extra?: Record<SnakeCase, SingleLine> | undefined;
+    extra?: Record<string, string> | undefined;
   } & (
     | { limits?: Map<PublicKey, bigint>; unlimited?: false }
     | { unlimited: true }
@@ -506,9 +503,21 @@ const buildMessage = async (
         session_key: await getAddressFromPublicKey(body.sessionKey.publicKey),
         tokens: serializeTokenList(body.tokens),
       }),
-      body.extra && serializeKV(body.extra),
+      body.extra && serializeExtra(body.extra),
     ].join("\n"),
   );
+
+const serializeExtra = (extra: Record<string, string>) => {
+  for (const [key, value] of Object.entries(extra)) {
+    if (!(/^[a-z]+(_[a-z0-9]+)*$/.test(key))) {
+      throw new Error(`Extra key must be a snake_case string: ${key}`);
+    }
+    if (value.includes("\n")) {
+      throw new Error(`Extra value must not contain a line break: ${value}`);
+    }
+  }
+  return serializeKV(extra);
+}
 
 const serializeKV = (data: Record<string, string>) =>
   Object.entries(data)
