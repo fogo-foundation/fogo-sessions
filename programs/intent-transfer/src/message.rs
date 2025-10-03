@@ -4,7 +4,7 @@ use nom::{
     character::complete::line_ending,
     combinator::{eof, map, verify},
     error::{Error, ParseError},
-    sequence::{delimited, preceded},
+    sequence::delimited,
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
 use solana_intents::{tag_key_value, SymbolOrMint, Version};
