@@ -82,6 +82,7 @@ where
 mod tests {
     mod key_value_with_key_type {
         use super::super::*;
+        use nom::character::complete::alphanumeric1;
         use nom::error::{Error, ErrorKind};
         use nom::Err;
 
