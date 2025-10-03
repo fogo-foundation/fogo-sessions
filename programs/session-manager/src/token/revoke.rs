@@ -9,7 +9,7 @@ pub struct PendingRevocation<'a, 'info> {
     pub user_account: &'a AccountInfo<'info>,
 }
 
-pub fn convert_remaining_accounts_to_pending_revocations<'a, 'info>(
+pub fn convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations<'a, 'info>(
     accounts: &'a [AccountInfo<'info>],
     mints_to_revoke: &[Pubkey],
     user: &Pubkey,

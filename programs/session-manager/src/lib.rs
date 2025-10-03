@@ -26,7 +26,7 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
-    use crate::token::revoke::convert_remaining_accounts_to_pending_revocations;
+    use crate::token::revoke::convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations;
 
     use super::*;
 
@@ -166,7 +166,7 @@ pub mod session_manager {
             },
             _ => return Err(error!(SessionManagerError::InvalidVersion)),
         };
-        let pending_revocations = convert_remaining_accounts_to_pending_revocations(
+        let pending_revocations = convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations(
             ctx.remaining_accounts,
             mints_to_revoke,
             user,
