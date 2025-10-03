@@ -857,5 +857,12 @@ export const verifyLogInToken = async (
   );
   if (!isValid) return;
 
-  return getSessionAccount(connection, new PublicKey(payload.sessionPublicKey));
+  const sessionAccount = await getSessionAccount(connection, new PublicKey(payload.sessionPublicKey));
+  if (!sessionAccount) return;
+
+  if (sessionAccount.expiration.getTime() < Date.now()) {
+    throw new Error("The session associated with this login token has expired");
+  }
+
+  return sessionAccount;
 };
