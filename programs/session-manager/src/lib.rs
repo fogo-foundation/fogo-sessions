@@ -166,12 +166,13 @@ pub mod session_manager {
             },
             _ => return Err(error!(SessionManagerError::InvalidVersion)),
         };
-        let pending_revocations = convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations(
-            ctx.remaining_accounts,
-            mints_to_revoke,
-            user,
-            &ctx.accounts.session.key(),
-        )?;
+        let pending_revocations =
+            convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations(
+                ctx.remaining_accounts,
+                mints_to_revoke,
+                user,
+                &ctx.accounts.session.key(),
+            )?;
         ctx.accounts
             .revoke_tokens(pending_revocations, ctx.bumps.session_setter)?;
         Ok(())
