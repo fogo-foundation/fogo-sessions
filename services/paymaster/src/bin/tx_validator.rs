@@ -78,7 +78,18 @@ async fn main() -> Result<()> {
             };
             
             let (transactions, is_batch) = if let Some(limit) = recent_sponsor_txs {
-                let sponsor = compute_contextual_keys(&domains[0].domain).await?.sponsor;
+                let domain_for_sponsor = if let Some(domain_name) = &domain {
+                    domain_name.as_str()
+                } else if domains.len() == 1 {
+                    &domains[0].domain
+                } else if domains.is_empty() {
+                    return Err(anyhow!("No domains found in config"));
+                } else {
+                    return Err(anyhow!(
+                        "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
+                    ));
+                };
+                let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
                 let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc).await?;
                 println!("Fetched {} recent transactions from sponsor {}\n", txs.len(), sponsor);
                 (txs, true)

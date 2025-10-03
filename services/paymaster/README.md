@@ -56,7 +56,9 @@ cargo run --bin tx-validator validate -c <CONFIG_PATH> --transaction-hash <ONCHA
 Alternatively, you can provide a serialized transaction as a base64 string via the `--transaction` argument in place of the hash. Additionally, you could ask the tool to validate a specified number of the most recent transactions that interacted with this domain's sponsor pubkey via:
 
 ```
-cargo run --bin tx-validator validate -c <CONFIG_PATH> --recent_sponsor_txs <NUMBER_OF_RECENT_TXS>
+cargo run --bin tx-validator validate -c <CONFIG_PATH> --domain <DOMAIN> --recent_sponsor_txs <NUMBER_OF_RECENT_TXS>
 ```
+
+Note that in this case, you must specify the domain you wish to match against and pull recent transactions for, unless your config only has 1 domain.
 
 You can optionally provide the name of the domain you wish to match against via `--domain`. The tool will print out the set of transaction variations that the provided transaction matches against.
