@@ -143,10 +143,13 @@ mod tests {
         fn test_same_line_value_with_carriage_return_eof() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo: bar\r"); // The parser expects a \n after the \r
-            assert_eq!(result, Err(Err::Error(Error {
-                code: ErrorKind::Eof,
-                input: " bar\r"
-            })))
+            assert_eq!(
+                result,
+                Err(Err::Error(Error {
+                    code: ErrorKind::Eof,
+                    input: " bar\r"
+                }))
+            )
         }
 
         #[test]

@@ -2,9 +2,9 @@ use anchor_lang::prelude::Pubkey;
 use nom::{
     bytes::complete::tag,
     character::complete::line_ending,
-    combinator::{map, verify},
+    combinator::{eof, map, verify},
     error::{Error, ParseError},
-    sequence::preceded,
+    sequence::{delimited, preceded},
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
 use solana_intents::{tag_key_value, SymbolOrMint, Version};
@@ -47,7 +47,7 @@ where
     E: ParseError<I>,
 {
     map(
-        preceded(
+        delimited(
             (tag(MESSAGE_PREFIX), line_ending),
             (
                 verify(tag_key_value("version"), |version: &Version| {
@@ -59,6 +59,7 @@ where
                 tag_key_value("recipient"),
                 tag_key_value("nonce"),
             ),
+            eof,
         ),
         |(version, chain_id, symbol_or_mint, amount, recipient, nonce)| Message {
             version,

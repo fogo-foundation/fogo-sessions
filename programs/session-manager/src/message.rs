@@ -102,7 +102,7 @@ where
                         })
                 }),
             ),
-            eof
+            eof,
         ),
         |(version, chain_id, domain, expires, session_key, tokens, extra)| Message {
             version,
