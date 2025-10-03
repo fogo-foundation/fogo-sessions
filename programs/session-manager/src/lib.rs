@@ -3,7 +3,7 @@
 
 use crate::error::SessionManagerError;
 use crate::message::{Message, Tokens};
-use crate::token::approve::resolve_pending_approvals;
+use crate::token::approve::convert_remaning_accounts_and_token_limits_to_pending_approvals;
 use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
@@ -26,6 +26,8 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
+    use crate::token::revoke::convert_remaining_accounts_to_pending_revocations;
+
     use super::*;
 
     #[instruction(discriminator = [0])]
@@ -52,7 +54,11 @@ pub mod session_manager {
         let authorized_tokens_with_mints = match tokens {
             Tokens::Specific(tokens) => {
                 let pending_approvals =
-                    resolve_pending_approvals(ctx.remaining_accounts, tokens, &signer)?;
+                    convert_remaning_accounts_and_token_limits_to_pending_approvals(
+                        ctx.remaining_accounts,
+                        tokens,
+                        &signer,
+                    )?;
                 let authorized_tokens_with_mints = AuthorizedTokensWithMints::Specific(
                     pending_approvals.iter().map(|p| p.mint()).collect(),
                 );
@@ -160,12 +166,14 @@ pub mod session_manager {
             },
             _ => return Err(error!(SessionManagerError::InvalidVersion)),
         };
-        ctx.accounts.revoke_tokens(
+        let pending_revocations = convert_remaining_accounts_to_pending_revocations(
             ctx.remaining_accounts,
             mints_to_revoke,
             user,
-            ctx.bumps.session_setter,
+            &ctx.accounts.session.key(),
         )?;
+        ctx.accounts
+            .revoke_tokens(pending_revocations, ctx.bumps.session_setter)?;
         Ok(())
     }
 

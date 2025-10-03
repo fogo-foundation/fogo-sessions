@@ -13,7 +13,8 @@ use solana_intents::SymbolOrMint;
 pub struct PendingApproval<'a, 'info> {
     pub user_account: &'a AccountInfo<'info>,
     pub mint_account: &'a AccountInfo<'info>,
-    pub amount: UiTokenAmount,
+    pub amount: u64,
+    pub mint_decimals: u8,
 }
 
 impl<'a, 'info> PendingApproval<'a, 'info> {
@@ -27,7 +28,7 @@ impl<'a, 'info> PendingApproval<'a, 'info> {
 /// If the symbol is provided, additionally to those two accounts, the caller needs to provide the metadata account for the mint which we use to check the mint account corresponds to the symbol.
 /// This behavior means that signing an intent with the symbol "SOL" means delegating your token account for a token who has metadata symbol "SOL".
 /// Although there can be multiple tokens with the same symbol, the worst case scenario is that you're delegating the token with the most value among them, which is probably what you want.
-pub fn resolve_pending_approvals<'a, 'info>(
+pub fn convert_remaning_accounts_and_token_limits_to_pending_approvals<'a, 'info>(
     accounts: &'a [AccountInfo<'info>],
     tokens: Vec<(SymbolOrMint, UiTokenAmount)>,
     user: &Pubkey,
@@ -35,7 +36,7 @@ pub fn resolve_pending_approvals<'a, 'info>(
     let mut accounts_iter = accounts.iter();
     tokens
         .into_iter()
-        .map(|(symbol_or_mint, amount)| {
+        .map(|(symbol_or_mint, ui_token_amount)| {
             let (user_account, mint_account) = match symbol_or_mint {
                 SymbolOrMint::Symbol(symbol) => {
                     let user_account = accounts_iter
@@ -79,10 +80,15 @@ pub fn resolve_pending_approvals<'a, 'info>(
                 get_associated_token_address(user, &mint_account.key()),
                 SessionManagerError::AssociatedTokenAccountMismatch
             );
+
+            let mint_data = Mint::try_deserialize(&mut mint_account.data.borrow().as_ref())?;
+            let amount = ui_token_amount.into_amount_internal(mint_data.decimals)?;
+
             Ok(PendingApproval {
                 user_account,
                 mint_account,
                 amount,
+                mint_decimals: mint_data.decimals,
             })
         })
         .collect()
@@ -100,23 +106,22 @@ impl<'info> StartSession<'info> {
                  user_account,
                  mint_account,
                  amount,
+                 mint_decimals,
              }| {
-                let mint_data = Mint::try_deserialize(&mut mint_account.data.borrow().as_ref())?;
                 let cpi_accounts = ApproveChecked {
                     to: user_account.to_account_info(),
                     delegate: self.session.to_account_info(),
                     authority: self.session_setter.to_account_info(),
                     mint: mint_account.to_account_info(),
                 };
-
                 approve_checked(
                     CpiContext::new_with_signer(
                         self.token_program.to_account_info(),
                         cpi_accounts,
                         &[&[SESSION_SETTER_SEED, &[session_setter_bump]]],
                     ),
-                    amount.into_amount_internal(mint_data.decimals)?,
-                    mint_data.decimals,
+                    amount,
+                    mint_decimals,
                 )
             },
         )
