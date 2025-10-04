@@ -394,9 +394,9 @@ pub async fn run_server(
         .map(
             |Domain {
                  domain,
-                 enable_session_management,
                  enable_preflight_simulation,
                  tx_variations,
+                 ..
              }| {
                 let domain_registry_key = domain_registry::domain::Domain::new_checked(&domain)
                     .expect("Failed to derive domain registry key")
@@ -409,21 +409,6 @@ pub async fn run_server(
                 )
                 .expect("Failed to derive keypair from mnemonic_file");
 
-                let tx_variations = tx_variations
-                    .into_iter()
-                    .chain(
-                        enable_session_management
-                            .then(|| {
-                                [
-                                    TransactionVariation::session_establishment_variation(),
-                                    TransactionVariation::session_revocation_variation(),
-                                ]
-                            })
-                            .into_iter()
-                            .flatten(),
-                    )
-                    .chain([TransactionVariation::intent_transfer_variation()])
-                    .collect();
                 (
                     domain,
                     DomainState {
