@@ -33,9 +33,18 @@ pub struct Config {
 }
 
 pub fn load_config(config_path: &str) -> Result<Config> {
-    let config: Config = config::Config::builder()
+    let mut config: Config = config::Config::builder()
         .add_source(File::with_name(config_path))
         .build()?
         .try_deserialize()?;
+
+    for domain in &mut config.domains {
+        if domain.enable_session_management {
+            domain.tx_variations.push(TransactionVariation::session_establishment_variation());
+            domain.tx_variations.push(TransactionVariation::session_revocation_variation());
+        }
+        domain.tx_variations.push(TransactionVariation::intent_transfer_variation());
+    }
+
     Ok(config)
 }
