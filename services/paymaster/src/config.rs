@@ -40,10 +40,16 @@ pub fn load_config(config_path: &str) -> Result<Config> {
 
     for domain in &mut config.domains {
         if domain.enable_session_management {
-            domain.tx_variations.push(TransactionVariation::session_establishment_variation());
-            domain.tx_variations.push(TransactionVariation::session_revocation_variation());
+            domain
+                .tx_variations
+                .push(TransactionVariation::session_establishment_variation());
+            domain
+                .tx_variations
+                .push(TransactionVariation::session_revocation_variation());
         }
-        domain.tx_variations.push(TransactionVariation::intent_transfer_variation());
+        domain
+            .tx_variations
+            .push(TransactionVariation::intent_transfer_variation());
     }
 
     Ok(config)
