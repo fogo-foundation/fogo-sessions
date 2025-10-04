@@ -1,5 +1,18 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.23
+
+### Patch Changes
+
+- 54c9764: Add button to copy token mint address
+- df90b24: Set wallet widget height on mobile
+- Updated dependencies [f03a86e]
+- Updated dependencies [7db8d6c]
+- Updated dependencies [082664c]
+- Updated dependencies [864db9b]
+  - @fogo/sessions-sdk@0.0.14
+  - @fogo/sessions-sdk-web@0.0.8
+
 ## 0.0.22
 
 ### Patch Changes
