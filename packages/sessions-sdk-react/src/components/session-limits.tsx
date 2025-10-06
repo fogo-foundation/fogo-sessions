@@ -16,12 +16,12 @@ import {
   ListBoxItem,
 } from "react-aria-components";
 
-import { stringToAmount, amountToString } from "./amount-to-string.js";
+import { stringToAmount, amountToString } from "../amount-to-string.js";
 import { Button } from "./button.js";
 import { TextField } from "./field.js";
 import styles from "./session-limits.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";
-import { StateType, useTokenMetadata } from "./use-token-metadata.js";
+import { StateType, useTokenMetadata } from "../hooks/use-token-metadata.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;

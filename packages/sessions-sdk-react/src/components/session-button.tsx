@@ -19,7 +19,7 @@ import {
 
 import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
-import { deserializePublicKeyMap } from "./deserialize-public-key.js";
+import { deserializePublicKeyMap } from "../deserialize-public-key.js";
 import { FogoLogo } from "./fogo-logo.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import { ReceivePage } from "./receive-page.js";
