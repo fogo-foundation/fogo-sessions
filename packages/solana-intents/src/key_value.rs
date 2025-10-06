@@ -1,6 +1,6 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_till1, take_while1},
+    bytes::complete::{tag, take_while1},
     character::complete::{anychar, char, line_ending, not_line_ending},
     combinator::{eof, map, map_opt, opt, peek, recognize},
     error::ParseError,
@@ -53,11 +53,7 @@ where
             key,
             char(':'),
             alt((
-                delimited(
-                    tag(" "),
-                    not_line_ending,
-                    alt((line_ending, eof)),
-                ),
+                delimited(tag(" "), not_line_ending, alt((line_ending, eof))),
                 delimited(
                     line_ending,
                     recognize(many_till(
