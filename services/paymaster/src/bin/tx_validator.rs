@@ -3,7 +3,7 @@ use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use dashmap::DashMap;
 use futures::stream::{FuturesOrdered, StreamExt};
-use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcTransactionConfig};
+use solana_client::{nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config, rpc_config::RpcTransactionConfig};
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
@@ -170,7 +170,9 @@ async fn fetch_transactions(
         );
         Ok((txs, true))
     } else if let Some(tx_hash) = transaction_hash {
-        let tx = fetch_transaction_from_rpc(&tx_hash, &chain_index.rpc, rpc_limiter).await?;
+        let tx_hash = Signature::from_str(&tx_hash)
+            .with_context(|| format!("Invalid transaction signature: {tx_hash}"))?;
+        let tx = fetch_transaction_from_rpc(tx_hash, &chain_index.rpc, rpc_limiter).await?;
         Ok((vec![tx], false))
     } else if let Some(tx) = transaction {
         let tx = parse_transaction_from_base64(&tx)?;
@@ -291,15 +293,11 @@ fn print_summary(validation_counts: HashMap<(String, String), usize>, failure_co
     }
 }
 
-async fn fetch_transaction_from_rpc<T: ToString>(
-    tx_hash: T,
+async fn fetch_transaction_from_rpc(
+    tx_hash: Signature,
     rpc_client: &RpcClient,
     rpc_limiter: &Arc<Semaphore>,
 ) -> Result<VersionedTransaction> {
-    let tx_hash = tx_hash.to_string();
-    let signature = Signature::from_str(&tx_hash)
-        .with_context(|| format!("Invalid transaction signature: {tx_hash}"))?;
-
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Base64),
         max_supported_transaction_version: Some(0),
@@ -313,7 +311,7 @@ async fn fetch_transaction_from_rpc<T: ToString>(
     })?;
 
     let transaction = rpc_client
-        .get_transaction_with_config(&signature, config).await
+        .get_transaction_with_config(&tx_hash, config).await
         .with_context(|| format!("Failed to fetch transaction from RPC: {tx_hash}"))?;
 
     let versioned_transaction = transaction
@@ -325,21 +323,50 @@ async fn fetch_transaction_from_rpc<T: ToString>(
     Ok(versioned_transaction)
 }
 
+async fn fetch_recent_sponsor_signatures(
+    sponsor_pubkey: &solana_pubkey::Pubkey,
+    mut number: usize,
+    rpc_client: &RpcClient,
+    rpc_limiter: &Arc<Semaphore>,
+) -> Result<Vec<Signature>> {
+    let mut signatures = Vec::new();
+    let mut before = None;
+    while number > 0 {
+        let _permit = rpc_limiter.acquire().await.map_err(|e| {
+            anyhow!(
+                "Failed to acquire RPC rate limiter permit for fetching signatures for sponsor {sponsor_pubkey}: {e}"
+            )
+        })?;
+        
+        let new_signatures = rpc_client
+            .get_signatures_for_address_with_config(sponsor_pubkey, GetConfirmedSignaturesForAddress2Config {
+                limit: Some(number.min(1000)),
+                before,
+                ..Default::default()
+            })
+            .await
+            .with_context(|| format!("Failed to fetch signatures for sponsor {sponsor_pubkey}"))?;
+
+        number -= new_signatures.len();
+        if new_signatures.is_empty() {
+            break;
+        }
+        before = new_signatures.last().map(|s| Signature::from_str(&s.signature).ok()).flatten();
+
+        signatures.extend(new_signatures);
+    }
+
+    signatures.into_iter().map(|s| Signature::from_str(&s.signature).map_err(|e| anyhow!("Invalid signature from RPC: {}", s.signature).context(e))).collect::<Result<Vec<_>>>()
+}
+
 async fn fetch_recent_sponsor_transactions(
     sponsor_pubkey: &solana_pubkey::Pubkey,
-    limit: usize,
+    number: usize,
     rpc_client: &RpcClient,
     rpc_limiter: &Arc<Semaphore>,
 ) -> Result<Vec<VersionedTransaction>> {
-    let signatures = rpc_client
-        .get_signatures_for_address(sponsor_pubkey)
-        .await
-        .with_context(|| format!("Failed to fetch signatures for sponsor {sponsor_pubkey}"))?;
-
-    let signatures_to_fetch = signatures.into_iter().take(limit).collect::<Vec<_>>();
-
-    let transaction_futures = signatures_to_fetch.into_iter().map(|sig_info| {
-        let signature = sig_info.signature.clone();
+    let signatures_to_fetch = fetch_recent_sponsor_signatures(sponsor_pubkey, number, rpc_client, rpc_limiter).await?;
+    let transaction_futures = signatures_to_fetch.into_iter().map(|signature| {
         fetch_transaction_from_rpc(signature, rpc_client, rpc_limiter)
     });
     let results = futures::future::join_all(transaction_futures).await;
