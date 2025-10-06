@@ -4,9 +4,11 @@ use anchor_spl::token::spl_token::try_ui_amount_into_amount;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
 use fogo_sessions_sdk::session::MAJOR;
+use nom::combinator::eof;
 use nom::error::FromExternalError;
 use nom::lib::std::fmt::Debug;
 use nom::multi::many0;
+use nom::sequence::delimited;
 use nom::{
     bytes::complete::tag,
     character::complete::line_ending,
@@ -69,7 +71,7 @@ where
     E: FromExternalError<I, anchor_lang::error::Error>,
 {
     map(
-        preceded(
+        delimited(
             (tag(MESSAGE_PREFIX), line_ending::<I, E>),
             (
                 map_opt(tag_key_value::<_, Version, _, _>("version"), |version| {
@@ -100,6 +102,7 @@ where
                         })
                 }),
             ),
+            eof,
         ),
         |(version, chain_id, domain, expires, session_key, tokens, extra)| Message {
             version,
@@ -363,6 +366,33 @@ mod tests {
                     input: _
                 }))
             ))
+        }
+
+        #[test]
+        pub fn test_parse_message_with_unexpected_data_after_end() {
+            let message = indoc!(
+                "Fogo Sessions:
+                Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
+                
+                version: 0.1
+                chain_id: localnet
+                domain: https://app.xyz
+                expires: 2014-11-28T21:00:09+09:00
+                session_key: 2jKr1met2kCteHoTNtkTL51Sgw7rQKcF4YNdP5xfkPRB
+                tokens:
+                -SOL: 100
+                -DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu: 200
+
+                this data should not be here");
+
+            let result = TryInto::<Message>::try_into(message.as_bytes().to_vec());
+            assert_eq!(
+                result,
+                Err(Err::Error(Error {
+                    code: ErrorKind::Eof,
+                    input: "\nthis data should not be here".as_bytes().to_vec()
+                }))
+            );
         }
     }
 }
