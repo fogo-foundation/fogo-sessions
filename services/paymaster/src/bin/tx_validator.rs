@@ -3,11 +3,20 @@ use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use dashmap::DashMap;
 use futures::stream::{FuturesOrdered, StreamExt};
-use solana_client::{rpc_client::RpcClient, rpc_config::RpcTransactionConfig};
+use governor::{
+    clock::DefaultClock,
+    middleware::NoOpMiddleware,
+    state::{InMemoryState, NotKeyed},
+    Quota, RateLimiter,
+};
+use solana_client::{
+    nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config,
+    rpc_config::RpcTransactionConfig,
+};
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
 
 use fogo_paymaster::{
     api::ChainIndex,
@@ -45,8 +54,14 @@ enum Commands {
         /// Number of recent sponsor transactions to fetch and validate
         #[arg(long, conflicts_with_all = ["transaction", "transaction_hash"])]
         recent_sponsor_txs: Option<usize>,
+
+        /// RPC rate limit (per second)
+        #[arg(long, default_value_t = 10)]
+        rpc_quota_per_second: u32,
     },
 }
+
+type RpcRateLimiter = RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -59,14 +74,20 @@ async fn main() -> Result<()> {
             transaction_hash,
             transaction,
             recent_sponsor_txs,
+            rpc_quota_per_second,
         } => {
-            let config = load_and_filter_config(&config, &domain)?;
+            let config = load_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
-            let solana_url = &config.solana_url;
+            let solana_url = config.solana_url.clone();
             let chain_index = ChainIndex {
                 rpc: RpcClient::new(solana_url),
                 lookup_table_cache: DashMap::new(),
             };
+
+            let rpc_limiter = RateLimiter::direct(Quota::per_second(
+                NonZeroU32::new(rpc_quota_per_second)
+                    .expect("RPC quota per second must be greater than zero"),
+            ));
 
             let (transactions, is_batch) = fetch_transactions(
                 recent_sponsor_txs,
@@ -75,11 +96,28 @@ async fn main() -> Result<()> {
                 &domain,
                 &domains,
                 &chain_index,
+                &rpc_limiter,
             )
             .await?;
 
-            let (validation_counts, failure_count) =
-                validate_transactions(&transactions, &domains, &chain_index, is_batch, true).await;
+            let contextual_keys_cache: HashMap<_, _> =
+                futures::future::try_join_all(domains.iter().map(|domain| async {
+                    let keys = compute_contextual_keys(&domain.domain).await?;
+                    Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
+                }))
+                .await?
+                .into_iter()
+                .collect();
+
+            let (validation_counts, failure_count) = validate_transactions(
+                &transactions,
+                &domains,
+                &chain_index,
+                &contextual_keys_cache,
+                is_batch,
+                true,
+            )
+            .await;
 
             if is_batch {
                 print_summary(validation_counts, failure_count);
@@ -88,22 +126,6 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-fn load_and_filter_config(
-    config_path: &str,
-    domain: &Option<String>,
-) -> Result<fogo_paymaster::config::Config> {
-    let config = load_config(config_path)
-        .with_context(|| format!("Failed to load config from {config_path}"))?;
-
-    if let Some(domain_name) = domain {
-        if !config.domains.iter().any(|d| d.domain == *domain_name) {
-            return Err(anyhow!("Domain '{domain_name}' not found in config"));
-        }
-    }
-
-    Ok(config)
 }
 
 fn get_domains_for_validation<'a>(
@@ -115,7 +137,7 @@ fn get_domains_for_validation<'a>(
             .domains
             .iter()
             .find(|d| d.domain == *domain_name)
-            .expect("Domain should exist - validated in load_and_filter_config")]
+            .expect("Specified domain not found in config")]
     } else {
         config.domains.iter().collect()
     }
@@ -128,6 +150,7 @@ async fn fetch_transactions(
     domain: &Option<String>,
     domains: &[&Domain],
     chain_index: &ChainIndex,
+    rpc_limiter: &RpcRateLimiter,
 ) -> Result<(Vec<VersionedTransaction>, bool)> {
     if let Some(limit) = recent_sponsor_txs {
         let domain_for_sponsor = if let Some(domain_name) = domain {
@@ -142,7 +165,8 @@ async fn fetch_transactions(
             ));
         };
         let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
-        let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc).await?;
+        let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc, rpc_limiter)
+            .await?;
         println!(
             "Fetched {} recent transactions from sponsor {}\n",
             txs.len(),
@@ -150,7 +174,9 @@ async fn fetch_transactions(
         );
         Ok((txs, true))
     } else if let Some(tx_hash) = transaction_hash {
-        let tx = fetch_transaction_from_rpc(&tx_hash, &chain_index.rpc).await?;
+        let tx_hash = Signature::from_str(&tx_hash)
+            .with_context(|| format!("Invalid transaction signature: {tx_hash}"))?;
+        let tx = fetch_transaction_from_rpc(tx_hash, &chain_index.rpc, rpc_limiter).await?;
         Ok((vec![tx], false))
     } else if let Some(tx) = transaction {
         let tx = parse_transaction_from_base64(&tx)?;
@@ -166,6 +192,7 @@ async fn validate_transactions(
     transactions: &[VersionedTransaction],
     domains: &[&Domain],
     chain_index: &ChainIndex,
+    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
     is_batch: bool,
     verbose: bool,
 ) -> (HashMap<(String, String), usize>, usize) {
@@ -174,9 +201,10 @@ async fn validate_transactions(
         .enumerate()
         .map(|(idx, tx)| async move {
             let results = futures::future::join_all(domains.iter().map(|domain| async {
-                let variations = get_matching_variations(tx, domain, chain_index)
-                    .await
-                    .unwrap_or_default();
+                let variations =
+                    get_matching_variations(tx, domain, chain_index, contextual_keys_cache)
+                        .await
+                        .unwrap_or_default();
                 variations
                     .into_iter()
                     .map(|v| (domain.domain.as_str(), v))
@@ -271,20 +299,20 @@ fn print_summary(validation_counts: HashMap<(String, String), usize>, failure_co
 }
 
 async fn fetch_transaction_from_rpc(
-    tx_hash: &str,
+    tx_hash: Signature,
     rpc_client: &RpcClient,
+    rpc_limiter: &RpcRateLimiter,
 ) -> Result<VersionedTransaction> {
-    let signature = Signature::from_str(tx_hash)
-        .with_context(|| format!("Invalid transaction signature: {tx_hash}"))?;
-
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Base64),
         max_supported_transaction_version: Some(0),
         ..Default::default()
     };
 
+    rpc_limiter.until_ready().await;
     let transaction = rpc_client
-        .get_transaction_with_config(&signature, config)
+        .get_transaction_with_config(&tx_hash, config)
+        .await
         .with_context(|| format!("Failed to fetch transaction from RPC: {tx_hash}"))?;
 
     let versioned_transaction = transaction
@@ -296,38 +324,62 @@ async fn fetch_transaction_from_rpc(
     Ok(versioned_transaction)
 }
 
-async fn fetch_recent_sponsor_transactions(
+async fn fetch_recent_sponsor_signatures(
     sponsor_pubkey: &solana_pubkey::Pubkey,
-    limit: usize,
+    mut number: usize,
     rpc_client: &RpcClient,
-) -> Result<Vec<VersionedTransaction>> {
-    let signatures = rpc_client
-        .get_signatures_for_address(sponsor_pubkey)
-        .with_context(|| format!("Failed to fetch signatures for sponsor {sponsor_pubkey}"))?;
+    rpc_limiter: &RpcRateLimiter,
+) -> Result<Vec<Signature>> {
+    let mut signatures = Vec::new();
+    let mut before = None;
+    while number > 0 {
+        rpc_limiter.until_ready().await;
+        let new_signatures = rpc_client
+            .get_signatures_for_address_with_config(
+                sponsor_pubkey,
+                GetConfirmedSignaturesForAddress2Config {
+                    limit: Some(number.min(1000)),
+                    before,
+                    ..Default::default()
+                },
+            )
+            .await
+            .with_context(|| format!("Failed to fetch signatures for sponsor {sponsor_pubkey}"))?;
 
-    let signatures_to_fetch = signatures.into_iter().take(limit).collect::<Vec<_>>();
-
-    let mut transactions = Vec::new();
-    for sig_info in signatures_to_fetch {
-        let signature = Signature::from_str(&sig_info.signature)
-            .with_context(|| format!("Invalid signature: {}", sig_info.signature))?;
-
-        let config = RpcTransactionConfig {
-            encoding: Some(UiTransactionEncoding::Base64),
-            max_supported_transaction_version: Some(0),
-            ..Default::default()
-        };
-
-        let transaction = rpc_client
-            .get_transaction_with_config(&signature, config)
-            .with_context(|| format!("Failed to fetch transaction {}", sig_info.signature))?;
-
-        if let Some(versioned_transaction) = transaction.transaction.transaction.decode() {
-            transactions.push(versioned_transaction);
+        number -= new_signatures.len();
+        if new_signatures.is_empty() {
+            break;
         }
+        before = new_signatures
+            .last()
+            .and_then(|s| Signature::from_str(&s.signature).ok());
+
+        signatures.extend(new_signatures);
     }
 
-    Ok(transactions)
+    signatures
+        .into_iter()
+        .map(|s| {
+            Signature::from_str(&s.signature)
+                .map_err(|e| anyhow!("Invalid signature from RPC: {}", s.signature).context(e))
+        })
+        .collect::<Result<Vec<_>>>()
+}
+
+async fn fetch_recent_sponsor_transactions(
+    sponsor_pubkey: &solana_pubkey::Pubkey,
+    number: usize,
+    rpc_client: &RpcClient,
+    rpc_limiter: &RpcRateLimiter,
+) -> Result<Vec<VersionedTransaction>> {
+    let signatures_to_fetch =
+        fetch_recent_sponsor_signatures(sponsor_pubkey, number, rpc_client, rpc_limiter).await?;
+    let transaction_futures = signatures_to_fetch
+        .into_iter()
+        .map(|signature| fetch_transaction_from_rpc(signature, rpc_client, rpc_limiter));
+    let results = futures::future::join_all(transaction_futures).await;
+
+    results.into_iter().collect::<Result<Vec<_>, _>>()
 }
 
 fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransaction> {
@@ -342,10 +394,15 @@ async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
     domain: &'a Domain,
     chain_index: &ChainIndex,
+    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
 ) -> Result<Vec<&'a TransactionVariation>> {
     let mut matching_variations = Vec::new();
 
-    let contextual_keys = compute_contextual_keys(&domain.domain).await?;
+    let contextual_keys = if let Some(keys) = contextual_keys_cache.get(&domain.domain) {
+        keys
+    } else {
+        &compute_contextual_keys(&domain.domain).await?
+    };
 
     for variation in &domain.tx_variations {
         let matches = match variation {
@@ -353,7 +410,8 @@ async fn get_matching_variations<'a>(
                 v0_variation.validate_transaction(transaction).is_ok()
             }
             TransactionVariation::V1(v1_variation) => v1_variation
-                .validate_transaction(transaction, &contextual_keys, chain_index)
+                .validate_transaction(transaction, contextual_keys, chain_index)
+                .await
                 .is_ok(),
         };
 
