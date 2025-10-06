@@ -1,0 +1,19 @@
+name: Publish sessions-sdk-rs to crates.io
+
+on:
+  push:
+    tags:
+      - 'sdk-rs-v*'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Publish crate
+        run: cargo publish -p fogo-sessions-sdk --token ${CARGO_REGISTRY_TOKEN}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
