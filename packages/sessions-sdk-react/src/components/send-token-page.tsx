@@ -5,9 +5,9 @@ import type { FormEvent } from "react";
 import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
 
-import { amountToString, stringToAmount } from "./amount-to-string.js";
+import { amountToString, stringToAmount } from "../amount-to-string.js";
 import { Button } from "./button.js";
-import { errorToString } from "./error-to-string.js";
+import { errorToString } from "../error-to-string.js";
 import { TextField } from "./field.js";
 import { Link } from "./link.js";
 import styles from "./send-token-page.module.css";

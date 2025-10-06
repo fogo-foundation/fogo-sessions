@@ -52,8 +52,8 @@ import {
   deserializePublicKey,
   deserializePublicKeyList,
   deserializePublicKeyMap,
-} from "./deserialize-public-key.js";
-import { errorToString } from "./error-to-string.js";
+} from "../deserialize-public-key.js";
+import { errorToString } from "../error-to-string.js";
 import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
 import { Spinner } from "./spinner.js";
@@ -62,7 +62,7 @@ import {
   getCacheKey,
   useTokenAccountData,
   StateType as TokenDataStateType,
-} from "./use-token-account-data.js";
+} from "../hooks/use-token-account-data.js";
 
 import "@solana/wallet-adapter-react-ui/styles.css";
 

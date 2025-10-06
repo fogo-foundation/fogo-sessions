@@ -6,5 +6,5 @@ export {
   StateType as SessionStateType,
   useSession,
   isEstablished,
-} from "./session-provider.js";
-export { SessionButton } from "./session-button.js";
+} from "./components/session-provider.js";
+export { SessionButton } from "./components/session-button.js";

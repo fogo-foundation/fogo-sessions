@@ -4,7 +4,7 @@ import { Button } from "./button.js";
 import styles from "./select-token-page.module.css";
 import type { EstablishedSessionState } from "./session-provider.js";
 import { TokenList } from "./token-list.js";
-import type { Token } from "./use-token-account-data.js";
+import type { Token } from "../hooks/use-token-account-data.js";
 
 type Props = {
   onPressBack: () => void;

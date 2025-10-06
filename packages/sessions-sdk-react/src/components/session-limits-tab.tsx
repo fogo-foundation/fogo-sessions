@@ -8,7 +8,7 @@ import { Spinner } from "./spinner.js";
 import {
   StateType as TokenDataStateType,
   useTokenAccountData,
-} from "./use-token-account-data.js";
+} from "../hooks/use-token-account-data.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;

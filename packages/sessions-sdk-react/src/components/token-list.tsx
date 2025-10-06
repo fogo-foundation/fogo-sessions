@@ -3,7 +3,7 @@ import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { motion } from "motion/react";
 import { GridList, GridListItem } from "react-aria-components";
 
-import { amountToString } from "./amount-to-string.js";
+import { amountToString } from "../amount-to-string.js";
 import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
 import { FetchError } from "./fetch-error.js";
@@ -11,12 +11,12 @@ import { Link } from "./link.js";
 import type { EstablishedSessionState } from "./session-provider.js";
 import styles from "./token-list.module.css";
 import { TruncateKey } from "./truncate-key.js";
-import { useFaucet } from "./use-faucet.js";
-import type { Token } from "./use-token-account-data.js";
+import { useFaucet } from "../hooks/use-faucet.js";
+import type { Token } from "../hooks/use-token-account-data.js";
 import {
   StateType as TokenDataStateType,
   useTokenAccountData,
-} from "./use-token-account-data.js";
+} from "../hooks/use-token-account-data.js";
 
 const MotionGridList = motion(GridList<Token>);
 

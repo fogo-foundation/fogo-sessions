@@ -3,7 +3,7 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect } from "react";
 
-import { getMetadata } from "./get-metadata.js";
+import { getMetadata } from "../get-metadata.js";
 import { StateType, useData } from "./use-data.js";
 
 export { StateType } from "./use-data.js";

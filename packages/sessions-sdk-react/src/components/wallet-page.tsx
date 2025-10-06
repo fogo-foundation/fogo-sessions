@@ -9,13 +9,13 @@ import {
 
 import type { EstablishedSessionState } from "./session-provider.js";
 import { TokenList } from "./token-list.js";
-import { useFaucet } from "./use-faucet.js";
-import type { Token } from "./use-token-account-data.js";
+import styles from "./wallet-page.module.css";
+import { useFaucet } from "../hooks/use-faucet.js";
+import type { Token } from "../hooks/use-token-account-data.js";
 import {
   StateType as TokenDataStateType,
   useTokenAccountData,
-} from "./use-token-account-data.js";
-import styles from "./wallet-page.module.css";
+} from "../hooks/use-token-account-data.js";
 
 type Props = {
   onPressSend: () => void;

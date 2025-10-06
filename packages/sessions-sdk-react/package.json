@@ -42,8 +42,7 @@
     "test:integration": "run-jest --colors --selectProjects integration",
     "test:lint:eslint": "run-jest --colors --selectProjects lint",
     "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
-    "test:types": "tsc",
-    "test:unit": "run-jest --colors --coverage --selectProjects unit"
+    "test:types": "tsc"
   },
   "peerDependencies": {
     "react": "^19"
