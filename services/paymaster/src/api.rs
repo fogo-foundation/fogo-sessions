@@ -75,8 +75,8 @@ impl ChainIndex {
         index: usize,
     ) -> Result<Pubkey, (StatusCode, String)> {
         match self.query_lookup_table(table, index) {
-            Ok(pubkey) => Ok(pubkey),
-            Err(_) => {
+            Some(pubkey) => Ok(pubkey),
+            None => {
                 let addresses = self.update_lookup_table(table).await?;
                 // get the key from the returned addresses instead of re-querying and re-locking the map
                 addresses.get(index).copied().ok_or_else(|| {
@@ -90,21 +90,15 @@ impl ChainIndex {
     }
 
     /// Queries the lookup table for the pubkey at the given index.
-    /// Returns an error if the table is not cached or the index is out of bounds.
+    /// Returns None if the table is not cached or the index is out of bounds.
     pub fn query_lookup_table(
         &self,
         table: &Pubkey,
         index: usize,
-    ) -> Result<Pubkey, (StatusCode, String)> {
+    ) -> Option<Pubkey> {
         self.lookup_table_cache
             .get(table)
             .and_then(|entry| entry.get(index).copied())
-            .ok_or_else(|| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!("Lookup table {table} does not contain index {index}"),
-                )
-            })
     }
 
     // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.

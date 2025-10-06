@@ -16,7 +16,7 @@ use solana_client::{
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
-use std::{collections::HashMap, num::NonZeroU32, str::FromStr, sync::Arc};
+use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
 
 use fogo_paymaster::{
     api::ChainIndex,
@@ -84,10 +84,10 @@ async fn main() -> Result<()> {
                 lookup_table_cache: DashMap::new(),
             };
 
-            let rpc_limiter = Arc::new(RateLimiter::direct(Quota::per_second(
+            let rpc_limiter = RateLimiter::direct(Quota::per_second(
                 NonZeroU32::new(rpc_quota_per_second)
                     .expect("RPC quota per second must be greater than zero"),
-            )));
+            ));
 
             let (transactions, is_batch) = fetch_transactions(
                 recent_sponsor_txs,
@@ -150,7 +150,7 @@ async fn fetch_transactions(
     domain: &Option<String>,
     domains: &[&Domain],
     chain_index: &ChainIndex,
-    rpc_limiter: &Arc<RpcRateLimiter>,
+    rpc_limiter: &RpcRateLimiter,
 ) -> Result<(Vec<VersionedTransaction>, bool)> {
     if let Some(limit) = recent_sponsor_txs {
         let domain_for_sponsor = if let Some(domain_name) = domain {
@@ -301,7 +301,7 @@ fn print_summary(validation_counts: HashMap<(String, String), usize>, failure_co
 async fn fetch_transaction_from_rpc(
     tx_hash: Signature,
     rpc_client: &RpcClient,
-    rpc_limiter: &Arc<RpcRateLimiter>,
+    rpc_limiter: &RpcRateLimiter,
 ) -> Result<VersionedTransaction> {
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Base64),
@@ -328,7 +328,7 @@ async fn fetch_recent_sponsor_signatures(
     sponsor_pubkey: &solana_pubkey::Pubkey,
     mut number: usize,
     rpc_client: &RpcClient,
-    rpc_limiter: &Arc<RpcRateLimiter>,
+    rpc_limiter: &RpcRateLimiter,
 ) -> Result<Vec<Signature>> {
     let mut signatures = Vec::new();
     let mut before = None;
@@ -370,7 +370,7 @@ async fn fetch_recent_sponsor_transactions(
     sponsor_pubkey: &solana_pubkey::Pubkey,
     number: usize,
     rpc_client: &RpcClient,
-    rpc_limiter: &Arc<RpcRateLimiter>,
+    rpc_limiter: &RpcRateLimiter,
 ) -> Result<Vec<VersionedTransaction>> {
     let signatures_to_fetch =
         fetch_recent_sponsor_signatures(sponsor_pubkey, number, rpc_client, rpc_limiter).await?;
