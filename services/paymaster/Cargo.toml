@@ -57,5 +57,5 @@ utoipa = "5.4.0"
 utoipa-axum = "0.2.0"
 
 [[bin]]
-name = "tx-validator"
+name = "paymaster-tx-validator"
 path = "src/bin/tx_validator.rs"
