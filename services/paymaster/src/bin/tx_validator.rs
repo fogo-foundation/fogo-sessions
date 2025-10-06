@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
             recent_sponsor_txs,
             rpc_concurrency,
         } => {
-            let config = load_and_filter_config(&config, &domain)?;
+            let config = load_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
             let solana_url = config.solana_url.clone();
             let chain_index = ChainIndex {
@@ -109,22 +109,6 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn load_and_filter_config(
-    config_path: &str,
-    domain: &Option<String>,
-) -> Result<fogo_paymaster::config::Config> {
-    let config = load_config(config_path)
-        .with_context(|| format!("Failed to load config from {config_path}"))?;
-
-    if let Some(domain_name) = domain {
-        if !config.domains.iter().any(|d| d.domain == *domain_name) {
-            return Err(anyhow!("Domain '{domain_name}' not found in config"));
-        }
-    }
-
-    Ok(config)
-}
-
 fn get_domains_for_validation<'a>(
     config: &'a fogo_paymaster::config::Config,
     domain: &Option<String>,
@@ -134,7 +118,7 @@ fn get_domains_for_validation<'a>(
             .domains
             .iter()
             .find(|d| d.domain == *domain_name)
-            .expect("Domain should exist - validated in load_and_filter_config")]
+            .expect(format!("Domain '{domain_name}' not found in config").as_str())]
     } else {
         config.domains.iter().collect()
     }
