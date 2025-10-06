@@ -42,6 +42,8 @@ pub enum SessionManagerError {
     SponsorMismatch,
     #[msg("Only expired session accounts can be closed")]
     SessionIsLive,
+    #[msg("The provided expiration is too far in the future")]
+    SessionTooLong,
 }
 
 impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for SessionManagerError {
