@@ -74,19 +74,18 @@ impl ChainIndex {
         table: &Pubkey,
         index: usize,
     ) -> Result<Pubkey, (StatusCode, String)> {
-        match self.query_lookup_table(table, index) {
-            Some(pubkey) => Ok(pubkey),
-            None => {
-                let addresses = self.update_lookup_table(table).await?;
-                // get the key from the returned addresses instead of re-querying and re-locking the map
-                addresses.get(index).copied().ok_or_else(|| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!("Lookup table {table} does not contain index {index}"),
-                    )
-                })
-            }
+        if let Some(pubkey) = self.query_lookup_table(table, index) {
+            return Ok(pubkey);
         }
+
+        let addresses = self.update_lookup_table(table).await?;
+        // get the key from the returned addresses instead of re-querying and re-locking the map
+        addresses.get(index).copied().ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Lookup table {table} does not contain index {index}"),
+            )
+        })
     }
 
     /// Queries the lookup table for the pubkey at the given index.
