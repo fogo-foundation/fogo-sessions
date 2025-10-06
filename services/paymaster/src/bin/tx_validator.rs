@@ -78,8 +78,18 @@ async fn main() -> Result<()> {
             )
             .await?;
 
+            let contextual_keys_cache: HashMap<_, _> = futures::future::try_join_all(
+                domains.iter().map(|domain| async {
+                    let keys = compute_contextual_keys(&domain.domain).await?;
+                    Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
+                }),
+            )
+            .await?
+            .into_iter()
+            .collect();
+
             let (validation_counts, failure_count) =
-                validate_transactions(&transactions, &domains, &chain_index, is_batch, true).await;
+                validate_transactions(&transactions, &domains, &chain_index, &contextual_keys_cache, is_batch, true).await;
 
             if is_batch {
                 print_summary(validation_counts, failure_count);
@@ -166,6 +176,7 @@ async fn validate_transactions(
     transactions: &[VersionedTransaction],
     domains: &[&Domain],
     chain_index: &ChainIndex,
+    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
     is_batch: bool,
     verbose: bool,
 ) -> (HashMap<(String, String), usize>, usize) {
@@ -174,7 +185,7 @@ async fn validate_transactions(
         .enumerate()
         .map(|(idx, tx)| async move {
             let results = futures::future::join_all(domains.iter().map(|domain| async {
-                let variations = get_matching_variations(tx, domain, chain_index)
+                let variations = get_matching_variations(tx, domain, chain_index, contextual_keys_cache)
                     .await
                     .unwrap_or_default();
                 variations
@@ -270,11 +281,12 @@ fn print_summary(validation_counts: HashMap<(String, String), usize>, failure_co
     }
 }
 
-async fn fetch_transaction_from_rpc(
-    tx_hash: &str,
+async fn fetch_transaction_from_rpc<T: ToString>(
+    tx_hash: T,
     rpc_client: &RpcClient,
 ) -> Result<VersionedTransaction> {
-    let signature = Signature::from_str(tx_hash)
+    let tx_hash = tx_hash.to_string();
+    let signature = Signature::from_str(&tx_hash)
         .with_context(|| format!("Invalid transaction signature: {tx_hash}"))?;
 
     let config = RpcTransactionConfig {
@@ -310,23 +322,8 @@ async fn fetch_recent_sponsor_transactions(
 
     let mut transactions = Vec::new();
     for sig_info in signatures_to_fetch {
-        let signature = Signature::from_str(&sig_info.signature)
-            .with_context(|| format!("Invalid signature: {}", sig_info.signature))?;
-
-        let config = RpcTransactionConfig {
-            encoding: Some(UiTransactionEncoding::Base64),
-            max_supported_transaction_version: Some(0),
-            ..Default::default()
-        };
-
-        let transaction = rpc_client
-            .get_transaction_with_config(&signature, config)
-            .await
-            .with_context(|| format!("Failed to fetch transaction {}", sig_info.signature))?;
-
-        if let Some(versioned_transaction) = transaction.transaction.transaction.decode() {
-            transactions.push(versioned_transaction);
-        }
+        let transaction = fetch_transaction_from_rpc(sig_info.signature, rpc_client).await?;
+        transactions.push(transaction);
     }
 
     Ok(transactions)
@@ -344,10 +341,15 @@ async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
     domain: &'a Domain,
     chain_index: &ChainIndex,
+    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
 ) -> Result<Vec<&'a TransactionVariation>> {
     let mut matching_variations = Vec::new();
 
-    let contextual_keys = compute_contextual_keys(&domain.domain).await?;
+    let contextual_keys = if let Some(keys) = contextual_keys_cache.get(&domain.domain) {
+        keys
+    } else {
+        &compute_contextual_keys(&domain.domain).await?
+    };
 
     for variation in &domain.tx_variations {
         let matches = match variation {
