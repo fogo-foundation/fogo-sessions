@@ -3,12 +3,12 @@ use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use dashmap::DashMap;
 use futures::stream::{FuturesOrdered, StreamExt};
+use governor::{clock::DefaultClock, middleware::NoOpMiddleware, state::{InMemoryState, NotKeyed}, Quota, RateLimiter};
 use solana_client::{nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config, rpc_config::RpcTransactionConfig};
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
-use std::{collections::HashMap, str::FromStr, sync::Arc};
-use tokio::sync::Semaphore;
+use std::{collections::HashMap, num::NonZeroU32, str::FromStr, sync::Arc};
 
 use fogo_paymaster::{
     api::ChainIndex,
@@ -47,11 +47,13 @@ enum Commands {
         #[arg(long, conflicts_with_all = ["transaction", "transaction_hash"])]
         recent_sponsor_txs: Option<usize>,
 
-        /// Number of concurrent RPC requests allowed
+        /// RPC rate limit (per second)
         #[arg(long, default_value_t = 10)]
-        rpc_concurrency: usize,
+        rpc_quota_per_second: u32,
     },
 }
+
+type RpcRateLimiter = RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -64,7 +66,7 @@ async fn main() -> Result<()> {
             transaction_hash,
             transaction,
             recent_sponsor_txs,
-            rpc_concurrency,
+            rpc_quota_per_second,
         } => {
             let config = load_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
@@ -74,7 +76,9 @@ async fn main() -> Result<()> {
                 lookup_table_cache: DashMap::new(),
             };
 
-            let rpc_limiter = Arc::new(Semaphore::new(rpc_concurrency));
+            let rpc_limiter = Arc::new(RateLimiter::direct(Quota::per_second(NonZeroU32::new(
+                rpc_quota_per_second,
+            ).expect("RPC quota per second must be greater than zero"))));
 
             let (transactions, is_batch) = fetch_transactions(
                 recent_sponsor_txs,
@@ -131,7 +135,7 @@ async fn fetch_transactions(
     domain: &Option<String>,
     domains: &[&Domain],
     chain_index: &ChainIndex,
-    rpc_limiter: &Arc<Semaphore>,
+    rpc_limiter: &Arc<RpcRateLimiter>,
 ) -> Result<(Vec<VersionedTransaction>, bool)> {
     if let Some(limit) = recent_sponsor_txs {
         let domain_for_sponsor = if let Some(domain_name) = domain {
@@ -280,7 +284,7 @@ fn print_summary(validation_counts: HashMap<(String, String), usize>, failure_co
 async fn fetch_transaction_from_rpc(
     tx_hash: Signature,
     rpc_client: &RpcClient,
-    rpc_limiter: &Arc<Semaphore>,
+    rpc_limiter: &Arc<RpcRateLimiter>,
 ) -> Result<VersionedTransaction> {
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Base64),
@@ -288,12 +292,7 @@ async fn fetch_transaction_from_rpc(
         ..Default::default()
     };
 
-    let _permit = rpc_limiter.acquire().await.map_err(|e| {
-        anyhow!(
-            "Failed to acquire RPC rate limiter permit for fetching transaction {tx_hash}: {e}"
-        )
-    })?;
-
+    rpc_limiter.until_ready().await;
     let transaction = rpc_client
         .get_transaction_with_config(&tx_hash, config).await
         .with_context(|| format!("Failed to fetch transaction from RPC: {tx_hash}"))?;
@@ -311,17 +310,12 @@ async fn fetch_recent_sponsor_signatures(
     sponsor_pubkey: &solana_pubkey::Pubkey,
     mut number: usize,
     rpc_client: &RpcClient,
-    rpc_limiter: &Arc<Semaphore>,
+    rpc_limiter: &Arc<RpcRateLimiter>,
 ) -> Result<Vec<Signature>> {
     let mut signatures = Vec::new();
     let mut before = None;
     while number > 0 {
-        let _permit = rpc_limiter.acquire().await.map_err(|e| {
-            anyhow!(
-                "Failed to acquire RPC rate limiter permit for fetching signatures for sponsor {sponsor_pubkey}: {e}"
-            )
-        })?;
-        
+        rpc_limiter.until_ready().await;
         let new_signatures = rpc_client
             .get_signatures_for_address_with_config(sponsor_pubkey, GetConfirmedSignaturesForAddress2Config {
                 limit: Some(number.min(1000)),
@@ -347,7 +341,7 @@ async fn fetch_recent_sponsor_transactions(
     sponsor_pubkey: &solana_pubkey::Pubkey,
     number: usize,
     rpc_client: &RpcClient,
-    rpc_limiter: &Arc<Semaphore>,
+    rpc_limiter: &Arc<RpcRateLimiter>,
 ) -> Result<Vec<VersionedTransaction>> {
     let signatures_to_fetch = fetch_recent_sponsor_signatures(sponsor_pubkey, number, rpc_client, rpc_limiter).await?;
     let transaction_futures = signatures_to_fetch.into_iter().map(|signature| {

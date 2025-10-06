@@ -1582,6 +1582,7 @@ dependencies = [
  "domain-registry",
  "fogo-sessions-sdk",
  "futures",
+ "governor",
  "hex",
  "intent-transfer",
  "opentelemetry",
