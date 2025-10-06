@@ -91,11 +91,7 @@ impl ChainIndex {
 
     /// Queries the lookup table for the pubkey at the given index.
     /// Returns None if the table is not cached or the index is out of bounds.
-    pub fn query_lookup_table(
-        &self,
-        table: &Pubkey,
-        index: usize,
-    ) -> Option<Pubkey> {
+    pub fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Option<Pubkey> {
         self.lookup_table_cache
             .get(table)
             .and_then(|entry| entry.get(index).copied())
