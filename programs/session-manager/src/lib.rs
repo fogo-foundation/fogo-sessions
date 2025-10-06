@@ -18,6 +18,7 @@ use solana_intents::Version;
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
+mod clock;
 pub mod error;
 mod message;
 mod system_program;
@@ -50,6 +51,8 @@ pub mod session_manager {
         ctx.accounts.check_chain_id(chain_id)?;
         ctx.accounts.check_session_key(session_key)?;
 
+        let expiration = clock::check_expiration(expires)?;
+
         let authorized_tokens_with_mints = match tokens {
             Tokens::Specific(tokens) => {
                 let pending_approvals =
@@ -79,7 +82,7 @@ pub mod session_manager {
                     authorized_programs: AuthorizedPrograms::Specific(program_domains),
                     authorized_tokens: authorized_tokens_with_mints.as_ref().clone(),
                     extra: extra.into(),
-                    expiration: expires.timestamp(),
+                    expiration,
                 }),
             },
             2 => Session {
@@ -90,7 +93,7 @@ pub mod session_manager {
                     authorized_programs: AuthorizedPrograms::Specific(program_domains),
                     authorized_tokens: authorized_tokens_with_mints.as_ref().clone(),
                     extra: extra.into(),
-                    expiration: expires.timestamp(),
+                    expiration,
                 })),
             },
             3 => Session {
@@ -101,7 +104,7 @@ pub mod session_manager {
                     authorized_programs: AuthorizedPrograms::Specific(program_domains),
                     authorized_tokens: authorized_tokens_with_mints,
                     extra: extra.into(),
-                    expiration: expires.timestamp(),
+                    expiration,
                 })),
             },
             _ => return err!(SessionManagerError::InvalidVersion),

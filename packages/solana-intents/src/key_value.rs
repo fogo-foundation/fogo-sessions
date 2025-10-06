@@ -1,7 +1,7 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_till1, take_while1},
-    character::complete::{alphanumeric1, anychar, char, line_ending},
+    bytes::complete::{tag, take_while1},
+    character::complete::{anychar, char, line_ending, not_line_ending},
     combinator::{eof, map, map_opt, opt, peek, recognize},
     error::ParseError,
     multi::many_till,
@@ -53,16 +53,18 @@ where
             key,
             char(':'),
             alt((
-                delimited(
-                    tag(" "),
-                    take_till1(|c: <I as Input>::Item| c.is_newline()),
-                    alt((line_ending, eof)),
-                ),
+                delimited(tag(" "), not_line_ending, alt((line_ending, eof))),
                 delimited(
                     line_ending,
                     recognize(many_till(
                         anychar,
-                        peek(alt((preceded(line_ending, alphanumeric1), eof))),
+                        peek(alt((
+                            preceded(
+                                line_ending,
+                                take_while1(|c: <I as Input>::Item| c.as_char() != '-'),
+                            ),
+                            eof,
+                        ))),
                     )),
                     opt(line_ending),
                 ),
@@ -76,6 +78,7 @@ where
 mod tests {
     mod key_value_with_key_type {
         use super::super::*;
+        use nom::character::complete::alphanumeric1;
         use nom::error::{Error, ErrorKind};
         use nom::Err;
 
@@ -103,13 +106,7 @@ mod tests {
         fn test_no_value_after_space() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo: ");
-            assert_eq!(
-                result.unwrap_err(),
-                Err::Error(Error {
-                    code: ErrorKind::Eof,
-                    input: " "
-                })
-            );
+            assert_eq!(result, Ok(("", ("foo", "".to_string()))));
         }
 
         #[test]
@@ -140,9 +137,29 @@ mod tests {
         }
 
         #[test]
+        fn test_same_line_value_with_carriage_return_eof() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo: bar\r"); // The parser expects a \n after the \r
+            assert_eq!(
+                result,
+                Err(Err::Error(Error {
+                    code: ErrorKind::Eof,
+                    input: " bar\r"
+                }))
+            )
+        }
+
+        #[test]
         fn test_same_line_value_linebreak() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo: bar\nbaz");
+            assert_eq!(result, Ok(("baz", ("foo", "bar".to_string()))))
+        }
+
+        #[test]
+        fn test_same_line_value_linebreak_crlf() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo: bar\r\nbaz");
             assert_eq!(result, Ok(("baz", ("foo", "bar".to_string()))))
         }
 
@@ -164,13 +181,7 @@ mod tests {
         fn test_value_after_space_and_newline() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo: \n-baz");
-            assert_eq!(
-                result.unwrap_err(),
-                Err::Error(Error {
-                    code: ErrorKind::Eof,
-                    input: " \n-baz"
-                })
-            );
+            assert_eq!(result, Ok(("-baz", ("foo", "".to_string()))));
         }
 
         #[test]
@@ -199,6 +210,13 @@ mod tests {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo:\n-baz\n-qux\nbaz");
             assert_eq!(result, Ok(("baz", ("foo", "-baz\n-qux".to_string()))))
+        }
+
+        #[test]
+        fn test_multiline_value_stops_at_next_line_without_dash() {
+            let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
+                .parse("foo:\n-baz\n-qux\n\nbaz");
+            assert_eq!(result, Ok(("\nbaz", ("foo", "-baz\n-qux".to_string()))))
         }
     }
 
