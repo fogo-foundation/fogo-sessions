@@ -3,7 +3,7 @@ import clsx from "clsx";
 import type { ComponentProps, ReactNode } from "react";
 
 import { Button } from "./button.js";
-import { errorToString } from "./error-to-string.js";
+import { errorToString } from "../error-to-string.js";
 import styles from "./fetch-error.module.css";
 
 type Props = {

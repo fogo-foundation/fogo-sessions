@@ -4,8 +4,8 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { z } from "zod";
 
-import { getMetadata } from "./get-metadata.js";
-import type { EstablishedSessionState } from "./session-provider.js";
+import type { EstablishedSessionState } from "../components/session-provider.js";
+import { getMetadata } from "../get-metadata.js";
 import { useData } from "./use-data.js";
 
 export { StateType } from "./use-data.js";

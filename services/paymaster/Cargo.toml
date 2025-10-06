@@ -21,6 +21,7 @@ config = "0.15.13"
 dashmap = "6.1.0"
 fogo-sessions-sdk = {workspace = true}
 futures = "0.3.31"
+governor = "0.6.3"
 hex = "0.4.3"
 intent-transfer = {workspace = true, features = ["no-entrypoint"]}
 opentelemetry = "0.30.0"

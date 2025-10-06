@@ -93,7 +93,7 @@ fn instruction_matches_program(
 }
 
 impl VariationOrderedInstructionConstraints {
-    pub fn validate_transaction(
+    pub async fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
         contextual_domain_keys: &ContextualDomainKeys,
@@ -123,13 +123,15 @@ impl VariationOrderedInstructionConstraints {
             }
 
             let constraint = &self.instructions[constraint_index];
-            let result = constraint.validate_instruction(
-                transaction,
-                instruction_index,
-                contextual_domain_keys,
-                &self.name,
-                chain_index,
-            );
+            let result = constraint
+                .validate_instruction(
+                    transaction,
+                    instruction_index,
+                    contextual_domain_keys,
+                    &self.name,
+                    chain_index,
+                )
+                .await;
 
             if result.is_err() {
                 if constraint.required {
@@ -169,7 +171,7 @@ pub struct InstructionConstraint {
 }
 
 impl InstructionConstraint {
-    pub fn validate_instruction(
+    pub async fn validate_instruction(
         &self,
         transaction: &VersionedTransaction,
         instruction_index: usize,
@@ -231,7 +233,8 @@ impl InstructionConstraint {
                     .collect();
                 let account_position_lookups = account_index - static_accounts.len();
                 &chain_index
-                    .find_and_query_lookup_table(lookup_accounts, account_position_lookups)?
+                    .find_and_query_lookup_table(lookup_accounts, account_position_lookups)
+                    .await?
             } else {
                 return Err((
                     StatusCode::BAD_REQUEST,
