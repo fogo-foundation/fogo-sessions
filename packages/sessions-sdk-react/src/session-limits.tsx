@@ -259,7 +259,7 @@ const DURATION = {
   },
   "one-week": {
     label: "One Week",
-    value: 7 * ONE_DAY_IN_MS,
+    value: 11 * ONE_DAY_IN_MS,
   },
 } as const;
 
