@@ -3,7 +3,7 @@ use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use dashmap::DashMap;
 use futures::stream::{FuturesOrdered, StreamExt};
-use solana_client::{rpc_client::RpcClient, rpc_config::RpcTransactionConfig};
+use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcTransactionConfig};
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
         } => {
             let config = load_and_filter_config(&config, &domain)?;
             let domains = get_domains_for_validation(&config, &domain);
-            let solana_url = &config.solana_url;
+            let solana_url = config.solana_url.clone();
             let chain_index = ChainIndex {
                 rpc: RpcClient::new(solana_url),
                 lookup_table_cache: DashMap::new(),
@@ -284,7 +284,7 @@ async fn fetch_transaction_from_rpc(
     };
 
     let transaction = rpc_client
-        .get_transaction_with_config(&signature, config)
+        .get_transaction_with_config(&signature, config).await
         .with_context(|| format!("Failed to fetch transaction from RPC: {tx_hash}"))?;
 
     let versioned_transaction = transaction
@@ -303,6 +303,7 @@ async fn fetch_recent_sponsor_transactions(
 ) -> Result<Vec<VersionedTransaction>> {
     let signatures = rpc_client
         .get_signatures_for_address(sponsor_pubkey)
+        .await
         .with_context(|| format!("Failed to fetch signatures for sponsor {sponsor_pubkey}"))?;
 
     let signatures_to_fetch = signatures.into_iter().take(limit).collect::<Vec<_>>();
@@ -320,6 +321,7 @@ async fn fetch_recent_sponsor_transactions(
 
         let transaction = rpc_client
             .get_transaction_with_config(&signature, config)
+            .await
             .with_context(|| format!("Failed to fetch transaction {}", sig_info.signature))?;
 
         if let Some(versioned_transaction) = transaction.transaction.transaction.decode() {
@@ -354,6 +356,7 @@ async fn get_matching_variations<'a>(
             }
             TransactionVariation::V1(v1_variation) => v1_variation
                 .validate_transaction(transaction, &contextual_keys, chain_index)
+                .await
                 .is_ok(),
         };
 

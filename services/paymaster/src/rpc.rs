@@ -1,5 +1,5 @@
 use axum::{http::StatusCode, response::ErrorResponse};
-use solana_client::{rpc_client::RpcClient, rpc_config::RpcSendTransactionConfig};
+use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcSendTransactionConfig};
 use solana_commitment_config::CommitmentConfig;
 use solana_hash::Hash;
 use solana_rpc_client_api::client_error::Error;
@@ -51,7 +51,7 @@ pub async fn send_and_confirm_transaction(
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResult, ErrorResponse> {
     let recent_blockhash = transaction.message.recent_blockhash();
-    let signature = match rpc.send_transaction_with_config(transaction, config) {
+    let signature = match rpc.send_transaction_with_config(transaction, config).await {
         Ok(sig) => sig,
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
@@ -79,6 +79,7 @@ pub async fn confirm_transaction(
     for status_retry in 0..GET_STATUS_RETRIES {
         match rpc
             .get_signature_status(signature)
+            .await
             .map_err(to_error_response)?
         {
             Some(Ok(_)) => {
@@ -95,6 +96,7 @@ pub async fn confirm_transaction(
             None => {
                 if !rpc
                     .is_blockhash_valid(recent_blockhash, CommitmentConfig::processed())
+                    .await
                     .map_err(to_error_response)?
                 {
                     break;

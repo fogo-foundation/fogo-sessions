@@ -17,7 +17,7 @@ use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_derivation_path::DerivationPath;
@@ -51,7 +51,7 @@ pub struct ServerState {
 
 impl ChainIndex {
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
-    pub fn find_and_query_lookup_table(
+    pub async fn find_and_query_lookup_table(
         &self,
         lookup_accounts: Vec<(Pubkey, u8)>,
         account_position_lookups: usize,
@@ -63,26 +63,29 @@ impl ChainIndex {
                     format!("Account position {account_position_lookups} out of bounds for lookup table invoked accounts"),
                 )
             })?;
-        self.query_lookup_table_with_retry(table_to_query, usize::from(*index_to_query))
+        self.query_lookup_table_with_retry(table_to_query, usize::from(*index_to_query)).await
     }
 
     /// Queries the lookup table for the pubkey at the given index.
     /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying.
-    pub fn query_lookup_table_with_retry(
+    pub async fn query_lookup_table_with_retry(
         &self,
         table: &Pubkey,
         index: usize,
     ) -> Result<Pubkey, (StatusCode, String)> {
-        self.query_lookup_table(table, index).or_else(|_| {
-            let addresses = self.update_lookup_table(table)?;
-            // get the key from the returned addresses instead of re-querying and re-locking the map
-            addresses.get(index).copied().ok_or_else(|| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!("Lookup table {table} does not contain index {index}"),
-                )
-            })
-        })
+        match self.query_lookup_table(table, index) {
+            Ok(pubkey) => Ok(pubkey),
+            Err(_) => {
+                let addresses = self.update_lookup_table(table).await?;
+                // get the key from the returned addresses instead of re-querying and re-locking the map
+                addresses.get(index).copied().ok_or_else(|| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!("Lookup table {table} does not contain index {index}"),
+                    )
+                })
+            }
+        }
     }
 
     /// Queries the lookup table for the pubkey at the given index.
@@ -104,8 +107,8 @@ impl ChainIndex {
     }
 
     // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.
-    pub fn update_lookup_table(&self, table: &Pubkey) -> Result<Vec<Pubkey>, (StatusCode, String)> {
-        let table_data = self.rpc.get_account(table).map_err(|err| {
+    pub async fn update_lookup_table(&self, table: &Pubkey) -> Result<Vec<Pubkey>, (StatusCode, String)> {
+        let table_data = self.rpc.get_account(table).await.map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Failed to fetch lookup table account {table} from RPC: {err}"),
@@ -171,22 +174,25 @@ impl DomainState {
                     })
             })?;
 
-        let matched = self.tx_variations.iter().find(|variation| {
-            self.validate_transaction_against_variation(transaction, variation, chain_index)
-                .is_ok()
-        });
-        if let Some(variation) = matched {
-            tracing::Span::current().record("variation", variation.name().to_string());
-            Ok(variation)
-        } else {
-            Err((
+        let validation_futures: Vec<_> = self.tx_variations.iter().map(|variation| {
+            Box::pin(async move {
+                self.validate_transaction_against_variation(transaction, variation, chain_index).await.map(|_| variation)
+            })
+        }).collect();
+
+        match futures::future::select_ok(validation_futures).await {
+            Ok((variation, _remaining)) => {
+                tracing::Span::current().record("variation", variation.name().to_string());
+                Ok(variation)
+            }
+            Err(_) => Err((
                 StatusCode::BAD_REQUEST,
                 "Transaction does not match any allowed variations".to_string(),
-            ))
+            )),
         }
     }
 
-    pub fn validate_transaction_against_variation(
+    pub async fn validate_transaction_against_variation(
         &self,
         transaction: &VersionedTransaction,
         tx_variation: &TransactionVariation,
@@ -201,7 +207,7 @@ impl DomainState {
                     sponsor: self.sponsor.pubkey(),
                 },
                 chain_index,
-            ),
+            ).await,
         }
     }
 }
