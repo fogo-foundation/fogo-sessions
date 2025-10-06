@@ -1,5 +1,6 @@
 use crate::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
+use crate::domain_registry::get_domain_record_address;
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
@@ -398,9 +399,7 @@ pub async fn run_server(
                  tx_variations,
                  ..
              }| {
-                let domain_registry_key = domain_registry::domain::Domain::new_checked(&domain)
-                    .expect("Failed to derive domain registry key")
-                    .get_domain_record_address();
+                let domain_registry_key = get_domain_record_address(&domain);
                 let sponsor = Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
                         &mnemonic, &domain,

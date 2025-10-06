@@ -12,7 +12,7 @@ use std::{collections::HashMap, str::FromStr};
 use fogo_paymaster::{
     api::ChainIndex,
     config::{load_config, Domain},
-    constraint::{ContextualDomainKeys, TransactionVariation},
+    constraint::{ContextualDomainKeys, TransactionVariation}, domain_registry::get_domain_record_address,
 };
 
 #[derive(Parser)]
@@ -366,9 +366,7 @@ async fn get_matching_variations<'a>(
 }
 
 async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
-    let domain_registry = domain_registry::domain::Domain::new_checked(domain)
-        .with_context(|| format!("Failed to derive domain registry key for domain: {domain}"))?
-        .get_domain_record_address();
+    let domain_registry = get_domain_record_address(domain);
 
     let url = format!("https://paymaster.fogo.io/api/sponsor_pubkey?domain={domain}");
     let client = reqwest::Client::new();

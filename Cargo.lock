@@ -1566,8 +1566,9 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "fogo-paymaster"
-version = "0.1.3"
+version = "0.2.0"
 dependencies = [
+ "anchor-lang",
  "anyhow",
  "axum",
  "axum-extra",
@@ -1579,7 +1580,6 @@ dependencies = [
  "clap",
  "config",
  "dashmap 6.1.0",
- "domain-registry",
  "fogo-sessions-sdk",
  "futures",
  "hex",
