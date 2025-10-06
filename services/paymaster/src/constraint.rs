@@ -123,13 +123,15 @@ impl VariationOrderedInstructionConstraints {
             }
 
             let constraint = &self.instructions[constraint_index];
-            let result = constraint.validate_instruction(
-                transaction,
-                instruction_index,
-                contextual_domain_keys,
-                &self.name,
-                chain_index,
-            ).await;
+            let result = constraint
+                .validate_instruction(
+                    transaction,
+                    instruction_index,
+                    contextual_domain_keys,
+                    &self.name,
+                    chain_index,
+                )
+                .await;
 
             if result.is_err() {
                 if constraint.required {
@@ -231,7 +233,8 @@ impl InstructionConstraint {
                     .collect();
                 let account_position_lookups = account_index - static_accounts.len();
                 &chain_index
-                    .find_and_query_lookup_table(lookup_accounts, account_position_lookups).await?
+                    .find_and_query_lookup_table(lookup_accounts, account_position_lookups)
+                    .await?
             } else {
                 return Err((
                     StatusCode::BAD_REQUEST,

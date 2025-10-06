@@ -63,7 +63,8 @@ impl ChainIndex {
                     format!("Account position {account_position_lookups} out of bounds for lookup table invoked accounts"),
                 )
             })?;
-        self.query_lookup_table_with_retry(table_to_query, usize::from(*index_to_query)).await
+        self.query_lookup_table_with_retry(table_to_query, usize::from(*index_to_query))
+            .await
     }
 
     /// Queries the lookup table for the pubkey at the given index.
@@ -107,7 +108,10 @@ impl ChainIndex {
     }
 
     // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.
-    pub async fn update_lookup_table(&self, table: &Pubkey) -> Result<Vec<Pubkey>, (StatusCode, String)> {
+    pub async fn update_lookup_table(
+        &self,
+        table: &Pubkey,
+    ) -> Result<Vec<Pubkey>, (StatusCode, String)> {
         let table_data = self.rpc.get_account(table).await.map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -174,11 +178,17 @@ impl DomainState {
                     })
             })?;
 
-        let validation_futures: Vec<_> = self.tx_variations.iter().map(|variation| {
-            Box::pin(async move {
-                self.validate_transaction_against_variation(transaction, variation, chain_index).await.map(|_| variation)
+        let validation_futures: Vec<_> = self
+            .tx_variations
+            .iter()
+            .map(|variation| {
+                Box::pin(async move {
+                    self.validate_transaction_against_variation(transaction, variation, chain_index)
+                        .await
+                        .map(|_| variation)
+                })
             })
-        }).collect();
+            .collect();
 
         match futures::future::select_ok(validation_futures).await {
             Ok((variation, _remaining)) => {
@@ -200,14 +210,18 @@ impl DomainState {
     ) -> Result<(), (StatusCode, String)> {
         match tx_variation {
             TransactionVariation::V0(variation) => variation.validate_transaction(transaction),
-            TransactionVariation::V1(variation) => variation.validate_transaction(
-                transaction,
-                &ContextualDomainKeys {
-                    domain_registry: self.domain_registry_key,
-                    sponsor: self.sponsor.pubkey(),
-                },
-                chain_index,
-            ).await,
+            TransactionVariation::V1(variation) => {
+                variation
+                    .validate_transaction(
+                        transaction,
+                        &ContextualDomainKeys {
+                            domain_registry: self.domain_registry_key,
+                            sponsor: self.sponsor.pubkey(),
+                        },
+                        chain_index,
+                    )
+                    .await
+            }
         }
     }
 }
