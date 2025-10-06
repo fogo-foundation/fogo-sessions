@@ -21,7 +21,8 @@ use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
 use fogo_paymaster::{
     api::ChainIndex,
     config::{load_config, Domain},
-    constraint::{ContextualDomainKeys, TransactionVariation}, domain_registry::get_domain_record_address,
+    constraint::{ContextualDomainKeys, TransactionVariation},
+    domain_registry::get_domain_record_address,
 };
 
 #[derive(Parser)]

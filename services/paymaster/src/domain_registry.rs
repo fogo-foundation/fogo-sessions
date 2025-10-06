@@ -2,7 +2,8 @@ use anchor_lang::solana_program::hash::hashv;
 use solana_pubkey::Pubkey;
 
 /// TODO: inherit everything from sdk
-const DOMAIN_REGISTRY_PROGRAM_ID: Pubkey = Pubkey::from_str_const("DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog");
+const DOMAIN_REGISTRY_PROGRAM_ID: Pubkey =
+    Pubkey::from_str_const("DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog");
 const DOMAIN_RECORD_SEED: &[u8] = b"domain-record";
 
 fn get_seeds(domain_name: &str) -> Vec<Vec<u8>> {
