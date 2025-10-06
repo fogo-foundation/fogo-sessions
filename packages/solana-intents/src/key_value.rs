@@ -1,7 +1,7 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_till1, take_while1},
-    character::complete::{anychar, char, line_ending},
+    bytes::complete::{tag, take_while1},
+    character::complete::{anychar, char, line_ending, not_line_ending},
     combinator::{eof, map, map_opt, opt, peek, recognize},
     error::ParseError,
     multi::many_till,
@@ -53,11 +53,7 @@ where
             key,
             char(':'),
             alt((
-                delimited(
-                    tag(" "),
-                    take_till1(|c: <I as Input>::Item| c.is_newline() || c.as_char() == '\r'),
-                    alt((line_ending, eof)),
-                ),
+                delimited(tag(" "), not_line_ending, alt((line_ending, eof))),
                 delimited(
                     line_ending,
                     recognize(many_till(
@@ -110,13 +106,7 @@ mod tests {
         fn test_no_value_after_space() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo: ");
-            assert_eq!(
-                result.unwrap_err(),
-                Err::Error(Error {
-                    code: ErrorKind::Eof,
-                    input: " "
-                })
-            );
+            assert_eq!(result, Ok(("", ("foo", "".to_string()))));
         }
 
         #[test]
@@ -191,13 +181,7 @@ mod tests {
         fn test_value_after_space_and_newline() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo: \n-baz");
-            assert_eq!(
-                result.unwrap_err(),
-                Err::Error(Error {
-                    code: ErrorKind::Eof,
-                    input: " \n-baz"
-                })
-            );
+            assert_eq!(result, Ok(("-baz", ("foo", "".to_string()))));
         }
 
         #[test]
