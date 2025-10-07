@@ -1,4 +1,6 @@
+pub mod domain_registry;
 pub mod error;
+pub mod intent_transfer;
 pub mod session;
 pub mod token;
 

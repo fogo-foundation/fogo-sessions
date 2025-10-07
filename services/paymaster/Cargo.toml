@@ -7,7 +7,6 @@ description = "Fogo paymaster service and transaction validator CLI"
 repository = "https://github.com/fogo-foundation/fogo-sessions"
 
 [dependencies]
-anchor-lang = {workspace = true}
 anyhow = "1.0.98"
 axum = "0.8.4"
 axum-extra = {version = "0.10.1", features = ["typed-header"]}

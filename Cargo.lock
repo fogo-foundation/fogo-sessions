@@ -1568,7 +1568,6 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 name = "fogo-paymaster"
 version = "0.2.0"
 dependencies = [
- "anchor-lang",
  "anyhow",
  "axum",
  "axum-extra",
@@ -1628,6 +1627,7 @@ dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
  "solana-program",
+ "solana-pubkey",
  "thiserror 1.0.69",
 ]
 

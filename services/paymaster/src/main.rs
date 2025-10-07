@@ -8,7 +8,6 @@ mod api;
 mod config;
 mod constraint;
 mod constraint_templates;
-mod domain_registry;
 mod metrics;
 mod rpc;
 mod serde;

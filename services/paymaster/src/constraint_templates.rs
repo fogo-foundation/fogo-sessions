@@ -3,11 +3,6 @@ use crate::constraint::{
     InstructionConstraint, PrimitiveDataType, PrimitiveDataValue, TransactionVariation,
     VariationOrderedInstructionConstraints,
 };
-use solana_pubkey::Pubkey;
-
-/// TODO: inherit from sdk
-pub const INTENT_TRANSFER_PROGRAM_ID: Pubkey =
-    Pubkey::from_str_const("Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD");
 
 impl InstructionConstraint {
     /// The template for the constraint for the ed25519_program instruction used to verify a single intent signature.
@@ -171,7 +166,7 @@ impl InstructionConstraint {
     /// The template for the constraint for the IntentTransfer instruction.
     pub fn intent_transfer_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
-            program: INTENT_TRANSFER_PROGRAM_ID,
+            program: fogo_sessions_sdk::intent_transfer::INTENT_TRANSFER_PROGRAM_ID,
             accounts: vec![],
             data: vec![
                 // instruction = 0 (SendTokens)

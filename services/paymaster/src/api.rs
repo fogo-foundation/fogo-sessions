@@ -1,6 +1,5 @@
 use crate::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
-use crate::domain_registry::get_domain_record_address;
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
@@ -17,6 +16,7 @@ use axum_prometheus::metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
+use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;

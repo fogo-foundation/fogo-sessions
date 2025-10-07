@@ -2,6 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use dashmap::DashMap;
+use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use futures::stream::{FuturesOrdered, StreamExt};
 use governor::{
     clock::DefaultClock,
@@ -22,7 +23,6 @@ use fogo_paymaster::{
     api::ChainIndex,
     config::{load_config, Domain},
     constraint::{ContextualDomainKeys, TransactionVariation},
-    domain_registry::get_domain_record_address,
 };
 
 #[derive(Parser)]
