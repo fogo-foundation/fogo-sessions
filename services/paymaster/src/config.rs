@@ -32,6 +32,8 @@ pub struct Config {
     pub domains: Vec<Domain>,
 }
 
+pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
+
 pub fn load_config(config_path: &str) -> Result<Config> {
     let mut config: Config = config::Config::builder()
         .add_source(File::with_name(config_path))
@@ -42,14 +44,20 @@ pub fn load_config(config_path: &str) -> Result<Config> {
         if domain.enable_session_management {
             domain
                 .tx_variations
-                .push(TransactionVariation::session_establishment_variation());
+                .push(TransactionVariation::session_establishment_variation(
+                    DEFAULT_TEMPLATE_MAX_GAS_SPEND,
+                ));
             domain
                 .tx_variations
-                .push(TransactionVariation::session_revocation_variation());
+                .push(TransactionVariation::session_revocation_variation(
+                    DEFAULT_TEMPLATE_MAX_GAS_SPEND,
+                ));
         }
         domain
             .tx_variations
-            .push(TransactionVariation::intent_transfer_variation());
+            .push(TransactionVariation::intent_transfer_variation(
+                DEFAULT_TEMPLATE_MAX_GAS_SPEND,
+            ));
     }
 
     Ok(config)
