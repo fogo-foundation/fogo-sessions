@@ -1627,7 +1627,6 @@ dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
  "solana-program",
- "solana-pubkey",
  "thiserror 1.0.69",
 ]
 
