@@ -3,7 +3,7 @@ name: Publish paymaster-tx-validator to crates.io
 on:
   push:
     tags:
-      - "paymaster-v*"
+      - "fogo-paymaster-v*"
   workflow_dispatch:
 
 jobs:
