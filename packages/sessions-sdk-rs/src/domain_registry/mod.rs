@@ -1,5 +1,5 @@
 use solana_program::hash::hashv;
-use solana_program::pubkey::Pubkey;
+use solana_pubkey::Pubkey;
 
 const DOMAIN_REGISTRY_PROGRAM_ID: Pubkey =
     Pubkey::from_str_const("DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog");
