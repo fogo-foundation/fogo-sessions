@@ -1,6 +1,6 @@
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import type { ReactNode } from "react";
-import { createContext, use, useMemo } from "react";
+import { createContext, use, useCallback, useMemo } from "react";
 import {
   Text,
   UNSTABLE_Toast as ReactAriaToast,
@@ -55,7 +55,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
 export const useToast = () => {
   const queue = use(ToastContext);
   if (queue) {
-    const mkToastFn =
+    const mkToastFn = useCallback(
       (toastType: ToastType) =>
       (
         title: ReactNode,
@@ -68,7 +68,9 @@ export const useToast = () => {
         queue.add(
           { type: toastType, title, description },
           { timeout, ...opts },
-        );
+        ),
+      [queue],
+    );
     return useMemo(
       () => ({
         queue,
