@@ -166,7 +166,7 @@ impl InstructionConstraint {
     /// The template for the constraint for the IntentTransfer instruction.
     pub fn intent_transfer_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
-            program: intent_transfer::ID,
+            program: fogo_sessions_sdk::intent_transfer::INTENT_TRANSFER_PROGRAM_ID,
             accounts: vec![],
             data: vec![
                 // instruction = 0 (SendTokens)

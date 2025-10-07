@@ -16,6 +16,7 @@ use axum_prometheus::metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
+use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
@@ -407,9 +408,7 @@ pub async fn run_server(
                  tx_variations,
                  ..
              }| {
-                let domain_registry_key = domain_registry::domain::Domain::new_checked(&domain)
-                    .expect("Failed to derive domain registry key")
-                    .get_domain_record_address();
+                let domain_registry_key = get_domain_record_address(&domain);
                 let sponsor = Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
                         &mnemonic, &domain,

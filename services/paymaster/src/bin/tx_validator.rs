@@ -2,6 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use dashmap::DashMap;
+use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use futures::stream::{FuturesOrdered, StreamExt};
 use governor::{
     clock::DefaultClock,
@@ -424,9 +425,7 @@ async fn get_matching_variations<'a>(
 }
 
 async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
-    let domain_registry = domain_registry::domain::Domain::new_checked(domain)
-        .with_context(|| format!("Failed to derive domain registry key for domain: {domain}"))?
-        .get_domain_record_address();
+    let domain_registry = get_domain_record_address(domain);
 
     let url = format!("https://paymaster.fogo.io/api/sponsor_pubkey?domain={domain}");
     let client = reqwest::Client::new();
