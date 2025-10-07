@@ -57,18 +57,18 @@ export const useToast = () => {
   if (queue) {
     const mkToastFn = useCallback(
       (toastType: ToastType) =>
-      (
-        title: ReactNode,
-        description?: ReactNode,
-        {
-          timeout = DEFAULT_TOAST_TIMEOUT,
-          ...opts
-        }: Parameters<typeof queue.add>[1] | undefined = {},
-      ) =>
-        queue.add(
-          { type: toastType, title, description },
-          { timeout, ...opts },
-        ),
+        (
+          title: ReactNode,
+          description?: ReactNode,
+          {
+            timeout = DEFAULT_TOAST_TIMEOUT,
+            ...opts
+          }: Parameters<typeof queue.add>[1] | undefined = {},
+        ) =>
+          queue.add(
+            { type: toastType, title, description },
+            { timeout, ...opts },
+          ),
       [queue],
     );
     return useMemo(
