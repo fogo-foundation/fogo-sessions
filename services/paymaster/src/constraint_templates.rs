@@ -183,9 +183,11 @@ impl InstructionConstraint {
     }
 }
 
+pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
+
 impl TransactionVariation {
     /// The template for the transaction variation that establishes a session.
-    pub fn session_establishment_variation() -> TransactionVariation {
+    pub fn session_establishment_variation(max_gas_spend: u64) -> TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Session Establishment".to_string(),
             instructions: vec![
@@ -197,21 +199,21 @@ impl TransactionVariation {
                 InstructionConstraint::intent_instruction_constraint(),
                 InstructionConstraint::start_session_instruction_constraint(),
             ],
-            max_gas_spend: 100_000,
+            max_gas_spend,
         })
     }
 
     /// The template for the transaction variation that revokes a session.
-    pub fn session_revocation_variation() -> TransactionVariation {
+    pub fn session_revocation_variation(max_gas_spend: u64) -> TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Session Revocation".to_string(),
             instructions: vec![InstructionConstraint::revoke_session_instruction_constraint()],
-            max_gas_spend: 100_000,
+            max_gas_spend,
         })
     }
 
     /// The template for the transaction variation that conducts intent transfers.
-    pub fn intent_transfer_variation() -> TransactionVariation {
+    pub fn intent_transfer_variation(max_gas_spend: u64) -> TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Intent Transfer".to_string(),
             instructions: vec![
@@ -219,7 +221,7 @@ impl TransactionVariation {
                 InstructionConstraint::intent_instruction_constraint(),
                 InstructionConstraint::intent_transfer_instruction_constraint(),
             ],
-            max_gas_spend: 100_000,
+            max_gas_spend,
         })
     }
 }
