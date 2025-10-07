@@ -2,7 +2,7 @@ use anyhow::Result;
 use config::File;
 use serde::Deserialize;
 
-use crate::{constraint::TransactionVariation, constraint_templates::DEFAULT_TEMPLATE_MAX_GAS_SPEND};
+use crate::constraint::TransactionVariation;
 
 fn default_true() -> bool {
     true
@@ -31,6 +31,8 @@ pub struct Config {
     pub listen_address: String,
     pub domains: Vec<Domain>,
 }
+
+pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
 
 pub fn load_config(config_path: &str) -> Result<Config> {
     let mut config: Config = config::Config::builder()

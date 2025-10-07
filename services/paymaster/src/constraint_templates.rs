@@ -183,8 +183,6 @@ impl InstructionConstraint {
     }
 }
 
-pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
-
 impl TransactionVariation {
     /// The template for the transaction variation that establishes a session.
     pub fn session_establishment_variation(max_gas_spend: u64) -> TransactionVariation {
