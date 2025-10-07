@@ -3,7 +3,7 @@ name: Publish sessions-sdk-rs to crates.io
 on:
   push:
     tags:
-      - 'sdk-rs-v*'
+      - "sdk-rs-v*"
   workflow_dispatch:
 
 jobs:
