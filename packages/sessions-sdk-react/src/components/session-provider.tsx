@@ -622,7 +622,7 @@ const useSessionStateContext = ({
         return;
       }
     }
-  }, [state, checkStoredSession, disconnectWallet]);
+  }, [state]);
 
   useEffect(() => {
     setState(
