@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk-web
 
+## 0.0.9
+
+### Patch Changes
+
+- @fogo/sessions-sdk@0.0.15
+
 ## 0.0.8
 
 ### Patch Changes
