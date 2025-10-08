@@ -1,0 +1,16 @@
+{
+  "extends": ["./tsconfig.base.json", "expo/tsconfig.base"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "customConditions": ["react-native-strict-api"],
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "strict": true,
+    "verbatimModuleSyntax": true
+  },
+  "exclude": [
+    "src/**/__tests__/**/*",
+    "src/**/*.test.*"
+  ]
+}
