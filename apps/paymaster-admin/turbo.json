@@ -1,0 +1,18 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": []
+    },
+    "start:dev": {
+      "env": []
+    },
+    "start:prod": {
+      "env": []
+    },
+    "test:types": {
+      "dependsOn": ["build"]
+    }
+  }
+}
