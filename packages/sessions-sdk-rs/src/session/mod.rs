@@ -350,9 +350,9 @@ impl Session {
 
     fn fee_collector_owner(&self) -> Result<Option<Pubkey>, SessionError> {
         match self.authorized_programs()? {
-            AuthorizedPrograms::Specific(ref programs) => {
-                Ok(programs.first().map(|authorized_program| authorized_program.signer_pda))
-            }
+            AuthorizedPrograms::Specific(ref programs) => Ok(programs
+                .first()
+                .map(|authorized_program| authorized_program.signer_pda)),
             AuthorizedPrograms::All => Ok(None),
         }
     }
