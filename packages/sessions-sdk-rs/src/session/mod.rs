@@ -348,6 +348,15 @@ impl Session {
         }
     }
 
+    fn fee_collector_owner(&self) -> Result<Option<Pubkey>, SessionError> {
+        match self.authorized_programs()? {
+            AuthorizedPrograms::Specific(ref programs) => {
+                Ok(programs.first().map(|authorized_program| authorized_program.signer_pda))
+            }
+            AuthorizedPrograms::All => Ok(None),
+        }
+    }
+
     /// Returns whether the session is live. Revoked sessions are considered live until their expiration time.
     pub fn is_live(&self) -> Result<bool, SessionError> {
         Ok(Clock::get()
@@ -363,6 +372,13 @@ impl Session {
         self.check_is_live()?;
         self.check_authorized_program(program_id)?;
         Ok(*self.user()?)
+    }
+
+    pub fn get_fee_collector_owner_checked(&self) -> Result<Option<Pubkey>, SessionError> {
+        self.check_version()?;
+        self.check_is_unrevoked()?;
+        self.check_is_live()?;
+        Ok(self.fee_collector_owner()?)
     }
 
     /// Returns the value of one of the session's extra fields with the given key, if it exists
