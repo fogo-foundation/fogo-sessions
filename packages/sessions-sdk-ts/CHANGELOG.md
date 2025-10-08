@@ -1,5 +1,15 @@
 # @fogo/sessions-sdk
 
+## 0.0.14
+
+### Patch Changes
+
+- f03a86e: Validate and populate extra key-values appropriately in the start session intent message.
+- 7db8d6c: Update getAccountInfo call to use 'confirmed' commitment
+- 3b21496: Check session expiration in verifyLogInToken
+- 082664c: Bump minor version of sessions to 3 to fix a bug where session accounts could be closed without revoking token delegates.
+- 864db9b: Declare @noble/hashes as a dependency instead of a devDependency
+
 ## 0.0.13
 
 ### Patch Changes
