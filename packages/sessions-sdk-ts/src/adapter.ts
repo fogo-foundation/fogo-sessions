@@ -186,7 +186,7 @@ const buildTransaction = async (
         ? (fromVersionedTransaction(instructions) as ReturnType<
             typeof fromVersionedTransaction
           > &
-            TransactionWithLifetime) // VersionedTransaction doesn't have the lifetimeConstraint property, so we need to cast it to the correct type
+            TransactionWithLifetime) // VersionedTransaction has a lifetime
         : instructions;
     return sessionKey === undefined
       ? tx
