@@ -28,6 +28,7 @@
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@types/jest": "catalog:",
+    "@types/node": "catalog:",
     "@types/yargs": "catalog:",
     "eslint": "catalog:",
     "jest": "catalog:",

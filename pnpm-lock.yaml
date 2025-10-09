@@ -820,6 +820,9 @@ importers:
       '@types/jest':
         specifier: 'catalog:'
         version: 29.5.14
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.0.3
       '@types/yargs':
         specifier: 'catalog:'
         version: 17.0.33
