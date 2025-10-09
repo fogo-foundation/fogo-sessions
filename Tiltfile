@@ -1,6 +1,6 @@
 local_resource(
     "build-programs",
-    "cargo build-sbf",
+    "anchor build --no-idl",
 )
 
 local_resource(

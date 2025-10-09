@@ -15,6 +15,8 @@ const ID: Pubkey = TOLLBOOTH_PROGRAM_ID;
 #[program]
 pub mod tollbooth {
     use super::*;
+
+    #[instruction(discriminator = [0])]
     pub fn pay_fee<'info>(
         ctx: Context<'_, '_, '_, 'info, PayFee<'info>>,
         amount: u64,
@@ -50,6 +52,7 @@ pub mod tollbooth {
 pub struct PayFee<'info> {
     #[account(signer)]
     pub session: Account<'info, Session>,
+    /// CHECK: this is just a PDA signer for token program CPIs
     #[account(seeds = [PROGRAM_SIGNER_SEED], bump)]
     pub program_signer: AccountInfo<'info>,
     pub source: Account<'info, TokenAccount>,

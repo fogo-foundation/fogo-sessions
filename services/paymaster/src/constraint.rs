@@ -93,14 +93,30 @@ fn instruction_matches_program(
     Ok(false)
 }
 
+
 fn check_tollbooth_instruction(
     transaction: &VersionedTransaction,
-    instruction_index: usize,
 ) -> Result<(), (StatusCode, String)> {
     let tollbooth_instructions = transaction.message.instructions().iter().filter(|ix| {
         ix.program_id(transaction.message.static_account_keys()) == &TOLLBOOTH_PROGRAM_ID
     });
-    if tollbooth_instructions.count() != 1 {
+    match tollbooth_instructions.collect::<Vec<_>>()[..] {
+        [tollbooth_instruction] => {
+
+            #[derive(BorshDeserialize)]
+            enum TollboothInstruction {
+                PayFee(u64),
+            }
+
+            let tollbooth_instruction_data = TollboothInstruction::try_from_slice(&tollbooth_instruction.data).map_err(|_| (StatusCode::BAD_REQUEST, "Tollbooth instruction data is not valid".to_string()))?;
+            let amount = match tollbooth_instruction_data {
+                TollboothInstruction::PayFee(amount) => amount,
+            };
+            if amount <= 1000 {
+                return Err((StatusCode::BAD_REQUEST, "Tollbooth fee is less than the minimum fee".to_string()));
+            }
+        }
+        _ => return Err((StatusCode::BAD_REQUEST, "Multiple tollbooth instructions found".to_string())),
     }
     Ok(())
 }
@@ -116,7 +132,7 @@ impl VariationOrderedInstructionConstraints {
         let mut instruction_index = 0;
         let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
-
+        check_tollbooth_instruction(transaction)?;
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
