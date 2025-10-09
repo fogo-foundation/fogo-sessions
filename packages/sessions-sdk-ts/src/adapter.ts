@@ -186,7 +186,7 @@ const buildTransaction = async (
         ? (fromVersionedTransaction(instructions) as ReturnType<
             typeof fromVersionedTransaction
           > &
-            TransactionWithLifetime) // VersionedTransaction has a lifetime
+            TransactionWithLifetime) // VersionedTransaction has a lifetime so it's fine to cast it so we can call partiallySignTransaction
         : instructions;
     return sessionKey === undefined
       ? tx
