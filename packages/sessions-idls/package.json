@@ -27,7 +27,7 @@
     "build:esm": "swc src -d dist/esm --strip-leading-paths --copy-files -C jsc.experimental.keepImportAttributes=true && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
     "build:types": "tsc --project tsconfig.build.json",
-    "build:idl": "mkdir -p src/idl && mkdir -p src/types && anchor idl build --program-name session-manager --out-ts src/types/session-manager.ts --out src/idl/session-manager.json && anchor idl build --program-name example --out-ts src/types/example.ts --out src/idl/example.json && anchor idl build --program-name chain-id --out-ts src/types/chain-id.ts --out src/idl/chain-id.json && anchor idl build --program-name domain-registry --out-ts src/types/domain-registry.ts --out src/idl/domain-registry.json && anchor idl build --program-name intent-transfer --out-ts src/types/intent-transfer.ts --out src/idl/intent-transfer.json",
+    "build:idl": "mkdir -p src/idl && mkdir -p src/types && anchor build && cp -r ../../target/idl/*.json src/idl/ && cp -r ../../target/types/*.ts src/types/",
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix . --max-warnings 0",
     "test:format": "run-jest --colors --selectProjects format",
