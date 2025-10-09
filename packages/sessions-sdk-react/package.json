@@ -61,6 +61,7 @@
     "@solana/wallet-adapter-wallets": "catalog:",
     "@solana/web3.js": "catalog:",
     "@yudiel/react-qr-scanner": "catalog:",
+    "bs58": "catalog:",
     "clsx": "catalog:",
     "idb": "catalog:",
     "modern-normalize": "catalog:",
