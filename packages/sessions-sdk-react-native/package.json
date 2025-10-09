@@ -16,27 +16,13 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "src",
     "lib",
-    "android",
-    "ios",
-    "cpp",
-    "*.podspec",
-    "react-native.config.js",
-    "!ios/build",
-    "!android/build",
-    "!android/gradle",
-    "!android/gradlew",
-    "!android/gradlew.bat",
-    "!android/local.properties",
-    "!**/__tests__",
-    "!**/__fixtures__",
-    "!**/__mocks__",
-    "!**/.*"
+    "scripts",
+    "package.json"
   ],
   "scripts": {
     "build": "bob build",
-    "build:cjs": "bob build --target module",
+    "build:cjs": "bob build --target commonjs",
     "build:esm": "bob build --target module",
     "build:types": "bob build --target typescript",
     "build:license": "cp ../../LICENSE ./lib/LICENSE",
@@ -64,16 +50,6 @@
     "ios",
     "android"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/leapwallet/sessions-sdk-react-native.git"
-  },
-  "author": "leapwallet <developers@leapwallet.io> (https://leapwallet.io)",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/leapwallet/sessions-sdk-react-native/issues"
-  },
-  "homepage": "https://github.com/leapwallet/sessions-sdk-react-native#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
