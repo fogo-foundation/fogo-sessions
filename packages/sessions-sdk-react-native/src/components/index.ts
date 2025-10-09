@@ -6,7 +6,7 @@
  *
  * @example
  * ```tsx
- * import { SessionButton, SessionLimitsSheet } from '@leapwallet/sessions-sdk-react-native';
+ * import { SessionButton, SessionLimitsSheet } from '@fogo/sessions-sdk-react-native';
  *
  * function MyApp() {
  *   return (

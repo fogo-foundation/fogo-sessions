@@ -3,7 +3,7 @@ React Native components and hooks for Solana session-based wallet connections.
 ## Installation
 
 ```sh
-npm install @leapwallet/sessions-sdk-react-native
+npm install @fogo/sessions-sdk-react-native
 npx sessions-sdk-setup  # Installs necessary packages and polyfills required for this SDK
 ```
 
@@ -15,7 +15,7 @@ Wrap your app with the `FogoSessionProvider` to enable session functionality:
 
 ```tsx
 import React from 'react';
-import { FogoSessionProvider, SessionButton, SessionLimitsSheet } from '@leapwallet/sessions-sdk-react-native';
+import { FogoSessionProvider, SessionButton, SessionLimitsSheet } from '@fogo/sessions-sdk-react-native';
 
 export default function App() {
   return (
@@ -48,7 +48,7 @@ function YourApp() {
 Access session information throughout your app:
 
 ```tsx
-import { useSession, StateType } from '@leapwallet/sessions-sdk-react-native';
+import { useSession, StateType } from '@fogo/sessions-sdk-react-native';
 
 function MyComponent() {
   const sessionState = useSession();
@@ -70,7 +70,7 @@ function MyComponent() {
 Fetch token balances and metadata:
 
 ```tsx
-import { useTokenAccountData } from '@leapwallet/sessions-sdk-react-native';
+import { useTokenAccountData } from '@fogo/sessions-sdk-react-native';
 
 function TokenList() {
   const sessionState = useSession();
@@ -105,7 +105,7 @@ import {
   useSession,
   StateType,
   useTokenAccountData
-} from '@leapwallet/sessions-sdk-react-native';
+} from '@fogo/sessions-sdk-react-native';
 
 function CustomSessionManager() {
   const sessionState = useSession();
@@ -174,7 +174,7 @@ function EstablishedSessionView({ sessionState }) {
 
 ```tsx
 // Get session context for more control
-import { useSessionContext } from '@leapwallet/sessions-sdk-react-native';
+import { useSessionContext } from '@fogo/sessions-sdk-react-native';
 
 function AdvancedComponent() {
   const {
@@ -208,7 +208,7 @@ function AdvancedComponent() {
 Build your own session limits interface using the session context:
 
 ```tsx
-import { useSessionContext, StateType } from '@leapwallet/sessions-sdk-react-native';
+import { useSessionContext, StateType } from '@fogo/sessions-sdk-react-native';
 
 function CustomSessionLimits() {
   const {
@@ -249,7 +249,7 @@ function CustomSessionLimits() {
 ### Transaction Sending
 
 ```tsx
-import { useSendToken } from '@leapwallet/sessions-sdk-react-native';
+import { useSendToken } from '@fogo/sessions-sdk-react-native';
 
 function SendTokenForm({ sessionState, tokenMint }) {
   const sendToken = useSendToken({

@@ -1,12 +1,12 @@
 /**
- * Main entry point for the @leapwallet/sessions-sdk-react-native package.
+ * Main entry point for the @fogo/sessions-sdk-react-native package.
  *
  * This SDK provides React Native components, hooks, and utilities for integrating
  * Solana session-based wallet connections into your mobile application.
  *
  * @example
  * ```tsx
- * import { SessionProvider, SessionButton } from '@leapwallet/sessions-sdk-react-native';
+ * import { SessionProvider, SessionButton } from '@fogo/sessions-sdk-react-native';
  *
  * function App() {
  *   return (

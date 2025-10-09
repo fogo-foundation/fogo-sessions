@@ -19,7 +19,7 @@ export { TokenDataStateType } from '../utils/use-data';
  *
  * @example
  * ```tsx
- * import { useTokenAccountData, useSession, StateType } from '@leapwallet/sessions-sdk-react-native';
+ * import { useTokenAccountData, useSession, StateType } from '@fogo/sessions-sdk-react-native';
  *
  * function TokenList() {
  *   const sessionState = useSession();

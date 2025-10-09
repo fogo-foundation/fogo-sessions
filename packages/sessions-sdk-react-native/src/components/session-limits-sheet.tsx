@@ -29,7 +29,7 @@ export interface SessionLimitsSheetProps {
  *
  * @example
  * ```tsx
- * import { FogoSessionProvider, SessionLimitsSheet } from '@leapwallet/sessions-sdk-react-native';
+ * import { FogoSessionProvider, SessionLimitsSheet } from '@fogo/sessions-sdk-react-native';
  *
  * function App() {
  *   return (

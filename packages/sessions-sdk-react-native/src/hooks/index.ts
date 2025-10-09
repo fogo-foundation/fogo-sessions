@@ -6,7 +6,7 @@
  *
  * @example
  * ```tsx
- * import { useSession, useTokenAccountData } from '@leapwallet/sessions-sdk-react-native';
+ * import { useSession, useTokenAccountData } from '@fogo/sessions-sdk-react-native';
  *
  * function TokenBalance() {
  *   const session = useSession();

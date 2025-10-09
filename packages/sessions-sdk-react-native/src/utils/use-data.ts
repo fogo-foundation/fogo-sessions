@@ -10,7 +10,7 @@ import useSWR from 'swr';
  *
  * @example
  * ```tsx
- * import { useData } from '@leapwallet/sessions-sdk-react-native';
+ * import { useData } from '@fogo/sessions-sdk-react-native';
  *
  * function MyComponent() {
  *   const result = useData('my-key', () => fetchMyData());

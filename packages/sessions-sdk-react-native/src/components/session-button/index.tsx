@@ -42,7 +42,7 @@ export interface SessionButtonProps {
  *
  * @example
  * ```tsx
- * import { SessionButton } from '@leapwallet/sessions-sdk-react-native';
+ * import { SessionButton } from '@fogo/sessions-sdk-react-native';
  * import { PublicKey } from '@solana/web3.js';
  *
  * function MyComponent() {
