@@ -1,5 +1,6 @@
 use axum::http::StatusCode;
 use borsh::BorshDeserialize;
+use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
@@ -92,6 +93,19 @@ fn instruction_matches_program(
     Ok(false)
 }
 
+fn check_tollbooth_instruction(
+    transaction: &VersionedTransaction,
+    instruction_index: usize,
+) -> Result<(), (StatusCode, String)> {
+    let tollbooth_instructions = transaction.message.instructions().iter().filter(|ix| {
+        ix.program_id(transaction.message.static_account_keys()) == &TOLLBOOTH_PROGRAM_ID
+    });
+    if tollbooth_instructions.count() != 1 {
+    }
+    Ok(())
+}
+
+
 impl VariationOrderedInstructionConstraints {
     pub async fn validate_transaction(
         &self,
@@ -102,6 +116,7 @@ impl VariationOrderedInstructionConstraints {
         let mut instruction_index = 0;
         let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
+
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
