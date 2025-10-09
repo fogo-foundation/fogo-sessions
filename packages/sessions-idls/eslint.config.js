@@ -1,8 +1,1 @@
-import { base } from "@cprussin/eslint-config";
-
-export default [
-  ...base,
-  {
-    ignores: ["src/types/**", "src/idl/**"],
-  },
-];
+export { base as default } from "@cprussin/eslint-config";
