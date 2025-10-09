@@ -6,7 +6,12 @@ import {
   fromLegacyTransactionInstruction,
   fromVersionedTransaction,
 } from "@solana/compat";
-import type { Transaction, IInstruction, Blockhash } from "@solana/kit";
+import type {
+  Transaction,
+  Instruction,
+  Blockhash,
+  TransactionWithLifetime,
+} from "@solana/kit";
 import {
   createTransactionMessage,
   setTransactionMessageFeePayer,
@@ -48,9 +53,9 @@ export type SessionAdapter = {
   sendTransaction: (
     sessionKey: CryptoKeyPair | undefined,
     instructions:
-      | (TransactionInstruction | IInstruction)[]
+      | (TransactionInstruction | Instruction)[]
       | VersionedTransaction
-      | Transaction,
+      | (Transaction & TransactionWithLifetime),
   ) => Promise<TransactionResult>;
 };
 
@@ -129,9 +134,9 @@ const buildTransaction = async (
   sessionKey: CryptoKeyPair | undefined,
   sponsor: PublicKey,
   instructions:
-    | (TransactionInstruction | IInstruction)[]
+    | (TransactionInstruction | Instruction)[]
     | VersionedTransaction
-    | Transaction,
+    | (Transaction & TransactionWithLifetime),
   addressLookupTables: AddressLookupTableAccount[] | undefined,
 ) => {
   const sessionKeySigner = sessionKey
@@ -178,7 +183,10 @@ const buildTransaction = async (
   } else {
     const tx =
       instructions instanceof VersionedTransaction
-        ? fromVersionedTransaction(instructions)
+        ? (fromVersionedTransaction(instructions) as ReturnType<
+            typeof fromVersionedTransaction
+          > &
+            TransactionWithLifetime) // VersionedTransaction has a lifetime so it's fine to cast it so we can call partiallySignTransaction
         : instructions;
     return sessionKey === undefined
       ? tx
