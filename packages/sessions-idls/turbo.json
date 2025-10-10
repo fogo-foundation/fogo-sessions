@@ -9,13 +9,63 @@
       "dependsOn": ["//#install:modules", "^build", "build:idl"]
     },
     "build:idl": {
+      "dependsOn": ["build:idl:chain-id", "build:idl:example", "build:idl:domain-registry", "build:idl:intent-transfer", "build:idl:session-manager"]
+    },
+    "build:idl:mkdir": {
+    },
+    "build:idl:chain-id": {
+      "inputs": [
+        "../../programs/chain-id/src/**/*.rs",
+        "../../programs/chain-id/Cargo.toml",
+        "../../packages/**/src/**/*.rs",
+        "../../Cargo.toml",
+        "../../Anchor.toml"
+      ],
+      "outputs": ["src/idl/chain-id.json", "src/types/chain-id.ts"],
+      "dependsOn": ["build:idl:mkdir"]
+    },  
+    "build:idl:domain-registry": {
+      "inputs": [
+        "../../programs/domain-registry/src/**/*.rs",
+        "../../programs/domain-registry/Cargo.toml",
+        "../../packages/**/src/**/*.rs",
+        "../../Cargo.toml",
+        "../../Anchor.toml"
+      ],
+      "outputs": ["src/idl/domain-registry.json", "src/types/domain-registry.ts"],
+      "dependsOn": ["build:idl:mkdir"]
+    },
+    "build:idl:example": {
+      "inputs": [
+        "../../programs/example/src/**/*.rs",
+        "../../programs/example/Cargo.toml",
+        "../../packages/**/src/**/*.rs",
+        "../../Cargo.toml",
+        "../../Anchor.toml"
+      ],
+      "outputs": ["src/idl/example.json", "src/types/example.ts"],
+      "dependsOn": ["build:idl:mkdir"]
+    },
+    "build:idl:intent-transfer": {
+      "inputs": [
+        "../../programs/intent-transfer/src/**/*.rs",
+        "../../programs/intent-transfer/Cargo.toml",
+        "../../packages/**/src/**/*.rs",
+        "../../Cargo.toml",
+        "../../Anchor.toml"
+      ],
+      "outputs": ["src/idl/intent-transfer.json", "src/types/intent-transfer.ts"],
+      "dependsOn": ["build:idl:mkdir"]
+    },
+    "build:idl:session-manager": {
       "inputs": [
         "../../programs/**/src/**/*.rs",
         "../../packages/**/src/**/*.rs",
         "../../**/Cargo.toml",
         "../../**/Anchor.toml"
       ],
-      "outputs": ["src/idl/*.json", "src/types/*.ts"]
+      "outputs": ["src/idl/session-manager.json", "src/types/session-manager.ts"],
+      "dependsOn": ["build:idl:mkdir"]
     },
     "build:types": {
       "dependsOn": ["//#install:modules", "^build", "build:idl"]
