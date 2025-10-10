@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.16
+
+### Patch Changes
+
+- 80cc3c3: Fix bug with legacy VersionedTransaction using Address Lookup Tables by bumping @solana/kit
+
 ## 0.0.15
 
 ### Patch Changes
