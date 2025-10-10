@@ -9,10 +9,15 @@
       "dependsOn": ["//#install:modules", "^build", "build:idl"]
     },
     "build:idl": {
-      "dependsOn": ["build:idl:chain-id", "build:idl:example", "build:idl:domain-registry", "build:idl:intent-transfer", "build:idl:session-manager"]
+      "dependsOn": [
+        "build:idl:chain-id",
+        "build:idl:example",
+        "build:idl:domain-registry",
+        "build:idl:intent-transfer",
+        "build:idl:session-manager"
+      ]
     },
-    "build:idl:mkdir": {
-    },
+    "build:idl:mkdir": {},
     "build:idl:chain-id": {
       "inputs": [
         "../../programs/chain-id/src/**/*.rs",
@@ -23,7 +28,7 @@
       ],
       "outputs": ["src/idl/chain-id.json", "src/types/chain-id.ts"],
       "dependsOn": ["build:idl:mkdir"]
-    },  
+    },
     "build:idl:domain-registry": {
       "inputs": [
         "../../programs/domain-registry/src/**/*.rs",
@@ -32,7 +37,10 @@
         "../../Cargo.toml",
         "../../Anchor.toml"
       ],
-      "outputs": ["src/idl/domain-registry.json", "src/types/domain-registry.ts"],
+      "outputs": [
+        "src/idl/domain-registry.json",
+        "src/types/domain-registry.ts"
+      ],
       "dependsOn": ["build:idl:mkdir"]
     },
     "build:idl:example": {
@@ -54,7 +62,10 @@
         "../../Cargo.toml",
         "../../Anchor.toml"
       ],
-      "outputs": ["src/idl/intent-transfer.json", "src/types/intent-transfer.ts"],
+      "outputs": [
+        "src/idl/intent-transfer.json",
+        "src/types/intent-transfer.ts"
+      ],
       "dependsOn": ["build:idl:mkdir"]
     },
     "build:idl:session-manager": {
@@ -64,7 +75,10 @@
         "../../**/Cargo.toml",
         "../../**/Anchor.toml"
       ],
-      "outputs": ["src/idl/session-manager.json", "src/types/session-manager.ts"],
+      "outputs": [
+        "src/idl/session-manager.json",
+        "src/types/session-manager.ts"
+      ],
       "dependsOn": ["build:idl:mkdir"]
     },
     "build:types": {
