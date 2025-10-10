@@ -5,11 +5,13 @@ import DomainRegistryIdlImpl from "./idl/domain-registry.json" with { type: "jso
 import ExampleIdlImpl from "./idl/example.json" with { type: "json" };
 import IntentTransferIdlImpl from "./idl/intent-transfer.json" with { type: "json" };
 import SessionManagerIdlImpl from "./idl/session-manager.json" with { type: "json" };
+import TollboothIdlImpl from "./idl/tollbooth.json" with { type: "json" };
 import type { ChainId } from "./types/chain-id.js";
 import type { DomainRegistry } from "./types/domain-registry.js";
 import type { Example } from "./types/example.js";
 import type { IntentTransfer } from "./types/intent-transfer.js";
 import type { SessionManager } from "./types/session-manager.js";
+import type { Tollbooth } from "./types/tollbooth.js";
 
 export type SessionManagerIdl = SessionManager;
 export const SessionManagerIdl = SessionManagerIdlImpl as SessionManagerIdl;
@@ -48,5 +50,13 @@ export const IntentTransferIdl = IntentTransferIdlImpl as IntentTransferIdl;
 export class IntentTransferProgram extends Program<IntentTransferIdl> {
   constructor(provider: AnchorProvider) {
     super(IntentTransferIdl, provider);
+  }
+}
+
+export type TollboothIdl = Tollbooth;
+export const TollboothIdl = TollboothIdlImpl as TollboothIdl;
+export class TollboothProgram extends Program<TollboothIdl> {
+  constructor(provider: AnchorProvider) {
+    super(TollboothIdl, provider);
   }
 }
