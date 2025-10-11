@@ -1,6 +1,9 @@
 use axum::{http::StatusCode, response::ErrorResponse};
 use futures::stream::StreamExt;
-use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig}};
+use solana_client::{
+    nonblocking::rpc_client::RpcClient,
+    rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig},
+};
 use solana_commitment_config::CommitmentConfig;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_rpc_client_api::client_error::Error;
@@ -99,28 +102,28 @@ pub async fn confirm_transaction(
     // innermost contains actual transaction error if transaction failed or success info if it succeeded
     let result = timeout(CONFIRMATION_TIMEOUT, async {
         while let Some(response) = stream.next().await {
-            match response.value {
-                solana_client::rpc_response::RpcSignatureResult::ProcessedSignature(processed_signature_result) => {
-                    if let Some(err) = processed_signature_result.err {
-                        return Ok(ConfirmationResult::Failed {
-                            signature: signature.to_string(),
-                            error: err,
-                        });
-                    } else {
-                        return Ok(ConfirmationResult::Success {
-                            signature: signature.to_string(),
-                        });
-                    }
+            if let solana_client::rpc_response::RpcSignatureResult::ProcessedSignature(
+                processed_signature_result,
+            ) = response.value
+            {
+                if let Some(err) = processed_signature_result.err {
+                    return Ok(ConfirmationResult::Failed {
+                        signature: signature.to_string(),
+                        error: err,
+                    });
+                } else {
+                    return Ok(ConfirmationResult::Success {
+                        signature: signature.to_string(),
+                    });
                 }
-
-                _ => ()
             }
         }
 
         Err((
             StatusCode::BAD_GATEWAY,
             "Signature subscription stream ended unexpectedly",
-        ).into())
+        )
+            .into())
     })
     .await;
 
@@ -128,6 +131,10 @@ pub async fn confirm_transaction(
 
     match result {
         Ok(r) => r,
-        Err(_) => Err((StatusCode::GATEWAY_TIMEOUT, "Transaction confirmation timed out").into()),
+        Err(_) => Err((
+            StatusCode::GATEWAY_TIMEOUT,
+            "Transaction confirmation timed out",
+        )
+            .into()),
     }
 }
