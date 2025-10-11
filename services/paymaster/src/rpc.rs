@@ -1,15 +1,14 @@
 use axum::{http::StatusCode, response::ErrorResponse};
-use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcSendTransactionConfig};
+use futures::stream::StreamExt;
+use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig}};
 use solana_commitment_config::CommitmentConfig;
-use solana_hash::Hash;
+use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_rpc_client_api::client_error::Error;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::time::Duration;
-use tokio::time::sleep;
-
-const GET_STATUS_RETRIES: usize = usize::MAX;
+use tokio::time::timeout;
 
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(tag = "type")]
@@ -47,10 +46,10 @@ fn to_error_response(err: Error) -> ErrorResponse {
 )]
 pub async fn send_and_confirm_transaction(
     rpc: &RpcClient,
+    pubsub: &PubsubClient,
     transaction: &VersionedTransaction,
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResult, ErrorResponse> {
-    let recent_blockhash = transaction.message.recent_blockhash();
     let signature = match rpc.send_transaction_with_config(transaction, config).await {
         Ok(sig) => sig,
         Err(err) => {
@@ -64,49 +63,71 @@ pub async fn send_and_confirm_transaction(
         }
     };
 
-    confirm_transaction(rpc, &signature, recent_blockhash).await
+    confirm_transaction(pubsub, &signature, Some(rpc.commitment())).await
 }
+
+pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[tracing::instrument(
     skip_all,
     fields(tx_hash = %signature)
 )]
 pub async fn confirm_transaction(
-    rpc: &RpcClient,
+    rpc_sub: &PubsubClient,
     signature: &Signature,
-    recent_blockhash: &Hash,
+    commitment: Option<CommitmentConfig>,
 ) -> Result<ConfirmationResult, ErrorResponse> {
-    for status_retry in 0..GET_STATUS_RETRIES {
-        match rpc
-            .get_signature_status(signature)
-            .await
-            .map_err(to_error_response)?
-        {
-            Some(Ok(_)) => {
-                return Ok(ConfirmationResult::Success {
-                    signature: signature.to_string(),
-                })
-            }
-            Some(Err(e)) => {
-                return Ok(ConfirmationResult::Failed {
-                    signature: signature.to_string(),
-                    error: e,
-                })
-            }
-            None => {
-                if !rpc
-                    .is_blockhash_valid(recent_blockhash, CommitmentConfig::processed())
-                    .await
-                    .map_err(to_error_response)?
-                {
-                    break;
-                } else if status_retry < GET_STATUS_RETRIES {
-                    // Retry twice a second
-                    sleep(Duration::from_millis(500)).await;
-                    continue;
+    let (mut stream, unsubscribe) = rpc_sub
+        .signature_subscribe(
+            signature,
+            Some(RpcSignatureSubscribeConfig {
+                commitment,
+                ..RpcSignatureSubscribeConfig::default()
+            }),
+        )
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Failed to subscribe to signature: {e}"),
+            )
+        })?;
+
+    // two levels of results here:
+    // 1. timeout error (outer)
+    // 2. RpcError from the stream failing (inner)
+    // innermost contains actual transaction error if transaction failed or success info if it succeeded
+    let result = timeout(CONFIRMATION_TIMEOUT, async {
+        while let Some(response) = stream.next().await {
+            match response.value {
+                solana_client::rpc_response::RpcSignatureResult::ProcessedSignature(processed_signature_result) => {
+                    if let Some(err) = processed_signature_result.err {
+                        return Ok(ConfirmationResult::Failed {
+                            signature: signature.to_string(),
+                            error: err,
+                        });
+                    } else {
+                        return Ok(ConfirmationResult::Success {
+                            signature: signature.to_string(),
+                        });
+                    }
                 }
+
+                _ => ()
             }
         }
+
+        Err((
+            StatusCode::BAD_GATEWAY,
+            "Signature subscription stream ended unexpectedly",
+        ).into())
+    })
+    .await;
+
+    unsubscribe().await;
+
+    match result {
+        Ok(r) => r,
+        Err(_) => Err((StatusCode::GATEWAY_TIMEOUT, "Transaction confirmation timed out").into()),
     }
-    Err((StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction").into())
 }
