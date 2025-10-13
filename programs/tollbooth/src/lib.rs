@@ -54,7 +54,9 @@ pub struct PayFee<'info> {
     /// CHECK: this is just a PDA signer for token program CPIs
     #[account(seeds = [PROGRAM_SIGNER_SEED], bump)]
     pub program_signer: AccountInfo<'info>,
+    #[account(mut)]
     pub source: Account<'info, TokenAccount>,
+    #[account(mut)]
     pub destination: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
 }

@@ -35,8 +35,8 @@ local_resource(
 local_resource(
     "setup-wrapped-sol-faucet",
     """spl-token -u l wrap 100 --fee-payer ./tilt/keypairs/faucet.json ./tilt/keypairs/faucet.json &&
-    spl-token -u l transfer --fee-payer ./tilt/keypairs/faucet.json --fund-recipient So11111111111111111111111111111111111111112 1 5SKUh8pPXYCa5GroGKgniL1Gjt7XHKQkkjK94nVXfSkF &&
-    spl-token -u l transfer --fee-payer ./tilt/keypairs/faucet.json --fund-recipient So11111111111111111111111111111111111111112 1 3kzAHeiucNConBwKQVHyLcG3soaMzSZkvs4y14fmMgKL""",
+    spl-token -u l transfer --owner ./tilt/keypairs/faucet.json --fund-recipient --allow-unfunded-recipient So11111111111111111111111111111111111111112 1 5SKUh8pPXYCa5GroGKgniL1Gjt7XHKQkkjK94nVXfSkF &&
+    spl-token -u l transfer --owner ./tilt/keypairs/faucet.json --fund-recipient --allow-unfunded-recipient So11111111111111111111111111111111111111112 1 3kzAHeiucNConBwKQVHyLcG3soaMzSZkvs4y14fmMgKL""",
     resource_deps=["svm-localnet"],
 )
 
