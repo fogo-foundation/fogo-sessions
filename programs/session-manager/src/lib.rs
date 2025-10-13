@@ -28,6 +28,8 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
+    use fogo_sessions_sdk::session::ActiveSessionInfoWithDomainId;
+
     use super::*;
 
     #[instruction(discriminator = [0])]
@@ -71,7 +73,7 @@ pub mod session_manager {
             Tokens::All => AuthorizedTokensWithMints::All,
         };
 
-        let program_domains = ctx.accounts.get_domain_programs(domain)?;
+        let program_domains = ctx.accounts.get_domain_programs(&domain)?;
 
         let session = match minor {
             1 => Session {
@@ -105,6 +107,20 @@ pub mod session_manager {
                     authorized_tokens: authorized_tokens_with_mints,
                     extra: extra.into(),
                     expiration,
+                })),
+            },
+            4 => Session {
+                sponsor: ctx.accounts.sponsor.key(),
+                major,
+                session_info: SessionInfo::V4(V4::Active(ActiveSessionInfoWithDomainId {
+                    domain_id: domain.get_domain_id().into(),
+                    active_session_info: ActiveSessionInfo {
+                        user: signer,
+                        authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                        authorized_tokens: authorized_tokens_with_mints,
+                        extra: extra.into(),
+                        expiration,
+                    },
                 })),
             },
             _ => return err!(SessionManagerError::InvalidVersion),
@@ -281,7 +297,7 @@ impl<'info> StartSession<'info> {
         Ok(())
     }
 
-    pub fn get_domain_programs(&self, domain: Domain) -> Result<Vec<AuthorizedProgram>> {
+    pub fn get_domain_programs(&self, domain: &Domain) -> Result<Vec<AuthorizedProgram>> {
         require_eq!(
             self.domain_registry.key(),
             domain.get_domain_record_address(),

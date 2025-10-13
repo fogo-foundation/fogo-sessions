@@ -18,8 +18,8 @@ pub mod tollbooth {
     use super::*;
 
     #[instruction(discriminator = [0])]
-    pub fn pay_fee<'info>(
-        ctx: Context<'_, '_, '_, 'info, PayFee<'info>>,
+    pub fn pay_toll<'info>(
+        ctx: Context<'_, '_, '_, 'info, PayToll<'info>>,
         amount: u64,
     ) -> Result<()> {
         require_eq!(
@@ -28,7 +28,6 @@ pub mod tollbooth {
                     &[
                         TOLL_RECIPIENT_SEED,
                         ctx.accounts.session.get_domain_id_checked()?.as_ref(),
-                        &[0],
                     ],
                     &crate::ID
                 )
@@ -55,7 +54,7 @@ pub mod tollbooth {
 }
 
 #[derive(Accounts)]
-pub struct PayFee<'info> {
+pub struct PayToll<'info> {
     #[account(signer)]
     pub session: Account<'info, Session>,
     /// CHECK: this is just a PDA signer for token program CPIs

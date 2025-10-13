@@ -36,6 +36,7 @@ import {
 } from "@solana/web3.js";
 import BN from "bn.js";
 import { z } from "zod";
+import { getDomainTollRecipientAddress } from "./index.js";
 
 // eslint-disable-next-line unicorn/no-typeof-undefined
 const IS_BROWSER = typeof globalThis.window !== "undefined";
@@ -118,7 +119,7 @@ export const createSolanaWalletAdapter = async (
           sponsor,
           instructions,
           addressLookupTables,
-          await buildTollboothInstructions(options, sessionKey, sponsor),
+          await buildTollboothInstructions(options, domain, sessionKey),
         ),
         domain,
       );
@@ -128,8 +129,8 @@ export const createSolanaWalletAdapter = async (
 
 const buildTollboothInstructions = async (
   options: Parameters<typeof createSolanaWalletAdapter>[0],
+  domain: string,
   sessionKey: CryptoKeyPair | undefined,
-  sponsor: PublicKey,
 ) => {
   if (sessionKey && options.walletPublicKey) {
     const sessionKeyPublicKey = new PublicKey(
@@ -139,7 +140,8 @@ const buildTollboothInstructions = async (
       NATIVE_MINT,
       options.walletPublicKey,
     );
-    const destination = getAssociatedTokenAddressSync(NATIVE_MINT, sponsor);
+    console.log(getDomainTollRecipientAddress(domain).toBase58());
+    const destination = getAssociatedTokenAddressSync(NATIVE_MINT, getDomainTollRecipientAddress(domain), true);
     const instructions = [
       await new TollboothProgram(
         new AnchorProvider(
@@ -147,11 +149,12 @@ const buildTollboothInstructions = async (
           { publicKey: options.walletPublicKey } as Wallet,
         ),
       ).methods
-        .payFee(new BN(1000))
+        .payToll(new BN(1000))
         .accounts({
           session: sessionKeyPublicKey,
           source: userTokenAccount,
           destination: destination,
+          mint: NATIVE_MINT,
         })
         .instruction(),
     ];

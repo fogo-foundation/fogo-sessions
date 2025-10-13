@@ -97,15 +97,20 @@ fn instruction_matches_programs(
 fn check_tollbooth_instruction(
     transaction: &VersionedTransaction,
 ) -> Result<(), (StatusCode, String)> {
+    println!("check_tollbooth_instruction");
+    println!("instructions: {:?}", transaction.message.instructions().len());
     let tollbooth_instructions = transaction.message.instructions().iter().filter(|ix| {
         ix.program_id(transaction.message.static_account_keys()) == &TOLLBOOTH_PROGRAM_ID
     });
+
     match tollbooth_instructions.collect::<Vec<_>>()[..] {
         [tollbooth_instruction] => {
             #[derive(BorshDeserialize)]
             enum TollboothInstruction {
-                PayFee(u64),
+                PayToll(u64),
             }
+
+            println!("tollbooth_instruction: {:?}", tollbooth_instruction);
 
             let tollbooth_instruction_data = TollboothInstruction::try_from_slice(
                 &tollbooth_instruction.data,
@@ -116,7 +121,7 @@ fn check_tollbooth_instruction(
                     "Tollbooth instruction data is not valid".to_string(),
                 )
             })?;
-            let TollboothInstruction::PayFee(amount) = tollbooth_instruction_data;
+            let TollboothInstruction::PayToll(amount) = tollbooth_instruction_data;
             if amount < 1000 {
                 return Err((
                     StatusCode::BAD_REQUEST,
