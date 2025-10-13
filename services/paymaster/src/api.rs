@@ -1,4 +1,4 @@
-use crate::config::{Config, Domain};
+use crate::config::{Config, Domain, Tolls};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
@@ -38,6 +38,7 @@ pub struct DomainState {
     pub sponsor: Keypair,
     pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
+    pub tolls: Vec<Tolls>,
 }
 
 pub struct ChainIndex {
@@ -378,6 +379,7 @@ async fn sponsor_pubkey_handler(
         sponsor,
         enable_preflight_simulation: _,
         tx_variations: _,
+        tolls: _,
     } = get_domain_state(&state, &domain)?;
     Ok(sponsor.pubkey().to_string())
 }
@@ -388,6 +390,7 @@ pub async fn run_server(
         solana_url,
         domains,
         listen_address,
+        tolls
     }: Config,
 ) {
     let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
@@ -406,6 +409,7 @@ pub async fn run_server(
                  domain,
                  enable_preflight_simulation,
                  tx_variations,
+                 tolls: tolls_override,
                  ..
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
@@ -424,6 +428,7 @@ pub async fn run_server(
                         sponsor,
                         enable_preflight_simulation,
                         tx_variations,
+                        tolls: tolls_override.unwrap_or_else(|| tolls.clone()),
                     },
                 )
             },

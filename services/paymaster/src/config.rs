@@ -1,6 +1,7 @@
 use anyhow::Result;
 use config::File;
 use serde::Deserialize;
+use solana_pubkey::Pubkey;
 
 use crate::constraint::TransactionVariation;
 
@@ -22,6 +23,9 @@ pub struct Domain {
 
     /// The list of transaction types that the paymaster should sponsor.
     pub tx_variations: Vec<TransactionVariation>,
+
+    #[serde(default)]
+    pub tolls: Option<Vec<Tolls>>,
 }
 
 #[derive(Deserialize)]
@@ -30,7 +34,16 @@ pub struct Config {
     pub solana_url: String,
     pub listen_address: String,
     pub domains: Vec<Domain>,
+    #[serde(default)]
+    pub tolls: Vec<Tolls>,
 }
+
+#[derive(Deserialize, Clone)]
+pub struct Tolls {
+    pub mint: Pubkey,
+    pub amount: u64,
+}
+
 
 pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
 
