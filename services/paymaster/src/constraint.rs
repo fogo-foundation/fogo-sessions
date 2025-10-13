@@ -94,7 +94,6 @@ fn instruction_matches_programs(
     Ok(false)
 }
 
-
 fn check_tollbooth_instruction(
     transaction: &VersionedTransaction,
 ) -> Result<(), (StatusCode, String)> {
@@ -103,25 +102,39 @@ fn check_tollbooth_instruction(
     });
     match tollbooth_instructions.collect::<Vec<_>>()[..] {
         [tollbooth_instruction] => {
-
             #[derive(BorshDeserialize)]
             enum TollboothInstruction {
                 PayFee(u64),
             }
 
-            let tollbooth_instruction_data = TollboothInstruction::try_from_slice(&tollbooth_instruction.data).map_err(|_| (StatusCode::BAD_REQUEST, "Tollbooth instruction data is not valid".to_string()))?;
+            let tollbooth_instruction_data = TollboothInstruction::try_from_slice(
+                &tollbooth_instruction.data,
+            )
+            .map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    "Tollbooth instruction data is not valid".to_string(),
+                )
+            })?;
             let amount = match tollbooth_instruction_data {
                 TollboothInstruction::PayFee(amount) => amount,
             };
             if amount < 1000 {
-                return Err((StatusCode::BAD_REQUEST, "Tollbooth fee is less than the minimum fee".to_string()));
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "Tollbooth fee is less than the minimum fee".to_string(),
+                ));
             }
         }
-        _ => return Err((StatusCode::BAD_REQUEST, "Multiple tollbooth instructions found".to_string())),
+        _ => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Multiple tollbooth instructions found".to_string(),
+            ))
+        }
     }
     Ok(())
 }
-
 
 impl VariationOrderedInstructionConstraints {
     pub async fn validate_transaction(
@@ -134,7 +147,10 @@ impl VariationOrderedInstructionConstraints {
         let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
         check_tollbooth_instruction(transaction)?;
-        println!("how many instructions: {:?}", transaction.message.instructions().len());
+        println!(
+            "how many instructions: {:?}",
+            transaction.message.instructions().len()
+        );
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
@@ -146,8 +162,12 @@ impl VariationOrderedInstructionConstraints {
             let ignore_ix = instruction_matches_programs(
                 transaction,
                 instruction_index,
-                &[&solana_compute_budget_interface::id(), &TOLLBOOTH_PROGRAM_ID],
-            ).unwrap_or(false);
+                &[
+                    &solana_compute_budget_interface::id(),
+                    &TOLLBOOTH_PROGRAM_ID,
+                ],
+            )
+            .unwrap_or(false);
 
             if ignore_ix {
                 instruction_index += 1;
@@ -176,7 +196,29 @@ impl VariationOrderedInstructionConstraints {
             }
         }
 
-        if transaction.message.instructions().get(instruction_index..).map(|instructions| instructions.iter().enumerate().filter(|(index, _)| !instruction_matches_programs(transaction, *index + instruction_index, &[&solana_compute_budget_interface::id(), &TOLLBOOTH_PROGRAM_ID]).unwrap_or(true)).count()) != Some(0) {
+        if transaction
+            .message
+            .instructions()
+            .get(instruction_index..)
+            .map(|instructions| {
+                instructions
+                    .iter()
+                    .enumerate()
+                    .filter(|(index, _)| {
+                        !instruction_matches_programs(
+                            transaction,
+                            *index + instruction_index,
+                            &[
+                                &solana_compute_budget_interface::id(),
+                                &TOLLBOOTH_PROGRAM_ID,
+                            ],
+                        )
+                        .unwrap_or(true)
+                    })
+                    .count()
+            })
+            != Some(0)
+        {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
