@@ -194,6 +194,12 @@ export const getSessionAccount = async (
   sessionPublicKey: PublicKey,
 ) => {
   const result = await connection.getAccountInfo(sessionPublicKey, "confirmed");
+  const decoded = new BorshAccountsCoder(SessionManagerIdl).decode(
+    "Session",
+    result!.data,
+  );
+
+  console.log("decoded", decoded);
   return result === null
     ? undefined
     : sessionInfoSchema.parse(
@@ -348,12 +354,12 @@ const sessionInfoSchema = z
         V4: z.object({
           "0": z.union([
             z.object({
-              Revoked: z.unknown(),
+              Revoked: z.instanceof(BN),
             }),
             z.object({
               Active: z.object({
                 "0": z.object({
-                  domain_id: z.unknown(),
+                  domain_id: z.array(z.number()),
                   active_session_info: z.object({
                     authorized_programs: z.union([
                       z.object({
@@ -398,6 +404,9 @@ const sessionInfoSchema = z
     let activeSessionInfo;
     let minor: 1 | 2 | 3 | 4;
 
+    if ("V4" in session_info) {
+      console.log("session_info", session_info.V4["0"]);
+    }
     if ("V1" in session_info) {
       activeSessionInfo = session_info.V1["0"];
       minor = 1;
