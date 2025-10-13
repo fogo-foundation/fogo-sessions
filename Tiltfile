@@ -34,15 +34,19 @@ local_resource(
 
 local_resource(
     "setup-wrapped-sol-faucet",
-    """spl-token -u l wrap 100 --fee-payer ./tilt/keypairs/faucet.json ./tilt/keypairs/faucet.json &&
-    spl-token -u l transfer --owner ./tilt/keypairs/faucet.json --fund-recipient --allow-unfunded-recipient So11111111111111111111111111111111111111112 1 8umeomfEvLNNbY95M2c1Psu7s5JTUCQL8vKp16Lek4Pw &&
-    spl-token -u l transfer --owner ./tilt/keypairs/faucet.json --fund-recipient --allow-unfunded-recipient So11111111111111111111111111111111111111112 1 3kzAHeiucNConBwKQVHyLcG3soaMzSZkvs4y14fmMgKL""",
+    """spl-token -u l wrap 100 --fee-payer  ./tilt/keypairs/faucet.json""",
     resource_deps=["svm-localnet"],
 )
 
 local_resource(
     "setup-sponsor",
     """solana -u l airdrop 1 5SKUh8pPXYCa5GroGKgniL1Gjt7XHKQkkjK94nVXfSkF""",
+    resource_deps=["svm-localnet"],
+)
+
+local_resource(
+    "setup-toll-recipient",
+    "spl-token -u l create-account --fee-payer ./tilt/keypairs/faucet.json --owner 8umeomfEvLNNbY95M2c1Psu7s5JTUCQL8vKp16Lek4Pw So11111111111111111111111111111111111111112",
     resource_deps=["svm-localnet"],
 )
 
@@ -88,5 +92,6 @@ local_resource(
 local_resource(
     "Demo Webapp",
     serve_cmd="pnpm turbo --filter @fogo/sessions-demo... start:dev",
-    resource_deps=["setup-wrapped-sol-faucet", "setup-sponsor", "setup-address-lookup-table", "initialize-programs", "paymaster"],
+    resource_deps=["setup-wrapped-sol-faucet", "setup-sponsor", "setup-address-lookup-table", "setup-toll-recipient", "initialize-programs", "paymaster"],
 )
+./tilt/keypairs/faucet.json
