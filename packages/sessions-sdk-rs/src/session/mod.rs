@@ -1,9 +1,9 @@
 use borsh::BorshSchema;
 use solana_program::hash::HASH_BYTES;
-use solana_program::{account_info::AccountInfo, hash::Hash};
 use solana_program::pubkey::Pubkey;
 use solana_program::sysvar::clock::Clock;
 use solana_program::sysvar::Sysvar;
+use solana_program::{account_info::AccountInfo, hash::Hash};
 use std::collections::HashMap;
 use std::fmt::Debug;
 
@@ -64,7 +64,7 @@ mod session_info {
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum SessionInfo {
         Invalid, // This is a hack for borsh to assign a discriminator of 1 to V1
-        V1(ActiveSessionInfo<AuthorizedTokens, ()>),
+        V1(ActiveSessionInfo<AuthorizedTokens>),
         V2(V2),
         V3(V3),
         V4(V4),
@@ -80,7 +80,7 @@ mod v2 {
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum V2 {
         Revoked(UnixTimestamp),
-        Active(ActiveSessionInfo<AuthorizedTokens, ()>),
+        Active(ActiveSessionInfo<AuthorizedTokens>),
     }
 }
 
@@ -94,7 +94,7 @@ mod v3 {
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum V3 {
         Revoked(RevokedSessionInfo),
-        Active(ActiveSessionInfo<AuthorizedTokensWithMints, ()>),
+        Active(ActiveSessionInfo<AuthorizedTokensWithMints>),
     }
 }
 
@@ -106,7 +106,7 @@ mod v4 {
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum V4 {
         Revoked(RevokedSessionInfo),
-        Active(ActiveSessionInfo<AuthorizedTokensWithMints, DomainId>),
+        Active(ActiveSessionInfoWithDomainId),
     }
 }
 
@@ -123,11 +123,9 @@ pub struct RevokedSessionInfo {
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub struct ActiveSessionInfo<T: IsAuthorizedTokens, U: IsDomainId> {
+pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
     /// The user who started this session
     pub user: Pubkey,
-    /// The domain ID of the session
-    pub domain_id: U,
     /// The expiration time of the session
     pub expiration: UnixTimestamp,
     /// Programs the session key is allowed to interact with as a (program_id, signer_pda) pair. We store the signer PDAs so we don't have to recalculate them
@@ -138,16 +136,25 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens, U: IsDomainId> {
     pub extra: Extra,
 }
 
-pub trait IsDomainId: Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema {
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+pub struct ActiveSessionInfoWithDomainId {
+    pub domain_id: DomainId,
+    pub active_session_info: ActiveSessionInfo<AuthorizedTokensWithMints>,
 }
 
-impl IsDomainId for () {
+impl AsRef<ActiveSessionInfo<AuthorizedTokensWithMints>> for ActiveSessionInfoWithDomainId {
+    fn as_ref(&self) -> &ActiveSessionInfo<AuthorizedTokensWithMints> {
+        &self.active_session_info
+    }
 }
+
+pub trait IsDomainId: Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema {}
+
+impl IsDomainId for () {}
 
 pub type DomainId = [u8; HASH_BYTES];
 
-impl IsDomainId for DomainId {
-}
+impl IsDomainId for DomainId {}
 
 pub trait IsAuthorizedTokens:
     Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema
@@ -272,6 +279,18 @@ impl Session {
         Ok(result)
     }
 
+    fn domain_id(&self) -> Result<&DomainId, SessionError> {
+        match &self.session_info {
+            SessionInfo::Invalid | SessionInfo::V1(_) | SessionInfo::V2(_) | SessionInfo::V3(_) => {
+                Err(SessionError::InvalidAccountVersion)
+            }
+            SessionInfo::V4(session) => match session {
+                V4::Revoked(_) => Err(SessionError::Revoked),
+                V4::Active(session) => Ok(&session.domain_id),
+            },
+        }
+    }
+
     fn expiration(&self) -> Result<UnixTimestamp, SessionError> {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(session.expiration),
@@ -285,7 +304,7 @@ impl Session {
             },
             SessionInfo::V4(session) => match session {
                 V4::Revoked(session) => Ok(session.expiration),
-                V4::Active(session) => Ok(session.expiration),
+                V4::Active(session) => Ok(session.as_ref().expiration),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
@@ -304,7 +323,7 @@ impl Session {
             },
             SessionInfo::V4(session) => match session {
                 V4::Revoked(_) => Err(SessionError::Revoked),
-                V4::Active(session) => Ok(&session.authorized_programs),
+                V4::Active(session) => Ok(&session.as_ref().authorized_programs),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
@@ -322,8 +341,8 @@ impl Session {
                 V3::Active(session) => Ok(&session.user),
             },
             SessionInfo::V4(session) => match session {
-                V4::Revoked(_) => Err(SessionError::Revoked),
-                V4::Active(session) => Ok(&session.user),
+                V4::Revoked(session) => Ok(&session.user),
+                V4::Active(session) => Ok(&session.as_ref().user),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
@@ -338,6 +357,10 @@ impl Session {
             SessionInfo::V3(session) => match session {
                 V3::Revoked(_) => Err(SessionError::Revoked),
                 V3::Active(session) => Ok(&session.extra),
+            },
+            SessionInfo::V4(session) => match session {
+                V4::Revoked(_) => Err(SessionError::Revoked),
+                V4::Active(session) => Ok(&session.as_ref().extra),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
@@ -379,10 +402,11 @@ impl Session {
         match &self.session_info {
             SessionInfo::V1(_)
             | SessionInfo::V2(V2::Active(_))
-            | SessionInfo::V3(V3::Active(_)) => Ok(()),
-            SessionInfo::V2(V2::Revoked(_)) | SessionInfo::V3(V3::Revoked(_)) => {
-                Err(SessionError::Revoked)
-            }
+            | SessionInfo::V3(V3::Active(_))
+            | SessionInfo::V4(V4::Active(_)) => Ok(()),
+            SessionInfo::V2(V2::Revoked(_))
+            | SessionInfo::V3(V3::Revoked(_))
+            | SessionInfo::V4(V4::Revoked(_)) => Err(SessionError::Revoked),
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
     }
@@ -393,6 +417,13 @@ impl Session {
             .map_err(|_| SessionError::ClockError)?
             .unix_timestamp
             <= self.expiration()?)
+    }
+
+    pub fn get_domain_id_checked(&self) -> Result<&DomainId, SessionError> {
+        self.check_version()?;
+        self.check_is_unrevoked()?;
+        self.check_is_live()?;
+        Ok(self.domain_id()?)
     }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session

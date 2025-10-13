@@ -11,7 +11,7 @@ use anchor_spl::token::Token;
 use domain_registry::{domain::Domain, state::DomainRecordInner};
 use fogo_sessions_sdk::session::{
     ActiveSessionInfo, AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens,
-    AuthorizedTokensWithMints, RevokedSessionInfo, Session, SessionInfo, V2, V3,
+    AuthorizedTokensWithMints, RevokedSessionInfo, Session, SessionInfo, V2, V3, V4,
 };
 use solana_intents::Intent;
 use solana_intents::Version;
@@ -134,6 +134,18 @@ pub mod session_manager {
                     }));
             }
             SessionInfo::V3(V3::Revoked(_)) => {} // Idempotent
+            SessionInfo::V4(V4::Active(active_session_info)) => {
+                ctx.accounts.session.session_info =
+                    SessionInfo::V4(V4::Revoked(RevokedSessionInfo {
+                        user: active_session_info.as_ref().user,
+                        expiration: active_session_info.as_ref().expiration,
+                        authorized_tokens_with_mints: active_session_info
+                            .as_ref()
+                            .authorized_tokens
+                            .clone(),
+                    }));
+            }
+            SessionInfo::V4(V4::Revoked(_)) => {} // Idempotent
         }
         ctx.accounts.reallocate_and_refund_rent()?;
         Ok(())

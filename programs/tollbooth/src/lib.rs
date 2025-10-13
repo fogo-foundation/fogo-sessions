@@ -1,15 +1,17 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 
-use crate::error::TollboothError;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke_signed;
-use anchor_spl::token::{Token, TokenAccount};
+use anchor_spl::associated_token::get_associated_token_address;
+use anchor_spl::token::{Mint, Token, TokenAccount};
 use fogo_sessions_sdk::{
     session::Session, token::instruction::transfer, token::PROGRAM_SIGNER_SEED,
 };
 mod error;
 
 declare_id!("too1LGRdFnP58TP5P4cmRsZT5BDEM38WdQxnFgD89hC");
+
+const TOLL_RECIPIENT_SEED: &[u8] = b"toll_recipient";
 
 #[program]
 pub mod tollbooth {
@@ -20,15 +22,20 @@ pub mod tollbooth {
         ctx: Context<'_, '_, '_, 'info, PayFee<'info>>,
         amount: u64,
     ) -> Result<()> {
-        require!(
-            ctx.accounts
-                .session
-                .get_fee_collector_owner_checked()?
-                .map(|fee_collector_owner| {
-                    fee_collector_owner == ctx.accounts.destination.owner
-                })
-                .unwrap_or(false),
-            TollboothError::InvalidDestination
+        require_eq!(
+            get_associated_token_address(
+                &Pubkey::find_program_address(
+                    &[
+                        TOLL_RECIPIENT_SEED,
+                        ctx.accounts.session.get_domain_id_checked()?.as_ref(),
+                        &[0],
+                    ],
+                    &crate::ID
+                )
+                .0,
+                &ctx.accounts.mint.key()
+            ),
+            ctx.accounts.destination.key(),
         );
         let instruction = transfer(
             ctx.accounts.token_program.key,
@@ -54,9 +61,10 @@ pub struct PayFee<'info> {
     /// CHECK: this is just a PDA signer for token program CPIs
     #[account(seeds = [PROGRAM_SIGNER_SEED], bump)]
     pub program_signer: AccountInfo<'info>,
-    #[account(mut)]
+    #[account(mut, token::mint = mint)]
     pub source: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(mut, token::mint = mint)]
     pub destination: Account<'info, TokenAccount>,
+    pub mint: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
 }
