@@ -80,7 +80,6 @@ pub struct PayToll<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
