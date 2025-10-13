@@ -34,7 +34,7 @@ local_resource(
 
 local_resource(
     "setup-wrapped-sol-faucet",
-    """spl-token -u l wrap 100 --fee-payer  ./tilt/keypairs/faucet.json""",
+    """spl-token -u l wrap 100 --fee-payer ./tilt/keypairs/faucet.json ./tilt/keypairs/faucet.json""",
     resource_deps=["svm-localnet"],
 )
 
