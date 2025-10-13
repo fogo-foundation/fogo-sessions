@@ -112,7 +112,7 @@ pub mod session_manager {
                 sponsor: ctx.accounts.sponsor.key(),
                 major,
                 session_info: SessionInfo::V4(V4::Active(ActiveSessionInfoWithDomainId {
-                    domain_id: domain.get_domain_id().into(),
+                    domain_id: domain.get_domain_id(),
                     active_session_info: ActiveSessionInfo {
                         user: signer,
                         authorized_programs: AuthorizedPrograms::Specific(program_domains),
