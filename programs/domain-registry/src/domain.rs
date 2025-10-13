@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::hash::hashv;
+use anchor_lang::solana_program::hash::{hashv, HASH_BYTES};
 use anchor_lang::solana_program::pubkey::Pubkey;
 
 const DOMAIN_RECORD_SEED: &[u8] = b"domain-record";
@@ -12,8 +12,15 @@ impl Domain {
         Ok(Self(domain.to_string()))
     }
 
+    pub fn get_domain_id(&self) -> [u8; HASH_BYTES] {
+        hashv(&[self.0.as_bytes()])
+            .as_ref()
+            .try_into()
+            .expect("The output of hashv is 32 bytes")
+    }
+
     pub(crate) fn get_seeds(&self) -> Vec<Vec<u8>> {
-        let hash = hashv(&[self.0.as_bytes()]);
+        let hash = self.get_domain_id();
         let seeds = [DOMAIN_RECORD_SEED, hash.as_ref()];
         let bump = Pubkey::find_program_address(&seeds, &crate::ID).1;
         let mut result = vec![];
