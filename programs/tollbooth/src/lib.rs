@@ -7,10 +7,9 @@ use anchor_spl::token::{Token, TokenAccount};
 use fogo_sessions_sdk::{
     session::Session, token::instruction::transfer, token::PROGRAM_SIGNER_SEED,
 };
-use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 mod error;
 
-const ID: Pubkey = TOLLBOOTH_PROGRAM_ID;
+declare_id!("too1LGRdFnP58TP5P4cmRsZT5BDEM38WdQxnFgD89hC");
 
 #[program]
 pub mod tollbooth {

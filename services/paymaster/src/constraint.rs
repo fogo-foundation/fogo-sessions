@@ -74,16 +74,17 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
-fn instruction_matches_program(
+fn instruction_matches_programs(
     transaction: &VersionedTransaction,
     instruction_index: usize,
-    program_to_match: &Pubkey,
+    program_to_match: &[&Pubkey],
 ) -> anyhow::Result<bool> {
     let instruction = transaction.message.instructions().get(instruction_index);
     if let Some(instruction) = instruction {
         let static_accounts = transaction.message.static_account_keys();
         let program_id = instruction.program_id(static_accounts);
-        if program_id == program_to_match {
+        println!("program_id: {:?}", program_id);
+        if program_to_match.contains(&program_id) {
             return Ok(true);
         }
     } else {
@@ -112,7 +113,7 @@ fn check_tollbooth_instruction(
             let amount = match tollbooth_instruction_data {
                 TollboothInstruction::PayFee(amount) => amount,
             };
-            if amount <= 1000 {
+            if amount < 1000 {
                 return Err((StatusCode::BAD_REQUEST, "Tollbooth fee is less than the minimum fee".to_string()));
             }
         }
@@ -133,6 +134,7 @@ impl VariationOrderedInstructionConstraints {
         let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
         check_tollbooth_instruction(transaction)?;
+        println!("how many instructions: {:?}", transaction.message.instructions().len());
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
@@ -141,14 +143,13 @@ impl VariationOrderedInstructionConstraints {
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         while constraint_index < self.instructions.len() {
-            let is_compute_budget_ix = instruction_matches_program(
+            let ignore_ix = instruction_matches_programs(
                 transaction,
                 instruction_index,
-                &solana_compute_budget_interface::id(),
-            )
-            .unwrap_or(false);
+                &[&solana_compute_budget_interface::id(), &TOLLBOOTH_PROGRAM_ID],
+            ).unwrap_or(false);
 
-            if is_compute_budget_ix {
+            if ignore_ix {
                 instruction_index += 1;
                 continue;
             }
@@ -175,7 +176,7 @@ impl VariationOrderedInstructionConstraints {
             }
         }
 
-        if instruction_index != transaction.message.instructions().len() {
+        if transaction.message.instructions().get(instruction_index..).map(|instructions| instructions.iter().enumerate().filter(|(index, _)| !instruction_matches_programs(transaction, *index + instruction_index, &[&solana_compute_budget_interface::id(), &TOLLBOOTH_PROGRAM_ID]).unwrap_or(true)).count()) != Some(0) {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(

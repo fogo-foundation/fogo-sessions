@@ -1,5 +1,5 @@
 import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
-import { ExampleProgram, TollboothProgram } from "@fogo/sessions-idls";
+import { ExampleProgram } from "@fogo/sessions-idls";
 import { TransactionResultType } from "@fogo/sessions-sdk";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import {
@@ -34,16 +34,6 @@ export const useTrade = (
         sessionState.payer,
         mint,
       ),
-      await new TollboothProgram(
-        new AnchorProvider(sessionState.connection, {} as Wallet, {}),
-      ).methods
-        .payFee(new BN(1000))
-        .accountsPartial({
-          session: sessionState.sessionPublicKey,
-          source: userTokenAccount,
-          destination: sinkAta,
-        })
-        .instruction(),
       await new ExampleProgram(
         new AnchorProvider(sessionState.connection, {} as Wallet, {}),
       ).methods

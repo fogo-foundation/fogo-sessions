@@ -378,7 +378,7 @@ impl Session {
         self.check_version()?;
         self.check_is_unrevoked()?;
         self.check_is_live()?;
-        Ok(self.fee_collector_owner()?)
+        Ok(Some(self.sponsor))
     }
 
     /// Returns the value of one of the session's extra fields with the given key, if it exists
