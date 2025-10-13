@@ -149,13 +149,7 @@ impl AsRef<ActiveSessionInfo<AuthorizedTokensWithMints>> for ActiveSessionInfoWi
     }
 }
 
-pub trait IsDomainId: Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema {}
-
-impl IsDomainId for () {}
-
 pub type DomainId = [u8; HASH_BYTES];
-
-impl IsDomainId for DomainId {}
 
 pub trait IsAuthorizedTokens:
     Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema
