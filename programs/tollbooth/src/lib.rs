@@ -31,7 +31,7 @@ pub mod tollbooth {
             TollboothError::InvalidDestination
         );
         let instruction = transfer(
-            &ctx.accounts.token_program.key,
+            ctx.accounts.token_program.key,
             &ctx.accounts.source.key(),
             &ctx.accounts.destination.key(),
             &ctx.accounts.session.key(),

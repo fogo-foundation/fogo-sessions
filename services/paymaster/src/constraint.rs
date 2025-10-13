@@ -116,9 +116,7 @@ fn check_tollbooth_instruction(
                     "Tollbooth instruction data is not valid".to_string(),
                 )
             })?;
-            let amount = match tollbooth_instruction_data {
-                TollboothInstruction::PayFee(amount) => amount,
-            };
+            let TollboothInstruction::PayFee(amount) = tollbooth_instruction_data;
             if amount < 1000 {
                 return Err((
                     StatusCode::BAD_REQUEST,
