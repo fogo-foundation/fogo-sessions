@@ -15,6 +15,8 @@ use fogo_sessions_sdk::session::{
 };
 use solana_intents::Intent;
 use solana_intents::Version;
+use fogo_sessions_sdk::session::ActiveSessionInfoWithDomainId;
+
 
 declare_id!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
@@ -28,8 +30,6 @@ const SESSION_SETTER_SEED: &[u8] = b"session_setter";
 
 #[program]
 pub mod session_manager {
-    use fogo_sessions_sdk::session::ActiveSessionInfoWithDomainId;
-
     use super::*;
 
     #[instruction(discriminator = [0])]
