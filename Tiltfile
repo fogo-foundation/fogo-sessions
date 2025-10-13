@@ -94,4 +94,3 @@ local_resource(
     serve_cmd="pnpm turbo --filter @fogo/sessions-demo... start:dev",
     resource_deps=["setup-wrapped-sol-faucet", "setup-sponsor", "setup-address-lookup-table", "setup-toll-recipient", "initialize-programs", "paymaster"],
 )
-./tilt/keypairs/faucet.json
