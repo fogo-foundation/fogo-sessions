@@ -2,6 +2,8 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum TollboothError {
-    #[msg("The destination fee collector account doesn't match the fee collector account in the session")]
+    #[msg("The source token account is not the associated token account of the user of the session")]
+    InvalidSource,
+    #[msg("The destination token account is not the associated token account of the toll recipient for the domain")]
     InvalidDestination,
 }

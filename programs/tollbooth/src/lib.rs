@@ -7,6 +7,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use fogo_sessions_sdk::{
     session::Session, token::instruction::transfer, token::PROGRAM_SIGNER_SEED,
 };
+use crate::error::TollboothError;
 mod error;
 
 declare_id!("too1LGRdFnP58TP5P4cmRsZT5BDEM38WdQxnFgD89hC");
@@ -23,6 +24,12 @@ pub mod tollbooth {
         amount: u64,
     ) -> Result<()> {
         require_eq!(
+            get_associated_token_address(&ctx.accounts.session.get_user_checked(&crate::ID)?, &ctx.accounts.mint.key()),
+            ctx.accounts.source.key(),
+            TollboothError::InvalidSource
+        );
+        
+        require_eq!(
             get_associated_token_address(
                 &Pubkey::find_program_address(
                     &[
@@ -35,7 +42,9 @@ pub mod tollbooth {
                 &ctx.accounts.mint.key()
             ),
             ctx.accounts.destination.key(),
+            TollboothError::InvalidDestination
         );
+
         let instruction = transfer(
             ctx.accounts.token_program.key,
             &ctx.accounts.source.key(),
