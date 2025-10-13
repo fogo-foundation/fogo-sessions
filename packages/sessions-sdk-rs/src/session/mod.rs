@@ -138,6 +138,7 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct ActiveSessionInfoWithDomainId {
+    /// The sha256 hash of the domain name for this session
     pub domain_id: DomainId,
     pub active_session_info: ActiveSessionInfo<AuthorizedTokensWithMints>,
 }

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::hash::hashv;
+use anchor_lang::solana_program::hash::{hashv, HASH_BYTES};
 use anchor_lang::solana_program::pubkey::Pubkey;
 
 const DOMAIN_RECORD_SEED: &[u8] = b"domain-record";
@@ -12,7 +12,7 @@ impl Domain {
         Ok(Self(domain.to_string()))
     }
 
-    pub fn get_domain_id(&self) -> [u8; 32] {
+    pub fn get_domain_id(&self) -> [u8; HASH_BYTES] {
         hashv(&[self.0.as_bytes()]).as_ref().try_into().expect("The output of hashv is 32 bytes")
     }
 
