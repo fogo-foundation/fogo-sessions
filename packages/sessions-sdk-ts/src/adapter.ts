@@ -1,6 +1,5 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
-import BN from "bn.js";
 import { ChainIdProgram, TollboothProgram } from "@fogo/sessions-idls";
 import {
   fromLegacyPublicKey,
@@ -35,6 +34,7 @@ import {
   TransactionInstruction,
   VersionedTransaction,
 } from "@solana/web3.js";
+import BN from "bn.js";
 import { z } from "zod";
 
 // eslint-disable-next-line unicorn/no-typeof-undefined
@@ -85,16 +85,16 @@ export const createSolanaWalletAdapter = async (
     addressLookupTableAddress?: string | undefined;
     domain?: string | undefined;
   } & (
-      | {
+    | {
         paymaster?: string | URL | undefined;
       }
-      | {
+    | {
         sendToPaymaster: (
           transaction: Transaction,
         ) => Promise<TransactionResult>;
         sponsor: PublicKey;
       }
-    ),
+  ),
 ): Promise<SessionAdapter> => {
   const addressLookupTables = await getAddressLookupTables(
     options.connection,
@@ -118,7 +118,7 @@ export const createSolanaWalletAdapter = async (
           sponsor,
           instructions,
           addressLookupTables,
-          await buildTollboothInstructions(options, sessionKey, sponsor)
+          await buildTollboothInstructions(options, sessionKey, sponsor),
         ),
         domain,
       );
@@ -126,20 +126,38 @@ export const createSolanaWalletAdapter = async (
   };
 };
 
-const buildTollboothInstructions = async (options: Parameters<typeof createSolanaWalletAdapter>[0], sessionKey: CryptoKeyPair | undefined, sponsor: PublicKey) => {
+const buildTollboothInstructions = async (
+  options: Parameters<typeof createSolanaWalletAdapter>[0],
+  sessionKey: CryptoKeyPair | undefined,
+  sponsor: PublicKey,
+) => {
   if (sessionKey && options.walletPublicKey) {
-    const sessionKeyPublicKey = new PublicKey(await getAddressFromPublicKey(sessionKey.publicKey))
-    const userTokenAccount = getAssociatedTokenAddressSync(NATIVE_MINT, options.walletPublicKey)
-    const destination = getAssociatedTokenAddressSync(NATIVE_MINT, sponsor)
+    const sessionKeyPublicKey = new PublicKey(
+      await getAddressFromPublicKey(sessionKey.publicKey),
+    );
+    const userTokenAccount = getAssociatedTokenAddressSync(
+      NATIVE_MINT,
+      options.walletPublicKey,
+    );
+    const destination = getAssociatedTokenAddressSync(NATIVE_MINT, sponsor);
     const instructions = [
       await new TollboothProgram(
-        new AnchorProvider({} as Connection, { publicKey: options.walletPublicKey } as Wallet),
-      ).methods.payFee(new BN(1000)).accounts({
-        session: sessionKeyPublicKey,
-        source: userTokenAccount,
-        destination: destination
-      }).instruction()];
-    return instructions.map((instruction) => fromLegacyTransactionInstruction(instruction));
+        new AnchorProvider(
+          {} as Connection,
+          { publicKey: options.walletPublicKey } as Wallet,
+        ),
+      ).methods
+        .payFee(new BN(1000))
+        .accounts({
+          session: sessionKeyPublicKey,
+          source: userTokenAccount,
+          destination: destination,
+        })
+        .instruction(),
+    ];
+    return instructions.map((instruction) =>
+      fromLegacyTransactionInstruction(instruction),
+    );
   } else {
     return [];
   }
@@ -179,10 +197,7 @@ const buildTransaction = async (
             ),
             tx,
           ),
-        (tx) => appendTransactionMessageInstructions(
-          tollboothInstructions,
-          tx,
-        ),
+        (tx) => appendTransactionMessageInstructions(tollboothInstructions, tx),
         (tx) =>
           compressTransactionMessageUsingAddressLookupTables(
             tx,
