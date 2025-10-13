@@ -390,7 +390,7 @@ pub async fn run_server(
         solana_url,
         domains,
         listen_address,
-        tolls
+        tolls,
     }: Config,
 ) {
     let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");

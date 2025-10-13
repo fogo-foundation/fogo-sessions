@@ -44,7 +44,6 @@ pub struct Tolls {
     pub amount: u64,
 }
 
-
 pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
 
 pub fn load_config(config_path: &str) -> Result<Config> {
