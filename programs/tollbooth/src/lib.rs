@@ -79,3 +79,14 @@ pub struct PayToll<'info> {
     pub mint: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_program_id_matches_sdk() {
+        assert_eq!(ID, fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID);
+    }
+}
