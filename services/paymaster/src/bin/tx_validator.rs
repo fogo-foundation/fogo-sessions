@@ -24,6 +24,7 @@ use fogo_paymaster::{
     api::ChainIndex,
     config::{load_config, Domain},
     constraint::{ContextualDomainKeys, TransactionVariation},
+    rpc::resolve_rpc_urls,
 };
 
 #[derive(Parser)]
@@ -63,11 +64,11 @@ enum Commands {
 
         /// RPC HTTP URL
         #[arg(long)]
-        rpc_url_http: String,
+        rpc_url_http: Option<String>,
 
         /// RPC WebSocket URL
         #[arg(long)]
-        rpc_url_ws: String,
+        rpc_url_ws: Option<String>,
     },
 }
 
@@ -90,6 +91,8 @@ async fn main() -> Result<()> {
         } => {
             let config = load_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
+            let (rpc_url_http, rpc_url_ws) =
+                resolve_rpc_urls(rpc_url_http, rpc_url_ws).context("Failed to resolve RPC URLs")?;
             let chain_index = ChainIndex {
                 rpc: RpcClient::new(rpc_url_http),
                 rpc_sub: PubsubClient::new(&rpc_url_ws)

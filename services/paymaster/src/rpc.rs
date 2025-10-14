@@ -13,6 +13,26 @@ use solana_transaction_error::TransactionError;
 use std::time::Duration;
 use tokio::time::timeout;
 
+pub fn resolve_rpc_urls(
+    rpc_url_http: Option<String>,
+    rpc_url_ws: Option<String>,
+) -> anyhow::Result<(String, String)> {
+    match (rpc_url_http, rpc_url_ws) {
+        (Some(http), Some(ws)) => Ok((http, ws)),
+        (Some(http), None) => {
+            let ws = http.replace("http", "ws");
+            Ok((http, ws))
+        }
+        (None, Some(ws)) => {
+            let http = ws.replace("ws", "http");
+            Ok((http, ws))
+        }
+        (None, None) => Err(anyhow::anyhow!(
+            "At least one of rpc-url-http or rpc-url-ws must be provided"
+        )),
+    }
+}
+
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(tag = "type")]
 pub enum ConfirmationResult {

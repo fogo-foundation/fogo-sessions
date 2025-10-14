@@ -1,4 +1,4 @@
-use crate::config::load_config;
+use crate::{config::load_config, rpc::resolve_rpc_urls};
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
@@ -21,10 +21,10 @@ struct Cli {
     mnemonic_file: String,
 
     #[clap(long)]
-    rpc_url_http: String,
+    rpc_url_http: Option<String>,
 
     #[clap(long)]
-    rpc_url_ws: String,
+    rpc_url_ws: Option<String>,
 
     #[clap(long, default_value = "0.0.0.0:4000")]
     listen_address: String,
@@ -75,10 +75,12 @@ async fn main() -> anyhow::Result<()> {
         .with(telemetry)
         .init();
 
+    let (rpc_url_http, rpc_url_ws) = resolve_rpc_urls(cli.rpc_url_http, cli.rpc_url_ws)?;
+
     api::run_server(
         cli.mnemonic_file,
-        cli.rpc_url_http,
-        cli.rpc_url_ws,
+        rpc_url_http,
+        rpc_url_ws,
         cli.listen_address,
         domains,
     )
