@@ -207,15 +207,12 @@ pub async fn fetch_transaction_cost_details(
             }
             Err(e) => {
                 last_error = Some(e);
-                if attempt < retry_cfg.max_tries {
-                    tracing::debug!("Failed to fetch transaction (attempt {}): {:?}", attempt + 1, last_error);
-                }
             }
         }
     }
 
     Err((
         StatusCode::BAD_GATEWAY,
-        format!("Failed to fetch transaction from RPC after {} attempts: {:?}", retry_cfg.max_tries + 1, last_error),
+        format!("Failed to fetch transaction from RPC after {} attempts: {:?}", retry_cfg.max_tries, last_error),
     ).into())
 }
