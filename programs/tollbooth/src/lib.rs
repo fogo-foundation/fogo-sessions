@@ -37,7 +37,7 @@ pub mod tollbooth {
                 &Pubkey::find_program_address(
                     &[
                         TOLL_RECIPIENT_SEED,
-                        ctx.accounts.session.get_domain_id_checked()?.as_ref(),
+                        ctx.accounts.session.get_domain_hash_checked()?.as_ref(),
                     ],
                     &crate::ID
                 )

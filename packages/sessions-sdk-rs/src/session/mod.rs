@@ -139,7 +139,7 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct ActiveSessionInfoWithDomainId {
     /// The sha256 hash of the domain name for this session
-    pub domain_id: DomainId,
+    pub domain_hash: DomainId,
     pub active_session_info: ActiveSessionInfo<AuthorizedTokensWithMints>,
 }
 
@@ -274,14 +274,14 @@ impl Session {
         Ok(result)
     }
 
-    fn domain_id(&self) -> Result<&DomainId, SessionError> {
+    fn domain_hash(&self) -> Result<&DomainId, SessionError> {
         match &self.session_info {
             SessionInfo::Invalid | SessionInfo::V1(_) | SessionInfo::V2(_) | SessionInfo::V3(_) => {
                 Err(SessionError::InvalidAccountVersion)
             }
             SessionInfo::V4(session) => match session {
                 V4::Revoked(_) => Err(SessionError::Revoked),
-                V4::Active(session) => Ok(&session.domain_id),
+                V4::Active(session) => Ok(&session.domain_hash),
             },
         }
     }
@@ -414,11 +414,11 @@ impl Session {
             <= self.expiration()?)
     }
 
-    pub fn get_domain_id_checked(&self) -> Result<&DomainId, SessionError> {
+    pub fn get_domain_hash_checked(&self) -> Result<&DomainId, SessionError> {
         self.check_version()?;
         self.check_is_unrevoked()?;
         self.check_is_live()?;
-        self.domain_id()
+        self.domain_hash()
     }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session

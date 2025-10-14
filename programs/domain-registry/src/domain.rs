@@ -12,7 +12,7 @@ impl Domain {
         Ok(Self(domain.to_string()))
     }
 
-    pub fn get_domain_id(&self) -> [u8; HASH_BYTES] {
+    pub fn get_domain_hash(&self) -> [u8; HASH_BYTES] {
         hashv(&[self.0.as_bytes()])
             .as_ref()
             .try_into()
@@ -20,7 +20,7 @@ impl Domain {
     }
 
     pub(crate) fn get_seeds(&self) -> Vec<Vec<u8>> {
-        let hash = self.get_domain_id();
+        let hash = self.get_domain_hash();
         let seeds = [DOMAIN_RECORD_SEED, hash.as_ref()];
         let bump = Pubkey::find_program_address(&seeds, &crate::ID).1;
         let mut result = vec![];
