@@ -358,19 +358,18 @@ async fn sponsor_and_send_handler(
     // Spawn async task to fetch actual transaction costs from RPC
     // This happens in the background to avoid blocking the response to the client
     // Only fetch if the transaction was actually sent to chain (not rejected in preflight)
-    let signature_to_check = match &confirmation_result {
-        ConfirmationResult::Success { signature } => Some(signature.clone()),
-        ConfirmationResult::Failed { signature, sent_to_chain, .. } => {
-            if *sent_to_chain {
-                Some(signature.clone())
-            } else {
-                None
-            }
-        }
+    let should_fetch_costs = match &confirmation_result {
+        ConfirmationResult::Success { .. } => true,
+        ConfirmationResult::Failed { sent_to_chain, .. } => *sent_to_chain,
     };
 
-    if let Some(sig_str) = signature_to_check {
-        if let Ok(signature) = sig_str.parse::<Signature>() {
+    if should_fetch_costs {
+        let signature_str = match &confirmation_result {
+            ConfirmationResult::Success { signature } => signature,
+            ConfirmationResult::Failed { signature, .. } => signature,
+        };
+
+        if let Ok(signature) = signature_str.parse::<Signature>() {
             let rpc = Arc::clone(&state.chain_index.rpc);
             let domain_for_metrics = domain.clone();
             let variation_for_metrics = matched_variation_name.clone();
