@@ -10,7 +10,7 @@ use fogo_sessions_sdk::{
 };
 mod error;
 
-declare_id!("too1LGRdFnP58TP5P4cmRsZT5BDEM38WdQxnFgD89hC");
+declare_id!("toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp");
 
 const TOLL_RECIPIENT_SEED: &[u8] = b"toll_recipient";
 
