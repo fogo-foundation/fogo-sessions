@@ -406,6 +406,13 @@ impl Session {
         }
     }
 
+    fn check_is_live_and_unrevoked(&self) -> Result<(), SessionError> {
+        self.check_version()?;
+        self.check_is_unrevoked()?;
+        self.check_is_live()?;
+        Ok(())
+    }
+
     /// Returns whether the session is live. Revoked sessions are considered live until their expiration time.
     pub fn is_live(&self) -> Result<bool, SessionError> {
         Ok(Clock::get()
@@ -415,23 +422,20 @@ impl Session {
     }
 
     pub fn get_domain_hash_checked(&self) -> Result<&DomainId, SessionError> {
-        self.check_version()?;
-        self.check_is_unrevoked()?;
-        self.check_is_live()?;
+        self.check_is_live_and_unrevoked()?;
         self.domain_hash()
     }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
     pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
-        self.check_version()?;
-        self.check_is_unrevoked()?;
-        self.check_is_live()?;
+        self.check_is_live_and_unrevoked()?;
         self.check_authorized_program(program_id)?;
         Ok(*self.user()?)
     }
 
     /// Returns the value of one of the session's extra fields with the given key, if it exists
     pub fn get_extra(&self, key: &str) -> Result<Option<&str>, SessionError> {
+        self.check_is_live_and_unrevoked()?;
         Ok(self.extra()?.get(key))
     }
 }
