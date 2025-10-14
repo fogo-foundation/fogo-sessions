@@ -60,6 +60,14 @@ enum Commands {
         /// RPC rate limit (per second)
         #[arg(long, default_value_t = 10)]
         rpc_quota_per_second: u32,
+
+        /// RPC HTTP URL
+        #[arg(long)]
+        rpc_url_http: String,
+
+        /// RPC WebSocket URL
+        #[arg(long)]
+        rpc_url_ws: String,
     },
 }
 
@@ -77,13 +85,14 @@ async fn main() -> Result<()> {
             transaction,
             recent_sponsor_txs,
             rpc_quota_per_second,
+            rpc_url_http,
+            rpc_url_ws,
         } => {
             let config = load_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
-            let solana_url_http = config.solana_url_http.clone();
             let chain_index = ChainIndex {
-                rpc: RpcClient::new(solana_url_http),
-                rpc_sub: PubsubClient::new(&config.solana_url_ws)
+                rpc: RpcClient::new(rpc_url_http),
+                rpc_sub: PubsubClient::new(&rpc_url_ws)
                     .await
                     .expect("Failed to create pubsub client"),
                 lookup_table_cache: DashMap::new(),

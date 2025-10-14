@@ -16,12 +16,25 @@ mod serde;
 struct Cli {
     #[clap(short, long, default_value = "./tilt/configs/paymaster.toml")]
     config: String,
+
+    #[clap(long)]
+    mnemonic_file: String,
+
+    #[clap(long)]
+    rpc_url_http: String,
+
+    #[clap(long)]
+    rpc_url_ws: String,
+
+    #[clap(long, default_value = "0.0.0.0:4000")]
+    listen_address: String,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let config = load_config(&cli.config).unwrap();
+    let domains = config.domains;
 
     let resource = opentelemetry_sdk::Resource::builder()
         .with_attributes(vec![opentelemetry::KeyValue::new(
@@ -62,7 +75,14 @@ async fn main() -> anyhow::Result<()> {
         .with(telemetry)
         .init();
 
-    api::run_server(config).await;
+    api::run_server(
+        cli.mnemonic_file,
+        cli.rpc_url_http,
+        cli.rpc_url_ws,
+        cli.listen_address,
+        domains,
+    )
+    .await;
 
     Ok(())
 }

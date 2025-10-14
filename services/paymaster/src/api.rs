@@ -1,4 +1,4 @@
-use crate::config::{Config, Domain};
+use crate::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
@@ -386,22 +386,20 @@ async fn sponsor_pubkey_handler(
 }
 
 pub async fn run_server(
-    Config {
-        mnemonic_file,
-        solana_url_http,
-        solana_url_ws,
-        domains,
-        listen_address,
-    }: Config,
+    mnemonic_file: String,
+    rpc_url_http: String,
+    rpc_url_ws: String,
+    listen_address: String,
+    domains: Vec<Domain>,
 ) {
     let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
     let rpc = RpcClient::new_with_commitment(
-        solana_url_http,
+        rpc_url_http,
         CommitmentConfig {
             commitment: CommitmentLevel::Processed,
         },
     );
-    let rpc_sub = PubsubClient::new(&solana_url_ws)
+    let rpc_sub = PubsubClient::new(&rpc_url_ws)
         .await
         .expect("Failed to create pubsub client");
 
