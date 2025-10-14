@@ -40,6 +40,7 @@ solana-message = {workspace = true}
 solana-packet = {workspace = true}
 solana-program = {workspace = true}
 solana-pubkey = {workspace = true}
+solana-pubsub-client = {workspace = true}
 solana-rpc-client-api = {workspace = true}
 solana-sdk-ids = {workspace = true}
 solana-seed-derivable = {workspace = true}

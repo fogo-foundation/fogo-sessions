@@ -1,5 +1,6 @@
 mnemonic_file = "./tilt/secrets/mnemonic"
-solana_url = "http://127.0.0.1:8899"
+solana_url_http = "http://127.0.0.1:8899"
+solana_url_ws = "ws://127.0.0.1:8900"
 listen_address = "0.0.0.0:4000"
 
 [[domains]]

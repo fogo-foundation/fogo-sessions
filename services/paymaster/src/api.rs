@@ -25,6 +25,7 @@ use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
+use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_seed_derivable::SeedDerivable;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
@@ -42,6 +43,7 @@ pub struct DomainState {
 
 pub struct ChainIndex {
     pub rpc: RpcClient,
+    pub rpc_sub: PubsubClient,
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
 
@@ -334,6 +336,7 @@ async fn sponsor_and_send_handler(
 
     let confirmation_result = send_and_confirm_transaction(
         &state.chain_index.rpc,
+        &state.chain_index.rpc_sub,
         &transaction,
         RpcSendTransactionConfig {
             skip_preflight: !domain_state.enable_preflight_simulation,
@@ -385,19 +388,22 @@ async fn sponsor_pubkey_handler(
 pub async fn run_server(
     Config {
         mnemonic_file,
-        solana_url,
+        solana_url_http,
+        solana_url_ws,
         domains,
         listen_address,
     }: Config,
 ) {
     let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
-
     let rpc = RpcClient::new_with_commitment(
-        solana_url,
+        solana_url_http,
         CommitmentConfig {
             commitment: CommitmentLevel::Processed,
         },
     );
+    let rpc_sub = PubsubClient::new(&solana_url_ws)
+        .await
+        .expect("Failed to create pubsub client");
 
     let domains = domains
         .into_iter()
@@ -465,6 +471,7 @@ pub async fn run_server(
             domains,
             chain_index: ChainIndex {
                 rpc,
+                rpc_sub,
                 lookup_table_cache: DashMap::new(),
             },
         }));
