@@ -2,4 +2,4 @@
 "@fogo/sessions-sdk-react": patch
 ---
 
-Update metadata url
+Fix metadata url
