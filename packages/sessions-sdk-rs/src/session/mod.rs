@@ -106,7 +106,7 @@ mod v4 {
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum V4 {
         Revoked(RevokedSessionInfo),
-        Active(ActiveSessionInfoWithDomainId),
+        Active(ActiveSessionInfoWithDomainHash),
     }
 }
 
@@ -137,13 +137,13 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub struct ActiveSessionInfoWithDomainId {
+pub struct ActiveSessionInfoWithDomainHash {
     /// The sha256 hash of the domain name for this session
     pub domain_hash: DomainId,
     pub active_session_info: ActiveSessionInfo<AuthorizedTokensWithMints>,
 }
 
-impl AsRef<ActiveSessionInfo<AuthorizedTokensWithMints>> for ActiveSessionInfoWithDomainId {
+impl AsRef<ActiveSessionInfo<AuthorizedTokensWithMints>> for ActiveSessionInfoWithDomainHash {
     fn as_ref(&self) -> &ActiveSessionInfo<AuthorizedTokensWithMints> {
         &self.active_session_info
     }

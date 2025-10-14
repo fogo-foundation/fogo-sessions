@@ -9,7 +9,7 @@ use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
 use domain_registry::{domain::Domain, state::DomainRecordInner};
-use fogo_sessions_sdk::session::ActiveSessionInfoWithDomainId;
+use fogo_sessions_sdk::session::ActiveSessionInfoWithDomainHash;
 use fogo_sessions_sdk::session::{
     ActiveSessionInfo, AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens,
     AuthorizedTokensWithMints, RevokedSessionInfo, Session, SessionInfo, V2, V3, V4,
@@ -111,7 +111,7 @@ pub mod session_manager {
             4 => Session {
                 sponsor: ctx.accounts.sponsor.key(),
                 major,
-                session_info: SessionInfo::V4(V4::Active(ActiveSessionInfoWithDomainId {
+                session_info: SessionInfo::V4(V4::Active(ActiveSessionInfoWithDomainHash {
                     domain_hash: domain.get_domain_hash(),
                     active_session_info: ActiveSessionInfo {
                         user: signer,
