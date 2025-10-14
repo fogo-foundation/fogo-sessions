@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const getMetadata = async (mints: string[]) => {
-  const metadataUrl = new URL("https://www.fogo.io/api/token-metadata");
+  const metadataUrl = new URL("https://www.api.fogo.io/api/token-metadata");
   for (const mint of mints) {
     metadataUrl.searchParams.append("mint[]", mint);
   }
