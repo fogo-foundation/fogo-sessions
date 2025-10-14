@@ -139,7 +139,7 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct ActiveSessionInfoWithDomainHash {
     /// The sha256 hash of the domain name for this session
-    pub domain_hash: DomainId,
+    pub domain_hash: DomainHash,
     pub active_session_info: ActiveSessionInfo<AuthorizedTokensWithMints>,
 }
 
@@ -149,7 +149,7 @@ impl AsRef<ActiveSessionInfo<AuthorizedTokensWithMints>> for ActiveSessionInfoWi
     }
 }
 
-pub type DomainId = [u8; HASH_BYTES];
+pub type DomainHash = [u8; HASH_BYTES];
 
 pub trait IsAuthorizedTokens:
     Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema
@@ -274,7 +274,7 @@ impl Session {
         Ok(result)
     }
 
-    fn domain_hash(&self) -> Result<&DomainId, SessionError> {
+    fn domain_hash(&self) -> Result<&DomainHash, SessionError> {
         match &self.session_info {
             SessionInfo::Invalid | SessionInfo::V1(_) | SessionInfo::V2(_) | SessionInfo::V3(_) => {
                 Err(SessionError::InvalidAccountVersion)
@@ -421,7 +421,7 @@ impl Session {
             <= self.expiration()?)
     }
 
-    pub fn get_domain_hash_checked(&self) -> Result<&DomainId, SessionError> {
+    pub fn get_domain_hash_checked(&self) -> Result<&DomainHash, SessionError> {
         self.check_is_live_and_unrevoked()?;
         self.domain_hash()
     }
