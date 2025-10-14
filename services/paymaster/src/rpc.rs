@@ -23,6 +23,7 @@ pub enum ConfirmationResult {
     Failed {
         signature: String,
         error: TransactionError,
+        sent_to_chain: bool,
     },
 }
 
@@ -61,6 +62,7 @@ pub async fn send_and_confirm_transaction(
                 return Ok(ConfirmationResult::Failed {
                     signature: transaction.signatures[0].to_string(),
                     error,
+                    sent_to_chain: false,
                 });
             }
             return Err(to_error_response(err));
@@ -111,6 +113,7 @@ pub async fn confirm_transaction(
                     return Ok(ConfirmationResult::Failed {
                         signature: signature.to_string(),
                         error: err,
+                        sent_to_chain: true,
                     });
                 } else {
                     return Ok(ConfirmationResult::Success {
@@ -149,7 +152,8 @@ pub struct RetryConfig {
 
 /// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
 /// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
-/// If retry_config is provided, retries the RPC call with backoff on failure.
+/// If retry_config is provided, retries the RPC call with backoff on failure. This is useful in cases where
+/// the transaction was sent and confirmed with a lower commitment level.
 #[tracing::instrument(skip_all, fields(tx_hash = %signature))]
 pub async fn fetch_transaction_cost_details(
     rpc: &RpcClient,

@@ -357,40 +357,49 @@ async fn sponsor_and_send_handler(
 
     // Spawn async task to fetch actual transaction costs from RPC
     // This happens in the background to avoid blocking the response to the client
-    let signature_str = match &confirmation_result {
-        ConfirmationResult::Success { signature } => signature.clone(),
-        ConfirmationResult::Failed { signature, .. } => signature.clone(),
+    // Only fetch if the transaction was actually sent to chain (not rejected in preflight)
+    let signature_to_check = match &confirmation_result {
+        ConfirmationResult::Success { signature } => Some(signature.clone()),
+        ConfirmationResult::Failed { signature, sent_to_chain, .. } => {
+            if *sent_to_chain {
+                Some(signature.clone())
+            } else {
+                None
+            }
+        }
     };
 
-    if let Ok(signature) = signature_str.parse::<Signature>() {
-        let rpc = Arc::clone(&state.chain_index.rpc);
-        let domain_for_metrics = domain.clone();
-        let variation_for_metrics = matched_variation_name.clone();
-        let status_for_metrics = confirmation_status.clone();
-        let transaction_for_metrics = transaction.clone();
+    if let Some(sig_str) = signature_to_check {
+        if let Ok(signature) = sig_str.parse::<Signature>() {
+            let rpc = Arc::clone(&state.chain_index.rpc);
+            let domain_for_metrics = domain.clone();
+            let variation_for_metrics = matched_variation_name.clone();
+            let status_for_metrics = confirmation_status.clone();
+            let transaction_for_metrics = transaction.clone();
 
-        tokio::spawn(async move {
-            match fetch_transaction_cost_details(&rpc, &signature, &transaction_for_metrics, Some(RetryConfig {
-                max_tries: 3,
-                backoff_ms: 2000,
-            })).await {
-                Ok(cost_details) => {
-                    obs_actual_transaction_costs(
-                        domain_for_metrics,
-                        variation_for_metrics,
-                        status_for_metrics,
-                        cost_details,
-                    );
+            tokio::spawn(async move {
+                match fetch_transaction_cost_details(&rpc, &signature, &transaction_for_metrics, Some(RetryConfig {
+                    max_tries: 3,
+                    backoff_ms: 2000,
+                })).await {
+                    Ok(cost_details) => {
+                        obs_actual_transaction_costs(
+                            domain_for_metrics,
+                            variation_for_metrics,
+                            status_for_metrics,
+                            cost_details,
+                        );
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Failed to fetch transaction cost details for {}: {:?}",
+                            signature,
+                            e
+                        );
+                    }
                 }
-                Err(e) => {
-                    tracing::warn!(
-                        "Failed to fetch transaction cost details for {}: {:?}",
-                        signature,
-                        e
-                    );
-                }
-            }
-        });
+            });
+        }
     }
 
     Ok(Json(confirmation_result))
