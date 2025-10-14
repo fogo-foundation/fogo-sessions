@@ -133,7 +133,7 @@ pub async fn confirm_transaction(
         Ok(r) => r,
         Err(_) => Err((
             StatusCode::GATEWAY_TIMEOUT,
-            "Transaction confirmation timed out",
+            "Unable to confirm transaction",
         )
             .into()),
     }
