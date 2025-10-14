@@ -409,8 +409,7 @@ impl Session {
     fn check_is_live_and_unrevoked(&self) -> Result<(), SessionError> {
         self.check_version()?;
         self.check_is_unrevoked()?;
-        self.check_is_live()?;
-        Ok(())
+        self.check_is_live()
     }
 
     /// Returns whether the session is live. Revoked sessions are considered live until their expiration time.

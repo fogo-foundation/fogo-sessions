@@ -389,7 +389,7 @@ pub async fn run_server(
     Config {
         mnemonic_file,
         solana_url_http,
-        solana_url_ws,
+        solana_url_ws
         domains,
         listen_address,
     }: Config,
