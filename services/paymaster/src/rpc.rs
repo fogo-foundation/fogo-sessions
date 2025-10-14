@@ -141,13 +141,21 @@ pub struct TransactionCostDetails {
     pub balance_change: Option<i64>,
 }
 
+#[derive(Debug, Clone)]
+pub struct RetryConfig {
+    pub max_tries: u32,
+    pub backoff_ms: u64,
+}
+
 /// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
 /// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
+/// If retry_config is provided, retries the RPC call with backoff on failure.
 #[tracing::instrument(skip_all, fields(tx_hash = %signature))]
 pub async fn fetch_transaction_cost_details(
     rpc: &RpcClient,
     signature: &Signature,
     transaction: &VersionedTransaction,
+    retry_config: Option<RetryConfig>,
 ) -> Result<TransactionCostDetails, ErrorResponse> {
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Json),
@@ -156,41 +164,58 @@ pub async fn fetch_transaction_cost_details(
         commitment: Some(CommitmentConfig::confirmed()),
     };
 
-    let tx_response = rpc
-        .get_transaction_with_config(signature, config)
-        .await
-        .map_err(|e| -> ErrorResponse {
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("Failed to fetch transaction from RPC: {e}"),
-            )
-                .into()
-        })?;
+    let retry_cfg = retry_config.unwrap_or(RetryConfig {
+        max_tries: 1,
+        backoff_ms: 0,
+    });
 
-    let (fee, balance_change) = tx_response
-        .transaction
-        .meta
-        .map(|meta| {
-            let balance_change = meta
-                .pre_balances
-                .get(0)
-                .and_then(|&before| meta.post_balances.get(0).map(|&after| (before, after)))
-                .and_then(|(before, after)| {
-                    i64::try_from(after)
-                        .ok()
-                        .zip(i64::try_from(before).ok())
-                        .map(|(after_i64, before_i64)| after_i64.saturating_sub(before_i64))
+    let mut last_error = None;
+
+    for attempt in 0..retry_cfg.max_tries {
+        if attempt > 0 {
+            tokio::time::sleep(Duration::from_millis(retry_cfg.backoff_ms)).await;
+        }
+
+        match rpc.get_transaction_with_config(signature, config).await {
+            Ok(tx_response) => {
+                let (fee, balance_change) = tx_response
+                    .transaction
+                    .meta
+                    .map(|meta| {
+                        let balance_change = meta
+                            .pre_balances
+                            .get(0)
+                            .and_then(|&before| meta.post_balances.get(0).map(|&after| (before, after)))
+                            .and_then(|(before, after)| {
+                                i64::try_from(after)
+                                    .ok()
+                                    .zip(i64::try_from(before).ok())
+                                    .map(|(after_i64, before_i64)| after_i64.saturating_sub(before_i64))
+                            });
+                        (meta.fee, balance_change)
+                    })
+                    .unwrap_or_else(|| {
+                        let fee = crate::constraint::compute_gas_spent(transaction)
+                            .unwrap_or(0);
+                        (fee, None)
+                    });
+
+                return Ok(TransactionCostDetails {
+                    fee,
+                    balance_change,
                 });
-            (meta.fee, balance_change)
-        })
-        .unwrap_or_else(|| {
-            let fee = crate::constraint::compute_gas_spent(transaction)
-                .unwrap_or(0);
-            (fee, None)
-        });
+            }
+            Err(e) => {
+                last_error = Some(e);
+                if attempt < retry_cfg.max_tries {
+                    tracing::debug!("Failed to fetch transaction (attempt {}): {:?}", attempt + 1, last_error);
+                }
+            }
+        }
+    }
 
-    Ok(TransactionCostDetails {
-        fee,
-        balance_change,
-    })
+    Err((
+        StatusCode::BAD_GATEWAY,
+        format!("Failed to fetch transaction from RPC after {} attempts: {:?}", retry_cfg.max_tries + 1, last_error),
+    ).into())
 }
