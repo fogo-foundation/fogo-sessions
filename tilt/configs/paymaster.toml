@@ -6,7 +6,7 @@ listen_address = "0.0.0.0:4000"
 [[domains]]
 domain = "http://localhost:3000"
 enable_session_management = true
-enable_preflight_simulation = false
+enable_preflight_simulation = true
 
 ## Tx Variation 0
 [[domains.tx_variations]]

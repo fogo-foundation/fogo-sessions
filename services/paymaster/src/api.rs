@@ -1,7 +1,7 @@
 use crate::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
-use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
-use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
+use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
+use crate::rpc::{fetch_transaction_cost_details, send_and_confirm_transaction, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -27,6 +27,7 @@ use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_seed_derivable::SeedDerivable;
+use solana_signature::Signature;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
@@ -42,7 +43,7 @@ pub struct DomainState {
 }
 
 pub struct ChainIndex {
-    pub rpc: RpcClient,
+    pub rpc: Arc<RpcClient>,
     pub rpc_sub: PubsubClient,
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
@@ -354,8 +355,40 @@ async fn sponsor_and_send_handler(
         confirmation_status.clone(),
     );
 
-    let gas = crate::constraint::compute_gas_spent(&transaction)?;
-    obs_gas_spend(domain, matched_variation_name, confirmation_status, gas);
+    // Spawn async task to fetch actual transaction costs from RPC
+    // This happens in the background to avoid blocking the response to the client
+    let signature_str = match &confirmation_result {
+        ConfirmationResult::Success { signature } => signature.clone(),
+        ConfirmationResult::Failed { signature, .. } => signature.clone(),
+    };
+
+    if let Ok(signature) = signature_str.parse::<Signature>() {
+        let rpc = Arc::clone(&state.chain_index.rpc);
+        let domain_for_metrics = domain.clone();
+        let variation_for_metrics = matched_variation_name.clone();
+        let status_for_metrics = confirmation_status.clone();
+        let transaction_for_metrics = transaction.clone();
+
+        tokio::spawn(async move {
+            match fetch_transaction_cost_details(&rpc, &signature, &transaction_for_metrics).await {
+                Ok(cost_details) => {
+                    obs_actual_transaction_costs(
+                        domain_for_metrics,
+                        variation_for_metrics,
+                        status_for_metrics,
+                        cost_details,
+                    );
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        "Failed to fetch transaction cost details for {}: {:?}",
+                        signature,
+                        e
+                    );
+                }
+            }
+        });
+    }
 
     Ok(Json(confirmation_result))
 }
@@ -443,7 +476,17 @@ pub async fn run_server(
     let handle = PrometheusBuilder::new()
         .set_buckets_for_metric(
             Matcher::Full(crate::metrics::GAS_SPEND_HISTOGRAM.to_string()),
-            crate::metrics::GAS_SPEND_BUCKETS,
+            crate::metrics::TRANSACTION_COST_BUCKETS,
+        )
+        .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::TRANSFER_SPEND_HISTOGRAM.to_string()),
+            crate::metrics::TRANSACTION_COST_BUCKETS,
+        )
+        .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::TOTAL_SPEND_HISTOGRAM.to_string()),
+            crate::metrics::TRANSACTION_COST_BUCKETS,
         )
         .unwrap()
         .install_recorder()
@@ -470,7 +513,7 @@ pub async fn run_server(
         .with_state(Arc::new(ServerState {
             domains,
             chain_index: ChainIndex {
-                rpc,
+                rpc: Arc::new(rpc),
                 rpc_sub,
                 lookup_table_cache: DashMap::new(),
             },

@@ -18,7 +18,7 @@ use solana_client::{
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
-use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
+use std::{collections::HashMap, num::NonZeroU32, str::FromStr, sync::Arc};
 
 use fogo_paymaster::{
     api::ChainIndex,
@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
             let domains = get_domains_for_validation(&config, &domain);
             let solana_url_http = config.solana_url_http.clone();
             let chain_index = ChainIndex {
-                rpc: RpcClient::new(solana_url_http),
+                rpc: Arc::new(RpcClient::new(solana_url_http)),
                 rpc_sub: PubsubClient::new(&config.solana_url_ws)
                     .await
                     .expect("Failed to create pubsub client"),

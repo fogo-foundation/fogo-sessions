@@ -2,7 +2,7 @@ use axum::{http::StatusCode, response::ErrorResponse};
 use futures::stream::StreamExt;
 use solana_client::{
     nonblocking::rpc_client::RpcClient,
-    rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig},
+    rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig, RpcTransactionConfig},
 };
 use solana_commitment_config::CommitmentConfig;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
@@ -10,6 +10,7 @@ use solana_rpc_client_api::client_error::Error;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
+use solana_transaction_status_client_types::UiTransactionEncoding;
 use std::time::Duration;
 use tokio::time::timeout;
 
@@ -132,4 +133,64 @@ pub async fn confirm_transaction(
     result
         .map_err(|_| (StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction").into())
         .and_then(|r| r)
+}
+
+#[derive(Debug, Clone)]
+pub struct TransactionCostDetails {
+    pub fee: u64,
+    pub balance_change: Option<i64>,
+}
+
+/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
+/// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
+#[tracing::instrument(skip_all, fields(tx_hash = %signature))]
+pub async fn fetch_transaction_cost_details(
+    rpc: &RpcClient,
+    signature: &Signature,
+    transaction: &VersionedTransaction,
+) -> Result<TransactionCostDetails, ErrorResponse> {
+    let config = RpcTransactionConfig {
+        encoding: Some(UiTransactionEncoding::Json),
+        max_supported_transaction_version: Some(0),
+        // this method does not support any commitment below confirmed
+        commitment: Some(CommitmentConfig::confirmed()),
+    };
+
+    let tx_response = rpc
+        .get_transaction_with_config(signature, config)
+        .await
+        .map_err(|e| -> ErrorResponse {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Failed to fetch transaction from RPC: {e}"),
+            )
+                .into()
+        })?;
+
+    let (fee, balance_change) = tx_response
+        .transaction
+        .meta
+        .map(|meta| {
+            let balance_change = meta
+                .pre_balances
+                .get(0)
+                .and_then(|&before| meta.post_balances.get(0).map(|&after| (before, after)))
+                .and_then(|(before, after)| {
+                    i64::try_from(after)
+                        .ok()
+                        .zip(i64::try_from(before).ok())
+                        .map(|(after_i64, before_i64)| after_i64.saturating_sub(before_i64))
+                });
+            (meta.fee, balance_change)
+        })
+        .unwrap_or_else(|| {
+            let fee = crate::constraint::compute_gas_spent(transaction)
+                .unwrap_or(0);
+            (fee, None)
+        });
+
+    Ok(TransactionCostDetails {
+        fee,
+        balance_change,
+    })
 }
