@@ -28,7 +28,7 @@ pub fn resolve_rpc_urls(
             Ok((http, ws))
         }
         (None, None) => Err(anyhow::anyhow!(
-            "At least one of rpc-url-http or rpc-url-ws must be provided"
+            "At least one of rpc_url_http or rpc_url_ws must be provided"
         )),
     }
 }
