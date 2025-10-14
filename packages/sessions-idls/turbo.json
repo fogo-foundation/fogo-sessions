@@ -90,10 +90,7 @@
         "../../Cargo.toml",
         "../../Anchor.toml"
       ],
-      "outputs": [
-        "src/idl/tollbooth.json",
-        "src/types/tollbooth.ts"
-      ],
+      "outputs": ["src/idl/tollbooth.json", "src/types/tollbooth.ts"],
       "dependsOn": ["build:idl:mkdir"]
     },
     "build:types": {
