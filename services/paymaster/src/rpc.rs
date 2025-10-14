@@ -129,12 +129,7 @@ pub async fn confirm_transaction(
 
     unsubscribe().await;
 
-    match result {
-        Ok(r) => r,
-        Err(_) => Err((
-            StatusCode::GATEWAY_TIMEOUT,
-            "Unable to confirm transaction",
-        )
-            .into()),
-    }
+    result
+        .map_err(|_| (StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction").into())
+        .and_then(|r| r)
 }
