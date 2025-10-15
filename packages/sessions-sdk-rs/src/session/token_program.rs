@@ -60,9 +60,7 @@ impl Session {
         user: &Pubkey,
         signers: &[AccountInfo],
     ) -> Result<AuthorizedTokens, SessionError> {
-        self.check_version()?;
-        self.check_is_unrevoked()?;
-        self.check_is_live()?;
+        self.check_is_live_and_unrevoked()?;
         self.check_user(user)?;
         self.check_authorized_program_signer(signers)?;
         Ok(self.authorized_tokens()?.clone())

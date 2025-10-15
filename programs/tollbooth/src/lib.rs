@@ -1,5 +1,6 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
 
+use crate::error::TollboothError;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::associated_token::get_associated_token_address;
@@ -7,10 +8,9 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use fogo_sessions_sdk::{
     session::Session, token::instruction::transfer, token::PROGRAM_SIGNER_SEED,
 };
-use crate::error::TollboothError;
 mod error;
 
-declare_id!("too1LGRdFnP58TP5P4cmRsZT5BDEM38WdQxnFgD89hC");
+declare_id!("toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp");
 
 const TOLL_RECIPIENT_SEED: &[u8] = b"toll_recipient";
 
@@ -24,17 +24,20 @@ pub mod tollbooth {
         amount: u64,
     ) -> Result<()> {
         require_eq!(
-            get_associated_token_address(&ctx.accounts.session.get_user_checked(&crate::ID)?, &ctx.accounts.mint.key()),
+            get_associated_token_address(
+                &ctx.accounts.session.get_user_checked(&crate::ID)?,
+                &ctx.accounts.mint.key()
+            ),
             ctx.accounts.source.key(),
             TollboothError::InvalidSource
         );
-        
+
         require_eq!(
             get_associated_token_address(
                 &Pubkey::find_program_address(
                     &[
                         TOLL_RECIPIENT_SEED,
-                        ctx.accounts.session.get_domain_id_checked()?.as_ref(),
+                        ctx.accounts.session.get_domain_hash_checked()?.as_ref(),
                     ],
                     &crate::ID
                 )
@@ -75,4 +78,14 @@ pub struct PayToll<'info> {
     pub destination: Account<'info, TokenAccount>,
     pub mint: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_program_id_matches_sdk() {
+        assert_eq!(ID, fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID);
+    }
 }

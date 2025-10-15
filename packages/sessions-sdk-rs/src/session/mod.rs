@@ -1,9 +1,9 @@
 use borsh::BorshSchema;
+use solana_program::account_info::AccountInfo;
 use solana_program::hash::HASH_BYTES;
 use solana_program::pubkey::Pubkey;
 use solana_program::sysvar::clock::Clock;
 use solana_program::sysvar::Sysvar;
-use solana_program::{account_info::AccountInfo, hash::Hash};
 use std::collections::HashMap;
 use std::fmt::Debug;
 
@@ -106,7 +106,7 @@ mod v4 {
     #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
     pub enum V4 {
         Revoked(RevokedSessionInfo),
-        Active(ActiveSessionInfoWithDomainId),
+        Active(ActiveSessionInfoWithDomainHash),
     }
 }
 
@@ -137,19 +137,19 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
 }
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-pub struct ActiveSessionInfoWithDomainId {
+pub struct ActiveSessionInfoWithDomainHash {
     /// The sha256 hash of the domain name for this session
-    pub domain_id: DomainId,
+    pub domain_hash: DomainHash,
     pub active_session_info: ActiveSessionInfo<AuthorizedTokensWithMints>,
 }
 
-impl AsRef<ActiveSessionInfo<AuthorizedTokensWithMints>> for ActiveSessionInfoWithDomainId {
+impl AsRef<ActiveSessionInfo<AuthorizedTokensWithMints>> for ActiveSessionInfoWithDomainHash {
     fn as_ref(&self) -> &ActiveSessionInfo<AuthorizedTokensWithMints> {
         &self.active_session_info
     }
 }
 
-pub type DomainId = [u8; HASH_BYTES];
+pub type DomainHash = [u8; HASH_BYTES];
 
 pub trait IsAuthorizedTokens:
     Debug + Clone + BorshDeserialize + BorshSerialize + BorshSchema
@@ -274,14 +274,14 @@ impl Session {
         Ok(result)
     }
 
-    fn domain_id(&self) -> Result<&DomainId, SessionError> {
+    fn domain_hash(&self) -> Result<&DomainHash, SessionError> {
         match &self.session_info {
             SessionInfo::Invalid | SessionInfo::V1(_) | SessionInfo::V2(_) | SessionInfo::V3(_) => {
                 Err(SessionError::InvalidAccountVersion)
             }
             SessionInfo::V4(session) => match session {
                 V4::Revoked(_) => Err(SessionError::Revoked),
-                V4::Active(session) => Ok(&session.domain_id),
+                V4::Active(session) => Ok(&session.domain_hash),
             },
         }
     }
@@ -406,6 +406,12 @@ impl Session {
         }
     }
 
+    fn check_is_live_and_unrevoked(&self) -> Result<(), SessionError> {
+        self.check_version()?;
+        self.check_is_unrevoked()?;
+        self.check_is_live()
+    }
+
     /// Returns whether the session is live. Revoked sessions are considered live until their expiration time.
     pub fn is_live(&self) -> Result<bool, SessionError> {
         Ok(Clock::get()
@@ -414,24 +420,21 @@ impl Session {
             <= self.expiration()?)
     }
 
-    pub fn get_domain_id_checked(&self) -> Result<&DomainId, SessionError> {
-        self.check_version()?;
-        self.check_is_unrevoked()?;
-        self.check_is_live()?;
-        Ok(self.domain_id()?)
+    pub fn get_domain_hash_checked(&self) -> Result<&DomainHash, SessionError> {
+        self.check_is_live_and_unrevoked()?;
+        self.domain_hash()
     }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
     pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
-        self.check_version()?;
-        self.check_is_unrevoked()?;
-        self.check_is_live()?;
+        self.check_is_live_and_unrevoked()?;
         self.check_authorized_program(program_id)?;
         Ok(*self.user()?)
     }
 
     /// Returns the value of one of the session's extra fields with the given key, if it exists
     pub fn get_extra(&self, key: &str) -> Result<Option<&str>, SessionError> {
+        self.check_is_live_and_unrevoked()?;
         Ok(self.extra()?.get(key))
     }
 }
