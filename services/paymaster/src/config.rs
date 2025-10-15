@@ -26,10 +26,6 @@ pub struct Domain {
 
 #[derive(Deserialize)]
 pub struct Config {
-    pub mnemonic_file: String,
-    pub solana_url_http: String,
-    pub solana_url_ws: String,
-    pub listen_address: String,
     pub domains: Vec<Domain>,
 }
 
