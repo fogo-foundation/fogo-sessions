@@ -31,7 +31,6 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
     )
     .fetch_all(pool::pool())
     .await?;
-
     // Accumulate by domain_id
     struct DomainAccum {
         domain: String,

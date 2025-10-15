@@ -9,9 +9,12 @@ use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
 
-use crate::{api::ChainIndex, serde::deserialize_pubkey_vec};
+use crate::{
+    api::ChainIndex,
+    serde::{deserialize_pubkey_vec, serialize_pubkey_vec},
+};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "version")]
 pub enum TransactionVariation {
     #[serde(rename = "v0")]
@@ -30,12 +33,15 @@ impl TransactionVariation {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde_as]
 pub struct VariationProgramWhitelist {
     pub name: String,
 
-    #[serde(deserialize_with = "deserialize_pubkey_vec")]
+    #[serde(
+        deserialize_with = "deserialize_pubkey_vec",
+        serialize_with = "serialize_pubkey_vec"
+    )]
     pub whitelisted_programs: Vec<Pubkey>,
 }
 
@@ -60,7 +66,7 @@ impl VariationProgramWhitelist {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
     #[serde(default)]
@@ -159,7 +165,7 @@ impl VariationOrderedInstructionConstraints {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct InstructionConstraint {
     #[serde_as(as = "DisplayFromStr")]
     pub program: Pubkey,

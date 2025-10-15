@@ -90,6 +90,7 @@ pub async fn seed_from_config(config: &Config) -> Result<(), sqlx::Error> {
             let user_email = format!("admin@{}", &host.to_string());
             let user = insert_user(&user_email, &password).await?;
             let app = insert_app(&user, &host.to_string()).await?;
+            println!("Added user: {} and app: {}", &user_email, domain.domain);
             let domain_config = insert_domain_config(&app, &domain).await?;
             for variation in &domain.tx_variations {
                 insert_variation(&domain_config, &variation).await?;
