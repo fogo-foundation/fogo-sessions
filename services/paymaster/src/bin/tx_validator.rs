@@ -11,8 +11,7 @@ use governor::{
     Quota, RateLimiter,
 };
 use solana_client::{
-    nonblocking::rpc_client::RpcClient,
-    rpc_client::GetConfirmedSignaturesForAddress2Config,
+    nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config,
     rpc_config::RpcTransactionConfig,
 };
 use solana_signature::Signature;

@@ -2,7 +2,10 @@ use axum::{http::StatusCode, response::ErrorResponse};
 use dashmap::DashMap;
 use futures::stream::StreamExt;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
-use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig}};
+use solana_client::{
+    nonblocking::rpc_client::RpcClient,
+    rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig},
+};
 use solana_commitment_config::CommitmentConfig;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
@@ -140,7 +143,11 @@ impl ChainIndex {
             )
         })?;
 
-        let signature = match self.rpc.send_transaction_with_config(transaction, config).await {
+        let signature = match self
+            .rpc
+            .send_transaction_with_config(transaction, config)
+            .await
+        {
             Ok(sig) => sig,
             Err(err) => {
                 if let Some(error) = err.get_transaction_error() {

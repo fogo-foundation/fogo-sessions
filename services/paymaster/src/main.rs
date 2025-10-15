@@ -80,7 +80,9 @@ async fn main() -> anyhow::Result<()> {
         .with(telemetry)
         .init();
 
-    let rpc_url_ws = cli.rpc_url_ws.unwrap_or_else(|| cli.rpc_url_http.replace("http", "ws"));
+    let rpc_url_ws = cli
+        .rpc_url_ws
+        .unwrap_or_else(|| cli.rpc_url_http.replace("http", "ws"));
 
     api::run_server(
         cli.mnemonic_file,
