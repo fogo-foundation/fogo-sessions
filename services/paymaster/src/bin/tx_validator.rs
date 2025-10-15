@@ -86,7 +86,6 @@ async fn main() -> Result<()> {
             let domains = get_domains_for_validation(&config, &domain);
             let chain_index = ChainIndex {
                 rpc: RpcClient::new(rpc_url_http),
-                rpc_sub: None,
                 lookup_table_cache: DashMap::new(),
             };
 

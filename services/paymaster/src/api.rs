@@ -1,7 +1,7 @@
 use crate::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
-use crate::rpc::{ChainIndex, ConfirmationResult};
+use crate::rpc::{send_and_confirm_transaction, ChainIndex, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -43,6 +43,7 @@ pub struct DomainState {
 pub struct ServerState {
     pub domains: HashMap<String, DomainState>,
     pub chain_index: ChainIndex,
+    pub rpc_sub: PubsubClient,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -254,17 +255,17 @@ async fn sponsor_and_send_handler(
         .sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
-    let confirmation_result = state
-        .chain_index
-        .send_and_confirm_transaction(
-            &transaction,
-            RpcSendTransactionConfig {
-                skip_preflight: !domain_state.enable_preflight_simulation,
-                preflight_commitment: Some(CommitmentLevel::Processed),
-                ..RpcSendTransactionConfig::default()
-            },
-        )
-        .await?;
+    let confirmation_result = send_and_confirm_transaction(
+        &state.chain_index.rpc,
+        &state.rpc_sub,
+        &transaction,
+        RpcSendTransactionConfig {
+            skip_preflight: !domain_state.enable_preflight_simulation,
+            preflight_commitment: Some(CommitmentLevel::Processed),
+            ..RpcSendTransactionConfig::default()
+        },
+    )
+    .await?;
 
     let confirmation_status = confirmation_result.status_string();
 
@@ -389,9 +390,9 @@ pub async fn run_server(
             domains,
             chain_index: ChainIndex {
                 rpc,
-                rpc_sub: Some(rpc_sub),
                 lookup_table_cache: DashMap::new(),
             },
+            rpc_sub,
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();

@@ -18,7 +18,6 @@ use tokio::time::timeout;
 
 pub struct ChainIndex {
     pub rpc: RpcClient,
-    pub rpc_sub: Option<PubsubClient>,
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
 
@@ -50,8 +49,6 @@ fn to_error_response(err: Error) -> ErrorResponse {
     )
         .into()
 }
-
-pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
 
 impl ChainIndex {
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
@@ -124,107 +121,96 @@ impl ChainIndex {
 
         Ok(table_data_deserialized.addresses.to_vec())
     }
+}
 
-    /// Sends a transaction and waits for confirmation via WebSocket subscription.
-    /// Returns an error if WebSocket client is not configured.
-    #[tracing::instrument(
-        skip_all,
-        fields(tx_hash = %transaction.signatures[0])
-    )]
-    pub async fn send_and_confirm_transaction(
-        &self,
-        transaction: &VersionedTransaction,
-        config: RpcSendTransactionConfig,
-    ) -> Result<ConfirmationResult, ErrorResponse> {
-        let pubsub = self.rpc_sub.as_ref().ok_or_else(|| {
+/// Sends a transaction and waits for confirmation via WebSocket subscription.
+#[tracing::instrument(
+    skip_all,
+    fields(tx_hash = %transaction.signatures[0])
+)]
+pub async fn send_and_confirm_transaction(
+    rpc: &RpcClient,
+    pubsub: &PubsubClient,
+    transaction: &VersionedTransaction,
+    config: RpcSendTransactionConfig,
+) -> Result<ConfirmationResult, ErrorResponse> {
+    let signature = match rpc.send_transaction_with_config(transaction, config).await {
+        Ok(sig) => sig,
+        Err(err) => {
+            if let Some(error) = err.get_transaction_error() {
+                return Ok(ConfirmationResult::Failed {
+                    signature: transaction.signatures[0].to_string(),
+                    error,
+                });
+            }
+            return Err(to_error_response(err));
+        }
+    };
+
+    confirm_transaction(pubsub, &signature, Some(rpc.commitment())).await
+}
+
+pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
+
+#[tracing::instrument(
+    skip_all,
+    fields(tx_hash = %signature)
+)]
+async fn confirm_transaction(
+    pubsub: &PubsubClient,
+    signature: &Signature,
+    commitment: Option<CommitmentConfig>,
+) -> Result<ConfirmationResult, ErrorResponse> {
+    let (mut stream, unsubscribe) = pubsub
+        .signature_subscribe(
+            signature,
+            Some(RpcSignatureSubscribeConfig {
+                commitment,
+                ..RpcSignatureSubscribeConfig::default()
+            }),
+        )
+        .await
+        .map_err(|e| {
             (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "WebSocket client required for transaction confirmation".to_string(),
+                StatusCode::BAD_GATEWAY,
+                format!("Failed to subscribe to signature: {e}"),
             )
         })?;
 
-        let signature = match self
-            .rpc
-            .send_transaction_with_config(transaction, config)
-            .await
-        {
-            Ok(sig) => sig,
-            Err(err) => {
-                if let Some(error) = err.get_transaction_error() {
+    // two levels of results here:
+    // 1. timeout error (outer)
+    // 2. RpcError from the stream failing (inner)
+    // innermost contains actual transaction error if transaction failed or success info if it succeeded
+    let result = timeout(CONFIRMATION_TIMEOUT, async {
+        while let Some(response) = stream.next().await {
+            if let solana_client::rpc_response::RpcSignatureResult::ProcessedSignature(
+                processed_signature_result,
+            ) = response.value
+            {
+                if let Some(err) = processed_signature_result.err {
                     return Ok(ConfirmationResult::Failed {
-                        signature: transaction.signatures[0].to_string(),
-                        error,
+                        signature: signature.to_string(),
+                        error: err,
+                    });
+                } else {
+                    return Ok(ConfirmationResult::Success {
+                        signature: signature.to_string(),
                     });
                 }
-                return Err(to_error_response(err));
             }
-        };
+        }
 
-        self.confirm_transaction(pubsub, &signature, Some(self.rpc.commitment()))
-            .await
-    }
+        Err((
+            StatusCode::BAD_GATEWAY,
+            "Signature subscription stream ended unexpectedly",
+        )
+            .into())
+    })
+    .await;
 
-    #[tracing::instrument(
-        skip_all,
-        fields(tx_hash = %signature)
-    )]
-    async fn confirm_transaction(
-        &self,
-        rpc_sub: &PubsubClient,
-        signature: &Signature,
-        commitment: Option<CommitmentConfig>,
-    ) -> Result<ConfirmationResult, ErrorResponse> {
-        let (mut stream, unsubscribe) = rpc_sub
-            .signature_subscribe(
-                signature,
-                Some(RpcSignatureSubscribeConfig {
-                    commitment,
-                    ..RpcSignatureSubscribeConfig::default()
-                }),
-            )
-            .await
-            .map_err(|e| {
-                (
-                    StatusCode::BAD_GATEWAY,
-                    format!("Failed to subscribe to signature: {e}"),
-                )
-            })?;
+    unsubscribe().await;
 
-        // two levels of results here:
-        // 1. timeout error (outer)
-        // 2. RpcError from the stream failing (inner)
-        // innermost contains actual transaction error if transaction failed or success info if it succeeded
-        let result = timeout(CONFIRMATION_TIMEOUT, async {
-            while let Some(response) = stream.next().await {
-                if let solana_client::rpc_response::RpcSignatureResult::ProcessedSignature(
-                    processed_signature_result,
-                ) = response.value
-                {
-                    if let Some(err) = processed_signature_result.err {
-                        return Ok(ConfirmationResult::Failed {
-                            signature: signature.to_string(),
-                            error: err,
-                        });
-                    } else {
-                        return Ok(ConfirmationResult::Success {
-                            signature: signature.to_string(),
-                        });
-                    }
-                }
-            }
-
-            Err((
-                StatusCode::BAD_GATEWAY,
-                "Signature subscription stream ended unexpectedly",
-            )
-                .into())
-        })
-        .await;
-
-        unsubscribe().await;
-
-        result
-            .map_err(|_| (StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction").into())
-            .and_then(|r| r)
-    }
+    result
+        .map_err(|_| (StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction").into())
+        .and_then(|r| r)
 }
