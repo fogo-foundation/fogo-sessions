@@ -2,9 +2,9 @@ export {
   type SessionState,
   type SessionStates,
   type EstablishedSessionState,
-  FogoSessionProvider,
   StateType as SessionStateType,
-  useSession,
   isEstablished,
-} from "./components/session-provider.js";
+} from "./session-state.js";
+export { useSession } from "./hooks/use-session.js";
+export { FogoSessionProvider } from "./components/session-provider.js";
 export { SessionButton } from "./components/session-button.js";

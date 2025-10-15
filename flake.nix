@@ -85,6 +85,8 @@
             final.pnpm
             final.python3
             final.tilt
+            final.openssl
+            final.pkg-config
             (final.rust-bin.nightly.latest.default.override {extensions = ["rust-analyzer"];})
             solana-nix.packages."${system}".solana-cli
             solana-nix.packages."${system}".anchor-cli

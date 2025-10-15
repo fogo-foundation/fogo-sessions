@@ -20,6 +20,10 @@ import {
 import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
 import { deserializePublicKeyMap } from "../deserialize-public-key.js";
+import type {
+  EstablishedSessionState,
+  SessionState,
+} from "../session-state.js";
 import { FogoLogo } from "./fogo-logo.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import { ReceivePage } from "./receive-page.js";
@@ -27,16 +31,11 @@ import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
 import styles from "./session-button.module.css";
 import { SessionLimitsTab } from "./session-limits-tab.js";
-import type {
-  EstablishedSessionState,
-  SessionState,
-} from "./session-provider.js";
+import { useSession, useSessionContext } from "../hooks/use-session.js";
 import {
   StateType as SessionStateType,
-  useSession,
-  useSessionContext,
   isEstablished,
-} from "./session-provider.js";
+} from "../session-state.js";
 import { TruncateKey } from "./truncate-key.js";
 import { WalletPage } from "./wallet-page.js";
 

@@ -2,6 +2,7 @@ import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
+import { AnimatePresence, motion } from "motion/react";
 import type { FormEvent, ReactNode } from "react";
 import { useCallback, useState } from "react";
 import {
@@ -122,35 +123,45 @@ export const SessionLimits = <Token extends PublicKey>({
             </ListBox>
           </Popover>
         </Select>
-        {enableUnlimited && (
-          <Checkbox
-            name="applyLimits"
-            className={styles.applyLimits ?? ""}
-            isSelected={applyLimits}
-            onChange={setApplyLimits}
-          >
-            <div className={styles.checkbox}>
-              <CheckIcon className={styles.check} weight="bold" />
-            </div>
-            {"Limit this app's access to tokens"}
-          </Checkbox>
-        )}
-        {applyLimits && (
-          <ul className={styles.tokenList}>
-            {tokens.map((mint) => (
-              <li key={mint.toBase58()}>
-                <Token
-                  mint={mint}
-                  initialAmount={
-                    initialLimits
-                      .entries()
-                      .find(([limitMint]) => limitMint.equals(mint))?.[1] ?? 0n
-                  }
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+        <div>
+          {enableUnlimited && (
+            <Checkbox
+              name="applyLimits"
+              className={styles.applyLimits ?? ""}
+              isSelected={applyLimits}
+              onChange={setApplyLimits}
+            >
+              <div className={styles.checkbox}>
+                <CheckIcon className={styles.check} weight="bold" />
+              </div>
+              {"Limit this app's access to tokens"}
+            </Checkbox>
+          )}
+          <AnimatePresence>
+            {applyLimits && (
+              <motion.ul
+                initial={{ height: 0 }}
+                animate={{ height: "auto" }}
+                exit={{ height: 0 }}
+                className={styles.tokenList}
+              >
+                {tokens.map((mint) => (
+                  <li key={mint.toBase58()}>
+                    <Token
+                      mint={mint}
+                      initialAmount={
+                        initialLimits
+                          .entries()
+                          .find(([limitMint]) => limitMint.equals(mint))?.[1] ??
+                        0n
+                      }
+                    />
+                  </li>
+                ))}
+              </motion.ul>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
       <div className={clsx(styles.footer, footerClassName)}>
         {!hideCancel && (
