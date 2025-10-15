@@ -1,6 +1,6 @@
 {
   "name": "@fogo/scripts",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "private": true,
   "type": "module",
   "bin": {
@@ -28,6 +28,7 @@
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@types/jest": "catalog:",
+    "@types/node": "catalog:",
     "@types/yargs": "catalog:",
     "eslint": "catalog:",
     "jest": "catalog:",

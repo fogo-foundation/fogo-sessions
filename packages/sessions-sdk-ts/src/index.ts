@@ -20,6 +20,7 @@ import {
   generateKeyPair,
   getAddressFromPublicKey,
   getProgramDerivedAddress,
+  signatureBytes,
   verifySignature,
 } from "@solana/kit";
 import {
@@ -523,7 +524,7 @@ const serializeU16LE = (value: number) => {
 // Some wallets add a prefix to the messag before signing, for example Ledger through Phantom
 const addOffchainMessagePrefixToMessageIfNeeded = async (
   walletPublicKey: PublicKey,
-  signature: Uint8Array,
+  signature: SignatureBytes,
   message: Uint8Array,
 ) => {
   const publicKey = await crypto.subtle.importKey(
@@ -534,7 +535,7 @@ const addOffchainMessagePrefixToMessageIfNeeded = async (
     ["verify"],
   );
 
-  if (await verifySignature(publicKey, signature as SignatureBytes, message)) {
+  if (await verifySignature(publicKey, signature, message)) {
     return message;
   } else {
     // Source: https://github.com/anza-xyz/solana-sdk/blob/master/offchain-message/src/lib.rs#L162
@@ -550,7 +551,7 @@ const addOffchainMessagePrefixToMessageIfNeeded = async (
     if (
       await verifySignature(
         publicKey,
-        signature as SignatureBytes,
+        signature,
         messageWithOffchainMessagePrefix,
       )
     ) {
@@ -576,7 +577,7 @@ const buildIntentInstruction = async (
     extra: options.extra,
   });
 
-  const intentSignature = await options.signMessage(message);
+  const intentSignature = signatureBytes(await options.signMessage(message));
 
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
@@ -848,7 +849,7 @@ const buildTransferIntentInstruction = async (
     ].join("\n"),
   );
 
-  const intentSignature = await options.signMessage(message);
+  const intentSignature = signatureBytes(await options.signMessage(message));
 
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),

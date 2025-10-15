@@ -10,7 +10,7 @@ use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
 
-use crate::{api::ChainIndex, serde::deserialize_pubkey_vec};
+use crate::{rpc::ChainIndex, serde::deserialize_pubkey_vec};
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]

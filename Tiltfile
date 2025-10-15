@@ -85,7 +85,7 @@ local_resource(
 
 local_resource(
     "paymaster",
-    serve_cmd="cargo run --bin fogo-paymaster",
+    serve_cmd="cargo run --bin fogo-paymaster -- --rpc-url-http http://127.0.0.1:8899 --rpc-url-ws ws://127.0.0.1:8900 --mnemonic-file ./tilt/secrets/mnemonic",
     resource_deps=["svm-localnet"],
 )
 

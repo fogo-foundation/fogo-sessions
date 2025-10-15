@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-react",
-  "version": "0.0.23",
+  "version": "0.0.25",
   "private": true,
   "description": "React components and hooks for integrating with Fogo sessions",
   "keywords": [
@@ -61,6 +61,7 @@
     "@solana/wallet-adapter-wallets": "catalog:",
     "@solana/web3.js": "catalog:",
     "@yudiel/react-qr-scanner": "catalog:",
+    "bs58": "catalog:",
     "clsx": "catalog:",
     "idb": "catalog:",
     "modern-normalize": "catalog:",

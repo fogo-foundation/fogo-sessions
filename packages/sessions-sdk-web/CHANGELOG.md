@@ -1,5 +1,18 @@
 # @fogo/sessions-sdk-web
 
+## 0.0.10
+
+### Patch Changes
+
+- Updated dependencies [80cc3c3]
+  - @fogo/sessions-sdk@0.0.16
+
+## 0.0.9
+
+### Patch Changes
+
+- @fogo/sessions-sdk@0.0.15
+
 ## 0.0.8
 
 ### Patch Changes

@@ -1,5 +1,24 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.25
+
+### Patch Changes
+
+- 80cc3c3: Fix bug with legacy VersionedTransaction using Address Lookup Tables by bumping @solana/kit
+- a38c12f: Fix default session duration
+- Updated dependencies [80cc3c3]
+  - @fogo/sessions-sdk@0.0.16
+  - @fogo/sessions-sdk-web@0.0.10
+
+## 0.0.24
+
+### Patch Changes
+
+- Updated dependencies [0eead65]
+  - @fogo/sessions-idls@0.0.6
+  - @fogo/sessions-sdk@0.0.15
+  - @fogo/sessions-sdk-web@0.0.9
+
 ## 0.0.23
 
 ### Patch Changes

@@ -18,7 +18,7 @@ bytemuck = {workspace = true}
 clap ={version = "4.5.41", features = ["derive"]}
 config = "0.15.13"
 dashmap = "6.1.0"
-fogo-sessions-sdk = { version = "0.6.0", path = "../../packages/sessions-sdk-rs" }
+fogo-sessions-sdk = { version = "0.7.0", path = "../../packages/sessions-sdk-rs" }
 futures = "0.3.31"
 governor = "0.6.3"
 hex = "0.4.3"
@@ -40,6 +40,7 @@ solana-message = {workspace = true}
 solana-packet = {workspace = true}
 solana-program = {workspace = true}
 solana-pubkey = {workspace = true}
+solana-pubsub-client = {workspace = true}
 solana-rpc-client-api = {workspace = true}
 solana-sdk-ids = {workspace = true}
 solana-seed-derivable = {workspace = true}
