@@ -21,8 +21,8 @@ use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
 
 use fogo_paymaster::{
     api::ChainIndex,
-    config::{load_config, Domain},
     constraint::{ContextualDomainKeys, TransactionVariation},
+    file_config::{load_config, Domain},
 };
 
 #[derive(Parser)]
@@ -130,7 +130,7 @@ async fn main() -> Result<()> {
 }
 
 fn get_domains_for_validation<'a>(
-    config: &'a fogo_paymaster::config::Config,
+    config: &'a fogo_paymaster::file_config::Config,
     domain: &Option<String>,
 ) -> Vec<&'a Domain> {
     if let Some(domain_name) = domain {

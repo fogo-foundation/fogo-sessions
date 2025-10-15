@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use fogo_paymaster::{config::Config, constraint::TransactionVariation};
+use crate::{config_manager::config::Config, constraint::TransactionVariation};
 use sqlx::{types::Json, FromRow};
 use uuid::Uuid;
 
@@ -63,7 +63,7 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
     };
 
     for (_, d) in map {
-        config.domains.push(fogo_paymaster::config::Domain {
+        config.domains.push(crate::config_manager::config::Domain {
             domain: d.domain,
             enable_session_management: d.enable_session_management,
             enable_preflight_simulation: d.enable_preflight_simulation,

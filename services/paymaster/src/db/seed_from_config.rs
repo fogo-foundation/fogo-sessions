@@ -1,12 +1,12 @@
-use crate::config::{Config, Domain};
+use crate::config_manager::config::{Config, Domain};
 use crate::constraint::TransactionVariation;
 use crate::db::pool::pool;
 use sqlx::types::Json;
-use url::{Host, Position, Url};
+use url::Url;
 
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
-    Algorithm, Argon2, Params, Version,
+    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+    Argon2,
 };
 use uuid::Uuid;
 

@@ -1,7 +1,7 @@
-use std::{env, os::unix::process};
+use std::env;
 
-use crate::config::load_config;
 extern crate dotenv;
+use crate::config_manager::load_config;
 use clap::Parser;
 use dotenv::dotenv;
 use opentelemetry::trace::TracerProvider;
@@ -9,13 +9,14 @@ use opentelemetry_otlp::WithExportConfig;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
-mod config;
+mod config_manager;
 mod constraint;
 mod constraint_templates;
 mod db;
 mod metrics;
 mod rpc;
 mod serde;
+
 #[derive(Parser)]
 struct Cli {
     #[clap(short, long, default_value = "./tilt/configs/paymaster.toml")]
@@ -29,17 +30,9 @@ async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     let cli = Cli::parse();
     let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| cli.db.unwrap());
-    let config = load_config(&cli.config).unwrap();
-
     db::pool::init_db_connection(database_url).await?;
-    db::seed_from_config::seed_from_config(&config).await?;
 
-    let mut db_config = db::load_config::load_config().await?;
-    db_config.mnemonic_file =
-        env::var("MNEMONIC_FILE").unwrap_or_else(|_| config.mnemonic_file.clone());
-    db_config.solana_url = env::var("SOLANA_URL").unwrap_or_else(|_| config.solana_url.clone());
-    db_config.listen_address =
-        env::var("LISTEN_ADDRESS").unwrap_or_else(|_| config.listen_address.clone());
+    let config = config_manager::load_config::load_config(&cli.config).await?;
 
     let resource = opentelemetry_sdk::Resource::builder()
         .with_attributes(vec![opentelemetry::KeyValue::new(
@@ -47,10 +40,6 @@ async fn main() -> anyhow::Result<()> {
             "paymaster-service",
         )])
         .build();
-    println!(
-        "db_config: {:#?}",
-        db_config.domains[0].tx_variations[0].name()
-    );
     let otlp_endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
         .unwrap_or_else(|_| "http://localhost:4317".to_string());
 

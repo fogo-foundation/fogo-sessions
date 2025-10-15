@@ -1,4 +1,4 @@
-use crate::config::{Config, Domain};
+use crate::config_manager::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
