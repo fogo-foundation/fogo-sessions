@@ -14,7 +14,8 @@
         "build:idl:example",
         "build:idl:domain-registry",
         "build:idl:intent-transfer",
-        "build:idl:session-manager"
+        "build:idl:session-manager",
+        "build:idl:tollbooth"
       ]
     },
     "build:idl:mkdir": {},
@@ -79,6 +80,17 @@
         "src/idl/session-manager.json",
         "src/types/session-manager.ts"
       ],
+      "dependsOn": ["build:idl:mkdir"]
+    },
+    "build:idl:tollbooth": {
+      "inputs": [
+        "../../programs/tollbooth/src/**/*.rs",
+        "../../programs/tollbooth/Cargo.toml",
+        "../../packages/**/src/**/*.rs",
+        "../../Cargo.toml",
+        "../../Anchor.toml"
+      ],
+      "outputs": ["src/idl/tollbooth.json", "src/types/tollbooth.ts"],
       "dependsOn": ["build:idl:mkdir"]
     },
     "build:types": {
