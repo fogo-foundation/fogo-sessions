@@ -21,9 +21,9 @@ use solana_transaction_status_client_types::UiTransactionEncoding;
 use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
 
 use fogo_paymaster::{
-    api::ChainIndex,
     config::{load_config, Domain},
     constraint::{ContextualDomainKeys, TransactionVariation},
+    rpc::ChainIndex,
 };
 
 #[derive(Parser)]
