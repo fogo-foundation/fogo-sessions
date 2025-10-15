@@ -68,6 +68,8 @@ pub fn obs_actual_transaction_costs(
             tracing::warn!("Fee value too large to fit in i64, skipping transfer spend metric");
         }
     } else {
-        tracing::warn!("No balance change information available, skipping transfer and total spend metrics");
+        tracing::warn!(
+            "No balance change information available, skipping transfer and total spend metrics"
+        );
     }
 }

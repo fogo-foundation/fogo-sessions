@@ -188,19 +188,22 @@ pub async fn fetch_transaction_cost_details(
                     .map(|meta| {
                         let balance_change = meta
                             .pre_balances
-                            .get(0)
-                            .and_then(|&before| meta.post_balances.get(0).map(|&after| (before, after)))
+                            .first()
+                            .and_then(|&before| {
+                                meta.post_balances.first().map(|&after| (before, after))
+                            })
                             .and_then(|(before, after)| {
                                 i64::try_from(after)
                                     .ok()
                                     .zip(i64::try_from(before).ok())
-                                    .map(|(after_i64, before_i64)| after_i64.saturating_sub(before_i64))
+                                    .map(|(after_i64, before_i64)| {
+                                        after_i64.saturating_sub(before_i64)
+                                    })
                             });
                         (meta.fee, balance_change)
                     })
                     .unwrap_or_else(|| {
-                        let fee = crate::constraint::compute_gas_spent(transaction)
-                            .unwrap_or(0);
+                        let fee = crate::constraint::compute_gas_spent(transaction).unwrap_or(0);
                         (fee, None)
                     });
 
@@ -217,6 +220,10 @@ pub async fn fetch_transaction_cost_details(
 
     Err((
         StatusCode::BAD_GATEWAY,
-        format!("Failed to fetch transaction from RPC after {} attempts: {:?}", retry_cfg.max_tries, last_error),
-    ).into())
+        format!(
+            "Failed to fetch transaction from RPC after {} attempts: {:?}",
+            retry_cfg.max_tries, last_error
+        ),
+    )
+        .into())
 }

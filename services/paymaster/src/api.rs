@@ -1,7 +1,9 @@
 use crate::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
-use crate::rpc::{fetch_transaction_cost_details, send_and_confirm_transaction, ConfirmationResult, RetryConfig};
+use crate::rpc::{
+    fetch_transaction_cost_details, send_and_confirm_transaction, ConfirmationResult, RetryConfig,
+};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -377,10 +379,17 @@ async fn sponsor_and_send_handler(
             let transaction_for_metrics = transaction.clone();
 
             tokio::spawn(async move {
-                match fetch_transaction_cost_details(&rpc, &signature, &transaction_for_metrics, Some(RetryConfig {
-                    max_tries: 3,
-                    backoff_ms: 2000,
-                })).await {
+                match fetch_transaction_cost_details(
+                    &rpc,
+                    &signature,
+                    &transaction_for_metrics,
+                    Some(RetryConfig {
+                        max_tries: 3,
+                        backoff_ms: 2000,
+                    }),
+                )
+                .await
+                {
                     Ok(cost_details) => {
                         obs_actual_transaction_costs(
                             domain_for_metrics,
