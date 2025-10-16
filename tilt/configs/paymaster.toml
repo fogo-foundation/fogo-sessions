@@ -2,6 +2,7 @@
 domain = "http://localhost:3000"
 enable_session_management = true
 enable_preflight_simulation = false
+tolls = { fixed = [ { mint = "So11111111111111111111111111111111111111112", amount = 1000 } ] }
 
 ## Tx Variation 0
 [[domains.tx_variations]]

@@ -2,6 +2,7 @@ use anyhow::Result;
 use config::File;
 use serde::Deserialize;
 
+use crate::constraint::tolls::Tolls;
 use crate::constraint::TransactionVariation;
 
 fn default_true() -> bool {
@@ -22,11 +23,16 @@ pub struct Domain {
 
     /// The list of transaction types that the paymaster should sponsor.
     pub tx_variations: Vec<TransactionVariation>,
+
+    #[serde(default)]
+    pub tolls: Option<Tolls>,
 }
 
 #[derive(Deserialize)]
 pub struct Config {
     pub domains: Vec<Domain>,
+    #[serde(default)]
+    pub tolls: Tolls,
 }
 
 pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
