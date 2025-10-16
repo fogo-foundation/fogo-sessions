@@ -2,7 +2,8 @@ use crate::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::rpc::{
-    fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex, ConfirmationResult, RetryConfig,
+    fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex, ConfirmationResult,
+    RetryConfig,
 };
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
