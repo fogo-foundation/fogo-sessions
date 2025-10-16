@@ -85,7 +85,7 @@ impl VariationOrderedInstructionConstraints {
         instruction: &CompiledInstruction,
     ) -> bool {
         let program_id = instruction.program_id(transaction.message.static_account_keys());
-        Self::IGNORED_PROGRAMS.contains(&program_id)
+        Self::IGNORED_PROGRAMS.contains(program_id)
     }
 
     pub async fn validate_transaction<'a>(

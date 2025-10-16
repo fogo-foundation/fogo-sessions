@@ -82,10 +82,10 @@ impl Tolls {
                 {
                     return Ok(());
                 }
-                return Err((
+                Err((
                         StatusCode::BAD_REQUEST,
                         "Toll payment mint is not accepted by the paymaster or the amount is not correct".to_string(),
-                    ));
+                    ))
             }
             (Tolls::Fixed(_), []) => Err((
                 StatusCode::BAD_REQUEST,

@@ -62,7 +62,7 @@ impl ChainIndex {
     ) -> Result<Pubkey, (StatusCode, String)> {
         let account_index_within_transaction = usize::from(*instruction
             .accounts
-            .get(usize::from(account_index_within_instruction))
+            .get(account_index_within_instruction)
             .ok_or_else(|| {
                 (
                     StatusCode::BAD_REQUEST,
@@ -76,7 +76,7 @@ impl ChainIndex {
             .static_account_keys()
             .get(account_index_within_transaction)
         {
-            return Ok(*pubkey);
+            Ok(*pubkey)
         } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
             let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
                 .iter()
@@ -99,13 +99,13 @@ impl ChainIndex {
                 .find_and_query_lookup_table(lookup_accounts, account_index_within_lookup_tables)
                 .await;
         } else {
-            return Err((
+            Err((
                 StatusCode::BAD_REQUEST,
                 format!(
                     "Transaction instruction {instruction_index} account index {account_index_within_transaction} out of bounds",
                 ),
-            ));
-        };
+            ))
+        }
     }
 
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.

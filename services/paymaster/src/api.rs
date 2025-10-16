@@ -358,7 +358,7 @@ pub async fn run_server(
                         sponsor,
                         enable_preflight_simulation,
                         tx_variations,
-                        tolls: domain_tolls.unwrap_or(tolls.clone()).into(),
+                        tolls: domain_tolls.unwrap_or(tolls.clone()),
                     },
                 )
             },
