@@ -16,7 +16,7 @@ local_resource(
         ../target/deploy/domain_registry.so \
         --bpf-program Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD \
         ../target/deploy/intent_transfer.so \
-        --bpf-program too1LGRdFnP58TP5P4cmRsZT5BDEM38WdQxnFgD89hC \
+        --bpf-program toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp \
         ../target/deploy/tollbooth.so \
         --mint $(solana-keygen pubkey ./keypairs/faucet.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
@@ -66,7 +66,7 @@ local_resource(
     """
     pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json --chain-id localnet &&
     pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 &&
-    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id too1LGRdFnP58TP5P4cmRsZT5BDEM38WdQxnFgD89hC
+    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp
 
     """,
     resource_deps=["svm-localnet"],

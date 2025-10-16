@@ -1,9 +1,11 @@
 use anyhow::Result;
 use config::File;
 use serde::Deserialize;
-use solana_pubkey::Pubkey;
 
 use crate::constraint::TransactionVariation;
+use tolls::Tolls;
+
+pub mod tolls;
 
 fn default_true() -> bool {
     true
@@ -25,20 +27,14 @@ pub struct Domain {
     pub tx_variations: Vec<TransactionVariation>,
 
     #[serde(default)]
-    pub tolls: Option<Vec<Tolls>>,
+    pub tolls: Option<Tolls>,
 }
 
 #[derive(Deserialize)]
 pub struct Config {
     pub domains: Vec<Domain>,
     #[serde(default)]
-    pub tolls: Vec<Tolls>,
-}
-
-#[derive(Deserialize, Clone)]
-pub struct Tolls {
-    pub mint: Pubkey,
-    pub amount: u64,
+    pub tolls: Tolls,
 }
 
 pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;

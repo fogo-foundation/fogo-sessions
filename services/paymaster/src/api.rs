@@ -1,4 +1,5 @@
-use crate::config::Domain;
+use crate::constraint::tolls::Tolls;
+use crate::config::{Config, Domain};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ChainIndex, ConfirmationResult};
@@ -38,6 +39,7 @@ pub struct DomainState {
     pub sponsor: Keypair,
     pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
+    pub tolls: Tolls,
 }
 
 pub struct ServerState {
@@ -230,6 +232,7 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
+    domain_state.tolls.validate_toll_payment(&transaction, &state.chain_index).await?;
     let matched_variation_name = match domain_state
         .validate_transaction(&transaction, &state.chain_index)
         .await
@@ -302,6 +305,7 @@ async fn sponsor_pubkey_handler(
         sponsor,
         enable_preflight_simulation: _,
         tx_variations: _,
+        tolls: _,
     } = get_domain_state(&state, &domain)?;
     Ok(sponsor.pubkey().to_string())
 }
@@ -311,8 +315,9 @@ pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
     listen_address: String,
-    domains: Vec<Domain>,
+    config: Config,
 ) {
+    let Config { domains, tolls } = config;
     let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
     let rpc = RpcClient::new_with_commitment(
         rpc_url_http,
@@ -331,7 +336,7 @@ pub async fn run_server(
                  domain,
                  enable_preflight_simulation,
                  tx_variations,
-                 tolls: tolls_override,
+                 tolls: domain_tolls,
                  ..
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
@@ -350,6 +355,7 @@ pub async fn run_server(
                         sponsor,
                         enable_preflight_simulation,
                         tx_variations,
+                        tolls: domain_tolls.unwrap_or(tolls.clone()).into(),
                     },
                 )
             },
