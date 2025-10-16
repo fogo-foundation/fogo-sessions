@@ -1,5 +1,5 @@
-use crate::constraint::tolls::Tolls;
 use crate::config::{Config, Domain};
+use crate::constraint::tolls::Tolls;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ChainIndex, ConfirmationResult};
@@ -232,7 +232,10 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    domain_state.tolls.validate_toll_payment(&transaction, &state.chain_index).await?;
+    domain_state
+        .tolls
+        .validate_toll_payment(&transaction, &state.chain_index)
+        .await?;
     let matched_variation_name = match domain_state
         .validate_transaction(&transaction, &state.chain_index)
         .await

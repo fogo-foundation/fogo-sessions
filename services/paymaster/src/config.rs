@@ -2,8 +2,8 @@ use anyhow::Result;
 use config::File;
 use serde::Deserialize;
 
-use crate::constraint::TransactionVariation;
 use crate::constraint::tolls::Tolls;
+use crate::constraint::TransactionVariation;
 
 fn default_true() -> bool {
     true

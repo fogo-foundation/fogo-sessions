@@ -1,3 +1,4 @@
+use crate::{rpc::ChainIndex, serde::deserialize_pubkey_vec};
 use axum::http::StatusCode;
 use borsh::BorshDeserialize;
 use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
@@ -9,7 +10,6 @@ use solana_message::VersionedMessage;
 use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
-use crate::{rpc::ChainIndex, serde::deserialize_pubkey_vec};
 
 mod templates;
 pub mod tolls;
@@ -77,10 +77,8 @@ pub struct ContextualDomainKeys {
 }
 
 impl VariationOrderedInstructionConstraints {
-    const IGNORED_PROGRAMS: &[Pubkey] = &[
-        solana_compute_budget_interface::id(),
-        TOLLBOOTH_PROGRAM_ID,
-    ];
+    const IGNORED_PROGRAMS: &[Pubkey] =
+        &[solana_compute_budget_interface::id(), TOLLBOOTH_PROGRAM_ID];
 
     fn is_ignored_instruction(
         transaction: &VersionedTransaction,
@@ -97,8 +95,15 @@ impl VariationOrderedInstructionConstraints {
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
         let mut instruction_iterator = transaction.message.instructions().iter().enumerate();
-        
-        let next_instruction = |instruction_iterator: &mut std::iter::Enumerate<std::slice::Iter<'a, CompiledInstruction>>, current_instruction_index: usize| -> Result<(usize, &'a CompiledInstruction), (StatusCode, String)> {
+
+        let next_instruction = |instruction_iterator: &mut std::iter::Enumerate<
+            std::slice::Iter<'a, CompiledInstruction>,
+        >,
+                                current_instruction_index: usize|
+         -> Result<
+            (usize, &'a CompiledInstruction),
+            (StatusCode, String),
+        > {
             instruction_iterator.next().ok_or_else(|| {
                 (
                     StatusCode::BAD_REQUEST,
@@ -109,7 +114,8 @@ impl VariationOrderedInstructionConstraints {
                 )
             })
         };
-        let (mut instruction_index, mut instruction) = next_instruction(&mut instruction_iterator, 0)?;
+        let (mut instruction_index, mut instruction) =
+            next_instruction(&mut instruction_iterator, 0)?;
 
         let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
@@ -122,7 +128,8 @@ impl VariationOrderedInstructionConstraints {
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         while constraint_index < self.instructions.len() {
             if Self::is_ignored_instruction(transaction, instruction) {
-                (instruction_index, instruction) = next_instruction(&mut instruction_iterator, instruction_index)?;
+                (instruction_index, instruction) =
+                    next_instruction(&mut instruction_iterator, instruction_index)?;
                 continue;
             }
 
@@ -144,12 +151,15 @@ impl VariationOrderedInstructionConstraints {
                 }
                 constraint_index += 1;
             } else {
-                (instruction_index, instruction) = next_instruction(&mut instruction_iterator, instruction_index)?;
+                (instruction_index, instruction) =
+                    next_instruction(&mut instruction_iterator, instruction_index)?;
                 constraint_index += 1;
             }
         }
 
-        if let Some((instruction_index, _)) = instruction_iterator.find(|(_, instruction)| !Self::is_ignored_instruction(transaction, instruction)) {
+        if let Some((instruction_index, _)) = instruction_iterator
+            .find(|(_, instruction)| !Self::is_ignored_instruction(transaction, instruction))
+        {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
@@ -200,9 +210,18 @@ impl InstructionConstraint {
         }
 
         for account_constraint in self.accounts.iter() {
-            let account_pubkey = chain_index.resolve_instruction_account_pubkey(transaction, instruction, instruction_index, account_constraint.index.into()).await?;
+            let account_pubkey = chain_index
+                .resolve_instruction_account_pubkey(
+                    transaction,
+                    instruction,
+                    instruction_index,
+                    account_constraint.index.into(),
+                )
+                .await?;
 
-            let signers = transaction.message.static_account_keys()
+            let signers = transaction
+                .message
+                .static_account_keys()
                 .iter()
                 .take(signatures.len())
                 .cloned()
