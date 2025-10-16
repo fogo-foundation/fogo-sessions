@@ -29,7 +29,6 @@ use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_seed_derivable::SeedDerivable;
-use solana_signature::Signature;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
@@ -45,7 +44,7 @@ pub struct DomainState {
 }
 
 pub struct ChainIndex {
-    pub rpc: Arc<RpcClient>,
+    pub rpc: RpcClient,
     pub rpc_sub: PubsubClient,
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
@@ -366,48 +365,42 @@ async fn sponsor_and_send_handler(
     };
 
     if should_fetch_costs {
-        let signature_str = match &confirmation_result {
-            ConfirmationResult::Success { signature } => signature,
-            ConfirmationResult::Failed { signature, .. } => signature,
+        let signature = match &confirmation_result {
+            ConfirmationResult::Success { signature } => *signature,
+            ConfirmationResult::Failed { signature, .. } => *signature,
         };
 
-        if let Ok(signature) = signature_str.parse::<Signature>() {
-            let rpc = Arc::clone(&state.chain_index.rpc);
-            let domain_for_metrics = domain.clone();
-            let variation_for_metrics = matched_variation_name.clone();
-            let status_for_metrics = confirmation_status.clone();
-            let transaction_for_metrics = transaction.clone();
+        let state_clone = state.clone();
 
-            tokio::spawn(async move {
-                match fetch_transaction_cost_details(
-                    &rpc,
-                    &signature,
-                    &transaction_for_metrics,
-                    Some(RetryConfig {
-                        max_tries: 3,
-                        backoff_ms: 2000,
-                    }),
-                )
-                .await
-                {
-                    Ok(cost_details) => {
-                        obs_actual_transaction_costs(
-                            domain_for_metrics,
-                            variation_for_metrics,
-                            status_for_metrics,
-                            cost_details,
-                        );
-                    }
-                    Err(e) => {
-                        tracing::warn!(
-                            "Failed to fetch transaction cost details for {}: {:?}",
-                            signature,
-                            e
-                        );
-                    }
+        tokio::spawn(async move {
+            match fetch_transaction_cost_details(
+                &state_clone.chain_index.rpc,
+                &signature,
+                &transaction,
+                RetryConfig {
+                    max_tries: 3,
+                    backoff_ms: 2000,
+                },
+            )
+            .await
+            {
+                Ok(cost_details) => {
+                    obs_actual_transaction_costs(
+                        domain,
+                        matched_variation_name,
+                        confirmation_status,
+                        cost_details,
+                    );
                 }
-            });
-        }
+                Err(e) => {
+                    tracing::warn!(
+                        "Failed to fetch transaction cost details for {}: {:?}",
+                        signature,
+                        e
+                    );
+                }
+            }
+        });
     }
 
     Ok(Json(confirmation_result))
@@ -533,7 +526,7 @@ pub async fn run_server(
         .with_state(Arc::new(ServerState {
             domains,
             chain_index: ChainIndex {
-                rpc: Arc::new(rpc),
+                rpc,
                 rpc_sub,
                 lookup_table_cache: DashMap::new(),
             },

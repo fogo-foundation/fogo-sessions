@@ -54,15 +54,13 @@ pub fn obs_actual_transaction_costs(
 
     metrics::histogram!(GAS_SPEND_HISTOGRAM, &labels).record(cost_details.fee as f64);
 
-    if let Some(balance_change) = cost_details.balance_change {
-        // Record total balance change (we negate to express greater than 0 spend as positive)
-        metrics::histogram!(TOTAL_SPEND_HISTOGRAM, &labels).record(-balance_change as f64);
+    if let Some(balance_spend) = cost_details.balance_spend {
+        metrics::histogram!(TOTAL_SPEND_HISTOGRAM, &labels).record(balance_spend as f64);
 
         if let Ok(fee_i64) = i64::try_from(cost_details.fee) {
-            // Record nongas spend (balance_change includes fee, so subtract it)
-            // Negative balance_change means balance decreased (spent)
-            // transfer_spend = -(balance_change + fee) = -balance_change - fee
-            let transfer_spend = (-balance_change).saturating_sub(fee_i64);
+            // Record nongas spend (balance_spend includes fee, so subtract it)
+            // transfer_spend = balance_spend - fee
+            let transfer_spend = balance_spend.saturating_sub(fee_i64);
             metrics::histogram!(TRANSFER_SPEND_HISTOGRAM, &labels).record(transfer_spend as f64);
         } else {
             tracing::warn!("Fee value too large to fit in i64, skipping transfer spend metric");
