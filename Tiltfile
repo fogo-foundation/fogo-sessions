@@ -46,7 +46,7 @@ local_resource(
 
 local_resource(
     "setup-toll-recipient",
-    "spl-token -u l create-account --fee-payer ./tilt/keypairs/faucet.json --owner 8umeomfEvLNNbY95M2c1Psu7s5JTUCQL8vKp16Lek4Pw So11111111111111111111111111111111111111112",
+    "spl-token -u l create-account --fee-payer ./tilt/keypairs/faucet.json --owner D7YZKerkVsgkyEzDdme5SxFFho5uyvENr9zJMDvsLFrm So11111111111111111111111111111111111111112",
     resource_deps=["svm-localnet"],
 )
 

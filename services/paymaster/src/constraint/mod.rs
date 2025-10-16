@@ -280,8 +280,8 @@ impl InstructionConstraint {
             ));
         }
 
-        for (i, account_constraint) in self.accounts.iter().enumerate() {
-            let account = get_instruction_account_pubkey_by_index(transaction, instruction, instruction_index, i, chain_index).await?;
+        for account_constraint in &self.accounts {
+            let account = get_instruction_account_pubkey_by_index(transaction, instruction, instruction_index, account_constraint.index.into(), chain_index).await?;
 
             let signers = static_accounts
                 .iter()
