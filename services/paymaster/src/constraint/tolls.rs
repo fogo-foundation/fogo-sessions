@@ -66,7 +66,7 @@ impl Tolls {
                         let TollboothInstruction::PayToll(amount) = tollbooth_instruction_data;
                         let mint = get_instruction_account_pubkey_by_index(transaction, tollbooth_instruction, index, Self::MINT_ACCOUNT_INDEX_PAY_TOLL_INSTRUCTION, chain_index).await?;
 
-                        if tolls.iter().any(|toll| toll.mint == mint && toll.amount < amount) {
+                        if tolls.iter().any(|toll| toll.mint == mint && toll.amount <= amount) {
                             return Ok(());
                         }
                         return Err((
