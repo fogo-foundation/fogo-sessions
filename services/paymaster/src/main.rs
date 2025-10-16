@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, sync::Arc, time::Duration};
 
 extern crate dotenv;
 use crate::config_manager::load_config;
@@ -6,6 +6,8 @@ use clap::Parser;
 use dotenv::dotenv;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
+use tokio::sync::RwLock;
+use tokio::time::interval;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
@@ -16,6 +18,9 @@ mod db;
 mod metrics;
 mod rpc;
 mod serde;
+
+type DomainStateMap = std::collections::HashMap<String, api::DomainState>;
+type SharedDomains = Arc<RwLock<DomainStateMap>>;
 
 #[derive(Parser)]
 struct Cli {
@@ -29,10 +34,14 @@ struct Cli {
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     let cli = Cli::parse();
-    let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| cli.db.unwrap());
-    db::pool::init_db_connection(database_url).await?;
 
-    let config = config_manager::load_config::load_config(&cli.config).await?;
+    // Prefer CLI flag over env if present
+    let database_url = cli
+        .db
+        .or_else(|| env::var("DATABASE_URL").ok())
+        .expect("DATABASE_URL must be set via --db or env var");
+
+    db::pool::init_db_connection(database_url).await?;
 
     let resource = opentelemetry_sdk::Resource::builder()
         .with_attributes(vec![opentelemetry::KeyValue::new(
@@ -56,7 +65,6 @@ async fn main() -> anyhow::Result<()> {
         .build();
 
     let tracer = provider.tracer("paymaster-service");
-
     let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
 
     tracing_subscriber::registry()
@@ -72,7 +80,61 @@ async fn main() -> anyhow::Result<()> {
         .with(telemetry)
         .init();
 
-    api::run_server(config).await;
+    // ----- load initial config -----
+    let config_file_path = cli.config.clone();
+    let config = config_manager::load_config::load_config(&config_file_path).await?;
+    let mnemonic =
+        std::fs::read_to_string(&config.mnemonic_file).expect("Failed to read mnemonic_file");
+
+    let domains: SharedDomains = Arc::new(RwLock::new(api::get_domain_state_map(
+        config.domains,
+        &mnemonic,
+    )));
+
+    // ----- background refresher -----
+    {
+        let domains = Arc::clone(&domains);
+        let config_file_path = config_file_path.clone();
+
+        tokio::spawn(async move {
+            let mut ticker = interval(Duration::from_secs(2));
+            // First tick fires immediately, we can skip it if we don't want a duplicate load.
+            ticker.tick().await;
+
+            loop {
+                ticker.tick().await;
+
+                match config_manager::load_config::load_config(&config_file_path).await {
+                    Ok(new_config) => match std::fs::read_to_string(&new_config.mnemonic_file) {
+                        Ok(new_mnemonic) => {
+                            // Recompute the derived state
+                            let new_domains =
+                                api::get_domain_state_map(new_config.domains, &new_mnemonic);
+
+                            // Atomically swap under a write lock
+                            {
+                                let mut guard = domains.write().await;
+                                *guard = new_domains;
+                            }
+
+                            tracing::info!("Config/domains refreshed");
+                        }
+                        Err(e) => {
+                            tracing::error!(
+                                "Failed to read mnemonic file during config update: {}",
+                                e
+                            );
+                        }
+                    },
+                    Err(e) => {
+                        tracing::error!("Failed to load config: {}", e);
+                    }
+                }
+            }
+        });
+    }
+
+    api::run_server(config.solana_url, domains, config.listen_address).await;
 
     Ok(())
 }

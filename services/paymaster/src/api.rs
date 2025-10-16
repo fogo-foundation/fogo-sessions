@@ -30,6 +30,7 @@ use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
@@ -46,7 +47,7 @@ pub struct ChainIndex {
 }
 
 pub struct ServerState {
-    pub domains: HashMap<String, DomainState>,
+    pub domains: Arc<RwLock<HashMap<String, DomainState>>>,
     pub chain_index: ChainIndex,
 }
 
@@ -246,11 +247,10 @@ fn get_domain_name(
 }
 
 fn get_domain_state<'a>(
-    state: &'a ServerState,
+    domains: &'a HashMap<String, DomainState>,
     domain_query_parameter: &str,
 ) -> Result<&'a DomainState, (StatusCode, String)> {
-    let domain_state = state
-        .domains
+    let domain_state = domains
         .get(domain_query_parameter)
         .ok_or_else(|| {
             (
@@ -285,9 +285,10 @@ async fn sponsor_and_send_handler(
     Query(SponsorAndSendQuery { domain, .. }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<Json<ConfirmationResult>, ErrorResponse> {
+    let val = state.domains.read().await;
     let domain = get_domain_name(domain, origin)?;
     tracing::Span::current().record("domain", domain.as_str());
-    let domain_state = get_domain_state(&state, &domain)?;
+    let domain_state = get_domain_state(&val, &domain)?;
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
@@ -373,33 +374,18 @@ async fn sponsor_pubkey_handler(
     Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
+    let val = state.domains.read().await;
     let DomainState {
         domain_registry_key: _,
         sponsor,
         enable_preflight_simulation: _,
         tx_variations: _,
-    } = get_domain_state(&state, &domain)?;
+    } = get_domain_state(&val, &domain)?;
     Ok(sponsor.pubkey().to_string())
 }
 
-pub async fn run_server(
-    Config {
-        mnemonic_file,
-        solana_url,
-        domains,
-        listen_address,
-    }: Config,
-) {
-    let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
-
-    let rpc = RpcClient::new_with_commitment(
-        solana_url,
-        CommitmentConfig {
-            commitment: CommitmentLevel::Processed,
-        },
-    );
-
-    let domains = domains
+pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<String, DomainState> {
+    return domains
         .into_iter()
         .map(
             |Domain {
@@ -429,6 +415,19 @@ pub async fn run_server(
             },
         )
         .collect::<HashMap<_, _>>();
+}
+
+pub async fn run_server(
+    solana_url: String,
+    domains_states: Arc<RwLock<HashMap<String, DomainState>>>, // <— CHANGED: pass Arc<RwLock<_>>
+    listen_address: String,
+) {
+    let rpc = RpcClient::new_with_commitment(
+        solana_url,
+        CommitmentConfig {
+            commitment: CommitmentLevel::Processed,
+        },
+    );
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
@@ -445,11 +444,22 @@ pub async fn run_server(
 
     let prometheus_layer = PrometheusMetricLayer::new();
 
+    let app_state = ServerState {
+        domains: domains_states,
+        chain_index: ChainIndex {
+            rpc, // RpcClient is cheap to clone internally; keep here in state
+            lookup_table_cache: DashMap::new(),
+        },
+    };
+
     let app = Router::new()
         .route("/ready", axum::routing::get(readiness_handler))
         .route(
             "/metrics",
-            axum::routing::get(move || async move { handle.render() }),
+            axum::routing::get({
+                let handle = handle.clone();
+                move || async move { handle.render() }
+            }),
         )
         .nest("/api", router)
         .layer(
@@ -461,13 +471,8 @@ pub async fn run_server(
                 )])),
         )
         .layer(prometheus_layer)
-        .with_state(Arc::new(ServerState {
-            domains,
-            chain_index: ChainIndex {
-                rpc,
-                lookup_table_cache: DashMap::new(),
-            },
-        }));
+        .with_state(Arc::new(app_state)); // <— CHANGED: store Arc<ServerState> as state
+
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
