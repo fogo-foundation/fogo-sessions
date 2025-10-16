@@ -141,8 +141,8 @@ impl VariationOrderedInstructionConstraints {
                 }
                 constraint_index += 1;
             } else {
-                constraint_index += 1;
                 instruction_index += 1;
+                constraint_index += 1;
             }
         }
 
