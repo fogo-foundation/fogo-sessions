@@ -12,7 +12,6 @@ fn load_file_config(config_path: &str) -> Result<Config> {
         .add_source(File::with_name(config_path))
         .build()?
         .try_deserialize()?;
-
     Ok(config)
 }
 
@@ -64,7 +63,6 @@ pub fn compare_configs(config1: &Config, config2: &Config) -> bool {
                 let json1 = serde_json::to_string(&domain1_variations).unwrap();
                 let json2 = serde_json::to_string(&domain2_variations).unwrap();
                 if json1 != json2 {
-                    println!("json1: {}\n\n\njson2: {}", json1, json2);
                     return false;
                 }
             }

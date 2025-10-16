@@ -6,7 +6,7 @@ fn default_true() -> bool {
     true
 }
 
-#[derive(Deserialize, serde::Serialize)]
+#[derive(Deserialize, serde::Serialize, Debug)]
 pub struct Domain {
     pub domain: String,
 
@@ -22,10 +22,7 @@ pub struct Domain {
     pub tx_variations: Vec<TransactionVariation>,
 }
 
-#[derive(Deserialize, serde::Serialize)]
+#[derive(Deserialize, serde::Serialize, Debug)]
 pub struct Config {
-    pub mnemonic_file: String,
-    pub solana_url: String,
-    pub listen_address: String,
     pub domains: Vec<Domain>,
 }

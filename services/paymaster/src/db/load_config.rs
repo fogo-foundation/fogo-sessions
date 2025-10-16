@@ -55,9 +55,6 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
 
     // Convert to your Config type
     let mut config = Config {
-        mnemonic_file: String::new(),
-        solana_url: String::new(),
-        listen_address: String::new(),
         domains: Vec::new(),
     };
 

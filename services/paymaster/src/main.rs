@@ -106,12 +106,11 @@ async fn main() -> anyhow::Result<()> {
 
     // ----- load initial config -----
     let config_file_path = cli.config.clone();
+
     let config = config_manager::load_config::load_config(&config_file_path).await?;
+
     let mnemonic =
         std::fs::read_to_string(&cli.mnemonic_file).expect("Failed to read mnemonic_file");
-
-    println!("mnemonic: {:#?}", mnemonic);
-
     let domains: SharedDomains = Arc::new(RwLock::new(api::get_domain_state_map(
         config.domains,
         &mnemonic,
@@ -155,7 +154,7 @@ async fn main() -> anyhow::Result<()> {
     let rpc_url_ws = cli
         .rpc_url_ws
         .unwrap_or_else(|| rpc_url_http.replace("http", "ws"));
-
+    println!("rpc_url_http: {:#?}", rpc_url_http);
     api::run_server(rpc_url_http, rpc_url_ws, cli.listen_address, domains).await;
 
     Ok(())
