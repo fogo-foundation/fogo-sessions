@@ -102,7 +102,7 @@ impl ChainIndex {
             Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Transaction instruction {instruction_index} account index {account_index_within_transaction} out of bounds",
+                    "Transaction instruction {instruction_index} account index {account_index_within_instruction} out of bounds",
                 ),
             ))
         }
