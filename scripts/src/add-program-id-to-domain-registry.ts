@@ -47,7 +47,7 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
 
   const url = args.url == "l" ? "http://localhost:8899" : args.url;
 
-  const connection = new Connection(url);
+  const connection = new Connection(url, "confirmed");
   const keypair = Keypair.fromSecretKey(
     Buffer.from(JSON.parse(fs.readFileSync(args.keypair, "utf8"))),
   );

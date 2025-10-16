@@ -77,7 +77,7 @@ const ERROR_CODE_SESSION_LIMITS_EXCEEDED = 4_000_000_008;
 
 type Props = ConstrainedOmit<
   ComponentProps<typeof SessionProvider>,
-  "sponsor" | "tokens" | "defaultRequestedLimits"
+  "sponsor" | "tokens" | "defaultRequestedLimits" | "walletPublicKey"
 > & {
   endpoint: string;
   tokens?: (PublicKey | string)[] | undefined;
@@ -651,16 +651,18 @@ const useSessionStateContext = ({
 const useSessionAdapter = (
   options: ConstrainedOmit<
     Parameters<typeof createSolanaWalletAdapter>[0],
-    "connection"
+    "connection" | "walletPublicKey"
   >,
 ) => {
   const { connection } = useConnection();
+  const { publicKey } = useWallet();
   const adapter = useRef<undefined | SessionAdapter>(undefined);
   return useCallback(async () => {
     if (adapter.current === undefined) {
       adapter.current = await createSolanaWalletAdapter({
         ...options,
         connection,
+        walletPublicKey: publicKey ?? undefined,
       });
       return adapter.current;
     } else {
