@@ -237,8 +237,8 @@ pub struct RetryConfig {
 
 /// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
 /// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
-/// retry_config retries the RPC call with backoff on failure. This is useful in cases where the
-/// transaction was sent and confirmed with a lower commitment level.
+/// retry_config configures the retries of the RPC call with sleep on failure. This is useful in cases where the
+/// transaction was sent with a lower commitment level, so it may not be confirmed yet.
 #[tracing::instrument(skip_all, fields(tx_hash = %signature))]
 pub async fn fetch_transaction_cost_details(
     rpc: &RpcClient,
