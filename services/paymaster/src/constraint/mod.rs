@@ -1,5 +1,6 @@
 use axum::http::StatusCode;
 use borsh::BorshDeserialize;
+use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
@@ -75,33 +76,41 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
-fn instruction_matches_program(
-    transaction: &VersionedTransaction,
-    instruction_index: usize,
-    program_to_match: &Pubkey,
-) -> anyhow::Result<bool> {
-    let instruction = transaction.message.instructions().get(instruction_index);
-    if let Some(instruction) = instruction {
-        let static_accounts = transaction.message.static_account_keys();
-        let program_id = instruction.program_id(static_accounts);
-        if program_id == program_to_match {
-            return Ok(true);
-        }
-    } else {
-        anyhow::bail!("Instruction index {instruction_index} out of bounds");
+impl VariationOrderedInstructionConstraints {
+    const IGNORED_PROGRAMS: &[Pubkey] = &[
+        solana_compute_budget_interface::id(),
+        TOLLBOOTH_PROGRAM_ID,
+    ];
+
+    fn is_ignored_instruction(
+        transaction: &VersionedTransaction,
+        instruction: &CompiledInstruction,
+    ) -> bool {
+        let program_id = instruction.program_id(transaction.message.static_account_keys());
+        Self::IGNORED_PROGRAMS.contains(&program_id)
     }
 
-    Ok(false)
-}
-
-impl VariationOrderedInstructionConstraints {
-    pub async fn validate_transaction(
+    pub async fn validate_transaction<'a>(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &'a VersionedTransaction,
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut instruction_index = 0;
+        let mut instruction_iterator = transaction.message.instructions().iter().enumerate();
+        
+        let next_instruction = |instruction_iterator: &mut std::iter::Enumerate<std::slice::Iter<'a, CompiledInstruction>>, current_instruction_index: usize| -> Result<(usize, &'a CompiledInstruction), (StatusCode, String)> {
+            instruction_iterator.next().ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Transaction is missing instruction {current_instruction_index} for variation {}",
+                        self.name
+                    ),
+                )
+            })
+        };
+        let (mut instruction_index, mut instruction) = next_instruction(&mut instruction_iterator, 0)?;
+
         let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
 
@@ -112,15 +121,8 @@ impl VariationOrderedInstructionConstraints {
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         while constraint_index < self.instructions.len() {
-            let is_compute_budget_ix = instruction_matches_program(
-                transaction,
-                instruction_index,
-                &solana_compute_budget_interface::id(),
-            )
-            .unwrap_or(false);
-
-            if is_compute_budget_ix {
-                instruction_index += 1;
+            if Self::is_ignored_instruction(transaction, instruction) {
+                (instruction_index, instruction) = next_instruction(&mut instruction_iterator, instruction_index)?;
                 continue;
             }
 
@@ -128,6 +130,7 @@ impl VariationOrderedInstructionConstraints {
             let result = constraint
                 .validate_instruction(
                     transaction,
+                    instruction,
                     instruction_index,
                     contextual_domain_keys,
                     &self.name,
@@ -141,12 +144,12 @@ impl VariationOrderedInstructionConstraints {
                 }
                 constraint_index += 1;
             } else {
-                instruction_index += 1;
+                (instruction_index, instruction) = next_instruction(&mut instruction_iterator, instruction_index)?;
                 constraint_index += 1;
             }
         }
 
-        if instruction_index != transaction.message.instructions().len() {
+        if let Some((instruction_index, _)) = instruction_iterator.find(|(_, instruction)| !Self::is_ignored_instruction(transaction, instruction)) {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
@@ -176,19 +179,12 @@ impl InstructionConstraint {
     pub async fn validate_instruction(
         &self,
         transaction: &VersionedTransaction,
+        instruction: &CompiledInstruction,
         instruction_index: usize,
         contextual_domain_keys: &ContextualDomainKeys,
         variation_name: &str,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let instruction = &transaction.message.instructions().get(instruction_index).ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Transaction is missing instruction {instruction_index} for variation {variation_name}",
-                ),
-            )
-        })?;
         let static_accounts = transaction.message.static_account_keys();
         let signatures = &transaction.signatures;
 
