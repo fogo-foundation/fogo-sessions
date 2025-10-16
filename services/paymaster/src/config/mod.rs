@@ -3,9 +3,7 @@ use config::File;
 use serde::Deserialize;
 
 use crate::constraint::TransactionVariation;
-use tolls::Tolls;
-
-pub mod tolls;
+use crate::constraint::tolls::Tolls;
 
 fn default_true() -> bool {
     true

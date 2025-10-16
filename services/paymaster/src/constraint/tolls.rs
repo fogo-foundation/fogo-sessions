@@ -3,37 +3,28 @@ use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use reqwest::StatusCode;
 use solana_pubkey::Pubkey;
 use solana_transaction::versioned::VersionedTransaction;
-use crate::config::tolls::Toll as TollConfiguration;
-use crate::config::tolls::Tolls as TollsConfiguration;
 use crate::constraint::get_instruction_account_pubkey_by_index;
 use crate::rpc::ChainIndex;
+use serde::Deserialize;
+use serde_with::{serde_as, DisplayFromStr};
 
+#[derive(Default, Deserialize, Clone)]
+#[serde_as]
 pub enum Tolls {
+    #[serde(rename = "free")]
+    #[default]
     Free,
+    #[serde(rename = "fixed")]
     Fixed(Vec<Toll>),
 }
 
-struct Toll {
-    pub amount: u64,
-    pub mint: Pubkey,
-}
+#[serde_as]
+#[derive(Deserialize, Clone)]
 
-impl From<TollsConfiguration> for Tolls {
-    fn from(tolls: TollsConfiguration) -> Self {
-        match tolls {
-            TollsConfiguration::Free => Self::Free,
-            TollsConfiguration::Fixed(toll) => Self::Fixed(toll.into_iter().map(|toll| toll.into()).collect()),
-        }
-    }
-}
-
-impl From<TollConfiguration> for Toll {
-    fn from(toll: TollConfiguration) -> Self {
-        Self {
-            amount: toll.amount,
-            mint: toll.mint,
-        }
-    }
+pub struct Toll {
+    amount: u64,
+    #[serde_as(as = "DisplayFromStr")]
+    mint: Pubkey,
 }
 
 impl Tolls {
