@@ -342,13 +342,11 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
 }
 
 pub async fn run_server(
-    mnemonic_file: String,
     rpc_url_http: String,
     rpc_url_ws: String,
     listen_address: String,
-    domains: Vec<Domain>,
+    domains_states: Arc<RwLock<HashMap<String, DomainState>>>,
 ) {
-    let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
     let rpc = RpcClient::new_with_commitment(
         rpc_url_http,
         CommitmentConfig {
@@ -394,7 +392,7 @@ pub async fn run_server(
         )
         .layer(prometheus_layer)
         .with_state(Arc::new(ServerState {
-            domains,
+            domains: domains_states,
             chain_index: ChainIndex {
                 rpc,
                 lookup_table_cache: DashMap::new(),
