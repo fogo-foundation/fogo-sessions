@@ -1,6 +1,5 @@
 use axum::http::StatusCode;
 use borsh::BorshDeserialize;
-use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
@@ -9,7 +8,6 @@ use solana_message::VersionedMessage;
 use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
-
 use crate::{rpc::ChainIndex, serde::deserialize_pubkey_vec};
 
 mod templates;
@@ -77,17 +75,16 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
-fn instruction_matches_programs(
+fn instruction_matches_program(
     transaction: &VersionedTransaction,
     instruction_index: usize,
-    program_to_match: &[&Pubkey],
+    program_to_match: &Pubkey,
 ) -> anyhow::Result<bool> {
     let instruction = transaction.message.instructions().get(instruction_index);
     if let Some(instruction) = instruction {
         let static_accounts = transaction.message.static_account_keys();
         let program_id = instruction.program_id(static_accounts);
-        println!("program_id: {:?}", program_id);
-        if program_to_match.contains(&program_id) {
+        if program_id == program_to_match {
             return Ok(true);
         }
     } else {
@@ -115,17 +112,14 @@ impl VariationOrderedInstructionConstraints {
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         while constraint_index < self.instructions.len() {
-            let ignore_ix = instruction_matches_programs(
+            let is_compute_budget_ix = instruction_matches_program(
                 transaction,
                 instruction_index,
-                &[
-                    &solana_compute_budget_interface::id(),
-                    &TOLLBOOTH_PROGRAM_ID,
-                ],
+                &solana_compute_budget_interface::id(),
             )
             .unwrap_or(false);
 
-            if ignore_ix {
+            if is_compute_budget_ix {
                 instruction_index += 1;
                 continue;
             }
@@ -152,29 +146,7 @@ impl VariationOrderedInstructionConstraints {
             }
         }
 
-        if transaction
-            .message
-            .instructions()
-            .get(instruction_index..)
-            .map(|instructions| {
-                instructions
-                    .iter()
-                    .enumerate()
-                    .filter(|(index, _)| {
-                        !instruction_matches_programs(
-                            transaction,
-                            *index + instruction_index,
-                            &[
-                                &solana_compute_budget_interface::id(),
-                                &TOLLBOOTH_PROGRAM_ID,
-                            ],
-                        )
-                        .unwrap_or(true)
-                    })
-                    .count()
-            })
-            != Some(0)
-        {
+        if instruction_index != transaction.message.instructions().len() {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
@@ -198,56 +170,6 @@ pub struct InstructionConstraint {
     #[serde(default)]
     pub data: Vec<DataConstraint>,
     pub required: bool,
-}
-
-pub async fn get_instruction_account_pubkey_by_index(
-    transaction: &VersionedTransaction,
-    instruction: &CompiledInstruction,
-    instruction_index: usize,
-    account_index: usize,
-    chain_index: &ChainIndex,
-) -> Result<Pubkey, (StatusCode, String)> {
-    let global_account_index = usize::from(*instruction
-        .accounts
-        .get(usize::from(account_index))
-        .ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Transaction instruction {instruction_index} missing account at index {account_index}",
-                ),
-            )
-        })?);
-    if let Some(pubkey) = transaction.message.static_account_keys().get(global_account_index) {
-        return Ok(*pubkey);
-    } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
-        let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
-            .iter()
-            .flat_map(|x| {
-                x.writable_indexes
-                    .clone()
-                    .into_iter()
-                    .map(|y| (x.account_key, y))
-            })
-            .chain(lookup_tables.iter().flat_map(|x| {
-                x.readonly_indexes
-                    .clone()
-                    .into_iter()
-                    .map(|y| (x.account_key, y))
-            }))
-            .collect();
-        let account_position_lookups = global_account_index - transaction.message.static_account_keys().len();
-        return chain_index
-            .find_and_query_lookup_table(lookup_accounts, account_position_lookups)
-            .await
-    } else {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!(
-                "Transaction instruction {instruction_index} account index {account_index} out of bounds",
-            ),
-        ));
-    };
 }
 
 impl InstructionConstraint {
@@ -275,21 +197,22 @@ impl InstructionConstraint {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Transaction instruction {instruction_index} program ID {program_id} does not match expected ID for variation {variation_name}",
+                    "Transaction instruction {instruction_index} program ID {program_id} does not match expected ID {} for variation {variation_name}",
+                    self.program,
                 ),
             ));
         }
 
-        for account_constraint in &self.accounts {
-            let account = get_instruction_account_pubkey_by_index(transaction, instruction, instruction_index, account_constraint.index.into(), chain_index).await?;
+        for account_constraint in self.accounts.iter() {
+            let account_pubkey = chain_index.resolve_instruction_account_pubkey(transaction, instruction, instruction_index, account_constraint.index.into()).await?;
 
-            let signers = static_accounts
+            let signers = transaction.message.static_account_keys()
                 .iter()
                 .take(signatures.len())
                 .cloned()
                 .collect::<Vec<_>>();
             account_constraint.check_account(
-                &account,
+                &account_pubkey,
                 signers,
                 contextual_domain_keys,
                 instruction_index,

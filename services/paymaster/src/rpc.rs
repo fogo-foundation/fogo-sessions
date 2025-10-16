@@ -7,6 +7,7 @@ use solana_client::{
     rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig},
 };
 use solana_commitment_config::CommitmentConfig;
+use solana_program::instruction::CompiledInstruction;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_rpc_client_api::client_error::Error;
@@ -51,8 +52,53 @@ fn to_error_response(err: Error) -> ErrorResponse {
 }
 
 impl ChainIndex {
+    /// Find the pubkey for the account at index `account_index_within_instruction` within the `instruction` at `instruction_index` in the given `transaction`.
+    pub async fn resolve_instruction_account_pubkey(&self, transaction: &VersionedTransaction, instruction: &CompiledInstruction, instruction_index: usize, account_index_within_instruction: usize) -> Result<Pubkey, (StatusCode, String)> {
+        let account_index_within_transaction = usize::from(*instruction
+            .accounts
+            .get(usize::from(account_index_within_instruction))
+            .ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Transaction instruction {instruction_index} missing account at index {account_index_within_instruction}",
+                    ),
+                )
+            })?);
+        if let Some(pubkey) = transaction.message.static_account_keys().get(account_index_within_transaction) {
+                return Ok(*pubkey);
+            } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
+            let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
+                .iter()
+                .flat_map(|x| {
+                    x.writable_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                })
+                .chain(lookup_tables.iter().flat_map(|x| {
+                    x.readonly_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                }))
+                .collect();
+            let account_index_within_lookup_tables = account_index_within_transaction - transaction.message.static_account_keys().len();
+            return self
+                .find_and_query_lookup_table(lookup_accounts, account_index_within_lookup_tables)
+                .await
+        } else {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction instruction {instruction_index} account index {account_index_within_transaction} out of bounds",
+                ),
+            ));
+        };
+    }
+
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
-    pub async fn find_and_query_lookup_table(
+    async fn find_and_query_lookup_table(
         &self,
         lookup_accounts: Vec<(Pubkey, u8)>,
         account_position_lookups: usize,
@@ -70,7 +116,7 @@ impl ChainIndex {
 
     /// Queries the lookup table for the pubkey at the given index.
     /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying.
-    pub async fn query_lookup_table_with_retry(
+    async fn query_lookup_table_with_retry(
         &self,
         table: &Pubkey,
         index: usize,
@@ -91,14 +137,14 @@ impl ChainIndex {
 
     /// Queries the lookup table for the pubkey at the given index.
     /// Returns None if the table is not cached or the index is out of bounds.
-    pub fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Option<Pubkey> {
+    fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Option<Pubkey> {
         self.lookup_table_cache
             .get(table)
             .and_then(|entry| entry.get(index).copied())
     }
 
     // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.
-    pub async fn update_lookup_table(
+    async fn update_lookup_table(
         &self,
         table: &Pubkey,
     ) -> Result<Vec<Pubkey>, (StatusCode, String)> {

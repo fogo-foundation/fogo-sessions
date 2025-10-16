@@ -4,7 +4,6 @@ use reqwest::StatusCode;
 use solana_program::instruction::CompiledInstruction;
 use solana_pubkey::Pubkey;
 use solana_transaction::versioned::VersionedTransaction;
-use crate::constraint::get_instruction_account_pubkey_by_index;
 use crate::rpc::ChainIndex;
 use serde::Deserialize;
 use serde_with::{serde_as, DisplayFromStr};
@@ -42,7 +41,7 @@ impl Tolls {
                 StatusCode::BAD_REQUEST,
                 "The paymaster for this domain does not require a toll payment".to_string(),
             )),
-            (Tolls::Fixed(tolls), [(index, tollbooth_instruction)]) => {
+            (Tolls::Fixed(tolls), [(instruction_index, tollbooth_instruction)]) => {
                     #[derive(BorshDeserialize)]
                     enum TollboothInstruction {
                         PayToll(u64),
@@ -58,7 +57,7 @@ impl Tolls {
                         )
                     })?;
                     let TollboothInstruction::PayToll(amount) = tollbooth_instruction_data;
-                    let mint = get_instruction_account_pubkey_by_index(transaction, tollbooth_instruction, *index, Self::MINT_ACCOUNT_INDEX_PAY_TOLL_INSTRUCTION, chain_index).await?;
+                    let mint = chain_index.resolve_instruction_account_pubkey(transaction, tollbooth_instruction, *instruction_index, Self::MINT_ACCOUNT_INDEX_PAY_TOLL_INSTRUCTION).await?;
 
                     if tolls.iter().any(|toll| toll.mint == mint && toll.amount == amount) {
                         return Ok(());
