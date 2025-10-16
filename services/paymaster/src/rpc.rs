@@ -232,7 +232,7 @@ pub struct TransactionCostDetails {
 #[derive(Debug, Clone)]
 pub struct RetryConfig {
     pub max_tries: u32,
-    pub backoff_ms: u64,
+    pub sleep_ms: u64,
 }
 
 /// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
@@ -257,7 +257,7 @@ pub async fn fetch_transaction_cost_details(
 
     for attempt in 0..retry_config.max_tries {
         if attempt > 0 {
-            tokio::time::sleep(Duration::from_millis(retry_config.backoff_ms)).await;
+            tokio::time::sleep(Duration::from_millis(retry_config.sleep_ms)).await;
         }
 
         match rpc.get_transaction_with_config(signature, config).await {

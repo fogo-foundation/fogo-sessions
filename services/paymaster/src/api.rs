@@ -301,7 +301,7 @@ async fn sponsor_and_send_handler(
                 &transaction,
                 RetryConfig {
                     max_tries: 3,
-                    backoff_ms: 2000,
+                    sleep_ms: 2000,
                 },
             )
             .await
