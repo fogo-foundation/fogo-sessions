@@ -7,7 +7,6 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod api;
 mod config;
 mod constraint;
-mod constraint_templates;
 mod metrics;
 mod rpc;
 mod serde;
@@ -37,7 +36,6 @@ struct Cli {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let config = load_config(&cli.config).unwrap();
-    let domains = config.domains;
 
     let resource = opentelemetry_sdk::Resource::builder()
         .with_attributes(vec![opentelemetry::KeyValue::new(
@@ -89,7 +87,7 @@ async fn main() -> anyhow::Result<()> {
         cli.rpc_url_http,
         rpc_url_ws,
         cli.listen_address,
-        domains,
+        config,
     )
     .await;
 
