@@ -45,7 +45,7 @@ local_resource(
 )
 
 local_resource(
-    "setup-toll-recipient",
+    "setup-toll-recipient-ata",
     "spl-token -u l create-account --fee-payer ./tilt/keypairs/faucet.json --owner D7YZKerkVsgkyEzDdme5SxFFho5uyvENr9zJMDvsLFrm So11111111111111111111111111111111111111112",
     resource_deps=["svm-localnet"],
 )
@@ -92,5 +92,5 @@ local_resource(
 local_resource(
     "Demo Webapp",
     serve_cmd="pnpm turbo --filter @fogo/sessions-demo... start:dev",
-    resource_deps=["setup-wrapped-sol-faucet", "setup-sponsor", "setup-address-lookup-table", "setup-toll-recipient", "initialize-programs", "paymaster"],
+    resource_deps=["setup-wrapped-sol-faucet", "setup-sponsor", "setup-address-lookup-table", "setup-toll-recipient-ata", "initialize-programs", "paymaster"],
 )
