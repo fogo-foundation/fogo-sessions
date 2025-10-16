@@ -65,7 +65,7 @@ impl Tolls {
                     }
                     return Err((
                         StatusCode::BAD_REQUEST,
-                        "Payment toll is less than the minimum or not the correct mint".to_string(),
+                        "Toll payment mint is not accepted by the paymaster or the amount is not correct".to_string(),
                     ));
             },
             (Tolls::Fixed(_), []) => Err((
