@@ -33,7 +33,7 @@ v1 does not enforce relationships across instructions (e.g. require instruction 
 
 ## Metrics and Logs
 
-The paymaster service records some metrics via Prometheus and some spans for timing of the transaction validation/submission/confirmation flow via OpenTelemetry. The service exports these OpenTelemetry spans to `localhost:4317` by default. You can configure sending these to a different destination by setting the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
+The paymaster service records some metrics via Prometheus and some spans for timing of the transaction validation/submission/confirmation flow via OpenTelemetry. The service exports these OpenTelemetry spans to `localhost:4317` by default. You can configure sending these to a different destination by setting the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable, or by providing the `otlp_endpoint` CLI arg.
 
 You can run a local all in one jaeger instance to collect and visualize these spans by running:
 
@@ -50,13 +50,13 @@ docker run --name jaeger \
 The crate also exposes a cli tool to validate arbitrary transactions against a specified config. You can run this via the following command:
 
 ```
-cargo run --bin paymaster-tx-validator validate -c <CONFIG_PATH> --transaction-hash <ONCHAIN_TRANSACTION_HASH>
+cargo run --bin paymaster-tx-validator validate -c <CONFIG_PATH> --rpc-url-http <RPC_URL_HTTP> --transaction-hash <ONCHAIN_TRANSACTION_HASH>
 ```
 
 Alternatively, you can provide a serialized transaction as a base64 string via the `--transaction` argument in place of the hash. Additionally, you could ask the tool to validate a specified number of the most recent transactions that interacted with this domain's sponsor pubkey via:
 
 ```
-cargo run --bin paymaster-tx-validator validate -c <CONFIG_PATH> --domain <DOMAIN> --recent-sponsor-txs <NUMBER_OF_RECENT_TXS>
+cargo run --bin paymaster-tx-validator validate -c <CONFIG_PATH> --rpc-url-http <RPC_URL_HTTP> --domain <DOMAIN> --recent-sponsor-txs <NUMBER_OF_RECENT_TXS>
 ```
 
 Note that in this case, you must specify the domain you wish to match against and pull recent transactions for, unless your config only has 1 domain.

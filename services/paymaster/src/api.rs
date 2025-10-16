@@ -1,7 +1,7 @@
-use crate::config_manager::config::{Config, Domain};
+use crate::config_manager::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
-use crate::rpc::{send_and_confirm_transaction, ConfirmationResult};
+use crate::rpc::{send_and_confirm_transaction, ChainIndex, ConfirmationResult};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -17,7 +17,6 @@ use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
-use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
@@ -25,6 +24,7 @@ use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
+use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_seed_derivable::SeedDerivable;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
@@ -41,87 +41,10 @@ pub struct DomainState {
     pub tx_variations: Vec<TransactionVariation>,
 }
 
-pub struct ChainIndex {
-    pub rpc: RpcClient,
-    pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
-}
-
 pub struct ServerState {
     pub domains: Arc<RwLock<HashMap<String, DomainState>>>,
     pub chain_index: ChainIndex,
-}
-
-impl ChainIndex {
-    /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
-    pub async fn find_and_query_lookup_table(
-        &self,
-        lookup_accounts: Vec<(Pubkey, u8)>,
-        account_position_lookups: usize,
-    ) -> Result<Pubkey, (StatusCode, String)> {
-        let (table_to_query, index_to_query) =
-            lookup_accounts.get(account_position_lookups).ok_or_else(|| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!("Account position {account_position_lookups} out of bounds for lookup table invoked accounts"),
-                )
-            })?;
-        self.query_lookup_table_with_retry(table_to_query, usize::from(*index_to_query))
-            .await
-    }
-
-    /// Queries the lookup table for the pubkey at the given index.
-    /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying.
-    pub async fn query_lookup_table_with_retry(
-        &self,
-        table: &Pubkey,
-        index: usize,
-    ) -> Result<Pubkey, (StatusCode, String)> {
-        if let Some(pubkey) = self.query_lookup_table(table, index) {
-            return Ok(pubkey);
-        }
-
-        let addresses = self.update_lookup_table(table).await?;
-        // get the key from the returned addresses instead of re-querying and re-locking the map
-        addresses.get(index).copied().ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!("Lookup table {table} does not contain index {index}"),
-            )
-        })
-    }
-
-    /// Queries the lookup table for the pubkey at the given index.
-    /// Returns None if the table is not cached or the index is out of bounds.
-    pub fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Option<Pubkey> {
-        self.lookup_table_cache
-            .get(table)
-            .and_then(|entry| entry.get(index).copied())
-    }
-
-    // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.
-    pub async fn update_lookup_table(
-        &self,
-        table: &Pubkey,
-    ) -> Result<Vec<Pubkey>, (StatusCode, String)> {
-        let table_data = self.rpc.get_account(table).await.map_err(|err| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to fetch lookup table account {table} from RPC: {err}"),
-            )
-        })?;
-        let table_data_deserialized =
-            AddressLookupTable::deserialize(&table_data.data).map_err(|e| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to deserialize lookup table account {table}: {e}"),
-                )
-            })?;
-
-        self.lookup_table_cache
-            .insert(*table, table_data_deserialized.addresses.to_vec());
-
-        Ok(table_data_deserialized.addresses.to_vec())
-    }
+    pub rpc_sub: PubsubClient,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -335,6 +258,7 @@ async fn sponsor_and_send_handler(
 
     let confirmation_result = send_and_confirm_transaction(
         &state.chain_index.rpc,
+        &state.rpc_sub,
         &transaction,
         RpcSendTransactionConfig {
             skip_preflight: !domain_state.enable_preflight_simulation,
@@ -418,16 +342,22 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
 }
 
 pub async fn run_server(
-    solana_url: String,
-    domains_states: Arc<RwLock<HashMap<String, DomainState>>>, // <— CHANGED: pass Arc<RwLock<_>>
+    mnemonic_file: String,
+    rpc_url_http: String,
+    rpc_url_ws: String,
     listen_address: String,
+    domains: Vec<Domain>,
 ) {
+    let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
     let rpc = RpcClient::new_with_commitment(
-        solana_url,
+        rpc_url_http,
         CommitmentConfig {
             commitment: CommitmentLevel::Processed,
         },
     );
+    let rpc_sub = PubsubClient::new(&rpc_url_ws)
+        .await
+        .expect("Failed to create pubsub client");
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
@@ -443,14 +373,6 @@ pub async fn run_server(
         .expect("install metrics recorder");
 
     let prometheus_layer = PrometheusMetricLayer::new();
-
-    let app_state = ServerState {
-        domains: domains_states,
-        chain_index: ChainIndex {
-            rpc, // RpcClient is cheap to clone internally; keep here in state
-            lookup_table_cache: DashMap::new(),
-        },
-    };
 
     let app = Router::new()
         .route("/ready", axum::routing::get(readiness_handler))
@@ -471,8 +393,14 @@ pub async fn run_server(
                 )])),
         )
         .layer(prometheus_layer)
-        .with_state(Arc::new(app_state)); // <— CHANGED: store Arc<ServerState> as state
-
+        .with_state(Arc::new(ServerState {
+            domains,
+            chain_index: ChainIndex {
+                rpc,
+                lookup_table_cache: DashMap::new(),
+            },
+            rpc_sub,
+        }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }

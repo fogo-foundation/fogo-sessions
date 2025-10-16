@@ -9,9 +9,10 @@ use anchor_lang::solana_program::borsh0_10::get_instance_packed_len;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Token;
 use domain_registry::{domain::Domain, state::DomainRecordInner};
+use fogo_sessions_sdk::session::ActiveSessionInfoWithDomainHash;
 use fogo_sessions_sdk::session::{
     ActiveSessionInfo, AuthorizedProgram, AuthorizedPrograms, AuthorizedTokens,
-    AuthorizedTokensWithMints, RevokedSessionInfo, Session, SessionInfo, V2, V3,
+    AuthorizedTokensWithMints, RevokedSessionInfo, Session, SessionInfo, V2, V3, V4,
 };
 use solana_intents::Intent;
 use solana_intents::Version;
@@ -71,7 +72,7 @@ pub mod session_manager {
             Tokens::All => AuthorizedTokensWithMints::All,
         };
 
-        let program_domains = ctx.accounts.get_domain_programs(domain)?;
+        let program_domains = ctx.accounts.get_domain_programs(&domain)?;
 
         let session = match minor {
             1 => Session {
@@ -107,6 +108,20 @@ pub mod session_manager {
                     expiration,
                 })),
             },
+            4 => Session {
+                sponsor: ctx.accounts.sponsor.key(),
+                major,
+                session_info: SessionInfo::V4(V4::Active(ActiveSessionInfoWithDomainHash {
+                    domain_hash: domain.get_domain_hash(),
+                    active_session_info: ActiveSessionInfo {
+                        user: signer,
+                        authorized_programs: AuthorizedPrograms::Specific(program_domains),
+                        authorized_tokens: authorized_tokens_with_mints,
+                        extra: extra.into(),
+                        expiration,
+                    },
+                })),
+            },
             _ => return err!(SessionManagerError::InvalidVersion),
         };
         ctx.accounts.initialize_and_store_session(&session)?;
@@ -134,6 +149,18 @@ pub mod session_manager {
                     }));
             }
             SessionInfo::V3(V3::Revoked(_)) => {} // Idempotent
+            SessionInfo::V4(V4::Active(active_session_info)) => {
+                ctx.accounts.session.session_info =
+                    SessionInfo::V4(V4::Revoked(RevokedSessionInfo {
+                        user: active_session_info.as_ref().user,
+                        expiration: active_session_info.as_ref().expiration,
+                        authorized_tokens_with_mints: active_session_info
+                            .as_ref()
+                            .authorized_tokens
+                            .clone(),
+                    }));
+            }
+            SessionInfo::V4(V4::Revoked(_)) => {} // Idempotent
         }
         ctx.accounts.reallocate_and_refund_rent()?;
         Ok(())
@@ -269,7 +296,7 @@ impl<'info> StartSession<'info> {
         Ok(())
     }
 
-    pub fn get_domain_programs(&self, domain: Domain) -> Result<Vec<AuthorizedProgram>> {
+    pub fn get_domain_programs(&self, domain: &Domain) -> Result<Vec<AuthorizedProgram>> {
         require_eq!(
             self.domain_registry.key(),
             domain.get_domain_record_address(),

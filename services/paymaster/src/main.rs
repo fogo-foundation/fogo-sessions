@@ -26,8 +26,24 @@ type SharedDomains = Arc<RwLock<DomainStateMap>>;
 struct Cli {
     #[clap(short, long, default_value = "./tilt/configs/paymaster.toml")]
     config: String,
+
     #[clap(short, long)]
     db: Option<String>,
+
+    #[clap(long)]
+    mnemonic_file: String,
+
+    #[clap(long)]
+    rpc_url_http: String,
+
+    #[clap(long)]
+    rpc_url_ws: Option<String>,
+
+    #[clap(long, default_value = "0.0.0.0:4000")]
+    listen_address: String,
+
+    #[clap(long)]
+    otlp_endpoint: Option<String>,
 }
 
 #[tokio::main]
@@ -49,8 +65,11 @@ async fn main() -> anyhow::Result<()> {
             "paymaster-service",
         )])
         .build();
-    let otlp_endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
-        .unwrap_or_else(|_| "http://localhost:4317".to_string());
+
+    let otlp_endpoint = cli
+        .otlp_endpoint
+        .or_else(|| std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok())
+        .unwrap_or_else(|| "http://localhost:4317".to_string());
 
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
@@ -135,6 +154,18 @@ async fn main() -> anyhow::Result<()> {
     }
 
     api::run_server(config.solana_url, domains, config.listen_address).await;
+    let rpc_url_ws = cli
+        .rpc_url_ws
+        .unwrap_or_else(|| cli.rpc_url_http.replace("http", "ws"));
+
+    api::run_server(
+        cli.mnemonic_file,
+        cli.rpc_url_http,
+        rpc_url_ws,
+        cli.listen_address,
+        domains,
+    )
+    .await;
 
     Ok(())
 }

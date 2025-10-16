@@ -21,8 +21,9 @@ use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
 
 use fogo_paymaster::{
     api::ChainIndex,
+    config::{load_config, Domain},
     constraint::{ContextualDomainKeys, TransactionVariation},
-    file_config::{load_config, Domain},
+    rpc::ChainIndex,
 };
 
 #[derive(Parser)]
@@ -59,6 +60,10 @@ enum Commands {
         /// RPC rate limit (per second)
         #[arg(long, default_value_t = 10)]
         rpc_quota_per_second: u32,
+
+        /// RPC HTTP URL
+        #[arg(long)]
+        rpc_url_http: String,
     },
 }
 
@@ -76,12 +81,12 @@ async fn main() -> Result<()> {
             transaction,
             recent_sponsor_txs,
             rpc_quota_per_second,
+            rpc_url_http,
         } => {
             let config = load_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
-            let solana_url = config.solana_url.clone();
             let chain_index = ChainIndex {
-                rpc: RpcClient::new(solana_url),
+                rpc: RpcClient::new(rpc_url_http),
                 lookup_table_cache: DashMap::new(),
             };
 

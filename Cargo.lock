@@ -1726,6 +1726,7 @@ dependencies = [
  "solana-packet",
  "solana-program",
  "solana-pubkey",
+ "solana-pubsub-client",
  "solana-rpc-client-api",
  "solana-sdk-ids",
  "solana-seed-derivable",
@@ -1750,7 +1751,7 @@ dependencies = [
 
 [[package]]
 name = "fogo-sessions-sdk"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
@@ -3344,7 +3345,6 @@ dependencies = [
 name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "percentage"
@@ -7066,6 +7066,15 @@ dependencies = [
  "futures-sink",
  "pin-project-lite",
  "tokio",
+]
+
+[[package]]
+name = "tollbooth"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "fogo-sessions-sdk",
 ]
 
 [[package]]
