@@ -3,10 +3,11 @@ domain = "http://foo.bar"
 enable_session_management = true
 enable_preflight_simulation = false
 tolls = { fixed = [ { mint = "So11111111111111111111111111111111111111112", amount = 1000 } ] }
+tx_variations = []
 
 [[domains]]
 domain = "http://localhost:3000"
-enable_session_management = true§
+enable_session_management = true
 enable_preflight_simulation = false
 
 ## Tx Variation 0
