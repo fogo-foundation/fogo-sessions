@@ -360,7 +360,7 @@ const sessionInfoSchema = z
             z.object({
               Active: z.object({
                 "0": z.object({
-                  domain_id: z.array(z.number()),
+                  domain_hash: z.array(z.number()),
                   active_session_info: z.object({
                     authorized_programs: z.union([
                       z.object({
