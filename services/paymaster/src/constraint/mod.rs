@@ -88,9 +88,9 @@ impl VariationOrderedInstructionConstraints {
         Self::IGNORED_PROGRAMS.contains(program_id)
     }
 
-    pub async fn validate_transaction<'a>(
+    pub async fn validate_transaction(
         &self,
-        transaction: &'a VersionedTransaction,
+        transaction: &VersionedTransaction,
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
