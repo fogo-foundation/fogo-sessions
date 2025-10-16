@@ -94,29 +94,7 @@ impl VariationOrderedInstructionConstraints {
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut instruction_iterator = transaction.message.instructions().iter().enumerate();
-
-        let next_instruction = |instruction_iterator: &mut std::iter::Enumerate<
-            std::slice::Iter<'a, CompiledInstruction>,
-        >,
-                                current_instruction_index: usize|
-         -> Result<
-            (usize, &'a CompiledInstruction),
-            (StatusCode, String),
-        > {
-            instruction_iterator.next().ok_or_else(|| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Transaction is missing instruction {current_instruction_index} for variation {}",
-                        self.name
-                    ),
-                )
-            })
-        };
-        let (mut instruction_index, mut instruction) =
-            next_instruction(&mut instruction_iterator, 0)?;
-
+        let mut instruction_index = 0;
         let mut constraint_index = 0;
         check_gas_spend(transaction, self.max_gas_spend)?;
 
@@ -127,9 +105,21 @@ impl VariationOrderedInstructionConstraints {
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         while constraint_index < self.instructions.len() {
+            let instruction = transaction
+                .message
+                .instructions()
+                .get(instruction_index)
+                .ok_or_else(|| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                        "Transaction is missing instruction {instruction_index} for variation {}",
+                        self.name
+                    ),
+                    )
+                })?;
             if Self::is_ignored_instruction(transaction, instruction) {
-                (instruction_index, instruction) =
-                    next_instruction(&mut instruction_iterator, instruction_index)?;
+                instruction_index += 1;
                 continue;
             }
 
@@ -151,13 +141,17 @@ impl VariationOrderedInstructionConstraints {
                 }
                 constraint_index += 1;
             } else {
-                (instruction_index, instruction) =
-                    next_instruction(&mut instruction_iterator, instruction_index)?;
                 constraint_index += 1;
+                instruction_index += 1;
             }
         }
 
-        if let Some((instruction_index, _)) = instruction_iterator
+        if let Some((instruction_index, _)) = transaction
+            .message
+            .instructions()
+            .iter()
+            .enumerate()
+            .skip(instruction_index)
             .find(|(_, instruction)| !Self::is_ignored_instruction(transaction, instruction))
         {
             return Err((
