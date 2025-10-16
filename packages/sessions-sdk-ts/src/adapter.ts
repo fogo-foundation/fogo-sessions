@@ -183,7 +183,7 @@ const buildTransaction = async (
     | VersionedTransaction
     | (Transaction & TransactionWithLifetime),
   addressLookupTables: AddressLookupTableAccount[] | undefined,
-  tollboothInstructions: IInstruction[],
+  tollboothInstructions: Instruction[],
 ) => {
   const sessionKeySigner = sessionKey
     ? await createSignerFromKeyPair(sessionKey)
