@@ -18,5 +18,5 @@ where
     S: Serializer,
 {
     let strings: Vec<String> = keys.iter().map(|k| k.to_string()).collect();
-    strings.serialize(serializer) // works now because `Serialize` is imported
+    strings.serialize(serializer)
 }

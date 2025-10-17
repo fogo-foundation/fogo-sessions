@@ -56,8 +56,6 @@ struct Cli {
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     let cli = Cli::parse();
-
-    // Prefer CLI flag over env if present
     let database_url = cli
         .db_url
         .expect("DATABASE_URL must be set via --db or env var");
@@ -105,10 +103,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     // ----- load initial config -----
-    let config_file_path = cli.config.clone();
-
-    let config = config_manager::load_config::load_config(&config_file_path).await?;
-
+    let config = config_manager::load_config::load_config(&cli.config).await?;
     let mnemonic =
         std::fs::read_to_string(&cli.mnemonic_file).expect("Failed to read mnemonic_file");
     let domains: SharedDomains = Arc::new(RwLock::new(api::get_domain_state_map(
@@ -118,17 +113,16 @@ async fn main() -> anyhow::Result<()> {
     // ----- background refresher -----
     {
         let domains = Arc::clone(&domains);
-        let config_file_path = config_file_path.clone();
 
         tokio::spawn(async move {
-            let mut ticker = interval(Duration::from_secs(2));
+            let mut ticker = interval(Duration::from_secs(10));
             // First tick fires immediately, we can skip it if we don't want a duplicate load.
             ticker.tick().await;
 
             loop {
                 ticker.tick().await;
 
-                match config_manager::load_config::load_config(&config_file_path).await {
+                match config_manager::load_config::load_config(&cli.config).await {
                     Ok(new_config) => {
                         // Recompute the derived state
                         let new_domains = api::get_domain_state_map(new_config.domains, &mnemonic);
@@ -154,7 +148,6 @@ async fn main() -> anyhow::Result<()> {
     let rpc_url_ws = cli
         .rpc_url_ws
         .unwrap_or_else(|| rpc_url_http.replace("http", "ws"));
-    println!("rpc_url_http: {:#?}", rpc_url_http);
     api::run_server(rpc_url_http, rpc_url_ws, cli.listen_address, domains).await;
 
     Ok(())

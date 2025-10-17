@@ -8,6 +8,7 @@ fn default_true() -> bool {
 
 #[derive(Deserialize, serde::Serialize, Debug)]
 pub struct Domain {
+    /// The domain that the paymaster should sponsor.
     pub domain: String,
 
     /// Whether to enable paymaster sponsoring session management (start/revoke) transactions.

@@ -1,8 +1,9 @@
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use tokio::sync::OnceCell;
 
-pub static POOL: OnceCell<sqlx::PgPool> = OnceCell::const_new();
+static POOL: OnceCell<sqlx::PgPool> = OnceCell::const_new();
 
+/// Initialize the database connection pool and runs any pending migrations.
 pub async fn init_db_connection(database_url: String) -> Result<(), sqlx::Error> {
     let pool = POOL
         .get_or_try_init(|| async {
@@ -19,6 +20,7 @@ pub async fn init_db_connection(database_url: String) -> Result<(), sqlx::Error>
     Ok(())
 }
 
+/// Get the database connection pool.
 pub fn pool() -> &'static Pool<Postgres> {
     POOL.get()
         .expect("DB pool not initialized; call init_db_connection() first")

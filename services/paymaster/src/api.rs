@@ -376,10 +376,7 @@ pub async fn run_server(
         .route("/ready", axum::routing::get(readiness_handler))
         .route(
             "/metrics",
-            axum::routing::get({
-                let handle = handle.clone();
-                move || async move { handle.render() }
-            }),
+            axum::routing::get(move || async move { handle.render() }),
         )
         .nest("/api", router)
         .layer(

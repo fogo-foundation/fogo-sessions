@@ -7,6 +7,7 @@ use config::File;
 
 pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
 
+/// Load the config from the file.
 fn load_file_config(config_path: &str) -> Result<Config> {
     let config: Config = config::Config::builder()
         .add_source(File::with_name(config_path))
@@ -15,8 +16,9 @@ fn load_file_config(config_path: &str) -> Result<Config> {
     Ok(config)
 }
 
+/// Load the config from the database.
 async fn load_db_config() -> Result<Config> {
-    let config = db::load_config::load_config().await?;
+    let config = db::config::load_config().await?;
     Ok(config)
 }
 
@@ -42,16 +44,18 @@ fn assign_config_defaults(config: &mut Config) {
     }
 }
 
-pub fn compare_configs(config1: &Config, config2: &Config) -> bool {
-    // loop through the domains and compare the tx_variations, we need to find the corresponding domain in the other config
+fn compare_configs(config1: &Config, config2: &Config) -> bool {
     if config1.domains.len() != config2.domains.len() {
         return false;
     }
     for domain1 in &config1.domains {
         for domain2 in &config2.domains {
+            // loop through the domains and compare the tx_variations, we need to find the corresponding domain in the other config
             if domain1.domain == domain2.domain {
-                // compare the tx_variations
-                if domain1.tx_variations.len() != domain2.tx_variations.len() {
+                if domain1.enable_session_management != domain2.enable_session_management {
+                    return false;
+                }
+                if domain1.enable_preflight_simulation != domain2.enable_preflight_simulation {
                     return false;
                 }
                 // sort the variations
@@ -75,17 +79,18 @@ pub fn compare_configs(config1: &Config, config2: &Config) -> bool {
 pub async fn load_config(config_path: &str) -> Result<Config> {
     let mut file_config = load_file_config(config_path)?;
 
-    db::seed_from_config::seed_from_config(&file_config).await?;
+    db::config::seed_from_config(&file_config).await?;
 
     let mut db_config = load_db_config().await?;
 
     assign_config_defaults(&mut db_config);
     assign_config_defaults(&mut file_config);
 
-    if !compare_configs(&db_config, &file_config) {
-        // throw error
-        anyhow::bail!("Error parsing config.");
-    }
+    // this was used when testing to make sure we have the same config structure from the database as the one from the toml file
+    // if !compare_configs(&db_config, &file_config) {
+    //     // throw error
+    //     anyhow::bail!("Error parsing config.");
+    // }
 
     Ok(db_config)
 }
