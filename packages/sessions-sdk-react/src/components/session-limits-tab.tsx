@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 
 import type { EstablishedSessionState } from "../session-state.js";
+import { isUpdatable } from "../session-state.js";
 import styles from "./session-limits-tab.module.css";
 import { SessionLimits } from "./session-limits.js";
 import { Spinner } from "./spinner.js";
@@ -63,7 +64,7 @@ const SessionLimitsForm = ({
             )
           }
           onSubmit={
-            "updateSession" in sessionState
+            isUpdatable(sessionState)
               ? (duration, tokens) => {
                   sessionState.updateSession(
                     sessionState.type,

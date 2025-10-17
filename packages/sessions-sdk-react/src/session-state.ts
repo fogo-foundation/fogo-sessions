@@ -105,16 +105,36 @@ export type SessionStates = {
   [key in keyof typeof SessionState]: ReturnType<(typeof SessionState)[key]>;
 };
 export type SessionState = SessionStates[keyof SessionStates];
-export type EstablishedSessionState =
-  | SessionStates["Established"]
-  | SessionStates["UpdatingSession"]
-  | SessionStates["RequestingExtendedExpiry"]
-  | SessionStates["RequestingIncreasedLimits"];
+
+export type EstablishedSessionState = Extract<
+  SessionState,
+  {
+    sessionKey: EstablishedOptions["sessionKey"];
+  }
+>;
 
 export const isEstablished = (
   sessionState: SessionState,
-): sessionState is EstablishedSessionState =>
-  sessionState.type === StateType.Established ||
-  sessionState.type === StateType.UpdatingSession ||
-  sessionState.type === StateType.RequestingExtendedExpiry ||
-  sessionState.type === StateType.RequestingIncreasedLimits;
+): sessionState is EstablishedSessionState => "sessionKey" in sessionState;
+
+export type UpdatableSessionState = Extract<
+  SessionState,
+  {
+    updateSession: EstablishedOptions["updateSession"];
+  }
+>;
+
+export const isUpdatable = (
+  sessionState: SessionState,
+): sessionState is UpdatableSessionState => "updateSession" in sessionState;
+
+export type CancelableSessionState = Extract<
+  SessionState,
+  {
+    cancel: () => void;
+  }
+>;
+
+export const isCancelable = (
+  sessionState: SessionState,
+): sessionState is CancelableSessionState => "cancel" in sessionState;

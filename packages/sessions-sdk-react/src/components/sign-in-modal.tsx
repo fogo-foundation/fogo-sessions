@@ -15,7 +15,7 @@ import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
 import styles from "./sign-in-modal.module.css";
 import { useSessionContext } from "../hooks/use-session.js";
-import { StateType } from "../session-state.js";
+import { isCancelable, StateType } from "../session-state.js";
 import { Link } from "./link.js";
 
 type Props = Omit<
@@ -49,7 +49,7 @@ export const SignInModal = ({
 
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
-      if (!isOpen && "cancel" in sessionState) {
+      if (!isOpen && isCancelable(sessionState)) {
         sessionState.cancel();
       }
     },
@@ -137,25 +137,20 @@ const WalletsPage = ({
 }) => {
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
-  const installedWallets = useMemo(
-    () =>
-      wallets.filter(
-        (wallet) =>
-          wallet.readyState === WalletReadyState.Installed ||
-          wallet.readyState === WalletReadyState.Loadable,
-      ),
-    [wallets],
-  );
-
-  const otherWallets = useMemo(
-    () =>
-      wallets.filter(
-        (wallet) =>
-          wallet.readyState === WalletReadyState.NotDetected ||
-          wallet.readyState === WalletReadyState.Unsupported,
-      ),
-    [wallets],
-  );
+  const { otherWallets, installedWallets } = useMemo(() => {
+    const { otherWallets, installedWallets } = Object.groupBy(
+      wallets,
+      (wallet) =>
+        wallet.readyState === WalletReadyState.Installed ||
+        wallet.readyState === WalletReadyState.Loadable
+          ? "installedWallets"
+          : "otherWallets",
+    );
+    return {
+      otherWallets: otherWallets ?? [],
+      installedWallets: installedWallets ?? [],
+    };
+  }, [wallets]);
 
   return (
     <Page heading="Select a wallet" message="Select a Solana wallet to connect">

@@ -354,13 +354,17 @@ const useSessionState = ({
         try {
           await mutate(getCacheKey(session.walletPublicKey));
         } catch (error: unknown) {
+          toast.error(
+            "We couldn't update your token balances, please try refreshing the page",
+            errorToString(error),
+          );
           // eslint-disable-next-line no-console
           console.error("Failed to update token account data", error);
         }
       }
       return result;
     },
-    [onOpenExtendSessionExpiry, onOpenSessionLimitsReached],
+    [onOpenExtendSessionExpiry, onOpenSessionLimitsReached, toast],
   );
 
   const updateSession = useCallback(
@@ -760,8 +764,16 @@ const tryLoadStoredSession = async (
 };
 
 enum ConnectWalletStateType {
+  // Indicates that the request to connect a wallet was aborted before
+  // completing (e.g. the user closed the wallet connection modal)
   Aborted,
+
+  // Indicates that the wallet connected and we found a valid stored session
+  // which has been restored
   RestoredSession,
+
+  // Indicates that the wallet is connected (but no stored session was found, so
+  // we need to request limits and create a session)
   Connected,
 }
 

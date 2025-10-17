@@ -130,7 +130,7 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
         data-is-signed-in={isEstablished(sessionState) ? "" : undefined}
         data-compact={compact ? "" : undefined}
       >
-        <div className={styles.fogoLogoContainer}>
+        <div className={styles.fogoLogoContainer} aria-hidden={isLoading}>
           <FogoLogo className={styles.fogoLogo} />
         </div>
         {!compact && (

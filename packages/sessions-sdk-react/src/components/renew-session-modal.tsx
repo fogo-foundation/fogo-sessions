@@ -11,14 +11,14 @@ import {
   useTokenAccountData,
   StateType as TokenDataStateType,
 } from "../hooks/use-token-account-data.js";
-import { StateType } from "../session-state.js";
+import { isCancelable, isUpdatable, StateType } from "../session-state.js";
 
 export const RenewSessionModal = () => {
   const sessionState = useSession();
 
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
-      if (!isOpen && "cancel" in sessionState) {
+      if (!isOpen && isCancelable(sessionState)) {
         sessionState.cancel();
       }
     },
@@ -87,7 +87,7 @@ const RenewSessionsContents = ({
             )
           }
           onSubmit={
-            "updateSession" in sessionState
+            isUpdatable(sessionState)
               ? (duration, limits) => {
                   sessionState.updateSession(
                     sessionState.type,
