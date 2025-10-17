@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 extern crate dotenv;
 use clap::Parser;
@@ -6,7 +6,6 @@ use dotenv::dotenv;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
 use tokio::sync::RwLock;
-use tokio::time::interval;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
@@ -109,38 +108,9 @@ async fn main() -> anyhow::Result<()> {
         config.domains,
         &mnemonic,
     )));
-    // ----- background refresher -----
-    {
-        let domains = Arc::clone(&domains);
 
-        tokio::spawn(async move {
-            let mut ticker = interval(Duration::from_secs(10));
-            // First tick fires immediately, we can skip it if we don't want a duplicate load.
-            ticker.tick().await;
-
-            loop {
-                ticker.tick().await;
-
-                match config_manager::load_config::load_config(&cli.config).await {
-                    Ok(new_config) => {
-                        // Recompute the derived state
-                        let new_domains = api::get_domain_state_map(new_config.domains, &mnemonic);
-
-                        // Atomically swap under a write lock
-                        {
-                            let mut guard = domains.write().await;
-                            *guard = new_domains;
-                        }
-
-                        tracing::info!("Config/domains refreshed");
-                    }
-                    Err(e) => {
-                        tracing::error!("Failed to read mnemonic file during config update: {}", e);
-                    }
-                }
-            }
-        });
-    }
+    // ----- spawn config refresher -----
+    config_manager::load_config::spawn_config_refresher(cli.config, mnemonic, &domains);
 
     let rpc_url_http = cli.rpc_url_http.unwrap();
 

@@ -1,8 +1,15 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::Duration;
+
+use crate::api::{self, DomainState};
 use crate::{config_manager::config::Config, constraint::TransactionVariation};
 
 use crate::db;
 use anyhow::Result;
 use config::File;
+use tokio::sync::RwLock;
+use tokio::time::interval;
 
 pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
 
@@ -94,4 +101,41 @@ pub async fn load_config(config_path: &str) -> Result<Config> {
     // }
 
     Ok(db_config)
+}
+
+/// Spawn a background task to refresh the config every 10 seconds.
+pub fn spawn_config_refresher(
+    config_path: String,
+    mnemonic: String,
+    domains: &Arc<RwLock<HashMap<String, DomainState>>>,
+) {
+    // ----- background refresher -----
+    let domains = Arc::clone(domains);
+    tokio::spawn(async move {
+        let mut ticker = interval(Duration::from_secs(10));
+        // First tick fires immediately, we can skip it if we don't want a duplicate load.
+        ticker.tick().await;
+
+        loop {
+            ticker.tick().await;
+            // note that `load_config` also reads from the toml file but that shouldn't be an issue
+            match load_config(&config_path).await {
+                Ok(new_config) => {
+                    // Recompute the derived state
+                    let new_domains = api::get_domain_state_map(new_config.domains, &mnemonic);
+
+                    // Atomically swap under a write lock
+                    {
+                        let mut guard = domains.write().await;
+                        *guard = new_domains;
+                    }
+
+                    tracing::info!("Config/domains refreshed");
+                }
+                Err(e) => {
+                    tracing::error!("Failed to read mnemonic file during config update: {}", e);
+                }
+            }
+        }
+    });
 }
