@@ -34,6 +34,7 @@ use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
+use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
@@ -288,35 +289,42 @@ async fn sponsor_and_send_handler(
     };
 
     if let Some(signature) = signature_to_fetch {
-        tokio::spawn(async move {
-            match fetch_transaction_cost_details(
-                &state.chain_index.rpc,
-                &signature,
-                &transaction,
-                RetryConfig {
-                    max_tries: 3,
-                    sleep_ms: 2000,
-                },
-            )
-            .await
-            {
-                Ok(cost_details) => {
-                    obs_actual_transaction_costs(
-                        domain,
-                        matched_variation_name,
-                        confirmation_status,
-                        cost_details,
-                    );
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        "Failed to fetch transaction cost details for {}: {:?}",
-                        signature,
-                        e
-                    );
+        // We capture the current span to propagate to the spawned task.
+        // This ensures that any logs/traces from the spawned task are associated with the original request.
+        let span = tracing::Span::current();
+
+        tokio::spawn(
+            async move {
+                match fetch_transaction_cost_details(
+                    &state.chain_index.rpc,
+                    &signature,
+                    &transaction,
+                    RetryConfig {
+                        max_tries: 3,
+                        sleep_ms: 2000,
+                    },
+                )
+                .await
+                {
+                    Ok(cost_details) => {
+                        obs_actual_transaction_costs(
+                            domain,
+                            matched_variation_name,
+                            confirmation_status,
+                            cost_details,
+                        );
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Failed to fetch transaction cost details for {}: {:?}",
+                            signature,
+                            e
+                        );
+                    }
                 }
             }
-        });
+            .instrument(span),
+        );
     }
 
     Ok(Json(confirmation_result))
