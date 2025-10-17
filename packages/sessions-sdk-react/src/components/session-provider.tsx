@@ -351,7 +351,7 @@ const useSessionStateContext = ({
         payer: session.payer,
         sendTransaction: async (instructions) => {
           const result = await session.sendTransaction(instructions);
-          if (result.type === TransactionResultType.Failed) {
+          if (result.type === TransactionResultType.Failed || result.type === TransactionResultType.UnconfirmedPreflightFailure) {
             const parsedError = instructionErrorCustomSchema.safeParse(
               result.error,
             );
