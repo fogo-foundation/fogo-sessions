@@ -281,14 +281,11 @@ async fn sponsor_and_send_handler(
 
     // Spawn async task to fetch actual transaction costs from RPC
     // This happens in the background to avoid blocking the response to the client
-    // Only fetch if the transaction was actually sent to chain (not rejected in preflight)
-    let signature_to_fetch = match &confirmation_result {
-        ConfirmationResult::Success { signature } => Some(*signature),
-        ConfirmationResult::Failed { signature, .. } => Some(*signature),
-        ConfirmationResult::UnconfirmedPreflightFailure { .. } => None,
-    };
-
-    if let Some(signature) = signature_to_fetch {
+    // Only fetch if the transaction actually succeeded on chain
+    // TODO: eventually we should disambiguate between failed on chain vs failed preflight
+    // and fetch costs for failed on chain as well. However, it probably doesn't make much difference
+    // since the only costs incurred in case of failure are the transaction fees + priority fees.
+    if let ConfirmationResult::Success { signature } = confirmation_result {
         // We capture the current span to propagate to the spawned task.
         // This ensures that any logs/traces from the spawned task are associated with the original request.
         let span = tracing::Span::current();

@@ -36,17 +36,9 @@ pub enum ConfirmationResult {
         signature: Signature,
     },
 
-    /// Transaction was confirmed but failed on chain
+    /// TODO: Disambiguate between confirmed and failed on chain vs failed preflight
     #[serde(rename = "failed")]
     Failed {
-        #[serde_as(as = "DisplayFromStr")]
-        signature: Signature,
-        error: TransactionError,
-    },
-
-    /// Transaction failed preflight checks and was not sent to chain
-    #[serde(rename = "unconfirmed_preflight_failure")]
-    UnconfirmedPreflightFailure {
         #[serde_as(as = "DisplayFromStr")]
         signature: Signature,
         error: TransactionError,
@@ -58,9 +50,6 @@ impl ConfirmationResult {
         match self {
             ConfirmationResult::Success { .. } => "success".to_string(),
             ConfirmationResult::Failed { .. } => "failed".to_string(),
-            ConfirmationResult::UnconfirmedPreflightFailure { .. } => {
-                "unconfirmed_failed_preflight".to_string()
-            }
         }
     }
 }
@@ -161,7 +150,8 @@ pub async fn send_and_confirm_transaction(
         Ok(sig) => sig,
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
-                return Ok(ConfirmationResult::UnconfirmedPreflightFailure {
+                // TODO: Disambiguate between confirmed and failed on chain vs failed preflight
+                return Ok(ConfirmationResult::Failed {
                     signature: transaction.signatures[0],
                     error,
                 });
