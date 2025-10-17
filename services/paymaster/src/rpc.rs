@@ -26,7 +26,7 @@ pub struct ChainIndex {
 }
 
 #[serde_as]
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(serde::Serialize)]
 #[serde(tag = "type")]
 pub enum ConfirmationResult {
     /// Transaction was confirmed and succeeded on chain
