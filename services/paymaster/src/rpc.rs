@@ -45,11 +45,47 @@ pub enum ConfirmationResult {
     },
 }
 
-impl ConfirmationResult {
+pub enum ConfirmationResultInternal {
+    /// Transaction was confirmed and succeeded on chain
+    Success { signature: Signature },
+
+    /// Transaction was confirmed but failed on chain
+    Failed {
+        signature: Signature,
+        error: TransactionError,
+    },
+
+    /// Transaction was not confirmed due to preflight failure
+    UnconfirmedPreflightFailure {
+        signature: Signature,
+        error: TransactionError,
+    },
+}
+
+impl ConfirmationResultInternal {
     pub fn status_string(&self) -> String {
         match self {
-            ConfirmationResult::Success { .. } => "success".to_string(),
-            ConfirmationResult::Failed { .. } => "failed".to_string(),
+            ConfirmationResultInternal::Success { .. } => "success".to_string(),
+            ConfirmationResultInternal::Failed { .. } => "failed".to_string(),
+            ConfirmationResultInternal::UnconfirmedPreflightFailure { .. } => {
+                "unconfirmed_preflight_failure".to_string()
+            }
+        }
+    }
+}
+
+impl From<ConfirmationResultInternal> for ConfirmationResult {
+    fn from(internal: ConfirmationResultInternal) -> Self {
+        match internal {
+            ConfirmationResultInternal::Success { signature } => {
+                ConfirmationResult::Success { signature }
+            }
+            ConfirmationResultInternal::Failed { signature, error } => {
+                ConfirmationResult::Failed { signature, error }
+            }
+            ConfirmationResultInternal::UnconfirmedPreflightFailure { signature, error } => {
+                ConfirmationResult::Failed { signature, error }
+            }
         }
     }
 }
@@ -145,13 +181,12 @@ pub async fn send_and_confirm_transaction(
     pubsub: &PubsubClient,
     transaction: &VersionedTransaction,
     config: RpcSendTransactionConfig,
-) -> Result<ConfirmationResult, ErrorResponse> {
+) -> Result<ConfirmationResultInternal, ErrorResponse> {
     let signature = match rpc.send_transaction_with_config(transaction, config).await {
         Ok(sig) => sig,
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
-                // TODO: Disambiguate between confirmed and failed on chain vs failed preflight
-                return Ok(ConfirmationResult::Failed {
+                return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
                     signature: transaction.signatures[0],
                     error,
                 });
@@ -173,7 +208,7 @@ async fn confirm_transaction(
     rpc_sub: &PubsubClient,
     signature: Signature,
     commitment: Option<CommitmentConfig>,
-) -> Result<ConfirmationResult, ErrorResponse> {
+) -> Result<ConfirmationResultInternal, ErrorResponse> {
     let (mut stream, unsubscribe) = rpc_sub
         .signature_subscribe(
             &signature,
@@ -201,12 +236,12 @@ async fn confirm_transaction(
             ) = response.value
             {
                 if let Some(err) = processed_signature_result.err {
-                    return Ok(ConfirmationResult::Failed {
+                    return Ok(ConfirmationResultInternal::Failed {
                         signature,
                         error: err,
                     });
                 } else {
-                    return Ok(ConfirmationResult::Success { signature });
+                    return Ok(ConfirmationResultInternal::Success { signature });
                 }
             }
         }

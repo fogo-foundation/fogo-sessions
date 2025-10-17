@@ -3,7 +3,7 @@ use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::rpc::{
     fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex, ConfirmationResult,
-    RetryConfig,
+    ConfirmationResultInternal, RetryConfig,
 };
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -282,10 +282,13 @@ async fn sponsor_and_send_handler(
     // Spawn async task to fetch actual transaction costs from RPC
     // This happens in the background to avoid blocking the response to the client
     // Only fetch if the transaction actually succeeded on chain
-    // TODO: eventually we should disambiguate between failed on chain vs failed preflight
-    // and fetch costs for failed on chain as well. However, it probably doesn't make much difference
-    // since the only costs incurred in case of failure are the transaction fees + priority fees.
-    if let ConfirmationResult::Success { signature } = confirmation_result {
+    let signature = match &confirmation_result {
+        ConfirmationResultInternal::Success { signature } => Some(signature.clone()),
+        ConfirmationResultInternal::Failed { signature, .. } => Some(signature.clone()),
+        _ => None,
+    };
+
+    if let Some(signature_to_fetch) = signature {
         // We capture the current span to propagate to the spawned task.
         // This ensures that any logs/traces from the spawned task are associated with the original request.
         let span = tracing::Span::current();
@@ -294,7 +297,7 @@ async fn sponsor_and_send_handler(
             async move {
                 match fetch_transaction_cost_details(
                     &state.chain_index.rpc,
-                    &signature,
+                    &signature_to_fetch,
                     &transaction,
                     RetryConfig {
                         max_tries: 3,
@@ -314,7 +317,7 @@ async fn sponsor_and_send_handler(
                     Err(e) => {
                         tracing::warn!(
                             "Failed to fetch transaction cost details for {}: {:?}",
-                            signature,
+                            signature_to_fetch,
                             e
                         );
                     }
@@ -324,7 +327,7 @@ async fn sponsor_and_send_handler(
         );
     }
 
-    Ok(Json(confirmation_result))
+    Ok(Json(confirmation_result.into()))
 }
 
 #[derive(serde::Deserialize, utoipa::IntoParams)]
