@@ -45,7 +45,7 @@ pub enum ConfirmationResult {
     },
 
     /// Transaction failed preflight checks and was not sent to chain
-    #[serde(rename = "failed_preflight")]
+    #[serde(rename = "unconfirmed_preflight_failure")]
     UnconfirmedPreflightFailure {
         #[serde_as(as = "DisplayFromStr")]
         signature: Signature,

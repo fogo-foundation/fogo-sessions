@@ -62,6 +62,7 @@ export type SessionAdapter = {
 export enum TransactionResultType {
   Success,
   Failed,
+  UnconfirmedPreflightFailure,
 }
 
 const TransactionResult = {
@@ -71,6 +72,11 @@ const TransactionResult = {
   }),
   Failed: (signature: string, error: TransactionError) => ({
     type: TransactionResultType.Failed as const,
+    signature,
+    error,
+  }),
+  UnconfirmedPreflightFailure: (signature: string, error: TransactionError) => ({
+    type: TransactionResultType.UnconfirmedPreflightFailure as const,
     signature,
     error,
   }),
@@ -229,11 +235,26 @@ const sponsorAndSendResponseSchema = z
         InstructionError: z.tuple([z.number(), z.unknown()]),
       }),
     }),
+    z.object({
+      type: z.literal("unconfirmed_preflight_failure"),
+      signature: z.string(),
+      error: z.object({
+        InstructionError: z.tuple([z.number(), z.unknown()]),
+      }),
+    })
   ])
   .transform((data) => {
-    return data.type === "success"
-      ? TransactionResult.Success(data.signature)
-      : TransactionResult.Failed(data.signature, data.error);
+    switch (data.type) {
+      case "success":
+        return TransactionResult.Success(data.signature);
+      case "failed":
+        return TransactionResult.Failed(data.signature, data.error);
+      case "unconfirmed_preflight_failure":
+        return TransactionResult.UnconfirmedPreflightFailure(
+          data.signature,
+          data.error,
+        );
+    }
   });
 
 const sendToPaymaster = async (

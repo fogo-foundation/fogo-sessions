@@ -140,6 +140,9 @@ const sendSessionEstablishTransaction = async (
     case TransactionResultType.Failed: {
       return EstablishSessionResult.Failed(result.signature, result.error);
     }
+    case TransactionResultType.UnconfirmedPreflightFailure: {
+      return EstablishSessionResult.Failed(result.signature, result.error);
+    }
   }
 };
 
