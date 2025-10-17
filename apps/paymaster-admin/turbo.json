@@ -1,0 +1,22 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!README.md",
+        "!**/*.test.*",
+        "!jest.config.js",
+        "!eslint.config.js",
+        "!prettier.config.js",
+        "!vercel.json",
+        "!**/dist/**"
+      ],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": ["VERCEL_ENV"]
+    }
+  }
+}
+
+
