@@ -17,6 +17,8 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
+      - name: Install libusb
+        run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev libudev-dev
       - name: Install Solana Verify CLI
         run: |
           cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 610cdc3
