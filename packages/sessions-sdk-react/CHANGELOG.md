@@ -1,5 +1,15 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.26
+
+### Patch Changes
+
+- 77ee4ed: Fix metadata url
+- Updated dependencies [2273056]
+  - @fogo/sessions-idls@0.0.7
+  - @fogo/sessions-sdk@0.0.17
+  - @fogo/sessions-sdk-web@0.0.11
+
 ## 0.0.25
 
 ### Patch Changes
