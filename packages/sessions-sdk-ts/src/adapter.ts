@@ -75,7 +75,10 @@ const TransactionResult = {
     signature,
     error,
   }),
-  UnconfirmedPreflightFailure: (signature: string, error: TransactionError) => ({
+  UnconfirmedPreflightFailure: (
+    signature: string,
+    error: TransactionError,
+  ) => ({
     type: TransactionResultType.UnconfirmedPreflightFailure as const,
     signature,
     error,
@@ -241,19 +244,22 @@ const sponsorAndSendResponseSchema = z
       error: z.object({
         InstructionError: z.tuple([z.number(), z.unknown()]),
       }),
-    })
+    }),
   ])
   .transform((data) => {
     switch (data.type) {
-      case "success":
+      case "success": {
         return TransactionResult.Success(data.signature);
-      case "failed":
+      }
+      case "failed": {
         return TransactionResult.Failed(data.signature, data.error);
-      case "unconfirmed_preflight_failure":
+      }
+      case "unconfirmed_preflight_failure": {
         return TransactionResult.UnconfirmedPreflightFailure(
           data.signature,
           data.error,
         );
+      }
     }
   });
 
