@@ -50,7 +50,7 @@ pub enum ConfirmationResult {
         #[serde_as(as = "DisplayFromStr")]
         signature: Signature,
         error: TransactionError,
-    }
+    },
 }
 
 impl ConfirmationResult {
