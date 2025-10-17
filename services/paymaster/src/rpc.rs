@@ -1,7 +1,6 @@
 use axum::{http::StatusCode, response::ErrorResponse};
 use dashmap::DashMap;
 use futures::stream::StreamExt;
-use serde_with::{serde_as, DisplayFromStr};
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::{
     nonblocking::rpc_client::RpcClient,
@@ -18,31 +17,11 @@ use solana_transaction_status_client_types::UiTransactionEncoding;
 use std::time::Duration;
 use tokio::time::timeout;
 
-use crate::constraint::compute_gas_spent;
+use crate::{api::ConfirmationResult, constraint::compute_gas_spent};
 
 pub struct ChainIndex {
     pub rpc: RpcClient,
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
-}
-
-#[serde_as]
-#[derive(serde::Serialize)]
-#[serde(tag = "type")]
-pub enum ConfirmationResult {
-    /// Transaction was confirmed and succeeded on chain
-    #[serde(rename = "success")]
-    Success {
-        #[serde_as(as = "DisplayFromStr")]
-        signature: Signature,
-    },
-
-    /// TODO: Disambiguate between confirmed and failed on chain vs failed preflight
-    #[serde(rename = "failed")]
-    Failed {
-        #[serde_as(as = "DisplayFromStr")]
-        signature: Signature,
-        error: TransactionError,
-    },
 }
 
 pub enum ConfirmationResultInternal {

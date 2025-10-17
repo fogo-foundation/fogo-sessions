@@ -2,7 +2,7 @@ use crate::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::rpc::{
-    fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex, ConfirmationResult,
+    fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex,
     ConfirmationResultInternal, RetryConfig,
 };
 use axum::extract::{Query, State};
@@ -20,6 +20,7 @@ use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
+use serde_with::{serde_as, DisplayFromStr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
@@ -29,8 +30,10 @@ use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_seed_derivable::SeedDerivable;
+use solana_signature::Signature;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
+use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
@@ -195,6 +198,26 @@ async fn readiness_handler() -> StatusCode {
     StatusCode::OK
 }
 
+#[serde_as]
+#[derive(serde::Serialize)]
+#[serde(tag = "type")]
+pub enum ConfirmationResult {
+    /// Transaction was confirmed and succeeded on chain
+    #[serde(rename = "success")]
+    Success {
+        #[serde_as(as = "DisplayFromStr")]
+        signature: Signature,
+    },
+
+    /// TODO: Disambiguate between confirmed and failed on chain vs failed preflight
+    #[serde(rename = "failed")]
+    Failed {
+        #[serde_as(as = "DisplayFromStr")]
+        signature: Signature,
+        error: TransactionError,
+    },
+}
+
 #[utoipa::path(
     post,
     path = "/sponsor_and_send",
@@ -283,8 +306,8 @@ async fn sponsor_and_send_handler(
     // This happens in the background to avoid blocking the response to the client
     // Only fetch if the transaction actually succeeded on chain
     let signature = match &confirmation_result {
-        ConfirmationResultInternal::Success { signature } => Some(signature.clone()),
-        ConfirmationResultInternal::Failed { signature, .. } => Some(signature.clone()),
+        ConfirmationResultInternal::Success { signature } => Some(*signature),
+        ConfirmationResultInternal::Failed { signature, .. } => Some(*signature),
         _ => None,
     };
 
