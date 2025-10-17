@@ -33,6 +33,7 @@ jobs:
           path: target/deploy/*.so
           retention-days: 10
       - name: Find program binaries to upload
+        id: programs
         run: |
           programs=$(find target/deploy -name "*.so" -type f -exec basename {} \; | sort | jq -R -s -c 'split("\n")[:-1]')
           echo "programs=$programs" >> $GITHUB_OUTPUT
