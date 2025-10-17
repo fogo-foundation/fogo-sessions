@@ -27,6 +27,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: contracts/svm/target/deploy/*.so
-          compression: 0
+          path: target/deploy/*.so
+          compression-level: 0
           retention-days: 90
