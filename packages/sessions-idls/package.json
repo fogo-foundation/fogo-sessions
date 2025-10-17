@@ -33,6 +33,7 @@
     "build:idl:example": "anchor idl build --program-name example --out-ts src/types/example.ts --out src/idl/example.json",
     "build:idl:intent-transfer": "anchor idl build --program-name intent-transfer --out-ts src/types/intent-transfer.ts --out src/idl/intent-transfer.json",
     "build:idl:session-manager": "anchor idl build --program-name session-manager --out-ts src/types/session-manager.ts --out src/idl/session-manager.json",
+    "build:idl:tollbooth": "anchor idl build --program-name tollbooth --out-ts src/types/tollbooth.ts --out src/idl/tollbooth.json",
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix . --max-warnings 0",
     "test:format": "run-jest --colors --selectProjects format",

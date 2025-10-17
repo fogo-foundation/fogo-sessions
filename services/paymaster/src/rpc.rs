@@ -1,10 +1,13 @@
 use axum::{http::StatusCode, response::ErrorResponse};
+use dashmap::DashMap;
 use futures::stream::StreamExt;
+use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::{
     nonblocking::rpc_client::RpcClient,
     rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig},
 };
 use solana_commitment_config::CommitmentConfig;
+use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_rpc_client_api::client_error::Error;
 use solana_signature::Signature;
@@ -12,6 +15,11 @@ use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::time::Duration;
 use tokio::time::timeout;
+
+pub struct ChainIndex {
+    pub rpc: RpcClient,
+    pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
+}
 
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(tag = "type")]
@@ -42,7 +50,80 @@ fn to_error_response(err: Error) -> ErrorResponse {
         .into()
 }
 
-// Inspired by send_and_confirm_transaction from solana-rpc-client, but accepts a config
+impl ChainIndex {
+    /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
+    pub async fn find_and_query_lookup_table(
+        &self,
+        lookup_accounts: Vec<(Pubkey, u8)>,
+        account_position_lookups: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        let (table_to_query, index_to_query) =
+            lookup_accounts.get(account_position_lookups).ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("Account position {account_position_lookups} out of bounds for lookup table invoked accounts"),
+                )
+            })?;
+        self.query_lookup_table_with_retry(table_to_query, usize::from(*index_to_query))
+            .await
+    }
+
+    /// Queries the lookup table for the pubkey at the given index.
+    /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying.
+    pub async fn query_lookup_table_with_retry(
+        &self,
+        table: &Pubkey,
+        index: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        if let Some(pubkey) = self.query_lookup_table(table, index) {
+            return Ok(pubkey);
+        }
+
+        let addresses = self.update_lookup_table(table).await?;
+        // get the key from the returned addresses instead of re-querying and re-locking the map
+        addresses.get(index).copied().ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Lookup table {table} does not contain index {index}"),
+            )
+        })
+    }
+
+    /// Queries the lookup table for the pubkey at the given index.
+    /// Returns None if the table is not cached or the index is out of bounds.
+    pub fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Option<Pubkey> {
+        self.lookup_table_cache
+            .get(table)
+            .and_then(|entry| entry.get(index).copied())
+    }
+
+    // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.
+    pub async fn update_lookup_table(
+        &self,
+        table: &Pubkey,
+    ) -> Result<Vec<Pubkey>, (StatusCode, String)> {
+        let table_data = self.rpc.get_account(table).await.map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to fetch lookup table account {table} from RPC: {err}"),
+            )
+        })?;
+        let table_data_deserialized =
+            AddressLookupTable::deserialize(&table_data.data).map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to deserialize lookup table account {table}: {e}"),
+                )
+            })?;
+
+        self.lookup_table_cache
+            .insert(*table, table_data_deserialized.addresses.to_vec());
+
+        Ok(table_data_deserialized.addresses.to_vec())
+    }
+}
+
+/// Sends a transaction and waits for confirmation via WebSocket subscription.
 #[tracing::instrument(
     skip_all,
     fields(tx_hash = %transaction.signatures[0])
@@ -75,12 +156,12 @@ pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
     skip_all,
     fields(tx_hash = %signature)
 )]
-pub async fn confirm_transaction(
-    rpc_sub: &PubsubClient,
+async fn confirm_transaction(
+    pubsub: &PubsubClient,
     signature: &Signature,
     commitment: Option<CommitmentConfig>,
 ) -> Result<ConfirmationResult, ErrorResponse> {
-    let (mut stream, unsubscribe) = rpc_sub
+    let (mut stream, unsubscribe) = pubsub
         .signature_subscribe(
             signature,
             Some(RpcSignatureSubscribeConfig {

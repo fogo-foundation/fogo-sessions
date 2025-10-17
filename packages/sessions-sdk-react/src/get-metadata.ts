@@ -13,7 +13,7 @@ const metadataSchema = z.record(
   z.string(),
   z.object({
     name: z.string(),
-    symbol: z.string(),
+    symbol: z.string().optional(),
     image: z.string(),
   }),
 );

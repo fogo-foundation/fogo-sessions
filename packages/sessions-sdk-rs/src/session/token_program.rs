@@ -5,6 +5,7 @@ use crate::session::SessionError;
 use crate::session::SessionInfo;
 use crate::session::V2;
 use crate::session::V3;
+use crate::session::V4;
 use solana_program::account_info::AccountInfo;
 use solana_program::pubkey::Pubkey;
 
@@ -22,6 +23,10 @@ impl Session {
             SessionInfo::V3(session) => match session {
                 V3::Revoked(session) => Ok(session.authorized_tokens_with_mints.as_ref()),
                 V3::Active(session) => Ok(session.authorized_tokens.as_ref()),
+            },
+            SessionInfo::V4(session) => match session {
+                V4::Revoked(session) => Ok(session.authorized_tokens_with_mints.as_ref()),
+                V4::Active(session) => Ok(session.as_ref().authorized_tokens.as_ref()),
             },
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
@@ -55,9 +60,7 @@ impl Session {
         user: &Pubkey,
         signers: &[AccountInfo],
     ) -> Result<AuthorizedTokens, SessionError> {
-        self.check_version()?;
-        self.check_is_unrevoked()?;
-        self.check_is_live()?;
+        self.check_is_live_and_unrevoked()?;
         self.check_user(user)?;
         self.check_authorized_program_signer(signers)?;
         Ok(self.authorized_tokens()?.clone())

@@ -1623,7 +1623,7 @@ dependencies = [
 
 [[package]]
 name = "fogo-sessions-sdk"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
@@ -6542,6 +6542,15 @@ dependencies = [
  "futures-sink",
  "pin-project-lite",
  "tokio",
+]
+
+[[package]]
+name = "tollbooth"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "fogo-sessions-sdk",
 ]
 
 [[package]]
