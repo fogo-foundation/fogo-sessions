@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      programs: ${{ steps.programs.outputs.programs }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -24,9 +26,21 @@ jobs:
           cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 610cdc3
       - name: Build
         run: solana-verify build --base-image solanafoundation/solana-verifiable-build:2.2.18
-      - name: Upload artifacts
+      - name: Find program binaries to deploy
+        run: |
+          programs=$(find target/deploy -name "*.so" -type f -exec basename {} \; | sort | jq -R -s -c 'split("\n")[:-1]')
+          echo "programs=$programs" >> $GITHUB_OUTPUT
+
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        program: ${{ fromJson(needs.build.outputs.programs) }}
+    steps:
+      - name: Upload individual program
         uses: actions/upload-artifact@v4
         with:
-          path: target/deploy/*.so
-          compression-level: 0
+          name: ${{ matrix.program }}
+          path: target/deploy/${{ matrix.program }}
           retention-days: 90
