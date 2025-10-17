@@ -82,6 +82,11 @@ pub fn convert_remaning_accounts_and_token_limits_to_pending_approvals<'a, 'info
             );
 
             let mint_data = Mint::try_deserialize(&mut mint_account.data.borrow().as_ref())?;
+            require!(
+                mint_data.freeze_authority.is_none(),
+                SessionManagerError::MintWithFreezeAuthority
+            );
+
             let amount = ui_token_amount.into_amount_internal(mint_data.decimals)?;
 
             Ok(PendingApproval {

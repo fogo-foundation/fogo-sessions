@@ -44,6 +44,8 @@ pub enum SessionManagerError {
     SessionIsLive,
     #[msg("The provided expiration is too far in the future")]
     SessionTooLong,
+    #[msg("Token limits for tokens whose accounts can be frozen are not supported")]
+    MintWithFreezeAuthority,
 }
 
 impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for SessionManagerError {
