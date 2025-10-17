@@ -20,8 +20,7 @@ use solana_transaction_status_client_types::UiTransactionEncoding;
 use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
 
 use fogo_paymaster::{
-    api::ChainIndex,
-    config::{load_config, Domain},
+    config_manager::{config::Domain, load_config::load_config},
     constraint::{ContextualDomainKeys, TransactionVariation},
     rpc::ChainIndex,
 };
@@ -83,7 +82,7 @@ async fn main() -> Result<()> {
             rpc_quota_per_second,
             rpc_url_http,
         } => {
-            let config = load_config(&config)?;
+            let config = load_config(&config).await?;
             let domains = get_domains_for_validation(&config, &domain);
             let chain_index = ChainIndex {
                 rpc: RpcClient::new(rpc_url_http),
@@ -135,7 +134,7 @@ async fn main() -> Result<()> {
 }
 
 fn get_domains_for_validation<'a>(
-    config: &'a fogo_paymaster::file_config::Config,
+    config: &'a fogo_paymaster::config_manager::config::Config,
     domain: &Option<String>,
 ) -> Vec<&'a Domain> {
     if let Some(domain_name) = domain {

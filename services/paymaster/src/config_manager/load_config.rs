@@ -1,5 +1,4 @@
 use crate::{config_manager::config::Config, constraint::TransactionVariation};
-use std::env;
 
 use crate::db;
 use anyhow::Result;
@@ -44,6 +43,8 @@ fn assign_config_defaults(config: &mut Config) {
     }
 }
 
+/// Compare the two configs to make sure they are the same.
+#[allow(dead_code)]
 fn compare_configs(config1: &Config, config2: &Config) -> bool {
     if config1.domains.len() != config2.domains.len() {
         return false;
@@ -73,7 +74,7 @@ fn compare_configs(config1: &Config, config2: &Config) -> bool {
         }
     }
 
-    return true;
+    true
 }
 
 pub async fn load_config(config_path: &str) -> Result<Config> {

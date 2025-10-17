@@ -1,7 +1,6 @@
-use std::{env, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 extern crate dotenv;
-use crate::config_manager::load_config;
 use clap::Parser;
 use dotenv::dotenv;
 use opentelemetry::trace::TracerProvider;

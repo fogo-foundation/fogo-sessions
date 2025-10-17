@@ -2,7 +2,6 @@ use crate::config_manager::config::{Config, Domain};
 use crate::constraint::TransactionVariation;
 use crate::db::pool::pool;
 use std::collections::HashMap;
-use tracing::info;
 use url::Url;
 
 use argon2::{
@@ -99,8 +98,8 @@ async fn insert_user(domain_url: &Url) -> Result<Uuid, sqlx::Error> {
         .fetch_optional(pool())
         .await?;
 
-    if existing_user.is_some() {
-        return Ok(existing_user.unwrap().0);
+    if let Some(user_result) = existing_user {
+        return Ok(user_result.0);
     }
 
     let new_user = sqlx::query_as::<_, (Uuid,)>(
@@ -167,9 +166,9 @@ pub async fn seed_from_config(config: &Config) -> Result<(), sqlx::Error> {
             let host = domain_url.host().unwrap();
             let user = insert_user(&domain_url).await?;
             let app = insert_app(&user, &host.to_string()).await?;
-            let domain_config = insert_domain_config(&app, &domain).await?;
+            let domain_config = insert_domain_config(&app, domain).await?;
             for variation in &domain.tx_variations {
-                insert_variation(&domain_config, &variation).await?;
+                insert_variation(&domain_config, variation).await?;
             }
         }
     }

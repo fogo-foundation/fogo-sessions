@@ -309,7 +309,7 @@ async fn sponsor_pubkey_handler(
 }
 
 pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<String, DomainState> {
-    return domains
+    domains
         .into_iter()
         .map(
             |Domain {
@@ -321,7 +321,7 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                 let domain_registry_key = get_domain_record_address(&domain);
                 let sponsor = Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
-                        &mnemonic, &domain,
+                        mnemonic, &domain,
                     ),
                     Some(DerivationPath::new_bip44(Some(0), Some(0))),
                 )
@@ -338,7 +338,7 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                 )
             },
         )
-        .collect::<HashMap<_, _>>();
+        .collect::<HashMap<_, _>>()
 }
 
 pub async fn run_server(
