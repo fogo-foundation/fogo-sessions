@@ -1,6 +1,7 @@
 use axum::{http::StatusCode, response::ErrorResponse};
 use dashmap::DashMap;
 use futures::stream::StreamExt;
+use serde_with::{serde_as, DisplayFromStr};
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::{
     nonblocking::rpc_client::RpcClient,
@@ -24,21 +25,32 @@ pub struct ChainIndex {
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
 
+#[serde_as]
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(tag = "type")]
 pub enum ConfirmationResult {
+    /// Transaction was confirmed and succeeded on chain
     #[serde(rename = "success")]
     Success {
-        #[serde(with = "serde_with::As::<serde_with::DisplayFromStr>")]
+        #[serde_as(as = "DisplayFromStr")]
         signature: Signature,
     },
+
+    /// Transaction was confirmed but failed on chain
     #[serde(rename = "failed")]
     Failed {
-        #[serde(with = "serde_with::As::<serde_with::DisplayFromStr>")]
+        #[serde_as(as = "DisplayFromStr")]
         signature: Signature,
         error: TransactionError,
-        sent_to_chain: bool,
     },
+
+    /// Transaction failed preflight checks and was not sent to chain
+    #[serde(rename = "failed_preflight")]
+    UnconfirmedPreflightFailure {
+        #[serde_as(as = "DisplayFromStr")]
+        signature: Signature,
+        error: TransactionError,
+    }
 }
 
 impl ConfirmationResult {
@@ -46,6 +58,9 @@ impl ConfirmationResult {
         match self {
             ConfirmationResult::Success { .. } => "success".to_string(),
             ConfirmationResult::Failed { .. } => "failed".to_string(),
+            ConfirmationResult::UnconfirmedPreflightFailure { .. } => {
+                "unconfirmed_failed_preflight".to_string()
+            }
         }
     }
 }
@@ -78,7 +93,7 @@ impl ChainIndex {
 
     /// Queries the lookup table for the pubkey at the given index.
     /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying.
-    pub async fn query_lookup_table_with_retry(
+    async fn query_lookup_table_with_retry(
         &self,
         table: &Pubkey,
         index: usize,
@@ -99,14 +114,14 @@ impl ChainIndex {
 
     /// Queries the lookup table for the pubkey at the given index.
     /// Returns None if the table is not cached or the index is out of bounds.
-    pub fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Option<Pubkey> {
+    fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Option<Pubkey> {
         self.lookup_table_cache
             .get(table)
             .and_then(|entry| entry.get(index).copied())
     }
 
     // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.
-    pub async fn update_lookup_table(
+    async fn update_lookup_table(
         &self,
         table: &Pubkey,
     ) -> Result<Vec<Pubkey>, (StatusCode, String)> {
@@ -146,10 +161,9 @@ pub async fn send_and_confirm_transaction(
         Ok(sig) => sig,
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
-                return Ok(ConfirmationResult::Failed {
+                return Ok(ConfirmationResult::UnconfirmedPreflightFailure {
                     signature: transaction.signatures[0],
                     error,
-                    sent_to_chain: false,
                 });
             }
             return Err(to_error_response(err));
@@ -165,7 +179,7 @@ pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
     skip_all,
     fields(tx_hash = %signature)
 )]
-pub async fn confirm_transaction(
+async fn confirm_transaction(
     rpc_sub: &PubsubClient,
     signature: Signature,
     commitment: Option<CommitmentConfig>,
@@ -200,7 +214,6 @@ pub async fn confirm_transaction(
                     return Ok(ConfirmationResult::Failed {
                         signature,
                         error: err,
-                        sent_to_chain: true,
                     });
                 } else {
                     return Ok(ConfirmationResult::Success { signature });

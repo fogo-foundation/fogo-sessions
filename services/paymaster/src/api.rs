@@ -281,22 +281,16 @@ async fn sponsor_and_send_handler(
     // Spawn async task to fetch actual transaction costs from RPC
     // This happens in the background to avoid blocking the response to the client
     // Only fetch if the transaction was actually sent to chain (not rejected in preflight)
-    let should_fetch_costs = match &confirmation_result {
-        ConfirmationResult::Success { .. } => true,
-        ConfirmationResult::Failed { sent_to_chain, .. } => *sent_to_chain,
+    let signature_to_fetch = match &confirmation_result {
+        ConfirmationResult::Success { signature } => Some(*signature),
+        ConfirmationResult::Failed { signature, .. } => Some(*signature),
+        ConfirmationResult::UnconfirmedPreflightFailure { .. } => None,
     };
 
-    if should_fetch_costs {
-        let signature = match &confirmation_result {
-            ConfirmationResult::Success { signature } => *signature,
-            ConfirmationResult::Failed { signature, .. } => *signature,
-        };
-
-        let state_clone = state.clone();
-
+    if let Some(signature) = signature_to_fetch {
         tokio::spawn(async move {
             match fetch_transaction_cost_details(
-                &state_clone.chain_index.rpc,
+                &state.chain_index.rpc,
                 &signature,
                 &transaction,
                 RetryConfig {
