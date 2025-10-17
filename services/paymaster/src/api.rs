@@ -1,7 +1,10 @@
 use crate::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
-use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
-use crate::rpc::{send_and_confirm_transaction, ChainIndex, ConfirmationResult};
+use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
+use crate::rpc::{
+    fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex,
+    ConfirmationResultInternal, RetryConfig,
+};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -17,6 +20,7 @@ use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
+use serde_with::{serde_as, DisplayFromStr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
@@ -26,11 +30,14 @@ use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_seed_derivable::SeedDerivable;
+use solana_signature::Signature;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
+use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
+use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
@@ -191,6 +198,26 @@ async fn readiness_handler() -> StatusCode {
     StatusCode::OK
 }
 
+#[serde_as]
+#[derive(serde::Serialize)]
+#[serde(tag = "type")]
+pub enum ConfirmationResult {
+    /// Transaction was confirmed and succeeded on chain
+    #[serde(rename = "success")]
+    Success {
+        #[serde_as(as = "DisplayFromStr")]
+        signature: Signature,
+    },
+
+    /// TODO: Disambiguate between confirmed and failed on chain vs failed preflight
+    #[serde(rename = "failed")]
+    Failed {
+        #[serde_as(as = "DisplayFromStr")]
+        signature: Signature,
+        error: TransactionError,
+    },
+}
+
 #[utoipa::path(
     post,
     path = "/sponsor_and_send",
@@ -275,10 +302,55 @@ async fn sponsor_and_send_handler(
         confirmation_status.clone(),
     );
 
-    let gas = crate::constraint::compute_gas_spent(&transaction)?;
-    obs_gas_spend(domain, matched_variation_name, confirmation_status, gas);
+    // Spawn async task to fetch actual transaction costs from RPC
+    // This happens in the background to avoid blocking the response to the client
+    // Only fetch if the transaction actually succeeded on chain
+    let signature = match &confirmation_result {
+        ConfirmationResultInternal::Success { signature } => Some(*signature),
+        ConfirmationResultInternal::Failed { signature, .. } => Some(*signature),
+        _ => None,
+    };
 
-    Ok(Json(confirmation_result))
+    if let Some(signature_to_fetch) = signature {
+        // We capture the current span to propagate to the spawned task.
+        // This ensures that any logs/traces from the spawned task are associated with the original request.
+        let span = tracing::Span::current();
+
+        tokio::spawn(
+            async move {
+                match fetch_transaction_cost_details(
+                    &state.chain_index.rpc,
+                    &signature_to_fetch,
+                    &transaction,
+                    RetryConfig {
+                        max_tries: 3,
+                        sleep_ms: 2000,
+                    },
+                )
+                .await
+                {
+                    Ok(cost_details) => {
+                        obs_actual_transaction_costs(
+                            domain,
+                            matched_variation_name,
+                            confirmation_status,
+                            cost_details,
+                        );
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Failed to fetch transaction cost details for {}: {:?}",
+                            signature_to_fetch,
+                            e
+                        );
+                    }
+                }
+            }
+            .instrument(span),
+        );
+    }
+
+    Ok(Json(confirmation_result.into()))
 }
 
 #[derive(serde::Deserialize, utoipa::IntoParams)]
@@ -362,7 +434,17 @@ pub async fn run_server(
     let handle = PrometheusBuilder::new()
         .set_buckets_for_metric(
             Matcher::Full(crate::metrics::GAS_SPEND_HISTOGRAM.to_string()),
-            crate::metrics::GAS_SPEND_BUCKETS,
+            crate::metrics::TRANSACTION_COST_BUCKETS,
+        )
+        .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::TRANSFER_SPEND_HISTOGRAM.to_string()),
+            crate::metrics::TRANSACTION_COST_BUCKETS,
+        )
+        .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::TOTAL_SPEND_HISTOGRAM.to_string()),
+            crate::metrics::TRANSACTION_COST_BUCKETS,
         )
         .unwrap()
         .install_recorder()
