@@ -2,8 +2,6 @@ name: Release SVM programs
 
 on:
   pull_request:
-    paths:
-      - programs/**
   push:
     branches:
       - main
@@ -21,7 +19,6 @@ jobs:
       - name: Build
         run: solana-verify build --base-image solanafoundation/solana-verifiable-build:2.2.18
       - name: Upload artifacts
-        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           path: contracts/svm/target/deploy/*.so
