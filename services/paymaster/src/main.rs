@@ -1,43 +1,64 @@
-use crate::config::load_config;
+use std::sync::Arc;
+
+extern crate dotenv;
 use clap::Parser;
+use dotenv::dotenv;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
+use tokio::sync::RwLock;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
-mod config;
+mod config_manager;
 mod constraint;
 mod constraint_templates;
+mod db;
 mod metrics;
 mod rpc;
 mod serde;
 
-#[derive(Parser)]
+type DomainStateMap = std::collections::HashMap<String, api::DomainState>;
+type SharedDomains = Arc<RwLock<DomainStateMap>>;
+
+#[derive(Debug, Parser)]
+#[clap(author, version, about, long_about = None)]
 struct Cli {
-    #[clap(short, long, default_value = "./tilt/configs/paymaster.toml")]
+    #[clap(
+        short,
+        long,
+        env = "CONFIG_FILE",
+        default_value = "./tilt/configs/paymaster.toml"
+    )]
     config: String,
 
-    #[clap(long)]
+    #[clap(short, long, env = "DATABASE_URL")]
+    db_url: Option<String>,
+
+    #[clap(long, env = "MNEMONIC_FILE", default_value = "./tilt/secrets/mnemonic")]
     mnemonic_file: String,
 
-    #[clap(long)]
-    rpc_url_http: String,
+    #[clap(long, env = "RPC_URL_HTTP")]
+    rpc_url_http: Option<String>,
 
-    #[clap(long)]
+    #[clap(long, env = "RPC_URL_WS")]
     rpc_url_ws: Option<String>,
 
-    #[clap(long, default_value = "0.0.0.0:4000")]
+    #[clap(long, env = "LISTEN_ADDRESS", default_value = "0.0.0.0:4000")]
     listen_address: String,
 
-    #[clap(long)]
+    #[clap(long, env = "OTEL_EXPORTER_OTLP_ENDPOINT")]
     otlp_endpoint: Option<String>,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    dotenv().ok();
     let cli = Cli::parse();
-    let config = load_config(&cli.config).unwrap();
-    let domains = config.domains;
+    let database_url = cli
+        .db_url
+        .expect("DATABASE_URL must be set via --db or env var");
+
+    db::pool::init_db_connection(database_url).await?;
 
     let resource = opentelemetry_sdk::Resource::builder()
         .with_attributes(vec![opentelemetry::KeyValue::new(
@@ -64,7 +85,6 @@ async fn main() -> anyhow::Result<()> {
         .build();
 
     let tracer = provider.tracer("paymaster-service");
-
     let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
 
     tracing_subscriber::registry()
@@ -80,18 +100,24 @@ async fn main() -> anyhow::Result<()> {
         .with(telemetry)
         .init();
 
+    // ----- load initial config -----
+    let config = config_manager::load_config::load_config(&cli.config).await?;
+    let mnemonic =
+        std::fs::read_to_string(&cli.mnemonic_file).expect("Failed to read mnemonic_file");
+    let domains: SharedDomains = Arc::new(RwLock::new(api::get_domain_state_map(
+        config.domains,
+        &mnemonic,
+    )));
+
+    // ----- spawn config refresher -----
+    config_manager::load_config::spawn_config_refresher(cli.config, mnemonic, &domains);
+
+    let rpc_url_http = cli.rpc_url_http.unwrap();
+
     let rpc_url_ws = cli
         .rpc_url_ws
-        .unwrap_or_else(|| cli.rpc_url_http.replace("http", "ws"));
-
-    api::run_server(
-        cli.mnemonic_file,
-        cli.rpc_url_http,
-        rpc_url_ws,
-        cli.listen_address,
-        domains,
-    )
-    .await;
+        .unwrap_or_else(|| rpc_url_http.replace("http", "ws"));
+    api::run_server(rpc_url_http, rpc_url_ws, cli.listen_address, domains).await;
 
     Ok(())
 }

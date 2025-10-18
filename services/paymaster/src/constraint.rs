@@ -9,9 +9,10 @@ use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
 
-use crate::{rpc::ChainIndex, serde::deserialize_pubkey_vec};
+use crate::rpc::ChainIndex;
+use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(tag = "version")]
 pub enum TransactionVariation {
     #[serde(rename = "v0")]
@@ -30,12 +31,15 @@ impl TransactionVariation {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde_as]
 pub struct VariationProgramWhitelist {
     pub name: String,
 
-    #[serde(deserialize_with = "deserialize_pubkey_vec")]
+    #[serde(
+        deserialize_with = "deserialize_pubkey_vec",
+        serialize_with = "serialize_pubkey_vec"
+    )]
     pub whitelisted_programs: Vec<Pubkey>,
 }
 
@@ -60,7 +64,7 @@ impl VariationProgramWhitelist {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
     #[serde(default)]
@@ -159,7 +163,7 @@ impl VariationOrderedInstructionConstraints {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstructionConstraint {
     #[serde_as(as = "DisplayFromStr")]
     pub program: Pubkey,
@@ -265,7 +269,7 @@ impl InstructionConstraint {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AccountConstraint {
     pub index: u16,
     #[serde(default)]
@@ -322,7 +326,7 @@ impl AccountConstraint {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ContextualPubkey {
     Explicit {
         #[serde_as(as = "DisplayFromStr")]
@@ -406,7 +410,7 @@ impl ContextualPubkey {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DataConstraint {
     pub start_byte: u16,
     pub data_type: PrimitiveDataType,
@@ -521,7 +525,7 @@ impl DataConstraint {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum PrimitiveDataType {
     U8,
     U16,
@@ -549,7 +553,7 @@ impl PrimitiveDataType {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum PrimitiveDataValue {
     U8(u8),
     U16(u16),
@@ -561,7 +565,7 @@ pub enum PrimitiveDataValue {
     Bytes(String),
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum DataConstraintSpecification {
     LessThan(PrimitiveDataValue),
     GreaterThan(PrimitiveDataValue),
