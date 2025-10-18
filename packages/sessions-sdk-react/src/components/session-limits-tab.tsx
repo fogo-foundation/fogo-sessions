@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 
+import type { EstablishedSessionState } from "../session-state.js";
+import { isUpdatable } from "../session-state.js";
 import styles from "./session-limits-tab.module.css";
 import { SessionLimits } from "./session-limits.js";
-import type { EstablishedSessionState } from "./session-provider.js";
-import { useSessionContext } from "./session-provider.js";
 import { Spinner } from "./spinner.js";
+import { useSessionContext } from "../hooks/use-session.js";
 import {
   StateType as TokenDataStateType,
   useTokenAccountData,
@@ -63,8 +64,14 @@ const SessionLimitsForm = ({
             )
           }
           onSubmit={
-            "updateSession" in sessionState
-              ? sessionState.updateSession
+            isUpdatable(sessionState)
+              ? (duration, tokens) => {
+                  sessionState.updateSession(
+                    sessionState.type,
+                    duration,
+                    tokens,
+                  );
+                }
               : undefined
           }
           buttonText="Update Limits"

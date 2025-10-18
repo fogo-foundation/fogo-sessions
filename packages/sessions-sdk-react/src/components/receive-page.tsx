@@ -1,10 +1,10 @@
 import { QrCodeIcon } from "@phosphor-icons/react/dist/ssr/QrCode";
 import { QRCodeSVG } from "qrcode.react";
 
+import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
 import styles from "./receive-page.module.css";
-import type { EstablishedSessionState } from "./session-provider.js";
 
 type Props = {
   onPressDone: () => void;

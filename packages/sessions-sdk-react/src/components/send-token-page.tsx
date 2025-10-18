@@ -6,15 +6,16 @@ import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
+import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
 import { TextField } from "./field.js";
 import { Link } from "./link.js";
 import styles from "./send-token-page.module.css";
-import type { EstablishedSessionState } from "./session-provider.js";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { TruncateKey } from "./truncate-key.js";
+import { useSessionContext } from "../hooks/use-session.js";
 
 type Props = {
   icon?: string | undefined;
@@ -39,6 +40,7 @@ export const SendTokenPage = ({
   amountAvailable,
   onSendComplete,
 }: Props) => {
+  const { getSessionContext } = useSessionContext();
   const [amount, setAmount] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [recipient, setRecipient] = useState("");
@@ -61,14 +63,17 @@ export const SendTokenPage = ({
       }
 
       setIsLoading(true);
-      sendTransfer({
-        adapter: sessionState.adapter,
-        walletPublicKey: sessionState.walletPublicKey,
-        signMessage: sessionState.signMessage,
-        mint: tokenMint,
-        amount: stringToAmount(amount, decimals),
-        recipient: new PublicKey(recipient),
-      })
+      getSessionContext()
+        .then((context) =>
+          sendTransfer({
+            context,
+            walletPublicKey: sessionState.walletPublicKey,
+            signMessage: sessionState.signMessage,
+            mint: tokenMint,
+            amount: stringToAmount(amount, decimals),
+            recipient: new PublicKey(recipient),
+          }),
+        )
         .then((result) => {
           if (result.type === TransactionResultType.Success) {
             toast.success("Tokens sent successfully!");
@@ -86,7 +91,7 @@ export const SendTokenPage = ({
     },
     [
       decimals,
-      sessionState.adapter,
+      getSessionContext,
       sessionState.signMessage,
       sessionState.walletPublicKey,
       tokenMint,

@@ -15,24 +15,6 @@
     padding-top: theme.spacing(40);
     z-index: theme.layer("modal-dialog");
 
-    &[data-entering] {
-      animation: modal-fade 200ms;
-    }
-
-    &[data-exiting] {
-      animation: modal-fade 150ms reverse ease-in;
-    }
-
-    @keyframes modal-fade {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
-    }
-
     .modal {
       outline: none;
       background-color: theme.color("card");
@@ -45,36 +27,6 @@
 
       .dialog {
         outline: none;
-        display: grid;
-        gap: theme.spacing(6);
-
-        .heading {
-          @include theme.text("lg", "medium");
-
-          color: theme.color("heading");
-        }
-
-        .message {
-          @include theme.text("sm", "normal");
-
-          line-height: 140%;
-          color: theme.color("paragraph");
-          margin-bottom: theme.spacing(4);
-        }
-      }
-
-      &[data-entering] {
-        animation: modal-zoom 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
-
-        @keyframes modal-zoom {
-          from {
-            transform: scale(0.8);
-          }
-
-          to {
-            transform: scale(1);
-          }
-        }
       }
     }
   }

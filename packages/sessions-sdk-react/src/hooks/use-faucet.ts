@@ -1,8 +1,8 @@
 import { useMemo, useCallback } from "react";
 import { mutate } from "swr";
 
+import type { EstablishedSessionState } from "../session-state.js";
 import { getCacheKey } from "./use-token-account-data.js";
-import type { EstablishedSessionState } from "../components/session-provider.js";
 
 const FAUCET_URL = "https://gas.zip/faucet/fogo";
 

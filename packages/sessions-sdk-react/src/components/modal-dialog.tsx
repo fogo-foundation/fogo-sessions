@@ -1,31 +1,49 @@
-import type { ComponentProps, ReactNode } from "react";
-import { Dialog, Modal, ModalOverlay, Heading } from "react-aria-components";
+import clsx from "clsx";
+import { AnimatePresence, motion } from "motion/react";
+import type { ComponentProps } from "react";
+import { Dialog, Modal, ModalOverlay } from "react-aria-components";
 
 import styles from "./modal-dialog.module.css";
 
-type Props = Omit<ComponentProps<typeof ModalOverlay>, "children"> & {
+const MotionModal = motion.create(Modal);
+const MotionModalOverlay = motion.create(ModalOverlay);
+
+type Props = Omit<ComponentProps<typeof MotionModalOverlay>, "children"> & {
   children: ComponentProps<typeof Modal>["children"];
-  heading: ReactNode;
-  message?: ReactNode | undefined;
+  dialogClassName?: string | undefined;
 };
 
 export const ModalDialog = ({
   children,
-  heading,
-  message,
+  isOpen,
+  dialogClassName,
   ...props
 }: Props) => (
-  <ModalOverlay isDismissable className={styles.modalOverlay ?? ""} {...props}>
-    <Modal isDismissable className={styles.modal ?? ""}>
-      {(args) => (
-        <Dialog className={styles.dialog ?? ""}>
-          <Heading slot="title" className={styles.heading ?? ""}>
-            {heading}
-          </Heading>
-          {message && <div className={styles.message}>{message}</div>}
-          {typeof children === "function" ? children(args) : children}
-        </Dialog>
-      )}
-    </Modal>
-  </ModalOverlay>
+  <AnimatePresence>
+    {isOpen && (
+      <MotionModalOverlay
+        isDismissable
+        className={styles.modalOverlay ?? ""}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        isOpen
+        {...props}
+      >
+        <MotionModal
+          isDismissable
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          exit={{ scale: 1.1 }}
+          className={styles.modal ?? ""}
+        >
+          {(args) => (
+            <Dialog className={clsx(styles.dialog, dialogClassName)}>
+              {typeof children === "function" ? children(args) : children}
+            </Dialog>
+          )}
+        </MotionModal>
+      </MotionModalOverlay>
+    )}
+  </AnimatePresence>
 );

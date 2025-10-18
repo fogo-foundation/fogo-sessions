@@ -23,7 +23,6 @@ export const CopyButton = ({
   const [isCopied, setIsCopied] = useState(false);
 
   const copyAddress = useCallback(() => {
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins
     navigator.clipboard
       .writeText(text)
       .then(() => {

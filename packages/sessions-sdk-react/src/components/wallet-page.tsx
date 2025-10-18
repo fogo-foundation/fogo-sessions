@@ -7,7 +7,7 @@ import {
   Toolbar,
 } from "react-aria-components";
 
-import type { EstablishedSessionState } from "./session-provider.js";
+import type { EstablishedSessionState } from "../session-state.js";
 import { TokenList } from "./token-list.js";
 import styles from "./wallet-page.module.css";
 import { useFaucet } from "../hooks/use-faucet.js";
