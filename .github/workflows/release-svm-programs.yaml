@@ -11,10 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      programs: ${{ steps.programs.outputs.programs }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install libusb
         run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev libudev-dev
       - name: Install Solana Verify CLI
@@ -22,34 +20,11 @@ jobs:
           cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 610cdc3
       - name: Build
         run: solana-verify build --base-image solanafoundation/solana-verifiable-build:2.2.18
-      - name: Upload deploy directory
+      - name: Print program hashes
+        run: sha256sum target/deploy/*.so
+      - name: Upload programs
         uses: actions/upload-artifact@v4
         with:
-          name: bundle
+          name: programs
           path: target/deploy/*.so
           retention-days: 90
-      - name: Find program binaries to upload
-        id: programs
-        run: |
-          programs=$(find target/deploy -name "*.so" -type f -exec basename {} \; | sort | jq -R -s -c 'split("\n")[:-1]')
-          echo "programs=$programs" >> $GITHUB_OUTPUT
-
-  upload:
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        program: ${{ fromJson(needs.build.outputs.programs) }}
-    steps:
-      - name: Download bundle
-        uses: actions/download-artifact@v4
-        with:
-          name: bundle
-          path: target/deploy
-      - name: Upload individual program
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.program }}
-          path: target/deploy/${{ matrix.program }}
-          retention-days: 90
-          compression-level: 0
