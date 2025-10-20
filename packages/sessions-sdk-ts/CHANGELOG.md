@@ -1,5 +1,13 @@
 # @fogo/sessions-sdk
 
+## 0.0.17
+
+### Patch Changes
+
+- 3a55a1a: Rewrite wallet interaction code & wallet select modal, expose options to pass a privacy policy URL and/or a terms of service URL
+- Updated dependencies [2273056]
+  - @fogo/sessions-idls@0.0.7
+
 ## 0.0.16
 
 ### Patch Changes
