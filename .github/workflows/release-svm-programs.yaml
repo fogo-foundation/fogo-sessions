@@ -2,6 +2,8 @@ name: Release SVM programs
 
 on:
   pull_request:
+    paths:
+      - programs/**
   push:
     branches:
       - main
@@ -23,6 +25,7 @@ jobs:
       - name: Print program hashes
         run: sha256sum target/deploy/*.so
       - name: Upload programs
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: programs
