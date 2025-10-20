@@ -1,0 +1,33 @@
+name: Build and upload SVM programs
+
+on:
+  pull_request:
+    paths:
+      - programs/**
+  push:
+    branches:
+      - main
+    paths:
+      - programs/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libusb
+        run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev libudev-dev
+      - name: Install Solana Verify CLI
+        run: |
+          cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 610cdc3
+      - name: Build
+        run: solana-verify build --base-image solanafoundation/solana-verifiable-build:2.2.18
+      - name: Print program hashes
+        run: sha256sum target/deploy/*.so
+      - name: Upload programs
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: programs
+          path: target/deploy/*.so
+          retention-days: 90
