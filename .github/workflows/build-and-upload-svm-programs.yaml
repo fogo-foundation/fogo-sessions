@@ -1,4 +1,4 @@
-name: Release SVM programs
+name: Build and upload SVM programs
 
 on:
   pull_request:
