@@ -15,10 +15,6 @@ jobs:
       programs: ${{ steps.programs.outputs.programs }}
     steps:
       - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
       - name: Install libusb
         run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev libudev-dev
       - name: Install Solana Verify CLI
@@ -29,9 +25,9 @@ jobs:
       - name: Upload deploy directory
         uses: actions/upload-artifact@v4
         with:
-          name: deploy
+          name: bundle
           path: target/deploy/*.so
-          retention-days: 10
+          retention-days: 90
       - name: Find program binaries to upload
         id: programs
         run: |
@@ -45,10 +41,10 @@ jobs:
       matrix:
         program: ${{ fromJson(needs.build.outputs.programs) }}
     steps:
-      - name: Download deploy directory
+      - name: Download bundle
         uses: actions/download-artifact@v4
         with:
-          name: deploy
+          name: bundle
           path: target/deploy
       - name: Upload individual program
         uses: actions/upload-artifact@v4
@@ -56,3 +52,4 @@ jobs:
           name: ${{ matrix.program }}
           path: target/deploy/${{ matrix.program }}
           retention-days: 90
+          compression-level: 0
