@@ -91,7 +91,7 @@ type Props = ConstrainedOmit<
   privacyPolicyUrl?: string | undefined;
 } & (
     | {
-        paymaster: ComponentProps<typeof SessionProvider>["paymaster"];
+        paymaster?: ComponentProps<typeof SessionProvider>["paymaster"];
         sendToPaymaster?: undefined;
         sponsor?: undefined;
       }
