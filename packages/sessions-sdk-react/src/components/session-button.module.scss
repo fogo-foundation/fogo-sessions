@@ -31,10 +31,12 @@
       display: grid;
       place-content: center;
       border-radius: theme.border-radius();
+      transition: background-color 50ms linear;
 
       .fogoLogo {
         color: theme.pallette-color("white");
         height: theme.spacing(4);
+        transition: opacity 50ms linear;
       }
     }
 
@@ -111,18 +113,18 @@
 
       .fogoLogoContainer {
         background: transparent;
+        position: relative;
 
         &::after {
           content: "";
           display: block;
-          width: theme.spacing(4);
-          height: theme.spacing(4);
           border: 1px solid theme.color("button", "disabled", "foreground");
           border-top-color: transparent;
           border-radius: theme.border-radius("full");
           animation: spin 1s linear infinite;
           transition: opacity linear 100ms;
-          margin-left: theme.spacing(1);
+          position: absolute;
+          inset: theme.spacing(2);
 
           @keyframes spin {
             0% {
@@ -144,7 +146,7 @@
         }
 
         .fogoLogo {
-          display: none;
+          opacity: 0;
         }
       }
     }
