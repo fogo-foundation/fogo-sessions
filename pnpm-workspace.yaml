@@ -13,8 +13,8 @@ catalog:
   "@cprussin/prettier-config": ^3.0.0
   "@cprussin/transform-package-json": ^2.0.0
   "@cprussin/tsconfig": ^4.0.1
-  "@ledgerhq/hw-transport": ^6.31.12,
-  "@ledgerhq/hw-transport-node-hid": ^6.29.13,
+  "@ledgerhq/hw-transport": ^6.31.12
+  "@ledgerhq/hw-transport-node-hid": ^6.29.13
   "@metaplex-foundation/mpl-token-metadata": ^3.4.0
   "@metaplex-foundation/umi": ^1.2.0
   "@metaplex-foundation/umi-bundle-defaults": ^1.2.0
