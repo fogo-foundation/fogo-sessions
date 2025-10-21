@@ -154,7 +154,9 @@ export class LedgerNodeWallet {
     const transport = this._transport;
     const publicKey = this.publicKey;
     // eslint-disable-next-line no-console
-    console.log(`Waiting for your approval on Ledger hardware wallet usb://ledger/${this.publicKey.toBase58()}`);
+    console.log(
+      `Waiting for your approval on Ledger hardware wallet usb://ledger/${this.publicKey.toBase58()}`,
+    );
     const signature = await signTransaction(
       transport,
       transaction,
