@@ -1,3 +1,4 @@
+// Adapted from @solana/wallet-adapter-ledger, with some modifications to support Node.js
 import Transport, {
   StatusCodes,
   TransportStatusError,
@@ -41,7 +42,7 @@ const P2_MORE = 0x02;
 
 const MAX_PAYLOAD = 255;
 
-const LEDGER_CLA = 0xe0;
+const LEDGER_CLA = 0xE0;
 
 async function getPublicKey(
   transport: Transport.default,
@@ -112,7 +113,6 @@ async function send(
   return response.subarray(0, -2);
 }
 
-// This class is inspired by LedgerWalletAdapter from @solana/wallet-adapter-ledger
 export class LedgerNodeWallet {
   private _derivationPath: Buffer;
   private _transport: Transport.default;
