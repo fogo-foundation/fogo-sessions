@@ -41,8 +41,8 @@ const P2_EXTEND = 0x01;
 const P2_MORE = 0x02;
 
 const MAX_PAYLOAD = 255;
-
-const LEDGER_CLA = 0xE0;
+// eslint-disable-next-line unicorn/number-literal-case
+const LEDGER_CLA = 0xe0;
 
 async function getPublicKey(
   transport: Transport.default,
