@@ -6,7 +6,6 @@ import {
 import { VersionedTransaction, type Transaction } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 import {default as TransportNodeHid} from "@ledgerhq/hw-transport-node-hid";
-import { getDerivationPath } from "@solana/wallet-adapter-ledger";
 
 const INS_GET_PUBKEY = 0x05;
 const INS_SIGN_MESSAGE = 0x06;
@@ -21,14 +20,12 @@ const MAX_PAYLOAD = 255;
 
 const LEDGER_CLA = 0xe0;
 
-/** @internal */
-export async function getPublicKey(transport: Transport.default, derivationPath: Buffer): Promise<PublicKey> {
+async function getPublicKey(transport: Transport.default, derivationPath: Buffer): Promise<PublicKey> {
     const bytes = await send(transport, INS_GET_PUBKEY, P1_NON_CONFIRM, derivationPath);
     return new PublicKey(bytes);
 }
 
-/** @internal */
-export async function signTransaction(
+async function signTransaction(
     transport: Transport.default,
     transaction: Transaction | VersionedTransaction,
     derivationPath: Buffer
@@ -77,14 +74,6 @@ export class LedgerNodeWallet {
         this._transport = transport;
         this.publicKey = publicKey;
     }
-    
-
-     async signAllTransactions<T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> {
-        for (const tx of txs) {
-            await this.signTransaction(tx);
-        }
-        return txs;
-    }
 
     static async create(derivationPath: Buffer): Promise<LedgerNodeWallet> {
         const transport = await TransportNodeHid.default.create();
@@ -99,6 +88,14 @@ export class LedgerNodeWallet {
             const signature = await signTransaction(transport, transaction, this._derivationPath);
             transaction.addSignature(publicKey, signature);
             return transaction;
+    }
+
+
+    async signAllTransactions<T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> {
+        for (const tx of txs) {
+            await this.signTransaction(tx);
+        }
+        return txs;
     }
 }
 
