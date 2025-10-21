@@ -243,13 +243,17 @@ const WalletsPage = ({
         <div className={styles.legal}>
           By connecting your wallet, you agree to our{" "}
           {termsOfServiceUrl !== undefined && (
-            <Link href={termsOfServiceUrl}>Terms of Service</Link>
+            <Link href={termsOfServiceUrl} target="_blank">
+              Terms of Service
+            </Link>
           )}
           {termsOfServiceUrl !== undefined &&
             privacyPolicyUrl !== undefined &&
             " and "}
           {privacyPolicyUrl !== undefined && (
-            <Link href={privacyPolicyUrl}>Privacy Policy</Link>
+            <Link href={privacyPolicyUrl} target="_blank">
+              Privacy Policy
+            </Link>
           )}
         </div>
       )}
