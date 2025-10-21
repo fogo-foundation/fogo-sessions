@@ -143,7 +143,7 @@ export class LedgerNodeWallet {
     const publicKey = await getPublicKey(transport, derivationPath);
     // eslint-disable-next-line no-console
     console.log(
-      "Loaded ledger wallet with public key: " + publicKey.toBase58(),
+      "Loaded Ledger hardware wallet with public key: " + publicKey.toBase58(),
     );
     return new LedgerNodeWallet(derivationPath, transport, publicKey);
   }
@@ -153,6 +153,8 @@ export class LedgerNodeWallet {
   ): Promise<T> {
     const transport = this._transport;
     const publicKey = this.publicKey;
+    // eslint-disable-next-line no-console
+    console.log(`Waiting for your approval on Ledger hardware wallet usb://ledger/${this.publicKey.toBase58()}`);
     const signature = await signTransaction(
       transport,
       transaction,
