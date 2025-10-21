@@ -5,7 +5,6 @@ import { DomainRegistryProgram } from "@fogo/sessions-idls";
 import { getDomainRecordAddress } from "@fogo/sessions-sdk";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import yargs from "yargs";
-import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
 import { hideBin } from "yargs/helpers";
 import { LedgerNodeWallet, parseDerivationPath } from "./ledger.js";
 

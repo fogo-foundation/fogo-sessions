@@ -9,7 +9,7 @@ import {default as TransportNodeHid} from "@ledgerhq/hw-transport-node-hid";
 import { getDerivationPath } from "@solana/wallet-adapter-ledger";
 
 export async function parseDerivationPath(source: string): Promise<{ derivationAccount?: number, derivationChange?: number }> {
-    const params = new URLSearchParams(source);
+    const params = new URLSearchParams(new URL(source).searchParams);
     const key = params.get("key");
     if (key === null) {
       return {}
