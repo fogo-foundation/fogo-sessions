@@ -6,6 +6,7 @@ import {
 import { VersionedTransaction, type Transaction } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 import {default as TransportNodeHid} from "@ledgerhq/hw-transport-node-hid";
+import { getDerivationPath } from "@solana/wallet-adapter-ledger";
 
 const INS_GET_PUBKEY = 0x05;
 const INS_SIGN_MESSAGE = 0x06;
@@ -64,6 +65,7 @@ async function send(transport: Transport.default, instruction: number, p1: numbe
 }
 
 
+// This class is inspired by LedgerWalletAdapter from @solana/wallet-adapter-ledger
 export class LedgerNodeWallet {
     private _derivationPath: Buffer;
     private _transport: Transport.default;
@@ -75,8 +77,9 @@ export class LedgerNodeWallet {
         this.publicKey = publicKey;
     }
 
-    static async create(derivationPath: Buffer): Promise<LedgerNodeWallet> {
+    static async create({derivationAccount, derivationChange}: {derivationAccount?: number, derivationChange?: number}): Promise<LedgerNodeWallet> {
         const transport = await TransportNodeHid.default.create();
+        const derivationPath = getDerivationPath(derivationAccount, derivationChange);
         const publicKey = await getPublicKey(transport, derivationPath);
         return new LedgerNodeWallet(derivationPath, transport, publicKey);
     }
