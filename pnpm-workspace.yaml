@@ -90,6 +90,7 @@ onlyBuiltDependencies:
   - blake-hash
   - bufferutil
   - esbuild
+  - node-hid
   - protobufjs
   - puppeteer
   - sharp
