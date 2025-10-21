@@ -61,9 +61,6 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
 
   const url = args.url == "l" ? "http://localhost:8899" : args.url;
 
-  const transport = await TransportNodeHid.default.create();
-  console.log(transport);
-
   const connection = new Connection(url);
   const provider = new AnchorProvider(connection, await parseSignerSource(args.keypair));
   const program = new DomainRegistryProgram(provider);
