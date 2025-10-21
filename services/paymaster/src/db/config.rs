@@ -1,14 +1,13 @@
 use crate::config_manager::config::{Config, Domain};
 use crate::constraint::TransactionVariation;
 use crate::db::pool::pool;
-use std::collections::HashMap;
-use url::Url;
-
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
 };
 use sqlx::{types::Json, FromRow};
+use std::collections::HashMap;
+use url::Url;
 use uuid::Uuid;
 
 use crate::db::pool;
@@ -41,19 +40,16 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
     .fetch_all(pool::pool())
     .await?;
 
-    let mut map: HashMap<Uuid, Domain> = HashMap::new();
-
-    for r in rows {
-        map.entry(r.domain_id)
-            .or_insert_with(|| Domain {
-                domain: r.domain,
-                enable_session_management: r.enable_session_management,
-                enable_preflight_simulation: r.enable_preflight_simulation,
-                tx_variations: Vec::new(),
-            })
-            .tx_variations
-            .push(r.instructions.0);
-    }
+    let map: HashMap<Uuid, Domain> = rows.into_iter().fold(HashMap::new(), |mut acc, r| {
+        let domain = Domain {
+            domain: r.domain,
+            enable_session_management: r.enable_session_management,
+            enable_preflight_simulation: r.enable_preflight_simulation,
+            tx_variations: vec![r.instructions.0],
+        };
+        acc.insert(r.domain_id, domain);
+        acc
+    });
 
     Ok(Config {
         domains: map.into_values().collect(),
@@ -63,11 +59,7 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
 /// Hash a plaintext password using Argon2.
 fn hash_password(plain: &str) -> String {
     let salt = SaltString::generate(&mut OsRng);
-
-    // Argon2 with default params (Argon2id v19)
     let argon2 = Argon2::default();
-
-    // Hash password to PHC string ($argon2id$v=19$...)
     argon2
         .hash_password(plain.as_bytes(), &salt)
         .unwrap()
@@ -90,9 +82,10 @@ fn registrable_domain(u: &Url) -> Option<String> {
     }
 }
 /// Insert a user(email, password) into the database.
-async fn insert_user(domain_url: &Url) -> Result<Uuid, sqlx::Error> {
-    let password = hash_password("admin");
-    let email = format!("admin@{}", &registrable_domain(domain_url).unwrap());
+async fn insert_user(domain_url: &Url, default_user_password: &str) -> Result<Uuid, sqlx::Error> {
+    let password = hash_password(default_user_password);
+    // handle the error gracefully
+    let email = format!("admin@{}", registrable_domain(domain_url).unwrap());
     let existing_user = sqlx::query_as::<_, (Uuid,)>("SELECT id FROM \"user\" WHERE email = $1")
         .bind(&email)
         .fetch_optional(pool())
@@ -155,22 +148,28 @@ async fn insert_variation(
 }
 
 /// Seed the database from the config.
-pub async fn seed_from_config(config: &Config) -> Result<(), sqlx::Error> {
+pub async fn seed_from_config(
+    config: &Config,
+    default_user_password: &str,
+) -> Result<(), sqlx::Error> {
     let user_count = sqlx::query_as::<_, (i64,)>("SELECT count(*) from \"user\"")
         .fetch_one(pool())
         .await?;
 
     if user_count.0 == 0 {
+        tracing::info!("Seeding database from config");
         for domain in &config.domains {
             let domain_url = Url::parse(&domain.domain).unwrap();
             let host = domain_url.host().unwrap();
-            let user = insert_user(&domain_url).await?;
+            let user = insert_user(&domain_url, default_user_password).await?;
             let app = insert_app(&user, &host.to_string()).await?;
             let domain_config = insert_domain_config(&app, domain).await?;
             for variation in &domain.tx_variations {
                 insert_variation(&domain_config, variation).await?;
             }
         }
+    } else {
+        tracing::warn!("Some users already exist, skipping seeding");
     }
 
     Ok(())

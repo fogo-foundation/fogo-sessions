@@ -1465,12 +1465,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dotenv"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
-
-[[package]]
 name = "dotenvy"
 version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1701,7 +1695,7 @@ dependencies = [
  "clap",
  "config",
  "dashmap 6.1.0",
- "dotenv",
+ "dotenvy",
  "fogo-sessions-sdk",
  "futures",
  "governor",
@@ -1709,10 +1703,8 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
- "rand 0.9.2",
  "reqwest",
  "serde",
- "serde_json",
  "serde_with",
  "solana-address-lookup-table-interface",
  "solana-client",

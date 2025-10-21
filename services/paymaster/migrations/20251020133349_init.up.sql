@@ -1,3 +1,4 @@
+-- Add up migration script here
 CREATE TABLE if not exists "user" (
   id uuid PRIMARY KEY default uuidv7(),
   email text NOT NULL UNIQUE,
@@ -24,7 +25,6 @@ CREATE TABLE if not exists domain_config (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX domain_config_domain_idx ON domain_config (domain);
 
 CREATE TABLE if not exists variation (
   id uuid PRIMARY KEY default uuidv7(),                           
@@ -33,4 +33,3 @@ CREATE TABLE if not exists variation (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX variation_dc_idx ON variation (domain_config_id);
