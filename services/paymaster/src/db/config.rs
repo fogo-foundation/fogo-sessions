@@ -84,7 +84,6 @@ fn registrable_domain(u: &Url) -> Option<String> {
 /// Insert a user(email, password) into the database.
 async fn insert_user(domain_url: &Url, default_user_password: &str) -> Result<Uuid, sqlx::Error> {
     let password = hash_password(default_user_password);
-    // handle the error gracefully
     let email = format!("admin@{}", registrable_domain(domain_url).unwrap());
     let existing_user = sqlx::query_as::<_, (Uuid,)>("SELECT id FROM \"user\" WHERE email = $1")
         .bind(&email)

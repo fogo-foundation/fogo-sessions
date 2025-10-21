@@ -1,4 +1,3 @@
--- Add up migration script here
 CREATE TABLE if not exists "user" (
   id uuid PRIMARY KEY default uuidv7(),
   email text NOT NULL UNIQUE,
