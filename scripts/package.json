@@ -19,7 +19,10 @@
     "@coral-xyz/anchor": "catalog:",
     "@fogo/sessions-idls": "workspace:*",
     "@fogo/sessions-sdk": "workspace:*",
+    "@ledgerhq/hw-transport": "^6.31.12",
     "@ledgerhq/hw-transport-node-hid": "^6.29.13",
+    "@solana/wallet-adapter-base": "catalog:",
+    "@solana/wallet-adapter-ledger": "^0.9.29",
     "@solana/web3.js": "catalog:",
     "yargs": "catalog:"
   },

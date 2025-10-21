@@ -7,6 +7,19 @@ import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import yargs from "yargs";
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
 import { hideBin } from "yargs/helpers";
+import { LedgerNodeWallet, parseDerivationPath } from "./ledger.js";
+
+async function parseSignerSource(source: string) {
+  if (source.startsWith("usb://ledger")) {
+    return await LedgerNodeWallet.create(await parseDerivationPath(source));
+  }
+  else {
+    const keypair = Keypair.fromSecretKey(
+      Buffer.from(JSON.parse(fs.readFileSync(source, "utf8"))),
+    );
+    return new Wallet(keypair);
+  }
+}
 
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)
@@ -52,10 +65,7 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
   console.log(transport);
 
   const connection = new Connection(url);
-  const keypair = Keypair.fromSecretKey(
-    Buffer.from(JSON.parse(fs.readFileSync(args.keypair, "utf8"))),
-  );
-  const provider = new AnchorProvider(connection, new Wallet(keypair));
+  const provider = new AnchorProvider(connection, await parseSignerSource(args.keypair));
   const program = new DomainRegistryProgram(provider);
 
   const { config: configPubkey } = await program.methods.initialize().pubkeys();

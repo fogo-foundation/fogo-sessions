@@ -8,6 +8,24 @@ import { PublicKey } from '@solana/web3.js';
 import {default as TransportNodeHid} from "@ledgerhq/hw-transport-node-hid";
 import { getDerivationPath } from "@solana/wallet-adapter-ledger";
 
+export async function parseDerivationPath(source: string): Promise<{ derivationAccount?: number, derivationChange?: number }> {
+    const params = new URLSearchParams(source);
+    const key = params.get("key");
+    if (key === null) {
+      return {}
+    } else {
+      const parts = key.split("/");
+      if (parts.length == 1){
+        return { derivationAccount: Number(parts[0]) }
+      } else if (parts.length == 2){
+        return { derivationAccount: Number(parts[0]), derivationChange: Number(parts[1]) }
+      } else {
+        throw new Error("The provided derivation path is too long: " + key);
+      }
+    }
+  }
+
+  
 const INS_GET_PUBKEY = 0x05;
 const INS_SIGN_MESSAGE = 0x06;
 
@@ -81,6 +99,7 @@ export class LedgerNodeWallet {
         const transport = await TransportNodeHid.default.create();
         const derivationPath = getDerivationPath(derivationAccount, derivationChange);
         const publicKey = await getPublicKey(transport, derivationPath);
+        console.log("Loaded ledger wallet with public key: " + publicKey.toBase58());
         return new LedgerNodeWallet(derivationPath, transport, publicKey);
     }
 
