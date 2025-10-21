@@ -26,7 +26,6 @@
     "eslint": "catalog:",
     "@fogo/scripts": "workspace:*",
     "jest": "catalog:",
-    "node-hid": "catalog:",
     "prettier": "catalog:",
     "turbo": "catalog:"
   }

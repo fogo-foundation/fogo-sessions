@@ -177,9 +177,6 @@ catalogs:
     next:
       specifier: ^15.1.5
       version: 15.3.3
-    node-hid:
-      specifier: ^2.1.2
-      version: 2.1.2
     pino:
       specifier: ^9.7.0
       version: 9.7.0
@@ -260,9 +257,6 @@ importers:
       jest:
         specifier: 'catalog:'
         version: 29.7.0(@types/node@24.0.3)
-      node-hid:
-        specifier: 'catalog:'
-        version: 2.1.2
       prettier:
         specifier: 'catalog:'
         version: 3.5.3
