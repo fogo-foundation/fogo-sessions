@@ -5,6 +5,7 @@ import { DomainRegistryProgram } from "@fogo/sessions-idls";
 import { getDomainRecordAddress } from "@fogo/sessions-sdk";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import yargs from "yargs";
+import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
 import { hideBin } from "yargs/helpers";
 
 export const main = async (argv: string[] = hideBin(process.argv)) => {
@@ -46,6 +47,9 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
   }
 
   const url = args.url == "l" ? "http://localhost:8899" : args.url;
+
+  const transport = await TransportNodeHid.default.create();
+  console.log(transport);
 
   const connection = new Connection(url);
   const keypair = Keypair.fromSecretKey(
