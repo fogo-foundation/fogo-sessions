@@ -57,34 +57,34 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
 }
 
 /// Hash a plaintext password using Argon2.
-fn hash_password(plain: &str) -> String {
+fn hash_password(plain: &str) -> Result<String, anyhow::Error> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
-    argon2
+    Ok(argon2
         .hash_password(plain.as_bytes(), &salt)
-        .unwrap()
-        .to_string()
+        .map_err(|e| anyhow::anyhow!("Failed to hash password: {}", e))?
+        .to_string())
 }
 
 // Get the registrable domain from a URL.
 // Example: https://test.brasa.finance -> brasa.finance
-fn registrable_domain(u: &Url) -> Option<String> {
-    let host = u.host_str()?;
+fn registrable_domain(u: &Url) -> Result<String, anyhow::Error> {
+    let host = u.host_str().ok_or(anyhow::anyhow!("Invalid URL"))?;
     let parts: Vec<&str> = host.split('.').collect();
     if parts.len() >= 2 {
-        Some(format!(
+        Ok(format!(
             "{}.{}",
             parts[parts.len() - 2],
             parts[parts.len() - 1]
         ))
     } else {
-        Some(host.to_string())
+        Ok(host.to_string())
     }
 }
 /// Insert a user(email, password) into the database.
-async fn insert_user(domain_url: &Url, default_user_password: &str) -> Result<Uuid, sqlx::Error> {
-    let password = hash_password(default_user_password);
-    let email = format!("admin@{}", registrable_domain(domain_url).unwrap());
+async fn insert_user(domain_url: &Url, default_user_password: &str) -> Result<Uuid, anyhow::Error> {
+    let password = hash_password(default_user_password)?;
+    let email = format!("admin@{}", registrable_domain(domain_url)?);
     let existing_user = sqlx::query_as::<_, (Uuid,)>("SELECT id FROM \"user\" WHERE email = $1")
         .bind(&email)
         .fetch_optional(pool())
@@ -150,7 +150,7 @@ async fn insert_variation(
 pub async fn seed_from_config(
     config: &Config,
     default_user_password: &str,
-) -> Result<(), sqlx::Error> {
+) -> Result<(), anyhow::Error> {
     let user_count = sqlx::query_as::<_, (i64,)>("SELECT count(*) from \"user\"")
         .fetch_one(pool())
         .await?;
