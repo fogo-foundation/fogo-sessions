@@ -12,8 +12,7 @@ export function parseDerivationPath(source: string): {
   derivationAccount?: number;
   derivationChange?: number;
 } {
-  const params = new URLSearchParams(new URL(source).searchParams);
-  const key = params.get("key");
+  const key = new URL(source).searchParams.get("key");
   if (key === null) {
     return {};
   } else {
