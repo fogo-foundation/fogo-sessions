@@ -64,8 +64,7 @@ impl PubsubClientWithReconnect {
             Err(e) => Err((
                 StatusCode::SERVICE_UNAVAILABLE,
                 format!("WebSocket unavailable: {e}"),
-            )
-                .into()),
+            )),
         }
     }
 }

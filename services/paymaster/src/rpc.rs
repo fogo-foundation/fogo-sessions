@@ -209,13 +209,15 @@ async fn confirm_transaction(
     signature: Signature,
     commitment: Option<CommitmentConfig>,
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
-    let signature_result = subscribe_and_wait_for_signature(pubsub, signature, commitment, true).await.map_err(|(status, err_string)| {
-        tracing::Span::current().record("result", "unconfirmed");
-        (
-            status,
-            format!("Failed to confirm transaction {}: {}", signature, err_string),
-        )
-    })?;
+    let signature_result = subscribe_and_wait_for_signature(pubsub, signature, commitment, true)
+        .await
+        .map_err(|(status, err_string)| {
+            tracing::Span::current().record("result", "unconfirmed");
+            (
+                status,
+                format!("Failed to confirm transaction {signature}: {err_string}"),
+            )
+        })?;
 
     if let Some(err) = signature_result.err {
         tracing::Span::current().record("result", "failed");
@@ -253,7 +255,8 @@ async fn subscribe_and_wait_for_signature(
             if reconnect {
                 tracing::warn!("WebSocket subscription failed, attempting reconnection and retry");
                 pubsub.reconnect_pubsub().await?;
-                return subscribe_and_wait_for_signature(pubsub, signature, commitment, false).await;
+                return subscribe_and_wait_for_signature(pubsub, signature, commitment, false)
+                    .await;
             }
 
             tracing::error!("WebSocket subscription failed");
@@ -261,7 +264,7 @@ async fn subscribe_and_wait_for_signature(
             return Err((
                 StatusCode::BAD_GATEWAY,
                 "Failed to subscribe to signature".to_string(),
-            ).into());
+            ));
         }
     };
 
@@ -279,9 +282,7 @@ async fn subscribe_and_wait_for_signature(
             }
         }
 
-        tracing::error!(
-            "Signature subscription stream ended unexpectedly for {signature}"
-        );
+        tracing::error!("Signature subscription stream ended unexpectedly for {signature}");
         Err((
             StatusCode::BAD_GATEWAY,
             "Signature subscription stream ended unexpectedly".to_string(),
@@ -291,15 +292,15 @@ async fn subscribe_and_wait_for_signature(
 
     unsubscribe().await;
 
-    result.map_err(|_| {
-        tracing::error!(
-            "Timeout while waiting for transaction confirmation for {signature}",
-        );
-        (
-            StatusCode::GATEWAY_TIMEOUT,
-            "Unable to confirm transaction".to_string(),
-        )
-    }).and_then(|r| r)
+    result
+        .map_err(|_| {
+            tracing::error!("Timeout while waiting for transaction confirmation for {signature}",);
+            (
+                StatusCode::GATEWAY_TIMEOUT,
+                "Unable to confirm transaction".to_string(),
+            )
+        })
+        .and_then(|r| r)
 }
 
 #[derive(Debug, Clone)]
