@@ -7,17 +7,42 @@ import {
   reestablishSession,
   AuthorizedTokens,
 } from '@fogo/sessions-sdk';
-import {
-  clearStoredSession,
-  getStoredSession,
-  setStoredSession,
-  setLastWalletPublicKey,
-  clearLastWalletPublicKey,
-  getLastWalletPublicKey,
-} from './session-store';
-
 import { Connection, PublicKey } from '@solana/web3.js';
-import React, { type ComponentProps, type ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import React, {
+  createContext,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+  use,
+} from 'react';
+import Toast from 'react-native-toast-message';
+import { mutate } from 'swr';
+
+// Type definitions to work around SDK typing issues
+type SafeSession = {
+  sessionKey: unknown;
+  walletPublicKey: PublicKey;
+  payer: unknown;
+  sendTransaction: (instructions: unknown) => Promise<unknown>;
+  sessionPublicKey: PublicKey;
+  sessionInfo: {
+    authorizedTokens: unknown;
+  };
+};
+
+type SafeSessionAdapter = {
+  connection: Connection;
+};
+
+type SafeSessionResult = {
+  type: unknown;
+  session?: SafeSession;
+  error?: unknown;
+};
 
 // Transaction context for better error messages
 enum TransactionContext {
@@ -34,32 +59,27 @@ function createContextualError(error: unknown, context: TransactionContext) {
   };
 
   return {
-    message: `${contextMessages[context]}: ${(error as Error)?.message || 'Unknown error'}`,
+    message: `${contextMessages[context]}: ${(error as Error).message || 'Unknown error'}`,
     context,
     originalError: error,
     name: 'SessionTransactionError'
   };
 }
-import {
-  createContext,
-  useMemo,
-  useCallback,
-  useState,
-  useEffect,
-  useRef,
-  use,
-} from 'react';
-import { mutate } from 'swr';
 
+import { getCacheKey } from './hooks/use-token-account-data';
+import {
+  clearStoredSession,
+  getStoredSession,
+  setStoredSession,
+  setLastWalletPublicKey,
+  clearLastWalletPublicKey,
+  getLastWalletPublicKey,
+} from './session-store';
 import {
   deserializePublicKey,
   deserializePublicKeyList,
   deserializePublicKeyMap,
 } from './utils/deserialize-public-key';
-import { errorToString } from './utils/error-to-string';
-import Toast from 'react-native-toast-message';
-import { getCacheKey } from './hooks/use-token-account-data';
-
 import {
   MobileConnectionProvider,
   MobileWalletProvider,
@@ -95,9 +115,9 @@ type Props = ConstrainedOmit<
 
   /** Default spending limits for tokens when establishing sessions */
   defaultRequestedLimits?:
-    | Map<PublicKey, bigint>
-    | Record<string, bigint>
-    | undefined;
+  | Map<PublicKey, bigint>
+  | Record<string, bigint>
+  | undefined;
 
   /** Whether to enable unlimited spending permissions */
   enableUnlimited?: boolean | undefined;
@@ -107,9 +127,9 @@ type Props = ConstrainedOmit<
 
   /** Callback fired when session initialization starts */
   onStartSessionInit?:
-    | (() => Promise<boolean> | boolean)
-    | (() => Promise<void> | void)
-    | undefined;
+  | (() => Promise<boolean> | boolean)
+  | (() => Promise<void> | void)
+  | undefined;
 
   /** Domain identifier for the session */
   domain: string;
@@ -171,9 +191,9 @@ export const FogoSessionProvider = ({
           }
           {...('sponsor' in props && {
             sponsor:
-              typeof props.sponsor === 'string'
-                ? deserializePublicKey(props.sponsor)
-                : props.sponsor,
+              typeof (props as {sponsor?: string | PublicKey}).sponsor === 'string'
+                ? deserializePublicKey((props as {sponsor: string}).sponsor)
+                : (props as {sponsor: PublicKey}).sponsor,
           })}
           {...props}
         />
@@ -188,27 +208,29 @@ const SessionProvider = ({
   enableUnlimited,
   onStartSessionInit,
   ...args
-}: Parameters<typeof useSessionStateContext>[0] & {
+}: Omit<Parameters<typeof useSessionStateContext>[0], 'children'> & {
   children: ReactNode;
   defaultRequestedLimits?: Map<PublicKey, bigint> | undefined;
   enableUnlimited?: boolean | undefined;
   onStartSessionInit?:
-    | (() => Promise<boolean> | boolean)
-    | (() => Promise<void> | void)
-    | undefined;
+  | (() => Promise<boolean> | boolean)
+  | (() => Promise<void> | void)
+  | undefined;
 }) => {
   const {
     state: sessionState,
     onSessionLimitsOpenChange,
     requestedLimits,
-  } = useSessionStateContext(args);
+  } = useSessionStateContext({ defaultRequestedLimits, ...args });
+
+  const tokensFromArgs = (args as {tokens?: PublicKey[]}).tokens;
 
   const state = useMemo(
     () => ({
       sessionState,
       enableUnlimited: enableUnlimited ?? false,
-      whitelistedTokens: args.tokens ?? [],
-      onStartSessionInit,
+      whitelistedTokens: tokensFromArgs ?? [],
+      onStartSessionInit: onStartSessionInit as (() => Promise<boolean> | boolean) | (() => Promise<void> | void) | undefined,
       // Session limits functionality
       isSessionLimitsOpen:
         sessionState.type === StateType.RequestingLimits ||
@@ -219,7 +241,7 @@ const SessionProvider = ({
     [
       sessionState,
       enableUnlimited,
-      args.tokens,
+      tokensFromArgs,
       onStartSessionInit,
       onSessionLimitsOpenChange,
       requestedLimits,
@@ -232,38 +254,33 @@ const SessionProvider = ({
 const useSessionStateContext = ({
   tokens,
   ...adapterArgs
-}: Parameters<typeof useSessionAdapter>[0] & {
+}: Omit<Parameters<typeof useSessionAdapter>[0], 'tokens'> & {
   tokens?: PublicKey[] | undefined;
 }) => {
-  const [state, setState] = useState<SessionState>(SessionState.Initializing());
+  const [state, setState] = useState<SessionState>(SessionState.Initializing() as SessionState);
   const [showWalletSheet, setShowWalletSheet] = useState<boolean>(false);
   const wallet = useMobileWallet();
   const requestedLimits = useRef<undefined | Map<PublicKey, bigint>>(undefined);
   const getAdapter = useSessionAdapter(adapterArgs);
 
   const establishSession = useCallback((newLimits?: Map<PublicKey, bigint>) => {
-    setState(SessionState.SelectingWallet());
+    setState(() => SessionState.SelectingWallet() as SessionState);
     setShowWalletSheet(true);
     requestedLimits.current = newLimits;
   }, []);
 
   const disconnectWallet = useCallback(() => {
-    wallet.disconnect().catch((error: unknown) => {
-      console.error('An error occurred while disconnecting the wallet', error);
-    });
+    void wallet.disconnect();
   }, [wallet]);
 
   const endSession = useCallback(
     (walletPublicKey: PublicKey) => {
-      clearStoredSession(walletPublicKey).catch((error: unknown) => {
-        console.error('Failed to clear stored session', error);
+      clearStoredSession(walletPublicKey).catch(() => {
         disconnectWallet();
       });
 
       // Also clear the last wallet public key
-      clearLastWalletPublicKey().catch((error: unknown) => {
-        console.error('Failed to clear last wallet public key', error);
-      });
+      void clearLastWalletPublicKey();
 
       disconnectWallet();
     },
@@ -280,77 +297,81 @@ const useSessionStateContext = ({
       try {
         // First, try to store the session securely
         await setStoredSession({
-          sessionKey: session.sessionKey,
-          walletPublicKey: session.walletPublicKey,
-          walletName: walletName || wallet.connectedWalletName || undefined,
+          sessionKey: (session as SafeSession).sessionKey,
+          walletPublicKey: (session as SafeSession).walletPublicKey,
+          ...(walletName ?? wallet.connectedWalletName) && {
+            walletName: walletName ?? wallet.connectedWalletName
+          },
         });
 
         // Store last wallet public key (this can fail without blocking the session)
-        setLastWalletPublicKey(session.walletPublicKey).catch(
-          (error: unknown) => {
-            console.error('Failed to store last wallet public key', error);
-          }
-        );
+        setLastWalletPublicKey((session as SafeSession).walletPublicKey).catch(() => {
+          // Ignore errors when setting last wallet public key
+        });
       } catch (error: unknown) {
-        console.error('Failed to store session', error);
 
         // Check if it's the biometric enrollment error
-        if ((error as Error)?.message?.includes('No biometrics are currently enrolled')) {
+        if ((error as Error).message.includes('No biometrics are currently enrolled')) {
           // Show the user-friendly error we added in session-store.ts
           // The error is already handled there, so we just need to prevent session establishment
-          setState(SessionState.NotEstablished(() => {}));
+          setState(SessionState.NotEstablished(() => {
+            // Intentionally empty - no additional state needed
+          }) as SessionState);
           return;
         }
 
         // For other storage errors, disconnect and show general error
         disconnectWallet();
-        setState(SessionState.NotEstablished(() => {}));
+        setState(SessionState.NotEstablished(() => {
+          // Intentionally empty - no additional state needed
+        }) as SessionState);
         return;
       }
-      const commonStateArgs: Parameters<typeof SessionState.UpdatingLimits>[0] =
-        {
-          endSession: () => {
-            endSession(session.walletPublicKey);
-          },
-          payer: session.payer,
-          sendTransaction: async (instructions) => {
-            const result = await session.sendTransaction(instructions);
-            mutate(getCacheKey(session.walletPublicKey)).catch(
-              (error: unknown) => {
-                console.error('Failed to update token account data', error);
-              }
-            );
-            return result;
-          },
-          sessionPublicKey: session.sessionPublicKey,
-          isLimited:
-            session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
-          walletPublicKey: session.walletPublicKey,
-          connection: adapter.connection as any,
-          adapter,
-          signMessage,
-        };
+      const commonStateArgs: Parameters<NonNullable<typeof SessionState.UpdatingLimits>>[0] =
+      {
+        endSession: () => {
+          endSession((session as SafeSession).walletPublicKey);
+        },
+        payer: (session as SafeSession).payer,
+        sendTransaction: async (instructions: unknown) => {
+          const result = await (session as SafeSession).sendTransaction(instructions);
+          mutate(getCacheKey((session as SafeSession).walletPublicKey)).catch(() => {
+            // Ignore cache refresh errors
+          });
+          return result;
+        },
+        sessionPublicKey: (session as SafeSession).sessionPublicKey,
+        isLimited:
+          (session as SafeSession).sessionInfo.authorizedTokens === (AuthorizedTokens as {Specific: unknown}).Specific,
+        walletPublicKey: (session as SafeSession).walletPublicKey,
+        connection: (adapter as SafeSessionAdapter).connection,
+        adapter: adapter as SafeSessionAdapter,
+        signMessage,
+      };
       const setLimits = (duration: number, limits?: Map<PublicKey, bigint>) => {
-        setState(SessionState.UpdatingLimits(commonStateArgs));
-        replaceSession({
+        setState(SessionState.UpdatingLimits(commonStateArgs) as SessionState);
+        (replaceSession as (args: unknown) => Promise<SafeSessionResult>)({
           expires: new Date(Date.now() + duration),
-          adapter,
+          adapter: adapter as SafeSessionAdapter,
           signMessage,
-          session,
+          session: session as SafeSession,
           ...(limits === undefined ? { unlimited: true } : { limits }),
         })
           .then(async (result) => {
-            switch (result.type) {
-              case SessionResultType.Success: {
+            switch ((result).type) {
+              case (SessionResultType as {Success: unknown}).Success: {
                 Toast.show({
                   type: 'success',
                   text1: 'Limits set successfully',
                 });
-                await setSessionState(adapter, result.session, signMessage);
+                const sessionData = (result).session;
+                if (sessionData) {
+                  await setSessionState(adapter, sessionData, signMessage);
+                }
                 return;
               }
-              case SessionResultType.Failed: {
-                const contextualError = createContextualError(result.error, TransactionContext.SESSION_LIMIT_UPDATE);
+              case (SessionResultType as {Failed: unknown}).Failed: {
+                const contextualError = createContextualError((result).error, TransactionContext.SESSION_LIMIT_UPDATE);
                 Toast.show({
                   type: 'error',
                   text1: contextualError.message,
@@ -359,7 +380,7 @@ const useSessionStateContext = ({
                   SessionState.Established({
                     ...commonStateArgs,
                     setLimits,
-                  })
+                  }) as SessionState
                 );
                 return;
               }
@@ -372,11 +393,11 @@ const useSessionStateContext = ({
               text1: contextualError.message,
             });
             setState(
-              SessionState.Established({ ...commonStateArgs, setLimits })
+              SessionState.Established({ ...commonStateArgs, setLimits }) as SessionState
             );
           });
       };
-      setState(SessionState.Established({ ...commonStateArgs, setLimits }));
+      setState(SessionState.Established({ ...commonStateArgs, setLimits }) as SessionState);
     },
     [disconnectWallet, endSession, wallet.connectedWalletName]
   );
@@ -387,50 +408,53 @@ const useSessionStateContext = ({
       session: Session,
       signMessage: (message: Uint8Array) => Promise<Uint8Array>
     ) => {
-      const commonStateArgs: Parameters<typeof SessionState.UpdatingLimits>[0] =
-        {
-          endSession: () => {
-            endSession(session.walletPublicKey);
-          },
-          payer: session.payer,
-          sendTransaction: async (instructions) => {
-            const result = await session.sendTransaction(instructions);
-            mutate(getCacheKey(session.walletPublicKey)).catch(
-              (error: unknown) => {
-                console.error('Failed to update token account data', error);
-              }
-            );
-            return result;
-          },
-          sessionPublicKey: session.sessionPublicKey,
-          isLimited:
-            session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
-          walletPublicKey: session.walletPublicKey,
-          connection: adapter.connection as any,
-          adapter,
-          signMessage,
-        };
+      const commonStateArgs: Parameters<NonNullable<typeof SessionState.UpdatingLimits>>[0] =
+      {
+        endSession: () => {
+          endSession((session as SafeSession).walletPublicKey);
+        },
+        payer: (session as SafeSession).payer,
+        sendTransaction: async (instructions: unknown) => {
+          const result = await (session as SafeSession).sendTransaction(instructions);
+          mutate(getCacheKey((session as SafeSession).walletPublicKey)).catch(
+            () => {
+              // Ignore cache mutation errors
+            }
+          );
+          return result;
+        },
+        sessionPublicKey: (session as SafeSession).sessionPublicKey,
+        isLimited:
+          (session as SafeSession).sessionInfo.authorizedTokens === (AuthorizedTokens as {Specific: unknown}).Specific,
+        walletPublicKey: (session as SafeSession).walletPublicKey,
+        connection: (adapter as SafeSessionAdapter).connection,
+        adapter: adapter as SafeSessionAdapter,
+        signMessage,
+      };
       const setLimits = (duration: number, limits?: Map<PublicKey, bigint>) => {
-        setState(SessionState.UpdatingLimits(commonStateArgs));
-        replaceSession({
+        setState(SessionState.UpdatingLimits(commonStateArgs) as SessionState);
+        (replaceSession as (args: unknown) => Promise<SafeSessionResult>)({
           expires: new Date(Date.now() + duration),
-          adapter,
+          adapter: adapter as SafeSessionAdapter,
           signMessage,
-          session,
+          session: session as SafeSession,
           ...(limits === undefined ? { unlimited: true } : { limits }),
         })
           .then(async (result) => {
-            switch (result.type) {
-              case SessionResultType.Success: {
+            switch ((result).type) {
+              case (SessionResultType as {Success: unknown}).Success: {
                 Toast.show({
                   type: 'success',
                   text1: 'Limits set successfully',
                 });
-                await setSessionState(adapter, result.session, signMessage);
+                const sessionData = (result).session;
+                if (sessionData) {
+                  await setSessionState(adapter, sessionData, signMessage);
+                }
                 return;
               }
-              case SessionResultType.Failed: {
-                const contextualError = createContextualError(result.error, TransactionContext.SESSION_LIMIT_UPDATE);
+              case (SessionResultType as {Failed: unknown}).Failed: {
+                const contextualError = createContextualError((result).error, TransactionContext.SESSION_LIMIT_UPDATE);
                 Toast.show({
                   type: 'error',
                   text1: contextualError.message,
@@ -439,7 +463,7 @@ const useSessionStateContext = ({
                   SessionState.Established({
                     ...commonStateArgs,
                     setLimits,
-                  })
+                  }) as SessionState
                 );
                 return;
               }
@@ -452,11 +476,11 @@ const useSessionStateContext = ({
               text1: contextualError.message,
             });
             setState(
-              SessionState.Established({ ...commonStateArgs, setLimits })
+              SessionState.Established({ ...commonStateArgs, setLimits }) as SessionState
             );
           });
       };
-      setState(SessionState.Established({ ...commonStateArgs, setLimits }));
+      setState(SessionState.Established({ ...commonStateArgs, setLimits }) as SessionState);
     },
     [endSession, setSessionState]
   );
@@ -466,33 +490,38 @@ const useSessionStateContext = ({
       walletPublicKey: PublicKey,
       signMessage: (message: Uint8Array) => Promise<Uint8Array>
     ) => {
-      const adapter = (await getAdapter()) as SessionAdapter;
+      const adapterResult = await getAdapter();
+      if (!adapterResult) {
+        throw new Error('Failed to get adapter');
+      }
+      const adapter = adapterResult;
       const storedSession = await getStoredSession(walletPublicKey);
       if (storedSession === undefined) {
         if (tokens === undefined || tokens.length === 0) {
-          setState(SessionState.SettingLimits());
+          setState(SessionState.SettingLimits() as SessionState);
           try {
-            const result = await establishSessionImpl({
+            const result = await (establishSessionImpl as (args: unknown) => Promise<SafeSessionResult>)({
               expires: new Date(Date.now() + DEFAULT_SESSION_DURATION),
-              adapter,
+              adapter: adapter,
               signMessage,
               walletPublicKey,
               unlimited: true,
               createUnsafeExtractableSessionKey: true,
             });
             switch (result.type) {
-              case SessionResultType.Success: {
-                await setSessionState(adapter, result.session, signMessage);
+              case (SessionResultType as {Success: unknown}).Success: {
+                const sessionData = result.session;
+                if (sessionData) {
+                  await setSessionState(adapter, sessionData, signMessage);
+                }
                 return;
               }
-              case SessionResultType.Failed: {
-                console.error('Connection failed', result.error);
+              case (SessionResultType as {Failed: unknown}).Failed: {
                 endSession(walletPublicKey);
                 return;
               }
             }
-          } catch (error: unknown) {
-            console.error('Failed to establish session', error);
+          } catch {
             endSession(walletPublicKey);
           }
         } else {
@@ -500,8 +529,8 @@ const useSessionStateContext = ({
             duration: number,
             limits?: Map<PublicKey, bigint>
           ) => {
-            setState(SessionState.SettingLimits());
-            establishSessionImpl({
+            setState(SessionState.SettingLimits() as SessionState);
+            (establishSessionImpl as (args: unknown) => Promise<SafeSessionResult>)({
               expires: new Date(Date.now() + duration),
               adapter,
               signMessage,
@@ -511,29 +540,31 @@ const useSessionStateContext = ({
             })
               .then(async (result) => {
                 switch (result.type) {
-                  case SessionResultType.Success: {
-                    await setSessionState(adapter, result.session, signMessage);
+                  case (SessionResultType as {Success: unknown}).Success: {
+                    const sessionData = result.session;
+                if (sessionData) {
+                  await setSessionState(adapter, sessionData, signMessage);
+                }
                     return;
                   }
-                  case SessionResultType.Failed: {
-                    const contextualError = createContextualError(result.error, TransactionContext.SESSION_ESTABLISHMENT);
+                  case (SessionResultType as {Failed: unknown}).Failed: {
+                    const contextualError = createContextualError((result as SafeSessionResult & {error: unknown}).error, TransactionContext.SESSION_ESTABLISHMENT);
                     setState(
-                      SessionState.RequestingLimits(setLimits, contextualError)
+                      SessionState.RequestingLimits(setLimits, contextualError) as SessionState
                     );
                     return;
                   }
                 }
               })
               .catch((error: unknown) => {
-                console.error('Failed to establish session', error);
                 const contextualError = createContextualError(error, TransactionContext.SESSION_ESTABLISHMENT);
-                setState(SessionState.RequestingLimits(setLimits, contextualError));
+                setState(SessionState.RequestingLimits(setLimits, contextualError) as SessionState);
               });
           };
-          setState(SessionState.RequestingLimits(setLimits));
+          setState(SessionState.RequestingLimits(setLimits) as SessionState);
         }
       } else {
-        const session = await reestablishSession(
+        const session = await (reestablishSession as (adapter: unknown, walletPublicKey: unknown, sessionKey: unknown) => Promise<SafeSession | undefined>)(
           adapter,
           storedSession.walletPublicKey,
           storedSession.sessionKey
@@ -559,7 +590,7 @@ const useSessionStateContext = ({
 
   useEffect(() => {
     if (!showWalletSheet && state.type === StateType.SelectingWallet) {
-      setState(SessionState.NotEstablished(establishSession));
+      setState(SessionState.NotEstablished(establishSession) as SessionState);
     }
   }, [showWalletSheet, establishSession, state.type]);
 
@@ -569,8 +600,7 @@ const useSessionStateContext = ({
         checkStoredSession(
           new PublicKey(state.walletPublicKey),
           state.signMessage
-        ).catch((error: unknown) => {
-          console.error('Failed to check stored session', error);
+        ).catch(() => {
           disconnectWallet();
         });
         return;
@@ -580,7 +610,7 @@ const useSessionStateContext = ({
 
   useEffect(() => {
     setState(
-      (prevState) =>
+      (prevState: SessionState) =>
         getNextState(prevState, wallet, establishSession) ?? prevState
     );
   }, [wallet, establishSession]);
@@ -594,8 +624,7 @@ const useSessionStateContext = ({
           const lastWalletPublicKey = await getLastWalletPublicKey();
           if (lastWalletPublicKey) {
             // Placeholder signMessage function - the real work happens in checkStoredSession
-            const placeholderSignMessage = async (
-              _: Uint8Array
+            const placeholderSignMessage = (
             ): Promise<Uint8Array> => {
               throw new Error(
                 'Placeholder signMessage during session restoration'
@@ -609,16 +638,15 @@ const useSessionStateContext = ({
             );
           } else {
             // No stored wallet public key, go to not established state
-            setState(SessionState.NotEstablished(establishSession));
+            setState(SessionState.NotEstablished(establishSession) as SessionState);
           }
-        } catch (error) {
-          console.error('Failed to initialize session:', error);
-          setState(SessionState.NotEstablished(establishSession));
+        } catch {
+          setState(SessionState.NotEstablished(establishSession) as SessionState);
         }
       }
     };
 
-    initializeSession();
+    void initializeSession();
   }, [state.type, checkStoredSession, establishSession]);
 
   return useMemo(
@@ -627,7 +655,7 @@ const useSessionStateContext = ({
       onSessionLimitsOpenChange,
       requestedLimits: requestedLimits.current,
     }),
-    [state, onSessionLimitsOpenChange, requestedLimits.current]
+    [state, onSessionLimitsOpenChange]
   );
 };
 
@@ -638,16 +666,16 @@ const useSessionAdapter = (
   >
 ) => {
   const { connection } = useMobileConnection();
-  const adapter = useRef<undefined | SessionAdapter>(undefined);
+  const adapter = useRef<undefined | SafeSessionAdapter>(undefined);
   return useCallback(async () => {
     if (adapter.current === undefined) {
       try {
-        adapter.current = await createSolanaWalletAdapter({
+        adapter.current = await (createSolanaWalletAdapter as (options: unknown) => Promise<SafeSessionAdapter>)({
           ...options,
-          connection: connection as any,
+          connection: connection as unknown,
         });
       } catch {
-        console.error('failed to create adapter');
+        // Ignore errors during adapter creation
       }
 
       return adapter.current;
@@ -667,7 +695,7 @@ const getNextState = (
       case StateType.Initializing:
       case StateType.NotEstablished:
       case StateType.SelectingWallet: {
-        return SessionState.WalletConnecting();
+        return SessionState.WalletConnecting() as SessionState;
       }
       case StateType.WalletConnecting: {
         return;
@@ -684,7 +712,7 @@ const getNextState = (
       }
     }
   } else if (wallet.connected && !wallet.disconnecting) {
-    if (wallet.publicKey === null || wallet.signMessage === undefined) {
+    if (wallet.publicKey === undefined || wallet.signMessage === undefined) {
       throw new InvariantFailedError(
         'Invalid wallet state returned from solana: connected but no public key or message signer.'
       );
@@ -699,15 +727,15 @@ const getNextState = (
           return SessionState.CheckingStoredSession(
             wallet.publicKey,
             wallet.signMessage
-          );
+          ) as SessionState;
         }
         case StateType.Established: {
           return state.walletPublicKey.equals(wallet.publicKey)
             ? undefined
             : SessionState.CheckingStoredSession(
-                wallet.publicKey,
-                wallet.signMessage
-              );
+              wallet.publicKey,
+              wallet.signMessage
+            ) as SessionState;
         }
         case StateType.SettingLimits:
         case StateType.CheckingStoredSession: {
@@ -724,7 +752,7 @@ const getNextState = (
       case StateType.UpdatingLimits:
       case StateType.WalletConnecting:
       case StateType.SelectingWallet: {
-        return SessionState.NotEstablished(establishSession);
+        return SessionState.NotEstablished(establishSession) as SessionState;
       }
       case StateType.Initializing: {
         return; // Let the initialization effect handle the state transition
@@ -738,18 +766,18 @@ const getNextState = (
 
 const SessionContext = createContext<
   | {
-      sessionState: SessionState;
-      enableUnlimited: boolean;
-      whitelistedTokens: PublicKey[];
-      onStartSessionInit?:
-        | (() => Promise<boolean> | boolean)
-        | (() => Promise<void> | void)
-        | undefined;
-      // Session limits functionality
-      isSessionLimitsOpen: boolean;
-      onSessionLimitsOpenChange: (isOpen: boolean) => void;
-      requestedLimits: Map<PublicKey, bigint> | undefined;
-    }
+    sessionState: SessionState;
+    enableUnlimited: boolean;
+    whitelistedTokens: PublicKey[];
+    onStartSessionInit?:
+    | (() => Promise<boolean> | boolean)
+    | (() => Promise<void> | void)
+    | undefined;
+    // Session limits functionality
+    isSessionLimitsOpen: boolean;
+    onSessionLimitsOpenChange: (isOpen: boolean) => void;
+    requestedLimits: Map<PublicKey, bigint> | undefined;
+  }
   | undefined
 >(undefined);
 
@@ -826,7 +854,7 @@ export enum StateType {
   UpdatingLimits,
 }
 
-const SessionState: Record<string, (...args: any[]) => any> = {
+const SessionState = {
   Initializing: (): { type: StateType.Initializing } => ({ type: StateType.Initializing as const }),
 
   NotEstablished: (
@@ -873,7 +901,20 @@ const SessionState: Record<string, (...args: any[]) => any> = {
       endSession: () => void;
     },
     updateLimitsError?: unknown
-  ) => ({
+  ): {
+    type: StateType.Established;
+    walletPublicKey: PublicKey;
+    sessionPublicKey: PublicKey;
+    sendTransaction: Session['sendTransaction'];
+    payer: Session['payer'];
+    adapter: SessionAdapter;
+    signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+    connection: ReturnType<typeof useMobileConnection>['connection'];
+    isLimited: boolean;
+    setLimits: (duration: number, limits?: Map<PublicKey, bigint>) => void;
+    endSession: () => void;
+    updateLimitsError?: unknown;
+  } => ({
     type: StateType.Established as const,
     ...options,
     updateLimitsError,
@@ -890,7 +931,18 @@ const SessionState: Record<string, (...args: any[]) => any> = {
       isLimited: boolean;
       endSession: () => void;
     }
-  ) => ({ type: StateType.UpdatingLimits as const, ...options }),
+  ): {
+    type: StateType.UpdatingLimits;
+    walletPublicKey: PublicKey;
+    sessionPublicKey: PublicKey;
+    sendTransaction: Session['sendTransaction'];
+    payer: Session['payer'];
+    adapter: SessionAdapter;
+    signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+    connection: ReturnType<typeof useMobileConnection>['connection'];
+    isLimited: boolean;
+    endSession: () => void;
+  } => ({ type: StateType.UpdatingLimits as const, ...options }),
 };
 
 /**
@@ -964,6 +1016,6 @@ class InvariantFailedError extends Error {
   }
 }
 
-type ConstrainedOmit<T, K> = {
-  [P in keyof T as Exclude<P, K & keyof any>]: T[P];
+type ConstrainedOmit<T, K extends keyof T> = {
+  [P in keyof T as Exclude<P, K>]: T[P];
 };

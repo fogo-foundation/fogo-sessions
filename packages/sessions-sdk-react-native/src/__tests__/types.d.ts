@@ -1,11 +1,11 @@
 // Test type declarations to relax strict typing for test files
 declare module '@fogo/sessions-sdk' {
-  export interface SessionAccount {
+  export type SessionAccount = {
     expiration: Date;
     [key: string]: any;
   }
   
-  export interface TransactionResult {
+  export type TransactionResult = {
     type: any;
     signature?: string;
     error?: any;
@@ -15,8 +15,6 @@ declare module '@fogo/sessions-sdk' {
 // Allow any property access on test objects
 declare global {
   namespace jest {
-    interface Mock {
-      [key: string]: any;
-    }
+    type Mock = Record<string, any>;
   }
 }

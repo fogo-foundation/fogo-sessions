@@ -2,12 +2,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
-import { CopyButton } from '../ui/copy-button';
-import { type EstablishedSessionState } from '../../session-provider';
-
 import { styles } from './styles';
+import type {EstablishedSessionState} from '../../session-provider';
+import { CopyButton } from '../ui/copy-button';
 
-export interface ReceiveScreenProps {
+export type ReceiveScreenProps = {
   sessionState: EstablishedSessionState;
   onBack: () => void;
 }

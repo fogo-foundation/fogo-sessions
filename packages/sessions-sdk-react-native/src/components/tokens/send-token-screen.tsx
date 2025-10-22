@@ -1,3 +1,4 @@
+import { PublicKey } from '@solana/web3.js';
 import React, { useCallback, useState } from 'react';
 import {
   View,
@@ -8,17 +9,16 @@ import {
   Image,
   Modal,
 } from 'react-native';
-import { PublicKey } from '@solana/web3.js';
-
-import { amountToString } from '../../utils/amount-to-string';
-import { type EstablishedSessionState } from '../../session-provider';
-import { QRScanner } from '../qr-scanner';
-import { useSendToken } from '../../hooks/use-send-token';
-
-import { styles } from './styles';
 import Toast from 'react-native-toast-message';
 
-export interface SendTokenScreenProps {
+import { useSendToken } from '../../hooks/use-send-token';
+import type {EstablishedSessionState} from '../../session-provider';
+import { amountToString } from '../../utils/amount-to-string';
+import { QRScanner } from '../qr-scanner';
+import { styles } from './styles';
+
+
+export type SendTokenScreenProps = {
   sessionState: EstablishedSessionState;
   onBack: () => void;
   onSendComplete: () => void;
@@ -48,7 +48,7 @@ export const SendTokenScreen: React.FC<SendTokenScreenProps> = ({
     tokenMint,
     decimals,
     amountAvailable,
-    onSuccess: (_txSignature) => {
+    onSuccess: () => {
       Toast.show({
         type: 'success',
         text1: 'Tokens sent successfully!',
@@ -95,7 +95,7 @@ export const SendTokenScreen: React.FC<SendTokenScreenProps> = ({
           <View style={styles.tokenIconPlaceholder} />
         )}
         <Text style={styles.sendTitle}>
-          Send {tokenName || tokenMint.toBase58()}
+          Send {tokenName ?? tokenMint.toBase58()}
         </Text>
         <Text style={styles.availableAmount}>
           {amountToString(amountAvailable, decimals)} {symbol} available
@@ -116,7 +116,7 @@ export const SendTokenScreen: React.FC<SendTokenScreenProps> = ({
           />
           <TouchableOpacity
             style={styles.qrScanButton}
-            onPress={() => setShowQRScanner(true)}
+            onPress={() => { setShowQRScanner(true); }}
           >
             <Text style={styles.qrScanButtonText}>📷</Text>
           </TouchableOpacity>
@@ -145,7 +145,7 @@ export const SendTokenScreen: React.FC<SendTokenScreenProps> = ({
           styles.sendButton,
           !validation.isReadyToSend && styles.sendButtonDisabled,
         ]}
-        onPress={actions.validateAndSend}
+        onPress={() => { void actions.validateAndSend(); }}
         disabled={!validation.isReadyToSend}
       >
         {state.isLoading ? (
@@ -162,7 +162,7 @@ export const SendTokenScreen: React.FC<SendTokenScreenProps> = ({
       >
         <QRScanner
           onScan={handleQRScan}
-          onClose={() => setShowQRScanner(false)}
+          onClose={() => { setShowQRScanner(false); }}
         />
       </Modal>
     </View>

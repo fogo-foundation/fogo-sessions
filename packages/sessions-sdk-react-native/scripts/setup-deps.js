@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { execSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 
 function log(message) {
   console.log(`[sessions-sdk-setup] ${message}`);
@@ -28,14 +28,14 @@ function runCommand(command, packageManager) {
   try {
     log(`Running: ${command}`);
     execSync(command, { stdio: 'inherit', cwd: process.cwd() });
-  } catch (err) {
+  } catch (error_) {
     error(`Failed to execute: ${command}`);
     if (packageManager !== 'npm') {
       log(
         `If you're having issues, try running the command manually or switch to npm`
       );
     }
-    throw err;
+    throw error_;
   }
 }
 
@@ -60,9 +60,9 @@ function addDependenciesToPackageJson(dependencies, isDev = false) {
       const [packageName, version] =
         dep.includes('@') && !dep.startsWith('@')
           ? dep.split('@')
-          : dep.startsWith('@')
+          : (dep.startsWith('@')
             ? [dep.split('@').slice(0, 2).join('@'), dep.split('@')[2]]
-            : [dep, null];
+            : [dep, null]);
 
       if (!packageJson[depKey][packageName]) {
         // Use provided version or fallback to latest
@@ -80,9 +80,9 @@ function addDependenciesToPackageJson(dependencies, isDev = false) {
       );
       log('Updated package.json with new dependencies');
     }
-  } catch (err) {
-    error(`Failed to update package.json: ${err.message}`);
-    throw err;
+  } catch (error_) {
+    error(`Failed to update package.json: ${error_.message}`);
+    throw error_;
   }
 }
 
@@ -154,7 +154,7 @@ function installDependencies() {
     // Check npm version to determine if peer deps are auto-installed
     try {
       const npmVersion = execSync('npm --version', { encoding: 'utf8' }).trim();
-      const majorVersion = parseInt(npmVersion.split('.')[0]);
+      const majorVersion = Number.parseInt(npmVersion.split('.')[0]);
 
       if (majorVersion >= 7) {
         // Only install polyfill dependencies for npm v7+ since peer deps are auto-installed
@@ -172,7 +172,7 @@ function installDependencies() {
         const installCmd = `npm install`;
         runCommand(installCmd, packageManager);
       }
-    } catch (err) {
+    } catch {
       // If we can't determine npm version, add all dependencies
       log('Could not determine npm version, adding all dependencies');
       const missingPeerDeps = checkMissingDependencies(peerDeps);
@@ -191,15 +191,18 @@ function installDependencies() {
 
     let installCmd;
     switch (packageManager) {
-      case 'yarn':
+      case 'yarn': {
         installCmd = `yarn install`;
         break;
-      case 'pnpm':
+      }
+      case 'pnpm': {
         installCmd = `pnpm install`;
         break;
-      case 'bun':
+      }
+      case 'bun': {
         installCmd = `bun install`;
         break;
+      }
     }
 
     runCommand(installCmd, packageManager);
@@ -215,7 +218,7 @@ function isExpoProject() {
         packageJson.dependencies?.expo || packageJson.devDependencies?.expo
       );
     }
-  } catch (err) {
+  } catch {
     log(
       'Could not determine if project uses Expo, assuming standard React Native'
     );
@@ -244,16 +247,16 @@ function checkMissingDependencies(requiredDeps) {
       const packageName =
         dep.includes('@') && !dep.startsWith('@')
           ? dep.split('@')[0]
-          : dep.startsWith('@')
+          : (dep.startsWith('@')
             ? dep.split('@').slice(0, 2).join('@') // Handle scoped packages like @noble/hashes
-            : dep;
+            : dep);
 
       if (!allDeps[packageName]) {
         missingDeps.push(dep);
       }
     }
-  } catch (err) {
-    log(`Error checking dependencies: ${err.message}`);
+  } catch (error_) {
+    log(`Error checking dependencies: ${error_.message}`);
     return requiredDeps; // Return all as missing if error occurs
   }
 
@@ -612,9 +615,9 @@ console.log('Sessions SDK polyfills loaded successfully');
       log(
         'Example: import "./polyfills.js"; // Add this as the first import in App.js or index.js'
       );
-    } catch (err) {
-      error(`Failed to create polyfills.js: ${err.message}`);
-      throw err;
+    } catch (error_) {
+      error(`Failed to create polyfills.js: ${error_.message}`);
+      throw error_;
     }
   }
 
@@ -629,7 +632,9 @@ function setupExpoConfig() {
 
   // Create fs-mock.js
   const fsMockPath = path.resolve(process.cwd(), 'fs-mock.js');
-  if (!fs.existsSync(fsMockPath)) {
+  if (fs.existsSync(fsMockPath)) {
+    log('fs-mock.js already exists, skipping');
+  } else {
     const fsMockContent = `// fs-mock.js - Mock implementation for React Native
 module.exports = {
   readFileSync: () => {
@@ -646,17 +651,22 @@ module.exports = {
     try {
       fs.writeFileSync(fsMockPath, fsMockContent);
       log('Created fs-mock.js');
-    } catch (err) {
-      error(`Failed to create fs-mock.js: ${err.message}`);
-      throw err;
+    } catch (error_) {
+      error(`Failed to create fs-mock.js: ${error_.message}`);
+      throw error_;
     }
-  } else {
-    log('fs-mock.js already exists, skipping');
   }
 
   // Create or update metro.config.js
   const metroConfigPath = path.resolve(process.cwd(), 'metro.config.js');
-  if (!fs.existsSync(metroConfigPath)) {
+  if (fs.existsSync(metroConfigPath)) {
+    log(
+      'metro.config.js already exists - please manually merge the resolver configuration'
+    );
+    log(
+      'Refer to the library documentation for the required metro config changes'
+    );
+  } else {
     const metroConfigContent = `// Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config");
 const path = require("path");
@@ -737,17 +747,10 @@ module.exports = config;
     try {
       fs.writeFileSync(metroConfigPath, metroConfigContent);
       log('Created metro.config.js with necessary resolver configurations');
-    } catch (err) {
-      error(`Failed to create metro.config.js: ${err.message}`);
-      throw err;
+    } catch (error_) {
+      error(`Failed to create metro.config.js: ${error_.message}`);
+      throw error_;
     }
-  } else {
-    log(
-      'metro.config.js already exists - please manually merge the resolver configuration'
-    );
-    log(
-      'Refer to the library documentation for the required metro config changes'
-    );
   }
 }
 
@@ -777,7 +780,7 @@ function main() {
       );
       log('3. For more details, check the library documentation');
     }
-  } catch (err) {
+  } catch {
     error('Setup failed');
     process.exit(1);
   }

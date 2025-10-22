@@ -1,17 +1,19 @@
-import React from 'react';
-import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { getSessionAccount, establishSession, SessionResultType } from '@fogo/sessions-sdk';
 import { PublicKey } from '@solana/web3.js';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
+import * as SecureStore from 'expo-secure-store';
+import React from 'react';
+
 import { FogoSessionProvider, useSession, StateType } from '../../session-provider';
 import { createMockPublicKey, mockSecureStore, mockConnection } from '../test-utils';
-import * as SecureStore from 'expo-secure-store';
-import { getSessionAccount, establishSession, SessionResultType } from '@fogo/sessions-sdk';
+
 
 // Mock dependencies
 jest.mock('@fogo/sessions-sdk');
 jest.mock('expo-secure-store');
 
-const mockGetSessionAccount = getSessionAccount as jest.MockedFunction<typeof getSessionAccount>;
-const mockEstablishSession = establishSession as jest.MockedFunction<typeof establishSession>;
+const mockGetSessionAccount = getSessionAccount;
+const mockEstablishSession = establishSession;
 const mockSecureStoreTyped = SecureStore as jest.Mocked<typeof SecureStore>;
 
 describe('Session Lifecycle Integration', () => {
@@ -28,7 +30,7 @@ describe('Session Lifecycle Integration', () => {
         domain={domain}
         tokens={[tokenMint]}
         defaultRequestedLimits={{
-          [tokenMint.toBase58()]: 1000000n,
+          [tokenMint.toBase58()]: 1_000_000n,
         }}
         {...props}
       >
@@ -79,7 +81,7 @@ describe('Session Lifecycle Integration', () => {
         })); // getStoredSession
 
       // Set up crypto mock for this test
-      const mockCrypto = global.crypto as any;
+      const mockCrypto = globalThis.crypto as any;
       mockCrypto.subtle.importKey
         .mockResolvedValueOnce({ type: 'private' })
         .mockResolvedValueOnce({ type: 'public' });
@@ -163,7 +165,7 @@ describe('Session Lifecycle Integration', () => {
       });
 
       // Mock crypto operations
-      Object.defineProperty(global, 'crypto', {
+      Object.defineProperty(globalThis, 'crypto', {
         value: {
           subtle: {
             exportKey: jest.fn()
@@ -278,7 +280,7 @@ describe('Session Lifecycle Integration', () => {
 
       // Mock reestablishSession to return undefined (expired)
       const { reestablishSession } = await import('@fogo/sessions-sdk');
-      (reestablishSession as jest.MockedFunction<typeof reestablishSession>)
+      (reestablishSession)
         .mockResolvedValueOnce(undefined);
 
       const { result } = renderHook(() => useSession(), {

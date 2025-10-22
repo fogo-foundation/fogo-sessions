@@ -1,17 +1,15 @@
+import { PublicKey } from '@solana/web3.js';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { PublicKey } from '@solana/web3.js';
 
+import { SessionLimitsPanel } from './session-limits-panel';
+import { styles } from './styles';
+import type {EstablishedSessionState} from '../../session-provider';
+import { Tokens } from '../tokens/tokens';
 import { CopyButton } from '../ui/copy-button';
 import { TruncateKey } from '../ui/truncate-key';
-import { Tokens } from '../tokens/tokens';
-import { SessionLimitsPanel } from './session-limits-panel';
 
-import { type EstablishedSessionState } from '../../session-provider';
-
-import { styles } from './styles';
-
-export interface SessionPanelProps {
+export type SessionPanelProps = {
   sessionState: EstablishedSessionState;
   onClose: () => void;
   whitelistedTokens: PublicKey[];
@@ -35,7 +33,7 @@ export const SessionPanel: React.FC<SessionPanelProps> = ({
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tab, currentTab === 'tokens' && styles.tabActive]}
-          onPress={() => setCurrentTab('tokens')}
+          onPress={() => { setCurrentTab('tokens'); }}
         >
           <Text
             style={[
@@ -48,7 +46,7 @@ export const SessionPanel: React.FC<SessionPanelProps> = ({
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, currentTab === 'session' && styles.tabActive]}
-          onPress={() => setCurrentTab('session')}
+          onPress={() => { setCurrentTab('session'); }}
         >
           <Text
             style={[

@@ -1,4 +1,5 @@
 import { PublicKey } from '@solana/web3.js';
+
 import {
   deserializePublicKey,
   deserializePublicKeyList,
@@ -118,7 +119,7 @@ describe('deserializePublicKeyMap', () => {
     expect(result).toBeInstanceOf(Map);
     expect(result.size).toBe(2);
     
-    const keys = Array.from(result.keys());
+    const keys = [...result.keys()];
     expect(keys[0]).toBeInstanceOf(PublicKey);
     expect(keys[1]).toBeInstanceOf(PublicKey);
     expect(keys[0].toBase58()).toBe('11111111111111111111111111111112');
@@ -148,7 +149,7 @@ describe('deserializePublicKeyMap', () => {
     };
     
     const result = deserializePublicKeyMap(record);
-    const values = Array.from(result.values());
+    const values = [...result.values()];
     
     expect(values[0]).toEqual({ amount: 1000n, decimals: 6 });
     expect(values[1]).toEqual({ amount: 2000n, decimals: 9 });

@@ -1,23 +1,13 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "strict": false,
-    "verbatimModuleSyntax": false,
+    "emitDeclarationOnly": true,
+    "incremental": false,
     "declaration": true,
     "declarationMap": true,
-    "outDir": "./lib/typescript"
+    "outDir": "./dist/types"
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "**/*.test.*",
-    "**/__tests__/**",
-    "node_modules",
-    "lib",
-    "example"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "integration-tests", "src/**/__tests__","**/*.test.ts", "**/*.test.tsx"]
 }

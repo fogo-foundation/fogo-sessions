@@ -1,5 +1,5 @@
 /**
- * @file React hooks for session management and token operations.
+ * React hooks for session management and token operations.
  *
  * These hooks provide access to session state, token data, metadata,
  * and transaction functionality within the session context.

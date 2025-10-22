@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
 import { PublicKey } from '@solana/web3.js';
+import { useState, useCallback } from 'react';
+
 import { stringToAmount } from '../utils/amount-to-string';
 
 /**

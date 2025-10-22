@@ -1,20 +1,22 @@
-import { renderHook, act, waitFor } from '@testing-library/react-native';
-import { PublicKey } from '@solana/web3.js';
-import { useSendToken, type SendTokenParams } from '../../hooks/use-send-token';
 import { sendTransfer, TransactionResultType } from '@fogo/sessions-sdk';
-import { createMockPublicKey } from '../test-utils';
+import { PublicKey } from '@solana/web3.js';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
+
+import type {SendTokenParams} from '../../hooks/use-send-token';
+import { useSendToken  } from '../../hooks/use-send-token';
 import type { EstablishedSessionState } from '../../session-provider';
+import { createMockPublicKey } from '../test-utils';
 
 // Mock the sessions SDK
 jest.mock('@fogo/sessions-sdk', () => ({
   sendTransfer: jest.fn(),
   TransactionResultType: {
-    Success: 'success',
-    Failed: 'failed',
+    Success: 0,
+    Failed: 1,
   },
 }));
 
-const mockSendTransfer = sendTransfer as jest.MockedFunction<typeof sendTransfer>;
+const mockSendTransfer = sendTransfer;
 
 describe('useSendToken', () => {
   const createMockSessionState = (): EstablishedSessionState => ({
@@ -36,7 +38,7 @@ describe('useSendToken', () => {
     sessionState: createMockSessionState(),
     tokenMint: createMockPublicKey('token-mint'),
     decimals: 6,
-    amountAvailable: 1000000000n, // 1000 tokens with 6 decimals
+    amountAvailable: 1_000_000_000n, // 1000 tokens with 6 decimals
     onSuccess: jest.fn(),
     onError: jest.fn(),
   };
@@ -52,7 +54,7 @@ describe('useSendToken', () => {
       expect(result.current.state.amount).toBe('');
       expect(result.current.state.recipient).toBe('');
       expect(result.current.state.isLoading).toBe(false);
-      expect(result.current.state.error).toBeNull();
+      expect(result.current.state.error).toBeUndefined();
     });
 
     it('should have invalid validation initially', () => {
@@ -61,8 +63,8 @@ describe('useSendToken', () => {
       expect(result.current.validation.isValidRecipient).toBe(false);
       expect(result.current.validation.isValidAmount).toBe(false);
       expect(result.current.validation.isReadyToSend).toBe(false);
-      expect(result.current.validation.recipientError).toBeNull();
-      expect(result.current.validation.amountError).toBeNull();
+      expect(result.current.validation.recipientError).toBeUndefined();
+      expect(result.current.validation.amountError).toBeUndefined();
     });
   });
 
@@ -75,7 +77,7 @@ describe('useSendToken', () => {
       });
 
       expect(result.current.validation.isValidAmount).toBe(true);
-      expect(result.current.validation.amountError).toBeNull();
+      expect(result.current.validation.amountError).toBeUndefined();
     });
 
     it('should reject zero amount', () => {
@@ -119,7 +121,7 @@ describe('useSendToken', () => {
       });
 
       expect(result.current.validation.isValidAmount).toBe(true);
-      expect(result.current.validation.amountError).toBeNull();
+      expect(result.current.validation.amountError).toBeUndefined();
     });
 
     it('should reject amounts with too much precision', () => {
@@ -144,7 +146,7 @@ describe('useSendToken', () => {
       });
 
       expect(result.current.validation.isValidRecipient).toBe(true);
-      expect(result.current.validation.recipientError).toBeNull();
+      expect(result.current.validation.recipientError).toBeUndefined();
     });
 
     it('should handle invalid recipient address with mock', () => {
@@ -157,7 +159,7 @@ describe('useSendToken', () => {
       // With mocked PublicKey, invalid strings won't throw, so validation passes
       // but it should still reject sending to self if the invalid string matches wallet key
       expect(result.current.validation.isValidRecipient).toBe(true);
-      expect(result.current.validation.recipientError).toBeNull();
+      expect(result.current.validation.recipientError).toBeUndefined();
     });
 
     it('should reject sending to self', () => {
@@ -179,7 +181,7 @@ describe('useSendToken', () => {
       });
 
       expect(result.current.validation.isValidRecipient).toBe(false);
-      expect(result.current.validation.recipientError).toBeNull();
+      expect(result.current.validation.recipientError).toBeUndefined();
     });
   });
 
@@ -198,7 +200,7 @@ describe('useSendToken', () => {
       const params = {
         ...defaultParams,
         decimals: 9,
-        amountAvailable: 5000000000n, // 5 tokens with 9 decimals
+        amountAvailable: 5_000_000_000n, // 5 tokens with 9 decimals
       };
       
       const { result } = renderHook(() => useSendToken(params));
@@ -219,7 +221,7 @@ describe('useSendToken', () => {
         result.current.actions.setMaxAmount();
       });
 
-      expect(result.current.state.error).toBeNull();
+      expect(result.current.state.error).toBeUndefined();
     });
   });
 
@@ -250,7 +252,7 @@ describe('useSendToken', () => {
         walletPublicKey: defaultParams.sessionState.walletPublicKey,
         signMessage: defaultParams.sessionState.signMessage,
         mint: defaultParams.tokenMint,
-        amount: 100000000n, // 100 * 10^6
+        amount: 100_000_000n, // 100 * 10^6
         recipient: expect.any(PublicKey),
       });
 
@@ -381,7 +383,7 @@ describe('useSendToken', () => {
 
       expect(result.current.state.amount).toBe('');
       expect(result.current.state.recipient).toBe('');
-      expect(result.current.state.error).toBeNull();
+      expect(result.current.state.error).toBeUndefined();
       expect(result.current.state.isLoading).toBe(false);
     });
   });
@@ -399,7 +401,7 @@ describe('useSendToken', () => {
         result.current.actions.setAmount('100');
       });
 
-      expect(result.current.state.error).toBeNull();
+      expect(result.current.state.error).toBeUndefined();
     });
 
     it('should clear error when setting recipient', () => {
@@ -414,7 +416,7 @@ describe('useSendToken', () => {
         result.current.actions.setRecipient(createMockPublicKey('recipient').toBase58());
       });
 
-      expect(result.current.state.error).toBeNull();
+      expect(result.current.state.error).toBeUndefined();
     });
   });
 

@@ -1,6 +1,7 @@
 // PublicKey will be mocked by jest-setup.js
-import type { SessionKeyPair, StoredSession } from '../session-store';
 import type { SessionAdapter } from '@fogo/sessions-sdk';
+
+import type { SessionKeyPair, StoredSession } from '../session-store';
 
 export const createMockPublicKey = (seed = 'test'): any => {
   // This will use the mocked PublicKey from jest-setup.js
@@ -99,13 +100,13 @@ export const createMockInstructions = (count = 1) =>
 export const waitForAsync = () => new Promise(resolve => setTimeout(resolve, 0));
 
 export const mockFetch = (response: any) => {
-  global.fetch = jest.fn().mockResolvedValue({
+  globalThis.fetch = jest.fn().mockResolvedValue({
     ok: true,
     json: () => Promise.resolve(response),
   });
 };
 
-export const createMockTokenAccount = (mint: PublicKey, amount = 1000000) => ({
+export const createMockTokenAccount = (mint: PublicKey, amount = 1_000_000) => ({
   mint,
   owner: createMockPublicKey('owner'),
   amount: BigInt(amount),

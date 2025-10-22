@@ -1,3 +1,4 @@
+import { PublicKey } from '@solana/web3.js';
 import React, { useCallback, useEffect, useRef } from 'react';
 import {
   View,
@@ -8,18 +9,20 @@ import {
   ActivityIndicator,
   Modal,
   TouchableWithoutFeedback,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
-import { PublicKey } from '@solana/web3.js';
 
-import { amountToString } from '../utils/amount-to-string';
-import { errorToString } from '../utils/error-to-string';
 import { TokenAmountInput } from './token-amount-input';
+import type {DurationKey} from '../hooks/use-session-duration';
+import { DURATION  } from '../hooks/use-session-duration';
+import { useSessionLimitsForm } from '../hooks/use-session-limits-form';
 import {
   TokenDataStateType,
   useTokenMetadata,
 } from '../hooks/use-token-metadata';
-import { useSessionLimitsForm } from '../hooks/use-session-limits-form';
-import { DURATION, type DurationKey } from '../hooks/use-session-duration';
+import { amountToString } from '../utils/amount-to-string';
+import { errorToString } from '../utils/error-to-string';
 
 const Switch = ({
   isEnabled,
@@ -30,7 +33,7 @@ const Switch = ({
   isEnabled: boolean;
   onToggle: (enabled: boolean) => void;
   children: React.ReactNode;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }) => (
   <View style={[styles.switchContainer, style]}>
     <View style={styles.switchLabel}>
@@ -42,7 +45,9 @@ const Switch = ({
     </View>
     <TouchableOpacity
       style={[styles.switch, isEnabled && styles.switchEnabled]}
-      onPress={() => onToggle(!isEnabled)}
+      onPress={() => {
+        onToggle(!isEnabled)
+      }}
       activeOpacity={0.8}
     >
       <View
@@ -61,9 +66,11 @@ const DurationPicker = React.memo(
   }: {
     selectedDuration: DurationKey;
     onDurationChange: (duration: DurationKey) => void;
-    style?: any;
+    style?: StyleProp<ViewStyle>;
   }) => {
     const [isOpen, setIsOpen] = React.useState(false);
+
+    DurationPicker.displayName = 'DurationPicker';
 
     return (
       <View style={[styles.durationContainer, style]}>
@@ -72,7 +79,9 @@ const DurationPicker = React.memo(
         </Text>
         <TouchableOpacity
           style={styles.durationSelector}
-          onPress={() => setIsOpen(true)}
+          onPress={() => {
+            setIsOpen(true);
+          }}
           activeOpacity={0.8}
         >
           <Text style={styles.durationSelectorText}>
@@ -85,9 +94,15 @@ const DurationPicker = React.memo(
           visible={isOpen}
           transparent
           animationType="slide"
-          onRequestClose={() => setIsOpen(false)}
+          onRequestClose={() => {
+            setIsOpen(false);
+          }}
         >
-          <TouchableWithoutFeedback onPress={() => setIsOpen(false)}>
+          <TouchableWithoutFeedback
+            onPress={() => {
+              setIsOpen(false);
+            }}
+          >
             <View style={styles.durationModalOverlay}>
               <TouchableWithoutFeedback>
                 <View style={styles.durationModal}>
@@ -96,7 +111,9 @@ const DurationPicker = React.memo(
                       Select Duration
                     </Text>
                     <TouchableOpacity
-                      onPress={() => setIsOpen(false)}
+                      onPress={() => {
+                        setIsOpen(false);
+                      }}
                       style={styles.durationModalClose}
                     >
                       <Text style={styles.durationModalCloseText}>✕</Text>
@@ -153,7 +170,6 @@ export const SessionLimits = <Token extends PublicKey>({
   style,
   enableUnlimited,
   isSessionUnlimited,
-  autoFocus,
 }: {
   tokens: Token[];
   initialLimits: Map<Token, bigint>;
@@ -162,8 +178,7 @@ export const SessionLimits = <Token extends PublicKey>({
   | undefined;
   buttonText?: string;
   error?: unknown;
-  style?: any;
-  autoFocus?: boolean;
+  style?: StyleProp<ViewStyle>;
 } & (
     | { enableUnlimited?: false | undefined; isSessionUnlimited?: undefined }
     | { enableUnlimited: true | undefined; isSessionUnlimited?: boolean }
@@ -176,10 +191,10 @@ export const SessionLimits = <Token extends PublicKey>({
     shouldShowTokenInputs,
     isSubmitDisabled,
   } = useSessionLimitsForm({
-    enableUnlimited,
-    isSessionUnlimited,
+    enableUnlimited: !!enableUnlimited,
+    isSessionUnlimited: !!isSessionUnlimited,
     tokens,
-    onSubmit,
+    ...(onSubmit && { onSubmit }),
   });
 
   return (
@@ -201,7 +216,7 @@ export const SessionLimits = <Token extends PublicKey>({
             style={styles.applyLimitsSwitch}
           >
             <Text style={styles.switchText}>
-              Limit this app's access to tokens
+              Limit this app&apos;s access to tokens
             </Text>
           </Switch>
         ) : (
@@ -220,7 +235,6 @@ export const SessionLimits = <Token extends PublicKey>({
                   )?.[1] ?? 0n
                 }
                 onValueChange={tokenForm.updateFormData}
-                autoFocus={autoFocus}
               />
             ))}
           </View>
@@ -274,8 +288,8 @@ const Token = ({
 
   const handleValueChange = useCallback(
     (value: string) => {
-      if (metadata.type === TokenDataStateType.Loaded) {
-        onValueChange(mint.toBase58(), value, metadata.data.decimals);
+      if ((metadata as { type: unknown; data?: { decimals: number } }).type === (TokenDataStateType as { Loaded: unknown }).Loaded) {
+        onValueChange(mint.toBase58(), value, (metadata as { data: { decimals: number } }).data.decimals);
       }
     },
     [mint, metadata, onValueChange]
@@ -284,21 +298,21 @@ const Token = ({
   // Initialize formData with initial value when metadata loads
   useEffect(() => {
     if (
-      metadata.type === TokenDataStateType.Loaded &&
+      (metadata as { type: unknown; data?: { decimals: number } }).type === (TokenDataStateType as { Loaded: unknown }).Loaded &&
       initialAmount > 0n &&
       !initializedRef.current
     ) {
       const initialValue = amountToString(
         initialAmount,
-        metadata.data.decimals
+        (metadata as { data: { decimals: number } }).data.decimals
       );
-      onValueChange(mint.toBase58(), initialValue, metadata.data.decimals);
+      onValueChange(mint.toBase58(), initialValue, (metadata as { data: { decimals: number } }).data.decimals);
       initializedRef.current = true;
     }
   }, [metadata, initialAmount, mint, onValueChange]);
 
-  switch (metadata.type) {
-    case TokenDataStateType.Error: {
+  switch ((metadata as { type: unknown }).type) {
+    case (TokenDataStateType as { Error: unknown }).Error: {
       return (
         <View style={styles.tokenError}>
           <Text style={styles.tokenErrorText}>
@@ -308,27 +322,28 @@ const Token = ({
       );
     }
 
-    case TokenDataStateType.Loaded: {
+    case (TokenDataStateType as { Loaded: unknown }).Loaded: {
+      const metadataData = (metadata as { data: { name?: string; decimals: number; symbol?: string } }).data;
       return (
         <View style={styles.tokenContainer}>
           <TokenAmountInput
-            style={styles.tokenInput}
-            label={
-              'name' in metadata.data ? metadata.data.name : mint.toBase58()
-            }
-            decimals={metadata.data.decimals}
-            symbol={metadata.data.symbol}
-            defaultValue={amountToString(initialAmount, metadata.data.decimals)}
-            min={0n}
-            onValueChange={handleValueChange}
-            autoFocus={autoFocus}
+            {...{
+              style: styles.tokenInput,
+              label: metadataData.name ?? mint.toBase58(),
+              decimals: metadataData.decimals,
+              ...(metadataData.symbol !== undefined && { symbol: metadataData.symbol }),
+              defaultValue: amountToString(initialAmount, metadataData.decimals),
+              min: 0n,
+              onValueChange: handleValueChange,
+              autoFocus: autoFocus ?? false,
+            }}
           />
         </View>
       );
     }
 
-    case TokenDataStateType.Loading:
-    case TokenDataStateType.NotLoaded: {
+    case (TokenDataStateType as { Loading: unknown }).Loading:
+    case (TokenDataStateType as { NotLoaded: unknown }).NotLoaded: {
       return (
         <View style={styles.tokenLoading}>
           <ActivityIndicator size="small" color="#666" />

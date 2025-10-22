@@ -1,15 +1,15 @@
 import React from 'react';
-import { useSessionContext } from '../session-provider';
-import { SessionLimits } from './session-limits';
+
 import { CustomBottomSheet } from './bottom-sheet';
-import { StateType } from '../session-provider';
+import { SessionLimits } from './session-limits';
+import { useSessionContext , StateType } from '../session-provider';
 
 /**
  * Props for the SessionLimitsSheet component.
  *
  * @public
  */
-export interface SessionLimitsSheetProps {
+export type SessionLimitsSheetProps = {
   /** Custom heading for the sheet (default: "Session Limits") */
   heading?: string;
 
@@ -67,8 +67,8 @@ export const SessionLimitsSheet: React.FC<SessionLimitsSheetProps> = ({
   } = useSessionContext();
 
   // Only render if there are tokens configured
-  if (!whitelistedTokens || whitelistedTokens.length === 0) {
-    return null;
+  if (whitelistedTokens.length === 0) {
+    return;
   }
 
   return (
@@ -83,17 +83,16 @@ export const SessionLimitsSheet: React.FC<SessionLimitsSheetProps> = ({
         enableUnlimited={enableUnlimited}
         tokens={whitelistedTokens}
         onSubmit={
-          sessionState.type === StateType.RequestingLimits
-            ? sessionState.onSubmitLimits
+          (sessionState as { type: StateType; onSubmitLimits?: unknown }).type === StateType.RequestingLimits
+            ? (sessionState as { onSubmitLimits: unknown }).onSubmitLimits
             : undefined
         }
         initialLimits={requestedLimits ?? new Map()}
         error={
-          sessionState.type === StateType.RequestingLimits
-            ? sessionState.error
+          (sessionState as { type: StateType; error?: unknown }).type === StateType.RequestingLimits
+            ? (sessionState as { error: unknown }).error
             : undefined
         }
-        autoFocus
       />
     </CustomBottomSheet>
   );

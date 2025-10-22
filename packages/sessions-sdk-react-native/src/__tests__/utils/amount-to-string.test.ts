@@ -2,27 +2,27 @@ import { amountToString, stringToAmount } from '../../utils/amount-to-string';
 
 describe('amountToString', () => {
   it('should convert whole amounts correctly', () => {
-    expect(amountToString(1000000n, 6)).toBe('1');
-    expect(amountToString(5000000n, 6)).toBe('5');
-    expect(amountToString(123000000n, 6)).toBe('123');
+    expect(amountToString(1_000_000n, 6)).toBe('1');
+    expect(amountToString(5_000_000n, 6)).toBe('5');
+    expect(amountToString(123_000_000n, 6)).toBe('123');
   });
 
   it('should convert decimal amounts correctly', () => {
-    expect(amountToString(1500000n, 6)).toBe('1.5');
-    expect(amountToString(1230000n, 6)).toBe('1.23');
-    expect(amountToString(1234560n, 6)).toBe('1.23456');
+    expect(amountToString(1_500_000n, 6)).toBe('1.5');
+    expect(amountToString(1_230_000n, 6)).toBe('1.23');
+    expect(amountToString(1_234_560n, 6)).toBe('1.23456');
   });
 
   it('should handle small amounts correctly', () => {
     expect(amountToString(1n, 6)).toBe('0.000001');
     expect(amountToString(100n, 6)).toBe('0.0001');
-    expect(amountToString(123456n, 6)).toBe('0.123456');
+    expect(amountToString(123_456n, 6)).toBe('0.123456');
   });
 
   it('should remove trailing zeros', () => {
-    expect(amountToString(1500000n, 6)).toBe('1.5');
-    expect(amountToString(1000000n, 6)).toBe('1');
-    expect(amountToString(1230000n, 6)).toBe('1.23');
+    expect(amountToString(1_500_000n, 6)).toBe('1.5');
+    expect(amountToString(1_000_000n, 6)).toBe('1');
+    expect(amountToString(1_230_000n, 6)).toBe('1.23');
   });
 
   it('should handle zero amount', () => {
@@ -31,34 +31,34 @@ describe('amountToString', () => {
   });
 
   it('should handle different decimal places', () => {
-    expect(amountToString(1000000000n, 9)).toBe('1');
-    expect(amountToString(1500000000n, 9)).toBe('1.5');
+    expect(amountToString(1_000_000_000n, 9)).toBe('1');
+    expect(amountToString(1_500_000_000n, 9)).toBe('1.5');
     expect(amountToString(1n, 9)).toBe('0.000000001');
   });
 
   it('should handle large amounts', () => {
-    expect(amountToString(12345678000000n, 6)).toBe('12345678');
-    expect(amountToString(999999999999n, 6)).toBe('999999.999999');
+    expect(amountToString(12_345_678_000_000n, 6)).toBe('12345678');
+    expect(amountToString(999_999_999_999n, 6)).toBe('999999.999999');
   });
 });
 
 describe('stringToAmount', () => {
   it('should convert whole number strings correctly', () => {
-    expect(stringToAmount('1', 6)).toBe(1000000n);
-    expect(stringToAmount('5', 6)).toBe(5000000n);
-    expect(stringToAmount('123', 6)).toBe(123000000n);
+    expect(stringToAmount('1', 6)).toBe(1_000_000n);
+    expect(stringToAmount('5', 6)).toBe(5_000_000n);
+    expect(stringToAmount('123', 6)).toBe(123_000_000n);
   });
 
   it('should convert decimal strings correctly', () => {
-    expect(stringToAmount('1.5', 6)).toBe(1500000n);
-    expect(stringToAmount('1.23', 6)).toBe(1230000n);
-    expect(stringToAmount('1.23456', 6)).toBe(1234560n);
+    expect(stringToAmount('1.5', 6)).toBe(1_500_000n);
+    expect(stringToAmount('1.23', 6)).toBe(1_230_000n);
+    expect(stringToAmount('1.23456', 6)).toBe(1_234_560n);
   });
 
   it('should handle small decimal amounts', () => {
     expect(stringToAmount('0.000001', 6)).toBe(1n);
     expect(stringToAmount('0.0001', 6)).toBe(100n);
-    expect(stringToAmount('0.123456', 6)).toBe(123456n);
+    expect(stringToAmount('0.123456', 6)).toBe(123_456n);
   });
 
   it('should handle zero', () => {
@@ -68,15 +68,15 @@ describe('stringToAmount', () => {
   });
 
   it('should handle different decimal places', () => {
-    expect(stringToAmount('1', 9)).toBe(1000000000n);
-    expect(stringToAmount('1.5', 9)).toBe(1500000000n);
+    expect(stringToAmount('1', 9)).toBe(1_000_000_000n);
+    expect(stringToAmount('1.5', 9)).toBe(1_500_000_000n);
     expect(stringToAmount('0.000000001', 9)).toBe(1n);
   });
 
   it('should pad fractional parts correctly', () => {
-    expect(stringToAmount('1.1', 6)).toBe(1100000n);
-    expect(stringToAmount('1.01', 6)).toBe(1010000n);
-    expect(stringToAmount('1.001', 6)).toBe(1001000n);
+    expect(stringToAmount('1.1', 6)).toBe(1_100_000n);
+    expect(stringToAmount('1.01', 6)).toBe(1_010_000n);
+    expect(stringToAmount('1.001', 6)).toBe(1_001_000n);
   });
 
   it('should throw error for invalid format', () => {
@@ -96,21 +96,21 @@ describe('stringToAmount', () => {
   });
 
   it('should handle exact precision', () => {
-    expect(stringToAmount('1.123456', 6)).toBe(1123456n);
-    expect(stringToAmount('0.123456', 6)).toBe(123456n);
+    expect(stringToAmount('1.123456', 6)).toBe(1_123_456n);
+    expect(stringToAmount('0.123456', 6)).toBe(123_456n);
   });
 });
 
 describe('round-trip conversions', () => {
   const testCases = [
-    { amount: 1000000n, decimals: 6, expected: '1' },
-    { amount: 1500000n, decimals: 6, expected: '1.5' },
-    { amount: 1234560n, decimals: 6, expected: '1.23456' },
-    { amount: 123456n, decimals: 6, expected: '0.123456' },
+    { amount: 1_000_000n, decimals: 6, expected: '1' },
+    { amount: 1_500_000n, decimals: 6, expected: '1.5' },
+    { amount: 1_234_560n, decimals: 6, expected: '1.23456' },
+    { amount: 123_456n, decimals: 6, expected: '0.123456' },
     { amount: 0n, decimals: 6, expected: '0' },
   ];
 
-  testCases.forEach(({ amount, decimals, expected }) => {
+  for (const { amount, decimals, expected } of testCases) {
     it(`should convert ${amount} with ${decimals} decimals to "${expected}" and back`, () => {
       const str = amountToString(amount, decimals);
       expect(str).toBe(expected);
@@ -118,5 +118,5 @@ describe('round-trip conversions', () => {
       const backToAmount = stringToAmount(str, decimals);
       expect(backToAmount).toBe(amount);
     });
-  });
+  }
 });

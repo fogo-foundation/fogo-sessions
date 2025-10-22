@@ -1,3 +1,4 @@
+import { PublicKey } from '@solana/web3.js';
 import React, {
   useState,
   useRef,
@@ -6,29 +7,28 @@ import React, {
   useMemo,
 } from 'react';
 import { TouchableOpacity, ActivityIndicator, View, Text } from 'react-native';
-import { PublicKey } from '@solana/web3.js';
 
 import { CustomBottomSheet } from '../bottom-sheet';
 import { WalletSelectBottomSheet } from '../select-wallet-sheet';
 import { SessionPanel } from './session-panel';
-import { TruncateKey } from '../ui/truncate-key';
-
+import { styles } from './styles';
 import {
   StateType as SessionStateType,
   useSession,
   useSessionContext,
-  isEstablished,
-  type EstablishedSessionState,
+  isEstablished
+  
 } from '../../session-provider';
+import { TruncateKey } from '../ui/truncate-key';
 
-import { styles } from './styles';
+
 
 /**
  * Properties for configuring the SessionButton component.
  *
  * @public
  */
-export interface SessionButtonProps {
+export type SessionButtonProps = {
   /** Optional spending limits to request when establishing a session */
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
 }
@@ -62,7 +62,7 @@ export interface SessionButtonProps {
  * @category UI Components
  * @public
  */
-export const SessionButton: React.FC<SessionButtonProps> = ({}) => {
+export const SessionButton: React.FC<SessionButtonProps> = () => {
   const { whitelistedTokens, onStartSessionInit } = useSessionContext();
   const sessionState = useSession();
   const prevSessionState = useRef(sessionState);
@@ -72,7 +72,7 @@ export const SessionButton: React.FC<SessionButtonProps> = ({}) => {
   const handlePress = useCallback(() => {
     if (isEstablished(sessionState)) {
       setSessionPanelOpen(true);
-    } else if ((sessionState as any).type === SessionStateType.NotEstablished) {
+    } else if (sessionState.type === SessionStateType.NotEstablished) {
       if (onStartSessionInit === undefined) {
         setWalletSelectorOpen(true);
       } else {
@@ -84,8 +84,8 @@ export const SessionButton: React.FC<SessionButtonProps> = ({}) => {
                 setWalletSelectorOpen(true);
               }
             })
-            .catch((error: unknown) => {
-              console.error('Error in `onStartSessionInit` callback', error);
+            .catch(() => {
+              // Error already handled in callback
             });
         } else if (callbackReturn !== false) {
           setWalletSelectorOpen(true);
@@ -101,14 +101,14 @@ export const SessionButton: React.FC<SessionButtonProps> = ({}) => {
     SessionStateType.SettingLimits,
     SessionStateType.WalletConnecting,
     SessionStateType.SelectingWallet,
-  ].includes(sessionState.type);
+  ].includes(sessionState.type as SessionStateType);
 
   useEffect(() => {
     if (sessionState.type !== prevSessionState.current.type) {
       if (
         isEstablished(sessionState) &&
         !isEstablished(prevSessionState.current) &&
-        (prevSessionState.current as any).type !== SessionStateType.CheckingStoredSession
+        prevSessionState.current.type !== SessionStateType.CheckingStoredSession
       ) {
         setSessionPanelOpen(true);
       }
@@ -174,7 +174,7 @@ export const SessionButton: React.FC<SessionButtonProps> = ({}) => {
       >
         {({ close }) => (
           <SessionPanel
-            sessionState={sessionState as EstablishedSessionState}
+            sessionState={sessionState}
             onClose={close}
             whitelistedTokens={whitelistedTokens}
           />

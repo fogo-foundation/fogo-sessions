@@ -1,10 +1,12 @@
-import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react-native';
-import { MobileWalletProvider, useMobileWallet } from '../../wallet-connect/wallet-provider';
-import { MobileWalletFactory } from '../../wallet-connect/wallet-factory';
-import { BaseMobileWalletAdapter } from '../../wallet-connect/wallet-connect';
-import { createMockPublicKey } from '../test-utils';
+import React from 'react';
 import { Linking } from 'react-native';
+
+import { BaseMobileWalletAdapter } from '../../wallet-connect/wallet-connect';
+import { MobileWalletFactory } from '../../wallet-connect/wallet-factory';
+import { MobileWalletProvider, useMobileWallet } from '../../wallet-connect/wallet-provider';
+import { createMockPublicKey } from '../test-utils';
+
 
 // Mock React Native Linking
 jest.mock('react-native', () => ({
@@ -43,8 +45,8 @@ describe('Wallet Connection Integration', () => {
       expect(result.current.connected).toBe(false);
       expect(result.current.connecting).toBe(false);
       expect(result.current.disconnecting).toBe(false);
-      expect(result.current.publicKey).toBeNull();
-      expect(result.current.connectedWalletName).toBeNull();
+      expect(result.current.publicKey).toBeUndefined();
+      expect(result.current.connectedWalletName).toBeUndefined();
     });
 
     it('should provide available wallets', () => {
@@ -147,14 +149,14 @@ describe('Wallet Connection Integration', () => {
       await act(async () => {
         try {
           await result.current.connect('phantom');
-        } catch (error) {
+        } catch {
           // Expected error
         }
       });
 
       expect(result.current.connecting).toBe(false);
       expect(result.current.connected).toBe(false);
-      expect(result.current.connectedWalletName).toBeNull();
+      expect(result.current.connectedWalletName).toBeUndefined();
     });
 
     it('should handle unsupported wallet', async () => {
@@ -254,8 +256,8 @@ describe('Wallet Connection Integration', () => {
         expect(result.current.disconnecting).toBe(false);
       });
 
-      expect(result.current.connectedWalletName).toBeNull();
-      expect(result.current.publicKey).toBeNull();
+      expect(result.current.connectedWalletName).toBeUndefined();
+      expect(result.current.publicKey).toBeUndefined();
     });
 
     it('should handle disconnection when not connected', async () => {
@@ -485,7 +487,7 @@ describe('Wallet Connection Integration', () => {
       await act(async () => {
         try {
           await result.current.connect('phantom');
-        } catch (error) {
+        } catch {
           // Expected error
         }
       });
@@ -537,7 +539,7 @@ describe('Wallet Connection Integration', () => {
 
       expect(result.current.connecting).toBe(false);
       expect(result.current.connected).toBe(false);
-      expect(result.current.connectedWalletName).toBeNull();
+      expect(result.current.connectedWalletName).toBeUndefined();
     });
   });
 });

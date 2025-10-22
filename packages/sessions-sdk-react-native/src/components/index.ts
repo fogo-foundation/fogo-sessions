@@ -1,5 +1,5 @@
 /**
- * @file React Native UI components for session management.
+ * React Native UI components for session management.
  *
  * These components provide ready-to-use UI elements for session establishment,
  * wallet selection, token management, and other session-related interactions.

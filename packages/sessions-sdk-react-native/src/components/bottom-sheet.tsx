@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
@@ -11,12 +12,11 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { ReactNode } from 'react';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type Props = {
-  children: ReactNode | ((args: { close: () => void }) => ReactNode);
+  children: ReactNode | ((_args: { close: () => void }) => ReactNode);
   heading: ReactNode;
   message?: ReactNode | undefined;
   isOpen: boolean;
@@ -48,15 +48,16 @@ export const CustomBottomSheet = ({
   // Calculate height from snap points
   const getHeightFromSnapPoint = (snapPoint: string) => {
     if (snapPoint.endsWith('%')) {
-      const percentage = parseInt(snapPoint.replace('%', ''), 10);
+      const percentage = Number.parseInt(snapPoint.replace('%', ''), 10);
       return (SCREEN_HEIGHT * percentage) / 100;
     }
-    return parseInt(snapPoint, 10);
+    return Number.parseInt(snapPoint, 10);
   };
 
-  const minHeight = getHeightFromSnapPoint(snapPoints[0] || '50%');
+  const minHeight = getHeightFromSnapPoint(snapPoints[0] ?? '50%');
   const maxHeight = getHeightFromSnapPoint(
-    snapPoints[snapPoints.length - 1] || '80%'
+    // eslint-disable-next-line unicorn/prefer-at
+    snapPoints[snapPoints.length - 1] ?? '80%'
   );
 
   const [currentHeight, setCurrentHeight] = useState(minHeight);

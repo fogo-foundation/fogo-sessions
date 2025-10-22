@@ -3,7 +3,7 @@ import { TouchableOpacity, View, Text, Clipboard } from 'react-native';
 
 import { styles } from './styles';
 
-export interface CopyButtonProps {
+export type CopyButtonProps = {
   text: string;
   children: React.ReactNode;
 }
@@ -12,6 +12,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ text, children }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const copyAddress = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     Clipboard.setString(text);
     setIsCopied(true);
     setTimeout(() => {

@@ -1,16 +1,17 @@
-import { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
+import { Buffer } from 'node:buffer';
+
+import { base58 } from '@scure/base';
+import type { WalletAdapter } from '@solana/wallet-adapter-base';
 import {
-  type WalletAdapter,
-  WalletReadyState,
   BaseWalletAdapter,
   WalletAdapterNetwork,
+  WalletReadyState,
 } from '@solana/wallet-adapter-base';
+import { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { Linking } from 'react-native';
-import { base58 } from '@scure/base';
-import { Buffer } from 'buffer';
-import nacl from 'tweetnacl';
+import * as nacl from 'tweetnacl';
 
-export interface WalletResponse {
+export type WalletResponse = {
   [key: string]: string; // Allow dynamic keys for different wallet encryption public keys
   nonce: string;
   data: string;
@@ -23,7 +24,7 @@ export interface WalletResponse {
 export abstract class BaseMobileWalletAdapter
   extends BaseWalletAdapter
   implements WalletAdapter {
-  abstract url: string;
+  abstract override url: string;
   abstract deepLinkScheme: string;
   abstract universalLinkDomain: string;
 
@@ -32,7 +33,7 @@ export abstract class BaseMobileWalletAdapter
 
   protected _connecting = false;
   protected _connected = false;
-  protected _publicKey: PublicKey | null = null;
+  protected _publicKey: PublicKey | undefined = undefined;
   protected _readyState = WalletReadyState.Installed;
 
   // Shared encryption properties
@@ -59,7 +60,7 @@ export abstract class BaseMobileWalletAdapter
     return this._connecting;
   }
 
-  get connected() {
+  override get connected() {
     return this._connected;
   }
 
@@ -67,8 +68,8 @@ export abstract class BaseMobileWalletAdapter
     return this._readyState;
   }
 
-  abstract connect(): Promise<void>;
-  abstract disconnect(): Promise<void>;
+  abstract override connect(): Promise<void>;
+  abstract override disconnect(): Promise<void>;
   abstract signTransaction<T extends Transaction | VersionedTransaction>(
     transaction: T
   ): Promise<T>;
@@ -84,15 +85,17 @@ export abstract class BaseMobileWalletAdapter
   protected encodeTransaction(
     transaction: Transaction | VersionedTransaction
   ): string {
-    return btoa(String.fromCharCode(...transaction.serialize()));
+    const serialized = transaction.serialize();
+    return btoa(String.fromCodePoint(...serialized));
   }
 
   protected decodeTransaction(encodedTx: string): Uint8Array {
-    return new Uint8Array(
-      atob(encodedTx)
-        .split('')
-        .map((char) => char.charCodeAt(0))
-    );
+    const decoded = atob(encodedTx);
+    const result = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i++) {
+      result[i] = decoded.codePointAt(i) ?? 0;
+    }
+    return result;
   }
 
   // Shared deeplink functionality
@@ -119,16 +122,14 @@ export abstract class BaseMobileWalletAdapter
       }
 
       const jsonString = Buffer.from(decryptedData).toString('utf8');
-      return JSON.parse(jsonString);
-    } catch (error: any) {
-      console.error('Decryption failed:', error);
-      console.error('Raw data received:', data);
-      console.error('Raw nonce received:', nonce);
-      throw new Error('Unable to decrypt data: ' + error.message);
+      return JSON.parse(jsonString) as unknown;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Unable to decrypt data: ${errorMessage}`);
     }
   };
 
-  protected encryptPayload(payload: any) {
+  protected encryptPayload(payload: unknown) {
     if (!this.sharedSecret) throw new Error('missing shared secret');
 
     const nonce = nacl.randomBytes(24);
@@ -146,7 +147,7 @@ export abstract class BaseMobileWalletAdapter
       const timeout = setTimeout(() => {
         Linking.removeAllListeners('url');
         reject(new Error('Wallet response timeout'));
-      }, 60000); // 1 minute timeout
+      }, 60_000); // 1 minute timeout
 
       const handleUrl = (url: string) => {
         clearTimeout(timeout);
@@ -155,11 +156,11 @@ export abstract class BaseMobileWalletAdapter
           const response = this.parseResponseUrl(url);
           resolve(response);
         } catch (error) {
-          reject(error);
+          reject(error instanceof Error ? error : new Error(String(error)));
         }
       };
 
-      Linking.addEventListener('url', ({ url }) => handleUrl(url));
+      Linking.addEventListener('url', ({ url }) => { handleUrl(url); });
     });
   }
 
@@ -169,20 +170,20 @@ export abstract class BaseMobileWalletAdapter
       const params = urlObj.searchParams;
 
       const response: WalletResponse = {
-        publicKey: params.get('public_key') || '',
-        data: params.get('data') || '',
+        publicKey: params.get('public_key') ?? '',
+        data: params.get('data') ?? '',
         session: params.get('session') ?? '',
         error: params.get('error') ?? '',
         nonce: params.get('nonce') ?? '',
       };
 
       // Add all other parameters to support different wallet encryption keys
-      params.forEach((value, key) => {
+      for (const [key, value] of params.entries()) {
         response[key] = value;
-      });
+      }
 
       return response;
-    } catch (error) {
+    } catch {
       throw new Error('Failed to parse wallet response URL');
     }
   }
@@ -195,7 +196,7 @@ export abstract class BaseMobileWalletAdapter
       dapp_encryption_public_key: base58.encode(this.dappKeyPair.publicKey),
       cluster: WalletAdapterNetwork.Mainnet,
       app_url: this.domain ? `https://${this.domain}` : 'https://leapwallet.io',
-      redirect_link: `${redirectUrl}`,
+      redirect_link: redirectUrl,
     });
 
     const connectUrl = this.buildUrl('connect', params);
@@ -221,7 +222,7 @@ export abstract class BaseMobileWalletAdapter
         response.data,
         response.nonce,
         sharedSecretDapp
-      );
+      ) as { session: string; public_key: string };
 
       this.sharedSecret = sharedSecretDapp;
       this.session = connectData.session;
@@ -231,12 +232,9 @@ export abstract class BaseMobileWalletAdapter
     } else {
       // Check if wallet responded but has no Solana wallet configured
       if (response.data === '' && response.publicKey === '') {
-        throw new Error(
-          'No Solana wallet found in your wallet app. Please create or import a Solana wallet and try connecting again.'
-        );
-      } else {
-        throw new Error('Failed to receive wallet public key. Please try connecting again.');
+        throw new Error('No Solana wallet found in your wallet app. Please create or import a Solana wallet and try connecting again.');
       }
+      throw new Error('Failed to receive wallet public key. Please try connecting again.');
     }
 
     this._connected = true;

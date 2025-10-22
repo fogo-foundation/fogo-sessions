@@ -1,24 +1,23 @@
 import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 
-import { SessionLimits } from '../session-limits';
-import { TimeUntilExpiration } from '../time-until-expiration';
-import { errorToString } from '../../utils/error-to-string';
-
+import { useSessionExpiration } from '../../hooks/use-session-expiration';
 import {
-  StateType as SessionStateType,
-  useSessionContext,
-  type EstablishedSessionState,
-} from '../../session-provider';
-import {
-  TokenDataStateType,
   useTokenAccountData,
 } from '../../hooks/use-token-account-data';
-import { useSessionExpiration } from '../../hooks/use-session-expiration';
-
+import type {EstablishedSessionState} from '../../session-provider';
+import {
+  StateType as SessionStateType,
+  useSessionContext
+  
+} from '../../session-provider';
+import { errorToString } from '../../utils/error-to-string';
+import { SessionLimits } from '../session-limits';
+import { TimeUntilExpiration } from '../time-until-expiration';
 import { styles } from './styles';
+import { TokenDataStateType } from '../../utils/use-data';
 
-export interface SessionLimitsPanelProps {
+export type SessionLimitsPanelProps = {
   sessionState: EstablishedSessionState;
 }
 
@@ -34,14 +33,15 @@ export const SessionLimitsPanel: React.FC<SessionLimitsPanelProps> = ({
   } = useSessionExpiration(sessionState);
 
   switch (state.type) {
-    case TokenDataStateType.Error:
+    case TokenDataStateType.Error: {
       return (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{errorToString(state.error)}</Text>
         </View>
       );
+    }
 
-    case TokenDataStateType.Loaded:
+    case TokenDataStateType.Loaded: {
       return (
         <View>
           {expiration && !expirationLoading && !expirationError && (
@@ -66,14 +66,14 @@ export const SessionLimitsPanel: React.FC<SessionLimitsPanelProps> = ({
               )
             }
             onSubmit={
-              sessionState.type === SessionStateType.Established
-                ? sessionState.setLimits
+              (sessionState as { type: SessionStateType; setLimits?: unknown }).type === SessionStateType.Established
+                ? (sessionState as { setLimits: unknown }).setLimits
                 : undefined
             }
             buttonText="Update limits"
             error={
-              sessionState.type === SessionStateType.Established
-                ? sessionState.updateLimitsError
+              (sessionState as { type: SessionStateType; updateLimitsError?: unknown }).type === SessionStateType.Established
+                ? (sessionState as { updateLimitsError: unknown }).updateLimitsError
                 : undefined
             }
             {...(enableUnlimited && {
@@ -83,14 +83,16 @@ export const SessionLimitsPanel: React.FC<SessionLimitsPanelProps> = ({
           />
         </View>
       );
+    }
 
     case TokenDataStateType.NotLoaded:
-    case TokenDataStateType.Loading:
+    case TokenDataStateType.Loading: {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
       );
+    }
   }
 };

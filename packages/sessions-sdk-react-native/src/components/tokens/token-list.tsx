@@ -1,25 +1,24 @@
 import React, { useMemo } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 
-import { TokenItem } from './token-item';
-import { errorToString } from '../../utils/error-to-string';
-
-import { type EstablishedSessionState } from '../../session-provider';
-import {
-  TokenDataStateType,
-  useTokenAccountData,
-  type Token,
-} from '../../hooks/use-token-account-data';
-
 import { styles } from './styles';
+import { TokenItem } from './token-item';
+import type {Token} from '../../hooks/use-token-account-data';
+import {
+  useTokenAccountData
+} from '../../hooks/use-token-account-data';
+import type {EstablishedSessionState} from '../../session-provider';
+import { errorToString } from '../../utils/error-to-string';
+import { TokenDataStateType } from '../../utils/use-data';
 
-export interface TokenListContainerProps {
+
+export type TokenListContainerProps = {
   sessionState: EstablishedSessionState;
   onPressToken?: (token: Token) => void;
   onPressSend?: (token: Token) => void;
 }
 
-interface TokenListProps {
+type TokenListProps = {
   state: ReturnType<typeof useTokenAccountData>,
   onPressToken?: (token: Token) => void;
   onPressSend?: (token: Token) => void;
@@ -31,8 +30,10 @@ const TokenList: React.FC<TokenListProps> = ({
   onPressToken,
   onPressSend,
 }) => {
-  if (state.type !== TokenDataStateType.Loaded) return null
   const tokens = useMemo(() => {
+    if (state.type !== TokenDataStateType.Loaded) {
+      return [];
+    }
     return state.data.tokensInWallet
       .sort((a, b) => {
         if (a.name === undefined) {
@@ -44,11 +45,12 @@ const TokenList: React.FC<TokenListProps> = ({
         } else {
           return a.name.toString().localeCompare(b.name.toString());
         }
-      })
+      });
+  }, [state]);
 
-
-  }, [state.data.tokensInWallet])
-
+  if (state.type !== TokenDataStateType.Loaded) {
+    return;
+  }
 
   return (
     <View style={styles.tokenList}>
@@ -56,14 +58,12 @@ const TokenList: React.FC<TokenListProps> = ({
         <TokenItem
           key={token.mint.toString()}
           token={token}
-          onPress={onPressToken}
-          onPressSend={onPressSend}
+          {...(onPressToken && { onPress: onPressToken })}
+          {...(onPressSend && { onPressSend })}
         />
       ))}
     </View>
   );
-
-
 }
 
 export const TokenListContainer: React.FC<TokenListContainerProps> = ({
@@ -76,14 +76,15 @@ export const TokenListContainer: React.FC<TokenListContainerProps> = ({
 
 
   switch (state.type) {
-    case TokenDataStateType.Error:
+    case TokenDataStateType.Error: {
       return (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{errorToString(state.error)}</Text>
         </View>
       );
+    }
 
-    case TokenDataStateType.Loaded:
+    case TokenDataStateType.Loaded: {
       if (state.data.tokensInWallet.length === 0) {
         return (
           <View style={styles.emptyContainer}>
@@ -94,17 +95,25 @@ export const TokenListContainer: React.FC<TokenListContainerProps> = ({
 
       return (
         <View style={styles.tokenList}>
-          <TokenList state={state} onPressSend={onPressSend} onPressToken={onPressToken} />
+          <TokenList
+            {...{
+              state,
+              ...(onPressSend && { onPressSend }),
+              ...(onPressToken && { onPressToken }),
+            }}
+          />
         </View>
       );
+    }
 
     case TokenDataStateType.NotLoaded:
-    case TokenDataStateType.Loading:
+    case TokenDataStateType.Loading: {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" />
           <Text style={styles.loadingText}>Loading tokens...</Text>
         </View>
       );
+    }
   }
 };

@@ -1,5 +1,5 @@
 /**
- * Main entry point for the @fogo/sessions-sdk-react-native package.
+ * Main entry point for the \@fogo/sessions-sdk-react-native package.
  *
  * This SDK provides React Native components, hooks, and utilities for integrating
  * Solana session-based wallet connections into your mobile application.

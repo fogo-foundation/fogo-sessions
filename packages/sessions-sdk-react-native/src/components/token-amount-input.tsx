@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
+import type {TextInputProps} from 'react-native';
 import {
   View,
   Text,
   TextInput,
-  StyleSheet,
-  type TextInputProps,
+  StyleSheet
+  
 } from 'react-native';
 
 import { stringToAmount, amountToString } from '../utils/amount-to-string';
@@ -29,11 +30,11 @@ const TextField = ({
   description?: string;
   validate?: (value: string) => string | undefined;
   errorMessage?: string;
-  style?: any;
-  inputStyle?: any;
-  labelStyle?: any;
-  errorStyle?: any;
-  descriptionStyle?: any;
+  style?: unknown;
+  inputStyle?: unknown;
+  labelStyle?: unknown;
+  errorStyle?: unknown;
+  descriptionStyle?: unknown;
 }) => {
   const [internalError, setInternalError] = useState<string | undefined>();
   const [isFocused, setIsFocused] = useState(false);
@@ -58,7 +59,7 @@ const TextField = ({
     setIsFocused(false);
   }, []);
 
-  const error = externalError || internalError;
+  const error = externalError ?? internalError;
   const hasError = !!error;
 
   return (
@@ -109,21 +110,21 @@ export const TokenAmountInput = ({
   lt?: bigint;
   onValueChange?: (value: string) => void;
   defaultValue?: string;
-  style?: any;
-  inputStyle?: any;
-  labelStyle?: any;
-  errorStyle?: any;
-  descriptionStyle?: any;
+  style?: unknown;
+  inputStyle?: unknown;
+  labelStyle?: unknown;
+  errorStyle?: unknown;
+  descriptionStyle?: unknown;
 }) => {
   const tokenAmountProps = useTokenAmountInput({
     decimals,
-    symbol,
-    min,
-    max,
-    gt,
-    lt,
+    ...(symbol !== undefined && { symbol }),
+    ...(min !== undefined && { min }),
+    ...(max !== undefined && { max }),
+    ...(gt !== undefined && { gt }),
+    ...(lt !== undefined && { lt }),
   });
-  const [value, setValue] = useState(props.defaultValue || '');
+  const [value, setValue] = useState(props.defaultValue ?? '');
 
   const handleChangeText = useCallback(
     (text: string) => {
@@ -176,13 +177,13 @@ const useTokenAmountInput = ({
           } else if (min !== undefined && amount < min) {
             return `Cannot be less than ${amountToString(min, decimals).toString()} ${symbol}`;
           } else {
-            return undefined;
+            return;
           }
         } catch (error: unknown) {
           return errorToString(error);
         }
       } else {
-        return undefined;
+        return;
       }
     },
     [decimals, gt, lt, max, min, symbol]
@@ -261,17 +262,17 @@ export const EnhancedTokenAmountInput = ({
   lt?: bigint;
   onValueChange?: (value: string) => void;
   defaultValue?: string;
-  style?: any;
+  style?: unknown;
 }) => {
   const tokenAmountProps = useTokenAmountInput({
     decimals,
     symbol,
-    min,
-    max,
-    gt,
-    lt,
+    ...(min !== undefined && { min }),
+    ...(max !== undefined && { max }),
+    ...(gt !== undefined && { gt }),
+    ...(lt !== undefined && { lt }),
   });
-  const [value, setValue] = useState(props.defaultValue || '');
+  const [value, setValue] = useState(props.defaultValue ?? '');
   const [isFocused, setIsFocused] = useState(false);
 
   const handleChangeText = useCallback(
@@ -291,7 +292,7 @@ export const EnhancedTokenAmountInput = ({
     setIsFocused(false);
   }, []);
 
-  const error = tokenAmountProps.validate?.(value);
+  const error = tokenAmountProps.validate(value);
   const hasError = !!error;
 
   return (
@@ -330,11 +331,18 @@ export const EnhancedTokenAmountInput = ({
       {/* Helper text for limits */}
       {(min !== undefined || max !== undefined) && !hasError && (
         <Text style={enhancedStyles.helperText}>
-          {min !== undefined && max !== undefined
-            ? `Range: ${amountToString(min, decimals)} - ${amountToString(max, decimals)} ${symbol}`
-            : min !== undefined
-              ? `Minimum: ${amountToString(min, decimals)} ${symbol}`
-              : `Maximum: ${amountToString(max!, decimals)} ${symbol}`}
+          {(() => {
+            if (min !== undefined && max !== undefined) {
+              return `Range: ${amountToString(min, decimals)} - ${amountToString(max, decimals)} ${symbol}`;
+            }
+            if (min === undefined && max !== undefined) {
+              return `Maximum: ${amountToString(max, decimals)} ${symbol}`;
+            }
+            if (max === undefined && min !== undefined) {
+              return `Minimum: ${amountToString(min, decimals)} ${symbol}`;
+            }
+            return '';
+          })()}
         </Text>
       )}
     </View>

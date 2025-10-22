@@ -1,9 +1,18 @@
+import { base58 } from '@scure/base';
 import { PublicKey } from '@solana/web3.js';
 import * as SecureStore from 'expo-secure-store';
 import 'react-native-get-random-values';
 import { Alert, Linking } from 'react-native';
+
+// React Native provides crypto API via polyfills
+declare const crypto: {
+  subtle: {
+    importKey: (format: string, keyData: BufferSource, algorithm: string, extractable: boolean, keyUsages: string[]) => Promise<unknown>;
+    exportKey: (format: string, key: unknown) => Promise<ArrayBuffer>;
+  };
+};
+
 const SESSION_KEY_PREFIX = 'fogo_session_';
-import { base58 } from '@scure/base';
 
 export const getStoredSession = async (
   walletPublicKey: PublicKey
@@ -20,7 +29,13 @@ export const getStoredSession = async (
       return undefined;
     }
 
-    const parsed = JSON.parse(storedData);
+    const parsed = JSON.parse(storedData) as {
+      privateKeyData: string;
+      publicKeyData: string;
+      walletPublicKey: string;
+      createdAt?: string;
+      walletName?: string;
+    };
 
     // Reconstruct keypair from stored data
     const privateKeyBytes = base58.decode(parsed.privateKeyData);
@@ -28,7 +43,7 @@ export const getStoredSession = async (
 
     // Create PKCS8 format for private key (reverse of the export process)
     const pkcs8Header = new Uint8Array([
-      0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70,
+      0x30, 0x2E, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2B, 0x65, 0x70,
       0x04, 0x22, 0x04, 0x20,
     ]);
     const pkcs8PrivateKey = new Uint8Array(
@@ -62,15 +77,14 @@ export const getStoredSession = async (
     return {
       sessionKey: keyPair,
       walletPublicKey: new PublicKey(parsed.walletPublicKey),
-      createdAt: parsed.createdAt,
-      walletName: parsed.walletName,
+      createdAt: parsed.createdAt ?? '',
+      walletName: parsed.walletName ?? '',
     };
-  } catch (error: any) {
-    console.error('Failed to get stored session:', error);
+  } catch (error: unknown) {
     // Only show alert if authentication was actually attempted and failed
     if (
-      error?.message?.includes('authentication') ||
-      error?.message?.includes('cancel')
+      (error as Error).message.includes('authentication') ||
+      (error as Error).message.includes('cancel')
     ) {
       Alert.alert(
         'Authentication Failed',
@@ -84,15 +98,10 @@ export const getStoredSession = async (
 export const clearStoredSession = async (
   walletPublicKey: PublicKey
 ): Promise<void> => {
-  try {
-    const sessionKey = `${SESSION_KEY_PREFIX}${walletPublicKey.toBase58()}`;
+  const sessionKey = `${SESSION_KEY_PREFIX}${walletPublicKey.toBase58()}`;
 
-    // Remove from secure store
-    await SecureStore.deleteItemAsync(sessionKey);
-  } catch (error) {
-    console.error('Failed to clear stored session:', error);
-    throw error;
-  }
+  // Remove from secure store
+  await SecureStore.deleteItemAsync(sessionKey);
 };
 
 export const setStoredSession = async (
@@ -118,7 +127,7 @@ export const setStoredSession = async (
       privateKeyData: base58.encode(new Uint8Array(privateKeyBytes)),
       publicKeyData: base58.encode(new Uint8Array(publicKeyRaw)),
       walletPublicKey: sessionData.walletPublicKey.toBase58(),
-      createdAt: sessionData.createdAt || new Date().toISOString(),
+      createdAt: sessionData.createdAt ?? new Date().toISOString(),
       walletName: sessionData.walletName,
     };
 
@@ -126,11 +135,10 @@ export const setStoredSession = async (
       requireAuthentication: true,
       authenticationPrompt: 'Please authenticate to secure your session. You can use your device passcode if biometrics are not set up.',
     });
-  } catch (error: any) {
-    console.error('Failed to set stored session:', error);
+  } catch (error: unknown) {
 
     // Handle specific biometric enrollment error
-    if (error?.message?.includes('No biometrics are currently enrolled')) {
+    if ((error as Error).message.includes('No biometrics are currently enrolled')) {
       Alert.alert(
         'Secure Authentication Required',
         'To secure your Fogo session, you need to set up either biometric authentication (Face ID/Touch ID) or a device passcode/PIN in your device settings.',
@@ -143,12 +151,12 @@ export const setStoredSession = async (
             text: 'Open Settings',
             onPress: () => {
               // This will open device settings where user can set up biometrics or passcode
-              Linking.openSettings();
+              void Linking.openSettings();
             },
           },
         ]
       );
-    } else if (error?.message?.includes('authentication') || error?.message?.includes('cancel')) {
+    } else if ((error as Error).message.includes('authentication') || (error as Error).message.includes('cancel')) {
       Alert.alert(
         'Authentication Failed',
         'Authentication is required to secure your session. Please try again.'
@@ -161,8 +169,8 @@ export const setStoredSession = async (
 
 
 export type SessionKeyPair = {
-  privateKey: any;
-  publicKey: any;
+  privateKey: unknown;
+  publicKey: unknown;
 };
 
 export type StoredSession = {
@@ -185,8 +193,8 @@ export const setLastWalletPublicKey = async (
         requireAuthentication: false, // Public key doesn't need authentication
       }
     );
-  } catch (error) {
-    console.error('Failed to store last wallet public key:', error);
+  } catch {
+    // Ignore errors when setting last wallet public key
   }
 };
 
@@ -203,8 +211,7 @@ export const getLastWalletPublicKey = async (): Promise<
     }
 
     return new PublicKey(publicKeyString);
-  } catch (error) {
-    console.error('Failed to get last wallet public key:', error);
+  } catch {
     return undefined;
   }
 };
@@ -212,8 +219,8 @@ export const getLastWalletPublicKey = async (): Promise<
 export const clearLastWalletPublicKey = async (): Promise<void> => {
   try {
     await SecureStore.deleteItemAsync(LAST_WALLET_KEY);
-  } catch (error) {
-    console.error('Failed to clear last wallet public key:', error);
+  } catch {
+    // Ignore errors when setting last wallet public key
   }
 };
 
@@ -231,8 +238,7 @@ export const getLatestStoredSession = async (): Promise<
     // Now get the session data for this wallet (authentication required)
     const session = await getStoredSession(lastWalletPublicKey);
     return session;
-  } catch (error) {
-    console.error('Failed to get latest stored session:', error);
+  } catch {
     return undefined;
   }
 };

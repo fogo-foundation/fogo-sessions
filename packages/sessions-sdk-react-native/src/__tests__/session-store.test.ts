@@ -1,4 +1,7 @@
 import { PublicKey } from '@solana/web3.js';
+import * as SecureStore from 'expo-secure-store';
+import { Alert } from 'react-native';
+
 import {
   getStoredSession,
   setStoredSession,
@@ -9,8 +12,6 @@ import {
   getLatestStoredSession,
 } from '../session-store';
 import { createMockPublicKey, createMockSessionKeyPair, mockSecureStore } from './test-utils';
-import * as SecureStore from 'expo-secure-store';
-import { Alert } from 'react-native';
 
 // Mock modules
 jest.mock('expo-secure-store');
@@ -25,7 +26,7 @@ describe('session-store', () => {
     jest.clearAllMocks();
     
     // Reset crypto.subtle mock
-    Object.defineProperty(global, 'crypto', {
+    Object.defineProperty(globalThis, 'crypto', {
       value: {
         subtle: {
           importKey: jest.fn(),
@@ -59,7 +60,7 @@ describe('session-store', () => {
       // Mock crypto operations
       const mockPrivateKey = { type: 'private', algorithm: { name: 'Ed25519' } };
       const mockPublicKey = { type: 'public', algorithm: { name: 'Ed25519' } };
-      const mockCrypto = global.crypto as any;
+      const mockCrypto = globalThis.crypto as any;
       mockCrypto.subtle.importKey
         .mockResolvedValueOnce(mockPrivateKey as any)
         .mockResolvedValueOnce(mockPublicKey as any);
@@ -147,7 +148,7 @@ describe('session-store', () => {
       const mockPrivateKeyExport = new ArrayBuffer(48); // PKCS8 format
       const mockPublicKeyExport = new ArrayBuffer(32);
       
-      const mockCrypto = global.crypto as any;
+      const mockCrypto = globalThis.crypto as any;
       mockCrypto.subtle.exportKey
         .mockResolvedValueOnce(mockPrivateKeyExport)
         .mockResolvedValueOnce(mockPublicKeyExport);
@@ -173,7 +174,7 @@ describe('session-store', () => {
         walletPublicKey: createMockPublicKey('test-wallet'),
       };
 
-      const mockCrypto = global.crypto as any;
+      const mockCrypto = globalThis.crypto as any;
       mockCrypto.subtle.exportKey.mockRejectedValueOnce(new Error('Export failed'));
 
       await expect(setStoredSession(sessionData)).rejects.toThrow('Export failed');
@@ -185,7 +186,7 @@ describe('session-store', () => {
         walletPublicKey: createMockPublicKey('test-wallet'),
       };
 
-      const mockCrypto = global.crypto as any;
+      const mockCrypto = globalThis.crypto as any;
       mockCrypto.subtle.exportKey
         .mockResolvedValueOnce(new ArrayBuffer(48))
         .mockResolvedValueOnce(new ArrayBuffer(32));
@@ -201,7 +202,7 @@ describe('session-store', () => {
         walletPublicKey: createMockPublicKey('test-wallet'),
       };
 
-      const mockCrypto = global.crypto as any;
+      const mockCrypto = globalThis.crypto as any;
       mockCrypto.subtle.exportKey
         .mockResolvedValueOnce(new ArrayBuffer(48))
         .mockResolvedValueOnce(new ArrayBuffer(32));
@@ -330,7 +331,7 @@ describe('session-store', () => {
           walletName: 'Test Wallet',
         })); // getStoredSession
 
-      const mockCrypto = global.crypto as any;
+      const mockCrypto = globalThis.crypto as any;
       mockCrypto.subtle.importKey
         .mockResolvedValueOnce(mockSessionData.sessionKey.privateKey)
         .mockResolvedValueOnce(mockSessionData.sessionKey.publicKey);

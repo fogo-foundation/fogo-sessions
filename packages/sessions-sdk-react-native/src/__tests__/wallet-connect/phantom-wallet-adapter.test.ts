@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // Note: This test file accesses protected methods and uses type suppressions for testing purposes
 
-import { PhantomMobileWalletAdapter } from '../../wallet-connect/phantom-wallet-adapter';
+import { base58 } from '@scure/base';
 import { WalletSignMessageError, WalletSignTransactionError } from '@solana/wallet-adapter-base';
 import { Transaction, VersionedTransaction, PublicKey } from '@solana/web3.js';
 import { Linking } from 'react-native';
-import { base58 } from '@scure/base';
+
+import { PhantomMobileWalletAdapter } from '../../wallet-connect/phantom-wallet-adapter';
 import { mockConnection, createMockPublicKey } from '../test-utils';
 
 // Mock React Native Linking
@@ -189,7 +190,7 @@ describe('PhantomMobileWalletAdapter', () => {
       });
       expect(mockLinking.openURL).toHaveBeenCalledWith('phantom://test');
       expect(signature).toBeInstanceOf(Uint8Array);
-      expect(signature.length).toBe(32); // The actual implementation returns 32 bytes
+      expect(signature).toHaveLength(32); // The actual implementation returns 32 bytes
     });
 
     it('should throw error when not connected', async () => {

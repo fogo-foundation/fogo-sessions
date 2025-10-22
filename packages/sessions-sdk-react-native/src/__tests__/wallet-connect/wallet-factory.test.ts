@@ -1,8 +1,8 @@
-import { MobileWalletFactory } from '../../wallet-connect/wallet-factory';
+import { BackpackMobileWalletAdapter } from '../../wallet-connect/backpack-wallet-adapter';
 import { PhantomMobileWalletAdapter } from '../../wallet-connect/phantom-wallet-adapter';
 import { SolflareMobileWalletAdapter } from '../../wallet-connect/solflare-wallet-adapter';
-import { BackpackMobileWalletAdapter } from '../../wallet-connect/backpack-wallet-adapter';
 import { BaseMobileWalletAdapter } from '../../wallet-connect/wallet-connect';
+import { MobileWalletFactory } from '../../wallet-connect/wallet-factory';
 
 describe('MobileWalletFactory', () => {
   const redirectUrl = 'myapp://wallet';
@@ -77,16 +77,16 @@ describe('MobileWalletFactory', () => {
       expect(wallets).toContain('phantom');
       expect(wallets).toContain('solflare');
       expect(wallets).toContain('backpack');
-      expect(wallets.length).toBe(3);
+      expect(wallets).toHaveLength(3);
     });
 
     it('should return array of strings', () => {
       const wallets = MobileWalletFactory.getAvailableWallets();
       
       expect(Array.isArray(wallets)).toBe(true);
-      wallets.forEach(wallet => {
+      for (const wallet of wallets) {
         expect(typeof wallet).toBe('string');
-      });
+      }
     });
   });
 
@@ -195,9 +195,9 @@ describe('MobileWalletFactory', () => {
         MobileWalletFactory.createWallet('phantom', 'myapp://auth'),
       ];
       
-      wallets.forEach(wallet => {
+      for (const wallet of wallets) {
         expect(wallet).toBeInstanceOf(PhantomMobileWalletAdapter);
-      });
+      }
     });
 
     it('should maintain wallet registry state', () => {

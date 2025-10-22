@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
 import { PublicKey } from '@solana/web3.js';
+import { useMemo } from 'react';
 
-export interface TruncateKeyProps {
+export type TruncateKeyProps = {
   keyValue: PublicKey;
 }
 

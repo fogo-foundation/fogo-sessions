@@ -3,12 +3,11 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { useCallback } from 'react';
 import { z } from 'zod';
 
-import { getMetadata } from '../utils/get-metadata';
 import type { EstablishedSessionState } from '../session-provider';
+import { getMetadata } from '../utils/get-metadata';
 import { useData } from '../utils/use-data';
 import { useMobileConnection } from '../wallet-connect/wallet-provider';
 
-export { TokenDataStateType } from '../utils/use-data';
 
 /**
  * Hook to fetch and manage token account data for an established session.

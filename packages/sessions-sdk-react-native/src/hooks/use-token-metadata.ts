@@ -1,12 +1,11 @@
 import { getMint } from '@solana/spl-token';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { getMetadata } from '../utils/get-metadata';
 import { TokenDataStateType, useData } from '../utils/use-data';
 import { useMobileConnection } from '../wallet-connect/wallet-provider';
 
-export { TokenDataStateType } from '../utils/use-data';
 
 export type Metadata = Awaited<ReturnType<typeof getTokenMetadata>>;
 
@@ -18,6 +17,7 @@ export type Metadata = Awaited<ReturnType<typeof getTokenMetadata>>;
  */
 export const useTokenMetadata = (mint: PublicKey) => {
   const { connection } = useMobileConnection();
+  const [, setError] = useState<unknown>()
   const fetchMetadata = useCallback(
     async () => getTokenMetadata(connection, mint),
     [mint, connection]
@@ -32,7 +32,7 @@ export const useTokenMetadata = (mint: PublicKey) => {
   useEffect(() => {
     if (data.type === TokenDataStateType.NotLoaded) {
       data.mutate().catch((error: unknown) => {
-        console.error('Failed to fetch token metadata', error);
+        setError(error)
       });
     }
   }, [data]);

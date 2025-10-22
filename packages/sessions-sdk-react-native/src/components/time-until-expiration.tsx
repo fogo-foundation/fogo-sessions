@@ -13,13 +13,13 @@ const formatRelativeTime = (interval: number): string => {
   const days = Math.floor(interval / ONE_DAY_IN_MS);
 
   if (days > 0) {
-    return `in ${days} day${days === 1 ? '' : 's'}`;
+    return `in ${String(days)} day${days === 1 ? '' : 's'}`;
   } else if (hours > 0) {
-    return `in ${hours} hour${hours === 1 ? '' : 's'}`;
+    return `in ${String(hours)} hour${hours === 1 ? '' : 's'}`;
   } else if (minutes > 0) {
-    return `in ${minutes} minute${minutes === 1 ? '' : 's'}`;
+    return `in ${String(minutes)} minute${minutes === 1 ? '' : 's'}`;
   } else if (seconds > 0) {
-    return `in ${seconds} second${seconds === 1 ? '' : 's'}`;
+    return `in ${String(seconds)} second${seconds === 1 ? '' : 's'}`;
   } else {
     return 'now';
   }
@@ -39,10 +39,10 @@ const getRelativeTimeFormatArgs = (interval: number) => {
   }
 };
 
-interface TimeUntilExpirationProps {
+type TimeUntilExpirationProps = {
   expiration: Date;
-  style?: any;
-  expiredStyle?: any;
+  style?: unknown;
+  expiredStyle?: unknown;
 }
 
 export const TimeUntilExpiration: React.FC<TimeUntilExpirationProps> = ({
@@ -59,13 +59,13 @@ export const TimeUntilExpiration: React.FC<TimeUntilExpirationProps> = ({
   useEffect(() => {
     const update = () => {
       const interval = expiration.getTime() - Date.now();
-      const args = getRelativeTimeFormatArgs(interval);
-      if (args === undefined) {
+      if (interval <= 0) {
         setExpired(true);
         setFormatted('Session is expired');
       } else {
         setExpired(false);
         setFormatted(`Session expires ${formatRelativeTime(interval)}`);
+        const args = getRelativeTimeFormatArgs(interval);
         timeoutRef.current = setTimeout(update, args[0]);
       }
     };

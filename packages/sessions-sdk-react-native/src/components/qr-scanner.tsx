@@ -1,22 +1,22 @@
+import { CameraView, Camera } from 'expo-camera';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { CameraView, Camera } from 'expo-camera';
 
-export interface QRScannerProps {
+export type QRScannerProps = {
   onScan: (data: string) => void;
   onClose: () => void;
 }
 
 export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
     const getCameraPermissions = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
+      setHasPermission(String(status) === 'granted');
     };
 
-    getCameraPermissions();
+    void getCameraPermissions();
   }, []);
 
   const onBarcodeScanned = ({ data }: { data: string }) => {
@@ -26,7 +26,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
     }
   };
 
-  if (hasPermission === null) {
+  if (hasPermission === undefined) {
     return (
       <View style={styles.container}>
         <Text style={styles.message}>Requesting camera permission...</Text>
@@ -34,7 +34,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
     );
   }
 
-  if (hasPermission === false) {
+  if (!hasPermission) {
     return (
       <View style={styles.container}>
         <Text style={styles.message}>No access to camera</Text>

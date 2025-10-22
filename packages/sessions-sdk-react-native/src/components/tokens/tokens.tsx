@@ -1,16 +1,14 @@
+import type {PublicKey} from '@solana/web3.js';
 import React, { useState, useCallback } from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
 
-import { WalletScreen } from './wallet-screen';
-import { SendTokenScreen } from './send-token-screen';
 import { ReceiveScreen } from './receive-screen';
-import { TokenListContainer } from './token-list';
-
-import { type EstablishedSessionState } from '../../session-provider';
-import { type Token } from '../../hooks/use-token-account-data';
-import { type PublicKey } from '@solana/web3.js'
-
+import { SendTokenScreen } from './send-token-screen';
 import { styles } from './styles';
+import { TokenListContainer } from './token-list';
+import { WalletScreen } from './wallet-screen';
+import type {Token} from '../../hooks/use-token-account-data';
+import type {EstablishedSessionState} from '../../session-provider';
 
 enum TokenScreenType {
   SelectTokenToSend,
@@ -34,7 +32,7 @@ type TokenScreen =
   | { type: TokenScreenType.Receive }
   | { type: TokenScreenType.Wallet };
 
-export interface TokensProps {
+export type TokensProps = {
   sessionState: EstablishedSessionState;
 }
 
@@ -65,7 +63,7 @@ export const Tokens: React.FC<TokensProps> = ({ sessionState }) => {
   }, []);
 
   switch (currentScreen.type) {
-    case TokenScreenType.SelectTokenToSend:
+    case TokenScreenType.SelectTokenToSend: {
       return (
         <View>
           <TouchableOpacity style={styles.backButton} onPress={showWallet}>
@@ -79,42 +77,47 @@ export const Tokens: React.FC<TokensProps> = ({ sessionState }) => {
                 amountAvailable: token.amountInWallet,
                 decimals: token.decimals,
                 tokenMint: token.mint,
-                icon: token.image,
-                symbol: token.symbol,
-                tokenName: token.name,
+                ...(token.image && { icon: token.image }),
+                ...(token.symbol && { symbol: token.symbol }),
+                ...(token.name && { tokenName: token.name }),
               });
             }}
           />
         </View>
       );
+    }
 
-    case TokenScreenType.Send:
+    case TokenScreenType.Send: {
       return (
         <SendTokenScreen
-          sessionState={sessionState}
-          onBack={() => {
-            if (currentScreen.prevScreen === TokenScreenType.Wallet) {
-              showWallet();
-            } else if (
-              currentScreen.prevScreen === TokenScreenType.SelectTokenToSend
-            ) {
-              showSelectTokenToSend();
-            }
+          {...{
+            sessionState,
+            onBack: () => {
+              if (currentScreen.prevScreen === TokenScreenType.Wallet) {
+                showWallet();
+              } else if (
+                currentScreen.prevScreen === TokenScreenType.SelectTokenToSend
+              ) {
+                showSelectTokenToSend();
+              }
+            },
+            onSendComplete: showWallet,
+            tokenMint: currentScreen.tokenMint,
+            decimals: currentScreen.decimals,
+            amountAvailable: currentScreen.amountAvailable,
+            ...(currentScreen.icon && { icon: currentScreen.icon }),
+            ...(currentScreen.symbol && { symbol: currentScreen.symbol }),
+            ...(currentScreen.tokenName && { tokenName: currentScreen.tokenName }),
           }}
-          onSendComplete={showWallet}
-          tokenMint={currentScreen.tokenMint}
-          decimals={currentScreen.decimals}
-          amountAvailable={currentScreen.amountAvailable}
-          icon={currentScreen.icon}
-          symbol={currentScreen.symbol}
-          tokenName={currentScreen.tokenName}
         />
       );
+    }
 
-    case TokenScreenType.Receive:
+    case TokenScreenType.Receive: {
       return <ReceiveScreen sessionState={sessionState} onBack={showWallet} />;
+    }
 
-    case TokenScreenType.Wallet:
+    case TokenScreenType.Wallet: {
       return (
         <WalletScreen
           sessionState={sessionState}
@@ -126,14 +129,16 @@ export const Tokens: React.FC<TokensProps> = ({ sessionState }) => {
               amountAvailable: token.amountInWallet,
               decimals: token.decimals,
               tokenMint: token.mint,
-              icon: token.image,
-              symbol: token.symbol,
-              tokenName: token.name,
+              ...(token.image && { icon: token.image }),
+              ...(token.symbol && { symbol: token.symbol }),
+              ...(token.name && { tokenName: token.name }),
             });
           }}
         />
       );
-    default:
-      return null;
+    }
+    default: {
+      return;
+    }
   }
 };

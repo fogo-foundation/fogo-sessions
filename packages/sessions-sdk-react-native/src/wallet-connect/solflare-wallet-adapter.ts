@@ -1,19 +1,24 @@
+import { base58 } from '@scure/base';
+import type {
+  SendTransactionOptions,
+  WalletName,
+} from '@solana/wallet-adapter-base';
 import {
   WalletSignMessageError,
   WalletSignTransactionError,
-  type SendTransactionOptions,
-  type WalletName,
 } from '@solana/wallet-adapter-base';
-import { BaseMobileWalletAdapter } from './wallet-connect';
+import type {
+  TransactionSignature,
+  TransactionVersion,
+} from '@solana/web3.js';
 import {
   Connection,
   Transaction,
   VersionedTransaction,
-  type TransactionSignature,
-  type TransactionVersion,
 } from '@solana/web3.js';
 import { Linking } from 'react-native';
-import { base58 } from '@scure/base';
+
+import { BaseMobileWalletAdapter } from './wallet-connect';
 
 // Solflare Mobile Wallet Adapter
 export class SolflareMobileWalletAdapter extends BaseMobileWalletAdapter {
@@ -33,16 +38,16 @@ export class SolflareMobileWalletAdapter extends BaseMobileWalletAdapter {
     try {
       this._connecting = true;
       await this.performEncryptedConnect();
-    } catch (error: any) {
-      this.emit('error', error);
+    } catch (error: unknown) {
+      this.emit('error', error instanceof Error ? error : new Error(String(error)));
       throw error;
     } finally {
       this._connecting = false;
     }
   }
 
-  async disconnect(): Promise<void> {
-    this._publicKey = null;
+  disconnect(): void {
+    this._publicKey = undefined;
     this._connected = false;
     this.emit('disconnect');
   }
@@ -73,8 +78,9 @@ export class SolflareMobileWalletAdapter extends BaseMobileWalletAdapter {
       };
 
       const [nonce, encryptedPayload] = this.encryptPayload(payload);
-      if (!nonce || !encryptedPayload)
+      if (!nonce || !encryptedPayload) {
         throw new Error('Unable to encrypt payload');
+      }
       const params = new URLSearchParams({
         dapp_encryption_public_key: base58.encode(this.dappKeyPair.publicKey),
         nonce: base58.encode(nonce),
@@ -108,8 +114,8 @@ export class SolflareMobileWalletAdapter extends BaseMobileWalletAdapter {
           : Transaction.from(signedTxData);
 
       return signedTransaction as T;
-    } catch (error: any) {
-      this.emit('error', error);
+    } catch (error: unknown) {
+      this.emit('error', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
@@ -136,8 +142,9 @@ export class SolflareMobileWalletAdapter extends BaseMobileWalletAdapter {
         message: base58.encode(message),
       };
       const [nonce, encryptedPayload] = this.encryptPayload(payload);
-      if (!nonce || !encryptedPayload)
+      if (!nonce || !encryptedPayload) {
         throw new Error('Unable to generate nonce');
+      }
 
       const params = new URLSearchParams({
         dapp_encryption_public_key: base58.encode(this.dappKeyPair.publicKey),
@@ -147,10 +154,6 @@ export class SolflareMobileWalletAdapter extends BaseMobileWalletAdapter {
       });
       const url = this.buildUrl('signMessage', params);
       const responsePromise = this.waitForWalletResponse();
-      //const supported = await Linking.canOpenURL(url);
-      //if (!supported) {
-      //  throw new WalletSignMessageError('Cannot open Solflare wallet');
-      //}
       await Linking.openURL(url);
       const response = await responsePromise;
 
@@ -166,13 +169,12 @@ export class SolflareMobileWalletAdapter extends BaseMobileWalletAdapter {
           response.data,
           response.nonce,
           this.sharedSecret
-        );
+        ) as { signature: string };
         return base58.decode(signMessageData.signature);
-      } else {
-        throw new WalletSignMessageError('Unable to decrypt signed data');
       }
-    } catch (error: any) {
-      this.emit('error', error);
+      throw new WalletSignMessageError('Unable to decrypt signed data');
+    } catch (error: unknown) {
+      this.emit('error', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }

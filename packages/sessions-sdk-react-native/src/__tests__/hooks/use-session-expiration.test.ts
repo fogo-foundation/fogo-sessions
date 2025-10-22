@@ -1,15 +1,16 @@
-import { renderHook, waitFor } from '@testing-library/react-native';
-import { useSessionExpiration } from '../../hooks/use-session-expiration';
 import { getSessionAccount } from '@fogo/sessions-sdk';
-import { createMockPublicKey, mockConnection } from '../test-utils';
+import { renderHook, waitFor } from '@testing-library/react-native';
+
+import { useSessionExpiration } from '../../hooks/use-session-expiration';
 import type { EstablishedSessionState } from '../../session-provider';
+import { createMockPublicKey, mockConnection } from '../test-utils';
 
 // Mock the sessions SDK
 jest.mock('@fogo/sessions-sdk', () => ({
   getSessionAccount: jest.fn(),
 }));
 
-const mockGetSessionAccount = getSessionAccount as jest.MockedFunction<typeof getSessionAccount>;
+const mockGetSessionAccount = getSessionAccount;
 
 describe('useSessionExpiration', () => {
   const createMockSessionState = (overrides?: Partial<EstablishedSessionState>): EstablishedSessionState => ({
@@ -53,16 +54,16 @@ describe('useSessionExpiration', () => {
       const { result } = renderHook(() => useSessionExpiration(sessionState));
 
       // Initially loading
-      expect(result.current.loading).toBe(true);
-      expect(result.current.expiration).toBeNull();
-      expect(result.current.error).toBeNull();
+      expect((result.current as any).loading).toBe(true);
+      expect((result.current as any).expiration).toBeUndefined();
+      expect((result.current as any).error).toBeUndefined();
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.expiration).toEqual(expiration);
-      expect(result.current.error).toBeNull();
+      expect((result.current as any).expiration).toEqual(expiration);
+      expect((result.current as any).error).toBeUndefined();
       expect(mockGetSessionAccount).toHaveBeenCalledWith(
         sessionState.connection,
         sessionState.sessionPublicKey
@@ -102,15 +103,15 @@ describe('useSessionExpiration', () => {
       });
 
       const { result, rerender } = renderHook(
-        ({ sessionState }) => useSessionExpiration(sessionState),
+        (props: { sessionState: EstablishedSessionState }) => useSessionExpiration(props.sessionState),
         { initialProps: { sessionState: sessionState1 } }
       );
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.expiration).toEqual(expiration1);
+      expect((result.current as any).expiration).toEqual(expiration1);
 
       const sessionState2 = createMockSessionState({
         sessionPublicKey: createMockPublicKey('session2')
@@ -118,13 +119,13 @@ describe('useSessionExpiration', () => {
 
       rerender({ sessionState: sessionState2 });
 
-      expect(result.current.loading).toBe(true);
+      expect((result.current as any).loading).toBe(true);
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.expiration).toEqual(expiration2);
+      expect((result.current as any).expiration).toEqual(expiration2);
       expect(mockGetSessionAccount).toHaveBeenCalledTimes(2);
     });
 
@@ -138,16 +139,16 @@ describe('useSessionExpiration', () => {
 
       const sessionState1 = createMockSessionState();
       const { result, rerender } = renderHook(
-        ({ sessionState }) => useSessionExpiration(sessionState),
+        (props: { sessionState: EstablishedSessionState }) => useSessionExpiration(props.sessionState),
         { initialProps: { sessionState: sessionState1 } }
       );
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
       const sessionState2 = createMockSessionState({
-        connection: { ...mockConnection, rpcEndpoint: 'https://different-endpoint.com' } as any
+        connection: { ...mockConnection, rpcEndpoint: 'https://different-endpoint.com' }
       });
 
       rerender({ sessionState: sessionState2 });
@@ -166,11 +167,11 @@ describe('useSessionExpiration', () => {
       const { result } = renderHook(() => useSessionExpiration(sessionState));
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.expiration).toBeNull();
-      expect(result.current.error).toEqual(new Error('Session account not found'));
+      expect((result.current as any).expiration).toBeUndefined();
+      expect((result.current as any).error).toEqual(new Error('Session account not found'));
     });
 
     it('should handle getSessionAccount throwing error', async () => {
@@ -181,11 +182,11 @@ describe('useSessionExpiration', () => {
       const { result } = renderHook(() => useSessionExpiration(sessionState));
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.expiration).toBeNull();
-      expect(result.current.error).toBe(error);
+      expect((result.current as any).expiration).toBeUndefined();
+      expect((result.current as any).error).toBe(error);
     });
 
     it('should reset error on successful retry', async () => {
@@ -198,15 +199,15 @@ describe('useSessionExpiration', () => {
 
       const sessionState1 = createMockSessionState();
       const { result, rerender } = renderHook(
-        ({ sessionState }) => useSessionExpiration(sessionState),
+        (props: { sessionState: EstablishedSessionState }) => useSessionExpiration(props.sessionState),
         { initialProps: { sessionState: sessionState1 } }
       );
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.error).toBe(error);
+      expect((result.current as any).error).toBe(error);
 
       // Trigger refetch by changing session state
       const sessionState2 = createMockSessionState({
@@ -216,11 +217,11 @@ describe('useSessionExpiration', () => {
       rerender({ sessionState: sessionState2 });
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.error).toBeNull();
-      expect(result.current.expiration).toEqual(expiration);
+      expect((result.current as any).error).toBeUndefined();
+      expect((result.current as any).expiration).toEqual(expiration);
     });
   });
 
@@ -231,9 +232,9 @@ describe('useSessionExpiration', () => {
       const sessionState = createMockSessionState();
       const { result } = renderHook(() => useSessionExpiration(sessionState));
 
-      expect(result.current.loading).toBe(true);
-      expect(result.current.expiration).toBeNull();
-      expect(result.current.error).toBeNull();
+      expect((result.current as any).loading).toBe(true);
+      expect((result.current as any).expiration).toBeUndefined();
+      expect((result.current as any).error).toBeUndefined();
     });
 
     it('should set loading=true when refetching', async () => {
@@ -246,12 +247,12 @@ describe('useSessionExpiration', () => {
 
       const sessionState1 = createMockSessionState();
       const { result, rerender } = renderHook(
-        ({ sessionState }) => useSessionExpiration(sessionState),
+        (props: { sessionState: EstablishedSessionState }) => useSessionExpiration(props.sessionState),
         { initialProps: { sessionState: sessionState1 } }
       );
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
       const sessionState2 = createMockSessionState({
@@ -260,7 +261,7 @@ describe('useSessionExpiration', () => {
 
       rerender({ sessionState: sessionState2 });
 
-      expect(result.current.loading).toBe(true);
+      expect((result.current as any).loading).toBe(true);
     });
 
     it('should set loading=false after error', async () => {
@@ -271,10 +272,10 @@ describe('useSessionExpiration', () => {
       const { result } = renderHook(() => useSessionExpiration(sessionState));
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.error).toBe(error);
+      expect((result.current as any).error).toBe(error);
     });
   });
 
@@ -294,11 +295,11 @@ describe('useSessionExpiration', () => {
       const { result } = renderHook(() => useSessionExpiration(sessionState));
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.expiration).toEqual(expiration);
-      expect(result.current.error).toBeNull();
+      expect((result.current as any).expiration).toEqual(expiration);
+      expect((result.current as any).error).toBeUndefined();
     });
 
     it('should handle undefined session account', async () => {
@@ -308,11 +309,11 @@ describe('useSessionExpiration', () => {
       const { result } = renderHook(() => useSessionExpiration(sessionState));
 
       await waitFor(() => {
-        expect(result.current.loading).toBe(false);
+        expect((result.current as any).loading).toBe(false);
       });
 
-      expect(result.current.expiration).toBeNull();
-      expect(result.current.error).toEqual(new Error('Session account not found'));
+      expect((result.current as any).expiration).toBeUndefined();
+      expect((result.current as any).error).toEqual(new Error('Session account not found'));
     });
   });
 });

@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react-native';
+
 import { useSessionLimits } from '../../hooks/use-session-limits';
 
 describe('useSessionLimits', () => {
@@ -86,13 +87,15 @@ describe('useSessionLimits', () => {
     });
 
     it('should maintain the same function reference across renders', () => {
-      const { result, rerender } = renderHook(() => 
-        useSessionLimits(true, false)
+      const { result, rerender } = renderHook(
+        (props: { enableUnlimited: boolean; isSessionUnlimited: boolean }) =>
+          useSessionLimits(props.enableUnlimited, props.isSessionUnlimited),
+        { initialProps: { enableUnlimited: true, isSessionUnlimited: false } }
       );
 
       const firstToggleRef = result.current.toggleApplyLimits;
 
-      rerender();
+      rerender({ enableUnlimited: true, isSessionUnlimited: false });
 
       const secondToggleRef = result.current.toggleApplyLimits;
 
@@ -165,8 +168,8 @@ describe('useSessionLimits', () => {
   describe('parameter changes', () => {
     it('should update when enableUnlimited changes', () => {
       const { result, rerender } = renderHook(
-        ({ enableUnlimited, isSessionUnlimited }) => 
-          useSessionLimits(enableUnlimited, isSessionUnlimited),
+        (props: { enableUnlimited: boolean; isSessionUnlimited: boolean }) =>
+          useSessionLimits(props.enableUnlimited, props.isSessionUnlimited),
         {
           initialProps: { enableUnlimited: false, isSessionUnlimited: false }
         }
@@ -181,8 +184,8 @@ describe('useSessionLimits', () => {
 
     it('should not reset applyLimits state when parameters change', () => {
       const { result, rerender } = renderHook(
-        ({ enableUnlimited, isSessionUnlimited }) => 
-          useSessionLimits(enableUnlimited, isSessionUnlimited),
+        (props: { enableUnlimited: boolean; isSessionUnlimited: boolean }) =>
+          useSessionLimits(props.enableUnlimited, props.isSessionUnlimited),
         {
           initialProps: { enableUnlimited: true, isSessionUnlimited: false }
         }

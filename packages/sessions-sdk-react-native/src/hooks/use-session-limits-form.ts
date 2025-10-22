@@ -1,16 +1,18 @@
-import { useCallback } from 'react';
 import { PublicKey } from '@solana/web3.js';
-import { useSessionDuration, type DurationKey } from './use-session-duration';
+import { useCallback } from 'react';
+
+import type { DurationKey } from './use-session-duration';
+import { useSessionDuration } from './use-session-duration';
 import { useSessionLimits } from './use-session-limits';
 import { useTokenFormData } from './use-token-form-data';
 
-export interface UseSessionLimitsFormProps<Token extends PublicKey> {
+export type UseSessionLimitsFormProps<Token extends PublicKey> = {
   enableUnlimited?: boolean;
   isSessionUnlimited?: boolean;
   initialDuration?: DurationKey;
   tokens: Token[];
   onSubmit?: (duration: number, tokens?: Map<Token, bigint>) => void;
-}
+};
 
 /**
  * Comprehensive hook for managing session limits form state and logic

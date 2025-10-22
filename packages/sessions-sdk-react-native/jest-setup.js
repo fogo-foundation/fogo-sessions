@@ -37,7 +37,7 @@ jest.mock('@scure/base', () => ({
 }));
 
 // Mock crypto.subtle for session store tests
-Object.defineProperty(global, 'crypto', {
+Object.defineProperty(globalThis, 'crypto', {
   value: {
     subtle: {
       importKey: jest.fn(),
@@ -117,7 +117,7 @@ jest.mock('@solana/web3.js', () => {
   class MockPublicKey {
     constructor(value) {
       this._value = value || 'mock-public-key';
-      this._bn = { toArrayLike: () => new Array(32).fill(0) };
+      this._bn = { toArrayLike: () => Array.from({length: 32}).fill(0) };
     }
     
     toBase58() {
@@ -187,7 +187,7 @@ jest.mock('@solana/web3.js', () => {
       transfer: jest.fn(),
       createAccount: jest.fn(),
     },
-    LAMPORTS_PER_SOL: 1000000000,
+    LAMPORTS_PER_SOL: 1_000_000_000,
   };
 });
 

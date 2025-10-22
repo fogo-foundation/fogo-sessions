@@ -1,29 +1,30 @@
-import React from 'react';
 import type { Connection, PublicKey } from '@solana/web3.js';
-import {
+import type { ReactNode } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import React, {
   createContext,
-  type ReactNode,
-  useMemo,
   use,
-  useReducer,
   useCallback,
+  useMemo,
+  useReducer,
   useRef,
 } from 'react';
+
 import { BaseMobileWalletAdapter } from './wallet-connect';
 import { MobileWalletFactory } from './wallet-factory';
 
 // Types
-interface MobileWalletState {
+type MobileWalletState = {
   status:
     | 'disconnected'
     | 'connecting'
     | 'connected'
     | 'disconnecting'
     | 'error';
-  publicKey: PublicKey | null;
-  wallet: BaseMobileWalletAdapter | null;
-  error: string | null;
-  connectedWalletName: string | null;
+  publicKey: PublicKey | undefined;
+  wallet: BaseMobileWalletAdapter | undefined;
+  error: string | undefined;
+  connectedWalletName: string | undefined;
 }
 
 type WalletAction =
@@ -44,72 +45,79 @@ function walletReducer(
   action: WalletAction
 ): MobileWalletState {
   switch (action.type) {
-    case 'CONNECT_START':
+    case 'CONNECT_START': {
       return {
         ...state,
         status: 'connecting',
         wallet: action.wallet,
         connectedWalletName: action.walletName,
-        error: null,
+        error: undefined,
       };
+    }
 
-    case 'CONNECT_SUCCESS':
+    case 'CONNECT_SUCCESS': {
       return {
         ...state,
         status: 'connected',
         publicKey: action.publicKey,
-        error: null,
+        error: undefined,
       };
+    }
 
-    case 'CONNECT_ERROR':
+    case 'CONNECT_ERROR': {
       return {
         ...state,
         status: 'error',
         error: action.error,
-        wallet: null,
-        publicKey: null,
-        connectedWalletName: null,
+        wallet: undefined,
+        publicKey: undefined,
+        connectedWalletName: undefined,
       };
+    }
 
-    case 'DISCONNECT_START':
+    case 'DISCONNECT_START': {
       return {
         ...state,
         status: 'disconnecting',
-        error: null,
+        error: undefined,
       };
+    }
 
-    case 'DISCONNECT_SUCCESS':
+    case 'DISCONNECT_SUCCESS': {
       return {
         status: 'disconnected',
-        publicKey: null,
-        wallet: null,
-        error: null,
-        connectedWalletName: null,
+        publicKey: undefined,
+        wallet: undefined,
+        error: undefined,
+        connectedWalletName: undefined,
       };
+    }
 
-    case 'RESET_ERROR':
+    case 'RESET_ERROR': {
       return {
         ...state,
-        error: null,
+        error: undefined,
         status: state.status === 'error' ? 'disconnected' : state.status,
       };
+    }
 
-    default:
+    default: {
       return state;
+    }
   }
 }
 
 // Context interfaces
-interface MobileConnectionContextValue {
+type MobileConnectionContextValue = {
   connection: Connection;
 }
 
-interface MobileWalletContextValue {
+type MobileWalletContextValue = {
   // State
   status: MobileWalletState['status'];
-  publicKey: PublicKey | null;
-  error: string | null;
-  connectedWalletName: string | null;
+  publicKey: PublicKey | undefined;
+  error: string | undefined;
+  connectedWalletName: string | undefined;
 
   // Computed values
   connected: boolean;
@@ -172,10 +180,10 @@ export const MobileWalletProvider = ({
 }) => {
   const [state, dispatch] = useReducer(walletReducer, {
     status: 'disconnected',
-    publicKey: null,
-    wallet: null,
-    error: null,
-    connectedWalletName: null,
+    publicKey: undefined,
+    wallet: undefined,
+    error: undefined,
+    connectedWalletName: undefined,
   });
 
   // Use ref to always have access to current state in callbacks
@@ -198,16 +206,14 @@ export const MobileWalletProvider = ({
         // Perform connection
         await wallet.connect();
 
-        // Verify public key
-        if (!wallet.publicKey) {
-          throw new Error('Failed to get public key from wallet');
-        }
+        // Get public key (throws if not connected)
+        const publicKey = wallet.publicKey;
 
         // Success - update state
-        dispatch({ type: 'CONNECT_SUCCESS', publicKey: wallet.publicKey });
+        dispatch({ type: 'CONNECT_SUCCESS', publicKey });
 
         // Return the public key directly
-        return wallet.publicKey;
+        return publicKey;
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown connection error';
@@ -229,8 +235,7 @@ export const MobileWalletProvider = ({
 
     try {
       await currentWallet.disconnect();
-    } catch (error) {
-      console.error('Error disconnecting wallet:', error);
+    } catch {
       // Continue with disconnection even if wallet.disconnect() fails
     } finally {
       dispatch({ type: 'DISCONNECT_SUCCESS' });
@@ -244,9 +249,9 @@ export const MobileWalletProvider = ({
   // Memoized sign message function
   const signMessage = useMemo(() => {
     if (state.wallet && state.status === 'connected') {
-      return (message: Uint8Array) => state.wallet!.signMessage(message);
+      return (message: Uint8Array) => state.wallet.signMessage(message);
     }
-    return undefined;
+    return;
   }, [state.wallet, state.status]);
 
   const value = useMemo(
@@ -268,7 +273,7 @@ export const MobileWalletProvider = ({
       clearError,
 
       // Wallet methods
-      signMessage,
+      ...(signMessage && { signMessage }),
 
       // Available wallets
       availableWallets: MobileWalletFactory.getAvailableWallets(),

@@ -1,5 +1,5 @@
 /**
- * @file Utility functions for deserializing PublicKey objects from strings.
+ * Utility functions for deserializing PublicKey objects from strings.
  *
  * These functions handle conversion between string representations and PublicKey
  * objects, supporting both individual keys and collections.
@@ -31,8 +31,8 @@ export const deserializePublicKeyList = (pubkeyList: (PublicKey | string)[]) =>
 /**
  * Deserializes a map or record with public key keys.
  *
- * Converts a Record<string, T> to Map<PublicKey, T>, or passes through
- * an existing Map<PublicKey, T> unchanged.
+ * Converts a Record\<string, T\> to Map\<PublicKey, T\>, or passes through
+ * an existing Map\<PublicKey, T\> unchanged.
  *
  * @param pubkeyMap - Map or record with public key strings/objects as keys
  * @returns Map with PublicKey objects as keys

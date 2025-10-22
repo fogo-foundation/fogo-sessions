@@ -1,12 +1,12 @@
-import { useState, useCallback } from 'react';
-import { PublicKey } from '@solana/web3.js';
 import { TransactionResultType, sendTransfer } from '@fogo/sessions-sdk';
+import { PublicKey } from '@solana/web3.js';
+import { useState, useCallback } from 'react';
 
+import type {EstablishedSessionState} from '../session-provider';
 import { stringToAmount } from '../utils/amount-to-string';
-import { type EstablishedSessionState } from '../session-provider';
 import { errorToString } from '../utils/error-to-string';
 
-export interface SendTokenParams {
+export type SendTokenParams = {
   sessionState: EstablishedSessionState;
   tokenMint: PublicKey;
   decimals: number;
@@ -15,14 +15,14 @@ export interface SendTokenParams {
   onError?: (error: string) => void;
 }
 
-export interface SendTokenState {
+export type SendTokenState = {
   amount: string;
   recipient: string;
   isLoading: boolean;
-  error: string | null;
+  error: string | undefined;
 }
 
-export interface SendTokenActions {
+export type SendTokenActions = {
   setAmount: (amount: string) => void;
   setRecipient: (recipient: string) => void;
   setMaxAmount: () => void;
@@ -30,12 +30,12 @@ export interface SendTokenActions {
   reset: () => void;
 }
 
-export interface SendTokenValidation {
+export type SendTokenValidation = {
   isValidRecipient: boolean;
   isValidAmount: boolean;
   isReadyToSend: boolean;
-  recipientError: string | null;
-  amountError: string | null;
+  recipientError: string | undefined;
+  amountError: string | undefined;
 }
 
 /**
@@ -56,17 +56,21 @@ export const useSendToken = ({
   onSuccess,
   onError,
 }: SendTokenParams) => {
+  // Type assertions for sessionState properties
+  const walletPublicKey = (sessionState as { walletPublicKey: PublicKey }).walletPublicKey;
+  const adapter = (sessionState as { adapter: unknown }).adapter;
+  const signMessage = (sessionState as { signMessage: (message: Uint8Array) => Promise<Uint8Array> }).signMessage;
   const [amount, setAmountState] = useState('');
   const [recipient, setRecipientState] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | undefined>(undefined);
 
   const validation: SendTokenValidation = {
     isValidRecipient: (() => {
       if (!recipient) return false;
       try {
         new PublicKey(recipient);
-        return !new PublicKey(recipient).equals(sessionState.walletPublicKey);
+        return !new PublicKey(recipient).equals(walletPublicKey);
       } catch {
         return false;
       }
@@ -84,19 +88,19 @@ export const useSendToken = ({
       return this.isValidRecipient && this.isValidAmount && !isLoading;
     },
     recipientError: (() => {
-      if (!recipient) return null;
+      if (!recipient) return;
       try {
         const recipientKey = new PublicKey(recipient);
-        if (recipientKey.equals(sessionState.walletPublicKey)) {
+        if (recipientKey.equals(walletPublicKey)) {
           return 'You cannot send tokens to yourself';
         }
-        return null;
+        return;
       } catch {
         return 'Invalid recipient address';
       }
     })(),
     amountError: (() => {
-      if (!amount) return null;
+      if (!amount) return;
       try {
         const amountBigInt = stringToAmount(amount, decimals);
         if (amountBigInt <= 0n) {
@@ -105,7 +109,7 @@ export const useSendToken = ({
         if (amountBigInt > amountAvailable) {
           return 'Insufficient balance';
         }
-        return null;
+        return;
       } catch (validationError: unknown) {
         return `Invalid amount: ${errorToString(validationError)}`;
       }
@@ -114,12 +118,12 @@ export const useSendToken = ({
 
   const setAmount = useCallback((newAmount: string) => {
     setAmountState(newAmount);
-    setError(null);
+    setError(undefined);
   }, []);
 
   const setRecipient = useCallback((newRecipient: string) => {
     setRecipientState(newRecipient);
-    setError(null);
+    setError(undefined);
   }, []);
 
   const setMaxAmount = useCallback(() => {
@@ -130,14 +134,13 @@ export const useSendToken = ({
   }, [amountAvailable, decimals, setAmount]);
 
   const validateAndSend = useCallback(async () => {
-
-    setError(null);
+    setError(undefined);
 
 
     if (!validation.isValidRecipient || !validation.isValidAmount) {
       const errorMsg =
-        validation.recipientError ||
-        validation.amountError ||
+        validation.recipientError ??
+        validation.amountError ??
         'Please fill in all fields';
       setError(errorMsg);
       onError?.(errorMsg);
@@ -151,16 +154,23 @@ export const useSendToken = ({
       const recipientPublicKey = new PublicKey(recipient);
 
 
-      const result = await sendTransfer({
-        adapter: sessionState.adapter,
-        walletPublicKey: sessionState.walletPublicKey,
-        signMessage: sessionState.signMessage,
+      const result = await (sendTransfer as (params: {
+        adapter: unknown;
+        walletPublicKey: PublicKey;
+        signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+        mint: PublicKey;
+        amount: bigint;
+        recipient: PublicKey;
+      }) => Promise<{ type: number; signature: string; error?: unknown }>)({
+        adapter,
+        walletPublicKey,
+        signMessage,
         mint: tokenMint,
         amount: transferAmount,
         recipient: recipientPublicKey,
       });
 
-      if (result.type === TransactionResultType.Success) {
+      if (result.type === (TransactionResultType as { Success: number }).Success) {
         onSuccess?.(result.signature);
         // Reset form on success
         setAmountState('');
@@ -186,9 +196,9 @@ export const useSendToken = ({
     validation.recipientError,
     validation.amountError,
     tokenMint,
-    sessionState.adapter,
-    sessionState.walletPublicKey,
-    sessionState.signMessage,
+    adapter,
+    walletPublicKey,
+    signMessage,
     onSuccess,
     onError,
   ]);
@@ -196,7 +206,7 @@ export const useSendToken = ({
   const reset = useCallback(() => {
     setAmountState('');
     setRecipientState('');
-    setError(null);
+    setError(undefined);
     setIsLoading(false);
   }, []);
 

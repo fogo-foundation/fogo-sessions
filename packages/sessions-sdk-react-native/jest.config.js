@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   testEnvironment: 'jsdom',
   modulePathIgnorePatterns: [
     '<rootDir>/example/node_modules',

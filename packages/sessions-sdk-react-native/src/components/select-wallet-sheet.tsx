@@ -1,3 +1,4 @@
+import { PublicKey } from '@solana/web3.js';
 import React, { useCallback, useState } from 'react';
 import {
   View,
@@ -7,15 +8,14 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import { PublicKey } from '@solana/web3.js';
 
-import { useMobileWallet } from '../wallet-connect/wallet-provider';
 import { CustomBottomSheet } from './bottom-sheet';
 import { WALLET_CONFIG } from './wallet-config';
+import { useMobileWallet } from '../wallet-connect/wallet-provider';
 
 type WalletName = keyof typeof WALLET_CONFIG;
 
-interface WalletSelectBottomSheetProps {
+type WalletSelectBottomSheetProps = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onConnect?: (publicKey: PublicKey, walletName: string) => void;
@@ -34,7 +34,7 @@ export const WalletSelectBottomSheet: React.FC<
   WalletSelectBottomSheetProps
 > = ({ isOpen, onOpenChange, onConnect, title = 'Connect Wallet' }) => {
   const { connect, availableWallets, clearError } = useMobileWallet();
-  const [connectingWallet, setConnectingWallet] = useState<string | null>(null);
+  const [connectingWallet, setConnectingWallet] = useState<string | undefined>(undefined);
 
   const handleWalletConnect = useCallback(
     async (walletName: string) => {
@@ -44,14 +44,15 @@ export const WalletSelectBottomSheet: React.FC<
 
         onConnect?.(publicKey, walletName);
         onOpenChange(false);
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         Alert.alert(
           'Connection Failed',
-          `Failed to connect to ${WALLET_CONFIG[walletName as WalletName]?.name || walletName}: ${error.message}`,
+          `Failed to connect to ${WALLET_CONFIG[walletName as WalletName].name}: ${errorMessage}`,
           [{ text: 'OK' }]
         );
       } finally {
-        setConnectingWallet(null);
+        setConnectingWallet(undefined);
       }
     },
     [connect, onConnect, onOpenChange, clearError]
@@ -90,8 +91,8 @@ export const WalletSelectBottomSheet: React.FC<
                     icon={wallet.icon}
                     color={wallet.color}
                     isConnecting={isConnecting}
-                    onPress={() => handleWalletConnect(walletName)}
-                    disabled={connectingWallet !== null}
+                    onPress={() => void handleWalletConnect(walletName)}
+                    disabled={connectingWallet !== undefined}
                   />
                 );
               })}
@@ -188,13 +189,15 @@ export const WalletConnectButton = ({
       >
         <Text style={styles.connectButtonText}>{buttonText}</Text>
       </TouchableOpacity>
-
-      <WalletSelectBottomSheet
-        isOpen={isWalletSelectorOpen}
-        onOpenChange={setIsWalletSelectorOpen}
-        onConnect={onConnect}
-        redirectUrl={redirectUrl}
-      />
+      {
+        onConnect && redirectUrl &&
+        <WalletSelectBottomSheet
+          isOpen={isWalletSelectorOpen}
+          onOpenChange={setIsWalletSelectorOpen}
+          onConnect={onConnect}
+          redirectUrl={redirectUrl}
+        />
+      }
     </>
   );
 };

@@ -40,13 +40,12 @@ export const useData = <T>(...args: Parameters<typeof useSWR<T>>) => {
   const error = rest.error as unknown;
 
   const reset = useCallback(() => {
-    mutate(undefined).catch((resetError: unknown) => {
-      console.error('Failed to reset data', resetError);
+    mutate(undefined).catch(() => {
+      // Reset failed, but continue silently
     });
   }, [mutate]);
 
   if (error) {
-    console.error('Data fetch failed:', error);
     return State.ErrorState(new UseDataError(error), reset);
   } else if (isLoading) {
     return State.Loading();

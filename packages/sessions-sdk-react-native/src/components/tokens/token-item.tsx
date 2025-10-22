@@ -1,12 +1,11 @@
 import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 
-import { amountToString } from '../../utils/amount-to-string';
-import { type Token } from '../../hooks/use-token-account-data';
-
 import { styles } from './styles';
+import type {Token} from '../../hooks/use-token-account-data';
+import { amountToString } from '../../utils/amount-to-string';
 
-export interface TokenItemProps {
+export type TokenItemProps = {
   token: Token;
   onPress?: (token: Token) => void;
   onPressSend?: (token: Token) => void;
@@ -43,10 +42,10 @@ export const TokenItem: React.FC<TokenItemProps> = ({
         )}
 
         <View style={styles.tokenInfo}>
-          <Text style={styles.tokenName}>{name || mint.toBase58()}</Text>
+          <Text style={styles.tokenName}>{name ?? mint.toBase58()}</Text>
           <Text style={styles.tokenAmount}>
             {amountAsString}{' '}
-            {symbol || (amountAsString === '1' ? 'Token' : 'Tokens')}
+            {symbol ?? (amountAsString === '1' ? 'Token' : 'Tokens')}
           </Text>
         </View>
 

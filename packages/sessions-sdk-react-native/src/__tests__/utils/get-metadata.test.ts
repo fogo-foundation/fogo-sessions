@@ -2,7 +2,7 @@ import { getMetadata } from '../../utils/get-metadata';
 
 // Mock fetch globally
 const mockFetch = jest.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 describe('getMetadata', () => {
   beforeEach(() => {

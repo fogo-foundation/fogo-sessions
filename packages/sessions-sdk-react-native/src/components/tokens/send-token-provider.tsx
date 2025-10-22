@@ -1,15 +1,15 @@
-import React, { createContext, useContext } from 'react';
 import { PublicKey } from '@solana/web3.js';
+import React, { createContext, useContext } from 'react';
 
+import type {UseSendTokenReturn, SendTokenParams} from '../../hooks/use-send-token';
 import {
-  useSendToken,
-  type UseSendTokenReturn,
-  type SendTokenParams,
+  useSendToken
+  
+  
 } from '../../hooks/use-send-token';
-import { type EstablishedSessionState } from '../../session-provider';
+import type {EstablishedSessionState} from '../../session-provider';
 
-export interface SendTokenProviderProps
-  extends Omit<SendTokenParams, 'sessionState'> {
+export type SendTokenProviderProps = {
   children: React.ReactNode;
   sessionState: EstablishedSessionState;
   tokenMint: PublicKey;
@@ -17,9 +17,9 @@ export interface SendTokenProviderProps
   amountAvailable: bigint;
   onSuccess?: (txSignature: string) => void;
   onError?: (error: string) => void;
-}
+} & Omit<SendTokenParams, 'sessionState'>
 
-const SendTokenContext = createContext<UseSendTokenReturn | null>(null);
+const SendTokenContext = createContext<UseSendTokenReturn | undefined>(undefined);
 
 export const SendTokenProvider: React.FC<SendTokenProviderProps> = ({
   children,
@@ -35,8 +35,8 @@ export const SendTokenProvider: React.FC<SendTokenProviderProps> = ({
     tokenMint,
     decimals,
     amountAvailable,
-    onSuccess,
-    onError,
+    ...(onSuccess && { onSuccess }),
+    ...(onError && { onError }),
   });
 
   return (
@@ -56,14 +56,14 @@ export const useSendTokenContext = (): UseSendTokenReturn => {
   return context;
 };
 
-export interface SendTokenAmountInputProps {
+export type SendTokenAmountInputProps = {
   placeholder?: string;
-  style?: any;
+  style?: unknown;
   onChangeText?: (text: string) => void;
   children?: (props: {
     value: string;
     onChangeText: (text: string) => void;
-    error: string | null;
+    error: string | undefined;
     isValid: boolean;
   }) => React.ReactNode;
 }
@@ -92,17 +92,17 @@ export const SendTokenAmountInput: React.FC<SendTokenAmountInputProps> = ({
     );
   }
 
-  return null;
+  return;
 };
 
-export interface SendTokenRecipientInputProps {
+export type SendTokenRecipientInputProps = {
   placeholder?: string;
-  style?: any;
+  style?: unknown;
   onChangeText?: (text: string) => void;
   children?: (props: {
     value: string;
     onChangeText: (text: string) => void;
-    error: string | null;
+    error: string | undefined;
     isValid: boolean;
   }) => React.ReactNode;
 }
@@ -130,10 +130,10 @@ export const SendTokenRecipientInput: React.FC<
     );
   }
 
-  return null;
+  return;
 };
 
-export interface SendTokenButtonProps {
+export type SendTokenButtonProps = {
   children?: (props: {
     onPress: () => void;
     isLoading: boolean;
@@ -149,7 +149,7 @@ export const SendTokenButton: React.FC<SendTokenButtonProps> = ({
   const { state, actions, validation } = useSendTokenContext();
 
   const handlePress = () => {
-    actions.validateAndSend();
+    void actions.validateAndSend();
     onPress?.();
   };
 
@@ -165,10 +165,10 @@ export const SendTokenButton: React.FC<SendTokenButtonProps> = ({
     );
   }
 
-  return null;
+  return;
 };
 
-export interface SendTokenMaxButtonProps {
+export type SendTokenMaxButtonProps = {
   children?: (props: { onPress: () => void }) => React.ReactNode;
   onPress?: () => void;
 }
@@ -194,13 +194,13 @@ export const SendTokenMaxButton: React.FC<SendTokenMaxButtonProps> = ({
     );
   }
 
-  return null;
+  return;
 };
 
-export interface SendTokenStatusProps {
+export type SendTokenStatusProps = {
   children: (props: {
     isLoading: boolean;
-    error: string | null;
+    error: string | undefined;
     isValid: boolean;
     canSend: boolean;
   }) => React.ReactNode;
