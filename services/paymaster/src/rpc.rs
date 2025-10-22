@@ -8,7 +8,6 @@ use solana_client::{
 };
 use solana_commitment_config::CommitmentConfig;
 use solana_pubkey::Pubkey;
-use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_rpc_client_api::client_error::Error;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
@@ -17,7 +16,10 @@ use solana_transaction_status_client_types::UiTransactionEncoding;
 use std::time::Duration;
 use tokio::time::timeout;
 
-use crate::{api::ConfirmationResult, constraint::compute_gas_spent};
+use crate::{
+    api::{ConfirmationResult, PubsubClientWithReconnect},
+    constraint::compute_gas_spent,
+};
 
 pub struct ChainIndex {
     pub rpc: RpcClient,
@@ -153,23 +155,39 @@ impl ChainIndex {
 /// Sends a transaction and waits for confirmation via WebSocket subscription.
 #[tracing::instrument(
     skip_all,
-    fields(tx_hash = %transaction.signatures[0])
+    fields(
+        tx_hash = %transaction.signatures[0],
+        result
+    )
 )]
 pub async fn send_and_confirm_transaction(
     rpc: &RpcClient,
-    pubsub: &PubsubClient,
+    pubsub: &PubsubClientWithReconnect,
     transaction: &VersionedTransaction,
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
     let signature = match rpc.send_transaction_with_config(transaction, config).await {
-        Ok(sig) => sig,
+        Ok(sig) => {
+            tracing::Span::current().record("result", "sent");
+            sig
+        }
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
+                tracing::Span::current().record("result", "preflight_failure");
+                tracing::warn!(
+                    "Transaction {} failed preflight: {error}",
+                    transaction.signatures[0]
+                );
                 return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
                     signature: transaction.signatures[0],
                     error,
                 });
             }
+            tracing::Span::current().record("result", "send_failed");
+            tracing::error!(
+                "Failed to send transaction {}: {err}",
+                transaction.signatures[0]
+            );
             return Err(to_error_response(err));
         }
     };
@@ -181,14 +199,47 @@ pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[tracing::instrument(
     skip_all,
-    fields(tx_hash = %signature)
+    fields(
+        tx_hash = %signature,
+        result
+    )
 )]
 async fn confirm_transaction(
-    rpc_sub: &PubsubClient,
+    pubsub: &PubsubClientWithReconnect,
     signature: Signature,
     commitment: Option<CommitmentConfig>,
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
-    let (mut stream, unsubscribe) = rpc_sub
+    let signature_result = subscribe_and_wait_for_signature(pubsub, signature, commitment, true)
+        .await
+        .map_err(|(status, err_string)| {
+            tracing::Span::current().record("result", "unconfirmed");
+            (
+                status,
+                format!("Failed to confirm transaction {signature}: {err_string}"),
+            )
+        })?;
+
+    if let Some(err) = signature_result.err {
+        tracing::Span::current().record("result", "failed");
+        return Ok(ConfirmationResultInternal::Failed {
+            signature,
+            error: err,
+        });
+    } else {
+        tracing::Span::current().record("result", "success");
+        return Ok(ConfirmationResultInternal::Success { signature });
+    }
+}
+
+#[async_recursion::async_recursion]
+async fn subscribe_and_wait_for_signature(
+    pubsub: &PubsubClientWithReconnect,
+    signature: Signature,
+    commitment: Option<CommitmentConfig>,
+    reconnect: bool,
+) -> Result<solana_client::rpc_response::ProcessedSignatureResult, (StatusCode, String)> {
+    let pubsub_client = pubsub.client.load();
+    let subscribe_result = pubsub_client
         .signature_subscribe(
             &signature,
             Some(RpcSignatureSubscribeConfig {
@@ -196,13 +247,26 @@ async fn confirm_transaction(
                 ..RpcSignatureSubscribeConfig::default()
             }),
         )
-        .await
-        .map_err(|e| {
-            (
+        .await;
+
+    let (mut stream, unsubscribe) = match subscribe_result {
+        Ok(sub) => sub,
+        Err(_) => {
+            if reconnect {
+                tracing::warn!("WebSocket subscription failed, attempting reconnection and retry");
+                pubsub.reconnect_pubsub().await?;
+                return subscribe_and_wait_for_signature(pubsub, signature, commitment, false)
+                    .await;
+            }
+
+            tracing::error!("WebSocket subscription failed");
+
+            return Err((
                 StatusCode::BAD_GATEWAY,
-                format!("Failed to subscribe to signature: {e}"),
-            )
-        })?;
+                "Failed to subscribe to signature".to_string(),
+            ));
+        }
+    };
 
     // two levels of results here:
     // 1. timeout error (outer)
@@ -214,29 +278,28 @@ async fn confirm_transaction(
                 processed_signature_result,
             ) = response.value
             {
-                if let Some(err) = processed_signature_result.err {
-                    return Ok(ConfirmationResultInternal::Failed {
-                        signature,
-                        error: err,
-                    });
-                } else {
-                    return Ok(ConfirmationResultInternal::Success { signature });
-                }
+                return Ok(processed_signature_result);
             }
         }
 
+        tracing::error!("Signature subscription stream ended unexpectedly for {signature}");
         Err((
             StatusCode::BAD_GATEWAY,
-            "Signature subscription stream ended unexpectedly",
-        )
-            .into())
+            "Signature subscription stream ended unexpectedly".to_string(),
+        ))
     })
     .await;
 
     unsubscribe().await;
 
     result
-        .map_err(|_| (StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction").into())
+        .map_err(|_| {
+            tracing::error!("Timeout while waiting for transaction confirmation for {signature}");
+            (
+                StatusCode::GATEWAY_TIMEOUT,
+                "Unable to confirm transaction".to_string(),
+            )
+        })
         .and_then(|r| r)
 }
 

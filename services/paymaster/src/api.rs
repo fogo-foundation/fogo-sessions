@@ -5,6 +5,7 @@ use crate::rpc::{
     fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex,
     ConfirmationResultInternal, RetryConfig,
 };
+use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -36,6 +37,7 @@ use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -47,10 +49,55 @@ pub struct DomainState {
     pub tx_variations: Vec<TransactionVariation>,
 }
 
+pub struct PubsubClientWithReconnect {
+    pub client: ArcSwap<PubsubClient>,
+    pub rpc_url_ws: String,
+    /// Mutex to prevent redundant concurrent reconnections
+    pub reconnect_lock: Mutex<()>,
+}
+
+impl PubsubClientWithReconnect {
+    pub fn new(rpc_url_ws: String, client: PubsubClient) -> Self {
+        Self {
+            client: ArcSwap::from_pointee(client),
+            rpc_url_ws,
+            reconnect_lock: Mutex::new(()),
+        }
+    }
+
+    /// Reconnects the PubsubClient after grabbing a lock which prevents concurrent reconnections.
+    pub async fn reconnect_pubsub(&self) -> Result<(), (StatusCode, String)> {
+        let old_client = self.client.load_full();
+
+        let _lock = self.reconnect_lock.lock().await;
+
+        let current_client = self.client.load_full();
+
+        // checks if the client was changed while waiting for the lock
+        // if so, then no need to reconnect
+        if Arc::ptr_eq(&old_client, &current_client) {
+            match PubsubClient::new(&self.rpc_url_ws).await {
+                Ok(new_client) => {
+                    let new_arc = Arc::new(new_client);
+                    self.client.store(new_arc);
+                    tracing::debug!("Reconnected to WebSocket RPC at {}", self.rpc_url_ws);
+                    Ok(())
+                }
+                Err(e) => Err((
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    format!("WebSocket unavailable: {e}"),
+                )),
+            }
+        } else {
+            Ok(())
+        }
+    }
+}
+
 pub struct ServerState {
     pub domains: HashMap<String, DomainState>,
     pub chain_index: ChainIndex,
-    pub rpc_sub: PubsubClient,
+    pub rpc_sub: PubsubClientWithReconnect,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -62,7 +109,7 @@ impl DomainState {
     /// Checks that the transaction meets at least one of the specified variations for this domain.
     /// If so, returns the variation this transaction matched against.
     /// Otherwise, returns an error with a message indicating why the transaction is invalid.
-    #[tracing::instrument(skip_all, fields(variation,))]
+    #[tracing::instrument(skip_all, fields(variation))]
     pub async fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
@@ -247,9 +294,8 @@ async fn sponsor_and_send_handler(
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
-                "Transaction is too large: {} > {}",
-                transaction_bytes.len(),
-                PACKET_DATA_SIZE
+                "Transaction is too large: {} > {PACKET_DATA_SIZE}",
+                transaction_bytes.len()
             ),
         ))?;
     }
@@ -339,9 +385,7 @@ async fn sponsor_and_send_handler(
                     }
                     Err(e) => {
                         tracing::warn!(
-                            "Failed to fetch transaction cost details for {}: {:?}",
-                            signature_to_fetch,
-                            e
+                            "Failed to fetch transaction cost details for {signature_to_fetch}: {e}",
                         );
                     }
                 }
@@ -392,9 +436,10 @@ pub async fn run_server(
             commitment: CommitmentLevel::Processed,
         },
     );
-    let rpc_sub = PubsubClient::new(&rpc_url_ws)
+    let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
         .await
         .expect("Failed to create pubsub client");
+    let rpc_sub = PubsubClientWithReconnect::new(rpc_url_ws, rpc_sub_client);
 
     let domains = domains
         .into_iter()
