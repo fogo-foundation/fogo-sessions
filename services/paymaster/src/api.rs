@@ -54,7 +54,7 @@ pub struct PubsubClientWithReconnect {
 }
 
 impl PubsubClientWithReconnect {
-    pub async fn reconnect_pubsub(&self) -> Result<(), ErrorResponse> {
+    pub async fn reconnect_pubsub(&self) -> Result<(), (StatusCode, String)> {
         match PubsubClient::new(&self.rpc_url_ws).await {
             Ok(new_client) => {
                 let new_arc = Arc::new(new_client);
@@ -63,7 +63,7 @@ impl PubsubClientWithReconnect {
             }
             Err(e) => Err((
                 StatusCode::SERVICE_UNAVAILABLE,
-                format!("WebSocket unavailable: {}", e),
+                format!("WebSocket unavailable: {e}"),
             )
                 .into()),
         }
@@ -85,7 +85,7 @@ impl DomainState {
     /// Checks that the transaction meets at least one of the specified variations for this domain.
     /// If so, returns the variation this transaction matched against.
     /// Otherwise, returns an error with a message indicating why the transaction is invalid.
-    #[tracing::instrument(skip_all, fields(variation,))]
+    #[tracing::instrument(skip_all, fields(variation))]
     pub async fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
@@ -270,9 +270,8 @@ async fn sponsor_and_send_handler(
         return Err((
             StatusCode::BAD_REQUEST,
             format!(
-                "Transaction is too large: {} > {}",
-                transaction_bytes.len(),
-                PACKET_DATA_SIZE
+                "Transaction is too large: {} > {PACKET_DATA_SIZE}",
+                transaction_bytes.len()
             ),
         ))?;
     }
@@ -362,9 +361,7 @@ async fn sponsor_and_send_handler(
                     }
                     Err(e) => {
                         tracing::warn!(
-                            "Failed to fetch transaction cost details for {}: {:?}",
-                            signature_to_fetch,
-                            e
+                            "Failed to fetch transaction cost details for {signature_to_fetch}: {e}",
                         );
                     }
                 }
