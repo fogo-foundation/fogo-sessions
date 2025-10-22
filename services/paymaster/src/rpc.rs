@@ -165,11 +165,13 @@ pub async fn send_and_confirm_transaction(
         Ok(sig) => sig,
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
+                tracing::error!("Transaction {} failed preflight: {}", transaction.signatures[0], error);
                 return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
                     signature: transaction.signatures[0],
                     error,
                 });
             }
+            tracing::error!("Failed to send transaction {}: {}", transaction.signatures[0], err);
             return Err(to_error_response(err));
         }
     };
@@ -191,7 +193,7 @@ async fn confirm_transaction_with_reconnect(
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
     let result = {
         let pubsub_guard = pubsub.client.load();
-        confirm_transaction(&*pubsub_guard, signature, commitment).await
+        confirm_transaction(&pubsub_guard, signature, commitment).await
     };
 
     match result {
@@ -199,7 +201,7 @@ async fn confirm_transaction_with_reconnect(
         Err(e) if is_subscription_error(e.0, &e.1) => {
             tracing::warn!("WebSocket subscription failed, attempting reconnection and retry");
             let new_client = pubsub.reconnect_pubsub().await?;
-            confirm_transaction(&*new_client, signature, commitment).await.map_err(|e| e.into())
+            confirm_transaction(&new_client, signature, commitment).await.map_err(|e| e.into())
         }
         Err(e) => Err(e.into()),
     }
@@ -253,6 +255,7 @@ async fn confirm_transaction(
             }
         }
 
+        tracing::error!("Signature subscription stream ended unexpectedly for {}", signature);
         Err((
             StatusCode::BAD_GATEWAY,
             "Signature subscription stream ended unexpectedly".to_string(),
@@ -263,7 +266,10 @@ async fn confirm_transaction(
     unsubscribe().await;
 
     result
-        .map_err(|_| (StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction".to_string()))
+        .map_err(|_| {
+            tracing::error!("Timeout while waiting for transaction confirmation for {}", signature);
+            (StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction".to_string())
+        })
         .and_then(|r| r)
 }
 
