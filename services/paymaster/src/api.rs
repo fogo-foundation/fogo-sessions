@@ -52,6 +52,7 @@ pub struct DomainState {
 pub struct PubsubClientWithReconnect {
     pub client: ArcSwap<PubsubClient>,
     pub rpc_url_ws: String,
+    /// Mutex to prevent redundant concurrent reconnections
     pub reconnect_lock: Mutex<()>,
 }
 
@@ -65,7 +66,6 @@ impl PubsubClientWithReconnect {
     }
 
     /// Reconnects the PubsubClient after grabbing a lock which prevents concurrent reconnections.
-    /// Detects if the client was reconnected already, in which case it does not conduct a redundant reconnection.
     pub async fn reconnect_pubsub(&self) -> Result<(), (StatusCode, String)> {
         let old_client = self.client.load_full();
 
