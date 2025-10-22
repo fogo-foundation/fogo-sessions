@@ -225,8 +225,9 @@ async fn confirm_transaction_with_reconnect(
         }
         Err(e) if is_subscription_error(e.0, &e.1) => {
             tracing::warn!("WebSocket subscription failed, attempting reconnection and retry");
-            let new_client = pubsub.reconnect_pubsub().await?;
-            let retry_result = confirm_transaction(&new_client, signature, commitment)
+            pubsub.reconnect_pubsub().await?;
+            let new_guard = pubsub.client.load();
+            let retry_result = confirm_transaction(&new_guard, signature, commitment)
                 .await
                 .map_err(|e| e.into());
 

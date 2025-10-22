@@ -54,12 +54,12 @@ pub struct PubsubClientWithReconnect {
 }
 
 impl PubsubClientWithReconnect {
-    pub async fn reconnect_pubsub(&self) -> Result<Arc<PubsubClient>, ErrorResponse> {
+    pub async fn reconnect_pubsub(&self) -> Result<(), ErrorResponse> {
         match PubsubClient::new(&self.rpc_url_ws).await {
             Ok(new_client) => {
                 let new_arc = Arc::new(new_client);
-                self.client.store(new_arc.clone());
-                Ok(new_arc)
+                self.client.store(new_arc);
+                Ok(())
             }
             Err(e) => Err((
                 StatusCode::SERVICE_UNAVAILABLE,
