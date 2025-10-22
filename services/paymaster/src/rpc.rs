@@ -17,7 +17,10 @@ use solana_transaction_status_client_types::UiTransactionEncoding;
 use std::time::Duration;
 use tokio::time::timeout;
 
-use crate::{api::{ConfirmationResult, PubsubClientWithReconnect}, constraint::compute_gas_spent};
+use crate::{
+    api::{ConfirmationResult, PubsubClientWithReconnect},
+    constraint::compute_gas_spent,
+};
 
 pub struct ChainIndex {
     pub rpc: RpcClient,
@@ -172,14 +175,22 @@ pub async fn send_and_confirm_transaction(
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
                 tracing::Span::current().record("result", "preflight_failure");
-                tracing::warn!("Transaction {} failed preflight: {}", transaction.signatures[0], error);
+                tracing::warn!(
+                    "Transaction {} failed preflight: {}",
+                    transaction.signatures[0],
+                    error
+                );
                 return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
                     signature: transaction.signatures[0],
                     error,
                 });
             }
             tracing::Span::current().record("result", "send_failed");
-            tracing::error!("Failed to send transaction {}: {}", transaction.signatures[0], err);
+            tracing::error!(
+                "Failed to send transaction {}: {}",
+                transaction.signatures[0],
+                err
+            );
             return Err(to_error_response(err));
         }
     };
@@ -215,11 +226,14 @@ async fn confirm_transaction_with_reconnect(
         Err(e) if is_subscription_error(e.0, &e.1) => {
             tracing::warn!("WebSocket subscription failed, attempting reconnection and retry");
             let new_client = pubsub.reconnect_pubsub().await?;
-            let retry_result = confirm_transaction(&new_client, signature, commitment).await.map_err(|e| e.into());
+            let retry_result = confirm_transaction(&new_client, signature, commitment)
+                .await
+                .map_err(|e| e.into());
 
             match retry_result {
                 Ok(ref confirmation) => {
-                    tracing::Span::current().record("result", confirmation.status_string().as_str());
+                    tracing::Span::current()
+                        .record("result", confirmation.status_string().as_str());
                 }
                 Err(_) => {
                     tracing::Span::current().record("result", "unconfirmed");
@@ -283,7 +297,10 @@ async fn confirm_transaction(
             }
         }
 
-        tracing::error!("Signature subscription stream ended unexpectedly for {}", signature);
+        tracing::error!(
+            "Signature subscription stream ended unexpectedly for {}",
+            signature
+        );
         Err((
             StatusCode::BAD_GATEWAY,
             "Signature subscription stream ended unexpectedly".to_string(),
@@ -295,8 +312,14 @@ async fn confirm_transaction(
 
     result
         .map_err(|_| {
-            tracing::error!("Timeout while waiting for transaction confirmation for {}", signature);
-            (StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction".to_string())
+            tracing::error!(
+                "Timeout while waiting for transaction confirmation for {}",
+                signature
+            );
+            (
+                StatusCode::GATEWAY_TIMEOUT,
+                "Unable to confirm transaction".to_string(),
+            )
         })
         .and_then(|r| r)
 }

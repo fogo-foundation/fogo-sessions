@@ -61,13 +61,11 @@ impl PubsubClientWithReconnect {
                 self.client.store(new_arc.clone());
                 Ok(new_arc)
             }
-            Err(e) => {
-                Err((
-                    StatusCode::SERVICE_UNAVAILABLE,
-                    format!("WebSocket unavailable: {}", e),
-                )
-                    .into())
-            }
+            Err(e) => Err((
+                StatusCode::SERVICE_UNAVAILABLE,
+                format!("WebSocket unavailable: {}", e),
+            )
+                .into()),
         }
     }
 }
@@ -420,7 +418,10 @@ pub async fn run_server(
     let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
         .await
         .expect("Failed to create pubsub client");
-    let rpc_sub = PubsubClientWithReconnect { client: Arc::new(ArcSwap::from_pointee(rpc_sub_client)), rpc_url_ws };
+    let rpc_sub = PubsubClientWithReconnect {
+        client: Arc::new(ArcSwap::from_pointee(rpc_sub_client)),
+        rpc_url_ws,
+    };
 
     let domains = domains
         .into_iter()
