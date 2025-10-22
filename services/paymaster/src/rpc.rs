@@ -179,10 +179,6 @@ pub async fn send_and_confirm_transaction(
 
 pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
 
-fn is_subscription_error(status_code: StatusCode, error_string: &str) -> bool {
-    error_string.contains("Failed to subscribe to signature") && status_code == StatusCode::BAD_GATEWAY
-}
-
 #[tracing::instrument(
     skip_all,
     name = "confirm_transaction",
@@ -209,6 +205,12 @@ async fn confirm_transaction_with_reconnect(
     }
 }
 
+pub const SIGNATURE_SUBSCRIPTION_ERROR: &str = "Failed to subscribe to signature";
+
+fn is_subscription_error(status_code: StatusCode, error_string: &str) -> bool {
+    status_code == StatusCode::BAD_GATEWAY && error_string == SIGNATURE_SUBSCRIPTION_ERROR
+}
+
 async fn confirm_transaction(
     rpc_sub: &PubsubClient,
     signature: Signature,
@@ -223,10 +225,10 @@ async fn confirm_transaction(
             }),
         )
         .await
-        .map_err(|e| {
+        .map_err(|_| {
             (
                 StatusCode::BAD_GATEWAY,
-                format!("Failed to subscribe to signature: {e}"),
+                SIGNATURE_SUBSCRIPTION_ERROR.to_string(),
             )
         })?;
 
