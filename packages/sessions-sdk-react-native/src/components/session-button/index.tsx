@@ -173,11 +173,13 @@ export const SessionButton: React.FC<SessionButtonProps> = () => {
         snapPoints={['70%', '90%']}
       >
         {({ close }) => (
-          <SessionPanel
-            sessionState={sessionState}
-            onClose={close}
-            whitelistedTokens={whitelistedTokens}
-          />
+          isEstablished(sessionState) ? (
+            <SessionPanel
+              sessionState={sessionState}
+              onClose={close}
+              whitelistedTokens={whitelistedTokens}
+            />
+          ) : undefined
         )}
       </CustomBottomSheet>
     </>

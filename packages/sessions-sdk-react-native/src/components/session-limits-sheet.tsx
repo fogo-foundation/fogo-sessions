@@ -83,8 +83,8 @@ export const SessionLimitsSheet: React.FC<SessionLimitsSheetProps> = ({
         enableUnlimited={enableUnlimited}
         tokens={whitelistedTokens}
         onSubmit={
-          (sessionState as { type: StateType; onSubmitLimits?: unknown }).type === StateType.RequestingLimits
-            ? (sessionState as { onSubmitLimits: unknown }).onSubmitLimits
+          sessionState.type === StateType.RequestingLimits
+            ? sessionState.onSubmitLimits
             : undefined
         }
         initialLimits={requestedLimits ?? new Map()}

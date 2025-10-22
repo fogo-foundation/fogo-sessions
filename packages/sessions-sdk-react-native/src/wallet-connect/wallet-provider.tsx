@@ -249,7 +249,10 @@ export const MobileWalletProvider = ({
   // Memoized sign message function
   const signMessage = useMemo(() => {
     if (state.wallet && state.status === 'connected') {
-      return (message: Uint8Array) => state.wallet.signMessage(message);
+      return (message: Uint8Array) => {
+        if (!state.wallet) throw new Error('Wallet not connected');
+        return state.wallet.signMessage(message);
+      };
     }
     return;
   }, [state.wallet, state.status]);

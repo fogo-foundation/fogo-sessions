@@ -66,8 +66,8 @@ export const SessionLimitsPanel: React.FC<SessionLimitsPanelProps> = ({
               )
             }
             onSubmit={
-              (sessionState as { type: SessionStateType; setLimits?: unknown }).type === SessionStateType.Established
-                ? (sessionState as { setLimits: unknown }).setLimits
+              sessionState.type === SessionStateType.Established
+                ? sessionState.setLimits
                 : undefined
             }
             buttonText="Update limits"

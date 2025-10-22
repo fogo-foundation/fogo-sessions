@@ -1,4 +1,4 @@
-import type { Session, SessionAdapter } from '@fogo/sessions-sdk';
+import type { Session, SessionAdapter, TransactionResult } from '@fogo/sessions-sdk';
 import {
   establishSession as establishSessionImpl,
   replaceSession,
@@ -67,6 +67,7 @@ function createContextualError(error: unknown, context: TransactionContext) {
 }
 
 import { getCacheKey } from './hooks/use-token-account-data';
+import type { SessionKeyPair } from './session-store';
 import {
   clearStoredSession,
   getStoredSession,
@@ -102,7 +103,7 @@ const DEFAULT_SESSION_DURATION = 14 * ONE_DAY_IN_MS;
  */
 type Props = ConstrainedOmit<
   ComponentProps<typeof SessionProvider>,
-  'sponsor' | 'tokens' | 'defaultRequestedLimits'
+  'tokens' | 'defaultRequestedLimits'
 > & {
   /** Solana RPC endpoint URL for blockchain connections */
   endpoint: string;
@@ -204,9 +205,10 @@ export const FogoSessionProvider = ({
 
 const SessionProvider = ({
   children,
-  defaultRequestedLimits,
   enableUnlimited,
   onStartSessionInit,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  defaultRequestedLimits,
   ...args
 }: Omit<Parameters<typeof useSessionStateContext>[0], 'children'> & {
   children: ReactNode;
@@ -221,7 +223,7 @@ const SessionProvider = ({
     state: sessionState,
     onSessionLimitsOpenChange,
     requestedLimits,
-  } = useSessionStateContext({ defaultRequestedLimits, ...args });
+  } = useSessionStateContext({ ...args });
 
   const tokensFromArgs = (args as {tokens?: PublicKey[]}).tokens;
 
@@ -296,12 +298,13 @@ const useSessionStateContext = ({
     ) => {
       try {
         // First, try to store the session securely
+        const finalWalletName = walletName ?? wallet.connectedWalletName;
         await setStoredSession({
-          sessionKey: (session as SafeSession).sessionKey,
+          sessionKey: (session as SafeSession).sessionKey as SessionKeyPair,
           walletPublicKey: (session as SafeSession).walletPublicKey,
-          ...(walletName ?? wallet.connectedWalletName) && {
-            walletName: walletName ?? wallet.connectedWalletName
-          },
+          ...(finalWalletName && {
+            walletName: finalWalletName
+          }),
         });
 
         // Store last wallet public key (this can fail without blocking the session)
@@ -332,9 +335,9 @@ const useSessionStateContext = ({
         endSession: () => {
           endSession((session as SafeSession).walletPublicKey);
         },
-        payer: (session as SafeSession).payer,
+        payer: (session as SafeSession).payer as PublicKey,
         sendTransaction: async (instructions: unknown) => {
-          const result = await (session as SafeSession).sendTransaction(instructions);
+          const result = await (session as SafeSession).sendTransaction(instructions) as TransactionResult;
           mutate(getCacheKey((session as SafeSession).walletPublicKey)).catch(() => {
             // Ignore cache refresh errors
           });
@@ -344,15 +347,16 @@ const useSessionStateContext = ({
         isLimited:
           (session as SafeSession).sessionInfo.authorizedTokens === (AuthorizedTokens as {Specific: unknown}).Specific,
         walletPublicKey: (session as SafeSession).walletPublicKey,
-        connection: (adapter as SafeSessionAdapter).connection,
-        adapter: adapter as SafeSessionAdapter,
+        connection: (adapter as unknown as SafeSessionAdapter).connection,
+        adapter: adapter as unknown as SessionAdapter,
         signMessage,
       };
       const setLimits = (duration: number, limits?: Map<PublicKey, bigint>) => {
         setState(SessionState.UpdatingLimits(commonStateArgs) as SessionState);
         (replaceSession as (args: unknown) => Promise<SafeSessionResult>)({
           expires: new Date(Date.now() + duration),
-          adapter: adapter as SafeSessionAdapter,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          adapter,
           signMessage,
           session: session as SafeSession,
           ...(limits === undefined ? { unlimited: true } : { limits }),
@@ -366,7 +370,7 @@ const useSessionStateContext = ({
                 });
                 const sessionData = (result).session;
                 if (sessionData) {
-                  await setSessionState(adapter, sessionData, signMessage);
+                  await setSessionState(adapter as unknown as SessionAdapter, sessionData as unknown as Session, signMessage);
                 }
                 return;
               }
@@ -387,7 +391,8 @@ const useSessionStateContext = ({
             }
           })
           .catch((error: unknown) => {
-            const contextualError = createContextualError(error, TransactionContext.SESSION_REPLACEMENT);
+            const normalizedError = error instanceof Error ? error : new Error(String(error));
+            const contextualError = createContextualError(normalizedError, TransactionContext.SESSION_REPLACEMENT);
             Toast.show({
               type: 'error',
               text1: contextualError.message,
@@ -413,9 +418,9 @@ const useSessionStateContext = ({
         endSession: () => {
           endSession((session as SafeSession).walletPublicKey);
         },
-        payer: (session as SafeSession).payer,
+        payer: (session as SafeSession).payer as PublicKey,
         sendTransaction: async (instructions: unknown) => {
-          const result = await (session as SafeSession).sendTransaction(instructions);
+          const result = await (session as SafeSession).sendTransaction(instructions) as TransactionResult;
           mutate(getCacheKey((session as SafeSession).walletPublicKey)).catch(
             () => {
               // Ignore cache mutation errors
@@ -427,15 +432,16 @@ const useSessionStateContext = ({
         isLimited:
           (session as SafeSession).sessionInfo.authorizedTokens === (AuthorizedTokens as {Specific: unknown}).Specific,
         walletPublicKey: (session as SafeSession).walletPublicKey,
-        connection: (adapter as SafeSessionAdapter).connection,
-        adapter: adapter as SafeSessionAdapter,
+        connection: (adapter as unknown as SafeSessionAdapter).connection,
+        adapter: adapter as unknown as SessionAdapter,
         signMessage,
       };
       const setLimits = (duration: number, limits?: Map<PublicKey, bigint>) => {
         setState(SessionState.UpdatingLimits(commonStateArgs) as SessionState);
         (replaceSession as (args: unknown) => Promise<SafeSessionResult>)({
           expires: new Date(Date.now() + duration),
-          adapter: adapter as SafeSessionAdapter,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          adapter,
           signMessage,
           session: session as SafeSession,
           ...(limits === undefined ? { unlimited: true } : { limits }),
@@ -449,7 +455,7 @@ const useSessionStateContext = ({
                 });
                 const sessionData = (result).session;
                 if (sessionData) {
-                  await setSessionState(adapter, sessionData, signMessage);
+                  await setSessionState(adapter as unknown as SessionAdapter, sessionData as unknown as Session, signMessage);
                 }
                 return;
               }
@@ -470,7 +476,8 @@ const useSessionStateContext = ({
             }
           })
           .catch((error: unknown) => {
-            const contextualError = createContextualError(error, TransactionContext.SESSION_REPLACEMENT);
+            const normalizedError = error instanceof Error ? error : new Error(String(error));
+            const contextualError = createContextualError(normalizedError, TransactionContext.SESSION_REPLACEMENT);
             Toast.show({
               type: 'error',
               text1: contextualError.message,
@@ -512,7 +519,7 @@ const useSessionStateContext = ({
               case (SessionResultType as {Success: unknown}).Success: {
                 const sessionData = result.session;
                 if (sessionData) {
-                  await setSessionState(adapter, sessionData, signMessage);
+                  await setSessionState(adapter as unknown as SessionAdapter, sessionData as unknown as Session, signMessage);
                 }
                 return;
               }
@@ -543,7 +550,7 @@ const useSessionStateContext = ({
                   case (SessionResultType as {Success: unknown}).Success: {
                     const sessionData = result.session;
                 if (sessionData) {
-                  await setSessionState(adapter, sessionData, signMessage);
+                  await setSessionState(adapter as unknown as SessionAdapter, sessionData as unknown as Session, signMessage);
                 }
                     return;
                   }
@@ -557,7 +564,8 @@ const useSessionStateContext = ({
                 }
               })
               .catch((error: unknown) => {
-                const contextualError = createContextualError(error, TransactionContext.SESSION_ESTABLISHMENT);
+                const normalizedError = error instanceof Error ? error : new Error(String(error));
+                const contextualError = createContextualError(normalizedError, TransactionContext.SESSION_ESTABLISHMENT);
                 setState(SessionState.RequestingLimits(setLimits, contextualError) as SessionState);
               });
           };
@@ -572,7 +580,7 @@ const useSessionStateContext = ({
         if (session === undefined) {
           endSession(walletPublicKey);
         } else {
-          restoreSessionState(adapter, session, signMessage);
+          restoreSessionState(adapter as unknown as SessionAdapter, session as unknown as Session, signMessage);
         }
       }
     },
@@ -670,10 +678,12 @@ const useSessionAdapter = (
   return useCallback(async () => {
     if (adapter.current === undefined) {
       try {
-        adapter.current = await (createSolanaWalletAdapter as (options: unknown) => Promise<SafeSessionAdapter>)({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        adapter.current = await createSolanaWalletAdapter({
           ...options,
-          connection: connection as unknown,
-        });
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          connection: connection as unknown as Parameters<typeof createSolanaWalletAdapter>[0]['connection'],
+        }) as unknown as SafeSessionAdapter;
       } catch {
         // Ignore errors during adapter creation
       }

@@ -24,4 +24,3 @@ export * from './session-provider';
 export * from './components';
 export * from './wallet-connect';
 export * from './hooks';
-export * from './utils/use-data';

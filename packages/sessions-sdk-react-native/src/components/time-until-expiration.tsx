@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, StyleProp, ViewStyle } from 'react-native';
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
@@ -41,8 +41,8 @@ const getRelativeTimeFormatArgs = (interval: number) => {
 
 type TimeUntilExpirationProps = {
   expiration: Date;
-  style?: unknown;
-  expiredStyle?: unknown;
+  style?: StyleProp<ViewStyle>;
+  expiredStyle?: StyleProp<ViewStyle>;
 }
 
 export const TimeUntilExpiration: React.FC<TimeUntilExpirationProps> = ({

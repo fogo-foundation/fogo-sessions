@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
-import type {TextInputProps} from 'react-native';
+import type {TextInputProps, StyleProp, ViewStyle, TextStyle} from 'react-native';
 import {
   View,
   Text,
   TextInput,
   StyleSheet
-  
+
 } from 'react-native';
 
 import { stringToAmount, amountToString } from '../utils/amount-to-string';
@@ -30,11 +30,11 @@ const TextField = ({
   description?: string;
   validate?: (value: string) => string | undefined;
   errorMessage?: string;
-  style?: unknown;
-  inputStyle?: unknown;
-  labelStyle?: unknown;
-  errorStyle?: unknown;
-  descriptionStyle?: unknown;
+  style?: StyleProp<ViewStyle>;
+  inputStyle?: StyleProp<TextStyle>;
+  labelStyle?: StyleProp<TextStyle>;
+  errorStyle?: StyleProp<TextStyle>;
+  descriptionStyle?: StyleProp<TextStyle>;
 }) => {
   const [internalError, setInternalError] = useState<string | undefined>();
   const [isFocused, setIsFocused] = useState(false);
@@ -110,11 +110,11 @@ export const TokenAmountInput = ({
   lt?: bigint;
   onValueChange?: (value: string) => void;
   defaultValue?: string;
-  style?: unknown;
-  inputStyle?: unknown;
-  labelStyle?: unknown;
-  errorStyle?: unknown;
-  descriptionStyle?: unknown;
+  style?: StyleProp<ViewStyle>;
+  inputStyle?: StyleProp<TextStyle>;
+  labelStyle?: StyleProp<TextStyle>;
+  errorStyle?: StyleProp<TextStyle>;
+  descriptionStyle?: StyleProp<TextStyle>;
 }) => {
   const tokenAmountProps = useTokenAmountInput({
     decimals,

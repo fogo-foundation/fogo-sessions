@@ -4,6 +4,7 @@ import type {
   WalletName,
 } from '@solana/wallet-adapter-base';
 import {
+  WalletError,
   WalletSignMessageError,
   WalletSignTransactionError,
 } from '@solana/wallet-adapter-base';
@@ -39,14 +40,15 @@ export class BackpackMobileWalletAdapter extends BaseMobileWalletAdapter {
       this._connecting = true;
       await this.performEncryptedConnect();
     } catch (error: unknown) {
-      this.emit('error', error instanceof Error ? error : new Error(String(error)));
+      this.emit('error', new WalletError(error instanceof Error ? error.message : String(error), error));
       throw error;
     } finally {
       this._connecting = false;
     }
   }
 
-  disconnect(): void {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async disconnect(): Promise<void> {
     this._publicKey = undefined;
     this._connected = false;
     this.emit('disconnect');
@@ -115,7 +117,7 @@ export class BackpackMobileWalletAdapter extends BaseMobileWalletAdapter {
 
       return signedTransaction as T;
     } catch (error: unknown) {
-      this.emit('error', error instanceof Error ? error : new Error(String(error)));
+      this.emit('error', new WalletError(error instanceof Error ? error.message : String(error), error));
       throw error;
     }
   }
@@ -174,7 +176,7 @@ export class BackpackMobileWalletAdapter extends BaseMobileWalletAdapter {
       }
       throw new WalletSignMessageError('Unable to decrypt signed data');
     } catch (error: unknown) {
-      this.emit('error', error instanceof Error ? error : new Error(String(error)));
+      this.emit('error', new WalletError(error instanceof Error ? error.message : String(error), error));
       throw error;
     }
   }

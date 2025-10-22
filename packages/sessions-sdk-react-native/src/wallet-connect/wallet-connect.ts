@@ -1,4 +1,5 @@
-import { Buffer } from 'node:buffer';
+// eslint-disable-next-line unicorn/prefer-node-protocol
+import { Buffer } from 'buffer';
 
 import { base58 } from '@scure/base';
 import type { WalletAdapter } from '@solana/wallet-adapter-base';

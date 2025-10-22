@@ -5,8 +5,7 @@
     "emitDeclarationOnly": true,
     "incremental": false,
     "declaration": true,
-    "declarationMap": true,
-    "outDir": "./dist/types"
+    "declarationMap": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "integration-tests", "src/**/__tests__","**/*.test.ts", "**/*.test.tsx"]

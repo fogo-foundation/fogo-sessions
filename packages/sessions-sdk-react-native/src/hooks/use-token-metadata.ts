@@ -3,10 +3,9 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { useCallback, useEffect, useState } from 'react';
 
 import { getMetadata } from '../utils/get-metadata';
+export { TokenDataStateType } from '../utils/use-data';
 import { TokenDataStateType, useData } from '../utils/use-data';
 import { useMobileConnection } from '../wallet-connect/wallet-provider';
-
-
 export type Metadata = Awaited<ReturnType<typeof getTokenMetadata>>;
 
 /**

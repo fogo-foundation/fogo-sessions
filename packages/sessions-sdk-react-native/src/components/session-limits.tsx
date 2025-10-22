@@ -351,6 +351,16 @@ const Token = ({
         </View>
       );
     }
+
+    default: {
+      return (
+        <View style={styles.tokenError}>
+          <Text style={styles.tokenErrorText}>
+            Unknown token state: {mint.toBase58().slice(0, 8)}...
+          </Text>
+        </View>
+      );
+    }
   }
 };
 
