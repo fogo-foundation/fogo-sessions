@@ -71,7 +71,11 @@ async fn main() -> anyhow::Result<()> {
         .with(
             tracing_subscriber::fmt::layer()
                 .with_target(false)
-                .with_level(true),
+                .with_file(true)
+                .with_line_number(true)
+                .with_thread_ids(true)
+                .with_level(true)
+                .json(),
         )
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
