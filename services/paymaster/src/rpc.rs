@@ -153,7 +153,10 @@ impl ChainIndex {
 /// Sends a transaction and waits for confirmation via WebSocket subscription.
 #[tracing::instrument(
     skip_all,
-    fields(tx_hash = %transaction.signatures[0])
+    fields(
+        tx_hash = %transaction.signatures[0],
+        result
+    )
 )]
 pub async fn send_and_confirm_transaction(
     rpc: &RpcClient,
@@ -162,15 +165,20 @@ pub async fn send_and_confirm_transaction(
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
     let signature = match rpc.send_transaction_with_config(transaction, config).await {
-        Ok(sig) => sig,
+        Ok(sig) => {
+            tracing::Span::current().record("result", "sent");
+            sig
+        }
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
-                tracing::error!("Transaction {} failed preflight: {}", transaction.signatures[0], error);
+                tracing::Span::current().record("result", "preflight_failure");
+                tracing::warn!("Transaction {} failed preflight: {}", transaction.signatures[0], error);
                 return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
                     signature: transaction.signatures[0],
                     error,
                 });
             }
+            tracing::Span::current().record("result", "send_failed");
             tracing::error!("Failed to send transaction {}: {}", transaction.signatures[0], err);
             return Err(to_error_response(err));
         }
@@ -184,7 +192,10 @@ pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
 #[tracing::instrument(
     skip_all,
     name = "confirm_transaction",
-    fields(tx_hash = %signature)
+    fields(
+        tx_hash = %signature,
+        result
+    )
 )]
 async fn confirm_transaction_with_reconnect(
     pubsub: &PubsubClientWithReconnect,
@@ -197,13 +208,30 @@ async fn confirm_transaction_with_reconnect(
     };
 
     match result {
-        Ok(confirmation) => Ok(confirmation),
+        Ok(confirmation) => {
+            tracing::Span::current().record("result", confirmation.status_string().as_str());
+            Ok(confirmation)
+        }
         Err(e) if is_subscription_error(e.0, &e.1) => {
             tracing::warn!("WebSocket subscription failed, attempting reconnection and retry");
             let new_client = pubsub.reconnect_pubsub().await?;
-            confirm_transaction(&new_client, signature, commitment).await.map_err(|e| e.into())
+            let retry_result = confirm_transaction(&new_client, signature, commitment).await.map_err(|e| e.into());
+
+            match retry_result {
+                Ok(ref confirmation) => {
+                    tracing::Span::current().record("result", confirmation.status_string().as_str());
+                }
+                Err(_) => {
+                    tracing::Span::current().record("result", "unconfirmed");
+                }
+            }
+
+            retry_result
         }
-        Err(e) => Err(e.into()),
+        Err(e) => {
+            tracing::Span::current().record("result", "unconfirmed");
+            Err(e.into())
+        }
     }
 }
 
