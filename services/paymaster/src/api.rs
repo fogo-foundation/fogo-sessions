@@ -5,6 +5,7 @@ use crate::rpc::{
     fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex,
     ConfirmationResultInternal, RetryConfig,
 };
+use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -47,10 +48,34 @@ pub struct DomainState {
     pub tx_variations: Vec<TransactionVariation>,
 }
 
+pub struct PubsubClientWithReconnect {
+    pub client: Arc<ArcSwap<PubsubClient>>,
+    pub rpc_url_ws: String,
+}
+
+impl PubsubClientWithReconnect {
+    pub async fn reconnect_pubsub(&self) -> Result<Arc<PubsubClient>, ErrorResponse> {
+        match PubsubClient::new(&self.rpc_url_ws).await {
+            Ok(new_client) => {
+                let new_arc = Arc::new(new_client);
+                self.client.store(new_arc.clone());
+                Ok(new_arc)
+            }
+            Err(e) => {
+                Err((
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    format!("WebSocket unavailable: {}", e),
+                )
+                    .into())
+            }
+        }
+    }
+}
+
 pub struct ServerState {
     pub domains: HashMap<String, DomainState>,
     pub chain_index: ChainIndex,
-    pub rpc_sub: PubsubClient,
+    pub rpc_sub: PubsubClientWithReconnect,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -392,9 +417,10 @@ pub async fn run_server(
             commitment: CommitmentLevel::Processed,
         },
     );
-    let rpc_sub = PubsubClient::new(&rpc_url_ws)
+    let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
         .await
         .expect("Failed to create pubsub client");
+    let rpc_sub = PubsubClientWithReconnect { client: Arc::new(ArcSwap::from_pointee(rpc_sub_client)), rpc_url_ws };
 
     let domains = domains
         .into_iter()
