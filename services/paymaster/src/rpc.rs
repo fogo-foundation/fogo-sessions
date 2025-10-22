@@ -294,7 +294,7 @@ async fn subscribe_and_wait_for_signature(
 
     result
         .map_err(|_| {
-            tracing::error!("Timeout while waiting for transaction confirmation for {signature}",);
+            tracing::error!("Timeout while waiting for transaction confirmation for {signature}");
             (
                 StatusCode::GATEWAY_TIMEOUT,
                 "Unable to confirm transaction".to_string(),
