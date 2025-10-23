@@ -1,0 +1,29 @@
+@use "../../theme";
+
+.home {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: theme.spacing(10);
+
+  .wordmark {
+    height: theme.spacing(14);
+    color: theme.color("brand");
+  }
+
+  .header {
+    @include theme.text("xl");
+
+    margin-bottom: theme.spacing(10);
+  }
+
+  .sessionPanel {
+    width: 80dvw;
+    height: 80dvh;
+    max-width: theme.spacing(200);
+    max-height: theme.spacing(300);
+  }
+}

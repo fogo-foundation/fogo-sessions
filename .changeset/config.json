@@ -7,6 +7,6 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@fogo/portfolio", "@fogo/sessions-demo"],
+  "ignore": ["@fogo/portfolio", "@fogo/sessions-demo", "@fogo/paymaster-admin"],
   "message": "chore: version packages"
 }
