@@ -8,6 +8,7 @@ repository = "https://github.com/fogo-foundation/fogo-sessions"
 
 [dependencies]
 anyhow = "1.0.98"
+arc-swap = "1.7.0"
 argon2 = "0.5.3"
 axum = "0.8.4"
 axum-extra = {version = "0.10.1", features = ["typed-header"]}

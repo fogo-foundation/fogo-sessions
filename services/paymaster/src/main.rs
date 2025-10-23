@@ -1,9 +1,10 @@
 use crate::cli::Cli;
+use arc_swap::ArcSwap;
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
+use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
@@ -16,8 +17,8 @@ mod metrics;
 mod rpc;
 mod serde;
 
-type DomainStateMap = std::collections::HashMap<String, api::DomainState>;
-type SharedDomains = Arc<RwLock<DomainStateMap>>;
+type DomainStateMap = HashMap<String, api::DomainState>;
+type SharedDomains = Arc<ArcSwap<DomainStateMap>>;
 
 async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let resource = opentelemetry_sdk::Resource::builder()
@@ -65,7 +66,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
-    let domains: SharedDomains = Arc::new(RwLock::new(api::get_domain_state_map(
+    let domains: SharedDomains = Arc::new(ArcSwap::from_pointee(api::get_domain_state_map(
         config.domains,
         &mnemonic,
     )));

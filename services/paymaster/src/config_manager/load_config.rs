@@ -1,3 +1,4 @@
+use arc_swap::ArcSwap;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -8,7 +9,6 @@ use crate::config_manager::config::Config;
 use crate::db;
 use anyhow::Result;
 use config::File;
-use tokio::sync::RwLock;
 use tokio::time::interval;
 
 /// Load the config from the file.
@@ -32,7 +32,7 @@ async fn load_db_config() -> Result<Config> {
 /// Spawn a background task to refresh the config every 10 seconds.
 pub fn spawn_config_refresher(
     mnemonic: String,
-    domains: Arc<RwLock<HashMap<String, DomainState>>>,
+    domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
 ) {
     tokio::spawn(async move {
         let mut ticker = interval(Duration::from_secs(10));
@@ -47,11 +47,8 @@ pub fn spawn_config_refresher(
                     // Recompute the derived state
                     let new_domains = api::get_domain_state_map(new_config.domains, &mnemonic);
 
-                    // Atomically swap under a write lock
-                    {
-                        let mut guard = domains.write().await;
-                        *guard = new_domains;
-                    }
+                    // Atomically swap the entire HashMap
+                    domains.store(Arc::new(new_domains));
 
                     tracing::info!("Config/domains refreshed");
                 }

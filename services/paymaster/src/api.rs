@@ -2,6 +2,7 @@ use crate::config_manager::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_gas_spend, obs_send, obs_validation};
 use crate::rpc::{send_and_confirm_transaction, ChainIndex, ConfirmationResult};
+use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
@@ -30,7 +31,6 @@ use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
@@ -42,7 +42,7 @@ pub struct DomainState {
 }
 
 pub struct ServerState {
-    pub domains: Arc<RwLock<HashMap<String, DomainState>>>,
+    pub domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClient,
 }
@@ -170,10 +170,10 @@ fn get_domain_name(
 }
 
 fn get_domain_state<'a>(
-    domains: &'a HashMap<String, DomainState>,
+    domains_guard: &'a HashMap<String, DomainState>,
     domain_query_parameter: &str,
 ) -> Result<&'a DomainState, (StatusCode, String)> {
-    let domain_state = domains
+    let domain_state = domains_guard
         .get(domain_query_parameter)
         .ok_or_else(|| {
             (
@@ -208,10 +208,10 @@ async fn sponsor_and_send_handler(
     Query(SponsorAndSendQuery { domain, .. }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<Json<ConfirmationResult>, ErrorResponse> {
-    let val = state.domains.read().await;
     let domain = get_domain_name(domain, origin)?;
     tracing::Span::current().record("domain", domain.as_str());
-    let domain_state = get_domain_state(&val, &domain)?;
+    let domains_guard = state.domains.load();
+    let domain_state = get_domain_state(&domains_guard, &domain)?;
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
@@ -298,13 +298,14 @@ async fn sponsor_pubkey_handler(
     Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
-    let val = state.domains.read().await;
+    let domains_guard = state.domains.load();
+    let domain_state = get_domain_state(&domains_guard, &domain)?;
     let DomainState {
         domain_registry_key: _,
         sponsor,
         enable_preflight_simulation: _,
         tx_variations: _,
-    } = get_domain_state(&val, &domain)?;
+    } = domain_state;
     Ok(sponsor.pubkey().to_string())
 }
 
@@ -345,7 +346,7 @@ pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
     listen_address: String,
-    domains_states: Arc<RwLock<HashMap<String, DomainState>>>,
+    domains_states: Arc<ArcSwap<HashMap<String, DomainState>>>,
 ) {
     let rpc = RpcClient::new_with_commitment(
         rpc_url_http,
