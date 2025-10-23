@@ -17,8 +17,8 @@ pub fn load_file_config(config_path: &str) -> Result<Config> {
         .add_source(File::with_name(config_path))
         .build()?
         .try_deserialize()?;
-    let mut config = config;
-    config.assign_defaults();
+    // note we DO NOT want to assign defaults here because this will be used to seed the database and there's no point adding the txs from eg. enable_session_management
+    // config.assign_defaults();
     Ok(config)
 }
 
