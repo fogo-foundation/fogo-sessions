@@ -17,7 +17,8 @@
         "RPC",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER",
-        "USE_TESTNET"
+        "USE_TESTNET",
+        "USE_MAINNET"
       ]
     },
     "start:prod": {
