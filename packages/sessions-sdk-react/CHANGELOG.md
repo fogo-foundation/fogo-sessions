@@ -1,5 +1,12 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.28
+
+### Patch Changes
+
+- e43593c: fix: make legal links open in a new tab
+- 0502d6c: Separate SessionPanel component and export it
+
 ## 0.0.27
 
 ### Patch Changes
