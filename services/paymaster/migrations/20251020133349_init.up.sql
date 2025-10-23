@@ -1,7 +1,7 @@
 CREATE TABLE if not exists "user" (
   id uuid PRIMARY KEY default uuidv7(),
-  email text NOT NULL UNIQUE,
-  password text NOT NULL,
+  username text NOT NULL UNIQUE,
+  wallet_address text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

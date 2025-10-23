@@ -59,6 +59,6 @@ pub struct SeedOptions {
     #[arg(short, long, env = "CONFIG_FILE")]
     pub config: String,
 
-    #[arg(long, env = "DEFAULT_USER_PASSWORD")]
-    pub default_user_password: String,
+    #[arg(long, env = "DEFAULT_USER_WALLET_ADDRESS")]
+    pub default_user_wallet_address: String,
 }

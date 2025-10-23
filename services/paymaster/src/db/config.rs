@@ -1,10 +1,6 @@
 use crate::config_manager::config::{Config, Domain};
 use crate::constraint::TransactionVariation;
 use crate::db::pool::pool;
-use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
-    Argon2,
-};
 use sqlx::{types::Json, FromRow};
 use std::collections::HashMap;
 use url::Url;
@@ -56,16 +52,6 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
     })
 }
 
-/// Hash a plaintext password using Argon2.
-fn hash_password(plain: &str) -> Result<String, anyhow::Error> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    Ok(argon2
-        .hash_password(plain.as_bytes(), &salt)
-        .map_err(|e| anyhow::anyhow!("Failed to hash password: {}", e))?
-        .to_string())
-}
-
 // Get the registrable domain from a URL.
 // Example: https://test.brasa.finance -> brasa.finance
 fn registrable_domain(u: &Url) -> Result<String, anyhow::Error> {
@@ -81,12 +67,14 @@ fn registrable_domain(u: &Url) -> Result<String, anyhow::Error> {
         Ok(host.to_string())
     }
 }
-/// Insert a user(email, password) into the database.
-async fn insert_user(domain_url: &Url, default_user_password: &str) -> Result<Uuid, anyhow::Error> {
-    let password = hash_password(default_user_password)?;
-    let email = format!("admin@{}", registrable_domain(domain_url)?);
-    let existing_user = sqlx::query_as::<_, (Uuid,)>("SELECT id FROM \"user\" WHERE email = $1")
-        .bind(&email)
+/// Insert a user(username, wallet_address) into the database.
+async fn insert_user(
+    domain_url: &Url,
+    default_user_wallet_address: &str,
+) -> Result<Uuid, anyhow::Error> {
+    let username = registrable_domain(domain_url)?;
+    let existing_user = sqlx::query_as::<_, (Uuid,)>("SELECT id FROM \"user\" WHERE username = $1")
+        .bind(&username)
         .fetch_optional(pool())
         .await?;
 
@@ -95,10 +83,10 @@ async fn insert_user(domain_url: &Url, default_user_password: &str) -> Result<Uu
     }
 
     let new_user = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO \"user\" (email, password) VALUES ($1, $2) RETURNING id",
+        "INSERT INTO \"user\" (username, wallet_address) VALUES ($1, $2) RETURNING id",
     )
-    .bind(&email)
-    .bind(&password)
+    .bind(&username)
+    .bind(&default_user_wallet_address)
     .fetch_one(pool())
     .await?;
 
@@ -149,7 +137,7 @@ async fn insert_variation(
 /// Seed the database from the config.
 pub async fn seed_from_config(
     config: &Config,
-    default_user_password: &str,
+    default_user_wallet_address: &str,
 ) -> Result<(), anyhow::Error> {
     let user_count = sqlx::query_as::<_, (i64,)>("SELECT count(*) from \"user\"")
         .fetch_one(pool())
@@ -160,7 +148,7 @@ pub async fn seed_from_config(
         for domain in &config.domains {
             let domain_url = Url::parse(&domain.domain).unwrap();
             let host = domain_url.host().unwrap();
-            let user = insert_user(&domain_url, default_user_password).await?;
+            let user = insert_user(&domain_url, default_user_wallet_address).await?;
             let app = insert_app(&user, &host.to_string()).await?;
             let domain_config = insert_domain_config(&app, domain).await?;
             for variation in &domain.tx_variations {

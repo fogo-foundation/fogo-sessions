@@ -94,7 +94,7 @@ async fn run_migrations(opts: cli::MigrateOptions) -> anyhow::Result<()> {
 async fn run_seed(opts: cli::SeedOptions) -> anyhow::Result<()> {
     db::pool::init_db_connection(&opts.db_url).await?;
     let config = config_manager::load_config::load_file_config(&opts.config)?;
-    db::config::seed_from_config(&config, &opts.default_user_password).await?;
+    db::config::seed_from_config(&config, &opts.default_user_wallet_address).await?;
     Ok(())
 }
 

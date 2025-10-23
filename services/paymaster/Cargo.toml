@@ -8,7 +8,6 @@ repository = "https://github.com/fogo-foundation/fogo-sessions"
 
 [dependencies]
 anyhow = "1.0.98"
-argon2 = "0.5.3"
 arc-swap = "1.7.1"
 async-recursion = "1.1.1"
 axum = "0.8.4"
