@@ -16,6 +16,8 @@ local_resource(
         ../target/deploy/domain_registry.so \
         --bpf-program Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD \
         ../target/deploy/intent_transfer.so \
+        --bpf-program toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp \
+        ../target/deploy/tollbooth.so \
         --mint $(solana-keygen pubkey ./keypairs/faucet.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
         --bpf-program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL ./programs/spl_associated_token_account.so \
@@ -42,6 +44,12 @@ local_resource(
     resource_deps=["svm-localnet"],
 )
 
+local_resource(
+    "setup-toll-recipient-ata",
+    "spl-token -u l create-account --fee-payer ./tilt/keypairs/faucet.json --owner D7YZKerkVsgkyEzDdme5SxFFho5uyvENr9zJMDvsLFrm So11111111111111111111111111111111111111112",
+    resource_deps=["svm-localnet"],
+)
+
 LOOKUP_TABLE_ADDRESSES=[
     "Sysvar1nstructions1111111111111111111111111",
     "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
@@ -57,7 +65,8 @@ local_resource(
     "initialize-programs",
     """
     pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json --chain-id localnet &&
-    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3
+    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 &&
+    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp
 
     """,
     resource_deps=["svm-localnet"],
@@ -83,5 +92,5 @@ local_resource(
 local_resource(
     "Demo Webapp",
     serve_cmd="pnpm turbo --filter @fogo/sessions-demo... start:dev",
-    resource_deps=["setup-wrapped-sol-faucet", "setup-sponsor", "setup-address-lookup-table", "initialize-programs", "paymaster"],
+    resource_deps=["setup-wrapped-sol-faucet", "setup-sponsor", "setup-address-lookup-table", "setup-toll-recipient-ata", "initialize-programs", "paymaster"],
 )
