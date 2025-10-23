@@ -522,5 +522,6 @@ pub async fn run_server(
             rpc_sub,
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
+    tracing::info!("Starting paymaster service...");
     axum::serve(listener, app).await.unwrap();
 }
