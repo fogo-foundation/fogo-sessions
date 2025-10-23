@@ -10,6 +10,8 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
 use axum::Json;
+use solana_derivation_path::DerivationPath;
+
 use axum::{
     http::{HeaderName, Method},
     Router,
@@ -25,7 +27,6 @@ use serde_with::{serde_as, DisplayFromStr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
-use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
@@ -41,7 +42,6 @@ use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
-
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
     pub sponsor: Keypair,
@@ -456,7 +456,6 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
         )
         .collect::<HashMap<_, _>>()
 }
-
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
@@ -469,9 +468,10 @@ pub async fn run_server(
             commitment: CommitmentLevel::Processed,
         },
     );
-    let rpc_sub = PubsubClient::new(&rpc_url_ws)
+    let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
         .await
         .expect("Failed to create pubsub client");
+    let rpc_sub = PubsubClientWithReconnect::new(rpc_url_ws, rpc_sub_client);
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
