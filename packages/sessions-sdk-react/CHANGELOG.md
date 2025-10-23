@@ -1,5 +1,23 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.27
+
+### Patch Changes
+
+- 4b1773b: Mark paymaster prop of FogoSessionProvider as optional
+
+## 0.0.26
+
+### Patch Changes
+
+- 77ee4ed: Fix metadata url
+- 3a55a1a: Rewrite wallet interaction code & wallet select modal, expose options to pass a privacy policy URL and/or a terms of service URL
+- Updated dependencies [2273056]
+- Updated dependencies [3a55a1a]
+  - @fogo/sessions-idls@0.0.7
+  - @fogo/sessions-sdk@0.0.17
+  - @fogo/sessions-sdk-web@0.0.11
+
 ## 0.0.25
 
 ### Patch Changes

@@ -2,4 +2,4 @@
 "@fogo/sessions-sdk-react": patch
 ---
 
-Fix metadata url
+fix: make legal links open in a new tab

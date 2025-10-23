@@ -45,7 +45,7 @@ const DEFAULT_PAYMASTER = "https://paymaster.fogo.io";
 const DEFAULT_ADDRESS_LOOKUP_TABLE_ADDRESS =
   "B8cUjJMqaWWTNNSTXBmeptjWswwCH1gTSCRYv4nu7kJW";
 
-export type SessionAdapter = {
+export type SessionContext = {
   chainId: string;
   connection: Connection;
   payer: PublicKey;
@@ -80,7 +80,7 @@ export type TransactionResult = ReturnType<
   (typeof TransactionResult)[keyof typeof TransactionResult]
 >;
 
-export const createSolanaWalletAdapter = async (
+export const createSessionContext = async (
   options: {
     connection: Connection;
     addressLookupTableAddress?: string | undefined;
@@ -88,15 +88,18 @@ export const createSolanaWalletAdapter = async (
   } & (
     | {
         paymaster?: string | URL | undefined;
+        sendToPaymaster?: undefined;
+        sponsor?: undefined;
       }
     | {
+        paymaster?: undefined;
         sendToPaymaster: (
           transaction: Transaction,
         ) => Promise<TransactionResult>;
         sponsor: PublicKey;
       }
   ),
-): Promise<SessionAdapter> => {
+): Promise<SessionContext> => {
   const addressLookupTables = await getAddressLookupTables(
     options.connection,
     options.addressLookupTableAddress,
@@ -195,12 +198,10 @@ const buildTransaction = async (
 };
 
 const getSponsor = async (
-  options: Parameters<typeof createSolanaWalletAdapter>[0],
+  options: Parameters<typeof createSessionContext>[0],
   domain: string,
 ) => {
-  if ("sponsor" in options) {
-    return options.sponsor;
-  } else {
+  if (options.sponsor === undefined) {
     const url = new URL(
       "/api/sponsor_pubkey",
       options.paymaster ?? DEFAULT_PAYMASTER,
@@ -213,6 +214,8 @@ const getSponsor = async (
     } else {
       throw new PaymasterResponseError(response.status, await response.text());
     }
+  } else {
+    return options.sponsor;
   }
 };
 
@@ -237,13 +240,11 @@ const sponsorAndSendResponseSchema = z
   });
 
 const sendToPaymaster = async (
-  options: Parameters<typeof createSolanaWalletAdapter>[0],
+  options: Parameters<typeof createSessionContext>[0],
   transaction: Transaction,
   domain: string,
 ): Promise<TransactionResult> => {
-  if ("sendToPaymaster" in options) {
-    return options.sendToPaymaster(transaction);
-  } else {
+  if (options.sendToPaymaster === undefined) {
     const url = new URL(
       "/api/sponsor_and_send",
       options.paymaster ?? DEFAULT_PAYMASTER,
@@ -264,6 +265,8 @@ const sendToPaymaster = async (
     } else {
       throw new PaymasterResponseError(response.status, await response.text());
     }
+  } else {
+    return options.sendToPaymaster(transaction);
   }
 };
 

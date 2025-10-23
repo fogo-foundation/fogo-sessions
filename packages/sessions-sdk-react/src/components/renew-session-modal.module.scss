@@ -1,0 +1,20 @@
+@use "../theme";
+
+.renewSessionModal {
+  display: grid;
+  gap: theme.spacing(6);
+
+  .heading {
+    @include theme.text("lg", "medium");
+
+    color: theme.color("heading");
+  }
+
+  .message {
+    @include theme.text("sm", "normal");
+
+    line-height: 140%;
+    color: theme.color("paragraph");
+    margin-bottom: theme.spacing(4);
+  }
+}

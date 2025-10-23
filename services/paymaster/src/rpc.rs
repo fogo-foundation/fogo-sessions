@@ -4,40 +4,69 @@ use futures::stream::StreamExt;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::{
     nonblocking::rpc_client::RpcClient,
-    rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig},
+    rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig, RpcTransactionConfig},
 };
 use solana_commitment_config::CommitmentConfig;
 use solana_pubkey::Pubkey;
-use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_rpc_client_api::client_error::Error;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
+use solana_transaction_status_client_types::UiTransactionEncoding;
 use std::time::Duration;
 use tokio::time::timeout;
+
+use crate::{
+    api::{ConfirmationResult, PubsubClientWithReconnect},
+    constraint::compute_gas_spent,
+};
 
 pub struct ChainIndex {
     pub rpc: RpcClient,
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(tag = "type")]
-pub enum ConfirmationResult {
-    #[serde(rename = "success")]
-    Success { signature: String },
-    #[serde(rename = "failed")]
+pub enum ConfirmationResultInternal {
+    /// Transaction was confirmed and succeeded on chain
+    Success { signature: Signature },
+
+    /// Transaction was confirmed but failed on chain
     Failed {
-        signature: String,
+        signature: Signature,
+        error: TransactionError,
+    },
+
+    /// Transaction was not confirmed due to preflight failure
+    UnconfirmedPreflightFailure {
+        signature: Signature,
         error: TransactionError,
     },
 }
 
-impl ConfirmationResult {
+impl ConfirmationResultInternal {
     pub fn status_string(&self) -> String {
         match self {
-            ConfirmationResult::Success { .. } => "success".to_string(),
-            ConfirmationResult::Failed { .. } => "failed".to_string(),
+            ConfirmationResultInternal::Success { .. } => "success".to_string(),
+            ConfirmationResultInternal::Failed { .. } => "failed".to_string(),
+            ConfirmationResultInternal::UnconfirmedPreflightFailure { .. } => {
+                "unconfirmed_preflight_failure".to_string()
+            }
+        }
+    }
+}
+
+impl From<ConfirmationResultInternal> for ConfirmationResult {
+    fn from(internal: ConfirmationResultInternal) -> Self {
+        match internal {
+            ConfirmationResultInternal::Success { signature } => {
+                ConfirmationResult::Success { signature }
+            }
+            ConfirmationResultInternal::Failed { signature, error } => {
+                ConfirmationResult::Failed { signature, error }
+            }
+            ConfirmationResultInternal::UnconfirmedPreflightFailure { signature, error } => {
+                ConfirmationResult::Failed { signature, error }
+            }
         }
     }
 }
@@ -70,7 +99,7 @@ impl ChainIndex {
 
     /// Queries the lookup table for the pubkey at the given index.
     /// If the table is not cached or the index is out of bounds, it fetches and updates the table from the RPC before requerying.
-    pub async fn query_lookup_table_with_retry(
+    async fn query_lookup_table_with_retry(
         &self,
         table: &Pubkey,
         index: usize,
@@ -91,14 +120,14 @@ impl ChainIndex {
 
     /// Queries the lookup table for the pubkey at the given index.
     /// Returns None if the table is not cached or the index is out of bounds.
-    pub fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Option<Pubkey> {
+    fn query_lookup_table(&self, table: &Pubkey, index: usize) -> Option<Pubkey> {
         self.lookup_table_cache
             .get(table)
             .and_then(|entry| entry.get(index).copied())
     }
 
     // Updates the lookup table entry in the dashmap based on pulling from RPC. Returns the updated table data.
-    pub async fn update_lookup_table(
+    async fn update_lookup_table(
         &self,
         table: &Pubkey,
     ) -> Result<Vec<Pubkey>, (StatusCode, String)> {
@@ -126,56 +155,118 @@ impl ChainIndex {
 /// Sends a transaction and waits for confirmation via WebSocket subscription.
 #[tracing::instrument(
     skip_all,
-    fields(tx_hash = %transaction.signatures[0])
+    fields(
+        tx_hash = %transaction.signatures[0],
+        result
+    )
 )]
 pub async fn send_and_confirm_transaction(
     rpc: &RpcClient,
-    pubsub: &PubsubClient,
+    pubsub: &PubsubClientWithReconnect,
     transaction: &VersionedTransaction,
     config: RpcSendTransactionConfig,
-) -> Result<ConfirmationResult, ErrorResponse> {
+) -> Result<ConfirmationResultInternal, ErrorResponse> {
     let signature = match rpc.send_transaction_with_config(transaction, config).await {
-        Ok(sig) => sig,
+        Ok(sig) => {
+            tracing::Span::current().record("result", "sent");
+            sig
+        }
         Err(err) => {
             if let Some(error) = err.get_transaction_error() {
-                return Ok(ConfirmationResult::Failed {
-                    signature: transaction.signatures[0].to_string(),
+                tracing::Span::current().record("result", "preflight_failure");
+                tracing::warn!(
+                    "Transaction {} failed preflight: {error}",
+                    transaction.signatures[0]
+                );
+                return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
+                    signature: transaction.signatures[0],
                     error,
                 });
             }
+            tracing::Span::current().record("result", "send_failed");
+            tracing::error!(
+                "Failed to send transaction {}: {err}",
+                transaction.signatures[0]
+            );
             return Err(to_error_response(err));
         }
     };
 
-    confirm_transaction(pubsub, &signature, Some(rpc.commitment())).await
+    confirm_transaction(pubsub, signature, Some(rpc.commitment())).await
 }
 
 pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[tracing::instrument(
     skip_all,
-    fields(tx_hash = %signature)
+    fields(
+        tx_hash = %signature,
+        result
+    )
 )]
 async fn confirm_transaction(
-    pubsub: &PubsubClient,
-    signature: &Signature,
+    pubsub: &PubsubClientWithReconnect,
+    signature: Signature,
     commitment: Option<CommitmentConfig>,
-) -> Result<ConfirmationResult, ErrorResponse> {
-    let (mut stream, unsubscribe) = pubsub
-        .signature_subscribe(
+) -> Result<ConfirmationResultInternal, ErrorResponse> {
+    let signature_result = subscribe_and_wait_for_signature(pubsub, signature, commitment, true)
+        .await
+        .map_err(|(status, err_string)| {
+            tracing::Span::current().record("result", "unconfirmed");
+            (
+                status,
+                format!("Failed to confirm transaction {signature}: {err_string}"),
+            )
+        })?;
+
+    if let Some(err) = signature_result.err {
+        tracing::Span::current().record("result", "failed");
+        return Ok(ConfirmationResultInternal::Failed {
             signature,
+            error: err,
+        });
+    } else {
+        tracing::Span::current().record("result", "success");
+        return Ok(ConfirmationResultInternal::Success { signature });
+    }
+}
+
+#[async_recursion::async_recursion]
+async fn subscribe_and_wait_for_signature(
+    pubsub: &PubsubClientWithReconnect,
+    signature: Signature,
+    commitment: Option<CommitmentConfig>,
+    reconnect: bool,
+) -> Result<solana_client::rpc_response::ProcessedSignatureResult, (StatusCode, String)> {
+    let pubsub_client = pubsub.client.load();
+    let subscribe_result = pubsub_client
+        .signature_subscribe(
+            &signature,
             Some(RpcSignatureSubscribeConfig {
                 commitment,
                 ..RpcSignatureSubscribeConfig::default()
             }),
         )
-        .await
-        .map_err(|e| {
-            (
+        .await;
+
+    let (mut stream, unsubscribe) = match subscribe_result {
+        Ok(sub) => sub,
+        Err(_) => {
+            if reconnect {
+                tracing::warn!("WebSocket subscription failed, attempting reconnection and retry");
+                pubsub.reconnect_pubsub().await?;
+                return subscribe_and_wait_for_signature(pubsub, signature, commitment, false)
+                    .await;
+            }
+
+            tracing::error!("WebSocket subscription failed");
+
+            return Err((
                 StatusCode::BAD_GATEWAY,
-                format!("Failed to subscribe to signature: {e}"),
-            )
-        })?;
+                "Failed to subscribe to signature".to_string(),
+            ));
+        }
+    };
 
     // two levels of results here:
     // 1. timeout error (outer)
@@ -187,30 +278,107 @@ async fn confirm_transaction(
                 processed_signature_result,
             ) = response.value
             {
-                if let Some(err) = processed_signature_result.err {
-                    return Ok(ConfirmationResult::Failed {
-                        signature: signature.to_string(),
-                        error: err,
-                    });
-                } else {
-                    return Ok(ConfirmationResult::Success {
-                        signature: signature.to_string(),
-                    });
-                }
+                return Ok(processed_signature_result);
             }
         }
 
+        tracing::error!("Signature subscription stream ended unexpectedly for {signature}");
         Err((
             StatusCode::BAD_GATEWAY,
-            "Signature subscription stream ended unexpectedly",
-        )
-            .into())
+            "Signature subscription stream ended unexpectedly".to_string(),
+        ))
     })
     .await;
 
     unsubscribe().await;
 
     result
-        .map_err(|_| (StatusCode::GATEWAY_TIMEOUT, "Unable to confirm transaction").into())
+        .map_err(|_| {
+            tracing::error!("Timeout while waiting for transaction confirmation for {signature}");
+            (
+                StatusCode::GATEWAY_TIMEOUT,
+                "Unable to confirm transaction".to_string(),
+            )
+        })
         .and_then(|r| r)
+}
+
+#[derive(Debug, Clone)]
+pub struct TransactionCostDetails {
+    pub fee: u64,
+    pub balance_spend: Option<i64>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RetryConfig {
+    pub max_tries: u32,
+    pub sleep_ms: u64,
+}
+
+/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
+/// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
+/// retry_config configures the retries of the RPC call with sleep on failure. This is useful in cases where the
+/// transaction was sent with a lower commitment level, so it may not be confirmed yet.
+#[tracing::instrument(skip_all, fields(tx_hash = %signature))]
+pub async fn fetch_transaction_cost_details(
+    rpc: &RpcClient,
+    signature: &Signature,
+    transaction: &VersionedTransaction,
+    retry_config: RetryConfig,
+) -> anyhow::Result<TransactionCostDetails> {
+    let config = RpcTransactionConfig {
+        encoding: Some(UiTransactionEncoding::Base64),
+        max_supported_transaction_version: Some(0),
+        // this method does not support any commitment below confirmed
+        commitment: Some(CommitmentConfig::confirmed()),
+    };
+
+    let mut last_error = None;
+
+    for attempt in 0..retry_config.max_tries {
+        if attempt > 0 {
+            tokio::time::sleep(Duration::from_millis(retry_config.sleep_ms)).await;
+        }
+
+        match rpc.get_transaction_with_config(signature, config).await {
+            Ok(tx_response) => {
+                // balance_spend is positive if balance decreased
+                let (fee, balance_spend) = tx_response
+                    .transaction
+                    .meta
+                    .map(|meta| {
+                        let balance_spend = meta
+                            .pre_balances
+                            .first()
+                            .and_then(|&before| {
+                                meta.post_balances.first().map(|&after| (before, after))
+                            })
+                            .and_then(|(before, after)| {
+                                i64::try_from(after)
+                                    .ok()
+                                    .zip(i64::try_from(before).ok())
+                                    .map(|(after_i64, before_i64)| {
+                                        before_i64.saturating_sub(after_i64)
+                                    })
+                            });
+                        (meta.fee, balance_spend)
+                    })
+                    .unwrap_or_else(|| {
+                        let fee = compute_gas_spent(transaction).unwrap_or(0);
+                        (fee, None)
+                    });
+
+                return Ok(TransactionCostDetails { fee, balance_spend });
+            }
+            Err(e) => {
+                last_error = Some(e);
+            }
+        }
+    }
+
+    Err(anyhow::anyhow!(
+        "Failed to fetch transaction from RPC after {} attempts: {:?}",
+        retry_config.max_tries,
+        last_error
+    ))
 }
