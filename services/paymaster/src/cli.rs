@@ -58,7 +58,4 @@ pub struct SeedOptions {
     /// Path to TOML config used to populate the DB (required via flag or env)
     #[arg(short, long, env = "CONFIG_FILE")]
     pub config: String,
-
-    #[arg(long, env = "DEFAULT_USER_WALLET_ADDRESS")]
-    pub default_user_wallet_address: String,
 }

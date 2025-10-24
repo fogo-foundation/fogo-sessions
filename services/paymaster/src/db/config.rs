@@ -68,10 +68,7 @@ fn registrable_domain(u: &Url) -> Result<String, anyhow::Error> {
     }
 }
 /// Insert a user(username, wallet_address) into the database.
-async fn insert_user(
-    domain_url: &Url,
-    default_user_wallet_address: &str,
-) -> Result<Uuid, anyhow::Error> {
+async fn insert_user(domain_url: &Url) -> Result<Uuid, anyhow::Error> {
     let username = registrable_domain(domain_url)?;
     let existing_user = sqlx::query_as::<_, (Uuid,)>("SELECT id FROM \"user\" WHERE username = $1")
         .bind(&username)
@@ -86,7 +83,7 @@ async fn insert_user(
         "INSERT INTO \"user\" (username, wallet_address) VALUES ($1, $2) RETURNING id",
     )
     .bind(&username)
-    .bind(&default_user_wallet_address)
+    .bind(format!("wallet-address-{}", username))
     .fetch_one(pool())
     .await?;
 
@@ -135,10 +132,7 @@ async fn insert_variation(
 }
 
 /// Seed the database from the config.
-pub async fn seed_from_config(
-    config: &Config,
-    default_user_wallet_address: &str,
-) -> Result<(), anyhow::Error> {
+pub async fn seed_from_config(config: &Config) -> Result<(), anyhow::Error> {
     let user_count = sqlx::query_as::<_, (i64,)>("SELECT count(*) from \"user\"")
         .fetch_one(pool())
         .await?;
@@ -148,7 +142,7 @@ pub async fn seed_from_config(
         for domain in &config.domains {
             let domain_url = Url::parse(&domain.domain).unwrap();
             let host = domain_url.host().unwrap();
-            let user = insert_user(&domain_url, default_user_wallet_address).await?;
+            let user = insert_user(&domain_url).await?;
             let app = insert_app(&user, &host.to_string()).await?;
             let domain_config = insert_domain_config(&app, domain).await?;
             for variation in &domain.tx_variations {
