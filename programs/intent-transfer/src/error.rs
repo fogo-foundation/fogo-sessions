@@ -36,6 +36,16 @@ pub enum IntentTransferError {
     SymbolMismatch,
     #[msg("The message's nonce is not one more than the previous nonce")]
     NonceFailure,
+    #[msg("The slot in the intent is too old")]
+    SlotStaleness,
+    #[msg("The session authority PDA does not match the expected derivation")]
+    InvalidSessionAuthority,
+    #[msg("NTT accounts are required for NTT bridge messages")]
+    MissingNttAccounts,
+    #[msg("The recipient address could not be parsed as a valid address")]
+    InvalidRecipientAddress,
+    #[msg("The provided byte string could not be decoded from base64")]
+    InvalidByteString,
 }
 
 impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for IntentTransferError {
