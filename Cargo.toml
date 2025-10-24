@@ -18,9 +18,11 @@ codegen-units = 1
 [workspace.dependencies]
 anchor-lang = "0.31.1"
 anchor-spl = "0.31.1"
+base64 = "0.22.1"
 borsh = "1.5.7"
 bytemuck = "1.23.1"
 fogo-sessions-sdk = { path = "packages/sessions-sdk-rs" }
+hex = "0.4.3"
 intent-transfer = { path = "programs/intent-transfer" }
 mpl-token-metadata = "5.1.0"
 nom = "8.0.0"

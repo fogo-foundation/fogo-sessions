@@ -18,7 +18,9 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 [dependencies]
 anchor-lang = { workspace = true, features = ["init-if-needed"] }
 anchor-spl = { workspace = true }
+base64 = { workspace = true }
 chain-id = { path = "../chain-id", features = ["no-entrypoint"] }
+hex = {workspace = true}
 mpl-token-metadata = { workspace = true }
 nom = { workspace = true }
 solana-intents = { path = "../../packages/solana-intents" }
