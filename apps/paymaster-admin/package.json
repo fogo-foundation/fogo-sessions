@@ -16,7 +16,12 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "next": "catalog:",
-    "clsx": "catalog:"
+    "clsx": "catalog:",
+    "pg": "catalog:",
+    "zod": "catalog:",
+    "@fogo/sessions-sdk-react": "workspace:*",
+    "@fogo/sessions-sdk": "workspace:",
+    "@solana/web3.js": "catalog:"
   },
   "devDependencies": {
     "@cprussin/eslint-config": "catalog:",
