@@ -15,10 +15,9 @@ struct Row {
     domain: String,
     enable_session_management: bool,
     enable_preflight_simulation: bool,
-    instructions: Json<TransactionVariation>,
+    transaction_variation: Json<TransactionVariation>,
 }
 
-/// Load the config from the database
 pub async fn load_config() -> Result<Config, sqlx::Error> {
     let rows: Vec<Row> = sqlx::query_as::<_, Row>(
         r#"
@@ -27,7 +26,7 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
           d.domain        AS domain,
           d.enable_session_management,
           d.enable_preflight_simulation,
-          v.instructions  AS instructions
+          v.transaction_variation  AS transaction_variation
         FROM domain_config d
         JOIN variation v ON v.domain_config_id = d.id
         ORDER BY d.id
@@ -41,7 +40,7 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
             domain: r.domain,
             enable_session_management: r.enable_session_management,
             enable_preflight_simulation: r.enable_preflight_simulation,
-            tx_variations: vec![r.instructions.0],
+            tx_variations: vec![r.transaction_variation.0],
         };
         acc.insert(r.domain_id, domain);
         acc

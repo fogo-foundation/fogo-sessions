@@ -82,7 +82,8 @@ async fn main() -> Result<()> {
             rpc_quota_per_second,
             rpc_url_http,
         } => {
-            let config = load_file_config(&config)?;
+            let mut config = load_file_config(&config)?;
+            config.assign_defaults();
             let domains = get_domains_for_validation(&config, &domain);
             let chain_index = ChainIndex {
                 rpc: RpcClient::new(rpc_url_http),

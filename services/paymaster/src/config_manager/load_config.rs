@@ -1,17 +1,14 @@
+use crate::api::{self, DomainState};
+use crate::config_manager::config::Config;
+use crate::db;
+use anyhow::Result;
 use arc_swap::ArcSwap;
+use config::File;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-
-use crate::api::{self, DomainState};
-use crate::config_manager::config::Config;
-
-use crate::db;
-use anyhow::Result;
-use config::File;
 use tokio::time::interval;
 
-/// Load the config from the file.
 pub fn load_file_config(config_path: &str) -> Result<Config> {
     let config: Config = config::Config::builder()
         .add_source(File::with_name(config_path))
@@ -22,7 +19,6 @@ pub fn load_file_config(config_path: &str) -> Result<Config> {
     Ok(config)
 }
 
-/// Load the config from the database.
 async fn load_db_config() -> Result<Config> {
     let mut config = db::config::load_config().await?;
     config.assign_defaults();
@@ -41,13 +37,11 @@ pub fn spawn_config_refresher(
 
         loop {
             ticker.tick().await;
-            // note that `load_config` also reads from the toml file but that shouldn't be an issue
             match load_db_config().await {
                 Ok(new_config) => {
                     // Recompute the derived state
                     let new_domains = api::get_domain_state_map(new_config.domains, &mnemonic);
 
-                    // Atomically swap the entire HashMap
                     domains.store(Arc::new(new_domains));
 
                     tracing::info!("Config/domains refreshed");
