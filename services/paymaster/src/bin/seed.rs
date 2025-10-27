@@ -55,7 +55,7 @@ async fn insert_user(host: &str) -> Result<Uuid, anyhow::Error> {
     )
     .bind(Uuid::new_v7(Timestamp::now(NoContext)))
     .bind(&username)
-    .bind(format!("wallet-address-{}", username))
+    .bind(format!("wallet-address-{username}"))
     .fetch_one(pool())
     .await?;
 
