@@ -37,20 +37,24 @@ import BN from "bn.js";
 import bs58 from "bs58";
 import { z } from "zod";
 
-import type { SessionContext, TransactionResult } from "./context.js";
-import { TransactionResultType } from "./context.js";
+import type { TransactionResult } from "./connection.js";
+import { TransactionResultType } from "./connection.js";
+import type { SessionContext } from "./context.js";
 import {
   importKey,
   signMessageWithKey,
   verifyMessageWithKey,
 } from "./crypto.js";
 
+export { type SessionContext, createSessionContext } from "./context.js";
+
 export {
-  createSessionContext,
-  TransactionResultType,
-  type SessionContext,
   type TransactionResult,
-} from "./context.js";
+  type Connection,
+  Network,
+  TransactionResultType,
+  createSessionConnection,
+} from "./connection.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
