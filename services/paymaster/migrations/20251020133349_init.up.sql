@@ -1,5 +1,9 @@
+DO $$ BEGIN
+  CREATE TYPE app_role AS ENUM ('owner', 'admin');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 CREATE TABLE if not exists "user" (
-  id uuid PRIMARY KEY default uuidv7(),
+  id uuid PRIMARY KEY,
   username text NOT NULL UNIQUE,
   wallet_address text NOT NULL UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -7,15 +11,29 @@ CREATE TABLE if not exists "user" (
 );
 
 CREATE TABLE if not exists app (
-  id uuid PRIMARY KEY default uuidv7(),
-  user_id uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-  name text NOT NULL,
+  id uuid PRIMARY KEY,
+  name text NOT NULL UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+
+CREATE TABLE if not exists app_user (
+  app_id  uuid NOT NULL REFERENCES app(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+  role    app_role NOT NULL DEFAULT 'admin',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (app_id, user_id)
+);
+
+-- this makes sure that there is only one owner per app
+CREATE UNIQUE INDEX IF NOT EXISTS app_user_owner_one
+  ON app_user (app_id)
+  WHERE role = 'owner';
+
 CREATE TABLE if not exists domain_config (
-  id uuid PRIMARY KEY default uuidv7(),                           
+  id uuid PRIMARY KEY,                           
   app_id uuid NOT NULL REFERENCES app(id) ON DELETE CASCADE,
   domain text NOT NULL UNIQUE,
   enable_session_management boolean NOT NULL DEFAULT false,
@@ -26,9 +44,9 @@ CREATE TABLE if not exists domain_config (
 
 
 CREATE TABLE if not exists variation (
-  id uuid PRIMARY KEY default uuidv7(),                           
+  id uuid PRIMARY KEY,                           
   domain_config_id uuid NOT NULL REFERENCES domain_config(id) ON DELETE CASCADE,
-  instructions jsonb NOT NULL,
+  transaction_variation jsonb NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

@@ -14,9 +14,6 @@ pub enum Command {
 
     /// Run DB migrations and exit (requires only DATABASE_URL)
     Migrate(MigrateOptions),
-
-    /// Seed DB from a config file (requires DATABASE_URL + CONFIG_FILE)
-    Seed(SeedOptions),
 }
 
 #[derive(Args, Debug, Clone)]
@@ -40,6 +37,9 @@ pub struct RunOptions {
 
     #[arg(long, env = "OTEL_EXPORTER_OTLP_ENDPOINT")]
     pub otlp_endpoint: Option<String>,
+
+    #[arg(long, env = "DB_REFRESH_INTERVAL_SECONDS", default_value = "10")]
+    pub db_refresh_interval_seconds: u64,
 }
 
 #[derive(Args, Debug, Clone)]
@@ -47,15 +47,4 @@ pub struct MigrateOptions {
     /// Postgres connection string (required via flag or env)
     #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
     pub db_url: String,
-}
-
-#[derive(Args, Debug, Clone)]
-pub struct SeedOptions {
-    /// Postgres connection string (required via flag or env)
-    #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
-    pub db_url: String,
-
-    /// Path to TOML config used to populate the DB (required via flag or env)
-    #[arg(short, long, env = "CONFIG_FILE")]
-    pub config: String,
 }
