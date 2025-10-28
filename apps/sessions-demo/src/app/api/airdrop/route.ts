@@ -1,9 +1,9 @@
+import { createSessionConnection } from "@fogo/sessions-sdk";
 import {
   createTransactionMessage,
   setTransactionMessageLifetimeUsingBlockhash,
   appendTransactionMessageInstructions,
   pipe,
-  createSolanaRpc,
   address,
   setTransactionMessageFeePayerSigner,
   sendTransactionWithoutConfirmingFactory,
@@ -19,7 +19,7 @@ import {
 } from "@solana-program/token";
 import { z } from "zod";
 
-import { FAUCET_KEY, RPC } from "../../../config/server";
+import { FAUCET_KEY, PROVIDER_CONFIG } from "../../../config/server";
 
 const keyPairSchema = z.array(z.number());
 const faucetSigner = FAUCET_KEY
@@ -35,7 +35,7 @@ const postBodySchema = z.strictObject({
 });
 
 export const POST = async (req: Request) => {
-  const rpc = createSolanaRpc(RPC);
+  const { rpc } = createSessionConnection(PROVIDER_CONFIG);
 
   if (!faucetSigner) {
     return new Response("Faucet unavailable: no faucet key provided", {

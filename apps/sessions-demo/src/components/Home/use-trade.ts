@@ -2,6 +2,7 @@ import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
 import { ExampleProgram } from "@fogo/sessions-idls";
 import { TransactionResultType } from "@fogo/sessions-sdk";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
+import { useConnection } from "@fogo/sessions-sdk-react";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
@@ -19,13 +20,14 @@ export const useTrade = (
   amount: number,
   mint: PublicKey,
 ) => {
+  const connection = useConnection();
   const doTrade = useCallback(async () => {
     const sinkAta = getAssociatedTokenAddressSync(mint, sessionState.payer);
     const userTokenAccount = getAssociatedTokenAddressSync(
       mint,
       sessionState.walletPublicKey,
     );
-    const { decimals } = await getMint(sessionState.connection, mint);
+    const { decimals } = await getMint(connection, mint);
 
     const result = await sessionState.sendTransaction([
       createAssociatedTokenAccountIdempotentInstruction(
@@ -35,7 +37,7 @@ export const useTrade = (
         mint,
       ),
       await new ExampleProgram(
-        new AnchorProvider(sessionState.connection, {} as Wallet, {}),
+        new AnchorProvider(connection, {} as Wallet, {}),
       ).methods
         .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
         .accountsPartial({
@@ -54,7 +56,7 @@ export const useTrade = (
     });
 
     return result;
-  }, [sessionState, appendTransaction, amount, mint]);
+  }, [connection, sessionState, appendTransaction, amount, mint]);
 
   return useAsync(doTrade);
 };

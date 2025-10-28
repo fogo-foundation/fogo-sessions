@@ -4,6 +4,7 @@ import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import {
   isEstablished,
   SessionStateType,
+  useConnection,
   useSession,
 } from "@fogo/sessions-sdk-react";
 import { NATIVE_MINT } from "@solana/spl-token";
@@ -19,13 +20,8 @@ import { useTransactionLog } from "./use-transaction-log";
 import { StateType as AsyncStateType } from "../../hooks/use-async";
 import { Button } from "../Button";
 
-export const Demo = ({
-  rpc,
-  faucetAvailable,
-}: {
-  rpc: string;
-  faucetAvailable: boolean;
-}) => {
+export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
+  const connection = useConnection();
   const { appendTransaction, transactions } = useTransactionLog();
   const sessionState = useSession();
 
@@ -70,7 +66,7 @@ export const Demo = ({
             <li key={tx.signature}>
               {tx.success ? "✅" : "❌"}
               <Link
-                href={`https://explorer.fogo.io/tx/${tx.signature}?cluster=custom&customUrl=${rpc}`}
+                href={`https://explorer.fogo.io/tx/${tx.signature}?cluster=custom&customUrl=${connection.rpcEndpoint}`}
                 target="_blank"
                 rel="noreferrer"
                 className={styles.exlporerLink}
