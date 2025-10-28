@@ -3084,18 +3084,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "mock-ntt-executor"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
-]
-
-[[package]]
 name = "mock-ntt-manager"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "spl-token",
+]
+
+[[package]]
+name = "mock-ntt-with-executor"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
 ]
 
 [[package]]
