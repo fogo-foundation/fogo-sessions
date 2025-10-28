@@ -13,7 +13,7 @@ use solana_signer::Signer;
 use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
-use intent_transfer::cpi::ntt_executor::{EXECUTOR_PROGRAM_ID, NTT_EXECUTOR_PROGRAM_ID};
+use intent_transfer::cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID};
 use intent_transfer::cpi::ntt_manager::WORMHOLE_PROGRAM_ID;
 
 mod helpers;
@@ -100,9 +100,9 @@ fn test_bridge_ntt_tokens_with_litesvm() {
     svm.add_program_from_file(&mock_ntt_manager_id, mock_ntt_manager_path)
         .expect("Failed to load mock NTT manager");
 
-    let mock_ntt_executor_path = "../../target/deploy/mock_ntt_executor.so";
-    svm.add_program_from_file(&NTT_EXECUTOR_PROGRAM_ID, mock_ntt_executor_path)
-        .expect("Failed to load mock NTT executor");
+    let mock_ntt_with_executor_path = "../../target/deploy/mock_ntt_with_executor.so";
+    svm.add_program_from_file(&NTT_WITH_EXECUTOR_PROGRAM_ID, mock_ntt_with_executor_path)
+        .expect("Failed to load mock NTT with executor");
 
     let chain_id_program_path = "../../target/deploy/chain_id.so";
     svm.add_program_from_file(chain_id::ID, chain_id_program_path)
@@ -170,7 +170,7 @@ fn test_bridge_ntt_tokens_with_litesvm() {
     let ntt_peer = Keypair::new();
     let ntt_outbox_item = Keypair::new();
     let ntt_outbox_rate_limit = Keypair::new();
-    let payee_ntt_executor = Keypair::new();
+    let payee_ntt_with_executor = Keypair::new();
 
     let to_chain_id_wormhole: u16 = 2; // Ethereum
     let recipient_address_str = "0xabcaA90Df87bf36b051E65331594d9AAB29C739e";
@@ -207,7 +207,7 @@ fn test_bridge_ntt_tokens_with_litesvm() {
         &transceiver,
         &wormhole_bridge,
         &wormhole_fee_collector,
-        &payee_ntt_executor,
+        &payee_ntt_with_executor,
     ] {
         svm.airdrop(&account.pubkey(), 1_000_000_000).unwrap();
     }
@@ -255,13 +255,13 @@ fn test_bridge_ntt_tokens_with_litesvm() {
                 wormhole_fee_collector: wormhole_fee_collector.pubkey(),
                 wormhole_sequence: wormhole_sequence.pubkey(),
                 wormhole_program: WORMHOLE_PROGRAM_ID,
-                ntt_executor_program: NTT_EXECUTOR_PROGRAM_ID,
+                ntt_with_executor_program: NTT_WITH_EXECUTOR_PROGRAM_ID,
                 executor_program: EXECUTOR_PROGRAM_ID,
                 ntt_peer: ntt_peer.pubkey(),
                 ntt_outbox_item: ntt_outbox_item.pubkey(),
                 ntt_outbox_rate_limit: ntt_outbox_rate_limit.pubkey(),
                 ntt_custody,
-                payee_ntt_executor: payee_ntt_executor.pubkey(),
+                payee_ntt_with_executor: payee_ntt_with_executor.pubkey(),
             }
         }.to_account_metas(None),
         data: intent_transfer::instruction::BridgeNttTokens {

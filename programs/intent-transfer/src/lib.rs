@@ -102,11 +102,11 @@ pub struct Ntt<'info> {
     pub wormhole_program: UncheckedAccount<'info>,
 
     /// CHECK: address is checked
-    #[account(address = cpi::ntt_executor::NTT_EXECUTOR_PROGRAM_ID)]
-    pub ntt_executor_program: UncheckedAccount<'info>,
+    #[account(address = cpi::ntt_with_executor::NTT_WITH_EXECUTOR_PROGRAM_ID)]
+    pub ntt_with_executor_program: UncheckedAccount<'info>,
 
     /// CHECK: address is checked
-    #[account(address = cpi::ntt_executor::EXECUTOR_PROGRAM_ID)]
+    #[account(address = cpi::ntt_with_executor::EXECUTOR_PROGRAM_ID)]
     pub executor_program: UncheckedAccount<'info>,
 
     /// CHECK: check not important per https://github.com/wormholelabs-xyz/example-ntt-with-executor-svm/blob/10c51da84ee5deb9dee7b2afa69382ce90984eae/programs/example-ntt-with-executor-svm/src/lib.rs#L74-L76
@@ -125,9 +125,9 @@ pub struct Ntt<'info> {
     pub ntt_custody: UncheckedAccount<'info>,
 
     // TODO: rename this
-    /// CHECK: checked in NTT executor program
+    /// CHECK: checked in NTT with executor program
     #[account(mut)]
-    pub payee_ntt_executor: UncheckedAccount<'info>,
+    pub payee_ntt_with_executor: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
@@ -238,13 +238,13 @@ impl<'info> BridgeNttTokens<'info> {
             wormhole_fee_collector,
             wormhole_sequence,
             wormhole_program,
-            ntt_executor_program,
+            ntt_with_executor_program,
             executor_program,
             ntt_peer,
             ntt_outbox_item,
             ntt_outbox_rate_limit,
             ntt_custody,
-            payee_ntt_executor,
+            payee_ntt_with_executor,
         } = ntt;
 
         let NttMessage {
@@ -359,12 +359,12 @@ impl<'info> BridgeNttTokens<'info> {
             relay_instructions,
         } = args;
 
-        cpi::ntt_executor::relay_ntt_message(
+        cpi::ntt_with_executor::relay_ntt_message(
             CpiContext::new(
-                ntt_executor_program.to_account_info(),
-                cpi::ntt_executor::RelayNttMessage {
+                ntt_with_executor_program.to_account_info(),
+                cpi::ntt_with_executor::RelayNttMessage {
                     payer: sponsor.to_account_info(),
-                    payee: payee_ntt_executor.to_account_info(),
+                    payee: payee_ntt_with_executor.to_account_info(),
                     ntt_program_id: ntt_manager.to_account_info(),
                     ntt_peer: ntt_peer.to_account_info(),
                     ntt_message: ntt_outbox_item.to_account_info(),
@@ -372,7 +372,7 @@ impl<'info> BridgeNttTokens<'info> {
                     system_program: system_program.to_account_info(),
                 },
             ),
-            cpi::ntt_executor::RelayNttMessageArgs {
+            cpi::ntt_with_executor::RelayNttMessageArgs {
                 recipient_chain: to_chain_id_wormhole,
                 exec_amount,
                 signed_quote_bytes,

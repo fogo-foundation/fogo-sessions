@@ -13,7 +13,7 @@ pub fn process_instruction(
     _accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> ProgramResult {
-    msg!("Mock NTT Executor called");
+    msg!("Mock NTT With Executor called");
 
     let discriminator = &instruction_data[0..8];
 
@@ -27,6 +27,6 @@ pub fn process_instruction(
         }
     }
 
-    msg!("Mock NTT Executor execution complete");
+    msg!("Mock NTT With Executor execution complete");
     Ok(())
 }
