@@ -71,8 +71,7 @@ pub struct AddProgram<'info> {
     /// CHECK: We will do the checks in the function since Anchor isn't expressive enough
     #[account(mut)]
     pub domain_record: AccountInfo<'info>,
-    /// CHECK: We just check that this is an actual program by checking the executable flag
-    #[account(executable)]
+    /// CHECK: The only requirement for program_id is that it is a valid Pubkey
     pub program_id: AccountInfo<'info>,
     /// CHECK: We check the PDA derivation
     #[account(seeds = [PROGRAM_SIGNER_SEED], bump, seeds::program = program_id.key())]
