@@ -80,7 +80,7 @@ fn create_ed25519_signature_instruction(signer: &Keypair, message: &str) -> Inst
 }
 
 #[test]
-fn test_bridge_ntt_tokens_with_litesvm() {
+fn test_bridge_ntt_tokens_with_mock_wh() {
     let mut svm = LiteSVM::new();
 
     let spl_token_path = "../../tilt/programs/spl_token.so";
