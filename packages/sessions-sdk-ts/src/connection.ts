@@ -112,7 +112,7 @@ export const createSessionConnection = (
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const rpcUrl = (options.rpc ?? DEFAULT_RPC[options.network!]).toString();
   const rpc = createSolanaRpc(rpcUrl);
-  const connection = new Web3Connection(rpcUrl, "finalized");
+  const connection = new Web3Connection(rpcUrl, "confirmed");
 
   return {
     rpc,
