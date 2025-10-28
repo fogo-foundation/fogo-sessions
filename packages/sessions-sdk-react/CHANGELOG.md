@@ -1,5 +1,17 @@
 # @fogo/sessions-sdk-react
 
+## 0.0.28
+
+### Patch Changes
+
+- 2865daa: Use custom groupBy rather than using Object.groupBy
+- e43593c: fix: make legal links open in a new tab
+- 0502d6c: Separate SessionPanel component and export it
+- 7467535: Add mainnet support
+- Updated dependencies [7467535]
+  - @fogo/sessions-sdk@0.0.18
+  - @fogo/sessions-sdk-web@0.0.12
+
 ## 0.0.27
 
 ### Patch Changes
