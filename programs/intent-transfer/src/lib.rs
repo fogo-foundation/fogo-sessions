@@ -12,7 +12,6 @@ use anchor_spl::token::{
     spl_token::try_ui_amount_into_amount, approve, transfer_checked, Mint, Token, TokenAccount,
     TransferChecked,
 };
-use base64::prelude::*;
 use chain_id::ChainId;
 use mpl_token_metadata::accounts::Metadata;
 use solana_intents::{Intent, SymbolOrMint};
@@ -20,7 +19,7 @@ use solana_intents::{Intent, SymbolOrMint};
 pub mod error;
 mod bridge_message;
 mod message;
-mod cpi;
+pub mod cpi;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
 const NONCE_SEED: &[u8] = b"nonce";
@@ -40,9 +39,22 @@ pub mod intent_transfer {
     }
 
     #[instruction(discriminator = [1])]
-    pub fn bridge_ntt_tokens<'info>(ctx: Context<'_, '_, '_, 'info, BridgeNttTokens<'info>>) -> Result<()> {
-        ctx.accounts.verify_and_initiate_bridge(&[&[INTENT_TRANSFER_SEED, &[ctx.bumps.intent_transfer_setter]]])
+    pub fn bridge_ntt_tokens<'info>(
+        ctx: Context<'_, '_, '_, 'info, BridgeNttTokens<'info>>,
+        args: BridgeNttTokensArgs,
+    ) -> Result<()> {
+        ctx.accounts.verify_and_initiate_bridge(
+            &[&[INTENT_TRANSFER_SEED, &[ctx.bumps.intent_transfer_setter]]],
+            args,
+        )
     }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct BridgeNttTokensArgs {
+    pub exec_amount: u64,
+    pub signed_quote_bytes: Vec<u8>,
+    pub relay_instructions: Vec<u8>,
 }
 
 #[derive(Accounts)]
@@ -54,6 +66,7 @@ pub struct Ntt<'info> {
     pub ntt_config: UncheckedAccount<'info>,
 
     /// CHECK: checked in NTT manager program
+    #[account(mut)]
     pub ntt_inbox_rate_limit: UncheckedAccount<'info>,
 
     /// CHECK: checked in NTT manager program
@@ -63,6 +76,7 @@ pub struct Ntt<'info> {
     pub ntt_token_authority: UncheckedAccount<'info>,
 
     /// CHECK: checked in NTT manager program
+    #[account(mut)]
     pub wormhole_message: UncheckedAccount<'info>,
 
     /// CHECK: checked in NTT manager program
@@ -72,12 +86,15 @@ pub struct Ntt<'info> {
     pub emitter: UncheckedAccount<'info>,
 
     /// CHECK: checked in NTT manager program
+    #[account(mut)]
     pub wormhole_bridge: UncheckedAccount<'info>,
 
     /// CHECK: checked in wormhole program
+    #[account(mut)]
     pub wormhole_fee_collector: UncheckedAccount<'info>,
 
     /// CHECK: checked in wormhole program
+    #[account(mut)]
     pub wormhole_sequence: UncheckedAccount<'info>,
 
     /// CHECK: address is checked, but also verified in NTT manager program
@@ -96,13 +113,21 @@ pub struct Ntt<'info> {
     pub ntt_peer: UncheckedAccount<'info>,
 
     /// CHECK: check not important per https://github.com/wormholelabs-xyz/example-ntt-with-executor-svm/blob/10c51da84ee5deb9dee7b2afa69382ce90984eae/programs/example-ntt-with-executor-svm/src/lib.rs#L78-L80
-    pub ntt_outbox_item: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub ntt_outbox_item: Signer<'info>,
 
     /// CHECK: check not important per https://github.com/wormhole-foundation/native-token-transfers/blob/8bd672c5164c53d5a3f9403dc7ce3450da539450/solana/programs/example-native-token-transfers/src/queue/outbox.rs#L50
+    #[account(mut)]
     pub ntt_outbox_rate_limit: UncheckedAccount<'info>,
 
     /// CHECK: checked in NTT manager program
+    #[account(mut)]
     pub ntt_custody: UncheckedAccount<'info>,
+
+    // TODO: rename this
+    /// CHECK: checked in NTT executor program
+    #[account(mut)]
+    pub payee_ntt_executor: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
@@ -124,17 +149,20 @@ pub struct BridgeNttTokens<'info> {
     pub source: Account<'info, TokenAccount>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer = sponsor,
         seeds = [BRIDGE_NTT_INTERMEDIATE_SEED, source.key().as_ref()],
         bump,
-        token::mint = mint
+        token::mint = mint,
+        token::authority = intent_transfer_setter
     )]
     pub intermediate_token_account: Account<'info, TokenAccount>,
 
+    #[account(mut)]
     pub mint: Account<'info, Mint>,
 
     pub metadata: Option<UncheckedAccount<'info>>,
-
+    
     #[account(
         init_if_needed,
         payer = sponsor,
@@ -143,15 +171,15 @@ pub struct BridgeNttTokens<'info> {
         bump
     )]
     pub nonce: Account<'info, Nonce>,
-
+    
     #[account(mut)]
     pub sponsor: Signer<'info>,
-
+    
     pub system_program: Program<'info, System>,
-
+    
     /// CHECK: Clock sysvar
     pub clock: Sysvar<'info, Clock>,
-
+    
     /// CHECK: Rent sysvar
     pub rent: Sysvar<'info, Rent>,
 
@@ -162,13 +190,13 @@ pub struct BridgeNttTokens<'info> {
 pub const SLOT_STALENESS_THRESHOLD: u64 = 150;
 
 impl<'info> BridgeNttTokens<'info> {
-    fn verify_and_initiate_bridge(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+    fn verify_and_initiate_bridge(&mut self, signer_seeds: &[&[&[u8]]], args: BridgeNttTokensArgs) -> Result<()> {
         let Intent { message, signer } = Intent::<BridgeMessage>::load(self.sysvar_instructions.as_ref())
             .map_err(Into::<IntentTransferError>::into)?;
 
         match message {
             BridgeMessage::Ntt(ntt_message) => {
-                self.process_ntt_bridge(ntt_message, signer, signer_seeds)
+                self.process_ntt_bridge(ntt_message, signer, signer_seeds, args)
             }
         }
     }
@@ -178,6 +206,7 @@ impl<'info> BridgeNttTokens<'info> {
         ntt_message: NttMessage,
         signer: Pubkey,
         signer_seeds: &[&[&[u8]]],
+        args: BridgeNttTokensArgs,
     ) -> Result<()> {
         let Self {
             from_chain_id,
@@ -215,6 +244,7 @@ impl<'info> BridgeNttTokens<'info> {
             ntt_outbox_item,
             ntt_outbox_rate_limit,
             ntt_custody,
+            payee_ntt_executor,
         } = ntt;
 
         let NttMessage {
@@ -224,10 +254,6 @@ impl<'info> BridgeNttTokens<'info> {
             amount: ui_amount,
             to_chain_id_wormhole,
             recipient_address,
-            exec_amount: ui_exec_amount,
-            signed_quote_bytes: signed_quote_bytes_serialized,
-            relay_instructions: relay_instructions_serialized,
-            slot,
             nonce: new_nonce,
         } = ntt_message;
 
@@ -237,7 +263,6 @@ impl<'info> BridgeNttTokens<'info> {
 
         verify_symbol_or_mint(&symbol_or_mint, metadata, mint)?;
         verify_signer_matches_source(signer, source.owner)?;
-        verify_slot_freshness(slot)?;
         verify_and_update_nonce(nonce, new_nonce)?;
 
         let amount = try_ui_amount_into_amount(ui_amount, mint.decimals)?;
@@ -266,23 +291,6 @@ impl<'info> BridgeNttTokens<'info> {
             recipient_address: recipient_address_bytes,
             should_queue: false,
         };
-
-        // Verify session authority PDA
-        // TODO: do we even need to do this, since this should be checked in NTT manager program?
-        let args_hash = transfer_args.keccak256();
-        let (expected_session_authority, _bump) = Pubkey::find_program_address(
-            &[
-                cpi::ntt_manager::SESSION_AUTHORITY_SEED,
-                source.owner.as_ref(),
-                args_hash.as_ref(),
-            ],
-            ntt_manager.key,
-        );
-        require_keys_eq!(
-            *ntt_session_authority.key,
-            expected_session_authority,
-            IntentTransferError::InvalidSessionAuthority
-        );
 
         approve(
             CpiContext::new_with_signer(
@@ -316,12 +324,7 @@ impl<'info> BridgeNttTokens<'info> {
                     token_authority: ntt_token_authority.to_account_info(),
                 },
             ),
-            cpi::ntt_manager::TransferArgs {
-                amount,
-                recipient_chain: cpi::ntt_manager::ChainId { id: to_chain_id_wormhole },
-                recipient_address: recipient_address_bytes,
-                should_queue: false,
-            },
+            transfer_args,
             ntt_manager.key(),
         )?;
 
@@ -350,18 +353,18 @@ impl<'info> BridgeNttTokens<'info> {
             ntt_manager.key(),
         )?;
 
-        let exec_amount = try_ui_amount_into_amount(ui_exec_amount, NATIVE_TOKEN_DECIMALS)?;
-        let signed_quote_bytes = BASE64_STANDARD.decode(signed_quote_bytes_serialized)
-            .map_err(|_| IntentTransferError::InvalidByteString)?;
-        let relay_instructions = BASE64_STANDARD.decode(relay_instructions_serialized)
-            .map_err(|_| IntentTransferError::InvalidByteString)?;
+        let BridgeNttTokensArgs {
+            exec_amount,
+            signed_quote_bytes,
+            relay_instructions,
+        } = args;
 
         cpi::ntt_executor::relay_ntt_message(
             CpiContext::new(
                 ntt_executor_program.to_account_info(),
                 cpi::ntt_executor::RelayNttMessage {
                     payer: sponsor.to_account_info(),
-                    payee: transceiver.to_account_info(),
+                    payee: payee_ntt_executor.to_account_info(),
                     ntt_program_id: ntt_manager.to_account_info(),
                     ntt_peer: ntt_peer.to_account_info(),
                     ntt_message: ntt_outbox_item.to_account_info(),
@@ -531,15 +534,6 @@ fn verify_signer_matches_source(signer: Pubkey, source_owner: Pubkey) -> Result<
         signer,
         source_owner,
         IntentTransferError::SignerSourceMismatch
-    );
-    Ok(())
-}
-
-fn verify_slot_freshness(slot: u64) -> Result<()> {
-    require_gt!(
-        slot.saturating_add(SLOT_STALENESS_THRESHOLD),
-        Clock::get()?.slot,
-        IntentTransferError::SlotStaleness
     );
     Ok(())
 }
