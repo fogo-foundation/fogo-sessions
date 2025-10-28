@@ -202,22 +202,21 @@ const SessionProvider = ({
   }) => {
   const sessionConnection = useMemo(
     () =>
-      createSessionConnection(
-        network === undefined
-          ? {
-              rpc,
-              ...(sendToPaymaster === undefined
-                ? { paymaster }
-                : {
-                    sendToPaymaster,
-                    sponsor,
-                  }),
-            }
-          : {
-              network,
-              rpc,
-            },
-      ),
+      // @ts-expect-error `createSessionConnection` enforces certain
+      // relationships between the arguments.  We have to destructure the
+      // arguments from the props to `SessionProvider` or else react would
+      // re-initialize this memoized value on each render, however doing that
+      // removes typescript's knowledge of these relationships.  We know the
+      // relationships are true because the prop types of `SessionProvider`
+      // extend the parameters of `createSessionConnection` so here it's safe to
+      // override typescript.
+      createSessionConnection({
+        network,
+        rpc,
+        paymaster,
+        sendToPaymaster,
+        sponsor,
+      }),
     [network, rpc, paymaster, sendToPaymaster, sponsor],
   );
 
