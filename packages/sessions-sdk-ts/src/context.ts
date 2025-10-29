@@ -1,288 +1,46 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { ChainIdProgram } from "@fogo/sessions-idls";
-import {
-  fromLegacyPublicKey,
-  fromLegacyTransactionInstruction,
-  fromVersionedTransaction,
-} from "@solana/compat";
-import type {
-  Transaction,
-  Instruction,
-  Blockhash,
-  TransactionWithLifetime,
-} from "@solana/kit";
-import {
-  createTransactionMessage,
-  setTransactionMessageFeePayer,
-  setTransactionMessageLifetimeUsingBlockhash,
-  appendTransactionMessageInstructions,
-  getBase64EncodedWireTransaction,
-  partiallySignTransactionMessageWithSigners,
-  pipe,
-  createSolanaRpc,
-  addSignersToTransactionMessage,
-  compressTransactionMessageUsingAddressLookupTables,
-  createSignerFromKeyPair,
-  partiallySignTransaction,
-} from "@solana/kit";
-import type {
-  AddressLookupTableAccount,
-  Connection,
-  TransactionError,
-} from "@solana/web3.js";
-import {
-  PublicKey,
-  Keypair,
-  TransactionInstruction,
-  VersionedTransaction,
-} from "@solana/web3.js";
-import { z } from "zod";
+import { Connection as Web3Connection, Keypair } from "@solana/web3.js";
+
+import type { Connection } from "./connection.js";
 
 // eslint-disable-next-line unicorn/no-typeof-undefined
 const IS_BROWSER = typeof globalThis.window !== "undefined";
-const DEFAULT_PAYMASTER = "https://paymaster.fogo.io";
-const DEFAULT_ADDRESS_LOOKUP_TABLE_ADDRESS =
-  "B8cUjJMqaWWTNNSTXBmeptjWswwCH1gTSCRYv4nu7kJW";
 
-export type SessionContext = {
-  chainId: string;
+export const createSessionContext = async (options: {
   connection: Connection;
-  payer: PublicKey;
-  domain: string;
-  sendTransaction: (
-    sessionKey: CryptoKeyPair | undefined,
-    instructions:
-      | (TransactionInstruction | Instruction)[]
-      | VersionedTransaction
-      | (Transaction & TransactionWithLifetime),
-  ) => Promise<TransactionResult>;
-};
-
-export enum TransactionResultType {
-  Success,
-  Failed,
-}
-
-const TransactionResult = {
-  Success: (signature: string) => ({
-    type: TransactionResultType.Success as const,
-    signature,
-  }),
-  Failed: (signature: string, error: TransactionError) => ({
-    type: TransactionResultType.Failed as const,
-    signature,
-    error,
-  }),
-};
-
-export type TransactionResult = ReturnType<
-  (typeof TransactionResult)[keyof typeof TransactionResult]
->;
-
-export const createSessionContext = async (
-  options: {
-    connection: Connection;
-    addressLookupTableAddress?: string | undefined;
-    domain?: string | undefined;
-  } & (
-    | {
-        paymaster?: string | URL | undefined;
-        sendToPaymaster?: undefined;
-        sponsor?: undefined;
-      }
-    | {
-        paymaster?: undefined;
-        sendToPaymaster: (
-          transaction: Transaction,
-        ) => Promise<TransactionResult>;
-        sponsor: PublicKey;
-      }
-  ),
-): Promise<SessionContext> => {
-  const addressLookupTables = await getAddressLookupTables(
-    options.connection,
+  addressLookupTableAddress?: string | undefined;
+  domain?: string | undefined;
+}) => {
+  const addressLookupTables = await options.connection.getAddressLookupTables(
     options.addressLookupTableAddress,
   );
   const domain = getDomain(options.domain);
-  const sponsor = await getSponsor(options, domain);
+  const sponsor = await options.connection.getSponsor(domain);
   return {
-    connection: options.connection,
-    payer: sponsor,
-    chainId: await fetchChainId(options.connection),
+    chainId: await fetchChainId(options.connection.connection),
     domain: getDomain(options.domain),
-    sendTransaction: async (sessionKey, instructions) => {
-      const rpc = createSolanaRpc(options.connection.rpcEndpoint);
-      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-      return await sendToPaymaster(
-        options,
-        await buildTransaction(
-          latestBlockhash,
-          sessionKey,
-          sponsor,
-          instructions,
-          addressLookupTables,
-        ),
+    payer: sponsor,
+    connection: options.connection.connection,
+    rpc: options.connection.rpc,
+    sendTransaction: (
+      sessionKey: CryptoKeyPair | undefined,
+      instructions: Parameters<typeof options.connection.sendToPaymaster>[4],
+    ) =>
+      options.connection.sendToPaymaster(
         domain,
-      );
-    },
+        sponsor,
+        addressLookupTables,
+        sessionKey,
+        instructions,
+      ),
   };
 };
 
-const buildTransaction = async (
-  latestBlockhash: Readonly<{
-    blockhash: Blockhash;
-    lastValidBlockHeight: bigint;
-  }>,
-  sessionKey: CryptoKeyPair | undefined,
-  sponsor: PublicKey,
-  instructions:
-    | (TransactionInstruction | Instruction)[]
-    | VersionedTransaction
-    | (Transaction & TransactionWithLifetime),
-  addressLookupTables: AddressLookupTableAccount[] | undefined,
-) => {
-  const sessionKeySigner = sessionKey
-    ? await createSignerFromKeyPair(sessionKey)
-    : undefined;
+export type SessionContext = Awaited<ReturnType<typeof createSessionContext>>;
 
-  if (Array.isArray(instructions)) {
-    return partiallySignTransactionMessageWithSigners(
-      pipe(
-        createTransactionMessage({ version: 0 }),
-        (tx) => setTransactionMessageFeePayer(fromLegacyPublicKey(sponsor), tx),
-        (tx) =>
-          setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        (tx) =>
-          appendTransactionMessageInstructions(
-            instructions.map((instruction) =>
-              instruction instanceof TransactionInstruction
-                ? fromLegacyTransactionInstruction(instruction)
-                : instruction,
-            ),
-            tx,
-          ),
-        (tx) =>
-          compressTransactionMessageUsingAddressLookupTables(
-            tx,
-            Object.fromEntries(
-              addressLookupTables?.map(
-                (table) =>
-                  [
-                    fromLegacyPublicKey(table.key),
-                    table.state.addresses.map((address) =>
-                      fromLegacyPublicKey(address),
-                    ),
-                  ] as const,
-              ) ?? [],
-            ),
-          ),
-        (tx) =>
-          sessionKeySigner === undefined
-            ? tx
-            : addSignersToTransactionMessage([sessionKeySigner], tx),
-      ),
-    );
-  } else {
-    const tx =
-      instructions instanceof VersionedTransaction
-        ? (fromVersionedTransaction(instructions) as ReturnType<
-            typeof fromVersionedTransaction
-          > &
-            TransactionWithLifetime) // VersionedTransaction has a lifetime so it's fine to cast it so we can call partiallySignTransaction
-        : instructions;
-    return sessionKey === undefined
-      ? tx
-      : partiallySignTransaction([sessionKey], tx);
-  }
-};
-
-const getSponsor = async (
-  options: Parameters<typeof createSessionContext>[0],
-  domain: string,
-) => {
-  if (options.sponsor === undefined) {
-    const url = new URL(
-      "/api/sponsor_pubkey",
-      options.paymaster ?? DEFAULT_PAYMASTER,
-    );
-    url.searchParams.set("domain", domain);
-    const response = await fetch(url);
-
-    if (response.status === 200) {
-      return new PublicKey(z.string().parse(await response.text()));
-    } else {
-      throw new PaymasterResponseError(response.status, await response.text());
-    }
-  } else {
-    return options.sponsor;
-  }
-};
-
-const sponsorAndSendResponseSchema = z
-  .discriminatedUnion("type", [
-    z.object({
-      type: z.literal("success"),
-      signature: z.string(),
-    }),
-    z.object({
-      type: z.literal("failed"),
-      signature: z.string(),
-      error: z.object({
-        InstructionError: z.tuple([z.number(), z.unknown()]),
-      }),
-    }),
-  ])
-  .transform((data) => {
-    return data.type === "success"
-      ? TransactionResult.Success(data.signature)
-      : TransactionResult.Failed(data.signature, data.error);
-  });
-
-const sendToPaymaster = async (
-  options: Parameters<typeof createSessionContext>[0],
-  transaction: Transaction,
-  domain: string,
-): Promise<TransactionResult> => {
-  if (options.sendToPaymaster === undefined) {
-    const url = new URL(
-      "/api/sponsor_and_send",
-      options.paymaster ?? DEFAULT_PAYMASTER,
-    );
-    url.searchParams.set("domain", domain);
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        transaction: getBase64EncodedWireTransaction(transaction),
-      }),
-    });
-
-    if (response.status === 200) {
-      return sponsorAndSendResponseSchema.parse(await response.json());
-    } else {
-      throw new PaymasterResponseError(response.status, await response.text());
-    }
-  } else {
-    return options.sendToPaymaster(transaction);
-  }
-};
-
-const getAddressLookupTables = async (
-  connection: Connection,
-  addressLookupTableAddress: string = DEFAULT_ADDRESS_LOOKUP_TABLE_ADDRESS,
-) => {
-  const addressLookupTableResult = await connection.getAddressLookupTable(
-    new PublicKey(addressLookupTableAddress),
-  );
-  return addressLookupTableResult.value
-    ? [addressLookupTableResult.value]
-    : undefined;
-};
-
-const fetchChainId = async (connection: Connection) => {
+const fetchChainId = async (connection: Web3Connection) => {
   const chainIdProgram = new ChainIdProgram(
     new AnchorProvider(
       connection,
@@ -313,13 +71,6 @@ const getDomain = (requestedDomain?: string) => {
     return requestedDomain;
   }
 };
-
-class PaymasterResponseError extends Error {
-  constructor(statusCode: number, message: string) {
-    super(`Paymaster sent a ${statusCode.toString()} response: ${message}`);
-    this.name = "PaymasterResponseError";
-  }
-}
 
 class NoChainIdAddressError extends Error {
   constructor() {

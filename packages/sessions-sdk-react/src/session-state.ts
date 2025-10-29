@@ -1,6 +1,5 @@
 import type { Session } from "@fogo/sessions-sdk";
 import type { MessageSignerWalletAdapterProps } from "@solana/wallet-adapter-base";
-import type { useConnection } from "@solana/wallet-adapter-react";
 import type { PublicKey } from "@solana/web3.js";
 
 export enum StateType {
@@ -21,7 +20,6 @@ export type EstablishedOptions = Omit<Session, "sessionInfo"> & {
   expiration: Date;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   createLogInToken: () => Promise<string>;
-  connection: ReturnType<typeof useConnection>["connection"];
   isLimited: boolean;
   endSession: () => void;
   updateSession: (

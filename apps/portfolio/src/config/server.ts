@@ -24,8 +24,6 @@ export const GOOGLE_ANALYTICS_ID = defaultInProduction(
 export const ENABLE_ACCESSIBILITY_REPORTING =
   !IS_PRODUCTION_SERVER && !process.env.DISABLE_ACCESSIBILITY_REPORTING;
 
-export const RPC = getEnvOrDefault("RPC", "https://testnet.fogo.io");
-
 // TODO Replace this domain with https://portfolio.fogo.io after setting up a
 // new paymaster for it
 export const DOMAIN = getEnvOrDefault(

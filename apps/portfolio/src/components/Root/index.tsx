@@ -1,4 +1,4 @@
-import { FogoSessionProvider } from "@fogo/sessions-sdk-react";
+import { FogoSessionProvider, Network } from "@fogo/sessions-sdk-react";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import clsx from "clsx";
 import dynamic from "next/dynamic";
@@ -12,7 +12,6 @@ import {
   ENABLE_ACCESSIBILITY_REPORTING,
   GOOGLE_ANALYTICS_ID,
   DOMAIN,
-  RPC,
 } from "../../config/server";
 import { LoggerProvider } from "../../hooks/use-logger";
 
@@ -34,7 +33,7 @@ export const Root = ({ children }: Props) => (
     <LoggerProvider>
       <html lang="en" className={clsx(sans.className, styles.root)}>
         <body className={styles.body}>
-          <FogoSessionProvider endpoint={RPC} domain={DOMAIN}>
+          <FogoSessionProvider network={Network.Testnet} domain={DOMAIN}>
             {children}
           </FogoSessionProvider>
         </body>

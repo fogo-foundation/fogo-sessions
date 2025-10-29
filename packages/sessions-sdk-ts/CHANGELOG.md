@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.18
+
+### Patch Changes
+
+- 7467535: Add mainnet support
+
 ## 0.0.17
 
 ### Patch Changes

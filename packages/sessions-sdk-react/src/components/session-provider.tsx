@@ -8,6 +8,7 @@ import {
   establishSession as establishSessionImpl,
   replaceSession,
   createSessionContext,
+  createSessionConnection,
   SessionResultType,
   reestablishSession,
   AuthorizedTokens,
@@ -24,10 +25,6 @@ import { useLocalStorageValue, useMountEffect } from "@react-hookz/web";
 import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
 import type { MessageSignerWalletAdapterProps } from "@solana/wallet-adapter-base";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
-import {
-  ConnectionProvider,
-  useConnection,
-} from "@solana/wallet-adapter-react";
 import {
   SolflareWalletAdapter,
   PhantomWalletAdapter,
@@ -49,7 +46,6 @@ import { mutate } from "swr";
 import { z } from "zod";
 
 import {
-  deserializePublicKey,
   deserializePublicKeyList,
   deserializePublicKeyMap,
 } from "../deserialize-public-key.js";
@@ -73,14 +69,8 @@ const ERROR_CODE_SESSION_LIMITS_EXCEEDED = 4_000_000_008;
 
 type Props = ConstrainedOmit<
   ComponentProps<typeof SessionProvider>,
-  | "sponsor"
-  | "tokens"
-  | "defaultRequestedLimits"
-  | "wallets"
-  | "paymaster"
-  | "sendToPaymaster"
+  "tokens" | "defaultRequestedLimits" | "wallets"
 > & {
-  endpoint: string;
   tokens?: (PublicKey | string)[] | undefined;
   defaultRequestedLimits?:
     | Map<PublicKey, bigint>
@@ -89,29 +79,12 @@ type Props = ConstrainedOmit<
   wallets?: MessageSignerWalletAdapterProps[] | undefined;
   termsOfServiceUrl?: string | undefined;
   privacyPolicyUrl?: string | undefined;
-} & (
-    | {
-        paymaster?: ComponentProps<typeof SessionProvider>["paymaster"];
-        sendToPaymaster?: undefined;
-        sponsor?: undefined;
-      }
-    | {
-        paymaster?: undefined;
-        sendToPaymaster: NonNullable<
-          ComponentProps<typeof SessionProvider>["sendToPaymaster"]
-        >;
-        sponsor: PublicKey | string;
-      }
-  );
+};
 
 export const FogoSessionProvider = ({
-  endpoint,
   tokens,
   defaultRequestedLimits,
   children,
-  paymaster,
-  sendToPaymaster,
-  sponsor,
   wallets = [
     new NightlyWalletAdapter(),
     new PhantomWalletAdapter(),
@@ -162,35 +135,24 @@ export const FogoSessionProvider = ({
 
   return (
     <ToastProvider>
-      <ConnectionProvider endpoint={endpoint}>
-        <SessionProvider
-          tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
-          defaultRequestedLimits={
-            defaultRequestedLimits === undefined
-              ? undefined
-              : deserializePublicKeyMap(defaultRequestedLimits)
-          }
+      <SessionProvider
+        tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
+        defaultRequestedLimits={
+          defaultRequestedLimits === undefined
+            ? undefined
+            : deserializePublicKeyMap(defaultRequestedLimits)
+        }
+        wallets={walletsWithMobileAdapter}
+        {...props}
+      >
+        {children}
+        <SignInModal
           wallets={walletsWithMobileAdapter}
-          {...(sendToPaymaster === undefined
-            ? { paymaster }
-            : {
-                sendToPaymaster,
-                sponsor:
-                  typeof sponsor === "string"
-                    ? deserializePublicKey(sponsor)
-                    : sponsor,
-              })}
-          {...props}
-        >
-          {children}
-          <SignInModal
-            wallets={walletsWithMobileAdapter}
-            termsOfServiceUrl={termsOfServiceUrl}
-            privacyPolicyUrl={privacyPolicyUrl}
-          />
-          <RenewSessionModal />
-        </SessionProvider>
-      </ConnectionProvider>
+          termsOfServiceUrl={termsOfServiceUrl}
+          privacyPolicyUrl={privacyPolicyUrl}
+        />
+        <RenewSessionModal />
+      </SessionProvider>
     </ToastProvider>
   );
 };
@@ -221,11 +183,14 @@ const SessionProvider = ({
   onStartSessionInit,
   addressLookupTableAddress,
   domain,
+  network,
+  rpc,
   paymaster,
   sendToPaymaster,
   sponsor,
   ...args
-}: ConstrainedOmit<Parameters<typeof createSessionContext>[0], "connection"> &
+}: Parameters<typeof createSessionConnection>[0] &
+  Omit<Parameters<typeof createSessionContext>[0], "connection"> &
   Omit<Parameters<typeof useSessionState>[0], "getSessionContext"> & {
     children: ReactNode;
     defaultRequestedLimits?: Map<PublicKey, bigint> | undefined;
@@ -235,31 +200,37 @@ const SessionProvider = ({
       | (() => Promise<void> | void)
       | undefined;
   }) => {
-  const { connection } = useConnection();
+  const sessionConnection = useMemo(
+    () =>
+      // @ts-expect-error `createSessionConnection` enforces certain
+      // relationships between the arguments.  We have to destructure the
+      // arguments from the props to `SessionProvider` or else react would
+      // re-initialize this memoized value on each render, however doing that
+      // removes typescript's knowledge of these relationships.  We know the
+      // relationships are true because the prop types of `SessionProvider`
+      // extend the parameters of `createSessionConnection` so here it's safe to
+      // override typescript.
+      createSessionConnection({
+        network,
+        rpc,
+        paymaster,
+        sendToPaymaster,
+        sponsor,
+      }),
+    [network, rpc, paymaster, sendToPaymaster, sponsor],
+  );
+
   const sessionContext = useMemo(
     () =>
       // eslint-disable-next-line unicorn/no-typeof-undefined
       typeof globalThis.window === "undefined"
         ? undefined
         : createSessionContext({
-            connection,
+            connection: sessionConnection,
             addressLookupTableAddress,
             domain,
-            ...(sendToPaymaster === undefined
-              ? { paymaster }
-              : {
-                  sendToPaymaster,
-                  sponsor,
-                }),
           }),
-    [
-      connection,
-      addressLookupTableAddress,
-      domain,
-      paymaster,
-      sendToPaymaster,
-      sponsor,
-    ],
+    [sessionConnection, addressLookupTableAddress, domain],
   );
   const getSessionContext = useCallback(async () => {
     if (sessionContext === undefined) {
@@ -273,6 +244,8 @@ const SessionProvider = ({
 
   const state = useMemo(
     () => ({
+      connection: sessionConnection.connection,
+      rpc: sessionConnection.rpc,
       getSessionContext,
       sessionState,
       enableUnlimited: enableUnlimited ?? false,
@@ -281,6 +254,7 @@ const SessionProvider = ({
       defaultRequestedLimits,
     }),
     [
+      sessionConnection,
       getSessionContext,
       sessionState,
       enableUnlimited,
@@ -307,7 +281,6 @@ const useSessionState = ({
   wallets: MessageSignerWalletAdapterProps[];
 }) => {
   const [state, setState] = useState<SessionState>(SessionState.Initializing());
-  const { connection } = useConnection();
   const toast = useToast();
   const walletName = useLocalStorageValue<string>("walletName");
 
@@ -448,7 +421,6 @@ const useSessionState = ({
         isLimited:
           session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
         walletPublicKey: session.walletPublicKey,
-        connection,
         signMessage: (message: Uint8Array) => wallet.signMessage(message),
         sessionPublicKey: session.sessionPublicKey,
         createLogInToken: () => createLogInToken(session),
@@ -468,7 +440,7 @@ const useSessionState = ({
       };
       setState(SessionState.Established(establishedOptions));
     },
-    [getSessionContext, updateSession, sendTransaction, connection],
+    [getSessionContext, updateSession, sendTransaction],
   );
 
   const submitLimits = useCallback(
