@@ -76,7 +76,7 @@ local_resource(
 
 local_resource(
     "paymaster",
-    serve_cmd="cargo run --bin fogo-paymaster migrate && cargo run --bin fogo-paymaster run",
+    serve_cmd="cargo run --bin fogo-paymaster migrate && cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster",
     resource_deps=["svm-localnet"],
 )
 
