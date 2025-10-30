@@ -10,11 +10,11 @@ const IS_BROWSER = typeof globalThis.window !== "undefined";
 
 export const createSessionContext = async (options: {
   connection: Connection;
-  addressLookupTableAddress?: string | undefined;
+  addressLookupTableAddresses?: string[] | undefined;
   domain?: string | undefined;
 }) => {
   const addressLookupTables = await options.connection.getAddressLookupTables(
-    options.addressLookupTableAddress,
+    options.addressLookupTableAddresses,
   );
   const domain = getDomain(options.domain);
   const sponsor = await options.connection.getSponsor(domain);
@@ -24,9 +24,11 @@ export const createSessionContext = async (options: {
     payer: sponsor,
     connection: options.connection.connection,
     rpc: options.connection.rpc,
+    network: options.connection.network,
     sendTransaction: (
       sessionKey: CryptoKeyPair | undefined,
       instructions: Parameters<typeof options.connection.sendToPaymaster>[4],
+      extraSigners?: Parameters<typeof options.connection.sendToPaymaster>[5],
     ) =>
       options.connection.sendToPaymaster(
         domain,
@@ -34,6 +36,7 @@ export const createSessionContext = async (options: {
         addressLookupTables,
         sessionKey,
         instructions,
+        extraSigners,
       ),
   };
 };

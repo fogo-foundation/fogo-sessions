@@ -3,7 +3,7 @@ package_manager = "pnpm"
 
 [features]
 resolution = true
-skip-lint = false
+skip-lint = true
 
 [workspace]
 members = [

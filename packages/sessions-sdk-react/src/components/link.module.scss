@@ -11,6 +11,7 @@
   transition: outline-color 50ms linear;
   border-radius: theme.border-radius("sm");
   text-decoration: none;
+  transition: color 50ms linear;
 
   &[data-hovered] {
     text-decoration: underline;
@@ -18,5 +19,10 @@
 
   &[data-focus-visible] {
     outline-color: theme.color("accent");
+  }
+
+  &[data-pending] {
+    cursor: wait;
+    color: theme.color("muted");
   }
 }

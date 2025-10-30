@@ -1,4 +1,5 @@
 import { HandCoinsIcon } from "@phosphor-icons/react/dist/ssr/HandCoins";
+import { HandWithdrawIcon } from "@phosphor-icons/react/dist/ssr/HandWithdraw";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
 import { QrCodeIcon } from "@phosphor-icons/react/dist/ssr/QrCode";
 import {
@@ -21,6 +22,7 @@ type Props = {
   onPressSend: () => void;
   onPressSendForToken: (token: Token) => void;
   onPressReceive: () => void;
+  onPressWithdraw: () => void;
   sessionState: EstablishedSessionState;
 };
 
@@ -28,6 +30,7 @@ export const WalletPage = ({
   onPressSend,
   onPressSendForToken,
   onPressReceive,
+  onPressWithdraw,
   sessionState,
 }: Props) => {
   const { faucetUrl, showFaucet } = useFaucet(sessionState);
@@ -67,6 +70,13 @@ export const WalletPage = ({
           <HandCoinsIcon className={styles.icon} />
           <span className={styles.text}>Get tokens</span>
         </UnstyledLink>
+        <UnstyledButton
+          className={styles.topButton ?? ""}
+          onPress={onPressWithdraw}
+        >
+          <HandWithdrawIcon className={styles.icon} />
+          <span className={styles.text}>Withdraw</span>
+        </UnstyledButton>
       </Toolbar>
       <TokenList
         onPressReceiveTokens={onPressReceive}

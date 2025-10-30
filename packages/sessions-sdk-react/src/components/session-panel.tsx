@@ -24,6 +24,7 @@ import { useSessionContext } from "../hooks/use-session.js";
 import { isEstablished } from "../session-state.js";
 import { TruncateKey } from "./truncate-key.js";
 import { WalletPage } from "./wallet-page.js";
+import { WithdrawPage } from "./withdraw-page.js";
 
 type Props = Omit<ComponentProps<"div">, "children"> & {
   onClose?: (() => void) | undefined;
@@ -169,6 +170,9 @@ const Tokens = ({
   const showReceive = useCallback(() => {
     setCurrentScreen(TokenScreen.Receive());
   }, [setCurrentScreen]);
+  const showWithdraw = useCallback(() => {
+    setCurrentScreen(TokenScreen.Withdraw());
+  }, [setCurrentScreen]);
   const showSelectTokenToSend = useCallback(() => {
     setCurrentScreen(TokenScreen.SelectTokenToSend());
   }, [setCurrentScreen]);
@@ -227,10 +231,21 @@ const Tokens = ({
         />
       );
     }
+    case TokenScreenType.Withdraw: {
+      return (
+        <WithdrawPage
+          key="withdraw"
+          sessionState={sessionState}
+          onPressBack={showWallet}
+          onSendComplete={showWallet}
+        />
+      );
+    }
     case TokenScreenType.Wallet: {
       return (
         <WalletPage
           key="wallet"
+          onPressWithdraw={showWithdraw}
           onPressReceive={showReceive}
           onPressSend={showSelectTokenToSend}
           onPressSendForToken={(token) => {
@@ -255,6 +270,7 @@ enum TokenScreenType {
   SelectTokenToSend,
   Send,
   Receive,
+  Withdraw,
   Wallet,
 }
 
@@ -272,6 +288,7 @@ const TokenScreen = {
     amountAvailable: bigint;
   }) => ({ type: TokenScreenType.Send as const, ...opts }),
   Receive: () => ({ type: TokenScreenType.Receive as const }),
+  Withdraw: () => ({ type: TokenScreenType.Withdraw as const }),
   Wallet: () => ({ type: TokenScreenType.Wallet as const }),
 };
 type TokenScreen = ReturnType<(typeof TokenScreen)[keyof typeof TokenScreen]>;

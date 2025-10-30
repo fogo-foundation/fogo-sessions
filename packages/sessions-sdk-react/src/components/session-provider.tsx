@@ -181,7 +181,7 @@ const SessionProvider = ({
   defaultRequestedLimits,
   enableUnlimited,
   onStartSessionInit,
-  addressLookupTableAddress,
+  addressLookupTableAddresses,
   domain,
   network,
   rpc,
@@ -227,10 +227,10 @@ const SessionProvider = ({
         ? undefined
         : createSessionContext({
             connection: sessionConnection,
-            addressLookupTableAddress,
+            addressLookupTableAddresses,
             domain,
           }),
-    [sessionConnection, addressLookupTableAddress, domain],
+    [sessionConnection, addressLookupTableAddresses, domain],
   );
   const getSessionContext = useCallback(async () => {
     if (sessionContext === undefined) {

@@ -65,6 +65,11 @@
     "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/web3.js": "catalog:",
+    "@wormhole-foundation/sdk": "^3.10.0",
+    "@wormhole-foundation/sdk-base": "^3.11.0",
+    "@wormhole-foundation/sdk-route-ntt": "^4.0.1",
+    "@wormhole-foundation/sdk-solana-core": "^3.10.0",
+    "@wormhole-foundation/sdk-solana-ntt": "^4.0.1",
     "bn.js": "catalog:",
     "bs58": "catalog:",
     "zod": "catalog:"

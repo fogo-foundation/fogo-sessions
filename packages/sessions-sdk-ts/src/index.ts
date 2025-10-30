@@ -32,13 +32,13 @@ import type {
   TransactionError,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { Ed25519Program, PublicKey } from "@solana/web3.js";
+import { Ed25519Program, Keypair, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import bs58 from "bs58";
 import { z } from "zod";
 
 import type { TransactionResult } from "./connection.js";
-import { TransactionResultType } from "./connection.js";
+import { Network, TransactionResultType } from "./connection.js";
 import type { SessionContext } from "./context.js";
 import {
   importKey,
@@ -67,6 +67,8 @@ const CURRENT_MAJOR = "0";
 const CURRENT_MINOR = "3";
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
 const CURRENT_INTENT_TRANSFER_MINOR = "1";
+const CURRENT_BRIDGE_OUT_MAJOR = 0;
+const CURRENT_BRIDGE_OUT_MINOR = 1;
 
 type EstablishSessionOptions = {
   context: SessionContext;
@@ -769,7 +771,7 @@ const buildTransferIntentInstruction = async (
   symbol?: string,
 ) => {
   const [nonce, { decimals }] = await Promise.all([
-    getNonce(program, options.walletPublicKey),
+    getNonce(program, options.walletPublicKey, NonceType.Transfer),
     getMint(options.context.connection, options.mint),
   ]);
   const message = new TextEncoder().encode(
@@ -799,13 +801,240 @@ const buildTransferIntentInstruction = async (
   });
 };
 
+const BRIDGE_OUT_MESSAGE_HEADER = `Fogo Bridge Transfer:
+Signing this intent will bridge out the tokens as described below.
+`;
+
+type SendBridgeOutOptions = {
+  context: SessionContext;
+  sessionKey: CryptoKeyPair;
+  sessionPublicKey: PublicKey;
+  walletPublicKey: PublicKey;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  amount: bigint;
+  fromToken: WormholeToken,
+  toToken: WormholeToken
+};
+
+type WormholeToken = {
+  mint: PublicKey;
+  manager: PublicKey;
+  transceiver: PublicKey;
+};
+
+import solanaSdk from "@wormhole-foundation/sdk/solana";
+import { Wormhole, type Network as WormholeNetwork, wormhole, routes, UniversalAddress } from "@wormhole-foundation/sdk";
+import { nttExecutorRoute } from "@wormhole-foundation/sdk-route-ntt";
+import { utils } from "@wormhole-foundation/sdk-solana-core";
+import { NTT } from "@wormhole-foundation/sdk-solana-ntt";
+import { contracts } from "@wormhole-foundation/sdk-base";
+
+export const bridgeOut = async (options: SendBridgeOutOptions) => {
+  const wormholeNetwork = NETWORK_TO_WORMHOLE_NETWORK[options.context.network];
+  const [wh, { decimals }] = await Promise.all([
+    wormhole(wormholeNetwork, [solanaSdk]),
+    getMint(options.context.connection, options.fromToken.mint)
+  ]);
+
+  const route = buildWormholeRoute(wh, options.fromToken, options.toToken);
+  const transferRequest = await routes.RouteTransferRequest.create(wh, {
+    source: Wormhole.tokenId("Fogo", options.fromToken.mint.toBase58()),
+    destination: Wormhole.tokenId("Solana", options.toToken.mint.toBase58()),
+  });
+  const validation = await route.validate(transferRequest, {
+    amount: amountToString(options.amount, decimals),
+    options: route.getDefaultOptions(),
+  });
+  if (validation.valid) {
+    // @ts-expect-error the wormhole client types are incorrect and do not
+    // properly represent the runtime representation.
+    const quote = await route.fetchExecutorQuote(transferRequest, validation.params);
+
+    const program = new IntentTransferProgram(
+      new AnchorProvider(options.context.connection, {} as Wallet, {}),
+    );
+
+    const umi = createUmi(options.context.connection.rpcEndpoint);
+    const metaplexMint = metaplexPublicKey(options.fromToken.mint.toBase58());
+    const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
+    const metadata = await safeFetchMetadata(umi, metadataAddress);
+    const pdas = NTT.pdas(options.fromToken.manager);
+    const fogo = wh.getChain("Fogo");
+    const solana = wh.getChain("Solana");
+    const coreBridgeContract = contracts.coreBridge.get(wormholeNetwork, "Fogo");
+    if (coreBridgeContract === undefined) {
+      throw new Error("Core bridge contract address not returned by wormhole!");
+    }
+    const wormholePdas = utils.getWormholeDerivedAccounts(
+      options.fromToken.transceiver,
+      coreBridgeContract
+    );
+    const transceiverPdas = NTT.transceiverPdas(options.fromToken.manager);
+    const outboxItem = Keypair.generate();
+    const intentTransferSetterPda = PublicKey.createProgramAddressSync(
+      [Buffer.from("intent_transfer")],
+      program.programId
+    );
+
+    return options.context.sendTransaction(options.sessionKey, [
+      await buildBridgeOutIntent(
+        program,
+        options,
+        solana.config.chainId,
+        decimals,
+        metadata?.symbol
+      ),
+
+      await program.methods
+        .bridgeNttTokens({
+          execAmount: new BN(quote.estimatedCost.toString()),
+          relayInstructions: Buffer.from(quote.relayInstructions),
+          signedQuoteBytes: Buffer.from(quote.signedQuote)
+        })
+        .accounts({
+          sessionSigner: options.sessionPublicKey,
+          sponsor: options.context.payer,
+          mint: options.fromToken.mint,
+          // eslint-disable-next-line unicorn/no-null
+          metadata: metadata?.symbol === undefined ? null : new PublicKey(metadataAddress),
+          source: getAssociatedTokenAddressSync(
+            options.fromToken.mint,
+            options.walletPublicKey,
+          ),
+          ntt: {
+            emitter: transceiverPdas.emitterAccount(),
+            nttConfig: pdas.configAccount(),
+            nttCustody: await NTT.custodyAccountAddress(
+              pdas,
+              options.fromToken.mint
+            ),
+            nttInboxRateLimit: pdas.inboxRateLimitAccount(fogo.chain),
+            nttManager: options.fromToken.manager,
+            nttOutboxItem: outboxItem.publicKey,
+            nttOutboxRateLimit: pdas.outboxRateLimitAccount(),
+            nttPeer: pdas.peerAccount(solana.chain),
+            nttSessionAuthority: pdas.sessionAuthority(
+              intentTransferSetterPda,
+              NTT.transferArgs(
+                options.amount,
+                {
+                  chain: solana.chain,
+                  address: new UniversalAddress(new Uint8Array(options.walletPublicKey.toBytes()))
+                },
+                false
+              )
+            ),
+            nttTokenAuthority: pdas.tokenAuthority(),
+            payeeNttWithExecutor: new PublicKey(quote.payeeAddress),
+            transceiver: options.fromToken.transceiver,
+            wormholeBridge: wormholePdas.wormholeBridge,
+            wormholeFeeCollector: wormholePdas.wormholeFeeCollector,
+            wormholeMessage: transceiverPdas.wormholeMessageAccount(outboxItem.publicKey),
+            wormholeSequence: wormholePdas.wormholeSequence
+          },
+        })
+        .instruction(),
+    ], [
+      outboxItem
+    ]);
+  } else {
+    throw validation.error;
+  }
+};
+
+const NETWORK_TO_WORMHOLE_NETWORK: Record<Network, WormholeNetwork> = {
+  [Network.Mainnet]: "Mainnet",
+  [Network.Testnet]: "Testnet"
+}
+
+const buildWormholeRoute = (wh: Wormhole<WormholeNetwork>, fromToken: WormholeToken, toToken: WormholeToken) => {
+  const Route = nttExecutorRoute({
+    ntt: {
+      tokens: {
+        USDC: [
+          {
+            chain: "Solana",
+            manager: toToken.manager.toBase58(),
+            token: toToken.mint.toBase58(),
+            transceiver: [
+              {
+                address: toToken.transceiver.toBase58(),
+                type: "wormhole",
+              },
+            ],
+          },
+          {
+            chain: "Fogo",
+            manager: fromToken.manager.toBase58(),
+            token: fromToken.mint.toBase58(),
+            transceiver: [
+              {
+                address: fromToken.transceiver.toBase58(),
+                type: "wormhole",
+              },
+            ],
+          },
+        ],
+      }
+    }
+  });
+  return new Route(wh);
+}
+
+const buildBridgeOutIntent = async (
+  program: IntentTransferProgram,
+  options: SendBridgeOutOptions,
+  chainId: number,
+  decimals: number,
+  symbol?: string | undefined,
+) => {
+  const nonce = await getNonce(program, options.walletPublicKey, NonceType.Bridge);
+  const message = new TextEncoder().encode(
+    [
+      BRIDGE_OUT_MESSAGE_HEADER,
+      serializeKV({
+        version: `${CURRENT_BRIDGE_OUT_MAJOR}.${CURRENT_BRIDGE_OUT_MINOR}`,
+        from_chain_id: options.context.chainId,
+        to_chain_id_wormhole: chainId.toString(),
+        token: symbol ?? options.fromToken.mint.toBase58(),
+        amount: amountToString(options.amount, decimals),
+        recipient_address: options.walletPublicKey.toBase58(),
+        nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
+      }),
+    ].join("\n"),
+  );
+
+  const intentSignature = signatureBytes(await options.signMessage(message));
+
+  return Ed25519Program.createInstructionWithPublicKey({
+    publicKey: options.walletPublicKey.toBytes(),
+    signature: intentSignature,
+    message: await addOffchainMessagePrefixToMessageIfNeeded(
+      options.walletPublicKey,
+      intentSignature,
+      message,
+    ),
+  });
+};
+
+enum NonceType {
+  Transfer,
+  Bridge
+}
+
+const NONCE_TYPE_TO_SEED: Record<NonceType, String> = {
+  [NonceType.Transfer]: "nonce",
+  [NonceType.Bridge]: "bridge_ntt_nonce"
+}
+
 const getNonce = async (
   program: IntentTransferProgram,
   walletPublicKey: PublicKey,
+  nonceType: NonceType
 ) => {
   const [noncePda] = await getProgramDerivedAddress({
     programAddress: fromLegacyPublicKey(program.programId),
-    seeds: [Buffer.from("nonce"), walletPublicKey.toBuffer()],
+    seeds: [Buffer.from(NONCE_TYPE_TO_SEED[nonceType]), walletPublicKey.toBuffer()],
   });
   return program.account.nonce.fetchNullable(noncePda);
 };

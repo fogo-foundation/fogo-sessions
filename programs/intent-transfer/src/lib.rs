@@ -63,44 +63,56 @@ pub struct BridgeNttTokensArgs {
 
 #[derive(Accounts)]
 pub struct Ntt<'info> {
+    // per mint -- should come from executor route
     /// CHECK: checked in NTT manager program
     pub ntt_manager: UncheckedAccount<'info>,
 
+    // should be seeded per mint
     /// CHECK: checked in NTT manager program
     pub ntt_config: UncheckedAccount<'info>,
 
+    // should be seeded per mint
     /// CHECK: checked in NTT manager program
     #[account(mut)]
     pub ntt_inbox_rate_limit: UncheckedAccount<'info>,
 
+    // should be seeded per mint
     /// CHECK: checked in NTT manager program
     pub ntt_session_authority: UncheckedAccount<'info>,
 
     /// CHECK: checked in NTT manager program
+    // should be seeded per mint
     pub ntt_token_authority: UncheckedAccount<'info>,
 
+    // new account
     /// CHECK: checked in NTT manager program
     #[account(mut)]
     pub wormhole_message: UncheckedAccount<'info>,
 
+    // should be seeded per mint
     /// CHECK: checked in NTT manager program
     pub transceiver: UncheckedAccount<'info>,
 
+    // should be seeded per mint
     /// CHECK: checked in NTT manager program
     pub emitter: UncheckedAccount<'info>,
 
+    // single per chain
     /// CHECK: checked in NTT manager program
     #[account(mut)]
     pub wormhole_bridge: UncheckedAccount<'info>,
 
+    // idk
     /// CHECK: checked in wormhole program
     #[account(mut)]
     pub wormhole_fee_collector: UncheckedAccount<'info>,
 
+    // idk
     /// CHECK: checked in wormhole program
     #[account(mut)]
     pub wormhole_sequence: UncheckedAccount<'info>,
 
+    // idk
     /// CHECK: address is checked, but also verified in NTT manager program
     #[account(address = WORMHOLE_PROGRAM_ID)]
     pub wormhole_program: UncheckedAccount<'info>,
@@ -128,6 +140,7 @@ pub struct Ntt<'info> {
     #[account(mut)]
     pub ntt_custody: UncheckedAccount<'info>,
 
+    // maybe not pda / derived
     /// CHECK: checked in NTT with executor program
     #[account(mut)]
     pub payee_ntt_with_executor: UncheckedAccount<'info>,

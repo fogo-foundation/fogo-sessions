@@ -31,8 +31,8 @@ export const FAUCET_KEY =
 const getProviderConfig = () => {
   if (NETWORK === undefined) {
     return {
-      addressLookupTableAddress:
-        process.env.ADDRESS_LOOKUP_TABLE_ADDRESS ??
+      addressLookupTableAddresses:
+        process.env.ADDRESS_LOOKUP_TABLE_ADDRESSES?.split(",") ??
         "93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3",
       domain: process.env.FOGO_SESSIONS_DOMAIN,
       rpc: process.env.RPC ?? "http://127.0.0.1:8899",
@@ -45,7 +45,7 @@ const getProviderConfig = () => {
     return {
       network: NETWORK,
       rpc: process.env.RPC,
-      addressLookupTableAddress: process.env.ADDRESS_LOOKUP_TABLE_ADDRESS,
+      addressLookupTableAddresses: process.env.ADDRESS_LOOKUP_TABLE_ADDRESSES?.split(","),
       domain:
         process.env.FOGO_SESSIONS_DOMAIN ?? "https://sessions-example.fogo.io",
     };
@@ -53,7 +53,7 @@ const getProviderConfig = () => {
     return {
       rpc: process.env.RPC,
       paymaster: process.env.PAYMASTER,
-      addressLookupTableAddress: process.env.ADDRESS_LOOKUP_TABLE_ADDRESS,
+      addressLookupTableAddresses: process.env.ADDRESS_LOOKUP_TABLE_ADDRESSES?.split(","),
       domain:
         process.env.FOGO_SESSIONS_DOMAIN ?? "https://sessions-example.fogo.io",
     };
