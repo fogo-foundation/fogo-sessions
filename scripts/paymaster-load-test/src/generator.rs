@@ -1,21 +1,21 @@
 use crate::config::ValidityType;
 use anyhow::Result;
 use chain_id::ID as CHAIN_ID_PID;
+use fogo_sessions_sdk::domain_registry::get_domain_record_address;
+use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_hash::Hash;
 use solana_keypair::Keypair;
 use solana_message::{v0, VersionedMessage};
 use solana_program::{
-    instruction::{AccountMeta, Instruction},
     ed25519_program,
+    instruction::{AccountMeta, Instruction},
 };
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
-use time::{OffsetDateTime, format_description::well_known::Rfc3339};
-use fogo_sessions_sdk::domain_registry::get_domain_record_address;
-use fogo_sessions_sdk::session::{SESSION_MANAGER_ID};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub struct TransactionGenerator {
     sponsor_pubkey: Pubkey,
@@ -43,7 +43,11 @@ impl TransactionGenerator {
     }
 
     /// Generate a transaction based on validity type
-    pub fn generate(&self, validity_type: ValidityType, blockhash: Hash) -> Result<VersionedTransaction> {
+    pub fn generate(
+        &self,
+        validity_type: ValidityType,
+        blockhash: Hash,
+    ) -> Result<VersionedTransaction> {
         match validity_type {
             ValidityType::Valid => self.generate_valid(blockhash),
             ValidityType::InvalidSignature => self.generate_invalid_signature(blockhash),
@@ -57,12 +61,8 @@ impl TransactionGenerator {
     fn generate_valid(&self, blockhash: Hash) -> Result<VersionedTransaction> {
         let (instructions, session_keypair) = self.build_session_establishment_instructions()?;
 
-        let message = v0::Message::try_compile(
-            &self.sponsor_pubkey,
-            &instructions,
-            &[],
-            blockhash,
-        )?;
+        let message =
+            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -91,12 +91,8 @@ impl TransactionGenerator {
     fn generate_invalid_signature(&self, blockhash: Hash) -> Result<VersionedTransaction> {
         let (instructions, _session_keypair) = self.build_session_establishment_instructions()?;
 
-        let message = v0::Message::try_compile(
-            &self.sponsor_pubkey,
-            &instructions,
-            &[],
-            blockhash,
-        )?;
+        let message =
+            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -122,12 +118,8 @@ impl TransactionGenerator {
 
         let instructions = vec![invalid_instruction];
 
-        let message = v0::Message::try_compile(
-            &self.sponsor_pubkey,
-            &instructions,
-            &[],
-            blockhash,
-        )?;
+        let message =
+            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let tx = VersionedTransaction {
             signatures: vec![Default::default(); 1], // only sponsor (fee payer)
@@ -142,12 +134,8 @@ impl TransactionGenerator {
         let (instructions, session_keypair) = self.build_session_establishment_instructions()?;
 
         // use user as fee payer instead of sponsor (this should be rejected by paymaster)
-        let message = v0::Message::try_compile(
-            &self.user_signer.pubkey(),
-            &instructions,
-            &[],
-            blockhash,
-        )?;
+        let message =
+            v0::Message::try_compile(&self.user_signer.pubkey(), &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -169,15 +157,12 @@ impl TransactionGenerator {
             ComputeBudgetInstruction::set_compute_unit_price(1_000_000),
         ];
 
-        let (session_instructions, session_keypair) = self.build_session_establishment_instructions()?;
+        let (session_instructions, session_keypair) =
+            self.build_session_establishment_instructions()?;
         instructions.extend(session_instructions);
 
-        let message = v0::Message::try_compile(
-            &self.sponsor_pubkey,
-            &instructions,
-            &[],
-            blockhash,
-        )?;
+        let message =
+            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -195,25 +180,35 @@ impl TransactionGenerator {
         let session_keypair = Keypair::new();
         let session_pubkey = session_keypair.pubkey();
 
-        let expires_iso = convert_to_iso_string((SystemTime::now().duration_since(UNIX_EPOCH).unwrap() + Duration::from_secs(3600)).as_secs());
+        let expires_iso = convert_to_iso_string(
+            (SystemTime::now().duration_since(UNIX_EPOCH).unwrap() + Duration::from_secs(3600))
+                .as_secs(),
+        );
 
-        let message_bytes = build_intent_message(&self.chain_id, &self.domain, &expires_iso, &session_pubkey);
+        let message_bytes =
+            build_intent_message(&self.chain_id, &self.domain, &expires_iso, &session_pubkey);
         let intent_ix = build_ed25519_verification_ix(&self.user_signer, message_bytes);
 
         let domain_record_pda = get_domain_record_address(&self.domain);
 
-        let accounts = gather_start_session_accounts(
-            self.sponsor_pubkey,
-            session_pubkey,
-            domain_record_pda,
-        );
-        let start_session_ix = Instruction { program_id: SESSION_MANAGER_ID, accounts, data: vec![0u8] };
+        let accounts =
+            gather_start_session_accounts(self.sponsor_pubkey, session_pubkey, domain_record_pda);
+        let start_session_ix = Instruction {
+            program_id: SESSION_MANAGER_ID,
+            accounts,
+            data: vec![0u8],
+        };
 
         Ok((vec![intent_ix, start_session_ix], session_keypair))
     }
 }
 
-fn build_intent_message(chain_id: &str, domain: &str, expires_iso: &str, session_key: &Pubkey) -> Vec<u8> {
+fn build_intent_message(
+    chain_id: &str,
+    domain: &str,
+    expires_iso: &str,
+    session_key: &Pubkey,
+) -> Vec<u8> {
     const HEADER: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.";
     const MAJOR: &str = "0";
     const MINOR: &str = "3";
@@ -247,7 +242,11 @@ fn build_ed25519_verification_ix(user_signer: &Keypair, message_bytes: Vec<u8>) 
     data.extend_from_slice(&user_signer.pubkey().to_bytes());
     data.extend_from_slice(signature.as_ref());
     data.extend_from_slice(&message_bytes);
-    Instruction { program_id: ed25519_program::id(), accounts: vec![], data }
+    Instruction {
+        program_id: ed25519_program::id(),
+        accounts: vec![],
+        data,
+    }
 }
 
 fn gather_start_session_accounts(
@@ -256,8 +255,8 @@ fn gather_start_session_accounts(
     domain_record_pda: Pubkey,
 ) -> Vec<AccountMeta> {
     let (chain_id_pda, _chain_bump) = Pubkey::find_program_address(&[b"chain_id"], &CHAIN_ID_PID);
-    let (session_setter_pda, _setter_bump) = Pubkey::find_program_address(&[b"session_setter"], &SESSION_MANAGER_ID);
-    let token_program_id = spl_token::id().into();
+    let (session_setter_pda, _setter_bump) =
+        Pubkey::find_program_address(&[b"session_setter"], &SESSION_MANAGER_ID);
     let sysvar_instructions_id: Pubkey = solana_program::sysvar::instructions::ID;
     vec![
         AccountMeta::new(sponsor, true),
@@ -266,14 +265,16 @@ fn gather_start_session_accounts(
         AccountMeta::new_readonly(sysvar_instructions_id, false),
         AccountMeta::new_readonly(domain_record_pda, false),
         AccountMeta::new_readonly(session_setter_pda, false),
-        AccountMeta::new_readonly(token_program_id, false),
+        AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(solana_program::system_program::ID, false),
     ]
 }
 
 fn convert_to_iso_string(unix_secs: u64) -> String {
     match OffsetDateTime::from_unix_timestamp(unix_secs as i64) {
-        Ok(dt) => dt.format(&Rfc3339).unwrap_or_else(|_| format!("{}", unix_secs)),
+        Ok(dt) => dt
+            .format(&Rfc3339)
+            .unwrap_or_else(|_| format!("{}", unix_secs)),
         Err(_) => format!("{}", unix_secs),
     }
 }

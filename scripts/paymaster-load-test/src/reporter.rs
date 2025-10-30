@@ -19,7 +19,10 @@ pub async fn generate_report(
     println!("\nTest Parameters:");
     println!("  Duration:        {}s", config.duration_secs);
     println!("  Target Rate:     {} req/s", config.request_rps);
-    println!("  Valid Rate:      {:.1}%", config.validity_distribution.valid_rate * 100.0);
+    println!(
+        "  Valid Rate:      {:.1}%",
+        config.validity_distribution.valid_rate * 100.0
+    );
     println!("\nTarget Configuration:");
     println!("  Paymaster:       {}", config.external.paymaster_endpoint);
     println!("  RPC:             {}", config.external.rpc_url);
@@ -37,8 +40,16 @@ pub async fn generate_report(
     let achieved_rate = total_sent as f64 / elapsed.as_secs_f64();
 
     println!("  Total Requests:  {}", total_sent);
-    println!("  Succeeded:       {} ({:.1}%)", total_succeeded, success_rate * 100.0);
-    println!("  Failed:          {} ({:.1}%)", total_failed, (1.0 - success_rate) * 100.0);
+    println!(
+        "  Succeeded:       {} ({:.1}%)",
+        total_succeeded,
+        success_rate * 100.0
+    );
+    println!(
+        "  Failed:          {} ({:.1}%)",
+        total_failed,
+        (1.0 - success_rate) * 100.0
+    );
     println!("  Achieved Rate:   {:.2} req/s", achieved_rate);
     println!("  Actual Duration: {:.2}s", elapsed.as_secs_f64());
 
@@ -52,7 +63,11 @@ pub async fn generate_report(
     println!("  Mean:  {:.2}ms", latency.mean_ms());
     println!("  Min:   {:.2}ms", latency.min_ms());
     for (quantile, duration) in &latency.percentiles {
-        println!("  p{:<2}:   {:.2}ms", (quantile * 100.0) as u32, duration.as_micros() as f64 / 1000.0);
+        println!(
+            "  p{:<2}:   {:.2}ms",
+            (quantile * 100.0) as u32,
+            duration.as_micros() as f64 / 1000.0
+        );
     }
     println!("  Max:   {:.2}ms", latency.max_ms());
 

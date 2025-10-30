@@ -99,10 +99,7 @@ impl LoadTestMetrics {
             .iter()
             .filter_map(|entry| {
                 // Only include per-validity-type metrics (Some), not global (None)
-                match entry.key() {
-                    Some(vt) => Some((*vt, entry.value().clone())),
-                    None => None,
-                }
+                entry.key().map(|vt| (vt, entry.value().clone()))
             })
             .collect()
     }
@@ -113,7 +110,7 @@ impl LoadTestMetrics {
 }
 
 pub fn compute_latency_percentiles(hist: &Histogram<u64>, quantiles: &[f64]) -> LatencyPercentiles {
-    if hist.len() == 0 {
+    if hist.is_empty() {
         return LatencyPercentiles::default();
     }
 

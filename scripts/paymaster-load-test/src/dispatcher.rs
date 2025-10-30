@@ -43,7 +43,9 @@ struct SponsorAndSendRequest {
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "lowercase")]
 enum SponsorAndSendResponse {
-    Success { signature: String },
+    Success {
+        signature: String,
+    },
     Failed {
         signature: String,
         error: serde_json::Value,
@@ -94,8 +96,8 @@ impl LoadTestDispatcher {
             config.external.domain.clone(),
         ));
 
-        let rate_per_second = NonZeroU32::new(config.request_rps as u32)
-            .context("Request rate must be non-zero")?;
+        let rate_per_second =
+            NonZeroU32::new(config.request_rps as u32).context("Request rate must be non-zero")?;
         let quota = Quota::per_second(rate_per_second);
         let rate_limiter = Arc::new(RateLimiter::direct(quota));
 
@@ -109,7 +111,6 @@ impl LoadTestDispatcher {
             blockhash: ArcSwap::from_pointee(initial_blockhash),
         })
     }
-
 
     /// Run the load test for the specified duration
     pub async fn run(self: &Arc<Self>, duration: Duration) -> Result<()> {
@@ -177,7 +178,10 @@ impl LoadTestDispatcher {
         Ok(())
     }
 
-    async fn send_sponsor_and_send_request(&self, transaction: &VersionedTransaction) -> Result<Signature> {
+    async fn send_sponsor_and_send_request(
+        &self,
+        transaction: &VersionedTransaction,
+    ) -> Result<Signature> {
         let config = bincode::config::standard();
         let tx_bytes = bincode::serde::encode_to_vec(transaction, config)
             .context("Failed to serialize transaction")?;
@@ -193,7 +197,8 @@ impl LoadTestDispatcher {
             urlencoding::encode(&self.config.external.domain)
         );
 
-        let response = self.http_client
+        let response = self
+            .http_client
             .post(&url)
             .header("Origin", &self.config.external.domain)
             .json(&request_body)
@@ -211,16 +216,12 @@ impl LoadTestDispatcher {
             anyhow::bail!("HTTP {}: {}", status, error_text);
         }
 
-        let response_body: SponsorAndSendResponse = response
-            .json()
-            .await
-            .context("Failed to parse response")?;
+        let response_body: SponsorAndSendResponse =
+            response.json().await.context("Failed to parse response")?;
 
         match response_body {
             SponsorAndSendResponse::Success { signature } => {
-                let sig = signature
-                    .parse()
-                    .context("Failed to parse signature")?;
+                let sig = signature.parse().context("Failed to parse signature")?;
                 Ok(sig)
             }
             SponsorAndSendResponse::Failed { signature, error } => {

@@ -21,7 +21,11 @@ use crate::config::FileConfig;
 #[command(about = "Load testing tool for paymaster", long_about = None)]
 struct Args {
     /// Path to TOML configuration file
-    #[arg(short, long, default_value = "scripts/paymaster-load-test/load-test-config.toml")]
+    #[arg(
+        short,
+        long,
+        default_value = "scripts/paymaster-load-test/load-test-config.toml"
+    )]
     config: String,
 
     /// Test duration in seconds
@@ -66,7 +70,10 @@ async fn main() -> Result<()> {
     tracing::info!(" - Chain ID: {}", config.external.chain_id);
     tracing::info!(" - Duration: {}s", config.duration_secs);
     tracing::info!(" - Target Rate: {} req/s", config.request_rps);
-    tracing::info!(" - Valid Rate: {:.1}%", config.validity_distribution.valid_rate * 100.0);
+    tracing::info!(
+        " - Valid Rate: {:.1}%",
+        config.validity_distribution.valid_rate * 100.0
+    );
 
     let metrics = Arc::new(LoadTestMetrics::new());
 
@@ -105,7 +112,7 @@ async fn monitor_progress(metrics: Arc<LoadTestMetrics>, duration_secs: u64) {
     let mut last_requests = 0;
     let interval = Duration::from_secs(MONITOR_INTERVAL);
     // we round up the number of intervals to make sure we get total coverage of the test duration
-    let total_intervals = (duration_secs + (MONITOR_INTERVAL-1)) / MONITOR_INTERVAL;
+    let total_intervals = duration_secs.div_ceil(MONITOR_INTERVAL);
 
     for i in 0..total_intervals {
         sleep(interval).await;

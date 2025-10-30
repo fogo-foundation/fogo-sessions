@@ -74,13 +74,11 @@ impl RuntimeConfig {
             self.duration_secs > 0,
             "Test duration must be greater than 0"
         );
-        anyhow::ensure!(
-            self.request_rps > 0,
-            "Request rate must be greater than 0"
-        );
+        anyhow::ensure!(self.request_rps > 0, "Request rate must be greater than 0");
 
         anyhow::ensure!(
-            self.validity_distribution.valid_rate >= 0.0 && self.validity_distribution.valid_rate <= 1.0,
+            self.validity_distribution.valid_rate >= 0.0
+                && self.validity_distribution.valid_rate <= 1.0,
             "Valid rate must be between 0.0 and 1.0"
         );
 
@@ -100,14 +98,8 @@ impl RuntimeConfig {
             !self.external.paymaster_endpoint.is_empty(),
             "Paymaster endpoint cannot be empty"
         );
-        anyhow::ensure!(
-            !self.external.rpc_url.is_empty(),
-            "RPC URL cannot be empty"
-        );
-        anyhow::ensure!(
-            !self.external.domain.is_empty(),
-            "Domain cannot be empty"
-        );
+        anyhow::ensure!(!self.external.rpc_url.is_empty(), "RPC URL cannot be empty");
+        anyhow::ensure!(!self.external.domain.is_empty(), "Domain cannot be empty");
         anyhow::ensure!(
             !self.external.chain_id.is_empty(),
             "Chain id cannot be empty"
