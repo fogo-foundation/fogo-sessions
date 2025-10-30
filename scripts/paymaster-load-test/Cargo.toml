@@ -1,0 +1,39 @@
+[package]
+name = "paymaster-load-test"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow = {workspace = true}
+arc-swap = {workspace = true}
+base64 = {workspace = true}
+bincode = { version = "2.0.1", features = ["serde"] }
+chain-id = { path = "../../programs/chain-id" }
+clap = {workspace = true}
+dashmap = {workspace = true}
+fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["token-program"] }
+governor = {workspace = true}
+hdrhistogram = "7.5.4"
+rand = "0.9.2"
+reqwest = { workspace = true, features = ["json"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = "1.0.145"
+solana-client = { workspace = true }
+solana-commitment-config = { workspace = true }
+solana-compute-budget-interface = { workspace = true }
+solana-hash = { workspace = true }
+solana-keypair = { workspace = true }
+solana-message = { workspace = true }
+solana-program = { workspace = true }
+solana-pubkey = { workspace = true }
+solana-signature = { workspace = true }
+solana-signer = { workspace = true }
+solana-transaction = { workspace = true }
+spl-token = "7.0.0"
+time = "0.3.44"
+tokio = {workspace = true}
+toml = "0.9.8"
+tracing = {workspace = true}
+tracing-subscriber = {workspace = true}
+urlencoding = "2.1.3"
