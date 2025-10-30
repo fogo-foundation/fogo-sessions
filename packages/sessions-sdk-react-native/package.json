@@ -1,0 +1,175 @@
+{
+  "name": "@fogo/sessions-sdk-react-native",
+  "version": "1.0.0",
+  "description": "React Native components and hooks for fogo sessions",
+  "main": "./lib/module/index.js",
+  "types": "./lib/typescript/index.d.ts",
+  "bin": {
+    "sessions-sdk-setup": "./scripts/setup-deps.js"
+  },
+  "exports": {
+    ".": {
+      "source": "./src/index.tsx",
+      "types": "./lib/typescript/index.d.ts",
+      "default": "./lib/module/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "scripts",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "bob build",
+    "build:cjs": "bob build --target commonjs",
+    "build:esm": "bob build --target module",
+    "build:types": "bob build --target typescript",
+    "build:license": "cp ../../LICENSE ./lib/LICENSE",
+    "build:package-json": "transform-package-json ./package.json ./lib/package.json",
+    "build:readme": "cp README.md ./lib/README.md",
+    "test": "jest",
+    "test:unit": "jest",
+    "test:types": "tsc --noEmit --skipLibCheck",
+    "test:format": "prettier --check .",
+    "test:lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "fix": "pnpm run fix:lint && pnpm run fix:format",
+    "fix:format": "prettier --write .",
+    "fix:lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "clean": "del-cli lib",
+    "example": "pnpm --filter sessions-sdk-react-native-example",
+    "release": "release-it --only-version",
+    "start": "expo start --dev-client",
+    "remove-packages": "node ./scripts/remove-packages.js",
+    "restore-packages": "node ./scripts/restore-packages.js",
+    "docs": "typedoc && touch docs/.nojekyll",
+    "docs:serve": "npx http-server docs -p 8080 -o"
+  },
+  "keywords": [
+    "react-native",
+    "ios",
+    "android"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.28.3",
+    "@babel/preset-react": "^7.27.1",
+    "@babel/preset-typescript": "^7.27.1",
+    "@cprussin/eslint-config": "catalog:",
+    "@cprussin/transform-package-json": "catalog:",
+    "@eslint/compat": "^1.2.7",
+    "@eslint/eslintrc": "^3.3.0",
+    "@eslint/js": "^9.22.0",
+    "@noble/ciphers": "^1.0.0",
+    "@noble/curves": "^1.0.0",
+    "@noble/hashes": "^1.0.0",
+    "@react-native/babel-preset": "0.78.2",
+    "@react-native/eslint-config": "^0.78.0",
+    "@release-it/conventional-changelog": "^9.0.2",
+    "@scure/base": "^1.0.0",
+    "@solana/wallet-adapter-base": "0.9.27",
+    "@solana/web3.js": "1.98.4",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/bn.js": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/react": "catalog:",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "commitlint": "^19.6.1",
+    "del-cli": "^5.1.0",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "expo": "~53.0.22",
+    "expo-camera": "^16.0.0",
+    "expo-secure-store": "^14.2.3",
+    "jest": "catalog:",
+    "json": "11.0.0",
+    "prettier": "catalog:",
+    "react": "catalog:",
+    "react-native": "0.79.6",
+    "react-native-builder-bob": "^0.40.13",
+    "react-native-get-random-values": "^1.11.0",
+    "react-native-qrcode-svg": "^6.3.11",
+    "react-native-safe-area-context": ">=5.6.1",
+    "react-native-web": "^0.21.1",
+    "react-test-renderer": "19.1.1",
+    "release-it": "^17.10.0",
+    "rpc-websockets": "^9.2.0",
+    "tweetnacl": "1.0.3",
+    "typedoc": "^0.28.13",
+    "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "@metaplex-foundation/umi": ">=1.4.0",
+    "@noble/ciphers": ">=1.0.0 <2.0.0",
+    "@noble/curves": ">=1.0.0 <2.0.0",
+    "@noble/hashes": ">=1.0.0 <2.0.0",
+    "@scure/base": ">=1.0.0 <2.0.0",
+    "@solana/wallet-adapter-base": ">=0.9.27",
+    "@solana/web3.js": ">=1.98.4",
+    "@solana/webcrypto-ed25519-polyfill": ">=3.0.0",
+    "expo-camera": ">=16.0.0",
+    "expo-secure-store": ">=14.2.3",
+    "expo-standard-web-crypto": ">=2.1.4",
+    "react": ">=18.0.0",
+    "react-native": ">=0.70.0",
+    "react-native-qrcode-svg": ">=6.3.11",
+    "react-native-safe-area-context": ">=5.6.1",
+    "react-native-svg": ">=15.1.0",
+    "tweetnacl": ">=1.0.3"
+  },
+  "prettier": {
+    "quoteProps": "consistent",
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "useTabs": false
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  },
+  "create-react-native-library": {
+    "languages": "js",
+    "type": "library",
+    "version": "0.53.0"
+  },
+  "dependencies": {
+    "@fogo/sessions-sdk": "workspace:^",
+    "@solana/spl-token": "catalog:",
+    "bn.js": "catalog:",
+    "expo-status-bar": "~2.2.3",
+    "react-native-toast-message": "^2.3.3",
+    "readable-stream": "^4.7.0",
+    "swr": "catalog:",
+    "zod": "catalog:"
+  },
+  "browser": {
+    "crypto": false,
+    "fs": false,
+    "path": false
+  },
+  "react-native": {
+    "fs": false,
+    "path": false,
+    "crypto": false
+  }
+}
