@@ -35,7 +35,6 @@ v1 does not enforce relationships across instructions (e.g. require instruction 
 
 ### Prerequisites
 
-- Install the Rust toolchain listed in `services/paymaster/rust-toolchain`.
 - Provision Postgres (Docker Compose is available via `docker-compose.yml`).
 - Copy `.env.example` to `.env` and adjust the values to match your local setup.
 
@@ -44,10 +43,15 @@ v1 does not enforce relationships across instructions (e.g. require instruction 
 Start the Postgres container (and the optional `pgweb` UI) with:
 
 ```bash
-docker compose up db db-ui
+docker compose up
 ```
 
 Confirm that `DATABASE_URL` in your environment matches the credentials that the container exposes.
+
+This will:
+
+- spin up a local postgres 17 database which can be used to connect the paymaster on `postgres://paymaster:paymaster@localhost:5432/paymaster`
+- run pgweb which exposes a web interface on http://localhost:8080/
 
 ### Migrations
 
