@@ -17,7 +17,7 @@ use solana_transaction::versioned::VersionedTransaction;
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::time::sleep;
+use tokio::{task::JoinSet, time::sleep};
 
 type DirectRateLimiter = RateLimiter<
     governor::state::NotKeyed,
@@ -117,22 +117,25 @@ impl LoadTestDispatcher {
         let end = start + duration;
 
         let blockhash_updater = self.spawn_blockhash_updater();
+        let mut tasks = JoinSet::new();
 
         while Instant::now() < end {
             self.rate_limiter.until_ready().await;
 
             let current_blockhash = **self.blockhash.load();
             let dispatcher = self.clone();
-            tokio::spawn(async move {
+            tasks.spawn(async move {
                 if let Err(e) = dispatcher.send_one_request(current_blockhash).await {
                     tracing::error!("Request error: {}", e);
                 }
             });
         }
 
-        // sleep to await the final requested tasks
-        // TODO: we can do better
-        sleep(Duration::from_secs(2)).await;
+        while let Some(result) = tasks.join_next().await {
+            if let Err(e) = result {
+                tracing::error!("Task panicked: {}", e);
+            }
+        }
 
         blockhash_updater.abort();
 
