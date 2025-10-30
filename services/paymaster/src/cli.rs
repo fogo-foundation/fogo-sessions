@@ -35,8 +35,12 @@ pub struct RunOptions {
     #[arg(long, env = "LISTEN_ADDRESS", default_value = "0.0.0.0:4000")]
     pub listen_address: String,
 
-    #[arg(long, env = "OTEL_EXPORTER_OTLP_ENDPOINT")]
-    pub otlp_endpoint: Option<String>,
+    #[arg(
+        long,
+        env = "OTEL_EXPORTER_OTLP_ENDPOINT",
+        default_value = "http://localhost:4317"
+    )]
+    pub otlp_endpoint: String,
 
     #[arg(long, env = "DB_REFRESH_INTERVAL_SECONDS", default_value = "10")]
     pub db_refresh_interval_seconds: u64,

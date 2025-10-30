@@ -28,14 +28,9 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         )])
         .build();
 
-    let otlp_endpoint = opts
-        .otlp_endpoint
-        .or_else(|| std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok())
-        .unwrap_or_else(|| "http://localhost:4317".to_string());
-
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
-        .with_endpoint(otlp_endpoint)
+        .with_endpoint(opts.otlp_endpoint)
         .build()?;
 
     let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
