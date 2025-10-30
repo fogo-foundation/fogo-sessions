@@ -66,7 +66,7 @@ cargo run --bin fogo-paymaster migrate
 Seeding is optional, but simplifies bootstrapping a local configuration. Provide both a database URL and a path to a TOML config (an example lives at `tilt/configs/paymaster.toml`):
 
 ```bash
-cargo run --bin seed -- --db-url "postgres://paymaster:paymaster@localhost:5432/paymaster" --config tilt/configs/paymaster.toml
+cargo run --bin paymaster-seed -- --db-url "postgres://paymaster:paymaster@localhost:5432/paymaster" --config tilt/configs/paymaster.toml
 ```
 
 ### Running the paymaster
