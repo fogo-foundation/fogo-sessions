@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::interval;
 
-async fn load_db_config() -> Result<Config> {
+pub async fn load_db_config() -> Result<Config> {
     let mut config = db::config::load_config().await?;
     config.assign_defaults();
     Ok(config)

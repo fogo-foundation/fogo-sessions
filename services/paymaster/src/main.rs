@@ -61,7 +61,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .init();
 
     db::pool::init_db_connection(&opts.db_url).await?;
-    let config = db::config::load_config().await?;
+    let config = config_manager::load_config::load_db_config().await?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
