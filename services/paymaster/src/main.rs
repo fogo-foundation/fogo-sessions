@@ -1,44 +1,26 @@
-use crate::config::load_config;
+use crate::cli::Cli;
+use arc_swap::ArcSwap;
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
+use std::collections::HashMap;
+use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod api;
-mod config;
+mod cli;
+mod config_manager;
 mod constraint;
 mod constraint_templates;
+mod db;
 mod metrics;
 mod rpc;
 mod serde;
 
-#[derive(Parser)]
-struct Cli {
-    #[clap(short, long, default_value = "./tilt/configs/paymaster.toml")]
-    config: String,
+type DomainStateMap = HashMap<String, api::DomainState>;
+type SharedDomains = Arc<ArcSwap<DomainStateMap>>;
 
-    #[clap(long)]
-    mnemonic_file: String,
-
-    #[clap(long)]
-    rpc_url_http: String,
-
-    #[clap(long)]
-    rpc_url_ws: Option<String>,
-
-    #[clap(long, default_value = "0.0.0.0:4000")]
-    listen_address: String,
-
-    #[clap(long)]
-    otlp_endpoint: Option<String>,
-}
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
-    let config = load_config(&cli.config).unwrap();
-    let domains = config.domains;
-
+async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let resource = opentelemetry_sdk::Resource::builder()
         .with_attributes(vec![opentelemetry::KeyValue::new(
             "service.name",
@@ -46,14 +28,9 @@ async fn main() -> anyhow::Result<()> {
         )])
         .build();
 
-    let otlp_endpoint = cli
-        .otlp_endpoint
-        .or_else(|| std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok())
-        .unwrap_or_else(|| "http://localhost:4317".to_string());
-
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
-        .with_endpoint(otlp_endpoint)
+        .with_endpoint(opts.otlp_endpoint)
         .build()?;
 
     let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
@@ -64,7 +41,6 @@ async fn main() -> anyhow::Result<()> {
         .build();
 
     let tracer = provider.tracer("paymaster-service");
-
     let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
 
     tracing_subscriber::registry()
@@ -84,18 +60,43 @@ async fn main() -> anyhow::Result<()> {
         .with(telemetry)
         .init();
 
-    let rpc_url_ws = cli
-        .rpc_url_ws
-        .unwrap_or_else(|| cli.rpc_url_http.replace("http", "ws"));
+    db::pool::init_db_connection(&opts.db_url).await?;
+    let config = db::config::load_config().await?;
 
-    api::run_server(
-        cli.mnemonic_file,
-        cli.rpc_url_http,
-        rpc_url_ws,
-        cli.listen_address,
-        domains,
-    )
-    .await;
+    let mnemonic =
+        std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
+    let domains: SharedDomains = Arc::new(ArcSwap::from_pointee(api::get_domain_state_map(
+        config.domains,
+        &mnemonic,
+    )));
+
+    config_manager::load_config::spawn_config_refresher(
+        mnemonic,
+        Arc::clone(&domains),
+        opts.db_refresh_interval_seconds,
+    );
+
+    let rpc_url_ws = opts
+        .rpc_url_ws
+        .unwrap_or_else(|| opts.rpc_url_http.replace("http", "ws"));
+    api::run_server(opts.rpc_url_http, rpc_url_ws, opts.listen_address, domains).await;
+    Ok(())
+}
+
+async fn run_migrations(opts: cli::MigrateOptions) -> anyhow::Result<()> {
+    db::pool::init_db_connection(&opts.db_url).await?;
+    db::pool::run_migrations().await?;
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    dotenvy::dotenv()?;
+
+    match Cli::parse().command {
+        cli::Command::Run(opts) => run_server(opts).await?,
+        cli::Command::Migrate(opts) => run_migrations(opts).await?,
+    }
 
     Ok(())
 }

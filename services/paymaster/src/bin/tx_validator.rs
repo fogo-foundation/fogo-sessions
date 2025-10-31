@@ -1,7 +1,13 @@
 use anyhow::{anyhow, Context, Result};
 use base64::prelude::*;
 use clap::{Parser, Subcommand, ValueEnum};
+use config::File;
 use dashmap::DashMap;
+use fogo_paymaster::{
+    config_manager::config::{Config, Domain},
+    constraint::{ContextualDomainKeys, TransactionVariation},
+    rpc::ChainIndex,
+};
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use futures::stream::{FuturesOrdered, StreamExt};
 use governor::{
@@ -18,12 +24,6 @@ use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
 use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
-
-use fogo_paymaster::{
-    config::{load_config, Domain},
-    constraint::{ContextualDomainKeys, TransactionVariation},
-    rpc::ChainIndex,
-};
 
 #[derive(Parser)]
 #[command(name = "tx-validator")]
@@ -94,6 +94,14 @@ impl Network {
     }
 }
 
+pub fn load_file_config(config_path: &str) -> Result<Config> {
+    let mut config: Config = config::Config::builder()
+        .add_source(File::with_name(config_path))
+        .build()?
+        .try_deserialize()?;
+    config.assign_defaults();
+    Ok(config)
+}
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -109,7 +117,7 @@ async fn main() -> Result<()> {
             rpc_url_http,
             network,
         } => {
-            let config = load_config(&config)?;
+            let config = load_file_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
             let rpc_url_http =
                 rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
@@ -165,7 +173,7 @@ async fn main() -> Result<()> {
 }
 
 fn get_domains_for_validation<'a>(
-    config: &'a fogo_paymaster::config::Config,
+    config: &'a fogo_paymaster::config_manager::config::Config,
     domain: &Option<String>,
 ) -> Vec<&'a Domain> {
     if let Some(domain_name) = domain {

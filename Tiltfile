@@ -76,7 +76,7 @@ local_resource(
 
 local_resource(
     "paymaster",
-    serve_cmd="cargo run --bin fogo-paymaster -- --rpc-url-http http://127.0.0.1:8899 --rpc-url-ws ws://127.0.0.1:8900 --mnemonic-file ./tilt/secrets/mnemonic",
+    serve_cmd="cargo run --bin fogo-paymaster migrate && cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster",
     resource_deps=["svm-localnet"],
 )
 
