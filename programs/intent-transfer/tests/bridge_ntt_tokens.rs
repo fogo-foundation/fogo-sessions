@@ -1,10 +1,6 @@
 use anchor_lang::{
-    solana_program::{
-        ed25519_program, pubkey::Pubkey, instruction::Instruction, sysvar
-    },
-    system_program,
-    ToAccountMetas,
-    InstructionData,
+    solana_program::{ed25519_program, instruction::Instruction, pubkey::Pubkey, sysvar},
+    system_program, InstructionData, ToAccountMetas,
 };
 use anchor_spl::token_2022::spl_token_2022::try_ui_amount_into_amount;
 use litesvm::LiteSVM;
@@ -13,8 +9,11 @@ use solana_signer::Signer;
 use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
-use intent_transfer::{bridge_message::convert_chain_id_to_wormhole, cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID}};
 use intent_transfer::cpi::ntt_manager::WORMHOLE_PROGRAM_ID;
+use intent_transfer::{
+    bridge_message::convert_chain_id_to_wormhole,
+    cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
+};
 
 mod helpers;
 
@@ -31,18 +30,12 @@ fn create_ntt_bridge_message(
          Signing this intent will bridge out the tokens as described below.\n\
          \n\
          version: 0.1\n\
-         from_chain_id: {}\n\
-         to_chain_id: {}\n\
-         token: {}\n\
-         amount: {}\n\
-         recipient_address: {}\n\
-         nonce: {}",
-        from_chain_id,
-        to_chain_id,
-        token_symbol,
-        amount,
-        recipient_address,
-        nonce
+         from_chain_id: {from_chain_id}\n\
+         to_chain_id: {to_chain_id}\n\
+         token: {token_symbol}\n\
+         amount: {amount}\n\
+         recipient_address: {recipient_address}\n\
+         nonce: {nonce}",
     )
 }
 
@@ -59,17 +52,17 @@ fn create_ed25519_signature_instruction(signer: &Keypair, message: &str) -> Inst
     instruction_data.extend_from_slice(&0u8.to_le_bytes()); // padding
 
     instruction_data.extend_from_slice(&48u16.to_le_bytes()); // signature offset (byte 48)
-    instruction_data.extend_from_slice(&u16::MAX.to_le_bytes());    // signature instruction index
+    instruction_data.extend_from_slice(&u16::MAX.to_le_bytes()); // signature instruction index
 
     instruction_data.extend_from_slice(&16u16.to_le_bytes()); // pubkey offset (byte 16)
-    instruction_data.extend_from_slice(&u16::MAX.to_le_bytes());    // pubkey instruction index
+    instruction_data.extend_from_slice(&u16::MAX.to_le_bytes()); // pubkey instruction index
 
     instruction_data.extend_from_slice(&112u16.to_le_bytes()); // message data offset (byte 112)
     instruction_data.extend_from_slice(&(message.len() as u16).to_le_bytes()); // message data size
-    instruction_data.extend_from_slice(&u16::MAX.to_le_bytes());    // message instruction index
-    
+    instruction_data.extend_from_slice(&u16::MAX.to_le_bytes()); // message instruction index
+
     instruction_data.extend_from_slice(&pubkey_bytes);
-    instruction_data.extend_from_slice(&signature_bytes);
+    instruction_data.extend_from_slice(signature_bytes);
     instruction_data.extend_from_slice(message.as_bytes());
 
     Instruction {
@@ -97,11 +90,11 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     let mock_ntt_manager_id = Pubkey::new_unique();
     let mock_ntt_manager_path = "../../target/deploy/mock_ntt_manager.so";
-    svm.add_program_from_file(&mock_ntt_manager_id, mock_ntt_manager_path)
+    svm.add_program_from_file(mock_ntt_manager_id, mock_ntt_manager_path)
         .expect("Failed to load mock NTT manager");
 
     let mock_ntt_with_executor_path = "../../target/deploy/mock_ntt_with_executor.so";
-    svm.add_program_from_file(&NTT_WITH_EXECUTOR_PROGRAM_ID, mock_ntt_with_executor_path)
+    svm.add_program_from_file(NTT_WITH_EXECUTOR_PROGRAM_ID, mock_ntt_with_executor_path)
         .expect("Failed to load mock NTT with executor");
 
     let chain_id_program_path = "../../target/deploy/chain_id.so";
@@ -116,10 +109,8 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     let source_token_account = token.airdrop(&mut svm, &source_owner.pubkey(), 1_000.0);
 
-    let (intent_transfer_setter, _) = Pubkey::find_program_address(
-        &[b"intent_transfer"],
-        &intent_transfer::ID,
-    );
+    let (intent_transfer_setter, _) =
+        Pubkey::find_program_address(&[b"intent_transfer"], &intent_transfer::ID);
 
     let (intermediate_token_account, _) = Pubkey::find_program_address(
         &[b"bridge_ntt_intermediate", source_token_account.as_ref()],
@@ -131,10 +122,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         &intent_transfer::ID,
     );
 
-    let (chain_id_account, _) = Pubkey::find_program_address(
-        &[b"chain_id"],
-        &chain_id::ID,
-    );
+    let (chain_id_account, _) = Pubkey::find_program_address(&[b"chain_id"], &chain_id::ID);
 
     let chain_id_value = "solana".to_string();
 
@@ -144,18 +132,15 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             chain_id_account,
             sponsor: payer.pubkey(),
             system_program: system_program::ID,
-        }.to_account_metas(None),
+        }
+        .to_account_metas(None),
         data: chain_id::instruction::Set {
             chain_id: chain_id_value.clone(),
-        }.data(),
+        }
+        .data(),
     };
 
-    helpers::submit_transaction(
-        &mut svm,
-        &[set_chain_id_ix],
-        &payer,
-        &[&payer],
-    ).unwrap();
+    helpers::submit_transaction(&mut svm, &[set_chain_id_ix], &payer, &[&payer]).unwrap();
 
     let ntt_config = Keypair::new();
     let ntt_inbox_rate_limit = Keypair::new();
@@ -173,24 +158,27 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let payee_ntt_with_executor = Keypair::new();
 
     let to_chain_id = "ethereum";
-    let to_chain_id_wormhole = convert_chain_id_to_wormhole(to_chain_id).expect("Invalid to_chain_id");
+    let to_chain_id_wormhole =
+        convert_chain_id_to_wormhole(to_chain_id).expect("Invalid to_chain_id");
     let recipient_address_str = "0xabcaA90Df87bf36b051E65331594d9AAB29C739e";
     let amount_str = "0.0001";
 
     let amount = try_ui_amount_into_amount(amount_str.parse().unwrap(), decimals).unwrap();
     let should_queue = false;
 
-    let recipient_hex = recipient_address_str.strip_prefix("0x").unwrap_or(recipient_address_str);
+    let recipient_hex = recipient_address_str
+        .strip_prefix("0x")
+        .unwrap_or(recipient_address_str);
     let recipient_bytes_vec = hex::decode(recipient_hex).unwrap();
     let mut recipient_address_bytes = [0u8; 32];
     let start_idx = 32 - recipient_bytes_vec.len();
     recipient_address_bytes[start_idx..].copy_from_slice(&recipient_bytes_vec);
 
     let args_hash = keccak::hashv(&[
-        &amount.to_be_bytes().as_ref(),
+        &amount.to_be_bytes(),
         to_chain_id_wormhole.to_be_bytes().as_ref(),
         &recipient_address_bytes,
-        &[u8::from(should_queue)]
+        &[u8::from(should_queue)],
     ]);
 
     let (ntt_session_authority, _) = Pubkey::find_program_address(
@@ -250,7 +238,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
                 ntt_manager: mock_ntt_manager_id,
                 ntt_config: ntt_config.pubkey(),
                 ntt_inbox_rate_limit: ntt_inbox_rate_limit.pubkey(),
-                ntt_session_authority: ntt_session_authority,
+                ntt_session_authority,
                 ntt_token_authority: ntt_token_authority.pubkey(),
                 wormhole_message: wormhole_message.pubkey(),
                 transceiver: transceiver.pubkey(),
@@ -266,15 +254,17 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
                 ntt_outbox_rate_limit: ntt_outbox_rate_limit.pubkey(),
                 ntt_custody,
                 payee_ntt_with_executor: payee_ntt_with_executor.pubkey(),
-            }
-        }.to_account_metas(None),
+            },
+        }
+        .to_account_metas(None),
         data: intent_transfer::instruction::BridgeNttTokens {
             args: intent_transfer::BridgeNttTokensArgs {
                 exec_amount: 1_000,
                 signed_quote_bytes: vec![],
                 relay_instructions: vec![],
             },
-        }.data(),
+        }
+        .data(),
     };
 
     let transfer_amount = token.get_amount_with_decimals(amount_str.parse::<f64>().unwrap());
@@ -295,17 +285,28 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let logs = meta.logs;
     println!("Transaction logs:");
     for log in &logs {
-        println!("  {}", log);
+        println!("  {log}");
     }
 
     let has_transfer_burn = logs.iter().any(|log| log.contains("transfer_burn"));
-    let has_release_outbound = logs.iter().any(|log| log.contains("release_wormhole_outbound"));
+    let has_release_outbound = logs
+        .iter()
+        .any(|log| log.contains("release_wormhole_outbound"));
     let has_relay_message = logs.iter().any(|log| log.contains("relay_ntt_message"));
 
     println!("CPI Verification:");
-    println!("  {} transfer_burn called", if has_transfer_burn { "✓" } else { "✗" });
-    println!("  {} release_wormhole_outbound called", if has_release_outbound { "✓" } else { "✗" });
-    println!("  {} relay_ntt_message called", if has_relay_message { "✓" } else { "✗" });
+    println!(
+        "  {} transfer_burn called",
+        if has_transfer_burn { "✓" } else { "✗" }
+    );
+    println!(
+        "  {} release_wormhole_outbound called",
+        if has_release_outbound { "✓" } else { "✗" }
+    );
+    println!(
+        "  {} relay_ntt_message called",
+        if has_relay_message { "✓" } else { "✗" }
+    );
 
     let source_balance_after = token.get_balance(&svm, &source_token_account);
     let intermediate_balance_after = token.get_balance(&svm, &intermediate_token_account);
@@ -316,20 +317,17 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     assert_eq!(
         source_delta, transfer_amount,
-        "Source balance should decrease by transfer amount. Expected: {}, Got: {}",
-        transfer_amount, source_delta
+        "Source balance should decrease by transfer amount. Expected: {transfer_amount}, Got: {source_delta}",
     );
 
     // Intermediate should remain at 0 since tokens are transferred to custody
     assert_eq!(
         intermediate_balance_after, 0,
-        "Intermediate balance should be 0 after transfer to custody. Got: {}",
-        intermediate_balance_after
+        "Intermediate balance should be 0 after transfer to custody. Got: {intermediate_balance_after}",
     );
 
     assert_eq!(
         custody_delta, transfer_amount,
-        "Custody balance should increase by transfer amount. Expected: {}, Got: {}",
-        transfer_amount, custody_delta
+        "Custody balance should increase by transfer amount. Expected: {transfer_amount}, Got: {custody_delta}",
     );
 }

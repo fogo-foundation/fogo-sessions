@@ -77,7 +77,15 @@ where
             ),
             eof,
         ),
-        |(version, from_chain_id, to_chain_id, symbol_or_mint, amount, recipient_address, nonce)| NttMessage {
+        |(
+            version,
+            from_chain_id,
+            to_chain_id,
+            symbol_or_mint,
+            amount,
+            recipient_address,
+            nonce,
+        )| NttMessage {
             version,
             from_chain_id,
             to_chain_id,

@@ -1,5 +1,5 @@
 use anchor_lang::{prelude::Pubkey, solana_program::system_instruction};
-use litesvm::{LiteSVM, types::TransactionResult};
+use litesvm::{types::TransactionResult, LiteSVM};
 use solana_instruction::Instruction;
 use solana_keypair::Keypair;
 use solana_signer::Signer;
@@ -20,6 +20,7 @@ pub fn generate_and_fund_key(svm: &mut litesvm::LiteSVM) -> Keypair {
     keypair
 }
 
+#[allow(clippy::result_large_err)]
 pub fn submit_transaction(
     svm: &mut litesvm::LiteSVM,
     ixs: &[Instruction],
@@ -37,19 +38,19 @@ pub fn submit_transaction(
 }
 
 pub struct Token {
-    pub mint:          Pubkey,
-    pub decimals:      u8,
-    mint_authority:    Keypair,
+    pub mint: Pubkey,
+    pub decimals: u8,
+    mint_authority: Keypair,
     pub token_program: Pubkey,
 }
 
 impl Clone for Token {
     fn clone(&self) -> Self {
         Self {
-            mint:           self.mint,
-            decimals:       self.decimals,
+            mint: self.mint,
+            decimals: self.decimals,
             mint_authority: self.mint_authority.insecure_clone(),
-            token_program:  self.token_program,
+            token_program: self.token_program,
         }
     }
 }
@@ -161,8 +162,11 @@ impl Token {
     }
 
     pub fn get_balance(&self, svm: &LiteSVM, token_account: &Pubkey) -> u64 {
-        let account = svm.get_account(token_account).expect("Token account not found");
-        let account_data = spl_token::state::Account::unpack(&account.data).expect("Failed to unpack token account");
+        let account = svm
+            .get_account(token_account)
+            .expect("Token account not found");
+        let account_data = spl_token::state::Account::unpack(&account.data)
+            .expect("Failed to unpack token account");
         account_data.amount
     }
 }
