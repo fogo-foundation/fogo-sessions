@@ -20,6 +20,7 @@ use solana_client::{
     nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config,
     rpc_config::RpcTransactionConfig,
 };
+use solana_pubkey::Pubkey;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
@@ -43,6 +44,10 @@ enum Commands {
         /// Domain name to check against (if not provided, checks all domains)
         #[arg(short, long)]
         domain: Option<String>,
+
+        /// Sponsor pubkey for the provided domain, if this is provided the sponsor pubkey won't be fetchedfrom the paymaster server. This is useful if your domain is not registered with the paymaster server yet.
+        #[arg(long, requires = "domain")]
+        sponsor: Option<Pubkey>,
 
         /// Transaction hash to fetch from RPC
         #[arg(long, conflicts_with_all = ["transaction", "recent_sponsor_txs"])]
@@ -84,6 +89,7 @@ async fn main() -> Result<()> {
         Commands::Validate {
             config,
             domain,
+            sponsor,
             transaction_hash,
             transaction,
             recent_sponsor_txs,
@@ -108,6 +114,7 @@ async fn main() -> Result<()> {
                 transaction,
                 &domain,
                 &domains,
+                sponsor,
                 &chain_index,
                 &rpc_limiter,
             )
@@ -115,7 +122,7 @@ async fn main() -> Result<()> {
 
             let contextual_keys_cache: HashMap<_, _> =
                 futures::future::try_join_all(domains.iter().map(|domain| async {
-                    let keys = compute_contextual_keys(&domain.domain).await?;
+                    let keys = compute_contextual_keys(&domain.domain, sponsor).await?;
                     Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
                 }))
                 .await?
@@ -126,6 +133,7 @@ async fn main() -> Result<()> {
                 &transactions,
                 &domains,
                 &chain_index,
+                sponsor,
                 &contextual_keys_cache,
                 is_batch,
                 true,
@@ -156,12 +164,14 @@ fn get_domains_for_validation<'a>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn fetch_transactions(
     recent_sponsor_txs: Option<usize>,
     transaction_hash: Option<String>,
     transaction: Option<String>,
     domain: &Option<String>,
     domains: &[&Domain],
+    sponsor_override: Option<Pubkey>,
     chain_index: &ChainIndex,
     rpc_limiter: &RpcRateLimiter,
 ) -> Result<(Vec<VersionedTransaction>, bool)> {
@@ -177,7 +187,7 @@ async fn fetch_transactions(
                 "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
             ));
         };
-        let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
+        let sponsor = sponsor_override.unwrap_or(fetch_sponsor_pubkey(domain_for_sponsor).await?);
         let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc, rpc_limiter)
             .await?;
         println!(
@@ -205,6 +215,7 @@ async fn validate_transactions(
     transactions: &[VersionedTransaction],
     domains: &[&Domain],
     chain_index: &ChainIndex,
+    sponsor_override: Option<Pubkey>,
     contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
     is_batch: bool,
     verbose: bool,
@@ -214,10 +225,15 @@ async fn validate_transactions(
         .enumerate()
         .map(|(idx, tx)| async move {
             let results = futures::future::join_all(domains.iter().map(|domain| async {
-                let variations =
-                    get_matching_variations(tx, domain, chain_index, contextual_keys_cache)
-                        .await
-                        .unwrap_or_default();
+                let variations = get_matching_variations(
+                    tx,
+                    domain,
+                    chain_index,
+                    sponsor_override,
+                    contextual_keys_cache,
+                )
+                .await
+                .unwrap_or_default();
                 variations
                     .into_iter()
                     .map(|v| (domain.domain.as_str(), v))
@@ -407,6 +423,7 @@ async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
     domain: &'a Domain,
     chain_index: &ChainIndex,
+    sponsor_override: Option<Pubkey>,
     contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
 ) -> Result<Vec<&'a TransactionVariation>> {
     let mut matching_variations = Vec::new();
@@ -414,7 +431,7 @@ async fn get_matching_variations<'a>(
     let contextual_keys = if let Some(keys) = contextual_keys_cache.get(&domain.domain) {
         keys
     } else {
-        &compute_contextual_keys(&domain.domain).await?
+        &compute_contextual_keys(&domain.domain, sponsor_override).await?
     };
 
     for variation in &domain.tx_variations {
@@ -436,9 +453,7 @@ async fn get_matching_variations<'a>(
     Ok(matching_variations)
 }
 
-async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
-    let domain_registry = get_domain_record_address(domain);
-
+async fn fetch_sponsor_pubkey(domain: &str) -> Result<Pubkey> {
     let url = format!("https://paymaster.fogo.io/api/sponsor_pubkey?domain={domain}");
     let client = reqwest::Client::new();
     let response =
@@ -458,12 +473,17 @@ async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
         .await
         .with_context(|| format!("Failed to read response body for domain: {domain}"))?;
 
-    let sponsor = solana_pubkey::Pubkey::from_str(sponsor_str.trim()).with_context(|| {
+    solana_pubkey::Pubkey::from_str(sponsor_str.trim()).with_context(|| {
         format!("Failed to parse sponsor pubkey from API response for domain: {domain}")
-    })?;
+    })
+}
 
+async fn compute_contextual_keys(
+    domain: &str,
+    sponsor_override: Option<Pubkey>,
+) -> Result<ContextualDomainKeys> {
     Ok(ContextualDomainKeys {
-        domain_registry,
-        sponsor,
+        domain_registry: get_domain_record_address(domain),
+        sponsor: sponsor_override.unwrap_or(fetch_sponsor_pubkey(domain).await?),
     })
 }
