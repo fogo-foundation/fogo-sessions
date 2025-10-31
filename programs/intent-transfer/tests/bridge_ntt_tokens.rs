@@ -225,6 +225,8 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     let ed25519_ix = create_ed25519_signature_instruction(&source_owner, &message);
 
+    let session_signer = Keypair::new();
+
     let bridge_ix = Instruction {
         program_id: intent_transfer::ID,
         accounts: intent_transfer::accounts::BridgeNttTokens {
@@ -239,6 +241,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             metadata: Some(intent_transfer::ID),
             nonce: nonce_account,
             sponsor: payer.pubkey(),
+            session_signer: session_signer.pubkey(),
             system_program: anchor_lang::solana_program::system_program::ID,
             clock: sysvar::clock::ID,
             rent: sysvar::rent::ID,
@@ -280,7 +283,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let tx = Transaction::new_signed_with_payer(
         &[ed25519_ix, bridge_ix],
         Some(&payer.pubkey()),
-        &[&payer, &ntt_outbox_item],
+        &[&payer, &ntt_outbox_item, &session_signer],
         svm.latest_blockhash(),
     );
 
@@ -330,7 +333,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             );
         }
         Err(e) => {
-            println!("Transaction failed: {:?}", e);
+            println!("Transaction failed: {e:?}");
         }
     }
 }

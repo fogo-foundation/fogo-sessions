@@ -57,8 +57,8 @@ pub fn process_instruction(
 
                 // Compute keccak256 of the args (same as TransferArgs::keccak256() in the real program)
                 let args_hash = hashv(&[
-                    &amount.to_be_bytes().as_ref(),
-                    &recipient_chain.to_be_bytes().as_ref(),
+                    &amount.to_be_bytes(),
+                    &recipient_chain.to_be_bytes(),
                     &recipient_address,
                     &[u8::from(should_queue)],
                 ]);
