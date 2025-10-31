@@ -121,7 +121,7 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
         if let Some(InstructionWithIndex {
             index,
             instruction: _,
-        }) = self.remaining_instructions.front()
+        }) = instruction
         {
             return Err((
                 StatusCode::BAD_REQUEST,
