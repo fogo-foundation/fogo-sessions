@@ -7,3 +7,4 @@ pub mod db;
 pub mod metrics;
 pub mod rpc;
 pub mod serde;
+pub mod transaction;

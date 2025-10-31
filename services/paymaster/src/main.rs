@@ -16,6 +16,7 @@ mod db;
 mod metrics;
 mod rpc;
 mod serde;
+mod transaction;
 
 type DomainStateMap = HashMap<String, api::DomainState>;
 type SharedDomains = Arc<ArcSwap<DomainStateMap>>;

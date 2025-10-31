@@ -11,6 +11,7 @@ use solana_transaction::versioned::VersionedTransaction;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
+use crate::transaction::PartiallyValidatedTransaction;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]
@@ -77,25 +78,6 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
-fn instruction_matches_program(
-    transaction: &VersionedTransaction,
-    instruction_index: usize,
-    program_to_match: &Pubkey,
-) -> anyhow::Result<bool> {
-    let instruction = transaction.message.instructions().get(instruction_index);
-    if let Some(instruction) = instruction {
-        let static_accounts = transaction.message.static_account_keys();
-        let program_id = instruction.program_id(static_accounts);
-        if program_id == program_to_match {
-            return Ok(true);
-        }
-    } else {
-        anyhow::bail!("Instruction index {instruction_index} out of bounds");
-    }
-
-    Ok(false)
-}
-
 impl VariationOrderedInstructionConstraints {
     pub async fn validate_transaction(
         &self,
@@ -103,62 +85,15 @@ impl VariationOrderedInstructionConstraints {
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut instruction_index = 0;
-        let mut constraint_index = 0;
-        check_gas_spend(transaction, self.max_gas_spend)?;
-
-        // Note: this validation algorithm is technically incorrect, because of optional constraints.
-        // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
-        // is optional, it might be possible that matching against j leads to failure due to later
-        // constraints failing while matching against j+1 would result in a valid transaction match.
-        // Technically, the correct way to validate this is via branching (efficiently via DP), but given
-        // the expected variation space and a desire to avoid complexity, we use this greedy approach.
-        while constraint_index < self.instructions.len() {
-            let is_compute_budget_ix = instruction_matches_program(
-                transaction,
-                instruction_index,
-                &solana_compute_budget_interface::id(),
+        PartiallyValidatedTransaction::new(transaction)
+            .validate_compute_units(self.max_gas_spend)?
+            .validate_instruction_constraints(
+                self.instructions.as_slice(),
+                contextual_domain_keys,
+                &self.name,
+                chain_index,
             )
-            .unwrap_or(false);
-
-            if is_compute_budget_ix {
-                instruction_index += 1;
-                continue;
-            }
-
-            let constraint = &self.instructions[constraint_index];
-            let result = constraint
-                .validate_instruction(
-                    transaction,
-                    instruction_index,
-                    contextual_domain_keys,
-                    &self.name,
-                    chain_index,
-                )
-                .await;
-
-            if result.is_err() {
-                if constraint.required {
-                    return result;
-                }
-                constraint_index += 1;
-            } else {
-                instruction_index += 1;
-                constraint_index += 1;
-            }
-        }
-
-        if instruction_index != transaction.message.instructions().len() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Instruction {instruction_index} does not match any expected instruction for variation {}",
-                    self.name
-                ),
-            ));
-        }
-
-        Ok(())
+            .await
     }
 }
 
