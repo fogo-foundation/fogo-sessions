@@ -52,6 +52,8 @@ pub mod intent_transfer {
     }
 }
 
+// TODO: we should do some parsing of the relay_instructions and/or exec_amounts arg(s)
+// in order to ensure the signed intent message does precisely what the user expects
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct BridgeNttTokensArgs {
     pub exec_amount: u64,
