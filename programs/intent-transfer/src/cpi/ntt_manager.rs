@@ -45,35 +45,85 @@ pub struct ReleaseOutboundArgs {
 
 #[derive(Accounts)]
 pub struct TransferBurn<'info> {
+    /// CHECK: unneeded for CPI
     pub payer: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub config: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub mint: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub from: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub token_program: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub outbox_item: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub outbox_rate_limit: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub custody: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub system_program: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub inbox_rate_limit: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub peer: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub session_authority: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub token_authority: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]
 pub struct ReleaseWormholeOutbound<'info> {
+    /// CHECK: unneeded for CPI
     pub payer: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub config: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub outbox_item: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub transceiver: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub wormhole_message: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub emitter: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub wormhole_bridge: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub wormhole_fee_collector: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub wormhole_sequence: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub wormhole_program: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub system_program: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub clock: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub rent: AccountInfo<'info>,
 }
 

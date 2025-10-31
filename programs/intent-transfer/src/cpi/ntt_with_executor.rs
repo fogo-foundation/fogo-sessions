@@ -18,12 +18,25 @@ pub struct RelayNttMessageArgs {
 
 #[derive(Accounts)]
 pub struct RelayNttMessage<'info> {
+    /// CHECK: unneeded for CPI
     pub payer: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub payee: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub ntt_program_id: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub ntt_peer: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub ntt_message: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub executor_program: AccountInfo<'info>,
+
+    /// CHECK: unneeded for CPI
     pub system_program: AccountInfo<'info>,
 }
 

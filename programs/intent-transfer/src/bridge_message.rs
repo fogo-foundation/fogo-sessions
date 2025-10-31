@@ -25,10 +25,6 @@ pub struct NttMessage {
     // TODO: maybe we want to handle parsing this to a readable chain identifier
     pub to_chain_id_wormhole: u16,
     pub recipient_address: String,
-    // // TODO: do these need to be in the NttMessage
-    // pub exec_amount: String,
-    // pub signed_quote_bytes: String,
-    // pub relay_instructions: String,
     pub nonce: u64,
 }
 

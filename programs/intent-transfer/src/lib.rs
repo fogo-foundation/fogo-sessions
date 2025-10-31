@@ -173,6 +173,15 @@ pub struct BridgeNttTokens<'info> {
     
     #[account(mut)]
     pub sponsor: Signer<'info>,
+
+    /// This signer exists solely to protect against MITM attacks whereby a malicious actor
+    /// intercepts a submitted transaction prior to any signatures being attached and changes
+    /// fields not directly encoded by the intent message. For example, such an attack could
+    /// alter the relay instructions in the bridging; attaching this signature prior to the
+    /// transaction leaving the client protects against that attack vector. Neither this signer
+    /// nor its signature are substantively required for this transaction. Note we do not need
+    /// to perform any checks on this signer; its mere presence is sufficient.
+    pub session_signer: Signer<'info>,
     
     pub system_program: Program<'info, System>,
     
@@ -218,6 +227,7 @@ impl<'info> BridgeNttTokens<'info> {
             token_program,
             nonce,
             sponsor,
+            session_signer: _,
             system_program,
             clock,
             rent,
