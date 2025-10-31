@@ -23,7 +23,8 @@
         _noAll = true;
 
         start = "${final.lib.getExe final.tilt} up";
-        start-testnet = "USE_TESTNET=true pnpm turbo start:dev";
+        start-testnet = "NETWORK=testnet pnpm turbo start:dev";
+        start-mainnet = "NETWORK=mainnet pnpm turbo start:dev";
         clean = "${final.lib.getExe final.git} clean -fdx";
 
         test = {

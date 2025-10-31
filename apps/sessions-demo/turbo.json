@@ -8,7 +8,8 @@
         "RPC",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER",
-        "USE_TESTNET"
+        "NETWORK",
+        "FAUCET_KEY"
       ]
     },
     "start:dev": {
@@ -17,7 +18,8 @@
         "RPC",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER",
-        "USE_TESTNET"
+        "NETWORK",
+        "FAUCET_KEY"
       ]
     },
     "start:prod": {
@@ -26,7 +28,8 @@
         "RPC",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER",
-        "USE_TESTNET"
+        "NETWORK",
+        "FAUCET_KEY"
       ]
     },
     "test:types": {

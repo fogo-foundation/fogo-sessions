@@ -138,13 +138,11 @@ const WalletsPage = ({
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
   const { otherWallets, installedWallets } = useMemo(() => {
-    const { otherWallets, installedWallets } = Object.groupBy(
-      wallets,
-      (wallet) =>
-        wallet.readyState === WalletReadyState.Installed ||
-        wallet.readyState === WalletReadyState.Loadable
-          ? "installedWallets"
-          : "otherWallets",
+    const { otherWallets, installedWallets } = groupBy(wallets, (wallet) =>
+      wallet.readyState === WalletReadyState.Installed ||
+      wallet.readyState === WalletReadyState.Loadable
+        ? "installedWallets"
+        : "otherWallets",
     );
     return {
       otherWallets: otherWallets ?? [],
@@ -315,3 +313,19 @@ const Page = ({
     {children}
   </>
 );
+
+// Object.groupBy is not supported in iOS 14.  We don't really need many
+// polyfills usually and this isn't used in a hot path, so rather setting up a
+// polyfilling library let's just use a manual implementation.
+const groupBy = <T, U extends string>(items: T[], match: (value: T) => U) => {
+  const result: Partial<Record<U, T[]>> = {};
+  for (const item of items) {
+    const matchResult = match(item);
+    if (result[matchResult]) {
+      result[matchResult].push(item);
+    } else {
+      result[matchResult] = [item];
+    }
+  }
+  return result;
+};

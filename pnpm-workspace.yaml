@@ -30,8 +30,6 @@ catalog:
   "@solana/wallet-adapter-backpack": 0.1.14
   "@solana/wallet-adapter-base": 0.9.27
   "@solana/wallet-adapter-ledger": ^0.9.29
-  "@solana/wallet-adapter-react": ^0.15.35
-  "@solana/wallet-adapter-react-ui": ^0.9.35
   "@solana/wallet-adapter-wallets": ^0.19.10
   "@solana/wallet-standard-wallet-adapter-react": ^1.1.4
   "@solana/web3.js": ^1.92.3

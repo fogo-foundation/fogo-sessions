@@ -1,5 +1,4 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { useConnection } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { z } from "zod";
@@ -7,12 +6,12 @@ import { z } from "zod";
 import { getMetadata } from "../get-metadata.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { useData } from "./use-data.js";
+import { useConnection } from "./use-session.js";
 
 export { StateType } from "./use-data.js";
 
 export const useTokenAccountData = (sessionState: EstablishedSessionState) => {
-  const { connection } = useConnection();
-
+  const connection = useConnection();
   const getTokenAccountData = useCallback(
     () => getTokenAccounts(connection, sessionState),
     [connection, sessionState],
