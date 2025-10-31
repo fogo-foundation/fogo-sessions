@@ -4,11 +4,12 @@ use crate::rpc::ChainIndex;
 use reqwest::StatusCode;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_transaction::versioned::VersionedTransaction;
+use std::collections::VecDeque;
 use std::marker::PhantomData;
 
 pub struct PartiallyValidatedTransaction<'a, T: ValidationState> {
     transaction: &'a VersionedTransaction,
-    remaining_instructions: Vec<InstructionWithIndex<'a>>,
+    remaining_instructions: VecDeque<InstructionWithIndex<'a>>,
     _validation_state: PhantomData<T>,
 }
 
@@ -77,7 +78,6 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
         let mut instruction_index = 0;
-        let mut constraint_index = 0;
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
@@ -86,8 +86,7 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
 
-        while constraint_index < instruction_constraints.len() {
-            let constraint = &instruction_constraints[constraint_index];
+        for constraint in instruction_constraints {
             let result = constraint
                 .validate_instruction(
                     self.transaction,
@@ -102,10 +101,8 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
                 if constraint.required {
                     return result;
                 }
-                constraint_index += 1;
             } else {
                 instruction_index += 1;
-                constraint_index += 1;
             }
         }
 
