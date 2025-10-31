@@ -170,6 +170,7 @@ fn get_domains_for_validation<'a>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn fetch_transactions(
     recent_sponsor_txs: Option<usize>,
     transaction_hash: Option<String>,
@@ -435,12 +436,10 @@ async fn get_matching_variations<'a>(
 ) -> Result<Vec<&'a TransactionVariation>> {
     let mut matching_variations = Vec::new();
 
-    let mut computed_keys = None;
     let contextual_keys = if let Some(keys) = contextual_keys_cache.get(&domain.domain) {
         keys
     } else {
-        computed_keys = Some(compute_contextual_keys(&domain.domain, network).await?);
-        computed_keys.as_ref().unwrap()
+        &compute_contextual_keys(&domain.domain, network).await?
     };
 
     for variation in &domain.tx_variations {
@@ -465,8 +464,10 @@ async fn get_matching_variations<'a>(
 async fn compute_contextual_keys(domain: &str, network: Network) -> Result<ContextualDomainKeys> {
     let domain_registry = get_domain_record_address(domain);
 
-    let base_url = network.paymaster_base_url();
-    let url = format!("{base_url}/api/sponsor_pubkey?domain={domain}");
+    let url = format!(
+        "{}/api/sponsor_pubkey?domain={domain}",
+        network.paymaster_base_url()
+    );
     let client = reqwest::Client::new();
     let response =
         client.get(&url).send().await.with_context(|| {
