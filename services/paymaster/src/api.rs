@@ -5,6 +5,7 @@ use crate::rpc::{
     fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex,
     ConfirmationResultInternal, RetryConfig,
 };
+use crate::transaction::{TransactionToValidate, Unvalidated};
 use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -112,7 +113,7 @@ impl DomainState {
     #[tracing::instrument(skip_all, fields(variation))]
     pub async fn validate_transaction(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_, Unvalidated>,
         chain_index: &ChainIndex,
     ) -> Result<&TransactionVariation, (StatusCode, String)> {
         if transaction.message.static_account_keys()[0] != self.sponsor.pubkey() {
@@ -171,7 +172,7 @@ impl DomainState {
 
     pub async fn validate_transaction_against_variation(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_, Unvalidated>,
         tx_variation: &TransactionVariation,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
@@ -303,8 +304,9 @@ async fn sponsor_and_send_handler(
     let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
+    let transaction_to_validate = TransactionToValidate::new(&transaction)?;
     let matched_variation_name = match domain_state
-        .validate_transaction(&transaction, &state.chain_index)
+        .validate_transaction(&transaction_to_validate, &state.chain_index)
         .await
     {
         Ok(variation) => {
@@ -322,6 +324,7 @@ async fn sponsor_and_send_handler(
         }
     }
     .to_owned();
+    let gas_spent = transaction_to_validate.gas_spent;
 
     transaction.signatures[0] = domain_state
         .sponsor
@@ -367,7 +370,7 @@ async fn sponsor_and_send_handler(
                 match fetch_transaction_cost_details(
                     &state.chain_index.rpc,
                     &signature_to_fetch,
-                    &transaction,
+                    gas_spent,
                     RetryConfig {
                         max_tries: 3,
                         sleep_ms: 2000,

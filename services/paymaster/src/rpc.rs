@@ -379,7 +379,7 @@ pub struct RetryConfig {
 pub async fn fetch_transaction_cost_details(
     rpc: &RpcClient,
     signature: &Signature,
-    transaction: &VersionedTransaction,
+    gas_spent: u64,
     retry_config: RetryConfig,
 ) -> anyhow::Result<TransactionCostDetails> {
     let config = RpcTransactionConfig {
@@ -420,8 +420,7 @@ pub async fn fetch_transaction_cost_details(
                         (meta.fee, balance_spend)
                     })
                     .unwrap_or_else(|| {
-                        let fee = compute_gas_spent(transaction).unwrap_or(0);
-                        (fee, None)
+                        (gas_spent, None)
                     });
 
                 return Ok(TransactionCostDetails { fee, balance_spend });

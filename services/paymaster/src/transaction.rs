@@ -1,44 +1,57 @@
-use crate::constraint::ContextualDomainKeys;
-use crate::constraint::{check_gas_spend, InstructionConstraint};
+use crate::constraint::{ContextualDomainKeys, compute_gas_spent};
+use crate::constraint::{InstructionConstraint};
 use crate::rpc::ChainIndex;
 use reqwest::StatusCode;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::VecDeque;
 use std::marker::PhantomData;
+use std::ops::Deref;
 
-pub struct PartiallyValidatedTransaction<'a, T: ValidationState> {
+pub struct TransactionToValidate<'a, T: ValidationState> {
     transaction: &'a VersionedTransaction,
-    remaining_instructions: VecDeque<InstructionWithIndex<'a>>,
+    substantive_instructions: VecDeque<InstructionWithIndex<'a>>,
+    pub gas_spent: u64,
     _validation_state: PhantomData<T>,
 }
 
+impl<'a, T: ValidationState> Deref for TransactionToValidate<'a, T> {
+    type Target = VersionedTransaction;
+
+    fn deref(&self) -> &Self::Target {
+        self.transaction
+    }
+}
 pub struct InstructionWithIndex<'a> {
     pub index: usize,
     pub instruction: &'a CompiledInstruction,
 }
 
 pub trait ValidationState {}
-
 pub struct Unvalidated {}
-
 pub struct ComputeInstructionValidated {}
-
 impl ValidationState for Unvalidated {}
-
 impl ValidationState for ComputeInstructionValidated {}
 
-impl<'a> PartiallyValidatedTransaction<'a, Unvalidated> {
+impl<'a> TransactionToValidate<'a, Unvalidated> {
     pub fn new(transaction: &'a VersionedTransaction) -> Result<Self, (StatusCode, String)> {
+
         Ok(Self {
             transaction,
-            remaining_instructions: transaction
+            substantive_instructions: transaction
                 .message
                 .instructions()
                 .iter()
+                .filter(
+                    |instruction| {
+                        instruction.program_id(transaction.message.static_account_keys())
+                            != &solana_compute_budget_interface::id()
+                    },
+                )
                 .enumerate()
                 .map(|(index, instruction)| InstructionWithIndex { index, instruction })
                 .collect(),
+            gas_spent: compute_gas_spent(transaction)?,
             _validation_state: PhantomData,
         })
     }
@@ -46,30 +59,24 @@ impl<'a> PartiallyValidatedTransaction<'a, Unvalidated> {
     pub fn validate_compute_units(
         self,
         max_gas_spend: u64,
-    ) -> Result<PartiallyValidatedTransaction<'a, ComputeInstructionValidated>, (StatusCode, String)>
+    ) -> Result<TransactionToValidate<'a, ComputeInstructionValidated>, (StatusCode, String)>
     {
-        check_gas_spend(self.transaction, max_gas_spend)?;
-        Ok(PartiallyValidatedTransaction {
+        if self.gas_spent > max_gas_spend {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("Transaction gas spend {} exceeds maximum allowed {}", self.gas_spent, max_gas_spend),
+            ));
+        }
+        Ok(TransactionToValidate {
+            gas_spent: self.gas_spent,
             transaction: self.transaction,
-            remaining_instructions: self
-                .remaining_instructions
-                .into_iter()
-                .filter(
-                    |InstructionWithIndex {
-                         index: _,
-                         instruction,
-                     }| {
-                        instruction.program_id(self.transaction.message.static_account_keys())
-                            != &solana_compute_budget_interface::id()
-                    },
-                )
-                .collect(),
+            substantive_instructions: self.substantive_instructions,
             _validation_state: PhantomData,
         })
     }
 }
 
-impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
+impl<'a> TransactionToValidate<'a, ComputeInstructionValidated> {
     pub async fn validate_instruction_constraints(
         mut self,
         instruction_constraints: &[InstructionConstraint],
@@ -77,7 +84,7 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
         variation_name: &str,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut instruction = self.remaining_instructions.pop_front();
+        let mut instruction = self.substantive_instructions.pop_front();
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
@@ -109,7 +116,7 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
 
             match constraint_validation_result {
                 Ok(_) => {
-                    instruction = self.remaining_instructions.pop_front();
+                    instruction = self.substantive_instructions.pop_front();
                 }
                 Err(e) if constraint.required => {
                     return Err(e);

@@ -11,7 +11,7 @@ use solana_transaction::versioned::VersionedTransaction;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
-use crate::transaction::{InstructionWithIndex, PartiallyValidatedTransaction};
+use crate::transaction::{InstructionWithIndex, TransactionToValidate, Unvalidated};
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]
@@ -81,11 +81,11 @@ pub struct ContextualDomainKeys {
 impl VariationOrderedInstructionConstraints {
     pub async fn validate_transaction(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_, Unvalidated>,
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        PartiallyValidatedTransaction::new(transaction)
+        TransactionToValidate::new(transaction)?
             .validate_compute_units(self.max_gas_spend)?
             .validate_instruction_constraints(
                 self.instructions.as_slice(),
@@ -556,22 +556,6 @@ pub fn compare_primitive_data_types(
 
 pub const LAMPORTS_PER_SIGNATURE: u64 = 5000;
 pub const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
-
-/// Checks that the transaction's gas spend (signatures + priority fee) does not exceed the maximum allowed.
-/// Does not account for spend on account creation or other outlets, since those cannot be determined from the transaction data alone.
-pub fn check_gas_spend(
-    transaction: &VersionedTransaction,
-    max_gas_spend: u64,
-) -> Result<(), (StatusCode, String)> {
-    let gas_spend = compute_gas_spent(transaction)?;
-    if gas_spend > max_gas_spend {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!("Transaction gas spend {gas_spend} exceeds maximum allowed {max_gas_spend}",),
-        ));
-    }
-    Ok(())
-}
 
 /// Computes the priority fee from the transaction's compute budget instructions.
 /// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
