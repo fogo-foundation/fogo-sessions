@@ -5,6 +5,12 @@ package_manager = "pnpm"
 resolution = true
 skip-lint = false
 
+[workspace]
+members = [
+    "programs/*",
+    "programs/intent-transfer/tests/mocks/*"
+]
+
 [programs.localnet]
 session_manager = "mCB9AkebGNqN7HhUPxisr7Hd8HzHifCpubj9dCwvctk"
 example = "91VRuqpFoaPnU1aj8P7rEY53yFUn2yEFo831SVbRaq45"
