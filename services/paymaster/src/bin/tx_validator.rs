@@ -60,9 +60,9 @@ enum Commands {
         #[arg(long, default_value_t = 10)]
         rpc_quota_per_second: u32,
 
-        /// RPC HTTP URL
+        /// RPC HTTP URL (defaults to the network-specific endpoint)
         #[arg(long)]
-        rpc_url_http: String,
+        rpc_url_http: Option<String>,
 
         /// Fogo network to target
         #[arg(long, value_enum, default_value_t = Network::Testnet)]
@@ -85,6 +85,13 @@ impl Network {
             Network::Testnet => "https://paymaster.fogo.io",
         }
     }
+
+    fn default_rpc_url_http(self) -> &'static str {
+        match self {
+            Network::Mainnet => "https://mainnet.fogo.io",
+            Network::Testnet => "https://testnet.fogo.io",
+        }
+    }
 }
 
 #[tokio::main]
@@ -104,6 +111,8 @@ async fn main() -> Result<()> {
         } => {
             let config = load_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
+            let rpc_url_http =
+                rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
                 rpc: RpcClient::new(rpc_url_http),
                 lookup_table_cache: DashMap::new(),
