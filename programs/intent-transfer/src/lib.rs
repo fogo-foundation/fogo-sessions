@@ -2,24 +2,24 @@
 
 declare_id!("Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD");
 
-use crate::bridge_message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole};
+use crate::bridge_message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage};
 use crate::cpi::ntt_manager::WORMHOLE_PROGRAM_ID;
 use crate::error::IntentTransferError;
 use crate::message::Message;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::Approve;
 use anchor_spl::token::{
-    spl_token::try_ui_amount_into_amount, approve, transfer_checked, Mint, Token, TokenAccount,
+    approve, spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
     TransferChecked,
 };
 use chain_id::ChainId;
 use mpl_token_metadata::accounts::Metadata;
 use solana_intents::{Intent, SymbolOrMint};
 
-pub mod error;
 pub mod bridge_message;
-mod message;
 pub mod cpi;
+pub mod error;
+mod message;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
 const NONCE_SEED: &[u8] = b"nonce";
@@ -165,7 +165,7 @@ pub struct BridgeNttTokens<'info> {
     pub mint: Account<'info, Mint>,
 
     pub metadata: Option<UncheckedAccount<'info>>,
-    
+
     #[account(
         init_if_needed,
         payer = sponsor,
@@ -174,7 +174,7 @@ pub struct BridgeNttTokens<'info> {
         bump
     )]
     pub nonce: Account<'info, Nonce>,
-    
+
     #[account(mut)]
     pub sponsor: Signer<'info>,
 
@@ -186,12 +186,12 @@ pub struct BridgeNttTokens<'info> {
     /// nor its signature are substantively required for this transaction. Note we do not need
     /// to perform any checks on this signer; its mere presence is sufficient.
     pub session_signer: Signer<'info>,
-    
+
     pub system_program: Program<'info, System>,
-    
+
     /// CHECK: Clock sysvar
     pub clock: Sysvar<'info, Clock>,
-    
+
     /// CHECK: Rent sysvar
     pub rent: Sysvar<'info, Rent>,
 
@@ -202,9 +202,14 @@ pub struct BridgeNttTokens<'info> {
 pub const SLOT_STALENESS_THRESHOLD: u64 = 150;
 
 impl<'info> BridgeNttTokens<'info> {
-    fn verify_and_initiate_bridge(&mut self, signer_seeds: &[&[&[u8]]], args: BridgeNttTokensArgs) -> Result<()> {
-        let Intent { message, signer } = Intent::<BridgeMessage>::load(self.sysvar_instructions.as_ref())
-            .map_err(Into::<IntentTransferError>::into)?;
+    fn verify_and_initiate_bridge(
+        &mut self,
+        signer_seeds: &[&[&[u8]]],
+        args: BridgeNttTokensArgs,
+    ) -> Result<()> {
+        let Intent { message, signer } =
+            Intent::<BridgeMessage>::load(self.sysvar_instructions.as_ref())
+                .map_err(Into::<IntentTransferError>::into)?;
 
         match message {
             BridgeMessage::Ntt(ntt_message) => {
@@ -298,13 +303,14 @@ impl<'info> BridgeNttTokens<'info> {
         // Prepare transfer args for session authority verification
         let recipient_address_bytes = parse_recipient_address(&recipient_address)?;
 
-        let to_chain_id_wormhole = convert_chain_id_to_wormhole(&to_chain_id).ok_or(
-            IntentTransferError::InvalidToChainId,
-        )?;
+        let to_chain_id_wormhole = convert_chain_id_to_wormhole(&to_chain_id)
+            .ok_or(IntentTransferError::InvalidToChainId)?;
 
         let transfer_args = cpi::ntt_manager::TransferArgs {
             amount,
-            recipient_chain: cpi::ntt_manager::ChainId { id: to_chain_id_wormhole },
+            recipient_chain: cpi::ntt_manager::ChainId {
+                id: to_chain_id_wormhole,
+            },
             recipient_address: recipient_address_bytes,
             should_queue: false,
         };
@@ -361,7 +367,7 @@ impl<'info> BridgeNttTokens<'info> {
                     wormhole_program: wormhole_program.to_account_info(),
                     system_program: system_program.to_account_info(),
                     clock: clock.to_account_info(),
-                    rent: rent.to_account_info()
+                    rent: rent.to_account_info(),
                 },
             ),
             cpi::ntt_manager::ReleaseOutboundArgs {
@@ -400,7 +406,6 @@ impl<'info> BridgeNttTokens<'info> {
         Ok(())
     }
 }
-
 
 #[derive(Accounts)]
 pub struct SendTokens<'info> {
@@ -536,7 +541,11 @@ fn verify_symbol_or_mint(
         }
 
         (SymbolOrMint::Mint(ref expected_mint), None) => {
-            require_keys_eq!(*expected_mint, mint.key(), IntentTransferError::MintMismatch);
+            require_keys_eq!(
+                *expected_mint,
+                mint.key(),
+                IntentTransferError::MintMismatch
+            );
         }
 
         (SymbolOrMint::Mint(_), Some(_)) => {
@@ -576,13 +585,12 @@ fn parse_recipient_address(address_str: &str) -> Result<[u8; 32]> {
     // fallback: try to parse as hex string
     let hex_str = address_str.strip_prefix("0x").unwrap_or(address_str);
 
-    let bytes = hex::decode(hex_str)
-        .map_err(|_| IntentTransferError::InvalidRecipientAddress)?;
+    let bytes = hex::decode(hex_str).map_err(|_| IntentTransferError::InvalidRecipientAddress)?;
 
     if bytes.len() > 32 {
         return err!(IntentTransferError::InvalidRecipientAddress);
     }
-    
+
     // left-pad with zeros to make it 32 bytes
     let mut result = [0u8; 32];
     let start_idx = 32 - bytes.len();

@@ -2,9 +2,11 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_lang::solana_program::instruction::Instruction;
 
-pub const NTT_WITH_EXECUTOR_PROGRAM_ID: Pubkey = Pubkey::from_str_const("nex1gkSWtRBheEJuQZMqHhbMG5A45qPU76KqnCZNVHR");
+pub const NTT_WITH_EXECUTOR_PROGRAM_ID: Pubkey =
+    Pubkey::from_str_const("nex1gkSWtRBheEJuQZMqHhbMG5A45qPU76KqnCZNVHR");
 
-pub const EXECUTOR_PROGRAM_ID: Pubkey = Pubkey::from_str_const("execXUrAsMnqMmTHj5m7N1YQgsDz3cwGLYCYyuDRciV");
+pub const EXECUTOR_PROGRAM_ID: Pubkey =
+    Pubkey::from_str_const("execXUrAsMnqMmTHj5m7N1YQgsDz3cwGLYCYyuDRciV");
 
 pub const RELAY_NTT_MESSAGE_DISCRIMINATOR: [u8; 8] = [192, 85, 112, 237, 55, 33, 49, 150];
 
