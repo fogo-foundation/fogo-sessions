@@ -2,7 +2,7 @@
 
 declare_id!("Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD");
 
-use crate::bridge_message::{BridgeMessage, NttMessage};
+use crate::bridge_message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole};
 use crate::cpi::ntt_manager::WORMHOLE_PROGRAM_ID;
 use crate::error::IntentTransferError;
 use crate::message::Message;
@@ -17,7 +17,7 @@ use mpl_token_metadata::accounts::Metadata;
 use solana_intents::{Intent, SymbolOrMint};
 
 pub mod error;
-mod bridge_message;
+pub mod bridge_message;
 mod message;
 pub mod cpi;
 
@@ -265,7 +265,7 @@ impl<'info> BridgeNttTokens<'info> {
             from_chain_id: expected_chain_id,
             symbol_or_mint,
             amount: ui_amount,
-            to_chain_id_wormhole,
+            to_chain_id,
             recipient_address,
             nonce: new_nonce,
         } = ntt_message;
@@ -297,6 +297,10 @@ impl<'info> BridgeNttTokens<'info> {
 
         // Prepare transfer args for session authority verification
         let recipient_address_bytes = parse_recipient_address(&recipient_address)?;
+
+        let to_chain_id_wormhole = convert_chain_id_to_wormhole(&to_chain_id).ok_or(
+            IntentTransferError::InvalidToChainId,
+        )?;
 
         let transfer_args = cpi::ntt_manager::TransferArgs {
             amount,

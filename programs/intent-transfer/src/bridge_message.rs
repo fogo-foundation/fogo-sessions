@@ -22,10 +22,19 @@ pub struct NttMessage {
     pub from_chain_id: String,
     pub symbol_or_mint: SymbolOrMint,
     pub amount: String,
-    // TODO: maybe we want to handle parsing this to a readable chain identifier
-    pub to_chain_id_wormhole: u16,
+    pub to_chain_id: String,
     pub recipient_address: String,
     pub nonce: u64,
+}
+
+pub fn convert_chain_id_to_wormhole(chain_id: &str) -> Option<u16> {
+    match chain_id {
+        "solana" => Some(1),
+        "ethereum" => Some(2),
+        "fogo" => Some(51),
+        "sepolia" => Some(10002),
+        _ => None,
+    }
 }
 
 impl TryFrom<Vec<u8>> for BridgeMessage {
@@ -60,7 +69,7 @@ where
                     version.major == 0 && version.minor == 1
                 }),
                 tag_key_value("from_chain_id"),
-                tag_key_value("to_chain_id_wormhole"),
+                tag_key_value("to_chain_id"),
                 tag_key_value("token"),
                 tag_key_value("amount"),
                 tag_key_value("recipient_address"),
@@ -68,10 +77,10 @@ where
             ),
             eof,
         ),
-        |(version, from_chain_id, to_chain_id_wormhole, symbol_or_mint, amount, recipient_address, nonce)| NttMessage {
+        |(version, from_chain_id, to_chain_id, symbol_or_mint, amount, recipient_address, nonce)| NttMessage {
             version,
             from_chain_id,
-            to_chain_id_wormhole,
+            to_chain_id,
             symbol_or_mint,
             amount,
             recipient_address,
@@ -95,7 +104,7 @@ mod tests {
 
             version: 0.1
             from_chain_id: foo
-            to_chain_id_wormhole: 2
+            to_chain_id: solana
             token: FOGO
             amount: 42.676
             recipient_address: 0xabc906d4A6074599D5471f04f9d6261030C8debe
@@ -107,7 +116,7 @@ mod tests {
             BridgeMessage::Ntt(NttMessage {
                 version: Version { major: 0, minor: 1 },
                 from_chain_id: "foo".to_string(),
-                to_chain_id_wormhole: 2,
+                to_chain_id: "solana".to_string(),
                 symbol_or_mint: SymbolOrMint::Symbol("FOGO".to_string()),
                 amount: "42.676".to_string(),
                 recipient_address: "0xabc906d4A6074599D5471f04f9d6261030C8debe".to_string(),
@@ -124,7 +133,7 @@ mod tests {
 
             version: 0.1
             from_chain_id: foo
-            to_chain_id_wormhole: 2
+            to_chain_id: solana
             token: FOGO
             amount: 42.676
             recipient_address: 0xabc906d4A6074599D5471f04f9d6261030C8debe
