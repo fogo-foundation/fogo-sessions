@@ -127,7 +127,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     );
 
     let (nonce_account, _) = Pubkey::find_program_address(
-        &[b"nonce", source_owner.pubkey().as_ref()],
+        &[b"bridge_ntt_nonce", source_owner.pubkey().as_ref()],
         &intent_transfer::ID,
     );
 
