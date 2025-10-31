@@ -1,13 +1,35 @@
 import { cookies } from "next/headers";
-import { getHost } from "../../server/get-host";
+import Link from "next/link";
 
-export const Dashboard = async ({ children }: { children: React.ReactNode }) => {
-  const host = await getHost();
+import { fetchPaymasterDataFromToken } from "../../server/paymaster";
+
+const getUserPaymasterData = async () => {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get("sessionToken");
-  const url = new URL(`/api/info`, host);
-  url.searchParams.set("sessionToken", sessionToken?.value ?? "");
-  const response = await fetch(url.toString());
-  const data = await response.json();
-  return <code>{JSON.stringify(data, null, 2)}</code>;
+  const data = await fetchPaymasterDataFromToken({
+    token: sessionToken?.value ?? "",
+  });
+  return data;
+};
+
+export const Dashboard = async ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const data = await getUserPaymasterData();
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <h2>Apps</h2>
+      <ul>
+        {data.apps.map((app) => (
+          <li key={app.id}>
+            <Link href={`/dashboard/${app.id}`}>{app.name}</Link>
+          </li>
+        ))}
+      </ul>
+      {children}
+    </div>
+  );
 };
