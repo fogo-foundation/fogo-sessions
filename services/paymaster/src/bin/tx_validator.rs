@@ -45,7 +45,7 @@ enum Commands {
         #[arg(short, long)]
         domain: Option<String>,
 
-        /// Sponsor pubkey for the provided domain, if this is provided the sponsor pubkey won't be fetchedfrom the paymaster server. This is useful if your domain is not registered with the paymaster server yet.
+        /// Sponsor pubkey for the provided domain, if this is provided the sponsor pubkey won't be fetched from the paymaster server. This is useful if your domain is not registered with the paymaster server yet.
         #[arg(long, requires = "domain")]
         sponsor: Option<Pubkey>,
 
