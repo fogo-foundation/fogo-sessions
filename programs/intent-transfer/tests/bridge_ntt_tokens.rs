@@ -13,7 +13,7 @@ use solana_signer::Signer;
 use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
-use intent_transfer::cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID};
+use intent_transfer::{bridge_message::convert_chain_id_to_wormhole, cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID}};
 use intent_transfer::cpi::ntt_manager::WORMHOLE_PROGRAM_ID;
 
 mod helpers;
@@ -22,7 +22,7 @@ fn create_ntt_bridge_message(
     from_chain_id: &str,
     token_symbol: &str,
     amount: &str,
-    to_chain_id_wormhole: u16,
+    to_chain_id: &str,
     recipient_address: &str,
     nonce: u64,
 ) -> String {
@@ -32,13 +32,13 @@ fn create_ntt_bridge_message(
          \n\
          version: 0.1\n\
          from_chain_id: {}\n\
-         to_chain_id_wormhole: {}\n\
+         to_chain_id: {}\n\
          token: {}\n\
          amount: {}\n\
          recipient_address: {}\n\
          nonce: {}",
         from_chain_id,
-        to_chain_id_wormhole,
+        to_chain_id,
         token_symbol,
         amount,
         recipient_address,
@@ -172,7 +172,8 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let ntt_outbox_rate_limit = Keypair::new();
     let payee_ntt_with_executor = Keypair::new();
 
-    let to_chain_id_wormhole: u16 = 2; // Ethereum
+    let to_chain_id = "ethereum";
+    let to_chain_id_wormhole = convert_chain_id_to_wormhole(to_chain_id).expect("Invalid to_chain_id");
     let recipient_address_str = "0xabcaA90Df87bf36b051E65331594d9AAB29C739e";
     let amount_str = "0.0001";
 
@@ -218,7 +219,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         &chain_id_value,
         &token.mint.to_string(),
         amount_str,
-        to_chain_id_wormhole,
+        to_chain_id,
         recipient_address_str,
         1,
     );
@@ -289,51 +290,46 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     let result = svm.send_transaction(tx);
 
-    match result {
-        Ok(meta) => {
-            let logs = meta.logs;
-            println!("Transaction logs:");
-            for log in &logs {
-                println!("  {}", log);
-            }
+    let meta = result.expect("Transaction failed to succeed");
 
-            let has_transfer_burn = logs.iter().any(|log| log.contains("transfer_burn"));
-            let has_release_outbound = logs.iter().any(|log| log.contains("release_wormhole_outbound"));
-            let has_relay_message = logs.iter().any(|log| log.contains("relay_ntt_message"));
-
-            println!("CPI Verification:");
-            println!("  {} transfer_burn called", if has_transfer_burn { "✓" } else { "✗" });
-            println!("  {} release_wormhole_outbound called", if has_release_outbound { "✓" } else { "✗" });
-            println!("  {} relay_ntt_message called", if has_relay_message { "✓" } else { "✗" });
-
-            let source_balance_after = token.get_balance(&svm, &source_token_account);
-            let intermediate_balance_after = token.get_balance(&svm, &intermediate_token_account);
-            let custody_balance_after = token.get_balance(&svm, &ntt_custody);
-
-            let source_delta = source_balance_before.saturating_sub(source_balance_after);
-            let custody_delta = custody_balance_after.saturating_sub(custody_balance_before);
-
-            assert_eq!(
-                source_delta, transfer_amount,
-                "Source balance should decrease by transfer amount. Expected: {}, Got: {}",
-                transfer_amount, source_delta
-            );
-
-            // Intermediate should remain at 0 since tokens are transferred to custody
-            assert_eq!(
-                intermediate_balance_after, 0,
-                "Intermediate balance should be 0 after transfer to custody. Got: {}",
-                intermediate_balance_after
-            );
-
-            assert_eq!(
-                custody_delta, transfer_amount,
-                "Custody balance should increase by transfer amount. Expected: {}, Got: {}",
-                transfer_amount, custody_delta
-            );
-        }
-        Err(e) => {
-            println!("Transaction failed: {e:?}");
-        }
+    let logs = meta.logs;
+    println!("Transaction logs:");
+    for log in &logs {
+        println!("  {}", log);
     }
+
+    let has_transfer_burn = logs.iter().any(|log| log.contains("transfer_burn"));
+    let has_release_outbound = logs.iter().any(|log| log.contains("release_wormhole_outbound"));
+    let has_relay_message = logs.iter().any(|log| log.contains("relay_ntt_message"));
+
+    println!("CPI Verification:");
+    println!("  {} transfer_burn called", if has_transfer_burn { "✓" } else { "✗" });
+    println!("  {} release_wormhole_outbound called", if has_release_outbound { "✓" } else { "✗" });
+    println!("  {} relay_ntt_message called", if has_relay_message { "✓" } else { "✗" });
+
+    let source_balance_after = token.get_balance(&svm, &source_token_account);
+    let intermediate_balance_after = token.get_balance(&svm, &intermediate_token_account);
+    let custody_balance_after = token.get_balance(&svm, &ntt_custody);
+
+    let source_delta = source_balance_before.saturating_sub(source_balance_after);
+    let custody_delta = custody_balance_after.saturating_sub(custody_balance_before);
+
+    assert_eq!(
+        source_delta, transfer_amount,
+        "Source balance should decrease by transfer amount. Expected: {}, Got: {}",
+        transfer_amount, source_delta
+    );
+
+    // Intermediate should remain at 0 since tokens are transferred to custody
+    assert_eq!(
+        intermediate_balance_after, 0,
+        "Intermediate balance should be 0 after transfer to custody. Got: {}",
+        intermediate_balance_after
+    );
+
+    assert_eq!(
+        custody_delta, transfer_amount,
+        "Custody balance should increase by transfer amount. Expected: {}, Got: {}",
+        transfer_amount, custody_delta
+    );
 }

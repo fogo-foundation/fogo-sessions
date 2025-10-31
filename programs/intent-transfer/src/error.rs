@@ -46,6 +46,8 @@ pub enum IntentTransferError {
     InvalidRecipientAddress,
     #[msg("The provided byte string could not be decoded from base64")]
     InvalidByteString,
+    #[msg("The provided to chain ID is invalid")]
+    InvalidToChainId,
 }
 
 impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for IntentTransferError {
