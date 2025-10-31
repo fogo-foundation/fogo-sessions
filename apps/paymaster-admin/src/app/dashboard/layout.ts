@@ -1,1 +1,1 @@
-export { Dashboard as default } from "../../components/Dashboard";
+export { DashboardLayout as default } from "../../components/Dashboard/layout";

@@ -1,11 +1,11 @@
-import Link from "next/link";
-
 import { getUserPaymasterData } from "../../server/paymaster";
 
-export const App = async ({
+export const AppLayout = async ({
+  children,
   params,
 }: {
   params: Promise<{ appId: string }>;
+  children: React.ReactNode;
 }) => {
   const { appId } = await params;
   const data = await getUserPaymasterData();
@@ -20,16 +20,8 @@ export const App = async ({
   }
   return (
     <div>
-      <h2>Domain Configs</h2>
-      <ul>
-        {app.domain_configs.map((domainConfig) => (
-          <li key={domainConfig.id}>
-            <Link href={`/dashboard/${appId}/${domainConfig.id}`}>
-              {domainConfig.domain}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <h1>App: {app.name}</h1>
+      {children}
     </div>
   );
 };

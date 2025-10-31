@@ -1,26 +1,11 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 
-import { fetchPaymasterDataFromToken } from "../../server/paymaster";
+import { getUserPaymasterData } from "../../server/paymaster";
 
-const getUserPaymasterData = async () => {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("sessionToken");
-  const data = await fetchPaymasterDataFromToken({
-    token: sessionToken?.value ?? "",
-  });
-  return data;
-};
-
-export const Dashboard = async ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const Dashboard = async () => {
   const data = await getUserPaymasterData();
   return (
     <div>
-      <h1>Dashboard</h1>
       <h2>Apps</h2>
       <ul>
         {data.apps.map((app) => (
@@ -29,7 +14,6 @@ export const Dashboard = async ({
           </li>
         ))}
       </ul>
-      {children}
     </div>
   );
 };

@@ -1,14 +1,17 @@
 import { verifyLogInToken } from "@fogo/sessions-sdk";
+import { cookies } from "next/headers";
 
-import pool from "./pg";
 import { UserSchema } from "../db-schema";
 import { connection } from "../fogo-connection";
+import pool from "./pg";
 
-export const fetchPaymasterDataFromToken = async ({
-  token,
-}: {
-  token: string;
-}) => {
+export const getUserPaymasterData = async () => {
+  const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("sessionToken");
+  return fetchPaymasterDataFromToken(sessionToken?.value ?? "");
+};
+
+export const fetchPaymasterDataFromToken = async (token: string) => {
   const acc = await verifyLogInToken(token, connection);
   if (!acc) {
     throw new Error("Invalid token");
