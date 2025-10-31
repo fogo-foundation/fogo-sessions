@@ -71,13 +71,13 @@ impl<'a> PartiallyValidatedTransaction<'a, Unvalidated> {
 
 impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
     pub async fn validate_instruction_constraints(
-        self,
+        mut self,
         instruction_constraints: &[InstructionConstraint],
         contextual_domain_keys: &ContextualDomainKeys,
         variation_name: &str,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut instruction_index = 0;
+        let mut instruction = self.remaining_instructions.pop_front();
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
@@ -85,33 +85,48 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
         // constraints failing while matching against j+1 would result in a valid transaction match.
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
-
-        for constraint in instruction_constraints {
-            let result = constraint
-                .validate_instruction(
-                    self.transaction,
-                    instruction_index,
-                    contextual_domain_keys,
-                    variation_name,
-                    chain_index,
-                )
-                .await;
-
-            if result.is_err() {
-                if constraint.required {
-                    return result;
+        for (constraint_index, constraint) in instruction_constraints.iter().enumerate() {
+            let constraint_validation_result = {
+                if let Some(instruction_with_index) = &instruction {
+                    constraint
+                        .validate_instruction(
+                            self.transaction,
+                            instruction_with_index.index,
+                            contextual_domain_keys,
+                            variation_name,
+                            chain_index,
+                        )
+                        .await
+                } else {
+                    Err((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Ran out of instructions while validating constraint {constraint_index} for variation {variation_name}",
+                    ),
+                ))
                 }
-            } else {
-                instruction_index += 1;
+            };
+
+            match constraint_validation_result {
+                Ok(_) => {
+                    instruction = self.remaining_instructions.pop_front();
+                }
+                Err(e) if constraint.required => {
+                    return Err(e);
+                }
+                Err(_) => {}
             }
         }
 
-        if instruction_index != self.transaction.message.instructions().len() {
+        if let Some(InstructionWithIndex {
+            index,
+            instruction: _,
+        }) = self.remaining_instructions.front()
+        {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Instruction {instruction_index} does not match any expected instruction for variation {}",
-                    variation_name
+                    "Ran out of constraints while validating instruction {index} for variation {variation_name}",
                 ),
             ));
         }
