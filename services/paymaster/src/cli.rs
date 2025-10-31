@@ -26,7 +26,7 @@ pub struct RunOptions {
     #[arg(long, env = "MNEMONIC_FILE", default_value = "./tilt/secrets/mnemonic")]
     pub mnemonic_file: String,
 
-    #[arg(long, env = "RPC_URL_HTTP")]
+    #[arg(long, env = "RPC_URL_HTTP", default_value = "http://localhost:8899")]
     pub rpc_url_http: String,
 
     #[arg(long, env = "RPC_URL_WS")]
