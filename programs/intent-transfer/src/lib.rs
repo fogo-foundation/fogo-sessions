@@ -23,7 +23,9 @@ pub mod cpi;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
 const NONCE_SEED: &[u8] = b"nonce";
+
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
+const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
 
 // TODO: pull this from somewhere?
 pub const NATIVE_TOKEN_DECIMALS: u8 = 9;
@@ -166,7 +168,7 @@ pub struct BridgeNttTokens<'info> {
         init_if_needed,
         payer = sponsor,
         space = Nonce::DISCRIMINATOR.len() + Nonce::INIT_SPACE,
-        seeds = [NONCE_SEED, source.owner.key().as_ref()],
+        seeds = [BRIDGE_NTT_NONCE_SEED, source.owner.key().as_ref()],
         bump
     )]
     pub nonce: Account<'info, Nonce>,
