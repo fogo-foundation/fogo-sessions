@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use base64::prelude::*;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
@@ -60,13 +60,39 @@ enum Commands {
         #[arg(long, default_value_t = 10)]
         rpc_quota_per_second: u32,
 
-        /// RPC HTTP URL
+        /// RPC HTTP URL (defaults to the network-specific endpoint)
         #[arg(long)]
-        rpc_url_http: String,
+        rpc_url_http: Option<String>,
+
+        /// Fogo network to target
+        #[arg(long, value_enum, default_value_t = Network::Testnet)]
+        network: Network,
     },
 }
 
 type RpcRateLimiter = RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>;
+
+#[derive(Copy, Clone, ValueEnum)]
+enum Network {
+    Mainnet,
+    Testnet,
+}
+
+impl Network {
+    fn paymaster_base_url(self) -> &'static str {
+        match self {
+            Network::Mainnet => "https://paymaster.dourolabs.app",
+            Network::Testnet => "https://paymaster.fogo.io",
+        }
+    }
+
+    fn default_rpc_url_http(self) -> &'static str {
+        match self {
+            Network::Mainnet => "https://mainnet.fogo.io",
+            Network::Testnet => "https://testnet.fogo.io",
+        }
+    }
+}
 
 pub fn load_file_config(config_path: &str) -> Result<Config> {
     let mut config: Config = config::Config::builder()
@@ -89,9 +115,12 @@ async fn main() -> Result<()> {
             recent_sponsor_txs,
             rpc_quota_per_second,
             rpc_url_http,
+            network,
         } => {
             let config = load_file_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
+            let rpc_url_http =
+                rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
                 rpc: RpcClient::new(rpc_url_http),
                 lookup_table_cache: DashMap::new(),
@@ -110,12 +139,13 @@ async fn main() -> Result<()> {
                 &domains,
                 &chain_index,
                 &rpc_limiter,
+                network,
             )
             .await?;
 
             let contextual_keys_cache: HashMap<_, _> =
                 futures::future::try_join_all(domains.iter().map(|domain| async {
-                    let keys = compute_contextual_keys(&domain.domain).await?;
+                    let keys = compute_contextual_keys(&domain.domain, network).await?;
                     Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
                 }))
                 .await?
@@ -129,6 +159,7 @@ async fn main() -> Result<()> {
                 &contextual_keys_cache,
                 is_batch,
                 true,
+                network,
             )
             .await;
 
@@ -156,6 +187,7 @@ fn get_domains_for_validation<'a>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn fetch_transactions(
     recent_sponsor_txs: Option<usize>,
     transaction_hash: Option<String>,
@@ -164,6 +196,7 @@ async fn fetch_transactions(
     domains: &[&Domain],
     chain_index: &ChainIndex,
     rpc_limiter: &RpcRateLimiter,
+    network: Network,
 ) -> Result<(Vec<VersionedTransaction>, bool)> {
     if let Some(limit) = recent_sponsor_txs {
         let domain_for_sponsor = if let Some(domain_name) = domain {
@@ -177,7 +210,9 @@ async fn fetch_transactions(
                 "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
             ));
         };
-        let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
+        let sponsor = compute_contextual_keys(domain_for_sponsor, network)
+            .await?
+            .sponsor;
         let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc, rpc_limiter)
             .await?;
         println!(
@@ -208,16 +243,22 @@ async fn validate_transactions(
     contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
     is_batch: bool,
     verbose: bool,
+    network: Network,
 ) -> (HashMap<(String, String), usize>, usize) {
     let mut validation_stream = transactions
         .iter()
         .enumerate()
         .map(|(idx, tx)| async move {
             let results = futures::future::join_all(domains.iter().map(|domain| async {
-                let variations =
-                    get_matching_variations(tx, domain, chain_index, contextual_keys_cache)
-                        .await
-                        .unwrap_or_default();
+                let variations = get_matching_variations(
+                    tx,
+                    domain,
+                    chain_index,
+                    contextual_keys_cache,
+                    network,
+                )
+                .await
+                .unwrap_or_default();
                 variations
                     .into_iter()
                     .map(|v| (domain.domain.as_str(), v))
@@ -408,13 +449,14 @@ async fn get_matching_variations<'a>(
     domain: &'a Domain,
     chain_index: &ChainIndex,
     contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
+    network: Network,
 ) -> Result<Vec<&'a TransactionVariation>> {
     let mut matching_variations = Vec::new();
 
     let contextual_keys = if let Some(keys) = contextual_keys_cache.get(&domain.domain) {
         keys
     } else {
-        &compute_contextual_keys(&domain.domain).await?
+        &compute_contextual_keys(&domain.domain, network).await?
     };
 
     for variation in &domain.tx_variations {
@@ -436,10 +478,13 @@ async fn get_matching_variations<'a>(
     Ok(matching_variations)
 }
 
-async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
+async fn compute_contextual_keys(domain: &str, network: Network) -> Result<ContextualDomainKeys> {
     let domain_registry = get_domain_record_address(domain);
 
-    let url = format!("https://paymaster.fogo.io/api/sponsor_pubkey?domain={domain}");
+    let url = format!(
+        "{}/api/sponsor_pubkey?domain={domain}",
+        network.paymaster_base_url()
+    );
     let client = reqwest::Client::new();
     let response =
         client.get(&url).send().await.with_context(|| {
