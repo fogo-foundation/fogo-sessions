@@ -76,7 +76,7 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
         variation_name: &str,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut remaining_instruction_index = 0;
+        let mut instruction_index = 0;
         let mut constraint_index = 0;
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
@@ -86,13 +86,12 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
 
-
-        while constraint_index < self.remaining_instructions.len() {
+        while constraint_index < instruction_constraints.len() {
             let constraint = &instruction_constraints[constraint_index];
             let result = constraint
                 .validate_instruction(
                     self.transaction,
-                    self.remaining_instructions[remaining_instruction_index].index,
+                    instruction_index,
                     contextual_domain_keys,
                     variation_name,
                     chain_index,
@@ -105,16 +104,16 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
                 }
                 constraint_index += 1;
             } else {
-                remaining_instruction_index += 1;
+                instruction_index += 1;
                 constraint_index += 1;
             }
         }
 
-        if remaining_instruction_index != self.remaining_instructions.len() {
+        if instruction_index != self.transaction.message.instructions().len() {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Instruction {remaining_instruction_index} does not match any expected instruction for variation {}",
+                    "Instruction {instruction_index} does not match any expected instruction for variation {}",
                     variation_name
                 ),
             ));
