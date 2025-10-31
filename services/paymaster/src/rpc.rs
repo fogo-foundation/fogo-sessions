@@ -18,7 +18,7 @@ use tokio::time::timeout;
 
 use crate::{
     api::{ConfirmationResult, PubsubClientWithReconnect},
-    constraint::compute_gas_spent,
+    constraint::compute_gas_spent, transaction::InstructionWithIndex,
 };
 
 pub struct ChainIndex {
@@ -80,6 +80,62 @@ fn to_error_response(err: Error) -> ErrorResponse {
 }
 
 impl ChainIndex {
+    /// Find the pubkey for the account at index `account_index_within_instruction` within the `instruction` at `instruction_index` in the given `transaction`.
+    pub async fn resolve_instruction_account_pubkey(
+        &self,
+        transaction: &VersionedTransaction,
+        instruction_with_index: &InstructionWithIndex<'_>,
+        account_index_within_instruction: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        let InstructionWithIndex { index: instruction_index, instruction } = &instruction_with_index;
+        let account_index_within_transaction = usize::from(*instruction
+            .accounts
+            .get(account_index_within_instruction)
+            .ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Transaction instruction {instruction_index} missing account at index {account_index_within_instruction}",
+                    ),
+                )
+            })?);
+        if let Some(pubkey) = transaction
+            .message
+            .static_account_keys()
+            .get(account_index_within_transaction)
+        {
+            Ok(*pubkey)
+        } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
+            let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
+                .iter()
+                .flat_map(|x| {
+                    x.writable_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                })
+                .chain(lookup_tables.iter().flat_map(|x| {
+                    x.readonly_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                }))
+                .collect();
+            let account_index_within_lookup_tables =
+                account_index_within_transaction - transaction.message.static_account_keys().len();
+            return self
+                .find_and_query_lookup_table(lookup_accounts, account_index_within_lookup_tables)
+                .await;
+        } else {
+            Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction instruction {instruction_index} account index {account_index_within_instruction} out of bounds",
+                ),
+            ))
+        }
+    }
+    
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
     pub async fn find_and_query_lookup_table(
         &self,

@@ -29,8 +29,8 @@ impl ValidationState for Unvalidated {}
 impl ValidationState for ComputeInstructionValidated {}
 
 impl<'a> PartiallyValidatedTransaction<'a, Unvalidated> {
-    pub fn new(transaction: &'a VersionedTransaction) -> Self {
-        Self {
+    pub fn new(transaction: &'a VersionedTransaction) -> Result<Self, (StatusCode, String)> {
+        Ok(Self {
             transaction,
             remaining_instructions: transaction
                 .message
@@ -39,8 +39,8 @@ impl<'a> PartiallyValidatedTransaction<'a, Unvalidated> {
                 .enumerate()
                 .map(|(index, instruction)| InstructionWithIndex { index, instruction })
                 .collect(),
-            _validation_state: PhantomData::default(),
-        }
+            _validation_state: PhantomData,
+        })
     }
 
     pub fn validate_compute_units(
@@ -64,7 +64,7 @@ impl<'a> PartiallyValidatedTransaction<'a, Unvalidated> {
                     },
                 )
                 .collect(),
-            _validation_state: PhantomData::default(),
+            _validation_state: PhantomData,
         })
     }
 }
@@ -91,7 +91,7 @@ impl<'a> PartiallyValidatedTransaction<'a, ComputeInstructionValidated> {
                     constraint
                         .validate_instruction(
                             self.transaction,
-                            instruction_with_index.index,
+                            &instruction_with_index,
                             contextual_domain_keys,
                             variation_name,
                             chain_index,

@@ -11,7 +11,7 @@ use solana_transaction::versioned::VersionedTransaction;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
-use crate::transaction::PartiallyValidatedTransaction;
+use crate::transaction::{InstructionWithIndex, PartiallyValidatedTransaction};
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]
@@ -110,78 +110,36 @@ pub struct InstructionConstraint {
 }
 
 impl InstructionConstraint {
-    pub async fn validate_instruction(
+    pub async fn validate_instruction<'a>(
         &self,
         transaction: &VersionedTransaction,
-        instruction_index: usize,
+        instruction_with_index: &InstructionWithIndex<'a>,
         contextual_domain_keys: &ContextualDomainKeys,
         variation_name: &str,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let instruction = &transaction.message.instructions().get(instruction_index).ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Transaction is missing instruction {instruction_index} for variation {variation_name}",
-                ),
-            )
-        })?;
         let static_accounts = transaction.message.static_account_keys();
         let signatures = &transaction.signatures;
 
-        let program_id = instruction.program_id(static_accounts);
+        let program_id = instruction_with_index.instruction.program_id(static_accounts);
         if *program_id != self.program {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Transaction instruction {instruction_index} program ID {program_id} does not match expected ID {} for variation {variation_name}",
+                    "Transaction instruction {} program ID {program_id} does not match expected ID {} for variation {variation_name}",
+                    instruction_with_index.index,
                     self.program,
                 ),
             ));
         }
 
-        for (i, account_constraint) in self.accounts.iter().enumerate() {
-            let account_index = usize::from(*instruction
-                .accounts
-                .get(usize::from(account_constraint.index))
-                .ok_or_else(|| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Transaction instruction {instruction_index} missing account at index {i} for variation {variation_name}",
-                        ),
-                    )
-                })?);
-            let account = if let Some(acc) = static_accounts.get(account_index) {
-                acc
-            } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
-                let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
-                    .iter()
-                    .flat_map(|x| {
-                        x.writable_indexes
-                            .clone()
-                            .into_iter()
-                            .map(|y| (x.account_key, y))
-                    })
-                    .chain(lookup_tables.iter().flat_map(|x| {
-                        x.readonly_indexes
-                            .clone()
-                            .into_iter()
-                            .map(|y| (x.account_key, y))
-                    }))
-                    .collect();
-                let account_position_lookups = account_index - static_accounts.len();
-                &chain_index
-                    .find_and_query_lookup_table(lookup_accounts, account_position_lookups)
-                    .await?
-            } else {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Transaction instruction {instruction_index} account index {account_index} out of bounds for variation {variation_name}",
-                    ),
-                ));
-            };
+        for account_constraint in &self.accounts {
+            let account_pubkey = chain_index.resolve_instruction_account_pubkey(
+                transaction,
+                &instruction_with_index,
+                account_constraint.index.into(),
+            )
+            .await?;
 
             let signers = static_accounts
                 .iter()
@@ -189,15 +147,15 @@ impl InstructionConstraint {
                 .cloned()
                 .collect::<Vec<_>>();
             account_constraint.check_account(
-                account,
+                &account_pubkey,
                 signers,
                 contextual_domain_keys,
-                instruction_index,
+                instruction_with_index.index,
             )?;
         }
 
         for data_constraint in &self.data {
-            data_constraint.check_data(&instruction.data, instruction_index)?;
+            data_constraint.check_data(&instruction_with_index)?;
         }
 
         Ok(())
@@ -355,9 +313,10 @@ pub struct DataConstraint {
 impl DataConstraint {
     pub fn check_data(
         &self,
-        data: &[u8],
-        instruction_index: usize,
+        instruction_with_index: &InstructionWithIndex<'_>,
     ) -> Result<(), (StatusCode, String)> {
+        let instruction_index = instruction_with_index.index;
+        let data = &instruction_with_index.instruction.data;
         let length = self.data_type.byte_length();
         let end_byte = length + usize::from(self.start_byte);
         if end_byte > data.len() {
