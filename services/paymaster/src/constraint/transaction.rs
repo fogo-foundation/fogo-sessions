@@ -1,5 +1,6 @@
+use crate::constraint::gas::compute_gas_spent;
+use crate::constraint::ContextualDomainKeys;
 use crate::constraint::InstructionConstraint;
-use crate::constraint::{compute_gas_spent, ContextualDomainKeys};
 use crate::rpc::ChainIndex;
 use reqwest::StatusCode;
 use solana_message::compiled_instruction::CompiledInstruction;
@@ -96,7 +97,7 @@ impl<'a> TransactionToValidate<'a, ComputeInstructionValidated> {
                 if let Some(instruction_with_index) = &instruction {
                     constraint
                         .validate_instruction(
-                            self.transaction,
+                            &self,
                             &instruction_with_index,
                             contextual_domain_keys,
                             variation_name,

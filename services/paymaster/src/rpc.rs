@@ -140,7 +140,7 @@ impl ChainIndex {
     }
 
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
-    pub async fn find_and_query_lookup_table(
+    async fn find_and_query_lookup_table(
         &self,
         lookup_accounts: Vec<(Pubkey, u8)>,
         account_position_lookups: usize,
