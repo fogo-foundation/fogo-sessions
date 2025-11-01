@@ -1,5 +1,4 @@
 use anyhow::Result;
-use clap::command;
 use clap::Parser;
 use config::File;
 use fogo_paymaster::config_manager::config::Config;
