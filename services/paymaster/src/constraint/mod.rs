@@ -1,12 +1,7 @@
 use axum::http::StatusCode;
-use borsh::BorshDeserialize;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
-use solana_compute_budget_interface::ComputeBudgetInstruction;
-use solana_message::compiled_instruction::CompiledInstruction;
-use solana_message::VersionedMessage;
 use solana_pubkey::Pubkey;
-use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
 
 use crate::rpc::ChainIndex;
@@ -143,7 +138,7 @@ impl InstructionConstraint {
             let account_pubkey = chain_index
                 .resolve_instruction_account_pubkey(
                     transaction,
-                    &instruction_with_index,
+                    instruction_with_index,
                     account_constraint.index.into(),
                 )
                 .await?;
@@ -162,7 +157,7 @@ impl InstructionConstraint {
         }
 
         for data_constraint in &self.data {
-            data_constraint.check_data(&instruction_with_index)?;
+            data_constraint.check_data(instruction_with_index)?;
         }
 
         Ok(())

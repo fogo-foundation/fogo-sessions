@@ -98,7 +98,7 @@ impl<'a> TransactionToValidate<'a, ComputeInstructionValidated> {
                     constraint
                         .validate_instruction(
                             &self,
-                            &instruction_with_index,
+                            instruction_with_index,
                             contextual_domain_keys,
                             variation_name,
                             chain_index,
