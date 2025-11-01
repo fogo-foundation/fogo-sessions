@@ -18,7 +18,7 @@ use tokio::time::timeout;
 
 use crate::{
     api::{ConfirmationResult, PubsubClientWithReconnect},
-    constraint::compute_gas_spent, transaction::InstructionWithIndex,
+    constraint::transaction::InstructionWithIndex,
 };
 
 pub struct ChainIndex {
@@ -87,7 +87,10 @@ impl ChainIndex {
         instruction_with_index: &InstructionWithIndex<'_>,
         account_index_within_instruction: usize,
     ) -> Result<Pubkey, (StatusCode, String)> {
-        let InstructionWithIndex { index: instruction_index, instruction } = &instruction_with_index;
+        let InstructionWithIndex {
+            index: instruction_index,
+            instruction,
+        } = &instruction_with_index;
         let account_index_within_transaction = usize::from(*instruction
             .accounts
             .get(account_index_within_instruction)
@@ -135,7 +138,7 @@ impl ChainIndex {
             ))
         }
     }
-    
+
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
     pub async fn find_and_query_lookup_table(
         &self,
@@ -419,9 +422,7 @@ pub async fn fetch_transaction_cost_details(
                             });
                         (meta.fee, balance_spend)
                     })
-                    .unwrap_or_else(|| {
-                        (gas_spent, None)
-                    });
+                    .unwrap_or_else(|| (gas_spent, None));
 
                 return Ok(TransactionCostDetails { fee, balance_spend });
             }

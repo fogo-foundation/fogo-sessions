@@ -5,8 +5,9 @@ use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
     config_manager::config::{Config, Domain},
+    constraint::transaction::TransactionToValidate,
     constraint::{ContextualDomainKeys, TransactionVariation},
-    rpc::ChainIndex, transaction::TransactionToValidate,
+    rpc::ChainIndex,
 };
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use futures::stream::{FuturesOrdered, StreamExt};
@@ -424,7 +425,10 @@ async fn get_matching_variations<'a>(
             }
             TransactionVariation::V1(v1_variation) => {
                 match TransactionToValidate::new(transaction) {
-                    Ok(paymaster_transaction) => v1_variation.validate_transaction(&paymaster_transaction, contextual_keys, chain_index).await.is_ok(),
+                    Ok(paymaster_transaction) => v1_variation
+                        .validate_transaction(&paymaster_transaction, contextual_keys, chain_index)
+                        .await
+                        .is_ok(),
                     Err(_) => false,
                 }
             }

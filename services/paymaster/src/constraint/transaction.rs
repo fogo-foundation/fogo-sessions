@@ -1,5 +1,5 @@
-use crate::constraint::{ContextualDomainKeys, compute_gas_spent};
-use crate::constraint::{InstructionConstraint};
+use crate::constraint::InstructionConstraint;
+use crate::constraint::{compute_gas_spent, ContextualDomainKeys};
 use crate::rpc::ChainIndex;
 use reqwest::StatusCode;
 use solana_message::compiled_instruction::CompiledInstruction;
@@ -35,19 +35,16 @@ impl ValidationState for ComputeInstructionValidated {}
 
 impl<'a> TransactionToValidate<'a, Unvalidated> {
     pub fn new(transaction: &'a VersionedTransaction) -> Result<Self, (StatusCode, String)> {
-
         Ok(Self {
             transaction,
             substantive_instructions: transaction
                 .message
                 .instructions()
                 .iter()
-                .filter(
-                    |instruction| {
-                        instruction.program_id(transaction.message.static_account_keys())
-                            != &solana_compute_budget_interface::id()
-                    },
-                )
+                .filter(|instruction| {
+                    instruction.program_id(transaction.message.static_account_keys())
+                        != &solana_compute_budget_interface::id()
+                })
                 .enumerate()
                 .map(|(index, instruction)| InstructionWithIndex { index, instruction })
                 .collect(),
@@ -59,12 +56,14 @@ impl<'a> TransactionToValidate<'a, Unvalidated> {
     pub fn validate_compute_units(
         self,
         max_gas_spend: u64,
-    ) -> Result<TransactionToValidate<'a, ComputeInstructionValidated>, (StatusCode, String)>
-    {
+    ) -> Result<TransactionToValidate<'a, ComputeInstructionValidated>, (StatusCode, String)> {
         if self.gas_spent > max_gas_spend {
             return Err((
                 StatusCode::BAD_REQUEST,
-                format!("Transaction gas spend {} exceeds maximum allowed {}", self.gas_spent, max_gas_spend),
+                format!(
+                    "Transaction gas spend {} exceeds maximum allowed {}",
+                    self.gas_spent, max_gas_spend
+                ),
             ));
         }
         Ok(TransactionToValidate {

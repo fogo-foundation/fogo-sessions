@@ -11,7 +11,10 @@ use solana_transaction::versioned::VersionedTransaction;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
-use crate::transaction::{InstructionWithIndex, TransactionToValidate, Unvalidated};
+use transaction::{InstructionWithIndex, TransactionToValidate, Unvalidated};
+
+mod templates;
+pub mod transaction;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]
@@ -121,7 +124,9 @@ impl InstructionConstraint {
         let static_accounts = transaction.message.static_account_keys();
         let signatures = &transaction.signatures;
 
-        let program_id = instruction_with_index.instruction.program_id(static_accounts);
+        let program_id = instruction_with_index
+            .instruction
+            .program_id(static_accounts);
         if *program_id != self.program {
             return Err((
                 StatusCode::BAD_REQUEST,
@@ -134,12 +139,13 @@ impl InstructionConstraint {
         }
 
         for account_constraint in &self.accounts {
-            let account_pubkey = chain_index.resolve_instruction_account_pubkey(
-                transaction,
-                &instruction_with_index,
-                account_constraint.index.into(),
-            )
-            .await?;
+            let account_pubkey = chain_index
+                .resolve_instruction_account_pubkey(
+                    transaction,
+                    &instruction_with_index,
+                    account_constraint.index.into(),
+                )
+                .await?;
 
             let signers = static_accounts
                 .iter()
