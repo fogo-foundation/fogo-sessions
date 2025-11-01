@@ -113,10 +113,10 @@ pub struct InstructionConstraint {
 }
 
 impl InstructionConstraint {
-    pub async fn validate_instruction<'a>(
+    pub async fn validate_instruction(
         &self,
         transaction: &VersionedTransaction,
-        instruction_with_index: &InstructionWithIndex<'a>,
+        instruction_with_index: &InstructionWithIndex<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
         variation_name: &str,
         chain_index: &ChainIndex,
