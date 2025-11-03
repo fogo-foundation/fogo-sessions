@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use config::File;
-use dashmap::{DashMap, mapref::one::Ref};
+use dashmap::DashMap;
 use fogo_paymaster::{
     config_manager::config::{Config, Domain},
     constraint::{ContextualDomainKeys, TransactionVariation},
@@ -108,7 +108,8 @@ async fn main() -> Result<()> {
                     .expect("RPC quota per second must be greater than zero"),
             ));
 
-            let contextual_keys_cache: ContextualKeysCache = ContextualKeysCache::new(&domains, sponsor).await?;
+            let contextual_keys_cache: ContextualKeysCache =
+                ContextualKeysCache::new(&domains, sponsor).await?;
 
             let (transactions, is_batch) = fetch_transactions(
                 recent_sponsor_txs,
@@ -216,14 +217,10 @@ async fn validate_transactions(
         .enumerate()
         .map(|(idx, tx)| async move {
             let results = futures::future::join_all(domains.iter().map(|domain| async {
-                let variations = get_matching_variations(
-                    tx,
-                    domain,
-                    chain_index,
-                    contextual_keys_cache,
-                )
-                .await
-                .unwrap_or_default();
+                let variations =
+                    get_matching_variations(tx, domain, chain_index, contextual_keys_cache)
+                        .await
+                        .unwrap_or_default();
                 variations
                     .into_iter()
                     .map(|v| (domain.domain.as_str(), v))
@@ -481,9 +478,14 @@ impl ContextualKeysCache {
         })
     }
 
-    pub async fn get(&self, domain: &str) -> Result<Ref<'_,String, ContextualDomainKeys>> {
-        let entry = self.cache.entry(domain.to_string()).or_insert(compute_contextual_keys(domain, self.sponsor_override).await?);
-        Ok(entry.downgrade())
+    pub async fn get(&self, domain: &str) -> Result<ContextualDomainKeys> {
+        if let Some(keys) = self.cache.get(domain) {
+            Ok(keys.clone())
+        } else {
+            let keys = compute_contextual_keys(domain, self.sponsor_override).await?;
+            self.cache.insert(domain.to_string(), keys.clone());
+            Ok(keys)
+        }
     }
 }
 
