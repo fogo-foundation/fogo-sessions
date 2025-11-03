@@ -57,7 +57,7 @@ const DEFAULT_ADDRESS_LOOKUP_TABLE_ADDRESSES = {
     // Session intent
     "B8cUjJMqaWWTNNSTXBmeptjWswwCH1gTSCRYv4nu7kJW",
     // Wormhole bridge out
-    "GfzBwA6rAeg9AjexrSNRUpcxpdpEj1KRDdeZuJy6mcmD",
+    "5TvNyLwACBbrwDeEYSFxZe4DX57zj1sbdc1cpDU3eKJu",
   ],
   [Network.Mainnet]: undefined,
 };
@@ -162,9 +162,24 @@ const sendToPaymaster = async (
     });
 
     if (response.status === 200) {
-      return sponsorAndSendResponseSchema.parse(await response.json());
+      const jsonResponse = await response.json();
+      console.log('Paymaster response:', jsonResponse);
+      const result = sponsorAndSendResponseSchema.parse(jsonResponse);
+      if (result.type === TransactionResultType.Failed) {
+        console.error('Transaction failed on-chain:', {
+          signature: result.signature,
+          error: result.error,
+        });
+      }
+      return result;
     } else {
-      throw new PaymasterResponseError(response.status, await response.text());
+      const errorText = await response.text();
+      console.error('Paymaster HTTP error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
+      throw new PaymasterResponseError(response.status, errorText);
     }
   } else {
     return options.sendToPaymaster(transaction);
@@ -200,6 +215,38 @@ const buildTransaction = async (
     const signers = await Promise.all(
       signerKeys.map(signer => createSignerFromKeyPair(signer))
     );
+
+    // UGLY CODE TO PRINT OUT MISSING ACCOUNTS FROM LUT
+    const allAddresses = new Set<string>();
+    instructions.forEach((instruction) => {
+      const keys = instruction instanceof TransactionInstruction
+        ? instruction.keys
+        : instruction.accounts ?? [];
+      keys.forEach((account: any) => {
+        const pubkey = account.pubkey ?? account.address;
+        allAddresses.add(pubkey.toString());
+      });
+    });
+    allAddresses.add(sponsor.toString());
+
+    const lookupTableAddresses = new Set<string>();
+    addressLookupTables?.forEach((table) => {
+      table.state.addresses.forEach((address) => {
+        lookupTableAddresses.add(address.toString());
+      });
+    });
+
+    const accountsNotInLookupTable = Array.from(allAddresses).filter(
+      (address) => !lookupTableAddresses.has(address)
+    );
+
+    if (accountsNotInLookupTable.length > 0) {
+      console.log('Accounts NOT in lookup table:');
+      accountsNotInLookupTable.forEach((address) => {
+        console.log(`  ${address}`);
+      });
+      console.log(`Total: ${accountsNotInLookupTable.length} accounts not in lookup table`);
+    }
 
     return partiallySignTransactionMessageWithSigners(
       pipe(

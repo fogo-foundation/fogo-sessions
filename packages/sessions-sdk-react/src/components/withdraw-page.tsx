@@ -23,13 +23,13 @@ import { bridgeOut, TransactionResultType } from "@fogo/sessions-sdk";
 const FOGO_USDC = {
   mint: new PublicKey("ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND"),
   manager: new PublicKey("NTtktYPsu3a9fvQeuJW6Ea11kinvGc7ricT1iikaTue"),
-  transceiver: new PublicKey("BLu7SyjSHWZVsiSSWhx3f3sL11rBpuzRYM1HyobVZR4v")
+  transceiver: new PublicKey("GJVgi8cwwUuyjjzM19xnT3KNYoX4pXvpp8UAS3ikgZLB")
 }
 
 const SOLANA_USDC = {
   mint: new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"),
   manager: new PublicKey("NTtktYPsu3a9fvQeuJW6Ea11kinvGc7ricT1iikaTue"),
-  transceiver: new PublicKey("BLu7SyjSHWZVsiSSWhx3f3sL11rBpuzRYM1HyobVZR4v")
+  transceiver: new PublicKey("GJVgi8cwwUuyjjzM19xnT3KNYoX4pXvpp8UAS3ikgZLB")
 }
 
 const USDC_DECIMALS = 6;
