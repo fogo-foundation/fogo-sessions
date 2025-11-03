@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use base64::prelude::*;
 use clap::{Parser, Subcommand};
 use config::File;
-use dashmap::DashMap;
+use dashmap::{DashMap, mapref::one::Ref};
 use fogo_paymaster::{
     config_manager::config::{Config, Domain},
     constraint::{ContextualDomainKeys, TransactionVariation},
@@ -108,32 +108,24 @@ async fn main() -> Result<()> {
                     .expect("RPC quota per second must be greater than zero"),
             ));
 
+            let contextual_keys_cache: ContextualKeysCache = ContextualKeysCache::new(&domains, sponsor).await?;
+
             let (transactions, is_batch) = fetch_transactions(
                 recent_sponsor_txs,
                 transaction_hash,
                 transaction,
                 &domain,
                 &domains,
-                sponsor,
                 &chain_index,
                 &rpc_limiter,
+                &contextual_keys_cache,
             )
             .await?;
-
-            let contextual_keys_cache: HashMap<_, _> =
-                futures::future::try_join_all(domains.iter().map(|domain| async {
-                    let keys = compute_contextual_keys(&domain.domain, sponsor).await?;
-                    Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
-                }))
-                .await?
-                .into_iter()
-                .collect();
 
             let (validation_counts, failure_count) = validate_transactions(
                 &transactions,
                 &domains,
                 &chain_index,
-                sponsor,
                 &contextual_keys_cache,
                 is_batch,
                 true,
@@ -171,9 +163,9 @@ async fn fetch_transactions(
     transaction: Option<String>,
     domain: &Option<String>,
     domains: &[&Domain],
-    sponsor_override: Option<Pubkey>,
     chain_index: &ChainIndex,
     rpc_limiter: &RpcRateLimiter,
+    contextual_keys_cache: &ContextualKeysCache,
 ) -> Result<(Vec<VersionedTransaction>, bool)> {
     if let Some(limit) = recent_sponsor_txs {
         let domain_for_sponsor = if let Some(domain_name) = domain {
@@ -187,7 +179,7 @@ async fn fetch_transactions(
                 "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
             ));
         };
-        let sponsor = sponsor_override.unwrap_or(fetch_sponsor_pubkey(domain_for_sponsor).await?);
+        let sponsor = contextual_keys_cache.get(domain_for_sponsor).await?.sponsor;
         let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc, rpc_limiter)
             .await?;
         println!(
@@ -215,8 +207,7 @@ async fn validate_transactions(
     transactions: &[VersionedTransaction],
     domains: &[&Domain],
     chain_index: &ChainIndex,
-    sponsor_override: Option<Pubkey>,
-    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
+    contextual_keys_cache: &ContextualKeysCache,
     is_batch: bool,
     verbose: bool,
 ) -> (HashMap<(String, String), usize>, usize) {
@@ -229,7 +220,6 @@ async fn validate_transactions(
                     tx,
                     domain,
                     chain_index,
-                    sponsor_override,
                     contextual_keys_cache,
                 )
                 .await
@@ -423,24 +413,18 @@ async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
     domain: &'a Domain,
     chain_index: &ChainIndex,
-    sponsor_override: Option<Pubkey>,
-    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
+    contextual_keys_cache: &ContextualKeysCache,
 ) -> Result<Vec<&'a TransactionVariation>> {
     let mut matching_variations = Vec::new();
 
-    let contextual_keys = if let Some(keys) = contextual_keys_cache.get(&domain.domain) {
-        keys
-    } else {
-        &compute_contextual_keys(&domain.domain, sponsor_override).await?
-    };
-
+    let contextual_keys = contextual_keys_cache.get(&domain.domain).await?;
     for variation in &domain.tx_variations {
         let matches = match variation {
             TransactionVariation::V0(v0_variation) => {
                 v0_variation.validate_transaction(transaction).is_ok()
             }
             TransactionVariation::V1(v1_variation) => v1_variation
-                .validate_transaction(transaction, contextual_keys, chain_index)
+                .validate_transaction(transaction, &contextual_keys, chain_index)
                 .await
                 .is_ok(),
         };
@@ -476,6 +460,31 @@ async fn fetch_sponsor_pubkey(domain: &str) -> Result<Pubkey> {
     solana_pubkey::Pubkey::from_str(sponsor_str.trim()).with_context(|| {
         format!("Failed to parse sponsor pubkey from API response for domain: {domain}")
     })
+}
+
+struct ContextualKeysCache {
+    pub cache: DashMap<String, ContextualDomainKeys>,
+    pub sponsor_override: Option<Pubkey>,
+}
+
+impl ContextualKeysCache {
+    pub async fn new(domains: &[&Domain], sponsor_override: Option<Pubkey>) -> Result<Self> {
+        Ok(Self {
+            cache: futures::future::try_join_all(domains.iter().map(|domain| async {
+                let keys = compute_contextual_keys(&domain.domain, sponsor_override).await?;
+                Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
+            }))
+            .await?
+            .into_iter()
+            .collect(),
+            sponsor_override,
+        })
+    }
+
+    pub async fn get(&self, domain: &str) -> Result<Ref<'_,String, ContextualDomainKeys>> {
+        let entry = self.cache.entry(domain.to_string()).or_insert(compute_contextual_keys(domain, self.sponsor_override).await?);
+        Ok(entry.downgrade())
+    }
 }
 
 async fn compute_contextual_keys(
