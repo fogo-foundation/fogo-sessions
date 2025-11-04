@@ -246,14 +246,10 @@ async fn validate_transactions(
         .enumerate()
         .map(|(idx, tx)| async move {
             let results = futures::future::join_all(domains.iter().map(|domain| async {
-                let variations = get_matching_variations(
-                    tx,
-                    domain,
-                    chain_index,
-                    contextual_keys_cache,
-                )
-                .await
-                .unwrap_or_default();
+                let variations =
+                    get_matching_variations(tx, domain, chain_index, contextual_keys_cache)
+                        .await
+                        .unwrap_or_default();
                 variations
                     .into_iter()
                     .map(|v| (domain.domain.as_str(), v))
@@ -503,10 +499,15 @@ struct ContextualKeysCache {
 }
 
 impl ContextualKeysCache {
-    pub async fn new(domains: &[&Domain], network: Network, sponsor_override: Option<Pubkey>) -> Result<Self> {
+    pub async fn new(
+        domains: &[&Domain],
+        network: Network,
+        sponsor_override: Option<Pubkey>,
+    ) -> Result<Self> {
         Ok(Self {
             cache: futures::future::try_join_all(domains.iter().map(|domain| async {
-                let keys = compute_contextual_keys(&domain.domain, network, sponsor_override).await?;
+                let keys =
+                    compute_contextual_keys(&domain.domain, network, sponsor_override).await?;
                 Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
             }))
             .await?
@@ -521,7 +522,7 @@ impl ContextualKeysCache {
         if let Some(keys) = self.cache.get(domain) {
             Ok(keys.clone())
         } else {
-            let keys = compute_contextual_keys(domain, self.network,self.sponsor_override).await?;
+            let keys = compute_contextual_keys(domain, self.network, self.sponsor_override).await?;
             self.cache.insert(domain.to_string(), keys.clone());
             Ok(keys)
         }
