@@ -223,10 +223,10 @@ fn get_domain_name(
 }
 
 fn get_domain_state<'a>(
-    domains_guard: &'a HashMap<String, DomainState>,
+    domains: &'a HashMap<String, DomainState>,
     domain_query_parameter: &str,
 ) -> Result<&'a DomainState, (StatusCode, String)> {
-    let domain_state = domains_guard
+    let domain_state = domains
         .get(domain_query_parameter)
         .ok_or_else(|| {
             (

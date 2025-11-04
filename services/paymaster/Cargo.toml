@@ -63,8 +63,12 @@ tracing-subscriber = {version = "0.3.20", features = ["env-filter", "json"]}
 utoipa = "5.4.0"
 utoipa-axum = "0.2.0"
 url = "2.5.7"
-uuid = {version = "1.18.1", features = ["v4"]}
+uuid = {version = "1.18.1", features = ["v7"]}
 
 [[bin]]
 name = "paymaster-tx-validator"
 path = "src/bin/tx_validator.rs"
+
+[[bin]]
+name = "paymaster-seed"
+path = "src/bin/seed.rs"

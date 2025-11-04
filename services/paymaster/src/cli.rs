@@ -14,9 +14,6 @@ pub enum Command {
 
     /// Run DB migrations and exit (requires only DATABASE_URL)
     Migrate(MigrateOptions),
-
-    /// Seed DB from a config file (requires DATABASE_URL + CONFIG_FILE)
-    Seed(SeedOptions),
 }
 
 #[derive(Args, Debug, Clone)]
@@ -29,7 +26,7 @@ pub struct RunOptions {
     #[arg(long, env = "MNEMONIC_FILE", default_value = "./tilt/secrets/mnemonic")]
     pub mnemonic_file: String,
 
-    #[arg(long, env = "RPC_URL_HTTP")]
+    #[arg(long, env = "RPC_URL_HTTP", default_value = "http://localhost:8899")]
     pub rpc_url_http: String,
 
     #[arg(long, env = "RPC_URL_WS")]
@@ -38,8 +35,15 @@ pub struct RunOptions {
     #[arg(long, env = "LISTEN_ADDRESS", default_value = "0.0.0.0:4000")]
     pub listen_address: String,
 
-    #[arg(long, env = "OTEL_EXPORTER_OTLP_ENDPOINT")]
-    pub otlp_endpoint: Option<String>,
+    #[arg(
+        long,
+        env = "OTEL_EXPORTER_OTLP_ENDPOINT",
+        default_value = "http://localhost:4317"
+    )]
+    pub otlp_endpoint: String,
+
+    #[arg(long, env = "DB_REFRESH_INTERVAL_SECONDS", default_value = "10")]
+    pub db_refresh_interval_seconds: u64,
 }
 
 #[derive(Args, Debug, Clone)]
@@ -47,15 +51,4 @@ pub struct MigrateOptions {
     /// Postgres connection string (required via flag or env)
     #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
     pub db_url: String,
-}
-
-#[derive(Args, Debug, Clone)]
-pub struct SeedOptions {
-    /// Postgres connection string (required via flag or env)
-    #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
-    pub db_url: String,
-
-    /// Path to TOML config used to populate the DB (required via flag or env)
-    #[arg(short, long, env = "CONFIG_FILE")]
-    pub config: String,
 }

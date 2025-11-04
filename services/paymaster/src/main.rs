@@ -28,14 +28,9 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         )])
         .build();
 
-    let otlp_endpoint = opts
-        .otlp_endpoint
-        .or_else(|| std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok())
-        .unwrap_or_else(|| "http://localhost:4317".to_string());
-
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
-        .with_endpoint(otlp_endpoint)
+        .with_endpoint(opts.otlp_endpoint)
         .build()?;
 
     let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
@@ -66,7 +61,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .init();
 
     db::pool::init_db_connection(&opts.db_url).await?;
-    let config = db::config::load_config().await?;
+    let config = config_manager::load_config::load_db_config().await?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
@@ -75,12 +70,15 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         &mnemonic,
     )));
 
-    config_manager::load_config::spawn_config_refresher(mnemonic, Arc::clone(&domains));
+    config_manager::load_config::spawn_config_refresher(
+        mnemonic,
+        Arc::clone(&domains),
+        opts.db_refresh_interval_seconds,
+    );
 
     let rpc_url_ws = opts
         .rpc_url_ws
         .unwrap_or_else(|| opts.rpc_url_http.replace("http", "ws"));
-
     api::run_server(opts.rpc_url_http, rpc_url_ws, opts.listen_address, domains).await;
     Ok(())
 }
@@ -91,13 +89,6 @@ async fn run_migrations(opts: cli::MigrateOptions) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn run_seed(opts: cli::SeedOptions) -> anyhow::Result<()> {
-    db::pool::init_db_connection(&opts.db_url).await?;
-    let config = config_manager::load_config::load_file_config(&opts.config)?;
-    db::config::seed_from_config(&config).await?;
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv()?;
@@ -105,7 +96,6 @@ async fn main() -> anyhow::Result<()> {
     match Cli::parse().command {
         cli::Command::Run(opts) => run_server(opts).await?,
         cli::Command::Migrate(opts) => run_migrations(opts).await?,
-        cli::Command::Seed(opts) => run_seed(opts).await?,
     }
 
     Ok(())

@@ -3,11 +3,7 @@ use tokio::sync::OnceCell;
 
 static POOL: OnceCell<PgPool> = OnceCell::const_new();
 
-/// Initialize the database connection pool and runs any pending migrations.
 pub async fn init_db_connection(database_url: &str) -> Result<(), sqlx::Error> {
-    if POOL.initialized() {
-        return Ok(());
-    }
     POOL.get_or_try_init(|| async {
         PgPoolOptions::new()
             .max_connections(5)
