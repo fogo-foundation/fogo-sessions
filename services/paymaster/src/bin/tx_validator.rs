@@ -159,7 +159,6 @@ async fn main() -> Result<()> {
                 &contextual_keys_cache,
                 is_batch,
                 true,
-                network,
             )
             .await;
 
@@ -210,9 +209,7 @@ async fn fetch_transactions(
                 "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
             ));
         };
-        let sponsor = compute_contextual_keys(domain_for_sponsor, network)
-            .await?
-            .sponsor;
+        let sponsor = contextual_keys_cache.get(domain_for_sponsor).await?.sponsor;
         let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc, rpc_limiter)
             .await?;
         println!(
@@ -243,7 +240,6 @@ async fn validate_transactions(
     contextual_keys_cache: &ContextualKeysCache,
     is_batch: bool,
     verbose: bool,
-    network: Network,
 ) -> (HashMap<(String, String), usize>, usize) {
     let mut validation_stream = transactions
         .iter()
@@ -255,7 +251,6 @@ async fn validate_transactions(
                     domain,
                     chain_index,
                     contextual_keys_cache,
-                    network,
                 )
                 .await
                 .unwrap_or_default();
@@ -472,7 +467,7 @@ async fn get_matching_variations<'a>(
     Ok(matching_variations)
 }
 
-async fn fetch_sponsor_pubkey(domain: &str) -> Result<Pubkey> {
+async fn fetch_sponsor_pubkey(domain: &str, network: Network) -> Result<Pubkey> {
     let url = format!(
         "{}/api/sponsor_pubkey?domain={domain}",
         network.paymaster_base_url()
@@ -502,20 +497,22 @@ async fn fetch_sponsor_pubkey(domain: &str) -> Result<Pubkey> {
 
 struct ContextualKeysCache {
     pub cache: DashMap<String, ContextualDomainKeys>,
+    pub network: Network,
     /// If this is Some, the sponsor pubkey won't be fetched from the paymaster server and the inner pubkey will be used instead. This is useful for apps whose domain is not registered with the paymaster server, so they don't have a sponsor wallet.
     pub sponsor_override: Option<Pubkey>,
 }
 
 impl ContextualKeysCache {
-    pub async fn new(domains: &[&Domain], sponsor_override: Option<Pubkey>) -> Result<Self> {
+    pub async fn new(domains: &[&Domain], network: Network, sponsor_override: Option<Pubkey>) -> Result<Self> {
         Ok(Self {
             cache: futures::future::try_join_all(domains.iter().map(|domain| async {
-                let keys = compute_contextual_keys(&domain.domain, sponsor_override).await?;
+                let keys = compute_contextual_keys(&domain.domain, network, sponsor_override).await?;
                 Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
             }))
             .await?
             .into_iter()
             .collect(),
+            network,
             sponsor_override,
         })
     }
@@ -524,7 +521,7 @@ impl ContextualKeysCache {
         if let Some(keys) = self.cache.get(domain) {
             Ok(keys.clone())
         } else {
-            let keys = compute_contextual_keys(domain, self.sponsor_override).await?;
+            let keys = compute_contextual_keys(domain, self.network,self.sponsor_override).await?;
             self.cache.insert(domain.to_string(), keys.clone());
             Ok(keys)
         }
@@ -533,10 +530,11 @@ impl ContextualKeysCache {
 
 async fn compute_contextual_keys(
     domain: &str,
+    network: Network,
     sponsor_override: Option<Pubkey>,
 ) -> Result<ContextualDomainKeys> {
     Ok(ContextualDomainKeys {
         domain_registry: get_domain_record_address(domain),
-        sponsor: sponsor_override.unwrap_or(fetch_sponsor_pubkey(domain).await?),
+        sponsor: sponsor_override.unwrap_or(fetch_sponsor_pubkey(domain, network).await?),
     })
 }
