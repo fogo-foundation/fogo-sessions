@@ -100,8 +100,6 @@ onlyBuiltDependencies:
 
 packageManagerStrict: true
 
-packageManagerStrictVersion: true
-
 strictDepBuilds: true
 
 strictPeerDependencies: false

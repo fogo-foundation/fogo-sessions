@@ -3,10 +3,10 @@
   "extends": ["//"],
   "tasks": {
     "build:cjs": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "build:esm": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "build:idl": {
       "dependsOn": [
@@ -94,16 +94,16 @@
       "dependsOn": ["build:idl:mkdir"]
     },
     "build:types": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "fix:lint": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "test:lint": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "test:types": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": ["//#install:modules", "^build"]
     }
   }
 }
