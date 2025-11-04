@@ -138,7 +138,7 @@ async fn main() -> Result<()> {
             ));
 
             let contextual_keys_cache: ContextualKeysCache =
-                ContextualKeysCache::new(&domains, sponsor).await?;
+                ContextualKeysCache::new(&domains, network, sponsor).await?;
 
             let (transactions, is_batch) = fetch_transactions(
                 recent_sponsor_txs,
