@@ -461,6 +461,7 @@ async fn fetch_sponsor_pubkey(domain: &str) -> Result<Pubkey> {
 
 struct ContextualKeysCache {
     pub cache: DashMap<String, ContextualDomainKeys>,
+    /// If this is Some, the sponsor pubkey won't be fetched from the paymaster server and the inner pubkey will be used instead. This is useful for apps whose domain is not registered with the paymaster server, so they don't have a sponsor wallet.
     pub sponsor_override: Option<Pubkey>,
 }
 
