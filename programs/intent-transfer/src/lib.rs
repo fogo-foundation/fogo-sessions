@@ -140,7 +140,6 @@ pub struct Ntt<'info> {
     #[account(mut)]
     pub ntt_custody: UncheckedAccount<'info>,
 
-    // maybe not pda / derived
     /// CHECK: checked in NTT with executor program
     #[account(mut)]
     pub payee_ntt_with_executor: UncheckedAccount<'info>,
