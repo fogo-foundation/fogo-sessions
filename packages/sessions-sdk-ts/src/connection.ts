@@ -56,8 +56,8 @@ const DEFAULT_ADDRESS_LOOKUP_TABLE_ADDRESSES = {
   [Network.Testnet]: [
     // Session intent
     "B8cUjJMqaWWTNNSTXBmeptjWswwCH1gTSCRYv4nu7kJW",
-    // Wormhole bridge out
-    "5TvNyLwACBbrwDeEYSFxZe4DX57zj1sbdc1cpDU3eKJu",
+    // Wormhole bridge out: USDC
+    "4FCi6LptexBdZtaePsoCMeb1XpCijxnWu96g5LsSb6WP",
   ],
   [Network.Mainnet]: undefined,
 };
@@ -163,7 +163,6 @@ const sendToPaymaster = async (
 
     if (response.status === 200) {
       const jsonResponse = await response.json();
-      console.log('Paymaster response:', jsonResponse);
       const result = sponsorAndSendResponseSchema.parse(jsonResponse);
       if (result.type === TransactionResultType.Failed) {
         console.error('Transaction failed on-chain:', {
@@ -215,38 +214,6 @@ const buildTransaction = async (
     const signers = await Promise.all(
       signerKeys.map(signer => createSignerFromKeyPair(signer))
     );
-
-    // UGLY CODE TO PRINT OUT MISSING ACCOUNTS FROM LUT
-    const allAddresses = new Set<string>();
-    instructions.forEach((instruction) => {
-      const keys = instruction instanceof TransactionInstruction
-        ? instruction.keys
-        : instruction.accounts ?? [];
-      keys.forEach((account: any) => {
-        const pubkey = account.pubkey ?? account.address;
-        allAddresses.add(pubkey.toString());
-      });
-    });
-    allAddresses.add(sponsor.toString());
-
-    const lookupTableAddresses = new Set<string>();
-    addressLookupTables?.forEach((table) => {
-      table.state.addresses.forEach((address) => {
-        lookupTableAddresses.add(address.toString());
-      });
-    });
-
-    const accountsNotInLookupTable = Array.from(allAddresses).filter(
-      (address) => !lookupTableAddresses.has(address)
-    );
-
-    if (accountsNotInLookupTable.length > 0) {
-      console.log('Accounts NOT in lookup table:');
-      accountsNotInLookupTable.forEach((address) => {
-        console.log(`  ${address}`);
-      });
-      console.log(`Total: ${accountsNotInLookupTable.length} accounts not in lookup table`);
-    }
 
     return partiallySignTransactionMessageWithSigners(
       pipe(

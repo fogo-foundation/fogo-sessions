@@ -859,7 +859,6 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
     const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
     const metadata = await safeFetchMetadata(umi, metadataAddress);
     const pdas = NTT.pdas(options.fromToken.manager);
-    const fogo = wh.getChain("Fogo");
     const solana = wh.getChain("Solana");
     const coreBridgeContract = contracts.coreBridge.get(wormholeNetwork, "Fogo");
     if (coreBridgeContract === undefined) {
@@ -869,110 +868,16 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       options.fromToken.manager,
       coreBridgeContract
     );
-    console.log("sequence", wormholePdas.wormholeSequence.toBase58());
     
-    console.log("Manager", options.fromToken.manager.toBase58());
     const transceiverPdas = NTT.transceiverPdas(options.fromToken.manager);
     const outboxItem = Keypair.generate();
     const [intentTransferSetterPda] = PublicKey.findProgramAddressSync(
       [Buffer.from("intent_transfer")],
       program.programId
     );
-    console.log("INTENT TFER", intentTransferSetterPda.toBase58());
-    console.log("INTENT TFER PID", program.programId.toBase58());
-
-    console.log("fogo", pdas.inboxRateLimitAccount(fogo.chain).toBase58());
-    console.log("solana", pdas.inboxRateLimitAccount(solana.chain).toBase58());
 
     const chainIdBytes = Buffer.alloc(2);
     chainIdBytes.writeUInt16BE(51, 0);
-    const nttManagerProgramId = new PublicKey("NTtktYPsu3a9fvQeuJW6Ea11kinvGc7ricT1iikaTue");
-    const [pda] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("inbox_rate_limit"),
-        chainIdBytes
-      ],
-      nttManagerProgramId
-    );
-    console.log("calculated", pda.toBase58());
-    console.log("transceiver", options.fromToken.transceiver.toBase58());
-    console.log("emitter", transceiverPdas.emitterAccount().toBase58());
-
-
-    console.log("amount", options.amount);
-    console.log("original", pdas.sessionAuthority(
-            intentTransferSetterPda,
-            NTT.transferArgs(
-              options.amount,
-              {
-                chain: solana.chain,
-                address: new UniversalAddress(new Uint8Array(options.walletPublicKey.toBytes()))
-              },
-              false
-            )
-          ).toBase58());
-
-    // Fetch and parse NTT config
-    const configAccount = pdas.configAccount();
-    console.log("Config account:", configAccount.toBase58());
-
-    try {
-      const configAccountInfo = await options.context.connection.getAccountInfo(configAccount);
-      if (configAccountInfo) {
-        const data = configAccountInfo.data;
-        let offset = 8; // Skip discriminator
-
-        const bump = data.readUInt8(offset); offset += 1;
-        const owner = new PublicKey(data.subarray(offset, offset + 32)); offset += 32;
-
-        // pending_owner: Option<Pubkey>
-        const hasPendingOwner = data.readUInt8(offset) === 1; offset += 1;
-        const pendingOwner = hasPendingOwner ? new PublicKey(data.subarray(offset, offset + 32)) : null;
-        if (hasPendingOwner) offset += 32;
-
-        const mint = new PublicKey(data.subarray(offset, offset + 32)); offset += 32;
-        const tokenProgram = new PublicKey(data.subarray(offset, offset + 32)); offset += 32;
-        const mode = data.readUInt8(offset); offset += 1;
-        const chainId = data.readUInt16LE(offset); offset += 2;
-        const nextTransceiverId = data.readUInt8(offset); offset += 1;
-        const threshold = data.readUInt8(offset); offset += 1;
-
-        // enabled_transceivers: Bitmap (u128 = 16 bytes)
-        const enabledTransceiversLow = data.readBigUInt64LE(offset); offset += 8;
-        const enabledTransceiversHigh = data.readBigUInt64LE(offset); offset += 8;
-        const enabledTransceivers = (enabledTransceiversHigh << 64n) | enabledTransceiversLow;
-
-        const paused = data.readUInt8(offset) === 1; offset += 1;
-        const custody = new PublicKey(data.subarray(offset, offset + 32));
-
-        console.log("enabled transceivers low", enabledTransceiversLow.toString(16));
-        console.log("enabled transceivers high", enabledTransceiversHigh.toString(16));
-
-        console.log("NTT Config:");
-        console.log("  bump:", bump);
-        console.log("  owner:", owner.toBase58());
-        console.log("  pending_owner:", pendingOwner?.toBase58() || "None");
-        console.log("  mint:", mint.toBase58());
-        console.log("  token_program:", tokenProgram.toBase58());
-        console.log("  mode:", mode);
-        console.log("  chain_id:", chainId);
-        console.log("  next_transceiver_id:", nextTransceiverId);
-        console.log("  threshold:", threshold);
-        console.log("  enabled_transceivers (bitmap):", enabledTransceivers.toString(16));
-        console.log("  paused:", paused);
-        console.log("  custody:", custody.toBase58());
-
-        // Print enabled transceivers
-        console.log("Enabled transceivers:");
-        for (let i = 0; i < 128; i++) {
-          if ((enabledTransceivers & (1n << BigInt(i))) !== 0n) {
-            console.log(`  Transceiver ${i} is enabled`);
-          }
-        }
-      }
-    } catch (error) {
-      console.log("Error fetching config:", error);
-    }
 
     // Compute intermediate token account PDA
     const sourceAccount = getAssociatedTokenAddressSync(
@@ -1027,11 +932,6 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
         systemProgram: PublicKey.default,
       })
       .instruction();
-
-    console.log('Bridge instruction accounts:');
-    bridgeInstruction.keys.forEach((key, index) => {
-      console.log(`  [${index}] ${key.pubkey.toBase58()} (writable: ${key.isWritable}, signer: ${key.isSigner})`);
-    });
 
     return options.context.sendTransaction(options.sessionKey, [
       await buildBridgeOutIntent(
