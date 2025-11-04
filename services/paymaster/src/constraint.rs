@@ -72,6 +72,7 @@ pub struct VariationOrderedInstructionConstraints {
     pub max_gas_spend: u64,
 }
 
+#[derive(Clone)]
 pub struct ContextualDomainKeys {
     pub domain_registry: Pubkey,
     pub sponsor: Pubkey,
