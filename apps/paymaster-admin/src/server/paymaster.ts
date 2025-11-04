@@ -1,34 +1,32 @@
 import { verifyLogInToken } from "@fogo/sessions-sdk";
 import { cookies } from "next/headers";
+import { z } from "zod";
 
-import { UserSchema } from "../db-schema";
+import { UserSchema, VariationSchema, TransactionVariationSchema } from "../db-schema";
 import { connection } from "../fogo-connection";
 import pool from "./pg";
 
 export const getUserPaymasterData = async () => {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("sessionToken");
-  return fetchPaymasterDataFromToken(sessionToken?.value ?? "");
-};
-
-export const fetchPaymasterDataFromToken = async (token: string) => {
-  const acc = await verifyLogInToken(token, connection);
+  const sessionToken = cookieStore.get("sessionToken")?.value ?? ""; 
+  const acc = await verifyLogInToken(sessionToken, connection);
   if (!acc) {
     throw new Error("Invalid token");
   }
-  return fetchUserPaymasterData({ walletAddress: acc.user.toString() });
+  return fetchUserPaymasterData( acc.user.toString()); 
 };
 
-export const fetchUserPaymasterData = async ({
-  walletAddress,
-}: {
-  walletAddress: string;
-}) => {
+export const updateVariation = async (variationId: string, data: z.infer<typeof TransactionVariationSchema>) => {
+  const res = await pool.query(
+    `UPDATE variation SET transaction_variation = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+    [data, variationId],
+  );
+  return VariationSchema.parse(res.rows[0]);
+}
+
+export const fetchUserPaymasterData = async (walletAddress: string) => {
   const { rows } = await pool.query(
-    `WITH u AS (
-  SELECT * FROM "user" WHERE wallet_address = $1
-)
-SELECT
+    `SELECT
   (
     -- apps the user belongs to, via app_user
     SELECT COALESCE(json_agg(app_row), '[]'::json)

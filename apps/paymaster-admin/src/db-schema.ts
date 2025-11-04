@@ -8,7 +8,15 @@ export const Base58Pubkey = z
   .max(44);
 const u16 = z.number().int().min(0).max(65_535);
 const u64 = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
-const TimeStr = z.string();
+
+const TimeStr = z.preprocess((val) => {
+  if (val instanceof Date) return val;
+  if (typeof val === "string" || typeof val === "number") {
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? undefined : d; 
+  }
+  return val; // will fail against z.date() below
+}, z.date());
 
 export const PrimitiveDataValueSchema = z.union([
   z.object({ U8: z.number().int().min(0).max(255) }),
@@ -21,6 +29,7 @@ export const PrimitiveDataValueSchema = z.union([
     Bytes: z.string().regex(/^[0-9a-fA-F]*$/, "Hex string expected"),
   }),
 ]);
+
 export const PrimitiveDataTypeSchema = z.union([
   z.literal("U8"),
   z.literal("U16"),
@@ -30,7 +39,7 @@ export const PrimitiveDataTypeSchema = z.union([
   z.literal("Pubkey"),
   z.object({ Bytes: z.object({ length: z.number().int().min(0) }) }),
 ]);
-/** DataConstraintSpecification */
+
 export const DataConstraintSpecificationSchema = z.union([
   z.object({ LessThan: PrimitiveDataValueSchema }),
   z.object({ GreaterThan: PrimitiveDataValueSchema }),
@@ -44,14 +53,13 @@ export const DataConstraintSchema = z.object({
   constraint: DataConstraintSpecificationSchema,
 });
 
-/** ContextualPubkey */
 export const ContextualPubkeySchema = z.union([
   z.object({ Explicit: z.object({ pubkey: Base58Pubkey }) }),
   z.literal("Sponsor"),
   z.literal("NonFeePayerSigner"),
   z.literal("DomainRegistry"),
 ]);
-/** AccountConstraint */
+
 export const AccountConstraintSchema = z.object({
   index: u16,
   include: z.array(ContextualPubkeySchema).default([]),
