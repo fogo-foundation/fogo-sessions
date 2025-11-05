@@ -91,7 +91,7 @@ async fn run_migrations(opts: cli::MigrateOptions) -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    dotenvy::dotenv()?;
+    dotenvy::dotenv();
 
     match Cli::parse().command {
         cli::Command::Run(opts) => run_server(opts).await?,
