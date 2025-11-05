@@ -29,7 +29,6 @@ jobs:
       - name: Build Solana programs
         run: |
           export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
-          cargo-build-sbf --version
           anchor build --no-idl
 
       - name: Test
