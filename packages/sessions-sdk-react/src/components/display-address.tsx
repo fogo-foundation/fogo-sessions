@@ -17,7 +17,7 @@ export const DisplayAddress = ({ address }: Props) => {
   const fnsNameState = useFNSReverseRecordName(address);
 
   if (fnsNameState.type === StateType.Loaded && fnsNameState.data) {
-    return <>{fnsNameState.data}</>;
+    return <>{fnsNameState.data}.fogo</>;
   }
 
   return <TruncateKey keyValue={address} />;
