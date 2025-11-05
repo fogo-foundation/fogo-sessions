@@ -14,13 +14,13 @@ import type {
 } from "../session-state.js";
 import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
-import { DisplayAddress } from "./display-address.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import { ReceivePage } from "./receive-page.js";
 import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
 import { SessionLimitsTab } from "./session-limits-tab.js";
 import styles from "./session-panel.module.css";
+import { TruncateKey } from "./truncate-key.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { isEstablished } from "../session-state.js";
 import { WalletPage } from "./wallet-page.js";
@@ -43,7 +43,7 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
         </Heading>
         {isEstablished(sessionState) && (
           <CopyButton text={sessionState.walletPublicKey.toBase58()}>
-            <DisplayAddress address={sessionState.walletPublicKey} />
+            <TruncateKey keyValue={sessionState.walletPublicKey} />
           </CopyButton>
         )}
         {onClose && (
