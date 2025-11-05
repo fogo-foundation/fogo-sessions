@@ -20,6 +20,12 @@ jobs:
           profile: minimal
           toolchain: nightly
 
+      - name: Install Solana
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+
       - name: Install anchor cli
         run: |
           cargo install --git https://github.com/coral-xyz/anchor --tag v0.31.1 --locked avm
