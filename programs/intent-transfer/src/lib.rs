@@ -27,9 +27,6 @@ const NONCE_SEED: &[u8] = b"nonce";
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
 const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
 
-// TODO: pull this from somewhere?
-pub const NATIVE_TOKEN_DECIMALS: u8 = 9;
-
 #[program]
 pub mod intent_transfer {
     use super::*;
@@ -63,6 +60,12 @@ pub struct BridgeNttTokensArgs {
 
 #[derive(Accounts)]
 pub struct Ntt<'info> {
+    /// CHECK: Clock sysvar
+    pub clock: Sysvar<'info, Clock>,
+
+    /// CHECK: Rent sysvar
+    pub rent: Sysvar<'info, Rent>,
+
     /// CHECK: checked in NTT manager program
     pub ntt_manager: UncheckedAccount<'info>,
 
@@ -189,18 +192,11 @@ pub struct BridgeNttTokens<'info> {
 
     pub system_program: Program<'info, System>,
 
-    /// CHECK: Clock sysvar
-    pub clock: Sysvar<'info, Clock>,
-
-    /// CHECK: Rent sysvar
-    pub rent: Sysvar<'info, Rent>,
-
     // NTT-specific accounts
     pub ntt: Ntt<'info>,
 }
 
-pub const SLOT_STALENESS_THRESHOLD: u64 = 150;
-
+// TODO: implement slot staleness check for intent messages
 impl<'info> BridgeNttTokens<'info> {
     fn verify_and_initiate_bridge(
         &mut self,
@@ -238,12 +234,12 @@ impl<'info> BridgeNttTokens<'info> {
             sponsor,
             session_signer: _,
             system_program,
-            clock,
-            rent,
             ntt,
         } = self;
 
         let Ntt {
+            clock,
+            rent,
             ntt_manager,
             ntt_config,
             ntt_inbox_rate_limit,
@@ -300,9 +296,6 @@ impl<'info> BridgeNttTokens<'info> {
             mint.decimals,
         )?;
 
-        // Prepare transfer args for session authority verification
-        let recipient_address_bytes = parse_recipient_address(&recipient_address)?;
-
         let to_chain_id_wormhole = convert_chain_id_to_wormhole(&to_chain_id)
             .ok_or(IntentTransferError::InvalidToChainId)?;
 
@@ -311,7 +304,7 @@ impl<'info> BridgeNttTokens<'info> {
             recipient_chain: cpi::ntt_manager::ChainId {
                 id: to_chain_id_wormhole,
             },
-            recipient_address: recipient_address_bytes,
+            recipient_address: parse_recipient_address(&recipient_address)?,
             should_queue: false,
         };
 
