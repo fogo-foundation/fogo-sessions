@@ -14,5 +14,7 @@ jobs:
         with:
           profile: minimal
           toolchain: 1.87.0
+      - name: Build Solana programs
+        run: anchor build --no-idl
       - name: Test
         run: cargo +1.87.0 test
