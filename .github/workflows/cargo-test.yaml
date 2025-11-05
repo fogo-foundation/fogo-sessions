@@ -21,9 +21,9 @@ jobs:
           avm install 0.31.1
           avm use 0.31.1
 
-      - name: Install Solana build tools
+      - name: Install solana tools
         run: |
-          cargo install --git https://github.com/solana-labs/solana --tag v1.18.22 cargo-build-sbf --locked
+          sh -c "$(curl -sSfL https://release.solana.com/v1.18.18/install)"
 
       - name: Build Solana programs
         run: anchor build --no-idl
