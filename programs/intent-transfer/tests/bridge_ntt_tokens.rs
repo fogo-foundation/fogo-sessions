@@ -233,9 +233,9 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             sponsor: payer.pubkey(),
             session_signer: session_signer.pubkey(),
             system_program: anchor_lang::solana_program::system_program::ID,
-            clock: sysvar::clock::ID,
-            rent: sysvar::rent::ID,
             ntt: intent_transfer::accounts::Ntt {
+                clock: sysvar::clock::ID,
+                rent: sysvar::rent::ID,
                 ntt_manager: mock_ntt_manager_id,
                 ntt_config: ntt_config.pubkey(),
                 ntt_inbox_rate_limit: ntt_inbox_rate_limit.pubkey(),
