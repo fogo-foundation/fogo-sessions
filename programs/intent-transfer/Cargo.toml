@@ -26,7 +26,6 @@ solana-intents = { path = "../../packages/solana-intents" }
 
 [dev-dependencies]
 indoc = "2.0.6"
-litesvm = "0.7.1"
 solana-address = {workspace = true}
 solana-instruction = {workspace = true}
 solana-keypair = {workspace = true}
