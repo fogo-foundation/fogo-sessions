@@ -12,6 +12,8 @@ export {
   isEstablished,
 } from "./session-state.js";
 export { useSession, useConnection, useRpc } from "./hooks/use-session.js";
+export { useFNSReverseRecordName } from "./hooks/use-fns-reverse-record.js";
 export { FogoSessionProvider } from "./components/session-provider.js";
 export { SessionButton } from "./components/session-button.js";
 export { SessionPanel } from "./components/session-panel.js";
+export { DisplayAddress } from "./components/display-address.js";
