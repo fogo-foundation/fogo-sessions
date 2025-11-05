@@ -14,7 +14,26 @@ jobs:
         with:
           profile: minimal
           toolchain: 1.87.0
+
+      - name: Cache Solana Tool Suite
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/solana
+            ~/.local/share/solana
+          key: ${{ runner.os }}-solana-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Solana
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v0.30.1 anchor-cli --locked --force
+
       - name: Build Solana programs
         run: anchor build --no-idl
+
       - name: Test
         run: cargo +1.87.0 test
