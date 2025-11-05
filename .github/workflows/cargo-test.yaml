@@ -22,7 +22,7 @@ jobs:
           avm use 0.31.1
 
       - name: Build Solana programs
-        run: anchor idl build
+        run: anchor idl build --program-name chain-id --out-ts src/types/chain-id.ts --out src/idl/chain-id.json
 
       - name: Test
         run: cargo +1.87.0 test
