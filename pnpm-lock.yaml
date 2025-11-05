@@ -257,9 +257,6 @@ importers:
       turbo:
         specifier: 'catalog:'
         version: 2.5.4
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.3
 
   apps/paymaster-admin:
     dependencies:

@@ -27,7 +27,6 @@
     "@fogo/scripts": "workspace:*",
     "jest": "catalog:",
     "prettier": "catalog:",
-    "turbo": "catalog:",
-    "typescript": "catalog:"
+    "turbo": "catalog:"
   }
 }
