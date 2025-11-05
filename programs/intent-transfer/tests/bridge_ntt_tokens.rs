@@ -212,7 +212,6 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         1,
     );
 
-    println!("message: {:?}", message);
     let ed25519_ix = create_ed25519_signature_instruction(&source_owner, &message);
 
     let session_signer = Keypair::new();
