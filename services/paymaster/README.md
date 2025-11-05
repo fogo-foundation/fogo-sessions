@@ -31,6 +31,64 @@ v1 is a more fleshed out constraint set. It introduces constraints on each instr
 
 v1 does not enforce relationships across instructions (e.g. require instruction Y if instruction X is present, constrain data in instruction Y based on the value of data in instruction X). In this way, it is relatively stateless and allows for simple absolute constraints on the instructions.
 
+## Running
+
+### Prerequisites
+
+- Provision Postgres (Docker Compose is available via `docker-compose.yml`).
+- Copy `.env.example` to `.env` and adjust the values to match your local setup.
+
+### Database
+
+Start the Postgres container (and the optional `pgweb` UI) with:
+
+```bash
+docker compose up
+```
+
+Confirm that `DATABASE_URL` in your environment matches the credentials that the container exposes.
+
+This will:
+
+- spin up a local postgres 17 database which can be used to connect the paymaster on `postgres://paymaster:paymaster@localhost:5432/paymaster`
+- run pgweb which exposes a web interface on http://localhost:8080/
+
+### Migrations
+
+Migrations are located in: `services/paymaster/migrations`, and can be run using:
+
+```bash
+cargo run --bin fogo-paymaster migrate
+```
+
+### Seeding
+
+Seeding is optional, but simplifies bootstrapping a local configuration. Provide both a database URL and a path to a TOML config (an example lives at `tilt/configs/paymaster.toml`):
+
+```bash
+cargo run --bin paymaster-seed -- --db-url "postgres://paymaster:paymaster@localhost:5432/paymaster" --config tilt/configs/paymaster.toml
+```
+
+### Running the paymaster
+
+Launch the service with either environment variables or explicit flags. The minimum inputs are the database URL, HTTP RPC endpoint, and a mnemonic file path for the sponsor wallet. Example:
+
+```bash
+cargo run --bin fogo-paymaster run \
+  --db-url "postgres://paymaster:paymaster@localhost:5432/paymaster" \
+  --rpc-url-http https://testnet-alt.fogo.io \
+  --mnemonic-file ./tilt/secrets/mnemonic
+```
+
+Optional flags:
+
+- `--rpc-url-ws` (defaults to replacing `http` with `ws` on the HTTP URL)
+- `--listen-address` (default `0.0.0.0:4000`)
+- `--otlp-endpoint` for exporting OpenTelemetry traces (default `http://localhost:4317`)
+- `--db-refresh-interval-seconds` for how frequently domain config is refreshed (default `10` secs)
+
+You can also rely on the `.env`(see `.env.example`) values and simply run `cargo run --bin fogo-paymaster run`.
+
 ## Metrics and Logs
 
 The paymaster service records some metrics via Prometheus and some spans for timing of the transaction validation/submission/confirmation flow via OpenTelemetry. The service exports these OpenTelemetry spans to `localhost:4317` by default. You can configure sending these to a different destination by setting the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable, or by providing the `otlp_endpoint` CLI arg.

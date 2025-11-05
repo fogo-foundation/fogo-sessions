@@ -1,4 +1,4 @@
-use crate::config::Domain;
+use crate::config_manager::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::rpc::{
@@ -10,6 +10,8 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
 use axum::Json;
+use solana_derivation_path::DerivationPath;
+
 use axum::{
     http::{HeaderName, Method},
     Router,
@@ -25,7 +27,6 @@ use serde_with::{serde_as, DisplayFromStr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
-use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
@@ -41,7 +42,6 @@ use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
-
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
     pub sponsor: Keypair,
@@ -95,7 +95,7 @@ impl PubsubClientWithReconnect {
 }
 
 pub struct ServerState {
-    pub domains: HashMap<String, DomainState>,
+    pub domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
 }
@@ -223,11 +223,10 @@ fn get_domain_name(
 }
 
 fn get_domain_state<'a>(
-    state: &'a ServerState,
+    domains: &'a HashMap<String, DomainState>,
     domain_query_parameter: &str,
 ) -> Result<&'a DomainState, (StatusCode, String)> {
-    let domain_state = state
-        .domains
+    let domain_state = domains
         .get(domain_query_parameter)
         .ok_or_else(|| {
             (
@@ -284,7 +283,8 @@ async fn sponsor_and_send_handler(
 ) -> Result<Json<ConfirmationResult>, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
     tracing::Span::current().record("domain", domain.as_str());
-    let domain_state = get_domain_state(&state, &domain)?;
+    let domains_guard = state.domains.load();
+    let domain_state = get_domain_state(&domains_guard, &domain)?;
 
     let transaction_bytes = base64::engine::general_purpose::STANDARD
         .decode(&payload.transaction)
@@ -413,35 +413,19 @@ async fn sponsor_pubkey_handler(
     Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
+    let domains_guard = state.domains.load();
+    let domain_state = get_domain_state(&domains_guard, &domain)?;
     let DomainState {
         domain_registry_key: _,
         sponsor,
         enable_preflight_simulation: _,
         tx_variations: _,
-    } = get_domain_state(&state, &domain)?;
+    } = domain_state;
     Ok(sponsor.pubkey().to_string())
 }
 
-pub async fn run_server(
-    mnemonic_file: String,
-    rpc_url_http: String,
-    rpc_url_ws: String,
-    listen_address: String,
-    domains: Vec<Domain>,
-) {
-    let mnemonic = std::fs::read_to_string(mnemonic_file).expect("Failed to read mnemonic_file");
-    let rpc = RpcClient::new_with_commitment(
-        rpc_url_http,
-        CommitmentConfig {
-            commitment: CommitmentLevel::Processed,
-        },
-    );
-    let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
-        .await
-        .expect("Failed to create pubsub client");
-    let rpc_sub = PubsubClientWithReconnect::new(rpc_url_ws, rpc_sub_client);
-
-    let domains = domains
+pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<String, DomainState> {
+    domains
         .into_iter()
         .map(
             |Domain {
@@ -453,7 +437,7 @@ pub async fn run_server(
                 let domain_registry_key = get_domain_record_address(&domain);
                 let sponsor = Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
-                        &mnemonic, &domain,
+                        mnemonic, &domain,
                     ),
                     Some(DerivationPath::new_bip44(Some(0), Some(0))),
                 )
@@ -470,7 +454,24 @@ pub async fn run_server(
                 )
             },
         )
-        .collect::<HashMap<_, _>>();
+        .collect::<HashMap<_, _>>()
+}
+pub async fn run_server(
+    rpc_url_http: String,
+    rpc_url_ws: String,
+    listen_address: String,
+    domains_states: Arc<ArcSwap<HashMap<String, DomainState>>>,
+) {
+    let rpc = RpcClient::new_with_commitment(
+        rpc_url_http,
+        CommitmentConfig {
+            commitment: CommitmentLevel::Processed,
+        },
+    );
+    let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
+        .await
+        .expect("Failed to create pubsub client");
+    let rpc_sub = PubsubClientWithReconnect::new(rpc_url_ws, rpc_sub_client);
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
@@ -514,7 +515,7 @@ pub async fn run_server(
         )
         .layer(prometheus_layer)
         .with_state(Arc::new(ServerState {
-            domains,
+            domains: domains_states,
             chain_index: ChainIndex {
                 rpc,
                 lookup_table_cache: DashMap::new(),
