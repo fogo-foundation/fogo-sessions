@@ -22,7 +22,7 @@ jobs:
           avm use 0.31.1
 
       - name: Build Solana programs
-        run: anchor build --no-idl
+        run: anchor idl build
 
       - name: Test
         run: cargo +1.87.0 test
