@@ -2,8 +2,6 @@ name: Build and upload SVM programs
 
 on:
   pull_request:
-    paths:
-      - programs/**
   push:
     branches:
       - main
