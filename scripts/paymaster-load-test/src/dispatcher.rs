@@ -213,7 +213,7 @@ impl LoadTestDispatcher {
                 .text()
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
-            anyhow::bail!("HTTP {}: {}", status, error_text);
+            anyhow::bail!("HTTP {status}: {error_text}");
         }
 
         let response_body: SponsorAndSendResponse =
@@ -225,7 +225,7 @@ impl LoadTestDispatcher {
                 Ok(sig)
             }
             SponsorAndSendResponse::Failed { signature, error } => {
-                anyhow::bail!("Transaction failed: {:?} (sig: {})", error, signature)
+                anyhow::bail!("Transaction failed: {error:?} (sig: {signature})")
             }
         }
     }

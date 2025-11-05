@@ -214,17 +214,10 @@ fn build_intent_message(
     const MINOR: &str = "3";
     const TOKENS: &str = "this app may spend any amount of any token";
     let body = format!(
-        "version: {major}.{minor}\nchain_id: {chain}\ndomain: {domain}\nexpires: {expires}\nsession_key: {session_key}\ntokens: {tokens}",
-        major = MAJOR,
-        minor = MINOR,
-        chain = chain_id,
-        domain = domain,
-        expires = expires_iso,
-        session_key = session_key,
-        tokens = TOKENS,
+        "version: {MAJOR}.{MINOR}\nchain_id: {chain_id}\ndomain: {domain}\nexpires: {expires_iso}\nsession_key: {session_key}\ntokens: {TOKENS}",
     );
 
-    format!("{header}\n\n{body}", header = HEADER, body = body).into_bytes()
+    format!("{HEADER}\n\n{body}").into_bytes()
 }
 
 fn build_ed25519_verification_ix(user_signer: &Keypair, message_bytes: Vec<u8>) -> Instruction {
@@ -274,7 +267,7 @@ fn convert_to_iso_string(unix_secs: u64) -> String {
     match OffsetDateTime::from_unix_timestamp(unix_secs as i64) {
         Ok(dt) => dt
             .format(&Rfc3339)
-            .unwrap_or_else(|_| format!("{}", unix_secs)),
-        Err(_) => format!("{}", unix_secs),
+            .unwrap_or_else(|_| format!("{unix_secs}")),
+        Err(_) => format!("{unix_secs}"),
     }
 }

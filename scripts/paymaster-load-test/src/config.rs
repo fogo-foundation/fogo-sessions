@@ -90,8 +90,7 @@ impl RuntimeConfig {
         let total = self.validity_distribution.valid_rate + total_invalid;
         anyhow::ensure!(
             (total - 1.0).abs() < 0.01,
-            "Sum of validity rates must equal 1.0 (currently: {:.2})",
-            total
+            "Sum of validity rates must equal 1.0 (currently: {total:.2})"
         );
 
         anyhow::ensure!(

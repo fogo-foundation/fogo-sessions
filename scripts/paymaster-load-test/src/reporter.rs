@@ -39,7 +39,7 @@ pub async fn generate_report(
     let success_rate = metrics.success_rate();
     let achieved_rate = total_sent as f64 / elapsed.as_secs_f64();
 
-    println!("  Total Requests:  {}", total_sent);
+    println!("  Total Requests:  {total_sent}");
     println!(
         "  Succeeded:       {} ({:.1}%)",
         total_succeeded,
@@ -50,7 +50,7 @@ pub async fn generate_report(
         total_failed,
         (1.0 - success_rate) * 100.0
     );
-    println!("  Achieved Rate:   {:.2} req/s", achieved_rate);
+    println!("  Achieved Rate:   {achieved_rate:.2} req/s");
     println!("  Actual Duration: {:.2}s", elapsed.as_secs_f64());
 
     // Latency statistics
@@ -77,7 +77,7 @@ pub async fn generate_report(
     println!("{}", "-".repeat(80));
 
     let mut by_validity = metrics.get_metrics_by_validity_type();
-    by_validity.sort_by_key(|(vt, _)| format!("{:?}", vt));
+    by_validity.sort_by_key(|(vt, _)| format!("{vt:?}"));
 
     for (validity_type, vm) in &by_validity {
         if vm.sent > 0 {
