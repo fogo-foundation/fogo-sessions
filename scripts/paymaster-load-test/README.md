@@ -27,17 +27,19 @@ The tool uses a TOML configuration file to specify the target environment and tr
 Configuration Parameters
 
 [external] section - Target environment settings:
-  - paymaster_endpoint: URL of the paymaster service to test
-  - rpc_url: Solana RPC endpoint URL (used for fetching blockhashes)
-  - domain: Domain string for session establishment (must match paymaster's domain registry)
-  - chain_id: Chain identifier (e.g., "localnet", "devnet", "mainnet-beta")
+
+- paymaster_endpoint: URL of the paymaster service to test
+- rpc_url: Solana RPC endpoint URL (used for fetching blockhashes)
+- domain: Domain string for session establishment (must match paymaster's domain registry)
+- chain_id: Chain identifier (e.g., "localnet", "devnet", "mainnet-beta")
 
 [validity] section - Transaction type distribution:
-  - valid_rate: Proportion of valid transactions (0.0-1.0)
-  - invalid_signature_rate: Proportion with invalid session signatures
-  - invalid_constraint_rate: Proportion calling non-whitelisted programs
-  - invalid_fee_payer_rate: Proportion with wrong fee payer
-  - invalid_gas_rate: Proportion exceeding gas limits
+
+- valid_rate: Proportion of valid transactions (0.0-1.0)
+- invalid_signature_rate: Proportion with invalid session signatures
+- invalid_constraint_rate: Proportion calling non-whitelisted programs
+- invalid_fee_payer_rate: Proportion with wrong fee payer
+- invalid_gas_rate: Proportion exceeding gas limits
 
 All validity rates must sum to exactly 1.0.
 
@@ -57,6 +59,7 @@ cargo run --release --bin paymaster-load-test -- \
 The tool provides a comprehensive report including:
 
 ### Overall Results
+
 - Total requests sent
 - Success and failure counts
 - Achieved request rate vs target
