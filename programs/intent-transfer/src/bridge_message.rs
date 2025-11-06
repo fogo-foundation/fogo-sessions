@@ -27,6 +27,7 @@ pub struct NttMessage {
     pub nonce: u64,
 }
 
+// Mapping from https://wormhole.com/docs/products/reference/chain-ids/
 pub fn convert_chain_id_to_wormhole(chain_id: &str) -> Option<u16> {
     match chain_id {
         "solana" => Some(1),

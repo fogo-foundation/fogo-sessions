@@ -7,9 +7,9 @@ use crate::cpi::ntt_manager::WORMHOLE_PROGRAM_ID;
 use crate::error::IntentTransferError;
 use crate::message::Message;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::token::Approve;
 use anchor_spl::token::{
-    approve, spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
+    Approve, approve,
+    spl_token::try_ui_amount_into_amount, close_account, CloseAccount, transfer_checked, Mint, Token, TokenAccount,
     TransferChecked,
 };
 use chain_id::ChainId;
@@ -160,7 +160,7 @@ pub struct BridgeNttTokens<'info> {
         seeds = [BRIDGE_NTT_INTERMEDIATE_SEED, source.key().as_ref()],
         bump,
         token::mint = mint,
-        token::authority = intent_transfer_setter
+        token::authority = intent_transfer_setter,
     )]
     pub intermediate_token_account: Account<'info, TokenAccount>,
 
@@ -394,6 +394,18 @@ impl<'info> BridgeNttTokens<'info> {
                 signed_quote_bytes,
                 relay_instructions,
             },
+        )?;
+
+        close_account(
+            CpiContext::new_with_signer(
+                token_program.to_account_info(),
+                CloseAccount {
+                    account: intermediate_token_account.to_account_info(),
+                    destination: sponsor.to_account_info(),
+                    authority: intent_transfer_setter.to_account_info(),
+                },
+                signer_seeds
+            ),
         )?;
 
         Ok(())

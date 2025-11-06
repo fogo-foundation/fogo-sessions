@@ -9,10 +9,9 @@ use solana_signer::Signer;
 use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
-use intent_transfer::cpi::ntt_manager::WORMHOLE_PROGRAM_ID;
 use intent_transfer::{
     bridge_message::convert_chain_id_to_wormhole,
-    cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
+    cpi::{ntt_manager::WORMHOLE_PROGRAM_ID, ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID}},
 };
 
 mod helpers;
@@ -309,8 +308,9 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     );
 
     let source_balance_after = token.get_balance(&svm, &source_token_account);
-    let intermediate_balance_after = token.get_balance(&svm, &intermediate_token_account);
     let custody_balance_after = token.get_balance(&svm, &ntt_custody);
+    
+    let intermediate_native_balance = svm.get_balance(&intermediate_token_account).unwrap_or(0);
 
     let source_delta = source_balance_before.saturating_sub(source_balance_after);
     let custody_delta = custody_balance_after.saturating_sub(custody_balance_before);
@@ -320,10 +320,9 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         "Source balance should decrease by transfer amount. Expected: {transfer_amount}, Got: {source_delta}",
     );
 
-    // Intermediate should remain at 0 since tokens are transferred to custody
     assert_eq!(
-        intermediate_balance_after, 0,
-        "Intermediate balance should be 0 after transfer to custody. Got: {intermediate_balance_after}",
+        intermediate_native_balance, 0,
+        "Intermediate token account should be closed at the end of the transaction, but balance is {intermediate_native_balance}",
     );
 
     assert_eq!(

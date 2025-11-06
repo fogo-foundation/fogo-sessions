@@ -38,7 +38,7 @@ pub enum IntentTransferError {
     NonceFailure,
     #[msg("The recipient address could not be parsed as a valid address")]
     InvalidRecipientAddress,
-    #[msg("The provided to chain ID is invalid")]
+    #[msg("The provided to chain ID is unsupported")]
     InvalidToChainId,
 }
 
