@@ -20,16 +20,8 @@ jobs:
           sh -c "$(curl -sSfL https://release.anza.xyz/v2.2.20/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
-      - name: Install anchor cli
-        run: |
-          cargo install --git https://github.com/coral-xyz/anchor --tag v0.31.1 --locked avm
-          avm install 0.31.1
-          avm use 0.31.1
-
       - name: Build Solana programs
-        run: |
-          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
-          anchor build --no-idl
+        run: cargo +1.87.0 build-sbf
 
       - name: Test
         run: cargo +1.87.0 test
