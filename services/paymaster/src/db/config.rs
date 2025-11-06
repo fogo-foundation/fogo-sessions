@@ -34,19 +34,19 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
     .await?;
 
     let map: HashMap<Uuid, Domain> = rows.into_iter().fold(HashMap::new(), |mut acc, r| {
-        if acc.contains_key(&r.domain_id) {
-            acc.get_mut(&r.domain_id)
-                .unwrap()
-                .tx_variations
-                .push(r.transaction_variation.0);
-        } else {
+        if let std::collections::hash_map::Entry::Vacant(e) = acc.entry(r.domain_id) {
             let domain = Domain {
                 domain: r.domain,
                 enable_session_management: r.enable_session_management,
                 enable_preflight_simulation: r.enable_preflight_simulation,
                 tx_variations: vec![r.transaction_variation.0],
             };
-            acc.insert(r.domain_id, domain);
+            e.insert(domain);
+        } else {
+            acc.get_mut(&r.domain_id)
+                .unwrap()
+                .tx_variations
+                .push(r.transaction_variation.0);
         }
         acc
     });
