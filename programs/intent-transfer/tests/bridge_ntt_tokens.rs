@@ -11,7 +11,10 @@ use spl_token::solana_program::keccak;
 
 use intent_transfer::{
     bridge_message::convert_chain_id_to_wormhole,
-    cpi::{ntt_manager::WORMHOLE_PROGRAM_ID, ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID}},
+    cpi::{
+        ntt_manager::WORMHOLE_PROGRAM_ID,
+        ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
+    },
 };
 
 mod helpers;
@@ -309,7 +312,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     let source_balance_after = token.get_balance(&svm, &source_token_account);
     let custody_balance_after = token.get_balance(&svm, &ntt_custody);
-    
+
     let intermediate_native_balance = svm.get_balance(&intermediate_token_account).unwrap_or(0);
 
     let source_delta = source_balance_before.saturating_sub(source_balance_after);

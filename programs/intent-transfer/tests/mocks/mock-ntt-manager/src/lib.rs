@@ -32,7 +32,9 @@ pub fn process_instruction(
             let custody_account = &accounts[7];
             let session_authority = &accounts[11];
 
-            let amount_bytes = instruction_data[8..16].try_into().map_err(|_| ProgramError::InvalidInstructionData)?;
+            let amount_bytes = instruction_data[8..16]
+                .try_into()
+                .map_err(|_| ProgramError::InvalidInstructionData)?;
             let amount = u64::from_le_bytes(amount_bytes);
 
             let decimals = {

@@ -8,9 +8,8 @@ use crate::error::IntentTransferError;
 use crate::message::Message;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
-    Approve, approve,
-    spl_token::try_ui_amount_into_amount, close_account, CloseAccount, transfer_checked, Mint, Token, TokenAccount,
-    TransferChecked,
+    approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
+    CloseAccount, Mint, Token, TokenAccount, TransferChecked,
 };
 use chain_id::ChainId;
 use mpl_token_metadata::accounts::Metadata;
@@ -396,17 +395,15 @@ impl<'info> BridgeNttTokens<'info> {
             },
         )?;
 
-        close_account(
-            CpiContext::new_with_signer(
-                token_program.to_account_info(),
-                CloseAccount {
-                    account: intermediate_token_account.to_account_info(),
-                    destination: sponsor.to_account_info(),
-                    authority: intent_transfer_setter.to_account_info(),
-                },
-                signer_seeds
-            ),
-        )?;
+        close_account(CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            CloseAccount {
+                account: intermediate_token_account.to_account_info(),
+                destination: sponsor.to_account_info(),
+                authority: intent_transfer_setter.to_account_info(),
+            },
+            signer_seeds,
+        ))?;
 
         Ok(())
     }
