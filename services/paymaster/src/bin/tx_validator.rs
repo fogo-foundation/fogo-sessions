@@ -45,6 +45,10 @@ enum Commands {
         #[arg(short, long)]
         domain: Option<String>,
 
+        /// Fogo network to target, this determines the paymaster instance and the default RPC endpoint to use.
+        #[arg(long, value_enum, default_value_t = Network::Testnet)]
+        network: Network,
+
         /// Sponsor pubkey for the provided domain, if this is provided the sponsor pubkey won't be fetched from the paymaster server. This is useful if your domain is not registered with the paymaster server yet.
         #[arg(long, requires = "domain")]
         sponsor: Option<Pubkey>,
@@ -68,10 +72,6 @@ enum Commands {
         /// RPC HTTP URL (defaults to the network-specific endpoint)
         #[arg(long)]
         rpc_url_http: Option<String>,
-
-        /// Fogo network to target
-        #[arg(long, value_enum, default_value_t = Network::Testnet)]
-        network: Network,
     },
 }
 
@@ -115,13 +115,13 @@ async fn main() -> Result<()> {
         Commands::Validate {
             config,
             domain,
+            network,
             sponsor,
             transaction_hash,
             transaction,
             recent_sponsor_txs,
             rpc_quota_per_second,
             rpc_url_http,
-            network,
         } => {
             let config = load_file_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
