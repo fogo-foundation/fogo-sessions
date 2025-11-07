@@ -90,8 +90,10 @@ pub struct RegisterNttConfig<'info> {
 
 // TODO: we should do some parsing of the relay_instructions and/or exec_amounts arg(s)
 // in order to ensure the signed intent message does precisely what the user expects
+// this will help to prevent MITM attacks
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct BridgeNttTokensArgs {
+    // TODO: we need to safely ensure the exec_amount cannot be spoofed
     pub exec_amount: u64,
     pub signed_quote_bytes: Vec<u8>,
     pub relay_instructions: Vec<u8>,
@@ -226,15 +228,6 @@ pub struct BridgeNttTokens<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
 
-    /// This signer exists solely to protect against MITM attacks whereby a malicious actor
-    /// intercepts a submitted transaction prior to any signatures being attached and changes
-    /// fields not directly encoded by the intent message. For example, such an attack could
-    /// alter the relay instructions in the bridging; attaching this signature prior to the
-    /// transaction leaving the client protects against that attack vector. Neither this signer
-    /// nor its signature are substantively required for this transaction. Note we do not need
-    /// to perform any checks on this signer; its mere presence is sufficient.
-    pub session_signer: Signer<'info>,
-
     pub system_program: Program<'info, System>,
 
     // NTT-specific accounts
@@ -284,8 +277,6 @@ impl<'info> BridgeNttTokens<'info> {
             expected_ntt_config,
             nonce,
             sponsor,
-            session_signer: _,
-            system_program,
             ntt,
         } = self;
 

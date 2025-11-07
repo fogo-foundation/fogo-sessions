@@ -216,8 +216,6 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     let ed25519_ix = create_ed25519_signature_instruction(&source_owner, &message);
 
-    let session_signer = Keypair::new();
-
     let (expected_ntt_config, _) = Pubkey::find_program_address(
         &[b"expected_ntt_config", token.mint.as_ref()],
         &intent_transfer::ID,
@@ -253,7 +251,6 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             expected_ntt_config,
             nonce: nonce_account,
             sponsor: payer.pubkey(),
-            session_signer: session_signer.pubkey(),
             system_program: anchor_lang::solana_program::system_program::ID,
             ntt: intent_transfer::accounts::Ntt {
                 clock: sysvar::clock::ID,
@@ -297,7 +294,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let tx = Transaction::new_signed_with_payer(
         &[ed25519_ix, bridge_ix],
         Some(&payer.pubkey()),
-        &[&payer, &ntt_outbox_item, &session_signer],
+        &[&payer, &ntt_outbox_item],
         svm.latest_blockhash(),
     );
 
