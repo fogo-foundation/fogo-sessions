@@ -6,7 +6,13 @@ use crate::bridge_message::{convert_chain_id_to_wormhole, BridgeMessage, NttMess
 use crate::cpi::ntt_manager::WORMHOLE_PROGRAM_ID;
 use crate::error::IntentTransferError;
 use crate::message::Message;
-use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
+use anchor_lang::{
+    prelude::*,
+    solana_program::{
+        bpf_loader_upgradeable,
+        sysvar::instructions,
+    },
+};
 use anchor_spl::token::{
     approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
     CloseAccount, Mint, Token, TokenAccount, TransferChecked,
@@ -25,6 +31,8 @@ const NONCE_SEED: &[u8] = b"nonce";
 
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
 const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
+
+const EXPECTED_NTT_CONFIG_SEED: &[u8] = b"expected_ntt_config";
 
 #[program]
 pub mod intent_transfer {
@@ -46,6 +54,38 @@ pub mod intent_transfer {
             args,
         )
     }
+
+    #[instruction(discriminator = [2])]
+    pub fn register_ntt_config<'info>(ctx: Context<'_, '_, '_, 'info, RegisterNttConfig<'info>>) -> Result<()> {
+        verify_upgrade_authority(&ctx.program_id, &ctx.accounts.program_data, &ctx.accounts.update_authority)?;
+        ctx.accounts.expected_ntt_config.manager = ctx.accounts.ntt_manager.key();
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+pub struct RegisterNttConfig<'info> {
+    #[account(mut)]
+    pub update_authority: Signer<'info>,
+
+    pub mint: Account<'info, Mint>,
+
+    #[account(
+        init_if_needed,
+        payer = update_authority,
+        space = ExpectedNttConfig::DISCRIMINATOR.len() + ExpectedNttConfig::INIT_SPACE,
+        seeds = [EXPECTED_NTT_CONFIG_SEED, mint.key().as_ref()],
+        bump
+    )]
+    pub expected_ntt_config: Account<'info, ExpectedNttConfig>,
+
+    /// CHECK: this is the address of the Ntt Manager program to register
+    pub ntt_manager: UncheckedAccount<'info>,
+
+    /// this account's address is verified to make sure it corresponds to this program
+    pub program_data: Account<'info, ProgramData>,
+
+    pub system_program: Program<'info, System>,
 }
 
 // TODO: we should do some parsing of the relay_instructions and/or exec_amounts arg(s)
@@ -169,6 +209,12 @@ pub struct BridgeNttTokens<'info> {
     pub metadata: Option<UncheckedAccount<'info>>,
 
     #[account(
+        seeds = [EXPECTED_NTT_CONFIG_SEED, mint.key().as_ref()],
+        bump,
+    )]
+    pub expected_ntt_config: Account<'info, ExpectedNttConfig>,
+
+    #[account(
         init_if_needed,
         payer = sponsor,
         space = Nonce::DISCRIMINATOR.len() + Nonce::INIT_SPACE,
@@ -193,6 +239,12 @@ pub struct BridgeNttTokens<'info> {
 
     // NTT-specific accounts
     pub ntt: Ntt<'info>,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct ExpectedNttConfig {
+    pub manager: Pubkey,
 }
 
 // TODO: implement slot staleness check for intent messages
@@ -229,6 +281,7 @@ impl<'info> BridgeNttTokens<'info> {
             intermediate_token_account,
             sysvar_instructions: _,
             token_program,
+            expected_ntt_config,
             nonce,
             sponsor,
             session_signer: _,
@@ -277,6 +330,7 @@ impl<'info> BridgeNttTokens<'info> {
         verify_symbol_or_mint(&symbol_or_mint, metadata, mint)?;
         verify_signer_matches_source(signer, source.owner)?;
         verify_and_update_nonce(nonce, new_nonce)?;
+        verify_ntt_manager(ntt_manager.key(), expected_ntt_config)?;
 
         let amount = try_ui_amount_into_amount(ui_amount, mint.decimals)?;
 
@@ -573,6 +627,32 @@ fn verify_and_update_nonce(nonce: &mut Account<Nonce>, new_nonce: u64) -> Result
         IntentTransferError::NonceFailure
     );
     nonce.nonce = new_nonce;
+    Ok(())
+}
+
+fn verify_ntt_manager(ntt_manager_key: Pubkey, expected_ntt_config: &Account<'_, ExpectedNttConfig>) -> Result<()> {
+    require_keys_eq!(
+        ntt_manager_key,
+        expected_ntt_config.manager,
+        IntentTransferError::InvalidNttManager
+    );
+    Ok(())
+}
+
+fn verify_upgrade_authority(
+    intent_transfer_program: &Pubkey,
+    program_data: &Account<ProgramData>,
+    upgrade_authority: &Signer,
+) -> Result<()> {
+    // verify valid program data account
+    require_keys_eq!(
+        program_data.key(),
+        bpf_loader_upgradeable::get_program_data_address(intent_transfer_program),
+        IntentTransferError::InvalidProgramData
+    );
+
+    // verify upgrade authority
+    require!(program_data.upgrade_authority_address.is_some_and(|addr| addr == upgrade_authority.key()), IntentTransferError::Unauthorized);
     Ok(())
 }
 

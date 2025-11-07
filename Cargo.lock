@@ -2755,6 +2755,7 @@ dependencies = [
  "litesvm",
  "mpl-token-metadata",
  "nom 8.0.0",
+ "solana-account",
  "solana-address",
  "solana-instruction",
  "solana-intents",

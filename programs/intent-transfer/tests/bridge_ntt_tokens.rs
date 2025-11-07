@@ -1,20 +1,20 @@
 use anchor_lang::{
     solana_program::{ed25519_program, instruction::Instruction, pubkey::Pubkey, sysvar},
-    system_program, InstructionData, ToAccountMetas,
+    system_program, AnchorSerialize, Discriminator, InstructionData, ToAccountMetas,
 };
 use anchor_spl::token_2022::spl_token_2022::try_ui_amount_into_amount;
 use litesvm::LiteSVM;
+use solana_account::Account;
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
 use intent_transfer::{
-    bridge_message::convert_chain_id_to_wormhole,
-    cpi::{
+    ExpectedNttConfig, bridge_message::convert_chain_id_to_wormhole, cpi::{
         ntt_manager::WORMHOLE_PROGRAM_ID,
         ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
-    },
+    }
 };
 
 mod helpers;
@@ -218,6 +218,26 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     let session_signer = Keypair::new();
 
+    let (expected_ntt_config, _) = Pubkey::find_program_address(
+        &[b"expected_ntt_config", token.mint.as_ref()],
+        &intent_transfer::ID,
+    );
+
+    let mut expected_ntt_config_data = Vec::new();
+    expected_ntt_config_data.extend_from_slice(&ExpectedNttConfig::DISCRIMINATOR);
+    ExpectedNttConfig {
+        manager: mock_ntt_manager_id,
+    }.serialize(&mut expected_ntt_config_data).unwrap();
+    
+    let result_mock_register_ntt_config = svm.set_account(expected_ntt_config, Account {
+        lamports: 1_000_000_000,
+        data: expected_ntt_config_data,
+        owner: intent_transfer::ID,
+        executable: false,
+        rent_epoch: 0,
+    });
+    result_mock_register_ntt_config.expect("Failed to set expected NTT config account");
+
     let bridge_ix = Instruction {
         program_id: intent_transfer::ID,
         accounts: intent_transfer::accounts::BridgeNttTokens {
@@ -230,6 +250,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             mint: token.mint,
             // metadata is None
             metadata: Some(intent_transfer::ID),
+            expected_ntt_config,
             nonce: nonce_account,
             sponsor: payer.pubkey(),
             session_signer: session_signer.pubkey(),
