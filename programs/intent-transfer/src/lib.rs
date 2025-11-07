@@ -277,6 +277,7 @@ impl<'info> BridgeNttTokens<'info> {
             expected_ntt_config,
             nonce,
             sponsor,
+            system_program,
             ntt,
         } = self;
 
