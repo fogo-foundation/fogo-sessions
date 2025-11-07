@@ -33,23 +33,25 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
     .fetch_all(pool::pool())
     .await?;
 
-    let map: HashMap<Uuid, Domain> = rows.into_iter().fold(HashMap::new(), |mut acc, r| {
-        if let std::collections::hash_map::Entry::Vacant(e) = acc.entry(r.domain_id) {
-            let domain = Domain {
-                domain: r.domain,
-                enable_session_management: r.enable_session_management,
-                enable_preflight_simulation: r.enable_preflight_simulation,
-                tx_variations: vec![r.transaction_variation.0],
-            };
-            e.insert(domain);
-        } else {
-            acc.get_mut(&r.domain_id)
-                .unwrap()
-                .tx_variations
-                .push(r.transaction_variation.0);
-        }
-        acc
-    });
+    let mut map: HashMap<Uuid, Domain> = HashMap::new();
+
+    for Row {
+        domain_id,
+        domain,
+        enable_session_management,
+        enable_preflight_simulation,
+        transaction_variation,
+    } in rows
+    {
+        let domain_ref = map.entry(domain_id).or_insert_with(|| Domain {
+            domain,
+            enable_session_management,
+            enable_preflight_simulation,
+            tx_variations: Vec::new(),
+        });
+
+        domain_ref.tx_variations.push(transaction_variation.0);
+    }
 
     Ok(Config {
         domains: map.into_values().collect(),
