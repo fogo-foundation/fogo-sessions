@@ -11,10 +11,12 @@ use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
 use intent_transfer::{
-    ExpectedNttConfig, bridge_message::convert_chain_id_to_wormhole, cpi::{
+    bridge_message::convert_chain_id_to_wormhole,
+    cpi::{
         ntt_manager::WORMHOLE_PROGRAM_ID,
         ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
-    }
+    },
+    ExpectedNttConfig,
 };
 
 mod helpers;
@@ -222,18 +224,23 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     );
 
     let mut expected_ntt_config_data = Vec::new();
-    expected_ntt_config_data.extend_from_slice(&ExpectedNttConfig::DISCRIMINATOR);
+    expected_ntt_config_data.extend_from_slice(ExpectedNttConfig::DISCRIMINATOR);
     ExpectedNttConfig {
         manager: mock_ntt_manager_id,
-    }.serialize(&mut expected_ntt_config_data).unwrap();
-    
-    let result_mock_register_ntt_config = svm.set_account(expected_ntt_config, Account {
-        lamports: 1_000_000_000,
-        data: expected_ntt_config_data,
-        owner: intent_transfer::ID,
-        executable: false,
-        rent_epoch: 0,
-    });
+    }
+    .serialize(&mut expected_ntt_config_data)
+    .unwrap();
+
+    let result_mock_register_ntt_config = svm.set_account(
+        expected_ntt_config,
+        Account {
+            lamports: 1_000_000_000,
+            data: expected_ntt_config_data,
+            owner: intent_transfer::ID,
+            executable: false,
+            rent_epoch: 0,
+        },
+    );
     result_mock_register_ntt_config.expect("Failed to set expected NTT config account");
 
     let bridge_ix = Instruction {

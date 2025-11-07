@@ -8,10 +8,7 @@ use crate::error::IntentTransferError;
 use crate::message::Message;
 use anchor_lang::{
     prelude::*,
-    solana_program::{
-        bpf_loader_upgradeable,
-        sysvar::instructions,
-    },
+    solana_program::{bpf_loader_upgradeable, sysvar::instructions},
 };
 use anchor_spl::token::{
     approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
@@ -56,8 +53,14 @@ pub mod intent_transfer {
     }
 
     #[instruction(discriminator = [2])]
-    pub fn register_ntt_config<'info>(ctx: Context<'_, '_, '_, 'info, RegisterNttConfig<'info>>) -> Result<()> {
-        verify_upgrade_authority(&ctx.program_id, &ctx.accounts.program_data, &ctx.accounts.update_authority)?;
+    pub fn register_ntt_config<'info>(
+        ctx: Context<'_, '_, '_, 'info, RegisterNttConfig<'info>>,
+    ) -> Result<()> {
+        verify_upgrade_authority(
+            ctx.program_id,
+            &ctx.accounts.program_data,
+            &ctx.accounts.update_authority,
+        )?;
         ctx.accounts.expected_ntt_config.manager = ctx.accounts.ntt_manager.key();
         Ok(())
     }
@@ -622,7 +625,10 @@ fn verify_and_update_nonce(nonce: &mut Account<Nonce>, new_nonce: u64) -> Result
     Ok(())
 }
 
-fn verify_ntt_manager(ntt_manager_key: Pubkey, expected_ntt_config: &Account<'_, ExpectedNttConfig>) -> Result<()> {
+fn verify_ntt_manager(
+    ntt_manager_key: Pubkey,
+    expected_ntt_config: &Account<'_, ExpectedNttConfig>,
+) -> Result<()> {
     require_keys_eq!(
         ntt_manager_key,
         expected_ntt_config.manager,
@@ -644,7 +650,12 @@ fn verify_upgrade_authority(
     );
 
     // verify upgrade authority
-    require!(program_data.upgrade_authority_address.is_some_and(|addr| addr == upgrade_authority.key()), IntentTransferError::Unauthorized);
+    require!(
+        program_data
+            .upgrade_authority_address
+            .is_some_and(|addr| addr == upgrade_authority.key()),
+        IntentTransferError::Unauthorized
+    );
     Ok(())
 }
 
