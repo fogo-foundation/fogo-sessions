@@ -68,7 +68,8 @@ export const SendTokenPage = ({
           sendTransfer({
             context,
             walletPublicKey: sessionState.walletPublicKey,
-            signMessage: sessionState.signMessage,
+            signMessage: (message) =>
+              sessionState.solanaWallet.signMessage(message),
             mint: tokenMint,
             amount: stringToAmount(amount, decimals),
             recipient: new PublicKey(recipient),
@@ -92,8 +93,8 @@ export const SendTokenPage = ({
     [
       decimals,
       getSessionContext,
-      sessionState.signMessage,
       sessionState.walletPublicKey,
+      sessionState.solanaWallet,
       tokenMint,
       onSendComplete,
       toast,

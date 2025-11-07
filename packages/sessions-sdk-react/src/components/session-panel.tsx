@@ -14,7 +14,9 @@ import type {
 } from "../session-state.js";
 import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
+import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
+import { GetTokensPage } from "./get-tokens-page.js";
 import { ReceivePage } from "./receive-page.js";
 import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
@@ -24,6 +26,7 @@ import { useSessionContext } from "../hooks/use-session.js";
 import { isEstablished } from "../session-state.js";
 import { TruncateKey } from "./truncate-key.js";
 import { WalletPage } from "./wallet-page.js";
+import { WithdrawPage } from "./withdraw-page.js";
 
 type Props = Omit<ComponentProps<"div">, "children"> & {
   onClose?: (() => void) | undefined;
@@ -169,6 +172,15 @@ const Tokens = ({
   const showReceive = useCallback(() => {
     setCurrentScreen(TokenScreen.Receive());
   }, [setCurrentScreen]);
+  const showGet = useCallback(() => {
+    setCurrentScreen(TokenScreen.Get());
+  }, [setCurrentScreen]);
+  const showWithdraw = useCallback(() => {
+    setCurrentScreen(TokenScreen.Withdraw());
+  }, [setCurrentScreen]);
+  const showDeposit = useCallback(() => {
+    setCurrentScreen(TokenScreen.Deposit());
+  }, [setCurrentScreen]);
   const showSelectTokenToSend = useCallback(() => {
     setCurrentScreen(TokenScreen.SelectTokenToSend());
   }, [setCurrentScreen]);
@@ -227,12 +239,42 @@ const Tokens = ({
         />
       );
     }
+    case TokenScreenType.Get: {
+      return (
+        <GetTokensPage
+          onPressBack={showWallet}
+          onPressDeposit={showDeposit}
+          sessionState={sessionState}
+        />
+      );
+    }
+    case TokenScreenType.Withdraw: {
+      return (
+        <WithdrawPage
+          key="withdraw"
+          sessionState={sessionState}
+          onPressBack={showWallet}
+          onSendComplete={showWallet}
+        />
+      );
+    }
+    case TokenScreenType.Deposit: {
+      return (
+        <DepositPage
+          sessionState={sessionState}
+          onPressBack={showGet}
+          onSendComplete={showWallet}
+        />
+      );
+    }
     case TokenScreenType.Wallet: {
       return (
         <WalletPage
           key="wallet"
+          onPressWithdraw={showWithdraw}
           onPressReceive={showReceive}
           onPressSend={showSelectTokenToSend}
+          onPressGet={showGet}
           onPressSendForToken={(token) => {
             showSend({
               prevScreen: TokenScreenType.Wallet,
@@ -255,6 +297,9 @@ enum TokenScreenType {
   SelectTokenToSend,
   Send,
   Receive,
+  Get,
+  Deposit,
+  Withdraw,
   Wallet,
 }
 
@@ -272,6 +317,9 @@ const TokenScreen = {
     amountAvailable: bigint;
   }) => ({ type: TokenScreenType.Send as const, ...opts }),
   Receive: () => ({ type: TokenScreenType.Receive as const }),
+  Get: () => ({ type: TokenScreenType.Get as const }),
+  Withdraw: () => ({ type: TokenScreenType.Withdraw as const }),
+  Deposit: () => ({ type: TokenScreenType.Deposit as const }),
   Wallet: () => ({ type: TokenScreenType.Wallet as const }),
 };
 type TokenScreen = ReturnType<(typeof TokenScreen)[keyof typeof TokenScreen]>;
