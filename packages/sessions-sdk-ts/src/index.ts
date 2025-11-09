@@ -901,8 +901,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       relayInstructions: Buffer.from(quote.relayInstructions),
       signedQuoteBytes: Buffer.from(quote.signedQuote),
     })
-    .accountsPartial({
-      sessionSigner: options.sessionPublicKey,
+    .accounts({
       sponsor: options.context.payer,
       mint: options.fromToken.mint,
       metadata:
@@ -913,7 +912,6 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
         options.walletPublicKey,
       ),
       ntt: nttPdas,
-      systemProgram: PublicKey.default,
     })
     .instruction();
 
