@@ -76,7 +76,7 @@ export type TransactionResult = ReturnType<
 export const createSessionConnection = (
   options: {
     network: Network;
-    rpc: string | URL | undefined;
+    rpc?: string | URL | undefined;
   } & (
     | {
         paymaster?: string | URL | undefined;

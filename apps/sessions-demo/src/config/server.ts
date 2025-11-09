@@ -31,6 +31,10 @@ export const FAUCET_KEY =
 const getProviderConfig = () => {
   if (NETWORK === undefined) {
     return {
+      // This option only matters for the wormhole bridge which won't work in
+      // localnet regardless, so let's just set it to Testnet to appease
+      // typescript.
+      network: Network.Testnet,
       addressLookupTableAddresses:
         process.env.ADDRESS_LOOKUP_TABLE_ADDRESSES?.split(",") ??
         "93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3",
@@ -52,6 +56,7 @@ const getProviderConfig = () => {
     };
   } else {
     return {
+      network: NETWORK,
       rpc: process.env.RPC,
       paymaster: process.env.PAYMASTER,
       addressLookupTableAddresses:
