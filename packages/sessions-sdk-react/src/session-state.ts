@@ -25,6 +25,7 @@ export type EstablishedOptions = Omit<Session, "sessionInfo"> & {
   createLogInToken: () => Promise<string>;
   isLimited: boolean;
   endSession: () => void;
+  showBridgeIn: () => void;
   updateSession: (
     prevState: StateType,
     duration: number,

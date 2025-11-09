@@ -43,7 +43,12 @@ import {
   SolanaMobileWalletAdapter,
   SolanaMobileWalletAdapterWalletName,
 } from "@solana-mobile/wallet-adapter-mobile";
-import type { ComponentProps, ReactNode } from "react";
+import type {
+  ComponentProps,
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+} from "react";
 import { useMemo, useCallback, useState } from "react";
 import { mutate } from "swr";
 import { z } from "zod";
@@ -196,7 +201,10 @@ const SessionProvider = ({
   ...args
 }: Parameters<typeof createSessionConnection>[0] &
   Omit<Parameters<typeof createSessionContext>[0], "connection"> &
-  Omit<Parameters<typeof useSessionState>[0], "getSessionContext"> & {
+  Omit<
+    Parameters<typeof useSessionState>[0],
+    "getSessionContext" | "setShowBridgeIn"
+  > & {
     children: ReactNode;
     defaultRequestedLimits?: Map<PublicKey, bigint> | undefined;
     enableUnlimited?: boolean | undefined;
@@ -205,6 +213,7 @@ const SessionProvider = ({
       | (() => Promise<void> | void)
       | undefined;
   }) => {
+  const [showBridgeIn, setShowBridgeIn] = useState(false);
   const sessionConnection = useMemo(
     () =>
       // @ts-expect-error `createSessionConnection` enforces certain
@@ -245,7 +254,11 @@ const SessionProvider = ({
     }
   }, [sessionContext]);
 
-  const sessionState = useSessionState({ ...args, getSessionContext });
+  const sessionState = useSessionState({
+    ...args,
+    getSessionContext,
+    setShowBridgeIn: setShowBridgeIn,
+  });
 
   const state = useMemo(
     () => ({
@@ -258,6 +271,8 @@ const SessionProvider = ({
       whitelistedTokens: args.tokens ?? [],
       onStartSessionInit,
       defaultRequestedLimits,
+      showBridgeIn,
+      setShowBridgeIn,
     }),
     [
       network,
@@ -268,6 +283,8 @@ const SessionProvider = ({
       args.tokens,
       onStartSessionInit,
       defaultRequestedLimits,
+      showBridgeIn,
+      setShowBridgeIn,
     ],
   );
 
@@ -281,11 +298,13 @@ const useSessionState = ({
   onOpenSessionLimitsReached,
   wallets,
   sessionEstablishmentLookupTable,
+  setShowBridgeIn,
 }: {
   getSessionContext: () => Promise<SessionExecutionContext>;
   tokens?: PublicKey[] | undefined;
   onOpenExtendSessionExpiry?: (() => void) | undefined;
   onOpenSessionLimitsReached?: (() => void) | undefined;
+  setShowBridgeIn: Dispatch<SetStateAction<boolean>>;
   wallets: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
   sessionEstablishmentLookupTable?: string | undefined;
 }) => {
@@ -434,6 +453,9 @@ const useSessionState = ({
         solanaWallet: wallet,
         sessionPublicKey: session.sessionPublicKey,
         createLogInToken: () => createLogInToken(session),
+        showBridgeIn: () => {
+          setShowBridgeIn(true);
+        },
         expiration: session.sessionInfo.expiration,
         updateSession: (previousState, duration, limits) => {
           updateSession({
@@ -450,7 +472,7 @@ const useSessionState = ({
       };
       setState(SessionState.Established(establishedOptions));
     },
-    [getSessionContext, updateSession, sendTransaction],
+    [getSessionContext, updateSession, sendTransaction, setShowBridgeIn],
   );
 
   const submitLimits = useCallback(
