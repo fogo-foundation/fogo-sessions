@@ -1,4 +1,7 @@
 // Adapted from @solana/wallet-adapter-ledger, with some modifications to support Node.js
+import fs from "node:fs";
+
+import { Wallet } from "@coral-xyz/anchor";
 import Transport, {
   StatusCodes,
   TransportStatusError,
@@ -6,7 +9,16 @@ import Transport, {
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
 import { getDerivationPath } from "@solana/wallet-adapter-ledger";
 import type { Transaction } from "@solana/web3.js";
-import { VersionedTransaction, PublicKey } from "@solana/web3.js";
+import { Keypair, VersionedTransaction, PublicKey } from "@solana/web3.js";
+
+export const parseSignerSource = async (source: string) =>
+  source.startsWith("usb://ledger")
+    ? await LedgerNodeWallet.create(parseDerivationPath(source))
+    : new Wallet(
+        Keypair.fromSecretKey(
+          Buffer.from(JSON.parse(fs.readFileSync(source, "utf8"))),
+        ),
+      );
 
 export function parseDerivationPath(source: string): {
   derivationAccount?: number;

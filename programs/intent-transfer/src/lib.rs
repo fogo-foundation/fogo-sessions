@@ -80,7 +80,7 @@ pub struct RegisterNttConfig<'info> {
     /// CHECK: this is the address of the Ntt Manager program to register
     pub ntt_manager: UncheckedAccount<'info>,
 
-    #[account(address = bpf_loader_upgradeable::get_program_data_address(&crate::ID))]
+    #[account(seeds = [crate::ID.as_ref()], bump, seeds::program = bpf_loader_upgradeable::ID)]
     pub program_data: Account<'info, ProgramData>,
 
     pub system_program: Program<'info, System>,

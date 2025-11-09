@@ -5,6 +5,7 @@
   "type": "module",
   "bin": {
     "initialize-chain-id": "./bin/initialize-chain-id.js",
+    "register-ntt-manager": "./bin/register-ntt-manager.js",
     "add-program-id-to-domain-registry": "./bin/add-program-id-to-domain-registry.js"
   },
   "scripts": {
