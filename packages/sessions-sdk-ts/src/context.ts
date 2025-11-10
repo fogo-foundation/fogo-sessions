@@ -10,30 +10,35 @@ const IS_BROWSER = typeof globalThis.window !== "undefined";
 
 export const createSessionContext = async (options: {
   connection: Connection;
-  addressLookupTableAddress?: string | undefined;
+  defaultAddressLookupTableAddress?: string | undefined;
   domain?: string | undefined;
 }) => {
-  const addressLookupTables = await options.connection.getAddressLookupTables(
-    options.addressLookupTableAddress,
-  );
   const domain = getDomain(options.domain);
   const sponsor = await options.connection.getSponsor(domain);
   return {
     chainId: await fetchChainId(options.connection.connection),
     domain: getDomain(options.domain),
     payer: sponsor,
+    getSolanaConnection: options.connection.getSolanaConnection,
     connection: options.connection.connection,
     rpc: options.connection.rpc,
+    network: options.connection.network,
     sendTransaction: (
       sessionKey: CryptoKeyPair | undefined,
-      instructions: Parameters<typeof options.connection.sendToPaymaster>[4],
+      instructions: Parameters<typeof options.connection.sendToPaymaster>[3],
+      extraConfig?: Parameters<typeof options.connection.sendToPaymaster>[4],
     ) =>
       options.connection.sendToPaymaster(
         domain,
         sponsor,
-        addressLookupTables,
         sessionKey,
         instructions,
+        {
+          addressLookupTable:
+            extraConfig?.addressLookupTable ??
+            options.defaultAddressLookupTableAddress,
+          extraSigners: extraConfig?.extraSigners,
+        },
       ),
   };
 };

@@ -104,7 +104,7 @@
 
       &,
       &[data-hovered] {
-        border: theme.color("button", "disabled", "foreground");
+        border-color: theme.color("button", "disabled", "foreground");
       }
     }
   }
