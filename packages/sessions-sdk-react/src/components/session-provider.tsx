@@ -41,7 +41,7 @@ import {
   SolanaMobileWalletAdapterWalletName,
 } from "@solana-mobile/wallet-adapter-mobile";
 import type { ComponentProps, ReactNode } from "react";
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { mutate } from "swr";
 import { z } from "zod";
 
@@ -273,17 +273,23 @@ const useSessionState = ({
   onOpenExtendSessionExpiry,
   onOpenSessionLimitsReached,
   wallets,
+  onStateChange
 }: {
   getSessionContext: () => Promise<SessionExecutionContext>;
   tokens?: PublicKey[] | undefined;
   onOpenExtendSessionExpiry?: (() => void) | undefined;
   onOpenSessionLimitsReached?: (() => void) | undefined;
   wallets: MessageSignerWalletAdapterProps[];
+  onStateChange?: (state: SessionState) => void;
 }) => {
   const [state, setState] = useState<SessionState>(SessionState.Initializing());
   const toast = useToast();
   const walletName = useLocalStorageValue<string>("walletName");
 
+  useEffect(() => {
+    onStateChange?.(state);
+  }, [state, onStateChange]);
+  
   const sendTransaction = useCallback(
     async (
       session: Session,
