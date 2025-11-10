@@ -7,7 +7,10 @@ import { anchorOptions, createAnchorProvider } from "./anchor-options.js";
 
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)
-    .command("* <mint> <ntt-manager>", "command")
+    .command(
+      "* <mint> <ntt-manager>",
+      "Register the ntt manager that the intent transfer will allow using when bridging out for a given mint",
+    )
     .options(anchorOptions)
     .positional("mint", {
       type: "string",
@@ -23,15 +26,8 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     })
     .parse();
 
-  const provider = await createAnchorProvider(args);
-  const program = new IntentTransferProgram(provider);
-
-  await program.methods
+  await new IntentTransferProgram(createAnchorProvider(args)).methods
     .registerNttConfig()
-    .accounts({
-      mint: args.mint,
-      nttManager: args.nttManager,
-      updateAuthority: provider.wallet.publicKey,
-    })
+    .accounts({ mint: args.mint, nttManager: args.nttManager })
     .rpc();
 };

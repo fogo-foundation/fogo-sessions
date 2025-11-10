@@ -1,5 +1,5 @@
 // Adapted from @solana/wallet-adapter-ledger, with some modifications to support Node.js
-import fs from "node:fs";
+import { readFile } from "node:fs/promises";
 
 import { Wallet } from "@coral-xyz/anchor";
 import Transport, {
@@ -16,7 +16,7 @@ export const parseSignerSource = async (source: string) =>
     ? await LedgerNodeWallet.create(parseDerivationPath(source))
     : new Wallet(
         Keypair.fromSecretKey(
-          Buffer.from(JSON.parse(fs.readFileSync(source, "utf8"))),
+          Buffer.from(JSON.parse(await readFile(source, "utf8"))),
         ),
       );
 
