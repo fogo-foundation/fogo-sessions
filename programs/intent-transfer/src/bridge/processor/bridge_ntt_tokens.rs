@@ -9,7 +9,7 @@ use anchor_spl::token::{
 use chain_id::ChainId;
 use mpl_token_metadata::accounts::Metadata;
 use solana_intents::{Intent, SymbolOrMint};
-use crate::{bridge::{config::ntt_config::{ExpectedNttConfig, verify_ntt_manager}, message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole}}, error::IntentTransferError, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}};
+use crate::{bridge::{config::ntt_config::{ExpectedNttConfig, verify_ntt_manager}, message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole}}, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}};
 use crate::{INTENT_TRANSFER_SEED, bridge::{config::ntt_config::EXPECTED_NTT_CONFIG_SEED, cpi::{self, ntt_manager::WORMHOLE_PROGRAM_ID}}};
 
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
@@ -171,8 +171,8 @@ impl<'info> BridgeNttTokens<'info> {
         args: BridgeNttTokensArgs,
     ) -> Result<()> {
         let Intent { message, signer } =
-            Intent::<BridgeMessage>::load(self.sysvar_instructions.as_ref())
-                .map_err(Into::<IntentTransferError>::into)?;
+        Intent::<BridgeMessage>::load(self.sysvar_instructions.as_ref())
+        .map_err(Into::<IntentTransferError>::into)?;
 
         match message {
             BridgeMessage::Ntt(ntt_message) => {
