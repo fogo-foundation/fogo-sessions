@@ -43,13 +43,13 @@ import {
   SolanaMobileWalletAdapter,
   SolanaMobileWalletAdapterWalletName,
 } from "@solana-mobile/wallet-adapter-mobile";
-import { useMemo, useCallback, useState, useEffect } from "react";
 import type {
   ComponentProps,
   Dispatch,
   ReactNode,
   SetStateAction,
 } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { mutate } from "swr";
 import { z } from "zod";
 
@@ -297,7 +297,7 @@ const useSessionState = ({
   onOpenExtendSessionExpiry,
   onOpenSessionLimitsReached,
   wallets,
-  onStateChange
+  onStateChange,
   sessionEstablishmentLookupTable,
   setShowBridgeIn,
 }: {
@@ -317,7 +317,7 @@ const useSessionState = ({
   useEffect(() => {
     onStateChange?.(state);
   }, [state, onStateChange]);
-  
+
   const sendTransaction = useCallback(
     async (
       session: Session,
