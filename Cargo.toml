@@ -1,5 +1,11 @@
 [workspace]
-members = ["programs/*", "packages/sessions-sdk-rs", "packages/solana-intents", "services/*"]
+members = [
+    "programs/*",
+    "programs/intent-transfer/tests/mocks/*",
+    "packages/sessions-sdk-rs",
+    "packages/solana-intents",
+    "services/*"
+]
 resolver = "2"
 
 [workspace.package]
@@ -18,12 +24,16 @@ codegen-units = 1
 [workspace.dependencies]
 anchor-lang = "0.31.1"
 anchor-spl = "0.31.1"
+base64 = "0.22.1"
 borsh = "1.5.7"
 bytemuck = "1.23.1"
 fogo-sessions-sdk = { path = "packages/sessions-sdk-rs" }
+hex = "0.4.3"
 intent-transfer = { path = "programs/intent-transfer" }
 mpl-token-metadata = "5.1.0"
 nom = "8.0.0"
+solana-account = "2.2.1"
+solana-address = "1.0.0"
 solana-address-lookup-table-interface = "2.2.1"
 solana-client = "2.2.1"
 solana-commitment-config = "2.2.1"
@@ -31,6 +41,7 @@ solana-compute-budget-interface = { version = "2.2.1", features = ["serde"] }
 solana-derivation-path = "2.2.1"
 solana-ed25519-program = "2.2.1"
 solana-hash = "2.2.1"
+solana-instruction = "2.2.1"
 solana-keypair = "2.2.1"
 solana-message = "2.2.1"
 solana-offchain-message = "2.2.1"
@@ -44,7 +55,8 @@ solana-seed-derivable = "2.2.1"
 solana-seed-phrase = "2.2.1"
 solana-signature = "2.2.1"
 solana-signer = "2.2.1"
-solana-transaction = "2.2.1"
+solana-transaction = { version = "2.2.1", features = ["bincode"] }
 solana-transaction-error = "2.2.1"
 solana-transaction-status-client-types = "2.2.1"
 spl-associated-token-account = { version = "6.0.0", features = ["no-entrypoint"] }
+spl-token = {version = "7.0.0", features = ["no-entrypoint"]}
