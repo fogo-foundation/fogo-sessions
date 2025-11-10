@@ -857,8 +857,8 @@ type SendBridgeOutOptions = {
   walletPublicKey: PublicKey;
   solanaWallet: MessageSignerWalletAdapterProps;
   amount: bigint;
-  fromToken: WormholeToken;
-  toToken: WormholeToken;
+  fromToken: WormholeToken & { chain: "Fogo" };
+  toToken: WormholeToken & { chain: "Solana" };
 };
 
 type WormholeToken = {
@@ -1035,8 +1035,8 @@ type SendBridgeInOptions = {
   walletPublicKey: PublicKey;
   solanaWallet: BaseWalletAdapter;
   amount: bigint;
-  fromToken: WormholeToken;
-  toToken: WormholeToken;
+  fromToken: WormholeToken & { chain: "Solana" };
+  toToken: WormholeToken & { chain: "Fogo" };
 };
 
 export const bridgeIn = async (options: SendBridgeInOptions) => {

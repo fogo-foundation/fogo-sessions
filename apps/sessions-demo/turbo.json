@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "env": [
-        "ADDRESS_LOOKUP_TABLE_ADDRESSES",
+        "ADDRESS_LOOKUP_TABLE_ADDRESS",
         "RPC",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER",
@@ -14,7 +14,7 @@
     },
     "start:dev": {
       "env": [
-        "ADDRESS_LOOKUP_TABLE_ADDRESSES",
+        "ADDRESS_LOOKUP_TABLE_ADDRESS",
         "RPC",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER",
@@ -24,7 +24,7 @@
     },
     "start:prod": {
       "env": [
-        "ADDRESS_LOOKUP_TABLE_ADDRESSES",
+        "ADDRESS_LOOKUP_TABLE_ADDRESS",
         "RPC",
         "FOGO_SESSIONS_DOMAIN",
         "PAYMASTER",

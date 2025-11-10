@@ -1,5 +1,4 @@
 import { bridgeOut, TransactionResultType } from "@fogo/sessions-sdk";
-import { PublicKey } from "@solana/web3.js";
 import type { FormEvent } from "react";
 import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
@@ -19,22 +18,7 @@ import {
   StateType as TokenAccountStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
-
-const FOGO_USDC = {
-  chain: "Fogo" as const,
-  mint: new PublicKey("ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND"),
-  manager: new PublicKey("NTtktYPsu3a9fvQeuJW6Ea11kinvGc7ricT1iikaTue"),
-  transceiver: new PublicKey("GJVgi8cwwUuyjjzM19xnT3KNYoX4pXvpp8UAS3ikgZLB"),
-};
-
-const SOLANA_USDC = {
-  chain: "Solana" as const,
-  mint: new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"),
-  manager: new PublicKey("NTtktYPsu3a9fvQeuJW6Ea11kinvGc7ricT1iikaTue"),
-  transceiver: new PublicKey("BLu7SyjSHWZVsiSSWhx3f3sL11rBpuzRYM1HyobVZR4v"),
-};
-
-const USDC_DECIMALS = 6;
+import { FOGO_USDC, SOLANA_USDC, USDC_DECIMALS } from "../usdc-wormhole.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
