@@ -27,7 +27,7 @@ type Props = {
 };
 
 export const SessionButton = ({ requestedLimits, compact }: Props) => {
-  const { onStartSessionInit } = useSessionContext();
+  const { onStartSessionInit, showBridgeIn } = useSessionContext();
   const sessionState = useSession();
   const prevSessionState = useRef(sessionState);
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
@@ -96,6 +96,12 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
       prevSessionState.current = sessionState;
     }
   }, [sessionState]);
+
+  useEffect(() => {
+    if (showBridgeIn) {
+      setSessionPanelOpen(true);
+    }
+  }, [showBridgeIn]);
 
   return (
     <>

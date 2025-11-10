@@ -5,7 +5,7 @@ import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import { motion } from "motion/react";
 import type { ComponentProps } from "react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Tabs, TabList, Tab, TabPanel, Heading } from "react-aria-components";
 
 import type {
@@ -33,10 +33,18 @@ type Props = Omit<ComponentProps<"div">, "children"> & {
 };
 
 export const SessionPanel = ({ onClose, className, ...props }: Props) => {
-  const { sessionState, whitelistedTokens } = useSessionContext();
+  const { sessionState, whitelistedTokens, showBridgeIn, setShowBridgeIn } =
+    useSessionContext();
   const [currentScreen, setCurrentScreen] = useState<TokenScreen>(
     TokenScreen.Wallet(),
   );
+
+  useEffect(() => {
+    if (showBridgeIn) {
+      setCurrentScreen(TokenScreen.Deposit());
+      setShowBridgeIn(false);
+    }
+  }, [showBridgeIn, setShowBridgeIn]);
 
   return (
     <div className={clsx(styles.sessionPanel, className)} {...props}>

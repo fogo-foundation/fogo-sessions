@@ -6,6 +6,7 @@ import type {
 } from "@fogo/sessions-sdk";
 import type { Rpc, SolanaRpcApi } from "@solana/kit";
 import type { Connection, PublicKey } from "@solana/web3.js";
+import type { Dispatch, SetStateAction } from "react";
 import { createContext, use } from "react";
 
 import type { SessionState } from "../session-state.js";
@@ -24,6 +25,8 @@ export const SessionContext = createContext<
         | (() => Promise<boolean> | boolean)
         | (() => Promise<void> | void)
         | undefined;
+      showBridgeIn: boolean;
+      setShowBridgeIn: Dispatch<SetStateAction<boolean>>;
     }
   | undefined
 >(undefined);
