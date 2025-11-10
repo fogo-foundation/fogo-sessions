@@ -7,7 +7,7 @@ use nom::{
     sequence::delimited,
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
-use solana_intents::{IntentError, SymbolOrMint, Version, tag_key_value};
+use solana_intents::{tag_key_value, IntentError, SymbolOrMint, Version};
 
 use crate::error::IntentTransferError;
 

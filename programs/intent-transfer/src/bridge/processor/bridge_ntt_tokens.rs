@@ -1,19 +1,29 @@
-use anchor_lang::{
-    prelude::*,
-    solana_program::sysvar::instructions,
+use crate::{
+    bridge::{
+        config::ntt_config::EXPECTED_NTT_CONFIG_SEED,
+        cpi::{self, ntt_manager::WORMHOLE_PROGRAM_ID},
+    },
+    INTENT_TRANSFER_SEED,
 };
+use crate::{
+    bridge::{
+        config::ntt_config::{verify_ntt_manager, ExpectedNttConfig},
+        message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage},
+    },
+    error::IntentTransferError,
+    nonce::Nonce,
+    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+};
+use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
     approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
     CloseAccount, Mint, Token, TokenAccount, TransferChecked,
 };
 use chain_id::ChainId;
 use solana_intents::Intent;
-use crate::{bridge::{config::ntt_config::{ExpectedNttConfig, verify_ntt_manager}, message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole}}, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}};
-use crate::{INTENT_TRANSFER_SEED, bridge::{config::ntt_config::EXPECTED_NTT_CONFIG_SEED, cpi::{self, ntt_manager::WORMHOLE_PROGRAM_ID}}};
 
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
 const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
-
 
 // TODO: we should do some parsing of the relay_instructions and/or exec_amounts arg(s)
 // in order to ensure the signed intent message does precisely what the user expects
@@ -161,7 +171,6 @@ pub struct BridgeNttTokens<'info> {
     pub ntt: Ntt<'info>,
 }
 
-
 // TODO: implement slot staleness check for intent messages
 impl<'info> BridgeNttTokens<'info> {
     pub fn verify_and_initiate_bridge(
@@ -170,8 +179,8 @@ impl<'info> BridgeNttTokens<'info> {
         args: BridgeNttTokensArgs,
     ) -> Result<()> {
         let Intent { message, signer } =
-        Intent::<BridgeMessage>::load(self.sysvar_instructions.as_ref())
-        .map_err(Into::<IntentTransferError>::into)?;
+            Intent::<BridgeMessage>::load(self.sysvar_instructions.as_ref())
+                .map_err(Into::<IntentTransferError>::into)?;
 
         match message {
             BridgeMessage::Ntt(ntt_message) => {

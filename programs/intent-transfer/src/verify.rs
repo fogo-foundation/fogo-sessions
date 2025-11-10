@@ -1,9 +1,9 @@
+use crate::error::IntentTransferError;
+use crate::nonce::Nonce;
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 use mpl_token_metadata::accounts::Metadata;
 use solana_intents::SymbolOrMint;
-use crate::error::IntentTransferError;
-use crate::nonce::Nonce;
 
 pub fn verify_symbol_or_mint(
     symbol_or_mint: &SymbolOrMint,

@@ -11,12 +11,12 @@ use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
 use intent_transfer::{
-    bridge::message::convert_chain_id_to_wormhole,
+    bridge::config::ntt_config::ExpectedNttConfig,
     bridge::cpi::{
         ntt_manager::WORMHOLE_PROGRAM_ID,
         ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
     },
-    bridge::config::ntt_config::ExpectedNttConfig,
+    bridge::message::convert_chain_id_to_wormhole,
     bridge::processor::bridge_ntt_tokens::BridgeNttTokensArgs,
 };
 

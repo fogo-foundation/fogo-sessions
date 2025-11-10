@@ -1,2 +1,2 @@
-pub mod processor;
 mod message;
+pub mod processor;

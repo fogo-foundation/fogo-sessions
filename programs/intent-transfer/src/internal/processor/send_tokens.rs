@@ -1,15 +1,17 @@
-use anchor_lang::{
-    prelude::*,
-    solana_program::sysvar::instructions,
+use crate::{
+    error::IntentTransferError,
+    internal::message::Message,
+    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
 };
+use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
-    spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount, TransferChecked,
+    spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
+    TransferChecked,
 };
 use chain_id::ChainId;
 use solana_intents::Intent;
-use crate::{error::IntentTransferError, internal::message::Message, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}};
 
-use crate::{INTENT_TRANSFER_SEED, nonce::Nonce};
+use crate::{nonce::Nonce, INTENT_TRANSFER_SEED};
 
 const NONCE_SEED: &[u8] = b"nonce";
 
@@ -52,7 +54,6 @@ pub struct SendTokens<'info> {
 
     pub system_program: Program<'info, System>,
 }
-
 
 impl<'info> SendTokens<'info> {
     pub fn verify_and_send(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {

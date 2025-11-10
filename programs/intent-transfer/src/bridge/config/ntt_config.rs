@@ -1,5 +1,5 @@
-use anchor_lang::prelude::*;
 use crate::error::IntentTransferError;
+use anchor_lang::prelude::*;
 
 pub const EXPECTED_NTT_CONFIG_SEED: &[u8] = b"expected_ntt_config";
 

@@ -1,2 +1,2 @@
-pub mod processor;
 pub mod ntt_config;
+pub mod processor;
