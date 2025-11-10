@@ -56,11 +56,6 @@ pub mod intent_transfer {
     pub fn register_ntt_config<'info>(
         ctx: Context<'_, '_, '_, 'info, RegisterNttConfig<'info>>,
     ) -> Result<()> {
-        verify_upgrade_authority(
-            ctx.program_id,
-            &ctx.accounts.program_data,
-            &ctx.accounts.update_authority,
-        )?;
         ctx.accounts.expected_ntt_config.manager = ctx.accounts.ntt_manager.key();
         Ok(())
     }
@@ -68,7 +63,7 @@ pub mod intent_transfer {
 
 #[derive(Accounts)]
 pub struct RegisterNttConfig<'info> {
-    #[account(mut)]
+    #[account(mut, address = program_data.upgrade_authority_address.ok_or(IntentTransferError::Unauthorized)?)]
     pub update_authority: Signer<'info>,
 
     pub mint: Account<'info, Mint>,
@@ -85,7 +80,7 @@ pub struct RegisterNttConfig<'info> {
     /// CHECK: this is the address of the Ntt Manager program to register
     pub ntt_manager: UncheckedAccount<'info>,
 
-    /// this account's address is verified to make sure it corresponds to this program
+    #[account(address = bpf_loader_upgradeable::get_program_data_address(&crate::ID))]
     pub program_data: Account<'info, ProgramData>,
 
     pub system_program: Program<'info, System>,
@@ -345,7 +340,7 @@ impl<'info> BridgeNttTokens<'info> {
         )?;
 
         let to_chain_id_wormhole = convert_chain_id_to_wormhole(&to_chain_id)
-            .ok_or(IntentTransferError::InvalidToChainId)?;
+            .ok_or(IntentTransferError::UnsupportedToChainId)?;
 
         let transfer_args = cpi::ntt_manager::TransferArgs {
             amount,
@@ -633,28 +628,6 @@ fn verify_ntt_manager(
         ntt_manager_key,
         expected_ntt_config.manager,
         IntentTransferError::InvalidNttManager
-    );
-    Ok(())
-}
-
-fn verify_upgrade_authority(
-    intent_transfer_program: &Pubkey,
-    program_data: &Account<ProgramData>,
-    upgrade_authority: &Signer,
-) -> Result<()> {
-    // verify valid program data account
-    require_keys_eq!(
-        program_data.key(),
-        bpf_loader_upgradeable::get_program_data_address(intent_transfer_program),
-        IntentTransferError::InvalidProgramData
-    );
-
-    // verify upgrade authority
-    require!(
-        program_data
-            .upgrade_authority_address
-            .is_some_and(|addr| addr == upgrade_authority.key()),
-        IntentTransferError::Unauthorized
     );
     Ok(())
 }

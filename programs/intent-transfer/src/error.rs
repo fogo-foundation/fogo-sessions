@@ -39,11 +39,9 @@ pub enum IntentTransferError {
     #[msg("The recipient address could not be parsed as a valid address")]
     InvalidRecipientAddress,
     #[msg("The provided to chain ID is unsupported")]
-    InvalidToChainId,
+    UnsupportedToChainId,
     #[msg("The provided Ntt manager for the given mint is invalid")]
     InvalidNttManager,
-    #[msg("Invalid ProgramData account")]
-    InvalidProgramData,
     #[msg("Unauthorized: only upgrade authority can call this")]
     Unauthorized,
 }
