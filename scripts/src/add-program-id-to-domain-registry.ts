@@ -8,7 +8,10 @@ import { anchorOptions, createAnchorProvider } from "./anchor-options.js";
 
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)
-    .command("* <domain> <program-id>", "command")
+    .command(
+      "* <domain> <program-id>",
+      "Add the given program ID to the whitelist of programs for the given domain",
+    )
     .options(anchorOptions)
     .positional("domain", {
       type: "string",
@@ -22,7 +25,7 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     })
     .parse();
 
-  const program = new DomainRegistryProgram(await createAnchorProvider(args));
+  const program = new DomainRegistryProgram(createAnchorProvider(args));
 
   const { config: configPubkey } = await program.methods.initialize().pubkeys();
 

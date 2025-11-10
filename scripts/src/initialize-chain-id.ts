@@ -6,7 +6,7 @@ import { anchorOptions, createAnchorProvider } from "./anchor-options.js";
 
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)
-    .command("* <chain-id>", "command")
+    .command("* <chain-id>", "Set the chain ID")
     .options(anchorOptions)
     .positional("chain-id", {
       type: "string",
@@ -15,7 +15,7 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     })
     .parse();
 
-  await new ChainIdProgram(await createAnchorProvider(args)).methods
+  await new ChainIdProgram(createAnchorProvider(args)).methods
     .set(args["chain-id"])
     .rpc();
 };

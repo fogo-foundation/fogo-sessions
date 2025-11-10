@@ -17,14 +17,19 @@ export const anchorOptions = {
     type: "string",
     description: "Filepath to a keypair",
     demandOption: true,
-    coerce: (keypair: string) => parseSignerSource(keypair),
+    coerce: (keypair: string): Awaited<ReturnType<typeof parseSignerSource>> =>
+      // @ts-expect-error yargs types are incorrect.  yargs will await the
+      // coerce but the typescript types do not indicate so, so we explicitly
+      // override yargs here to indicate that the return value is indeed
+      // awaited.
+      parseSignerSource(keypair),
   },
 } as const satisfies Record<string, Options>;
 
-export const createAnchorProvider = async ({
+export const createAnchorProvider = ({
   url,
   keypair,
 }: {
   url: string;
-  keypair: ReturnType<typeof parseSignerSource>;
-}) => new AnchorProvider(new Connection(url), await keypair);
+  keypair: Awaited<ReturnType<typeof parseSignerSource>>;
+}) => new AnchorProvider(new Connection(url), keypair);
