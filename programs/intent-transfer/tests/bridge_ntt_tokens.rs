@@ -11,12 +11,13 @@ use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
 use intent_transfer::{
-    bridge_message::convert_chain_id_to_wormhole,
-    cpi::{
+    bridge::message::convert_chain_id_to_wormhole,
+    bridge::cpi::{
         ntt_manager::WORMHOLE_PROGRAM_ID,
         ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
     },
-    ExpectedNttConfig,
+    bridge::config::ntt_config::ExpectedNttConfig,
+    bridge::processor::bridge_ntt_tokens::BridgeNttTokensArgs,
 };
 
 mod helpers;
@@ -285,7 +286,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         }
         .to_account_metas(None),
         data: intent_transfer::instruction::BridgeNttTokens {
-            args: intent_transfer::BridgeNttTokensArgs {
+            args: BridgeNttTokensArgs {
                 exec_amount: 1_000,
                 signed_quote_bytes: vec![],
                 relay_instructions: vec![],

@@ -14,7 +14,7 @@ use chain_id::ChainId;
 use mpl_token_metadata::accounts::Metadata;
 use solana_intents::{Intent, SymbolOrMint};
 
-mod bridge;
+pub mod bridge;
 mod internal;
 mod verify;
 mod nonce;
