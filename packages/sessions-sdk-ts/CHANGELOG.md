@@ -1,5 +1,13 @@
 # @fogo/sessions-sdk
 
+## 0.0.19
+
+### Patch Changes
+
+- c69ea06: Add support for bridging tokens to/from Solana
+- Updated dependencies [c69ea06]
+  - @fogo/sessions-idls@0.0.8
+
 ## 0.0.18
 
 ### Patch Changes
