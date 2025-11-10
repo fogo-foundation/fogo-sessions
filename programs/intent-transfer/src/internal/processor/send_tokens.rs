@@ -1,7 +1,9 @@
 use crate::{
     error::IntentTransferError,
     internal::message::Message,
+    nonce::Nonce,
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+    INTENT_TRANSFER_SEED,
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
@@ -10,8 +12,6 @@ use anchor_spl::token::{
 };
 use chain_id::ChainId;
 use solana_intents::Intent;
-
-use crate::{nonce::Nonce, INTENT_TRANSFER_SEED};
 
 const NONCE_SEED: &[u8] = b"nonce";
 
