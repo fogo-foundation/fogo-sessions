@@ -18,9 +18,11 @@ mod bridge;
 mod internal;
 mod verify;
 mod nonce;
+mod error;
 
-use bridge::*;
-use internal::*;
+use bridge::processor::bridge_ntt_tokens::*;
+use bridge::config::processor::register_ntt_config::*;
+use internal::processor::send_tokens::*;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
 

@@ -44,21 +44,3 @@ pub enum IntentTransferError {
     #[msg("Unauthorized: only upgrade authority can call this")]
     Unauthorized,
 }
-
-impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for IntentTransferError {
-    fn from(err: IntentError<<Message as TryFrom<Vec<u8>>>::Error>) -> Self {
-        match err {
-            IntentError::NoIntentMessageInstruction(_) => {
-                IntentTransferError::NoIntentMessageInstruction
-            }
-            IntentError::IncorrectInstructionProgramId => {
-                IntentTransferError::IncorrectInstructionProgramId
-            }
-            IntentError::SignatureVerificationUnexpectedHeader => {
-                IntentTransferError::SignatureVerificationUnexpectedHeader
-            }
-            IntentError::ParseFailedError(_) => IntentTransferError::ParseFailedError,
-            IntentError::DeserializeFailedError(_) => IntentTransferError::DeserializeFailedError,
-        }
-    }
-}

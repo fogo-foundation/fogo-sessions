@@ -1,4 +1,7 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::bpf_loader_upgradeable;
+use anchor_spl::token::Mint;
+use crate::{bridge::config::ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig}, error::IntentTransferError};
 
 #[derive(Accounts)]
 pub struct RegisterNttConfig<'info> {

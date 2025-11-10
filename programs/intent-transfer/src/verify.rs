@@ -1,6 +1,18 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{
+    prelude::*,
+    solana_program::{bpf_loader_upgradeable, sysvar::instructions},
+};
+use anchor_spl::token::{
+    approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
+    CloseAccount, Mint, Token, TokenAccount, TransferChecked,
+};
+use chain_id::ChainId;
+use mpl_token_metadata::accounts::Metadata;
+use solana_intents::{Intent, SymbolOrMint};
+use crate::error::IntentTransferError;
+use crate::nonce::Nonce;
 
-fn verify_symbol_or_mint(
+pub fn verify_symbol_or_mint(
     symbol_or_mint: &SymbolOrMint,
     metadata: &Option<UncheckedAccount>,
     mint: &Account<Mint>,
@@ -39,7 +51,7 @@ fn verify_symbol_or_mint(
     Ok(())
 }
 
-fn verify_signer_matches_source(signer: Pubkey, source_owner: Pubkey) -> Result<()> {
+pub fn verify_signer_matches_source(signer: Pubkey, source_owner: Pubkey) -> Result<()> {
     require_keys_eq!(
         signer,
         source_owner,
@@ -48,7 +60,7 @@ fn verify_signer_matches_source(signer: Pubkey, source_owner: Pubkey) -> Result<
     Ok(())
 }
 
-fn verify_and_update_nonce(nonce: &mut Account<Nonce>, new_nonce: u64) -> Result<()> {
+pub fn verify_and_update_nonce(nonce: &mut Account<Nonce>, new_nonce: u64) -> Result<()> {
     require_eq!(
         new_nonce,
         nonce.nonce + 1,
