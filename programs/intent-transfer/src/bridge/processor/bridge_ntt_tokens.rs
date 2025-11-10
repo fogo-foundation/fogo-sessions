@@ -153,7 +153,7 @@ pub struct BridgeNttTokens<'info> {
 
 // TODO: implement slot staleness check for intent messages
 impl<'info> BridgeNttTokens<'info> {
-    fn verify_and_initiate_bridge(
+    pub fn verify_and_initiate_bridge(
         &mut self,
         signer_seeds: &[&[&[u8]]],
         args: BridgeNttTokensArgs,

@@ -24,3 +24,10 @@ pub struct RegisterNttConfig<'info> {
 
     pub system_program: Program<'info, System>,
 }
+
+impl<'info> RegisterNttConfig<'info> {
+    pub fn process(&mut self) -> Result<()> {
+        self.expected_ntt_config.manager = self.ntt_manager.key();
+        Ok(())
+    }
+}

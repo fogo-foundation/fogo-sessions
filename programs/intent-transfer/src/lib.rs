@@ -49,8 +49,7 @@ pub mod intent_transfer {
     pub fn register_ntt_config<'info>(
         ctx: Context<'_, '_, '_, 'info, RegisterNttConfig<'info>>,
     ) -> Result<()> {
-        ctx.accounts.expected_ntt_config.manager = ctx.accounts.ntt_manager.key();
-        Ok(())
+        ctx.accounts.process()
     }
 }
 

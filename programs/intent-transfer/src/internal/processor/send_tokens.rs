@@ -44,7 +44,7 @@ pub struct SendTokens<'info> {
 
 
 impl<'info> SendTokens<'info> {
-    fn verify_and_send(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+    pub fn verify_and_send(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
         let Self {
             chain_id,
             destination,
