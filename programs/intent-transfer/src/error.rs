@@ -1,4 +1,3 @@
-use crate::Message;
 use anchor_lang::prelude::*;
 use solana_intents::IntentError;
 
