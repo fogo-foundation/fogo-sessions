@@ -47,6 +47,10 @@
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },
+    "//#run:register-ntt-manager": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
     "//#test": {
       "dependsOn": [
         "//#test:types",
