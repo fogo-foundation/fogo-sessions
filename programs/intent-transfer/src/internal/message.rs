@@ -1,3 +1,4 @@
+use crate::error::IntentTransferError;
 use anchor_lang::prelude::Pubkey;
 use nom::{
     bytes::complete::tag,
@@ -8,8 +9,6 @@ use nom::{
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
 use solana_intents::{tag_key_value, IntentError, SymbolOrMint, Version};
-
-use crate::error::IntentTransferError;
 
 const MESSAGE_PREFIX: &str =
     "Fogo Transfer:\nSigning this intent will transfer the tokens as described below.\n";

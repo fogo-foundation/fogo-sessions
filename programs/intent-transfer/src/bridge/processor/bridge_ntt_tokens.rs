@@ -1,18 +1,13 @@
 use crate::{
     bridge::{
-        config::ntt_config::EXPECTED_NTT_CONFIG_SEED,
+        config::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
         cpi::{self, ntt_manager::WORMHOLE_PROGRAM_ID},
-    },
-    INTENT_TRANSFER_SEED,
-};
-use crate::{
-    bridge::{
-        config::ntt_config::{verify_ntt_manager, ExpectedNttConfig},
         message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage},
     },
     error::IntentTransferError,
     nonce::Nonce,
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+    INTENT_TRANSFER_SEED,
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
