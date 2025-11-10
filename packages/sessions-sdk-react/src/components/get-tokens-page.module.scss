@@ -1,0 +1,26 @@
+@use "../theme";
+
+.getTokensPage {
+  height: 100%;
+  position: relative;
+
+  .backButton {
+    position: absolute;
+    top: theme.spacing(4);
+    left: theme.spacing(4);
+  }
+
+  .options {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: theme.spacing(6);
+    padding: theme.spacing(24) theme.spacing(8);
+    align-items: center;
+    justify-content: stretch;
+    margin: 0;
+
+    & > * {
+      width: 100%;
+    }
+  }
+}

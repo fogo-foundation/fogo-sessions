@@ -23,7 +23,10 @@ import {
 } from "@fogo/sessions-sdk-web";
 import { useLocalStorageValue, useMountEffect } from "@react-hookz/web";
 import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
-import type { MessageSignerWalletAdapterProps } from "@solana/wallet-adapter-base";
+import type {
+  BaseWalletAdapter,
+  MessageSignerWalletAdapterProps,
+} from "@solana/wallet-adapter-base";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import {
   SolflareWalletAdapter,
@@ -76,7 +79,7 @@ type Props = ConstrainedOmit<
     | Map<PublicKey, bigint>
     | Record<string, bigint>
     | undefined;
-  wallets?: MessageSignerWalletAdapterProps[] | undefined;
+  wallets?: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[] | undefined;
   termsOfServiceUrl?: string | undefined;
   privacyPolicyUrl?: string | undefined;
 };
@@ -100,7 +103,7 @@ export const FogoSessionProvider = ({
   const walletsWithStandardAdapters = useStandardWalletAdapters(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
     wallets as any,
-  ) as unknown as MessageSignerWalletAdapterProps[];
+  ) as unknown as (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
 
   const mobileWalletAdapter = useMemo(
     () =>
@@ -161,7 +164,9 @@ export const FogoSessionProvider = ({
 const ANDROID_REGEX = /android/i;
 const WEBVIEW_REGEX =
   /(WebView|Version\/.+(Chrome)\/(\d+)\.(\d+)\.(\d+)\.(\d+)|; wv\).+(Chrome)\/(\d+)\.(\d+)\.(\d+)\.(\d+))/i;
-const isMobile = (wallets: MessageSignerWalletAdapterProps[]) => {
+const isMobile = (
+  wallets: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[],
+) => {
   if (
     wallets.some(
       (wallet) =>
@@ -181,7 +186,7 @@ const SessionProvider = ({
   defaultRequestedLimits,
   enableUnlimited,
   onStartSessionInit,
-  addressLookupTableAddress,
+  defaultAddressLookupTableAddress,
   domain,
   network,
   rpc,
@@ -227,10 +232,10 @@ const SessionProvider = ({
         ? undefined
         : createSessionContext({
             connection: sessionConnection,
-            addressLookupTableAddress,
+            defaultAddressLookupTableAddress,
             domain,
           }),
-    [sessionConnection, addressLookupTableAddress, domain],
+    [sessionConnection, defaultAddressLookupTableAddress, domain],
   );
   const getSessionContext = useCallback(async () => {
     if (sessionContext === undefined) {
@@ -244,6 +249,7 @@ const SessionProvider = ({
 
   const state = useMemo(
     () => ({
+      network,
       connection: sessionConnection.connection,
       rpc: sessionConnection.rpc,
       getSessionContext,
@@ -254,6 +260,7 @@ const SessionProvider = ({
       defaultRequestedLimits,
     }),
     [
+      network,
       sessionConnection,
       getSessionContext,
       sessionState,
@@ -273,12 +280,14 @@ const useSessionState = ({
   onOpenExtendSessionExpiry,
   onOpenSessionLimitsReached,
   wallets,
+  sessionEstablishmentLookupTable,
 }: {
   getSessionContext: () => Promise<SessionExecutionContext>;
   tokens?: PublicKey[] | undefined;
   onOpenExtendSessionExpiry?: (() => void) | undefined;
   onOpenSessionLimitsReached?: (() => void) | undefined;
-  wallets: MessageSignerWalletAdapterProps[];
+  wallets: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
+  sessionEstablishmentLookupTable?: string | undefined;
 }) => {
   const [state, setState] = useState<SessionState>(SessionState.Initializing());
   const toast = useToast();
@@ -366,7 +375,8 @@ const useSessionState = ({
           replaceSession({
             expires: new Date(Date.now() + duration),
             context,
-            signMessage: establishedOptions.signMessage,
+            signMessage: (message) =>
+              establishedOptions.solanaWallet.signMessage(message),
             session,
             ...(limits === undefined ? { unlimited: true } : { limits }),
           }),
@@ -399,7 +409,7 @@ const useSessionState = ({
   const completeSessionSetup = useCallback(
     (
       session: Session,
-      wallet: MessageSignerWalletAdapterProps,
+      wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
       onEndSession: () => void,
     ) => {
       setStoredSession({
@@ -421,7 +431,7 @@ const useSessionState = ({
         isLimited:
           session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
         walletPublicKey: session.walletPublicKey,
-        signMessage: (message: Uint8Array) => wallet.signMessage(message),
+        solanaWallet: wallet,
         sessionPublicKey: session.sessionPublicKey,
         createLogInToken: () => createLogInToken(session),
         expiration: session.sessionInfo.expiration,
@@ -452,7 +462,7 @@ const useSessionState = ({
       onCancel,
       onError,
     }: {
-      wallet: MessageSignerWalletAdapterProps;
+      wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter;
       walletPublicKey: PublicKey;
       sessionDuration: number;
       limits?: Map<PublicKey, bigint> | undefined;
@@ -476,6 +486,7 @@ const useSessionState = ({
         sessionDuration,
         limits,
         controller.signal,
+        sessionEstablishmentLookupTable,
       )
         .then((session) => {
           if (session !== undefined) {
@@ -492,12 +503,17 @@ const useSessionState = ({
           onError();
         });
     },
-    [getSessionContext, completeSessionSetup, toast],
+    [
+      getSessionContext,
+      completeSessionSetup,
+      toast,
+      sessionEstablishmentLookupTable,
+    ],
   );
 
   const requestLimits = useCallback(
     (
-      wallet: MessageSignerWalletAdapterProps,
+      wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
       walletPublicKey: PublicKey,
       requestedLimits: Map<PublicKey, bigint> | undefined,
       onCancel: () => void,
@@ -539,7 +555,7 @@ const useSessionState = ({
       onCancel,
       onError,
     }: {
-      wallet: MessageSignerWalletAdapterProps;
+      wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter;
       requestedLimits?: Map<PublicKey, bigint> | undefined;
       onCancel: () => void;
       onError: () => void;
@@ -659,7 +675,7 @@ const useSessionState = ({
 
 const checkStoredSession = async (
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: MessageSignerWalletAdapterProps,
+  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
 ) => {
   await wallet.autoConnect();
   if (wallet.publicKey === null) {
@@ -687,7 +703,7 @@ const checkStoredSession = async (
 
 const connectWalletImpl = async (
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: MessageSignerWalletAdapterProps,
+  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
   abortSignal: AbortSignal,
 ) => {
   await wallet.connect();
@@ -707,7 +723,7 @@ const connectWalletImpl = async (
 
 const tryLoadStoredSession = async (
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: MessageSignerWalletAdapterProps,
+  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
   walletPublicKey: PublicKey,
   abortSignal?: AbortSignal,
 ) => {
@@ -763,11 +779,12 @@ const ConnectWalletState = {
 
 const establishSession = async (
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: MessageSignerWalletAdapterProps,
+  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
   walletPublicKey: PublicKey,
   sessionDuration: number,
   limits: Map<PublicKey, bigint> | undefined,
   abortSignal: AbortSignal,
+  sessionEstablishmentLookupTable?: string,
 ) => {
   const context = await sessionContext;
   const result = await establishSessionImpl({
@@ -775,6 +792,7 @@ const establishSession = async (
     context,
     signMessage: (message: Uint8Array) => wallet.signMessage(message),
     walletPublicKey: walletPublicKey,
+    sessionEstablishmentLookupTable,
     ...(limits === undefined ? { unlimited: true } : { limits }),
   });
   switch (result.type) {
@@ -803,7 +821,7 @@ const establishSession = async (
 };
 
 const disconnect = (
-  wallet: MessageSignerWalletAdapterProps,
+  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
   sessionInfo?: {
     session: Session;
     sessionContext: Promise<SessionExecutionContext>;
@@ -825,7 +843,9 @@ const disconnect = (
   });
 };
 
-const ensureWalletPublicKey = (wallet: MessageSignerWalletAdapterProps) => {
+const ensureWalletPublicKey = (
+  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
+) => {
   if (wallet.publicKey === null) {
     throw new InvariantFailedError("Wallet connected but has no public key");
   } else {

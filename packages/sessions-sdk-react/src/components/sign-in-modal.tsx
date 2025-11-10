@@ -2,7 +2,10 @@ import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { useResizeObserver } from "@react-hookz/web";
-import type { MessageSignerWalletAdapterProps } from "@solana/wallet-adapter-base";
+import type {
+  MessageSignerWalletAdapterProps,
+  BaseWalletAdapter,
+} from "@solana/wallet-adapter-base";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
@@ -22,7 +25,7 @@ type Props = Omit<
   ComponentProps<typeof ModalDialog>,
   "isOpen" | "onOpenChange" | "children"
 > & {
-  wallets: MessageSignerWalletAdapterProps[];
+  wallets: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
   termsOfServiceUrl?: string | undefined;
   privacyPolicyUrl?: string | undefined;
 };
@@ -127,9 +130,9 @@ const WalletsPage = ({
   termsOfServiceUrl,
   privacyPolicyUrl,
 }: {
-  wallets: MessageSignerWalletAdapterProps[];
+  wallets: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
   selectWallet?:
-    | ((wallet: MessageSignerWalletAdapterProps) => void)
+    | ((wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter) => void)
     | undefined;
   cancel: () => void;
   termsOfServiceUrl?: string | undefined;
