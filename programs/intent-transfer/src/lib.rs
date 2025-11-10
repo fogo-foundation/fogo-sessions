@@ -2,17 +2,7 @@
 
 declare_id!("Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD");
 
-use anchor_lang::{
-    prelude::*,
-    solana_program::{bpf_loader_upgradeable, sysvar::instructions},
-};
-use anchor_spl::token::{
-    approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
-    CloseAccount, Mint, Token, TokenAccount, TransferChecked,
-};
-use chain_id::ChainId;
-use mpl_token_metadata::accounts::Metadata;
-use solana_intents::{Intent, SymbolOrMint};
+use anchor_lang::prelude::*;
 
 pub mod bridge;
 mod internal;

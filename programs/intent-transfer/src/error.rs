@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use solana_intents::IntentError;
 
 #[error_code]
 pub enum IntentTransferError {
