@@ -9,7 +9,7 @@
     "start:dev": "next dev --port 3002",
     "start:prod": "next start --port 3002",
     "test:format": "prettier --check .",
-    "test:lint": "eslint .",
+    "test:lint": "eslint . --max-warnings 0",
     "test:types": "tsc"
   },
   "dependencies": {

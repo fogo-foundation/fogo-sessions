@@ -68,6 +68,7 @@ export const DepositPage = ({ onPressBack, ...props }: Props) => {
 const DepositForm = ({
   onSendComplete,
   sessionState,
+  mutateAmountAvailable,
   ...props
 }: Omit<Props, "onPressBack"> &
   (
@@ -76,7 +77,11 @@ const DepositForm = ({
         amountAvailable: TokenAmount;
         mutateAmountAvailable: KeyedMutator<RpcResponseAndContext<TokenAmount>>;
       }
-    | { isLoading: true }
+    | {
+        isLoading: true;
+        amountAvailable?: undefined;
+        mutateAmountAvailable?: undefined;
+      }
   )) => {
   const { getSessionContext } = useSessionContext();
   const [amount, setAmount] = useState("");
@@ -112,12 +117,10 @@ const DepositForm = ({
             );
           } else {
             toast.success("Tokens transferred to Fogo successfully!");
-            if (!props.isLoading) {
-              props.mutateAmountAvailable().catch((error: unknown) => {
-                // eslint-disable-next-line no-console
-                console.error("Failed to update Solana USDC balance", error);
-              });
-            }
+            mutateAmountAvailable?.().catch((error: unknown) => {
+              // eslint-disable-next-line no-console
+              console.error("Failed to update Solana USDC balance", error);
+            });
             onSendComplete();
           }
         })
@@ -139,6 +142,7 @@ const DepositForm = ({
       toast,
       getSessionContext,
       onSendComplete,
+      mutateAmountAvailable,
     ],
   );
 
