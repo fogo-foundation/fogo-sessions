@@ -1,5 +1,6 @@
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { Connection } from "@solana/web3.js";
+import type { Options } from "yargs";
 
 import { parseSignerSource } from "./ledger.js";
 
@@ -18,7 +19,7 @@ export const anchorOptions = {
     demandOption: true,
     coerce: (keypair: string) => parseSignerSource(keypair),
   },
-} as const;
+} as const satisfies Record<string, Options>;
 
 export const createAnchorProvider = async ({
   url,
