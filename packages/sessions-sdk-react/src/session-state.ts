@@ -1,5 +1,8 @@
 import type { Session } from "@fogo/sessions-sdk";
-import type { MessageSignerWalletAdapterProps } from "@solana/wallet-adapter-base";
+import type {
+  MessageSignerWalletAdapterProps,
+  BaseWalletAdapter,
+} from "@solana/wallet-adapter-base";
 import type { PublicKey } from "@solana/web3.js";
 
 export enum StateType {
@@ -18,10 +21,11 @@ export enum StateType {
 
 export type EstablishedOptions = Omit<Session, "sessionInfo"> & {
   expiration: Date;
-  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  solanaWallet: MessageSignerWalletAdapterProps & BaseWalletAdapter;
   createLogInToken: () => Promise<string>;
   isLimited: boolean;
   endSession: () => void;
+  showBridgeIn: () => void;
   updateSession: (
     prevState: StateType,
     duration: number,
@@ -44,7 +48,9 @@ export const SessionState = {
   }),
 
   SelectingWallet: (args: {
-    selectWallet: (wallet: MessageSignerWalletAdapterProps) => void;
+    selectWallet: (
+      wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
+    ) => void;
     cancel: () => void;
   }) => ({ type: StateType.SelectingWallet as const, ...args }),
 

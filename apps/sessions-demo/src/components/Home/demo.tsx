@@ -56,6 +56,13 @@ export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
               amount={0.5}
               mint={NATIVE_MINT}
             />
+            <Button
+              onPress={() => {
+                sessionState.showBridgeIn();
+              }}
+            >
+              Bridge In
+            </Button>
           </div>
         )}
       </section>
