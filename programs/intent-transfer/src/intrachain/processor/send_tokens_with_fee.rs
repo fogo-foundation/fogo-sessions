@@ -25,7 +25,7 @@ pub struct SendTokensWithFee<'info> {
     #[account(mut, token::mint = mint)]
     pub source: Account<'info, TokenAccount>,
 
-    /// CHECK: this is the destination token account, it might be unitialized
+    /// CHECK: this is the destination token account, it might be unitialized in the case of send_tokens_with_fee
     pub destination: UncheckedAccount<'info>,
 
     pub mint: Account<'info, Mint>,
@@ -60,30 +60,36 @@ pub struct SendTokensWithFee<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-// impl<'info> SendTokensWithFee<'info> {
-//     fn as_send_tokens(self, destination: Account<'info, TokenAccount>) -> SendTokens<'info> {
-//         SendTokens {
-//             chain_id: self.chain_id,
-//             destination,
-//             intent_transfer_setter: self.intent_transfer_setter,
-//             metadata: self.metadata,
-//             mint: self.mint,
-//             source: self.source,
-//             sysvar_instructions: self.sysvar_instructions,
-//             token_program: self.token_program,
-//             nonce: self.nonce,
-//             sponsor: self.sponsor,
-//             system_program: self.system_program,
-//         }
-//     }
-// }
+impl<'info> Into<SendTokens<'info>> for SendTokensWithFee<'info> {
+    fn into(self) -> SendTokens<'info> {
+        SendTokens {
+            chain_id: self.chain_id,
+            destination: self.destination,
+            intent_transfer_setter: self.intent_transfer_setter,
+            metadata: self.metadata,
+            mint: self.mint,
+            source: self.source,
+            sysvar_instructions: self.sysvar_instructions,
+            token_program: self.token_program,
+            nonce: self.nonce,
+            sponsor: self.sponsor,
+            system_program: self.system_program,
+        }
+    }
+}
 
-// impl<'info> SendTokensWithFee<'info> {
-//     pub fn verify_and_send(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
-//         let desnation_account_info = self.destination.to_account_info().to_owned();
-//         let destination = Account::<'info, TokenAccount>::try_from(&desnation_account_info).unwrap();
-//         let mut send_tokens = self.as_send_tokens(destination);
-//         send_tokens.verify_and_send(signer_seeds)?;
-//         Ok(())
-//     }
-// }
+impl<'info> SendTokensWithFee<'info> {
+    fn create_destination_account_and_collect_fee(self) -> Result<()> {
+        let destination = Account::<'info, TokenAccount>::try_from(&self.destination.to_account_info()).unwrap();
+        let fee = self.fee_source.amount;
+        let fee_destination = self.fee_destination.to_account_info();
+        let fee_mint = self.fee_mint.to_account_info();
+        let fee_config = self.send_token_fee_config.to_account_info();
+        Ok(())
+    }
+
+    pub fn verify_and_send(self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+        let mut send_tokens: SendTokens<'info> = self.into();
+        send_tokens.verify_and_send(signer_seeds)
+    }
+}

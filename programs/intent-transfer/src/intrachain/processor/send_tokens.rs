@@ -27,8 +27,8 @@ pub struct SendTokens<'info> {
     #[account(mut, token::mint = mint)]
     pub source: Account<'info, TokenAccount>,
 
-    /// CHECK: this is the destination token account, it might be unitialized
-    pub destination: Account<'info, TokenAccount>,
+    /// CHECK: this is the destination token account, it might be unitialized in the case of send_tokens_with_fee
+    pub destination: UncheckedAccount<'info>,
 
     pub mint: Account<'info, Mint>,
 
