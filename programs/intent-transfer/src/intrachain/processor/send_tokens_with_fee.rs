@@ -8,6 +8,7 @@ use anchor_spl::{
     associated_token::{self, AssociatedToken},
     token::{Mint, Token, TokenAccount},
 };
+use anchor_spl::associated_token::get_associated_token_address;
 
 #[derive(Accounts)]
 pub struct SendTokensWithFee<'info> {
@@ -16,8 +17,7 @@ pub struct SendTokensWithFee<'info> {
     #[account(mut, token::mint = fee_mint, token::authority = send_tokens.source.owner )]
     pub fee_source: Account<'info, TokenAccount>,
 
-    #[account(init_if_needed, payer = send_tokens.sponsor, associated_token::mint = fee_mint, associated_token::authority = system_program)]
-    // sending to the system program is equivalent to burning: https://github.com/solana-program/token/blob/main/program/src/processor.rs#L620
+    #[account(init_if_needed, payer = send_tokens.sponsor, associated_token::mint = fee_mint, associated_token::authority = send_tokens.sponsor)]
     pub fee_destination: Account<'info, TokenAccount>,
 
     pub fee_mint: Account<'info, Mint>,
@@ -25,7 +25,7 @@ pub struct SendTokensWithFee<'info> {
     #[account(seeds = [SEND_TOKEN_FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
     pub send_token_fee_config: Account<'info, SendTokenFeeConfig>,
 
-    /// CHECK: ATA initialization will fail if this owner is not the same as the source owner
+    /// CHECK: This account is only used and checked against `destination` in the `create_destination_account_and_collect_fee` when the `destination` account is not yet initialized
     pub destination_owner: AccountInfo<'info>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -44,6 +44,7 @@ impl<'info> SendTokensWithFee<'info> {
             &mut self.send_tokens.destination.data.borrow().as_ref(),
         ) {
             Err(_) => {
+                require_eq!(self.send_tokens.destination.key(), get_associated_token_address(&self.destination_owner.key(), &self.send_tokens.mint.key()), ErrorCode::ConstraintAddress); // This check is redundant because associated_token::create will fail if this is false
                 associated_token::create(CpiContext::new(
                     self.associated_token_program.to_account_info(),
                     associated_token::Create {

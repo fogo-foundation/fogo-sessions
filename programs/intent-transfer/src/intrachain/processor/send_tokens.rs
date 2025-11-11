@@ -10,6 +10,7 @@ use anchor_spl::token::{
     spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
     TransferChecked,
 };
+use anchor_lang::error::ErrorCode;
 use chain_id::ChainId;
 use solana_intents::Intent;
 
@@ -31,7 +32,7 @@ pub struct SendTokens<'info> {
     #[account(mut, token::mint = mint)]
     pub source: Account<'info, TokenAccount>,
 
-    /// CHECK: this is the destination token account, it might be unitialized in the case of send_tokens_with_fee
+    /// CHECK: this account might be unitialized in the case of `send_tokens_with_fee` but it is checked after initialization in `SendTokens::verify_and_send`
     pub destination: UncheckedAccount<'info>,
 
     pub mint: Account<'info, Mint>,
@@ -55,6 +56,8 @@ pub struct SendTokens<'info> {
 
 impl<'info> SendTokens<'info> {
     pub fn verify_and_send(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+        let destination_account_data = TokenAccount::try_deserialize(&mut self.destination.data.borrow().as_ref())?;
+        require_eq!(destination_account_data.mint, self.mint.key(), ErrorCode::ConstraintTokenMint);
         let Self {
             chain_id,
             destination,
@@ -91,7 +94,7 @@ impl<'info> SendTokens<'info> {
 
         require_keys_eq!(
             recipient,
-            TokenAccount::try_deserialize(&mut destination.data.borrow().as_ref())?.owner,
+            destination_account_data.owner,
             IntentTransferError::RecipientMismatch
         );
 
