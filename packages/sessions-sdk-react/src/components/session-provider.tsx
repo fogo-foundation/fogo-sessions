@@ -859,10 +859,14 @@ const disconnect = (
           ),
           clearStoredSession(sessionInfo.session.walletPublicKey),
         ]),
-  ]).catch((error: unknown) => {
-    // eslint-disable-next-line no-console
-    console.error("Failed to clean up session", error);
-  });
+  ])
+    .then(() => {
+      localStorage.removeItem("walletName");
+    })
+    .catch((error: unknown) => {
+      // eslint-disable-next-line no-console
+      console.error("Failed to clean up session", error);
+    });
 };
 
 const ensureWalletPublicKey = (
