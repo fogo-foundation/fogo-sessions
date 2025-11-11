@@ -1,16 +1,13 @@
 use crate::{
     config::state::send_token_fee_config::{SendTokenFeeConfig, SEND_TOKEN_FEE_CONFIG_SEED},
-    intrachain::processor::{send_tokens::*, NONCE_SEED},
-    nonce::Nonce,
-    INTENT_TRANSFER_SEED,
+    intrachain::processor::send_tokens::*,
 };
-use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
+use anchor_lang::prelude::*;
 use anchor_spl::token::{transfer_checked, TransferChecked};
 use anchor_spl::{
     associated_token::{self, AssociatedToken},
     token::{Mint, Token, TokenAccount},
 };
-use chain_id::ChainId;
 
 #[derive(Accounts)]
 pub struct SendTokensWithFee<'info> {
