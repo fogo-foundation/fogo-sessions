@@ -981,6 +981,7 @@ const getNttPdas = async <N extends WormholeNetwork>(
     nttTokenAuthority: pdas.tokenAuthority(),
     payeeNttWithExecutor: quotePayeeAddress,
     transceiver: options.fromToken.transceiver,
+    wormholeProgram: coreBridgeContract,
     wormholeBridge: wormholePdas.wormholeBridge,
     wormholeFeeCollector: wormholePdas.wormholeFeeCollector,
     wormholeMessage:
