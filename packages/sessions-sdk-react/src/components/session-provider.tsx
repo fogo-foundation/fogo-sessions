@@ -106,7 +106,8 @@ export const FogoSessionProvider = ({
 }: Props) => {
   // We have to typecast this unfortunately because the Solana library typings are broken
   const walletsWithStandardAdapters = useStandardWalletAdapters(
-    wallets,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+    wallets as any,
   ) as unknown as (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
 
   const mobileWalletAdapter = useMemo(
