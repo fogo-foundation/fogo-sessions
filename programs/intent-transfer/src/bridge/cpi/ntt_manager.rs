@@ -2,9 +2,6 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_lang::solana_program::instruction::Instruction;
 
-pub const WORMHOLE_PROGRAM_ID: Pubkey =
-    Pubkey::from_str_const("BhnQyKoQQgpuRTRo6D8Emz93PvXCYfVgHhnrR4T3qhw4");
-
 pub const TRANSFER_BURN_DISCRIMINATOR: [u8; 8] = [75, 144, 26, 232, 39, 12, 75, 222];
 pub const RELEASE_WORMHOLE_OUTBOUND_DISCRIMINATOR: [u8; 8] = [202, 87, 51, 173, 142, 160, 188, 204];
 pub const SESSION_AUTHORITY_SEED: &[u8] = b"session_authority";
