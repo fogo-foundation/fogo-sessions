@@ -127,7 +127,7 @@ impl<'info> SendTokensWithFee<'info> {
     }
 
     pub fn verify_and_send(mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
-        self.create_destination_account_and_collect_fee(&signer_seeds)?;
+        self.create_destination_account_and_collect_fee(signer_seeds)?;
         let mut send_tokens: SendTokens<'info> = self.into();
         send_tokens.verify_and_send(signer_seeds)
     }
