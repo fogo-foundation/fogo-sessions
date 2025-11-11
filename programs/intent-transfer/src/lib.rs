@@ -9,8 +9,10 @@ mod error;
 mod intrachain;
 mod nonce;
 mod verify;
+mod config;
 
-use bridge::config::processor::register_ntt_config::*;
+use config::processor::register_ntt_config::*;
+use config::processor::register_send_token_fee_config::*;
 use bridge::processor::bridge_ntt_tokens::*;
 use intrachain::processor::send_tokens::*;
 
@@ -42,6 +44,14 @@ pub mod intent_transfer {
         ctx: Context<'_, '_, '_, 'info, RegisterNttConfig<'info>>,
     ) -> Result<()> {
         ctx.accounts.process()
+    }
+
+    #[instruction(discriminator = [4])]
+    pub fn register_send_token_fee_config<'info>(
+        ctx: Context<'_, '_, '_, 'info, RegisterSendTokenFeeConfig<'info>>,
+        ata_creation_fee: u64,
+    ) -> Result<()> {
+        ctx.accounts.process(ata_creation_fee)
     }
 }
 

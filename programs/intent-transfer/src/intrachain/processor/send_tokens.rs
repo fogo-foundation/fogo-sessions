@@ -1,9 +1,5 @@
 use crate::{
-    error::IntentTransferError,
-    intrachain::message::Message,
-    nonce::Nonce,
-    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
-    INTENT_TRANSFER_SEED,
+    INTENT_TRANSFER_SEED, config::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig}, error::IntentTransferError, intrachain::{message::Message, processor::NONCE_SEED}, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
@@ -12,8 +8,6 @@ use anchor_spl::token::{
 };
 use chain_id::ChainId;
 use solana_intents::Intent;
-
-const NONCE_SEED: &[u8] = b"nonce";
 
 #[derive(Accounts)]
 pub struct SendTokens<'info> {

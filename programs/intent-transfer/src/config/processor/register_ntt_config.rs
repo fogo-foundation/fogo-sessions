@@ -1,21 +1,20 @@
 use crate::{
-    bridge::config::ntt_config::{ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
-    error::IntentTransferError,
+    config::ntt_config::{ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
 };
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::bpf_loader_upgradeable;
 use anchor_spl::token::Mint;
+use crate::config::access_control::*;
+
 
 #[derive(Accounts)]
 pub struct RegisterNttConfig<'info> {
-    #[account(mut, address = program_data.upgrade_authority_address.ok_or(IntentTransferError::Unauthorized)?)]
-    pub update_authority: Signer<'info>,
+    pub upgrade_authority: UpgradeAuthority<'info>,
 
     pub mint: Account<'info, Mint>,
 
     #[account(
         init_if_needed,
-        payer = update_authority,
+        payer = upgrade_authority.signer,
         space = ExpectedNttConfig::DISCRIMINATOR.len() + ExpectedNttConfig::INIT_SPACE,
         seeds = [EXPECTED_NTT_CONFIG_SEED, mint.key().as_ref()],
         bump
@@ -24,9 +23,6 @@ pub struct RegisterNttConfig<'info> {
 
     /// CHECK: this is the address of the Ntt Manager program to register
     pub ntt_manager: UncheckedAccount<'info>,
-
-    #[account(seeds = [crate::ID.as_ref()], bump, seeds::program = bpf_loader_upgradeable::ID)]
-    pub program_data: Account<'info, ProgramData>,
 
     pub system_program: Program<'info, System>,
 }
