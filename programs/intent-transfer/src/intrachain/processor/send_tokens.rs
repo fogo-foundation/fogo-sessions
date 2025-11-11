@@ -87,7 +87,7 @@ impl<'info> SendTokens<'info> {
 
         require_keys_eq!(
             recipient,
-            destination.owner,
+            TokenAccount::try_deserialize(&mut destination.data.borrow().as_ref())?.owner,
             IntentTransferError::RecipientMismatch
         );
 

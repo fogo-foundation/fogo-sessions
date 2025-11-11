@@ -6,6 +6,10 @@ use anchor_spl::{associated_token::{self, AssociatedToken}, token::{
     Mint, Token, TokenAccount
 }};
 use chain_id::ChainId;
+use anchor_spl::token::{
+    transfer_checked,
+    TransferChecked,
+};
 
 #[derive(Accounts)]
 pub struct SendTokensWithFee<'info> {
@@ -46,7 +50,7 @@ pub struct SendTokensWithFee<'info> {
 
     pub system_program: Program<'info, System>,
 
-    #[account(mut, token::mint = fee_mint)]
+    #[account(mut, token::mint = fee_mint, token::authority = source.owner )]
     pub fee_source: Account<'info, TokenAccount>,
 
     #[account(init_if_needed, payer = sponsor, associated_token::mint = fee_mint, associated_token::authority = system_program)] // sending to the system program is equivalent to burning: https://github.com/solana-program/token/blob/main/program/src/processor.rs#L620
@@ -56,6 +60,9 @@ pub struct SendTokensWithFee<'info> {
 
     #[account(seeds = [SEND_TOKEN_FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
     pub send_token_fee_config: Account<'info, SendTokenFeeConfig>,
+
+    /// CHECK: ATA initialization will fail if this owner is not the same as the source owner
+    pub destination_owner: AccountInfo<'info>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
@@ -79,16 +86,44 @@ impl<'info> Into<SendTokens<'info>> for SendTokensWithFee<'info> {
 }
 
 impl<'info> SendTokensWithFee<'info> {
-    fn create_destination_account_and_collect_fee(self) -> Result<()> {
-        let destination = Account::<'info, TokenAccount>::try_from(&self.destination.to_account_info()).unwrap();
-        let fee = self.fee_source.amount;
-        let fee_destination = self.fee_destination.to_account_info();
-        let fee_mint = self.fee_mint.to_account_info();
-        let fee_config = self.send_token_fee_config.to_account_info();
-        Ok(())
+    fn create_destination_account_and_collect_fee(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+        match TokenAccount::try_deserialize(&mut self.destination.data.borrow().as_ref()) {
+            Err(_) => {
+                associated_token::create(CpiContext::new(
+                    self.associated_token_program.to_account_info(),
+                    associated_token::Create {
+                        payer: self.sponsor.to_account_info(),
+                        associated_token: self.destination.to_account_info(),
+                        authority: self.destination_owner.to_account_info(),
+                        mint: self.mint.to_account_info(),
+                        system_program: self.system_program.to_account_info(),
+                        token_program: self.token_program.to_account_info(),
+                    },
+                ))?;
+
+                transfer_checked(
+                    CpiContext::new_with_signer(
+                        self.token_program.to_account_info(),
+                        TransferChecked {
+                            authority: self.intent_transfer_setter.to_account_info(),
+                            from: self.fee_source.to_account_info(),
+                            mint: self.fee_mint.to_account_info(),
+                            to: self.fee_destination.to_account_info(),
+                        },
+                        signer_seeds,
+                    ),
+                    self.send_token_fee_config.ata_creation_fee,
+                    self.fee_mint.decimals,
+                )
+            }
+            Ok(_) => {
+                Ok(())
+            }
+        }
     }
 
-    pub fn verify_and_send(self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+    pub fn verify_and_send(mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+        self.create_destination_account_and_collect_fee(&signer_seeds)?;
         let mut send_tokens: SendTokens<'info> = self.into();
         send_tokens.verify_and_send(signer_seeds)
     }
