@@ -1,7 +1,7 @@
 use crate::{
     bridge::{
         config::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
-        cpi::{self, ntt_manager::WORMHOLE_PROGRAM_ID},
+        cpi,
         message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage},
     },
     error::IntentTransferError,
@@ -77,8 +77,7 @@ pub struct Ntt<'info> {
     #[account(mut)]
     pub wormhole_sequence: UncheckedAccount<'info>,
 
-    /// CHECK: address is checked, but also verified in NTT manager program
-    #[account(address = WORMHOLE_PROGRAM_ID)]
+    /// CHECK: address is checked in NTT manager program
     pub wormhole_program: UncheckedAccount<'info>,
 
     /// CHECK: address is checked

@@ -12,10 +12,7 @@ use spl_token::solana_program::keccak;
 
 use intent_transfer::{
     bridge::config::ntt_config::ExpectedNttConfig,
-    bridge::cpi::{
-        ntt_manager::WORMHOLE_PROGRAM_ID,
-        ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
-    },
+    bridge::cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
     bridge::message::convert_chain_id_to_wormhole,
     bridge::processor::bridge_ntt_tokens::BridgeNttTokensArgs,
 };
@@ -274,7 +271,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
                 wormhole_bridge: wormhole_bridge.pubkey(),
                 wormhole_fee_collector: wormhole_fee_collector.pubkey(),
                 wormhole_sequence: wormhole_sequence.pubkey(),
-                wormhole_program: WORMHOLE_PROGRAM_ID,
+                wormhole_program: Pubkey::new_unique(), // Mock NTT manager will not check address
                 ntt_with_executor_program: NTT_WITH_EXECUTOR_PROGRAM_ID,
                 executor_program: EXECUTOR_PROGRAM_ID,
                 ntt_peer: ntt_peer.pubkey(),
