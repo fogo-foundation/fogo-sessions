@@ -1,5 +1,4 @@
 use crate::{
-    config::state::send_token_fee_config::{SendTokenFeeConfig, SEND_TOKEN_FEE_CONFIG_SEED},
     error::IntentTransferError,
     intrachain::{message::Message, processor::NONCE_SEED},
     nonce::Nonce,

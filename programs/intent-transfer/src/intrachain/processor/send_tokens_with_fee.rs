@@ -2,10 +2,9 @@ use crate::{
     config::state::send_token_fee_config::{SendTokenFeeConfig, SEND_TOKEN_FEE_CONFIG_SEED},
     intrachain::processor::{send_tokens::SendTokens, NONCE_SEED},
     nonce::Nonce,
-    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
     INTENT_TRANSFER_SEED,
 };
-use anchor_lang::{prelude::*, solana_program::incinerator, solana_program::sysvar::instructions};
+use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{transfer_checked, TransferChecked};
 use anchor_spl::{
     associated_token::{self, AssociatedToken},
@@ -70,20 +69,20 @@ pub struct SendTokensWithFee<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-impl<'info> Into<SendTokens<'info>> for SendTokensWithFee<'info> {
-    fn into(self) -> SendTokens<'info> {
+impl<'info> From<SendTokensWithFee<'info>> for SendTokens<'info> {
+    fn from(val: SendTokensWithFee<'info>) -> Self {
         SendTokens {
-            chain_id: self.chain_id,
-            destination: self.destination,
-            intent_transfer_setter: self.intent_transfer_setter,
-            metadata: self.metadata,
-            mint: self.mint,
-            source: self.source,
-            sysvar_instructions: self.sysvar_instructions,
-            token_program: self.token_program,
-            nonce: self.nonce,
-            sponsor: self.sponsor,
-            system_program: self.system_program,
+            chain_id: val.chain_id,
+            destination: val.destination,
+            intent_transfer_setter: val.intent_transfer_setter,
+            metadata: val.metadata,
+            mint: val.mint,
+            source: val.source,
+            sysvar_instructions: val.sysvar_instructions,
+            token_program: val.token_program,
+            nonce: val.nonce,
+            sponsor: val.sponsor,
+            system_program: val.system_program,
         }
     }
 }
