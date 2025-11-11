@@ -3,12 +3,12 @@ use crate::{
     intrachain::processor::send_tokens::*,
 };
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::get_associated_token_address;
 use anchor_spl::token::{transfer_checked, TransferChecked};
 use anchor_spl::{
     associated_token::{self, AssociatedToken},
     token::{Mint, Token, TokenAccount},
 };
-use anchor_spl::associated_token::get_associated_token_address;
 
 #[derive(Accounts)]
 pub struct SendTokensWithFee<'info> {
@@ -44,7 +44,14 @@ impl<'info> SendTokensWithFee<'info> {
             &mut self.send_tokens.destination.data.borrow().as_ref(),
         ) {
             Err(_) => {
-                require_eq!(self.send_tokens.destination.key(), get_associated_token_address(&self.destination_owner.key(), &self.send_tokens.mint.key()), ErrorCode::ConstraintAddress); // This check is redundant because associated_token::create will fail if this is false
+                require_eq!(
+                    self.send_tokens.destination.key(),
+                    get_associated_token_address(
+                        &self.destination_owner.key(),
+                        &self.send_tokens.mint.key()
+                    ),
+                    ErrorCode::AccountNotAssociatedTokenAccount
+                ); // This check is redundant because associated_token::create will fail if this is false
                 associated_token::create(CpiContext::new(
                     self.associated_token_program.to_account_info(),
                     associated_token::Create {

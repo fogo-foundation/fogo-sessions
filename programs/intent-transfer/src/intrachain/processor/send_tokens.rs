@@ -5,12 +5,12 @@ use crate::{
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
     INTENT_TRANSFER_SEED,
 };
+use anchor_lang::error::ErrorCode;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
     spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
     TransferChecked,
 };
-use anchor_lang::error::ErrorCode;
 use chain_id::ChainId;
 use solana_intents::Intent;
 
@@ -56,8 +56,13 @@ pub struct SendTokens<'info> {
 
 impl<'info> SendTokens<'info> {
     pub fn verify_and_send(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
-        let destination_account_data = TokenAccount::try_deserialize(&mut self.destination.data.borrow().as_ref())?;
-        require_eq!(destination_account_data.mint, self.mint.key(), ErrorCode::ConstraintTokenMint);
+        let destination_account_data =
+            TokenAccount::try_deserialize(&mut self.destination.data.borrow().as_ref())?;
+        require_eq!(
+            destination_account_data.mint,
+            self.mint.key(),
+            ErrorCode::ConstraintTokenMint
+        );
         let Self {
             chain_id,
             destination,
