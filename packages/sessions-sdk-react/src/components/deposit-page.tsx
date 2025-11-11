@@ -18,7 +18,7 @@ import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
 import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
-import { FOGO_USDC, SOLANA_USDC, USDC_DECIMALS } from "../usdc-wormhole.js";
+import { USDC } from "../wormhole-routes.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -27,7 +27,7 @@ type Props = {
 };
 
 export const DepositPage = ({ onPressBack, ...props }: Props) => {
-  const { getSessionContext } = useSessionContext();
+  const { getSessionContext, network } = useSessionContext();
   const balance = useData(
     ["solanaUsdcBalance"],
     async () => {
@@ -35,7 +35,7 @@ export const DepositPage = ({ onPressBack, ...props }: Props) => {
       const connection = await getSolanaConnection();
       return connection.getTokenAccountBalance(
         getAssociatedTokenAddressSync(
-          SOLANA_USDC.mint,
+          USDC.chains[network].solana.mint,
           props.sessionState.walletPublicKey,
         ),
       );
@@ -83,7 +83,7 @@ const DepositForm = ({
         mutateAmountAvailable?: undefined;
       }
   )) => {
-  const { getSessionContext } = useSessionContext();
+  const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
@@ -104,9 +104,9 @@ const DepositForm = ({
             context,
             walletPublicKey: sessionState.walletPublicKey,
             solanaWallet: sessionState.solanaWallet,
-            fromToken: SOLANA_USDC,
-            toToken: FOGO_USDC,
-            amount: stringToAmount(amount, USDC_DECIMALS),
+            fromToken: USDC.chains[network].solana,
+            toToken: USDC.chains[network].fogo,
+            amount: stringToAmount(amount, USDC.decimals),
           }),
         )
         .then((result) => {
@@ -163,7 +163,7 @@ const DepositForm = ({
       </div>
       <TokenAmountInput
         className={styles.field ?? ""}
-        decimals={USDC_DECIMALS}
+        decimals={USDC.decimals}
         label="Amount"
         name="amount"
         symbol="USDC"

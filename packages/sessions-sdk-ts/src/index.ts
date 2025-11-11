@@ -674,7 +674,11 @@ const BRIDGING_ADDRESS_LOOKUP_TABLE: Record<
     ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND:
       "4FCi6LptexBdZtaePsoCMeb1XpCijxnWu96g5LsSb6WP",
   },
-  [Network.Mainnet]: undefined,
+  [Network.Mainnet]: {
+    // USDC
+    UsdcSt7U9H5bVy4WaWgeqoowe8RgXpLShCmxUFgZssx:
+      "DjM31fhuQsjxLmpRFQpFUpZvyXzwQeNvyR1DUd8GMVmo",
+  },
 };
 
 const buildStartSessionInstruction = async (
@@ -895,32 +899,32 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
     ),
   ]);
 
-  const bridgeInstruction = await program.methods
-    .bridgeNttTokens({
-      execAmount: new BN(quote.estimatedCost.toString()),
-      relayInstructions: Buffer.from(quote.relayInstructions),
-      signedQuoteBytes: Buffer.from(quote.signedQuote),
-    })
-    .accounts({
-      sponsor: options.context.payer,
-      mint: options.fromToken.mint,
-      metadata:
-        // eslint-disable-next-line unicorn/no-null
-        metadata?.symbol === undefined ? null : new PublicKey(metadataAddress),
-      source: getAssociatedTokenAddressSync(
-        options.fromToken.mint,
-        options.walletPublicKey,
-      ),
-      ntt: nttPdas,
-    })
-    .instruction();
-
   return options.context.sendTransaction(
     options.sessionKey,
-    [
-      await buildBridgeOutIntent(program, options, decimals, metadata?.symbol),
-      bridgeInstruction,
-    ],
+    await Promise.all([
+      buildBridgeOutIntent(program, options, decimals, metadata?.symbol),
+      program.methods
+        .bridgeNttTokens({
+          execAmount: new BN(quote.estimatedCost.toString()),
+          relayInstructions: Buffer.from(quote.relayInstructions),
+          signedQuoteBytes: Buffer.from(quote.signedQuote),
+        })
+        .accounts({
+          sponsor: options.context.payer,
+          mint: options.fromToken.mint,
+          metadata:
+            metadata?.symbol === undefined
+              ? // eslint-disable-next-line unicorn/no-null
+                null
+              : new PublicKey(metadataAddress),
+          source: getAssociatedTokenAddressSync(
+            options.fromToken.mint,
+            options.walletPublicKey,
+          ),
+          ntt: nttPdas,
+        })
+        .instruction(),
+    ]),
     {
       extraSigners: [outboxItem],
       addressLookupTable:
@@ -1064,7 +1068,7 @@ export const bridgeIn = async (options: SendBridgeInOptions) => {
                   transaction.transaction,
                   solanaConnection,
                   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                  { signers: transaction.signers, skipPreflight: true },
+                  { signers: transaction.signers },
                 ),
               ),
             ),
@@ -1084,11 +1088,19 @@ const buildWormholeTransfer = async (
     amount: bigint;
     fromToken: WormholeToken;
     toToken: WormholeToken;
+    walletPublicKey: PublicKey;
   },
   connection: Connection,
 ) => {
+  const solanaConnection = await options.context.getSolanaConnection();
   const [wh, { decimals }] = await Promise.all([
-    wormhole(NETWORK_TO_WORMHOLE_NETWORK[options.context.network], [solanaSdk]),
+    wormhole(
+      NETWORK_TO_WORMHOLE_NETWORK[options.context.network],
+      [solanaSdk],
+      {
+        chains: { Solana: { rpc: solanaConnection.rpcEndpoint } },
+      },
+    ),
     getMint(connection, options.fromToken.mint),
   ]);
 
@@ -1125,6 +1137,10 @@ const buildWormholeTransfer = async (
   const route = new Route(wh);
 
   const transferRequest = await routes.RouteTransferRequest.create(wh, {
+    recipient: Wormhole.chainAddress(
+      options.toToken.chain,
+      options.walletPublicKey.toBase58(),
+    ),
     source: Wormhole.tokenId(
       options.fromToken.chain,
       options.fromToken.mint.toBase58(),

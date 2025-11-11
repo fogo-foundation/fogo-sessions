@@ -34,6 +34,8 @@
       overflow: hidden;
       flex-grow: 1;
       flex-shrink: 0;
+      height: 100%;
+      justify-content: center;
 
       .icon {
         width: theme.spacing(8);
@@ -53,6 +55,8 @@
         margin-top: theme.spacing(2);
         text-overflow: ellipsis;
         width: theme.spacing(26);
+        height: 100%;
+        justify-content: center;
 
         .name {
           @include theme.text("sm", "medium");
@@ -77,6 +81,8 @@
         gap: theme.spacing(2);
         overflow: hidden;
         text-align: right;
+        height: 100%;
+        justify-content: center;
 
         .amount {
           @include theme.text("sm", "medium");
@@ -91,6 +97,8 @@
 
           color: theme.color("muted");
           opacity: 0.65;
+          overflow-x: clip;
+          text-overflow: ellipsis;
         }
       }
     }

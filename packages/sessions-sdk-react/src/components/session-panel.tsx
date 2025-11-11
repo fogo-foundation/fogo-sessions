@@ -198,6 +198,7 @@ const Tokens = ({
         <SelectTokenPage
           onPressBack={showWallet}
           onPressReceive={showReceive}
+          onPressGetTokens={showGet}
           onPressSend={(token) => {
             showSend({
               prevScreen: TokenScreenType.SelectTokenToSend,
