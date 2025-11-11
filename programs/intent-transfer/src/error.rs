@@ -1,4 +1,7 @@
 use anchor_lang::prelude::*;
+use nom::error::Error;
+use nom::Err;
+use solana_intents::IntentError;
 
 #[error_code]
 pub enum IntentTransferError {
@@ -42,4 +45,23 @@ pub enum IntentTransferError {
     InvalidNttManager,
     #[msg("Unauthorized: only upgrade authority can call this")]
     Unauthorized,
+}
+
+type NomError = Err<Error<Vec<u8>>>;
+impl From<IntentError<NomError>> for IntentTransferError {
+    fn from(err: IntentError<NomError>) -> Self {
+        match err {
+            IntentError::NoIntentMessageInstruction(_) => {
+                IntentTransferError::NoIntentMessageInstruction
+            }
+            IntentError::IncorrectInstructionProgramId => {
+                IntentTransferError::IncorrectInstructionProgramId
+            }
+            IntentError::SignatureVerificationUnexpectedHeader => {
+                IntentTransferError::SignatureVerificationUnexpectedHeader
+            }
+            IntentError::ParseFailedError(_) => IntentTransferError::ParseFailedError,
+            IntentError::DeserializeFailedError(_) => IntentTransferError::DeserializeFailedError,
+        }
+    }
 }

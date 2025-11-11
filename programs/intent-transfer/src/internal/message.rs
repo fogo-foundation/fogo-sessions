@@ -1,4 +1,3 @@
-use crate::error::IntentTransferError;
 use anchor_lang::prelude::Pubkey;
 use nom::{
     bytes::complete::tag,
@@ -8,7 +7,7 @@ use nom::{
     sequence::delimited,
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
-use solana_intents::{tag_key_value, IntentError, SymbolOrMint, Version};
+use solana_intents::{tag_key_value, SymbolOrMint, Version};
 
 const MESSAGE_PREFIX: &str =
     "Fogo Transfer:\nSigning this intent will transfer the tokens as described below.\n";
@@ -72,24 +71,6 @@ where
         },
     )
     .parse(input)
-}
-
-impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for IntentTransferError {
-    fn from(err: IntentError<<Message as TryFrom<Vec<u8>>>::Error>) -> Self {
-        match err {
-            IntentError::NoIntentMessageInstruction(_) => {
-                IntentTransferError::NoIntentMessageInstruction
-            }
-            IntentError::IncorrectInstructionProgramId => {
-                IntentTransferError::IncorrectInstructionProgramId
-            }
-            IntentError::SignatureVerificationUnexpectedHeader => {
-                IntentTransferError::SignatureVerificationUnexpectedHeader
-            }
-            IntentError::ParseFailedError(_) => IntentTransferError::ParseFailedError,
-            IntentError::DeserializeFailedError(_) => IntentTransferError::DeserializeFailedError,
-        }
-    }
 }
 
 #[cfg(test)]
