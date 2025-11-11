@@ -1,6 +1,6 @@
 use crate::{
     error::IntentTransferError,
-    internal::message::Message,
+    intrachain::message::Message,
     nonce::Nonce,
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
     INTENT_TRANSFER_SEED,

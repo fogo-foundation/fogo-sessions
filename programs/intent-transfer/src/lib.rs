@@ -6,13 +6,13 @@ use anchor_lang::prelude::*;
 
 pub mod bridge;
 mod error;
-mod internal;
+mod intrachain;
 mod nonce;
 mod verify;
 
 use bridge::config::processor::register_ntt_config::*;
 use bridge::processor::bridge_ntt_tokens::*;
-use internal::processor::send_tokens::*;
+use intrachain::processor::send_tokens::*;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
 
