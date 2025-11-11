@@ -1,10 +1,7 @@
-use crate::{
-    config::state::ntt_config::{ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
-};
+use crate::config::access_control::*;
+use crate::config::state::ntt_config::{ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED};
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
-use crate::config::access_control::*;
-
 
 #[derive(Accounts)]
 pub struct RegisterNttConfig<'info> {

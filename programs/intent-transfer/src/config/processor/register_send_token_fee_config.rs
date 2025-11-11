@@ -1,8 +1,7 @@
-use crate::config::state::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig};
+use crate::config::access_control::*;
+use crate::config::state::send_token_fee_config::{SendTokenFeeConfig, SEND_TOKEN_FEE_CONFIG_SEED};
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
-use crate::config::access_control::*;
-
 
 #[derive(Accounts)]
 pub struct RegisterSendTokenFeeConfig<'info> {

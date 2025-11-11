@@ -1,15 +1,17 @@
 use crate::{
-    INTENT_TRANSFER_SEED, config::state::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig}, intrachain::processor::{NONCE_SEED, send_tokens::SendTokens}, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
+    config::state::send_token_fee_config::{SendTokenFeeConfig, SEND_TOKEN_FEE_CONFIG_SEED},
+    intrachain::processor::{send_tokens::SendTokens, NONCE_SEED},
+    nonce::Nonce,
+    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+    INTENT_TRANSFER_SEED,
 };
-use anchor_lang::{prelude::*, solana_program::sysvar::instructions, solana_program::incinerator};
-use anchor_spl::{associated_token::{self, AssociatedToken}, token::{
-    Mint, Token, TokenAccount
-}};
+use anchor_lang::{prelude::*, solana_program::incinerator, solana_program::sysvar::instructions};
+use anchor_spl::token::{transfer_checked, TransferChecked};
+use anchor_spl::{
+    associated_token::{self, AssociatedToken},
+    token::{Mint, Token, TokenAccount},
+};
 use chain_id::ChainId;
-use anchor_spl::token::{
-    transfer_checked,
-    TransferChecked,
-};
 
 #[derive(Accounts)]
 pub struct SendTokensWithFee<'info> {
@@ -53,7 +55,8 @@ pub struct SendTokensWithFee<'info> {
     #[account(mut, token::mint = fee_mint, token::authority = source.owner )]
     pub fee_source: Account<'info, TokenAccount>,
 
-    #[account(init_if_needed, payer = sponsor, associated_token::mint = fee_mint, associated_token::authority = system_program)] // sending to the system program is equivalent to burning: https://github.com/solana-program/token/blob/main/program/src/processor.rs#L620
+    #[account(init_if_needed, payer = sponsor, associated_token::mint = fee_mint, associated_token::authority = system_program)]
+    // sending to the system program is equivalent to burning: https://github.com/solana-program/token/blob/main/program/src/processor.rs#L620
     pub fee_destination: Account<'info, TokenAccount>,
 
     pub fee_mint: Account<'info, Mint>,
@@ -86,7 +89,10 @@ impl<'info> Into<SendTokens<'info>> for SendTokensWithFee<'info> {
 }
 
 impl<'info> SendTokensWithFee<'info> {
-    fn create_destination_account_and_collect_fee(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+    fn create_destination_account_and_collect_fee(
+        &mut self,
+        signer_seeds: &[&[&[u8]]],
+    ) -> Result<()> {
         match TokenAccount::try_deserialize(&mut self.destination.data.borrow().as_ref()) {
             Err(_) => {
                 associated_token::create(CpiContext::new(
@@ -116,9 +122,7 @@ impl<'info> SendTokensWithFee<'info> {
                     self.fee_mint.decimals,
                 )
             }
-            Ok(_) => {
-                Ok(())
-            }
+            Ok(_) => Ok(()),
         }
     }
 

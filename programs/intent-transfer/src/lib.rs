@@ -5,15 +5,15 @@ declare_id!("Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD");
 use anchor_lang::prelude::*;
 
 pub mod bridge;
+mod config;
 mod error;
 mod intrachain;
 mod nonce;
 mod verify;
-mod config;
 
+use bridge::processor::bridge_ntt_tokens::*;
 use config::processor::register_ntt_config::*;
 use config::processor::register_send_token_fee_config::*;
-use bridge::processor::bridge_ntt_tokens::*;
 use intrachain::processor::send_tokens::*;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
