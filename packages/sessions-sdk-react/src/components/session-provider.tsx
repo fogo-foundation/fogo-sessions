@@ -106,8 +106,7 @@ export const FogoSessionProvider = ({
 }: Props) => {
   // We have to typecast this unfortunately because the Solana library typings are broken
   const walletsWithStandardAdapters = useStandardWalletAdapters(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-    wallets as any,
+    wallets,
   ) as unknown as (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
 
   const mobileWalletAdapter = useMemo(
@@ -859,10 +858,14 @@ const disconnect = (
           ),
           clearStoredSession(sessionInfo.session.walletPublicKey),
         ]),
-  ]).catch((error: unknown) => {
-    // eslint-disable-next-line no-console
-    console.error("Failed to clean up session", error);
-  });
+  ])
+    .then(() => {
+      localStorage.removeItem("walletName");
+    })
+    .catch((error: unknown) => {
+      // eslint-disable-next-line no-console
+      console.error("Failed to clean up session", error);
+    });
 };
 
 const ensureWalletPublicKey = (
