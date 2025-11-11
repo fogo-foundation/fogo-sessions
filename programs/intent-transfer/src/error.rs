@@ -1,5 +1,6 @@
-use crate::Message;
 use anchor_lang::prelude::*;
+use nom::error::Error;
+use nom::Err;
 use solana_intents::IntentError;
 
 #[error_code]
@@ -46,8 +47,9 @@ pub enum IntentTransferError {
     Unauthorized,
 }
 
-impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for IntentTransferError {
-    fn from(err: IntentError<<Message as TryFrom<Vec<u8>>>::Error>) -> Self {
+type NomError = Err<Error<Vec<u8>>>;
+impl From<IntentError<NomError>> for IntentTransferError {
+    fn from(err: IntentError<NomError>) -> Self {
         match err {
             IntentError::NoIntentMessageInstruction(_) => {
                 IntentTransferError::NoIntentMessageInstruction
