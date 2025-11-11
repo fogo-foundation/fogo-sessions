@@ -1,5 +1,5 @@
 use crate::{
-    INTENT_TRANSFER_SEED, config::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig}, intrachain::processor::{NONCE_SEED, send_tokens::SendTokens}, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
+    INTENT_TRANSFER_SEED, config::state::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig}, intrachain::processor::{NONCE_SEED, send_tokens::SendTokens}, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions, solana_program::incinerator};
 use anchor_spl::{associated_token::{self, AssociatedToken}, token::{

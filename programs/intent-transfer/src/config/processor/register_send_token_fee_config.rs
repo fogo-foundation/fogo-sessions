@@ -1,4 +1,4 @@
-use crate::config::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig};
+use crate::config::state::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig};
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 use crate::config::access_control::*;

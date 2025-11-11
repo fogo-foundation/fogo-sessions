@@ -1,5 +1,5 @@
 use crate::{
-    config::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
+    config::state::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
     bridge::{cpi::{self, ntt_manager::WORMHOLE_PROGRAM_ID}, message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage}},
     error::IntentTransferError,
     nonce::Nonce,

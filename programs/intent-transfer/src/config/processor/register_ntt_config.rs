@@ -1,5 +1,5 @@
 use crate::{
-    config::ntt_config::{ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
+    config::state::ntt_config::{ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
