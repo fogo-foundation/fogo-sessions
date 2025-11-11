@@ -89,9 +89,12 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
       if (
         isEstablished(sessionState) &&
         !isEstablished(prevSessionState.current) &&
-        prevSessionState.current.type !== SessionStateType.CheckingStoredSession
+        prevSessionState.current.type !== SessionStateType.CheckingStoredSession &&
+        !localStorage.getItem("fogo-session-widget-shown")
       ) {
+        // Only show the widget automatically on first connection
         setSessionPanelOpen(true);
+        localStorage.setItem("fogo-session-widget-shown", "true");
       }
       prevSessionState.current = sessionState;
     }
