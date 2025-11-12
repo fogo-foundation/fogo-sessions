@@ -1,13 +1,9 @@
 use crate::{
-    bridge::{
-        config::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
-        cpi,
-        message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage},
-    },
-    error::IntentTransferError,
-    nonce::Nonce,
-    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
-    INTENT_TRANSFER_SEED,
+    INTENT_TRANSFER_SEED, bridge::{
+        config::ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig, verify_ntt_manager},
+        cpi::{self, ntt_with_executor::RelayNttMessageArgs},
+        message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole},
+    }, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
@@ -20,15 +16,10 @@ use solana_intents::Intent;
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
 const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
 
-// TODO: we should do some parsing of the relay_instructions and/or exec_amounts arg(s)
-// in order to ensure the signed intent message does precisely what the user expects
-// this will help to prevent MITM attacks
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct BridgeNttTokensArgs {
-    // TODO: we need to safely ensure the exec_amount cannot be spoofed
-    pub exec_amount: u64,
     pub signed_quote_bytes: Vec<u8>,
-    pub relay_instructions: Vec<u8>,
+    pub pay_destination_rent: bool,
 }
 
 #[derive(Accounts)]
@@ -340,10 +331,11 @@ impl<'info> BridgeNttTokens<'info> {
         )?;
 
         let BridgeNttTokensArgs {
-            exec_amount,
             signed_quote_bytes,
-            relay_instructions,
+            pay_destination_rent,
         } = args;
+
+        let relay_ntt_args = compute_relay_ntt_args(to_chain_id_wormhole, signed_quote_bytes, pay_destination_rent)?;
 
         cpi::ntt_with_executor::relay_ntt_message(
             CpiContext::new(
@@ -358,12 +350,7 @@ impl<'info> BridgeNttTokens<'info> {
                     system_program: system_program.to_account_info(),
                 },
             ),
-            cpi::ntt_with_executor::RelayNttMessageArgs {
-                recipient_chain: to_chain_id_wormhole,
-                exec_amount,
-                signed_quote_bytes,
-                relay_instructions,
-            },
+            relay_ntt_args,
         )?;
 
         close_account(CpiContext::new_with_signer(
@@ -403,4 +390,98 @@ fn parse_recipient_address(address_str: &str) -> Result<[u8; 32]> {
     result[start_idx..].copy_from_slice(&bytes);
 
     Ok(result)
+}
+
+/// Computes the relay ntt args to pass to the NTT with executor CPI.
+fn compute_relay_ntt_args(
+    to_chain_id_wormhole: u16,
+    signed_quote_bytes_serialized: Vec<u8>,
+    pay_destination_rent: bool,
+) -> Result<RelayNttMessageArgs> {
+    let (msg_value, gas_limit) = if to_chain_id_wormhole == 1 {
+        compute_msg_value_and_gas_limit_solana(pay_destination_rent)
+    } else {
+        return Err(IntentTransferError::UnsupportedToChainId.into());
+    };
+
+    // constructed in line with the gas instruction format: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#relay-instructions
+    let relay_instructions = vec![
+        [1u8].as_slice(),
+        gas_limit.to_le_bytes().as_slice(),
+        msg_value.to_le_bytes().as_slice(),
+    ]
+    .concat();
+
+    let signed_quote_bytes = SignedQuoteBytes::try_from_slice(&signed_quote_bytes_serialized)
+        .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?;
+    let exec_amount = compute_exec_amount(to_chain_id_wormhole, signed_quote_bytes, gas_limit, msg_value)?;
+
+    Ok(RelayNttMessageArgs {
+        recipient_chain: to_chain_id_wormhole,
+        exec_amount,
+        signed_quote_bytes: signed_quote_bytes_serialized,
+        relay_instructions,
+    })
+}
+
+pub const LAMPORTS_PER_SIGNATURE: u128 = 5000;
+pub const RENT_TOKEN_ACCOUNT_SOLANA: u128 = 2_039_280; // equals 0.00203928 SOL
+
+/// Based on the logic encoded in https://github.com/wormhole-foundation/native-token-transfers/blob/20fc162f4a37391694dfb0e31afedf72549ea477/solana/ts/sdk/nttWithExecutor.ts#L304-L344.
+fn compute_msg_value_and_gas_limit_solana(
+    pay_destination_rent: bool,
+) -> (u128, u128) {
+    let mut msg_value = 0u128;
+    msg_value = msg_value.saturating_add(2 * LAMPORTS_PER_SIGNATURE + 7 * LAMPORTS_PER_SIGNATURE + 1_400_000);
+    msg_value = msg_value.saturating_add(2 * LAMPORTS_PER_SIGNATURE + 7 * LAMPORTS_PER_SIGNATURE);
+    msg_value = msg_value.saturating_add(5000 + 3_200_000);
+    msg_value = msg_value.saturating_add(5000 + 5_000_000);
+    msg_value = msg_value.saturating_add(5000);
+    msg_value = msg_value.saturating_add(if pay_destination_rent { RENT_TOKEN_ACCOUNT_SOLANA } else { 0 });
+
+    (msg_value, 250_000)
+}
+
+// Derived from the documentation: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#off-chain-quote
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct SignedQuoteBytesHeader {
+    pub prefix: [u8; 4],
+    pub quoter_address: [u8; 20],
+    pub payee_address: [u8; 32],
+    pub source_chain: u16,
+    pub destination_chain: u16,
+    pub expiry_time: u64,
+
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct SignedQuoteBytes {
+    pub header: SignedQuoteBytesHeader,
+    pub base_fee: u64,
+    pub destination_gas_price: u64,
+    pub source_price: u64,
+    pub destination_price: u64,
+    pub signature: [u8; 65],
+}
+
+fn compute_exec_amount(
+    to_chain_id: u16,
+    signed_quote_bytes: SignedQuoteBytes,
+    gas_limit: u128,
+    msg_value: u128,
+) -> Result<u64> {
+    let divisor = if to_chain_id == 1 {
+        1_000_000 // gas price should be in microlamports for solana
+    } else {
+        return Err(IntentTransferError::UnsupportedToChainId.into());
+    };
+
+    let gas_limit_u64 = u64::try_from(gas_limit)?;
+    let msg_value_u64 = u64::try_from(msg_value)?;
+    Ok(signed_quote_bytes
+        .base_fee
+        .saturating_mul(gas_limit_u64)
+        .saturating_div(divisor)
+        .saturating_add(msg_value_u64)
+    )
 }

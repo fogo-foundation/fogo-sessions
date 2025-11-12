@@ -45,6 +45,8 @@ pub enum IntentTransferError {
     InvalidNttManager,
     #[msg("Unauthorized: only upgrade authority can call this")]
     Unauthorized,
+    #[msg("The signed quote for NTT execution is invalid")]
+    InvalidNttSignedQuote,
 }
 
 type NomError = Err<Error<Vec<u8>>>;
