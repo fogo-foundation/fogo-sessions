@@ -697,14 +697,14 @@ const useSessionState = ({
 };
 
 const waitForWalletReady = async (wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter) => {
-  const isWalletInReadyState = wallet.readyState === WalletReadyState.Installed || wallet.readyState === WalletReadyState.Loadable;
+  const isWalletInReadyState = wallet.readyState === WalletReadyState.Installed;
 
   // so apparently BaseWalletAdapter doesn't have any event emitter methods even if it extends EventEmitter
   const eventEmitterTypedWallet = wallet as MessageSignerWalletAdapterProps & BaseWalletAdapter & { on: (event: string, callback: (readyState: WalletReadyState) => void) => void };
 
   return isWalletInReadyState ? true : new Promise((resolve) => {
     eventEmitterTypedWallet.on('readyStateChange', (readyState: WalletReadyState) => {
-      if (readyState === WalletReadyState.Installed || readyState === WalletReadyState.Loadable) {
+      if (readyState === WalletReadyState.Installed) {
         resolve(true);
       }
     });
