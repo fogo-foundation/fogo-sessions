@@ -397,7 +397,7 @@ async fn sponsor_and_send_handler(
                             cost_details,
                         );
 
-                        if let Some(delay) = block_time.map(|block_time| block_time.try_into().ok()).flatten().map(|block_time| Duration::from_secs(block_time).saturating_sub(send_transaction_system_time.duration_since(UNIX_EPOCH).unwrap_or_default())) {
+                        if let Some(delay) = block_time.and_then(|block_time| block_time.try_into().ok()).map(|block_time| Duration::from_secs(block_time).saturating_sub(send_transaction_system_time.duration_since(UNIX_EPOCH).unwrap_or_default())) {
                             obs_actual_confirmation_latency(
                                 domain,
                                 matched_variation_name,

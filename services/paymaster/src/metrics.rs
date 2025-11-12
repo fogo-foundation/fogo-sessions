@@ -1,7 +1,7 @@
 use axum_prometheus::metrics;
 use std::time::Duration;
 
-use crate::rpc::{ConfirmedTransactionDetails, TransactionCostDetails};
+use crate::rpc::TransactionCostDetails;
 
 pub const TRANSACTION_VALIDATION_COUNT: &str = "paymaster_transaction_validation_total";
 pub fn obs_validation(domain: String, variation: String, result_validation: String) {
