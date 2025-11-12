@@ -1,5 +1,29 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.0
+
+### Minor Changes
+
+- 1ee9982: Remove "walletName" from localstorage on logout
+- 5dc15bc: Don't pop up wallet on connect each time
+
+### Patch Changes
+
+- 55ad299: Add mainnet bridging config
+- Updated dependencies [55ad299]
+  - @fogo/sessions-sdk@0.0.20
+  - @fogo/sessions-sdk-web@0.0.14
+
+## 0.0.29
+
+### Patch Changes
+
+- c69ea06: Add support for bridging tokens to/from Solana
+- Updated dependencies [c69ea06]
+  - @fogo/sessions-sdk@0.0.19
+  - @fogo/sessions-idls@0.0.8
+  - @fogo/sessions-sdk-web@0.0.13
+
 ## 0.0.28
 
 ### Patch Changes

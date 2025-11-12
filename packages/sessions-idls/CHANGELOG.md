@@ -1,5 +1,11 @@
 # @fogo/sessions-idls
 
+## 0.0.8
+
+### Patch Changes
+
+- c69ea06: Add support for bridging tokens to/from Solana
+
 ## 0.0.7
 
 ### Patch Changes
