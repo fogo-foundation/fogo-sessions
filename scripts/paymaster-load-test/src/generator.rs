@@ -181,12 +181,15 @@ impl TransactionGenerator {
         let session_pubkey = session_keypair.pubkey();
 
         let expires_iso = convert_to_iso_string(
-            (SystemTime::now().duration_since(UNIX_EPOCH).unwrap() + Duration::from_secs(3600))
+            (SystemTime::now().duration_since(UNIX_EPOCH).unwrap() - Duration::from_secs(30))
                 .as_secs(),
         );
 
         let message_bytes =
             build_intent_message(&self.chain_id, &self.domain, &expires_iso, &session_pubkey);
+
+        let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(50_000);
+
         let intent_ix = build_ed25519_verification_ix(&self.user_signer, message_bytes);
 
         let domain_record_pda = get_domain_record_address(&self.domain);
@@ -199,7 +202,13 @@ impl TransactionGenerator {
             data: vec![0u8],
         };
 
-        Ok((vec![intent_ix, start_session_ix], session_keypair))
+        let close_session_ix = Instruction {
+            program_id: SESSION_MANAGER_ID,
+            accounts: gather_close_session_accounts(self.sponsor_pubkey, session_pubkey),
+            data: vec![2u8],
+        };
+
+        Ok((vec![compute_budget_ix, intent_ix, start_session_ix, close_session_ix], session_keypair))
     }
 }
 
@@ -257,6 +266,21 @@ fn gather_start_session_accounts(
         AccountMeta::new(session_pubkey, true),
         AccountMeta::new_readonly(sysvar_instructions_id, false),
         AccountMeta::new_readonly(domain_record_pda, false),
+        AccountMeta::new_readonly(session_setter_pda, false),
+        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(solana_program::system_program::ID, false),
+    ]
+}
+
+fn gather_close_session_accounts(
+    sponsor: Pubkey,
+    session_pubkey: Pubkey,
+) -> Vec<AccountMeta> {
+    let (session_setter_pda, _setter_bump) =
+    Pubkey::find_program_address(&[b"session_setter"], &SESSION_MANAGER_ID);
+    vec![
+        AccountMeta::new(session_pubkey, false),
+        AccountMeta::new(sponsor, true),
         AccountMeta::new_readonly(session_setter_pda, false),
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(solana_program::system_program::ID, false),
