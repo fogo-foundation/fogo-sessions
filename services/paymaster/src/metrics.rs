@@ -1,6 +1,7 @@
 use axum_prometheus::metrics;
+use std::time::Duration;
 
-use crate::rpc::TransactionCostDetails;
+use crate::rpc::{ConfirmedTransactionDetails, TransactionCostDetails};
 
 pub const TRANSACTION_VALIDATION_COUNT: &str = "paymaster_transaction_validation_total";
 pub fn obs_validation(domain: String, variation: String, result_validation: String) {
@@ -20,6 +21,48 @@ pub fn obs_send(domain: String, variation: String, result_confirmation: String) 
         ("result", result_confirmation),
     ];
     metrics::counter!(TRANSACTION_SEND_COUNT, &labels).increment(1);
+}
+
+pub const TRANSACTION_CONFIRMATION_NOTIFICATION_LATENCY: &str =
+    "paymaster_transaction_confirmation_notification_latency_seconds";
+pub const TRANSACTION_ACTUAL_CONFIRMATION_LATENCY: &str =
+    "paymaster_transaction_actual_confirmation_latency_seconds";
+
+pub const TRANSACTION_CONFIRMATION_LATENCY_BUCKETS: &[f64] =
+    &[0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0];
+
+fn latency_labels(
+    domain: String,
+    variation: String,
+    result_confirmation: String,
+) -> Vec<(&'static str, String)> {
+    vec![
+        ("domain", domain),
+        ("variation", variation),
+        ("result", result_confirmation),
+    ]
+}
+
+pub fn obs_confirmation_notification_latency(
+    domain: String,
+    variation: String,
+    result_confirmation: String,
+    duration: Duration,
+) {
+    let labels = latency_labels(domain, variation, result_confirmation);
+    metrics::histogram!(TRANSACTION_CONFIRMATION_NOTIFICATION_LATENCY, &labels)
+        .record(duration.as_secs_f64());
+}
+
+pub fn obs_actual_confirmation_latency(
+    domain: String,
+    variation: String,
+    result_confirmation: String,
+    duration: Duration,
+) {
+    let labels = latency_labels(domain, variation, result_confirmation);
+    metrics::histogram!(TRANSACTION_ACTUAL_CONFIRMATION_LATENCY, &labels)
+        .record(duration.as_secs_f64());
 }
 
 pub const GAS_SPEND_HISTOGRAM: &str = "paymaster_gas_spend_lamports";
