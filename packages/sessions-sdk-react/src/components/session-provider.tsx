@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 "use client";
 
 import type {
@@ -695,11 +696,14 @@ const useSessionState = ({
   return state;
 };
 
-const waitForWalletReady = async (wallet: BaseWalletAdapter) => {
+const waitForWalletReady = async (wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter) => {
   const isWalletInReadyState = wallet.readyState === WalletReadyState.Installed || wallet.readyState === WalletReadyState.Loadable;
 
+  // so apparently BaseWalletAdapter doesn't have any event emitter methods even if it extends EventEmitter
+  const eventEmitterTypedWallet = wallet as MessageSignerWalletAdapterProps & BaseWalletAdapter & { on: (event: string, callback: (readyState: WalletReadyState) => void) => void };
+
   return isWalletInReadyState ? true : new Promise((resolve) => {
-    wallet.on('readyStateChange', (readyState: WalletReadyState) => {
+    eventEmitterTypedWallet.on('readyStateChange', (readyState: WalletReadyState) => {
       if (readyState === WalletReadyState.Installed || readyState === WalletReadyState.Loadable) {
         resolve(true);
       }
