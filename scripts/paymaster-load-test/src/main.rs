@@ -54,20 +54,17 @@ async fn main() -> Result<()> {
 
     let file_config = FileConfig::from_file(&args.config)?;
 
-    let config = RuntimeConfig {
-        duration_secs: args.duration,
-        request_rps: args.rate,
-        validity_distribution: file_config.validity,
-        external: file_config.external,
-    };
-
-    config.validate()?;
+    let config = RuntimeConfig::new(
+        args.duration,
+        args.rate,
+        file_config.validity,
+        file_config.external,
+    )?;
 
     tracing::info!("Configuration loaded successfully");
     tracing::info!(" - Paymaster: {}", config.external.paymaster_endpoint);
     tracing::info!(" - RPC: {}", config.external.rpc_url);
     tracing::info!(" - Domain: {}", config.external.domain);
-    tracing::info!(" - Chain ID: {}", config.external.chain_id);
     tracing::info!(" - Duration: {}s", config.duration_secs);
     tracing::info!(" - Target Rate: {} req/s", config.request_rps);
     tracing::info!(
@@ -114,23 +111,46 @@ async fn monitor_progress(metrics: Arc<LoadTestMetrics>, duration_secs: u64) {
     // we round up the number of intervals to make sure we get total coverage of the test duration
     let total_intervals = duration_secs.div_ceil(MONITOR_INTERVAL);
 
+    let mut success_rate_last = None;
+
     for i in 0..total_intervals {
         sleep(interval).await;
 
         let current_requests = metrics.get_requests_sent();
         let requests_delta = current_requests.saturating_sub(last_requests);
         let current_rate = requests_delta as f64 / interval.as_secs_f64();
+
         let success_rate = metrics.success_rate();
 
+        let success_delta = match (success_rate_last, success_rate) {
+            (Some(last), Some(current)) => Some(current - last),
+            _ => None,
+        };
+
+        let success_display = match success_rate {
+            Some(rate) => {
+                let delta_display = match success_delta {
+                    Some(delta) => {
+                        let sign = if delta >= 0.0 { "+" } else { "" };
+                        format!(" ({}{:.1}%)", sign, delta * 100.0)
+                    }
+                    None => String::new(),
+                };
+                format!(" | Success: {:.1}%{}", rate * 100.0, delta_display)
+            }
+            None => String::new(),
+        };
+
         tracing::info!(
-            "[{:3}s] Requests: {} (+{} @ {:.1} req/s) | Success: {:.1}%",
+            "[{:3}s] Requests: {} (+{} @ {:.1} req/s){}",
             (i + 1) * 5,
             current_requests,
             requests_delta,
             current_rate,
-            success_rate * 100.0
+            success_display
         );
 
         last_requests = current_requests;
+        success_rate_last = success_rate;
     }
 }

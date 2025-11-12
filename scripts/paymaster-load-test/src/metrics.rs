@@ -83,14 +83,15 @@ impl LoadTestMetrics {
         self.0.get(&None).map(|m| m.failed).unwrap_or(0)
     }
 
-    pub fn success_rate(&self) -> f64 {
+    pub fn success_rate(&self) -> Option<f64> {
         if let Some(global) = self.0.get(&None) {
-            if global.sent == 0 {
-                return 0.0;
+            let resolved = global.succeeded + global.failed;
+            if resolved == 0 {
+                return Some(0.0);
             }
-            global.succeeded as f64 / global.sent as f64
+            Some(global.succeeded as f64 / resolved as f64)
         } else {
-            0.0
+            None
         }
     }
 

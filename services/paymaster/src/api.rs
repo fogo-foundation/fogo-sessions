@@ -300,7 +300,7 @@ async fn sponsor_and_send_handler(
         ))?;
     }
 
-    let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
+    let (mut transaction, _): (VersionedTransaction, _) = bincode::serde::decode_from_slice(&transaction_bytes, bincode::config::standard())
         .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
     let matched_variation_name = match domain_state

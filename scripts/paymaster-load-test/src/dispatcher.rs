@@ -1,10 +1,12 @@
 use crate::config::RuntimeConfig;
 use crate::generator::TransactionGenerator;
 use crate::metrics::LoadTestMetrics;
+use anchor_lang::AnchorDeserialize;
 use anyhow::{Context, Result};
 use arc_swap::ArcSwap;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
+use chain_id::{ChainId, ID as CHAIN_ID_PID};
 use governor::{Quota, RateLimiter};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -90,9 +92,16 @@ impl LoadTestDispatcher {
             .parse()
             .context("Failed to parse sponsor pubkey")?;
 
+        let (chain_id_address, _chain_bump) = Pubkey::find_program_address(&[b"chain_id"], &CHAIN_ID_PID);
+        let chain_id_account = rpc_client
+            .get_account(&chain_id_address)
+            .await
+            .context("Failed to fetch chain ID account")?;
+        let chain_id_data = ChainId::try_from_slice(&chain_id_account.data[8..]).context("Failed to deserialize chain ID account")?;
+
         let generator = Arc::new(TransactionGenerator::new(
             sponsor_pubkey,
-            config.external.chain_id.clone(),
+            chain_id_data.chain_id,
             config.external.domain.clone(),
         ));
 

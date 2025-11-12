@@ -5,10 +5,11 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+anchor-lang = {workspace = true}
 anyhow = {workspace = true}
 arc-swap = {workspace = true}
 base64 = {workspace = true}
-bincode = { version = "2.0.1", features = ["serde"] }
+bincode = { workspace = true, features = ["serde"] }
 chain-id = { path = "../../programs/chain-id" }
 clap = {workspace = true}
 dashmap = {workspace = true}

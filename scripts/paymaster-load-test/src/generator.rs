@@ -14,7 +14,7 @@ use solana_program::{
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub struct TransactionGenerator {
@@ -147,14 +147,13 @@ impl TransactionGenerator {
         Ok(tx)
     }
 
-    /// Generate transaction exceeding gas limits
-    /// TODO: we should think about making this safe, especially on testnet where we don't want to accidentally cause drainage
+    /// Generate transaction with invalid compute budget instructions
     fn generate_invalid_gas(&self, blockhash: Hash) -> Result<VersionedTransaction> {
         let mut instructions = vec![
-            // request excessively high compute units
-            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
-            // high priority fee
-            ComputeBudgetInstruction::set_compute_unit_price(1_000_000),
+            // request compute unit limit
+            ComputeBudgetInstruction::set_compute_unit_limit(200_000),
+            // rerequest compute unit limit (should fail the validation)
+            ComputeBudgetInstruction::set_compute_unit_limit(200_000),
         ];
 
         let (session_instructions, session_keypair) =
@@ -180,10 +179,7 @@ impl TransactionGenerator {
         let session_keypair = Keypair::new();
         let session_pubkey = session_keypair.pubkey();
 
-        let expires_iso = convert_to_iso_string(
-            (SystemTime::now().duration_since(UNIX_EPOCH).unwrap() + Duration::from_secs(3600))
-                .as_secs(),
-        );
+        let expires_iso = (OffsetDateTime::now_utc() + Duration::from_secs(3600)).format(&Rfc3339)?;
 
         let message_bytes =
             build_intent_message(&self.chain_id, &self.domain, &expires_iso, &session_pubkey);
@@ -261,13 +257,4 @@ fn gather_start_session_accounts(
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(solana_program::system_program::ID, false),
     ]
-}
-
-fn convert_to_iso_string(unix_secs: u64) -> String {
-    match OffsetDateTime::from_unix_timestamp(unix_secs as i64) {
-        Ok(dt) => dt
-            .format(&Rfc3339)
-            .unwrap_or_else(|_| format!("{unix_secs}")),
-        Err(_) => format!("{unix_secs}"),
-    }
 }

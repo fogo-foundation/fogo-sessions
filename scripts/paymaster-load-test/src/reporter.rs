@@ -40,16 +40,20 @@ pub async fn generate_report(
     let achieved_rate = total_sent as f64 / elapsed.as_secs_f64();
 
     println!("  Total Requests:  {total_sent}");
-    println!(
-        "  Succeeded:       {} ({:.1}%)",
-        total_succeeded,
-        success_rate * 100.0
-    );
-    println!(
-        "  Failed:          {} ({:.1}%)",
-        total_failed,
-        (1.0 - success_rate) * 100.0
-    );
+    if let Some(success_rate) = success_rate {
+        println!(
+            "  Succeeded:       {} ({:.1}%)",
+            total_succeeded,
+            success_rate * 100.0
+        );
+        println!(
+            "  Failed:          {} ({:.1}%)",
+            total_failed,
+            (1.0 - success_rate) * 100.0
+        );
+    } else {
+        println!("  No requests were resolved.");
+    }
     println!("  Achieved Rate:   {achieved_rate:.2} req/s");
     println!("  Actual Duration: {:.2}s", elapsed.as_secs_f64());
 
