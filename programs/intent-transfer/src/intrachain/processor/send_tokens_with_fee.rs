@@ -30,7 +30,7 @@ pub struct SendTokensWithFee<'info> {
 
     pub associated_token_program: Program<'info, AssociatedToken>,
 
-    // These are duplicate because anchor is dumb and doesn't detect they are already in send_tokens, but it's fine because it only adds two bytes to the transaction size
+    // These are duplicate because anchor is dumb and doesn't detect they are already in `send_tokens`, but it's fine because it only adds two bytes to the transaction size
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
@@ -48,7 +48,7 @@ impl<'info> SendTokensWithFee<'info> {
                     &self.send_tokens.mint.key()
                 ),
                 ErrorCode::AccountNotAssociatedTokenAccount
-            ); // This check is redundant because associated_token::create will fail if this is false
+            ); // This check is redundant because associated_token::create will fail if this is false but I feel better not trusting the callee
 
             associated_token::create(CpiContext::new(
                 self.associated_token_program.to_account_info(),
@@ -62,6 +62,7 @@ impl<'info> SendTokensWithFee<'info> {
                 },
             ))?;
 
+            // collect the fee
             transfer_checked(
                 CpiContext::new_with_signer(
                     self.token_program.to_account_info(),
