@@ -59,13 +59,6 @@ pub struct SendTokens<'info> {
 
 impl<'info> SendTokens<'info> {
     pub fn verify_and_send(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
-        let destination_account_data =
-            TokenAccount::try_deserialize(&mut self.destination.data.borrow().as_ref())?;
-        require_eq!(
-            destination_account_data.mint,
-            self.mint.key(),
-            ErrorCode::ConstraintTokenMint
-        );
         let Self {
             chain_id,
             destination,
@@ -79,6 +72,15 @@ impl<'info> SendTokens<'info> {
             sponsor: _,
             system_program: _,
         } = self;
+
+        let destination_account_data =
+            TokenAccount::try_deserialize(&mut destination.data.borrow().as_ref())?;
+        require_eq!(
+            destination_account_data.mint,
+            mint.key(),
+            ErrorCode::ConstraintTokenMint
+        );
+
         let Intent {
             message:
                 Message {
