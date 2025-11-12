@@ -695,10 +695,23 @@ const useSessionState = ({
   return state;
 };
 
+const waitForWalletReady = async (wallet: BaseWalletAdapter) => {
+  const isWalletInReadyState = wallet.readyState === WalletReadyState.Installed || wallet.readyState === WalletReadyState.Loadable;
+
+  return isWalletInReadyState ? true : new Promise((resolve) => {
+    wallet.on('readyStateChange', (readyState: WalletReadyState) => {
+      if (readyState === WalletReadyState.Installed || readyState === WalletReadyState.Loadable) {
+        resolve(true);
+      }
+    });
+  });
+};
+
 const checkStoredSession = async (
   sessionContext: Promise<SessionExecutionContext>,
   wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
 ) => {
+  await waitForWalletReady(wallet);
   await wallet.autoConnect();
   if (wallet.publicKey === null) {
     return;
