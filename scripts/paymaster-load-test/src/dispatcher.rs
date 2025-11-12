@@ -92,12 +92,14 @@ impl LoadTestDispatcher {
             .parse()
             .context("Failed to parse sponsor pubkey")?;
 
-        let (chain_id_address, _chain_bump) = Pubkey::find_program_address(&[b"chain_id"], &CHAIN_ID_PID);
+        let (chain_id_address, _chain_bump) =
+            Pubkey::find_program_address(&[b"chain_id"], &CHAIN_ID_PID);
         let chain_id_account = rpc_client
             .get_account(&chain_id_address)
             .await
             .context("Failed to fetch chain ID account")?;
-        let chain_id_data = ChainId::try_from_slice(&chain_id_account.data[8..]).context("Failed to deserialize chain ID account")?;
+        let chain_id_data = ChainId::try_from_slice(&chain_id_account.data[8..])
+            .context("Failed to deserialize chain ID account")?;
 
         let generator = Arc::new(TransactionGenerator::new(
             sponsor_pubkey,

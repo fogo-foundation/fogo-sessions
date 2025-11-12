@@ -432,7 +432,9 @@ fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransactio
         .decode(encoded_tx)
         .context("Failed to decode base64 transaction")?;
 
-    let (transaction, _) = bincode::serde::decode_from_slice(&tx_bytes, bincode::config::standard()).context("Failed to deserialize transaction")?;
+    let (transaction, _) =
+        bincode::serde::decode_from_slice(&tx_bytes, bincode::config::standard())
+            .context("Failed to deserialize transaction")?;
     Ok(transaction)
 }
 

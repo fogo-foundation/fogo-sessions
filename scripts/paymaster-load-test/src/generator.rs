@@ -179,7 +179,8 @@ impl TransactionGenerator {
         let session_keypair = Keypair::new();
         let session_pubkey = session_keypair.pubkey();
 
-        let expires_iso = (OffsetDateTime::now_utc() + Duration::from_secs(3600)).format(&Rfc3339)?;
+        let expires_iso =
+            (OffsetDateTime::now_utc() + Duration::from_secs(3600)).format(&Rfc3339)?;
 
         let message_bytes =
             build_intent_message(&self.chain_id, &self.domain, &expires_iso, &session_pubkey);
