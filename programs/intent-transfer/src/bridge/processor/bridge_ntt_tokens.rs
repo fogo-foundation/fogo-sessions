@@ -1,9 +1,13 @@
 use crate::{
-    INTENT_TRANSFER_SEED, bridge::{
-        config::ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig, verify_ntt_manager},
+    bridge::{
+        config::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
         cpi::{self, ntt_with_executor::RelayNttMessageArgs},
-        message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole},
-    }, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
+        message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage},
+    },
+    error::IntentTransferError,
+    nonce::Nonce,
+    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+    INTENT_TRANSFER_SEED,
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
@@ -335,7 +339,11 @@ impl<'info> BridgeNttTokens<'info> {
             pay_destination_rent,
         } = args;
 
-        let relay_ntt_args = compute_relay_ntt_args(to_chain_id_wormhole, signed_quote_bytes, pay_destination_rent)?;
+        let relay_ntt_args = compute_relay_ntt_args(
+            to_chain_id_wormhole,
+            signed_quote_bytes,
+            pay_destination_rent,
+        )?;
 
         cpi::ntt_with_executor::relay_ntt_message(
             CpiContext::new(
@@ -405,7 +413,7 @@ fn compute_relay_ntt_args(
     };
 
     // constructed in line with the gas instruction format: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#relay-instructions
-    let relay_instructions = vec![
+    let relay_instructions = [
         [1u8].as_slice(),
         gas_limit.to_le_bytes().as_slice(),
         msg_value.to_le_bytes().as_slice(),
@@ -414,7 +422,12 @@ fn compute_relay_ntt_args(
 
     let signed_quote_bytes = SignedQuoteBytes::try_from_slice(&signed_quote_bytes_serialized)
         .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?;
-    let exec_amount = compute_exec_amount(to_chain_id_wormhole, signed_quote_bytes, gas_limit, msg_value)?;
+    let exec_amount = compute_exec_amount(
+        to_chain_id_wormhole,
+        signed_quote_bytes,
+        gas_limit,
+        msg_value,
+    )?;
 
     Ok(RelayNttMessageArgs {
         recipient_chain: to_chain_id_wormhole,
@@ -428,16 +441,19 @@ pub const LAMPORTS_PER_SIGNATURE: u128 = 5000;
 pub const RENT_TOKEN_ACCOUNT_SOLANA: u128 = 2_039_280; // equals 0.00203928 SOL
 
 /// Based on the logic encoded in https://github.com/wormhole-foundation/native-token-transfers/blob/20fc162f4a37391694dfb0e31afedf72549ea477/solana/ts/sdk/nttWithExecutor.ts#L304-L344.
-fn compute_msg_value_and_gas_limit_solana(
-    pay_destination_rent: bool,
-) -> (u128, u128) {
+fn compute_msg_value_and_gas_limit_solana(pay_destination_rent: bool) -> (u128, u128) {
     let mut msg_value = 0u128;
-    msg_value = msg_value.saturating_add(2 * LAMPORTS_PER_SIGNATURE + 7 * LAMPORTS_PER_SIGNATURE + 1_400_000);
+    msg_value = msg_value
+        .saturating_add(2 * LAMPORTS_PER_SIGNATURE + 7 * LAMPORTS_PER_SIGNATURE + 1_400_000);
     msg_value = msg_value.saturating_add(2 * LAMPORTS_PER_SIGNATURE + 7 * LAMPORTS_PER_SIGNATURE);
     msg_value = msg_value.saturating_add(5000 + 3_200_000);
     msg_value = msg_value.saturating_add(5000 + 5_000_000);
     msg_value = msg_value.saturating_add(5000);
-    msg_value = msg_value.saturating_add(if pay_destination_rent { RENT_TOKEN_ACCOUNT_SOLANA } else { 0 });
+    msg_value = msg_value.saturating_add(if pay_destination_rent {
+        RENT_TOKEN_ACCOUNT_SOLANA
+    } else {
+        0
+    });
 
     (msg_value, 250_000)
 }
@@ -451,7 +467,6 @@ pub struct SignedQuoteBytesHeader {
     pub source_chain: u16,
     pub destination_chain: u16,
     pub expiry_time: u64,
-
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -482,6 +497,5 @@ fn compute_exec_amount(
         .base_fee
         .saturating_mul(gas_limit_u64)
         .saturating_div(divisor)
-        .saturating_add(msg_value_u64)
-    )
+        .saturating_add(msg_value_u64))
 }

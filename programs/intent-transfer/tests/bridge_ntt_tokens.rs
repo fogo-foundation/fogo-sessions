@@ -10,7 +10,12 @@ use solana_signer::Signer;
 use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
-use intent_transfer::bridge::{config::ntt_config::ExpectedNttConfig, cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID}, message::convert_chain_id_to_wormhole, processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuoteBytes, SignedQuoteBytesHeader}};
+use intent_transfer::bridge::{
+    config::ntt_config::ExpectedNttConfig,
+    cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
+    message::convert_chain_id_to_wormhole,
+    processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuoteBytes, SignedQuoteBytesHeader},
+};
 
 mod helpers;
 
@@ -251,7 +256,9 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         source_price: 0u64,
         destination_price: 0u64,
         signature: [0u8; 65],
-    }.try_to_vec().unwrap();
+    }
+    .try_to_vec()
+    .unwrap();
 
     let bridge_ix = Instruction {
         program_id: intent_transfer::ID,
