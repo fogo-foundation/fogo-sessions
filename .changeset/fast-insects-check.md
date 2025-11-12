@@ -1,5 +1,5 @@
 ---
-"@fogo/sessions-sdk-react": minor
+"@fogo/sessions-sdk-react": patch
 ---
 
 Remove outdated Solflare Metamask adapter
