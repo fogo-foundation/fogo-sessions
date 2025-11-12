@@ -274,7 +274,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
                 wormhole_bridge: wormhole_bridge.pubkey(),
                 wormhole_fee_collector: wormhole_fee_collector.pubkey(),
                 wormhole_sequence: wormhole_sequence.pubkey(),
-                wormhole_program: WORMHOLE_PROGRAM_ID,
+                wormhole_program: Pubkey::new_unique(), // Mock NTT manager will not check address
                 ntt_with_executor_program: NTT_WITH_EXECUTOR_PROGRAM_ID,
                 executor_program: EXECUTOR_PROGRAM_ID,
                 ntt_peer: ntt_peer.pubkey(),
