@@ -28,6 +28,10 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
 
   await new IntentTransferProgram(createAnchorProvider(args)).methods
     .registerNttConfig()
-    .accounts({ mint: args.mint, nttManager: args.nttManager, upgradeAuthority: {signer: undefined} })
+    .accounts({
+      mint: args.mint,
+      nttManager: args.nttManager,
+      upgradeAuthority: { signer: undefined },
+    })
     .rpc();
 };
