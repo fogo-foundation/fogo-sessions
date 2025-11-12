@@ -11,10 +11,7 @@ use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
 use intent_transfer::{
-    bridge::cpi::{
-        ntt_manager::WORMHOLE_PROGRAM_ID,
-        ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
-    },
+    bridge::cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
     bridge::message::convert_chain_id_to_wormhole,
     bridge::processor::bridge_ntt_tokens::BridgeNttTokensArgs,
     config::state::ntt_config::ExpectedNttConfig,
