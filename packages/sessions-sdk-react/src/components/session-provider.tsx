@@ -707,7 +707,7 @@ const waitForWalletReady = async (
     const eventEmitterTypedWallet = wallet as MessageSignerWalletAdapterProps &
       BaseWalletAdapter & {
         on: (
-          event: 'readyStateChange',
+          event: "readyStateChange",
           callback: (readyState: WalletReadyState) => void,
         ) => void;
       };
