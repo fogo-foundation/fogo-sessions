@@ -1,11 +1,12 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{
-    obs_actual_transaction_costs, obs_confirmation_notification_latency,
-    obs_actual_confirmation_latency, obs_send, obs_validation,
+    obs_actual_confirmation_latency, obs_actual_transaction_costs,
+    obs_confirmation_notification_latency, obs_send, obs_validation,
 };
 use crate::rpc::{
-    ChainIndex, ConfirmationResultInternal, ConfirmedTransactionDetails, RetryConfig, fetch_confirmed_transaction_details, send_and_confirm_transaction
+    fetch_confirmed_transaction_details, send_and_confirm_transaction, ChainIndex,
+    ConfirmationResultInternal, ConfirmedTransactionDetails, RetryConfig,
 };
 use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
@@ -40,7 +41,7 @@ use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
@@ -332,6 +333,7 @@ async fn sponsor_and_send_handler(
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
     let send_transaction_instant = Instant::now();
+    let send_transaction_system_time = SystemTime::now();
     let confirmation_result = send_and_confirm_transaction(
         &state.chain_index.rpc,
         &state.rpc_sub,
@@ -395,7 +397,7 @@ async fn sponsor_and_send_handler(
                             cost_details,
                         );
 
-                        if let Some(delay) = block_time.map(|block_time| block_time.try_into().ok()).flatten().map(|delay| Duration::from_secs(delay)) {
+                        if let Some(delay) = block_time.map(|block_time| block_time.try_into().ok()).flatten().map(|block_time| Duration::from_secs(block_time).saturating_sub(send_transaction_system_time.duration_since(UNIX_EPOCH).unwrap_or_default())) {
                             obs_actual_confirmation_latency(
                                 domain,
                                 matched_variation_name,
@@ -516,7 +518,9 @@ pub async fn run_server(
         )
         .unwrap()
         .set_buckets_for_metric(
-            Matcher::Full(crate::metrics::TRANSACTION_CONFIRMATION_NOTIFICATION_LATENCY.to_string()),
+            Matcher::Full(
+                crate::metrics::TRANSACTION_CONFIRMATION_NOTIFICATION_LATENCY.to_string(),
+            ),
             crate::metrics::TRANSACTION_CONFIRMATION_LATENCY_BUCKETS,
         )
         .unwrap()

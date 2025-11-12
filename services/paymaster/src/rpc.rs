@@ -350,7 +350,8 @@ pub async fn fetch_confirmed_transaction_details(
             Ok(tx_response) => {
                 let block_time = tx_response.block_time;
                 // balance_spend is positive if balance decreased
-                let (fee, balance_spend) = tx_response.transaction
+                let (fee, balance_spend) = tx_response
+                    .transaction
                     .meta
                     .map(|meta| {
                         let balance_spend = meta
@@ -375,10 +376,7 @@ pub async fn fetch_confirmed_transaction_details(
                     });
 
                 return Ok(ConfirmedTransactionDetails {
-                    cost_details: TransactionCostDetails {
-                        fee,
-                        balance_spend,
-                    },
+                    cost_details: TransactionCostDetails { fee, balance_spend },
                     block_time,
                 });
             }
