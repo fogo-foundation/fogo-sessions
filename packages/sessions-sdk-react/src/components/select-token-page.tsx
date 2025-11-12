@@ -10,6 +10,7 @@ type Props = {
   onPressBack: () => void;
   onPressSend: (token: Token) => void;
   onPressReceive: () => void;
+  onPressGetTokens: () => void;
   sessionState: EstablishedSessionState;
 };
 
@@ -17,6 +18,7 @@ export const SelectTokenPage = ({
   onPressBack,
   onPressSend,
   onPressReceive,
+  onPressGetTokens,
   sessionState,
 }: Props) => (
   <div className={styles.selectTokenPage}>
@@ -39,6 +41,7 @@ export const SelectTokenPage = ({
       onPressReceiveTokens={onPressReceive}
       sessionState={sessionState}
       onPressToken={onPressSend}
+      onPressGetTokens={onPressGetTokens}
     />
   </div>
 );

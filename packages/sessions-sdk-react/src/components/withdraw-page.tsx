@@ -1,4 +1,4 @@
-import { bridgeOut, TransactionResultType } from "@fogo/sessions-sdk";
+import { bridgeOut, Network, TransactionResultType } from "@fogo/sessions-sdk";
 import type { FormEvent } from "react";
 import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
@@ -18,7 +18,7 @@ import {
   StateType as TokenAccountStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
-import { FOGO_USDC, SOLANA_USDC, USDC_DECIMALS } from "../usdc-wormhole.js";
+import { USDC } from "../wormhole-routes.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -27,6 +27,7 @@ type Props = {
 };
 
 export const WithdrawPage = ({ onPressBack, ...props }: Props) => {
+  const { network } = useSessionContext();
   const tokenAccountState = useTokenAccountData(props.sessionState);
 
   return (
@@ -43,6 +44,7 @@ export const WithdrawPage = ({ onPressBack, ...props }: Props) => {
         {...(tokenAccountState.type === TokenAccountStateType.Loaded
           ? {
               amountAvailable: getUsdcBalance(
+                network,
                 tokenAccountState.data.tokensInWallet,
               ),
             }
@@ -58,7 +60,7 @@ const WithdrawForm = ({
   ...props
 }: Omit<Props, "onPressBack"> &
   ({ isLoading?: false; amountAvailable: bigint } | { isLoading: true })) => {
-  const { getSessionContext } = useSessionContext();
+  const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
@@ -81,9 +83,9 @@ const WithdrawForm = ({
             sessionKey: sessionState.sessionKey,
             walletPublicKey: sessionState.walletPublicKey,
             solanaWallet: sessionState.solanaWallet,
-            fromToken: FOGO_USDC,
-            toToken: SOLANA_USDC,
-            amount: stringToAmount(amount, USDC_DECIMALS),
+            fromToken: USDC.chains[network].fogo,
+            toToken: USDC.chains[network].solana,
+            amount: stringToAmount(amount, USDC.decimals),
           }),
         )
         .then((result) => {
@@ -129,12 +131,12 @@ const WithdrawForm = ({
           data-is-loading={props.isLoading ? "" : undefined}
         >
           {!props.isLoading &&
-            `${amountToString(props.amountAvailable, USDC_DECIMALS).toString()} USDC available`}
+            `${amountToString(props.amountAvailable, USDC.decimals).toString()} USDC available`}
         </div>
       </div>
       <TokenAmountInput
         className={styles.field ?? ""}
-        decimals={USDC_DECIMALS}
+        decimals={USDC.decimals}
         label="Amount"
         name="amount"
         symbol="USDC"
@@ -151,7 +153,7 @@ const WithdrawForm = ({
               : {
                   onPress: () => {
                     setAmount(
-                      amountToString(props.amountAvailable, USDC_DECIMALS),
+                      amountToString(props.amountAvailable, USDC.decimals),
                     );
                   },
                 })}
@@ -178,6 +180,7 @@ const WithdrawForm = ({
   );
 };
 
-const getUsdcBalance = (tokensInWallet: Token[]) =>
-  tokensInWallet.find((token) => token.mint.equals(FOGO_USDC.mint))
-    ?.amountInWallet ?? 0n;
+const getUsdcBalance = (network: Network, tokensInWallet: Token[]) =>
+  tokensInWallet.find((token) =>
+    token.mint.equals(USDC.chains[network].fogo.mint),
+  )?.amountInWallet ?? 0n;

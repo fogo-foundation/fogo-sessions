@@ -11,7 +11,6 @@ import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";
 import styles from "./token-list.module.css";
 import { TruncateKey } from "./truncate-key.js";
-import { useFaucet } from "../hooks/use-faucet.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
   StateType as TokenDataStateType,
@@ -22,6 +21,7 @@ const MotionGridList = motion.create(GridList<Token>);
 
 type Props = {
   sessionState: EstablishedSessionState;
+  onPressGetTokens: () => void;
   onPressReceiveTokens: () => void;
 } & (
   | { onPressToken: (token: Token) => void }
@@ -31,9 +31,9 @@ type Props = {
 export const TokenList = ({
   sessionState,
   onPressReceiveTokens,
+  onPressGetTokens,
   ...props
 }: Props) => {
-  const { faucetUrl, showFaucet } = useFaucet(sessionState);
   const state = useTokenAccountData(sessionState);
   switch (state.type) {
     case TokenDataStateType.Error: {
@@ -53,13 +53,7 @@ export const TokenList = ({
           <span className={styles.message}>Your wallet is empty</span>
           <span className={styles.hints}>
             <Link onPress={onPressReceiveTokens}>Receive</Link> or{" "}
-            <Link
-              onPress={showFaucet}
-              href={faucetUrl.toString()}
-              target="_blank"
-            >
-              Get tokens
-            </Link>
+            <Link onPress={onPressGetTokens}>Get tokens</Link>
           </span>
         </div>
       ) : (
