@@ -33,6 +33,7 @@ pub struct SendTokens<'info> {
     pub source: Account<'info, TokenAccount>,
 
     /// CHECK: this account might be unitialized in the case of `send_tokens_with_fee` but it is checked after initialization in `SendTokens::verify_and_send`
+    #[account(mut)]
     pub destination: UncheckedAccount<'info>,
 
     pub mint: Account<'info, Mint>,
