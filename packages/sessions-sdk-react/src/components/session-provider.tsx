@@ -129,6 +129,7 @@ export const FogoSessionProvider = ({
               authorizationResultCache: createDefaultAuthorizationResultCache(),
               chain: "mainnet-beta",
               onWalletNotFound: createDefaultWalletNotFoundHandler(),
+            // doing type casting to use our type with the EventEmitter types
             })) as SolanaMobileWallet)
         : undefined,
     [walletsWithStandardAdapters],
