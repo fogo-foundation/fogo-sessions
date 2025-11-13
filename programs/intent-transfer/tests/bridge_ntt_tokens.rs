@@ -160,8 +160,9 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let payee_ntt_with_executor = Keypair::new();
 
     let to_chain_id = "solana";
-    let to_chain_id_wormhole: u16 =
-        convert_chain_id_to_wormhole(to_chain_id).expect("Invalid to_chain_id").into();
+    let to_chain_id_wormhole: u16 = convert_chain_id_to_wormhole(to_chain_id)
+        .expect("Invalid to_chain_id")
+        .into();
     let recipient_address_str = "0xabcaA90Df87bf36b051E65331594d9AAB29C739e";
     let amount_str = "0.0001";
 

@@ -1,9 +1,13 @@
 use crate::{
-    INTENT_TRANSFER_SEED, bridge::{
-        config::ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig, verify_ntt_manager},
+    bridge::{
+        config::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
         cpi::{self, ntt_with_executor::RelayNttMessageArgs},
-        message::{BridgeMessage, NttMessage, WormholeChainId, convert_chain_id_to_wormhole},
-    }, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
+        message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage, WormholeChainId},
+    },
+    error::IntentTransferError,
+    nonce::Nonce,
+    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+    INTENT_TRANSFER_SEED,
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::token::{
@@ -418,12 +422,8 @@ fn compute_relay_ntt_args(
 
     let signed_quote = SignedQuote::try_from_slice(&signed_quote_bytes)
         .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?;
-    let exec_amount = compute_exec_amount(
-        to_chain_id_wormhole,
-        signed_quote,
-        gas_limit,
-        msg_value,
-    )?;
+    let exec_amount =
+        compute_exec_amount(to_chain_id_wormhole, signed_quote, gas_limit, msg_value)?;
 
     Ok(RelayNttMessageArgs {
         recipient_chain: to_chain_id_wormhole.into(),
@@ -476,11 +476,7 @@ pub struct SignedQuote {
 const DECIMALS_QUOTE: u32 = 10;
 const DECIMALS_MAX: u32 = 18;
 
-fn normalize(
-    amount: u128,
-    decimals_from: u32,
-    decimals_to: u32,
-) -> Result<u128> {
+fn normalize(amount: u128, decimals_from: u32, decimals_to: u32) -> Result<u128> {
     if decimals_from > decimals_to {
         Ok(amount / 10u128.pow(decimals_from - decimals_to))
     } else {
@@ -520,7 +516,8 @@ fn compute_exec_amount(
     let gas_limit_cost = gas_limit
         .checked_mul(destination_gas_price)
         .ok_or(ProgramError::ArithmeticOverflow)?;
-    let gas_limit_cost_normalized = normalize(gas_limit_cost, decimals_destination_gas, DECIMALS_MAX)?;
+    let gas_limit_cost_normalized =
+        normalize(gas_limit_cost, decimals_destination_gas, DECIMALS_MAX)?;
     let amount_gas = normalize(
         gas_limit_cost_normalized
             .checked_mul(scaled_conversion)
@@ -576,12 +573,7 @@ mod tests {
         let gas_limit = 250_000u128;
         let msg_value = 9_705_000u128;
 
-        let result = compute_exec_amount(
-            WormholeChainId::Solana,
-            quote,
-            gas_limit,
-            msg_value,
-        );
+        let result = compute_exec_amount(WormholeChainId::Solana, quote, gas_limit, msg_value);
 
         assert_eq!(result, Ok(7484974250));
     }
