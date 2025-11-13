@@ -321,7 +321,7 @@ pub struct RetryConfig {
     pub sleep_ms: u64,
 }
 
-/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer 
+/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer
 /// and the block time of the block that includes the transaction.
 /// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
 /// retry_config configures the retries of the RPC call with sleep on failure. This is useful in cases where the
