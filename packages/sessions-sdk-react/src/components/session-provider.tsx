@@ -690,20 +690,33 @@ const useSessionState = ({
   return state;
 };
 
+/**
+ * Waits for the wallet to be ready before trying autoConnect. This is especially needed for Nightly Wallet as it's not instantly ready.
+ */
 const waitForWalletReady = async (wallet: SolanaWallet) => {
+  const WALLET_READY_TIMEOUT = 3000;
   const isWalletInReadyState = wallet.readyState === WalletReadyState.Installed;
 
   if (isWalletInReadyState) {
     return true;
   }
 
-  return new Promise((resolve) => {
-    wallet.on("readyStateChange", (readyState) => {
-      if (readyState === WalletReadyState.Installed) {
-        resolve(true);
-      }
-    });
-  });
+  // If the wallet is not in the ready state, we wait for it to be ready
+  // or for the timeout to expire so that the user can try to connect again (should never happen)
+  return Promise.race([
+    new Promise((resolve) => {
+      wallet.on("readyStateChange", (readyState) => {
+        if (readyState === WalletReadyState.Installed) {
+          resolve(true);
+        }
+      });
+    }),
+    new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(false);
+      }, WALLET_READY_TIMEOUT);
+    }),
+  ]);
 };
 
 const checkStoredSession = async (
