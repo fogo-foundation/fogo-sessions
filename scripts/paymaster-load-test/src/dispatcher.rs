@@ -1,7 +1,7 @@
 use crate::config::RuntimeConfig;
 use crate::generator::TransactionGenerator;
 use crate::metrics::LoadTestMetrics;
-use anchor_lang::AnchorDeserialize;
+use anchor_lang::AccountDeserialize;
 use anyhow::{Context, Result};
 use arc_swap::ArcSwap;
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -98,7 +98,7 @@ impl LoadTestDispatcher {
             .get_account(&chain_id_address)
             .await
             .context("Failed to fetch chain ID account")?;
-        let chain_id_data = ChainId::try_from_slice(&chain_id_account.data[8..])
+        let chain_id_data = ChainId::try_deserialize(&mut chain_id_account.data.as_slice())
             .context("Failed to deserialize chain ID account")?;
 
         let generator = Arc::new(TransactionGenerator::new(
