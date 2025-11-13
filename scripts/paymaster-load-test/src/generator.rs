@@ -70,21 +70,9 @@ impl TransactionGenerator {
         };
 
         // sign with session keypair only (sponsor signature will be added by paymaster)
-        Self::sign_transaction(&mut tx, &[&session_keypair]);
+        sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
-    }
-
-    fn sign_transaction(tx: &mut VersionedTransaction, signers: &[&Keypair]) {
-        let message_bytes = tx.message.serialize();
-        for (i, signer) in signers.iter().enumerate() {
-            let signature = signer.sign_message(&message_bytes);
-
-            // skip the first signature slot (reserved for sponsor)
-            if i + 1 < tx.signatures.len() {
-                tx.signatures[i + 1] = signature;
-            }
-        }
     }
 
     /// Generate transaction with invalid signature (wrong keypair)
@@ -101,7 +89,7 @@ impl TransactionGenerator {
 
         // sign with a wrong keypair instead of the correct session keypair
         let wrong_keypair = Keypair::new();
-        Self::sign_transaction(&mut tx, &[&wrong_keypair]);
+        sign_transaction(&mut tx, &[&wrong_keypair]);
 
         Ok(tx)
     }
@@ -142,7 +130,7 @@ impl TransactionGenerator {
             message: VersionedMessage::V0(message),
         };
 
-        Self::sign_transaction(&mut tx, &[&session_keypair]);
+        sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
     }
@@ -168,7 +156,7 @@ impl TransactionGenerator {
             message: VersionedMessage::V0(message),
         };
 
-        Self::sign_transaction(&mut tx, &[&session_keypair]);
+        sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
     }
@@ -197,6 +185,18 @@ impl TransactionGenerator {
         };
 
         Ok((vec![intent_ix, start_session_ix], session_keypair))
+    }
+}
+
+fn sign_transaction(tx: &mut VersionedTransaction, signers: &[&Keypair]) {
+    let message_bytes = tx.message.serialize();
+    for (i, signer) in signers.iter().enumerate() {
+        let signature = signer.sign_message(&message_bytes);
+
+        // skip the first signature slot (reserved for sponsor)
+        if i + 1 < tx.signatures.len() {
+            tx.signatures[i + 1] = signature;
+        }
     }
 }
 
