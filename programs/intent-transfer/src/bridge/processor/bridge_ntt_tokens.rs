@@ -550,3 +550,39 @@ fn compute_exec_amount(
 
     Ok(u64::try_from(total_amount)?)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compute_exec_amount_solana() {
+        let quote = SignedQuote {
+            header: SignedQuoteHeader {
+                prefix: *b"EQ01",
+                quoter_address: [0u8; 20],
+                payee_address: [0u8; 32],
+                source_chain: 0u16,
+                destination_chain: 1u16,
+                expiry_time: 0u64,
+            },
+            base_fee: 500_000_000,
+            destination_gas_price: 10_000,
+            source_price: 2_000_000_000,
+            destination_price: 1_531_800_000_000,
+            signature: [0u8; 65],
+        };
+
+        let gas_limit = 250_000u128;
+        let msg_value = 9_705_000u128;
+
+        let result = compute_exec_amount(
+            WormholeChainId::Solana,
+            quote,
+            gas_limit,
+            msg_value,
+        );
+
+        assert_eq!(result, Ok(7484974250));
+    }
+}
