@@ -27,13 +27,43 @@ pub struct NttMessage {
     pub nonce: u64,
 }
 
-// Mapping from https://wormhole.com/docs/products/reference/chain-ids/
-pub fn convert_chain_id_to_wormhole(chain_id: &str) -> Option<u16> {
+#[derive(Copy, Clone, PartialEq)]
+pub enum WormholeChainId {
+    Solana,
+    Fogo,
+}
+
+/// Mapping from https://wormhole.com/docs/products/reference/chain-ids/
+impl From<WormholeChainId> for u16 {
+    fn from(chain_id: WormholeChainId) -> u16 {
+        match chain_id {
+            WormholeChainId::Solana => 1,
+            WormholeChainId::Fogo => 51,
+        }
+    }
+}
+
+impl WormholeChainId {
+    pub fn decimals_native(self) -> u32 {
+        match self {
+            WormholeChainId::Solana => 9,
+            WormholeChainId::Fogo => 9,
+        }
+    }
+
+    /// The decimals of the gas price specification (e.g. microlamports)
+    pub fn decimals_gas_price(self) -> u32 {
+        match self {
+            WormholeChainId::Solana => 15,
+            WormholeChainId::Fogo => 15,
+        }
+    }
+}
+
+pub fn convert_chain_id_to_wormhole(chain_id: &str) -> Option<WormholeChainId> {
     match chain_id {
-        "solana" => Some(1),
-        "ethereum" => Some(2),
-        "fogo" => Some(51),
-        "sepolia" => Some(10002),
+        "solana" => Some(WormholeChainId::Solana),
+        "fogo" => Some(WormholeChainId::Fogo),
         _ => None,
     }
 }
