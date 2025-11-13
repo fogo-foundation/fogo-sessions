@@ -425,6 +425,7 @@ const useSessionState = ({
     [getSessionContext, toast],
   );
 
+
   const completeSessionSetup = useCallback(
     (session: Session, wallet: SolanaWallet, onEndSession: () => void) => {
       setStoredSession({
@@ -466,6 +467,13 @@ const useSessionState = ({
           });
         },
       };
+      
+      // when the wallet is disconnected, we need to end the session
+      const handleEndSession = () => {
+        establishedOptions.endSession();
+        wallet.off("disconnect", handleEndSession);
+      };
+      wallet.on("disconnect", handleEndSession);
       setState(SessionState.Established(establishedOptions));
     },
     [getSessionContext, updateSession, sendTransaction, setShowBridgeIn],
@@ -687,6 +695,7 @@ const useSessionState = ({
       }
     }
   });
+
 
   return state;
 };
