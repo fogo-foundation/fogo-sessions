@@ -415,8 +415,8 @@ fn compute_relay_ntt_args(
     // constructed in line with the gas instruction format: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#relay-instructions
     let relay_instructions = [
         [1u8].as_slice(),
-        gas_limit.to_le_bytes().as_slice(),
-        msg_value.to_le_bytes().as_slice(),
+        gas_limit.to_be_bytes().as_slice(),
+        msg_value.to_be_bytes().as_slice(),
     ]
     .concat();
 
