@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.20
+
+### Patch Changes
+
+- 55ad299: Add mainnet bridging config
+
 ## 0.0.19
 
 ### Patch Changes

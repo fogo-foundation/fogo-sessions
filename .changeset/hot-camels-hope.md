@@ -3,4 +3,4 @@
 "@fogo/sessions-sdk": patch
 ---
 
-Add mainnet bridging config
+Update wormhole contract addresses in mainnet

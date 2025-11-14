@@ -7,18 +7,18 @@ export const USDC = {
     [Network.Mainnet]: {
       fogo: {
         chain: "Fogo" as const,
-        mint: new PublicKey("UsdcSt7U9H5bVy4WaWgeqoowe8RgXpLShCmxUFgZssx"),
-        manager: new PublicKey("NTtUtKGWF1ZaPNp5WkzRAPyrCNJ5X2VmqYisEJ1K5QZ"),
+        mint: new PublicKey("uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG"),
+        manager: new PublicKey("nttu74CdAmsErx5daJVCQNoDZujswFrskMzonoZSdGk"),
         transceiver: new PublicKey(
-          "8N219XZ9n3ogcNawmSYrJstyAGeBSyq5AEFGAixpciXX",
+          "9ioH2HQmVsnbmA8Ej5o1LCAHPRisS8of4whyjCNHJXiw",
         ),
       },
       solana: {
         chain: "Solana" as const,
         mint: new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
-        manager: new PublicKey("NTtUtKGWF1ZaPNp5WkzRAPyrCNJ5X2VmqYisEJ1K5QZ"),
+        manager: new PublicKey("nttu74CdAmsErx5daJVCQNoDZujswFrskMzonoZSdGk"),
         transceiver: new PublicKey(
-          "4R4ZesEgyBYLzm58QL2iKKfdDTMhhqTZD9aV51GNrCKy",
+          "9ioH2HQmVsnbmA8Ej5o1LCAHPRisS8of4whyjCNHJXiw",
         ),
       },
     },

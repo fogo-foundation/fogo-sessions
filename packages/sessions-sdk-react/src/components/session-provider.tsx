@@ -90,6 +90,29 @@ type Props = ConstrainedOmit<
   privacyPolicyUrl?: string | undefined;
 };
 
+const filterUnwantedWallets = (
+  wallets: SolanaWallet[],
+) => {
+  let seenMetaMask = false;
+  return wallets.filter((wallet) => {
+    /*
+     * Currently excludes the legacy Solflare MetaMask Snap adapter. The Snap was
+     * decommissioned after MetaMask added native Solana; keeping it around causes
+     * a confusing dead-end modal for most users.
+     *
+     * WARNING: We detect this via the logic that Solflare checks for the Snap adapter
+     * *after* Metamask has already been registered as a wallet.
+     * https://github.com/anza-xyz/wallet-adapter/blob/master/packages/wallets/solflare/src/metamask/detect.ts#L13
+     */
+    if (wallet.name === "MetaMask") {
+      // If we've already kept one MetaMask, drop any subsequent ones.
+      if (seenMetaMask) return false;
+      seenMetaMask = true;
+    }
+    return true;
+  });
+};
+
 export const FogoSessionProvider = ({
   tokens,
   defaultRequestedLimits,
@@ -110,11 +133,14 @@ export const FogoSessionProvider = ({
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
     wallets as any,
   ) as unknown as SolanaWallet[];
-
+  const filteredWalletsWithStandardAdapters = useMemo(
+    () => filterUnwantedWallets(walletsWithStandardAdapters),
+    [walletsWithStandardAdapters],
+  );
   const mobileWalletAdapter = useMemo(
     () =>
-      isMobile(walletsWithStandardAdapters)
-        ? ((walletsWithStandardAdapters.find(
+      isMobile(filteredWalletsWithStandardAdapters)
+        ? (filteredWalletsWithStandardAdapters.find(
             (adapter) => adapter.name === SolanaMobileWalletAdapterWalletName,
           ) ??
             new SolanaMobileWalletAdapter({
@@ -132,15 +158,15 @@ export const FogoSessionProvider = ({
             // doing type casting to use our type with the EventEmitter types
             })) as SolanaMobileWallet)
         : undefined,
-    [walletsWithStandardAdapters],
+    [filteredWalletsWithStandardAdapters],
   );
 
   const walletsWithMobileAdapter = useMemo(
     () =>
       mobileWalletAdapter == undefined
-        ? walletsWithStandardAdapters
-        : [mobileWalletAdapter, ...walletsWithStandardAdapters],
-    [walletsWithStandardAdapters, mobileWalletAdapter],
+        ? filteredWalletsWithStandardAdapters
+        : [mobileWalletAdapter, ...filteredWalletsWithStandardAdapters],
+    [filteredWalletsWithStandardAdapters, mobileWalletAdapter],
   );
 
   return (
