@@ -9,8 +9,8 @@ use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod api;
 mod cli;
-/// TODO: This is public so clippy doesn't shout at us for not using it.
-pub mod config_manager;
+#[allow(dead_code)] // TODO: This module is unused until we bring back the DB 
+mod config_manager;
 mod constraint;
 mod constraint_templates;
 mod db;
