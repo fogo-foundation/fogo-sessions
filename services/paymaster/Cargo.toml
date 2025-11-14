@@ -32,6 +32,7 @@ opentelemetry-otlp = {version = "0.30.0", features = ["grpc-tonic"]}
 opentelemetry_sdk = {version = "0.30.0", features = ["rt-tokio"]}
 reqwest = {workspace = true}
 serde = {workspace = true}
+serde_json = "1.0"
 serde_with = { version = "3.14.0", features = ["base64"] }
 solana-address-lookup-table-interface = {workspace = true}
 solana-client = {workspace = true}
@@ -46,6 +47,7 @@ solana-packet = {workspace = true}
 solana-program = {workspace = true}
 solana-pubkey = {workspace = true}
 solana-pubsub-client = {workspace = true}
+solana-rpc-client = {workspace = true}
 solana-rpc-client-api = {workspace = true}
 solana-sdk-ids = {workspace = true}
 solana-seed-derivable = {workspace = true}

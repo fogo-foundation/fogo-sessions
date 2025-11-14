@@ -93,7 +93,14 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let rpc_url_ws = opts
         .rpc_url_ws
         .unwrap_or_else(|| opts.rpc_url_http.replace("http", "ws"));
-    api::run_server(opts.rpc_url_http, rpc_url_ws, opts.listen_address, domains).await;
+    api::run_server(
+        opts.rpc_url_http,
+        rpc_url_ws,
+        opts.ftl_url,
+        opts.listen_address,
+        domains,
+    )
+    .await;
     Ok(())
 }
 
