@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 
 #[derive(Accounts)]
-pub struct RegisterSendTokenFeeConfig<'info> {
+pub struct RegisterFeeConfig<'info> {
     pub upgrade_authority: UpgradeAuthority<'info>,
 
     pub mint: Account<'info, Mint>,
@@ -20,7 +20,7 @@ pub struct RegisterSendTokenFeeConfig<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> RegisterSendTokenFeeConfig<'info> {
+impl<'info> RegisterFeeConfig<'info> {
     pub fn process(&mut self, ata_creation_fee: u64) -> Result<()> {
         self.send_token_fee_config.ata_creation_fee = ata_creation_fee;
         Ok(())
