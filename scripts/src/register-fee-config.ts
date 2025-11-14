@@ -9,8 +9,8 @@ import BN from "bn.js";
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)
     .command(
-      "* <mint> <ata-creation-fee>",
-      "Register the ATA creation fee for a given fee mint",
+      "* <mint> <ata-creation-fee> <bridging-out-fee>",
+      "Register the intent transfer fees for a given fee mint",
     )
     .options(anchorOptions)
     .positional("mint", {
@@ -25,10 +25,16 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
       demandOption: true,
       coerce: (ataCreationFee: number) => new BN(ataCreationFee),
     })
+    .positional("bridging-out-fee", {
+      type: "number",
+      description: "Bridging out fee for the mint",
+      demandOption: true,
+      coerce: (bridgingOutFee: number) => new BN(bridgingOutFee),
+    })
     .parse();
 
   await new IntentTransferProgram(createAnchorProvider(args)).methods
-    .registerFeeConfig({ataCreationFee: args.ataCreationFee, bridgingOutFee: new BN(0)})
+    .registerFeeConfig({ataCreationFee: args.ataCreationFee, bridgingOutFee: args.bridgingOutFee})
     .accounts({ mint: args.mint, upgradeAuthority: {signer: undefined} })
     .rpc();
 };

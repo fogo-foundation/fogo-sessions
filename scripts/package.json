@@ -7,7 +7,7 @@
     "initialize-chain-id": "./bin/initialize-chain-id.js",
     "register-ntt-manager": "./bin/register-ntt-manager.js",
     "add-program-id-to-domain-registry": "./bin/add-program-id-to-domain-registry.js",
-    "register-send-token-fee-config": "./bin/register-send-token-fee-config.js"
+    "register-fee-config": "./bin/register-fee-config.js"
   },
   "scripts": {
     "build": "tsc --noEmit false --outDir ./dist",
