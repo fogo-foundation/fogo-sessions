@@ -513,6 +513,8 @@ fn compute_exec_amount(
         .checked_div(src_price_normalized)
         .ok_or(ProgramError::ArithmeticOverflow)?;
 
+    // Note that for Fogo -> Solana, assuming gas_limit = 250_000, destination_gas_price = 10_000,
+    // the amount_gas computation will overflow when dest_price / src_price >= 136112947.
     let gas_limit_cost = gas_limit
         .checked_mul(destination_gas_price)
         .ok_or(ProgramError::ArithmeticOverflow)?;
@@ -528,6 +530,8 @@ fn compute_exec_amount(
         decimals_source_native,
     )?;
 
+    // Note that for Fogo -> Solana, assuming msg_val = 11_744_280,
+    // the amount_msg_value computation will overflow when dest_price / src_price >= 28975.
     let msg_value_normalized = normalize(msg_value, decimals_destination_native, DECIMALS_MAX)?;
     let amount_msg_value = normalize(
         msg_value_normalized
