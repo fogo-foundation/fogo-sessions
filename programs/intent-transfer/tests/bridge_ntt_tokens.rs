@@ -10,11 +10,14 @@ use solana_signer::Signer;
 use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
-use intent_transfer::bridge::{
-    config::ntt_config::ExpectedNttConfig,
-    cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
-    message::convert_chain_id_to_wormhole,
-    processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuote, SignedQuoteHeader},
+use intent_transfer::{
+    be::{U16BE, U64BE},
+    bridge::{
+        config::ntt_config::ExpectedNttConfig,
+        cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
+        message::convert_chain_id_to_wormhole,
+        processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuote, SignedQuoteHeader},
+    },
 };
 
 mod helpers;
@@ -248,17 +251,18 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             prefix: *b"EQ01",
             quoter_address: [0u8; 20],
             payee_address: [0u8; 32],
-            source_chain: 0u16,
-            destination_chain: 0u16,
-            expiry_time: 0u64,
+            source_chain: U16BE(0u16),
+            destination_chain: U16BE(0u16),
+            expiry_time: U64BE(0u64),
         },
-        base_fee: 500_000_000,
-        destination_gas_price: 10_000,
-        source_price: 2_000_000_000,
-        destination_price: 1_531_800_000_000,
+        base_fee: U64BE(500_000_000),
+        destination_gas_price: U64BE(10_000),
+        source_price: U64BE(2_000_000_000),
+        destination_price: U64BE(1_531_800_000_000),
         signature: [0u8; 65],
     }
-    .serialize();
+    .try_to_vec()
+    .unwrap();
 
     let bridge_ix = Instruction {
         program_id: intent_transfer::ID,

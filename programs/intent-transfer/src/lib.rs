@@ -4,6 +4,7 @@ declare_id!("Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD");
 
 use anchor_lang::prelude::*;
 
+pub mod be;
 pub mod bridge;
 mod error;
 mod intrachain;
