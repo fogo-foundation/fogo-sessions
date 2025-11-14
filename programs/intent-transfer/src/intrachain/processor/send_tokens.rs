@@ -94,7 +94,7 @@ impl<'info> SendTokens<'info> {
             fee_destination,
             fee_mint,
             fee_metadata,
-            fee_config: send_token_fee_config,
+            fee_config,
             system_program: _,
             associated_token_program: _,
             sponsor: _,
@@ -146,7 +146,7 @@ impl<'info> SendTokens<'info> {
             mint.decimals,
         )?;
 
-        send_token_fee_config.verify_and_collect_ata_fee(
+        fee_config.verify_and_collect_ata_fee(
             VerifyAndCollectArgs {
                 fee_source,
                 fee_destination,
