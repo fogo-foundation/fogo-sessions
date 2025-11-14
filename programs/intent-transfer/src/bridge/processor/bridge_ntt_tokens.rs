@@ -1,16 +1,10 @@
 use crate::{
-    bridge::{
+    INTENT_TRANSFER_SEED, bridge::{
         cpi,
-        message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage},
-    },
-    config::state::{
-        ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
-        fee_config::{FeeConfig, FEE_CONFIG_SEED},
-    },
-    error::IntentTransferError,
-    nonce::Nonce,
-    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
-    INTENT_TRANSFER_SEED,
+        message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole},
+    }, config::state::{
+        fee_config::{FEE_CONFIG_SEED, FeeConfig, VerifyAndCollectArgs}, ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig, verify_ntt_manager}
+    }, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::{
@@ -223,7 +217,13 @@ impl<'info> BridgeNttTokens<'info> {
             sponsor,
             system_program,
             ntt,
-            ..
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            fee_config,
+            associated_token_program: _,
+            
         } = self;
 
         let Ntt {
@@ -258,8 +258,8 @@ impl<'info> BridgeNttTokens<'info> {
             to_chain_id,
             recipient_address,
             nonce: new_nonce,
-            fee_amount: _,
-            fee_symbol_or_mint: _,
+            fee_amount,
+            fee_symbol_or_mint,
         } = ntt_message;
 
         if from_chain_id.chain_id != expected_chain_id {
@@ -397,6 +397,15 @@ impl<'info> BridgeNttTokens<'info> {
             },
             signer_seeds,
         ))?;
+
+        fee_config.verify_and_collect_bridging_out_fee(VerifyAndCollectArgs {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            intent_transfer_setter,
+            token_program,
+        }, fee_amount, fee_symbol_or_mint, signer_seeds)?;
 
         Ok(())
     }
