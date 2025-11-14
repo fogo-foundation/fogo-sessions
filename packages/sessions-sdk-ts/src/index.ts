@@ -888,7 +888,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
 
   const outboxItem = Keypair.generate();
 
-  const [metadata, nttPdas] = await Promise.all([
+  const [metadata, nttPdas, destinationAtaExists] = await Promise.all([
     safeFetchMetadata(umi, metadataAddress),
     getNttPdas(
       options,
@@ -896,6 +896,11 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       program,
       outboxItem.publicKey,
       new PublicKey(quote.payeeAddress),
+    ),
+    getDestinationAtaExists(
+      options.context,
+      options.toToken.mint,
+      options.walletPublicKey,
     ),
   ]);
 
@@ -905,8 +910,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       buildBridgeOutIntent(program, options, decimals, metadata?.symbol),
       program.methods
         .bridgeNttTokens({
-          execAmount: new BN(quote.estimatedCost.toString()),
-          relayInstructions: Buffer.from(quote.relayInstructions),
+          payDestinationAtaRent: !destinationAtaExists,
           signedQuoteBytes: Buffer.from(quote.signedQuote),
         })
         .accounts({
@@ -933,6 +937,18 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
         ],
     },
   );
+};
+
+const getDestinationAtaExists = async (
+  context: SessionContext,
+  token: PublicKey,
+  wallet: PublicKey,
+) => {
+  const solanaConnection = await context.getSolanaConnection();
+  const ataAccount = await solanaConnection.getAccountInfo(
+    getAssociatedTokenAddressSync(token, wallet),
+  );
+  return ataAccount !== null;
 };
 
 // Here we use the Wormhole SDKs to produce the wormhole pdas that are needed
