@@ -10,14 +10,12 @@ use solana_signer::Signer;
 use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
-use intent_transfer::{
-    bridge::{
-        be::{U16BE, U64BE},
-        config::ntt_config::ExpectedNttConfig,
-        cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
-        message::convert_chain_id_to_wormhole,
-        processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuote, SignedQuoteHeader},
-    },
+use intent_transfer::bridge::{
+    be::{U16BE, U64BE},
+    config::ntt_config::ExpectedNttConfig,
+    cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
+    message::convert_chain_id_to_wormhole,
+    processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuote, SignedQuoteHeader},
 };
 
 mod helpers;
