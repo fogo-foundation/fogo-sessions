@@ -143,7 +143,7 @@ export const FogoSessionProvider = ({
         ? (filteredWalletsWithStandardAdapters.find(
             (adapter) => adapter.name === SolanaMobileWalletAdapterWalletName,
           ) ??
-            new SolanaMobileWalletAdapter({
+            (new SolanaMobileWalletAdapter({
               addressSelector: createDefaultAddressSelector(),
               appIdentity: {
                 uri:
