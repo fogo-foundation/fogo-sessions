@@ -1,7 +1,7 @@
 use crate::{
-    config::state::fee_config::{FeeConfig, VerifyAndCollectAccounts, FEE_CONFIG_SEED},
+    config::state::fee_config::{FeeConfig, FEE_CONFIG_SEED},
     error::IntentTransferError,
-    fees::PaidInstruction,
+    fees::{PaidInstruction, VerifyAndCollectAccounts},
     intrachain::message::Message,
     nonce::Nonce,
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
