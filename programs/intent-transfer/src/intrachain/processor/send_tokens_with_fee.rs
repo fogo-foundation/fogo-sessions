@@ -13,26 +13,6 @@ use anchor_spl::{
 #[derive(Accounts)]
 pub struct SendTokensWithFee<'info> {
     pub send_tokens: SendTokens<'info>,
-
-    #[account(mut, token::mint = fee_mint, token::authority = send_tokens.source.owner )]
-    pub fee_source: Account<'info, TokenAccount>,
-
-    #[account(init_if_needed, payer = send_tokens.sponsor, associated_token::mint = fee_mint, associated_token::authority = send_tokens.sponsor)]
-    pub fee_destination: Account<'info, TokenAccount>,
-
-    pub fee_mint: Account<'info, Mint>,
-
-    #[account(seeds = [SEND_TOKEN_FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
-    pub send_token_fee_config: Account<'info, SendTokenFeeConfig>,
-
-    /// CHECK: This account is only used and checked against `destination` in the `create_destination_account_and_collect_fee` when the `destination` account is not yet initialized
-    pub destination_owner: AccountInfo<'info>,
-
-    pub associated_token_program: Program<'info, AssociatedToken>,
-
-    // These are duplicate because anchor is dumb and doesn't detect they are already in `send_tokens`, but it's fine because it only adds two bytes to the transaction size
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
 }
 
 impl<'info> SendTokensWithFee<'info> {

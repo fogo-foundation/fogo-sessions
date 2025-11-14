@@ -45,6 +45,8 @@ pub enum IntentTransferError {
     InvalidNttManager,
     #[msg("Unauthorized: only upgrade authority can call this")]
     Unauthorized,
+    #[msg("The fee amount signed by the user doesn't match the configured fee amount")]
+    FeeAmountMismatch,
 }
 
 type NomError = Err<Error<Vec<u8>>>;

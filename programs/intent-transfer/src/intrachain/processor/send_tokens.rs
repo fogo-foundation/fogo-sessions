@@ -1,18 +1,13 @@
 use crate::{
-    error::IntentTransferError,
-    intrachain::message::Message,
-    nonce::Nonce,
-    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
-    INTENT_TRANSFER_SEED,
+    INTENT_TRANSFER_SEED, config::state::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig}, error::IntentTransferError, intrachain::message::Message, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
 };
 use anchor_lang::error::ErrorCode;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::token::{
-    spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
-    TransferChecked,
-};
+use anchor_spl::{associated_token::AssociatedToken, token::{
+    Mint, Token, TokenAccount, TransferChecked, spl_token::try_ui_amount_into_amount, transfer_checked
+}};
 use chain_id::ChainId;
-use solana_intents::Intent;
+use solana_intents::{Intent, SymbolOrMint};
 
 const NONCE_SEED: &[u8] = b"nonce";
 
@@ -29,14 +24,11 @@ pub struct SendTokens<'info> {
     #[account(seeds = [INTENT_TRANSFER_SEED], bump)]
     pub intent_transfer_setter: UncheckedAccount<'info>,
 
-    pub token_program: Program<'info, Token>,
-
     #[account(mut, token::mint = mint)]
     pub source: Account<'info, TokenAccount>,
 
-    /// CHECK: this account might be unitialized in the case of `send_tokens_with_fee` but it is checked after initialization in `SendTokens::verify_and_send`
-    #[account(mut)]
-    pub destination: UncheckedAccount<'info>,
+    #[account(init_if_needed, payer = sponsor, associated_token::mint = mint, associated_token::authority = destination_owner)]
+    pub destination: Account<'info, TokenAccount>,
 
     pub mint: Account<'info, Mint>,
 
@@ -54,7 +46,25 @@ pub struct SendTokens<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
 
+    /// CHECK: This account is checked against the signed message
+    pub destination_owner: AccountInfo<'info>,
+
+    #[account(mut, token::mint = fee_mint, token::authority = source.owner )]
+    pub fee_source: Account<'info, TokenAccount>,
+
+    #[account(init_if_needed, payer = sponsor, associated_token::mint = fee_mint, associated_token::authority = sponsor)]
+    pub fee_destination: Account<'info, TokenAccount>,
+
+    pub fee_mint: Account<'info, Mint>,
+
+    pub fee_metadata: Option<UncheckedAccount<'info>>,
+
+    #[account(seeds = [SEND_TOKEN_FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
+    pub send_token_fee_config: Account<'info, SendTokenFeeConfig>,
+
     pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 impl<'info> SendTokens<'info> {
@@ -69,17 +79,9 @@ impl<'info> SendTokens<'info> {
             sysvar_instructions,
             token_program,
             nonce,
-            sponsor: _,
-            system_program: _,
+            destination_owner,
+            ..
         } = self;
-
-        let destination_account_data =
-            TokenAccount::try_deserialize(&mut destination.data.borrow().as_ref())?;
-        require_eq!(
-            destination_account_data.mint,
-            mint.key(),
-            ErrorCode::ConstraintTokenMint
-        );
 
         let Intent {
             message:
@@ -104,7 +106,7 @@ impl<'info> SendTokens<'info> {
 
         require_keys_eq!(
             recipient,
-            destination_account_data.owner,
+            destination_owner.key(),
             IntentTransferError::RecipientMismatch
         );
 
@@ -126,5 +128,35 @@ impl<'info> SendTokens<'info> {
         )?;
 
         Ok(())
+    }
+
+    fn verify_and_collect_fee(&mut self, fee_amount: String, fee_symbol_or_mint: SymbolOrMint, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+        let Self {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            send_token_fee_config,
+            ..
+        } = self;
+
+        verify_symbol_or_mint(&fee_symbol_or_mint, fee_metadata, fee_mint)?;
+        let fee_amount = try_ui_amount_into_amount(fee_amount, fee_mint.decimals)?;
+        require_eq!(fee_amount, send_token_fee_config.ata_creation_fee, IntentTransferError::FeeAmountMismatch);
+
+        transfer_checked(
+            CpiContext::new_with_signer(
+                self.token_program.to_account_info(),
+                TransferChecked {
+                    authority: self.intent_transfer_setter.to_account_info(),
+                    from: self.fee_source.to_account_info(),
+                    mint: self.fee_mint.to_account_info(),
+                    to: self.fee_destination.to_account_info(),
+                },
+                signer_seeds,
+            ),
+            self.send_token_fee_config.ata_creation_fee,
+            self.fee_mint.decimals,
+        )
     }
 }
