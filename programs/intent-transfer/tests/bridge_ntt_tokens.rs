@@ -25,6 +25,7 @@ use intent_transfer::{
 
 mod helpers;
 
+#[allow(clippy::too_many_arguments)]
 fn create_ntt_bridge_message(
     from_chain_id: &str,
     to_chain_id: &str,
