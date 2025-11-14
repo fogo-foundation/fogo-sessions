@@ -1,19 +1,13 @@
 use crate::{
-    bridge::{
+    INTENT_TRANSFER_SEED, bridge::{
         cpi,
-        message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage},
-    },
-    config::state::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
-    error::IntentTransferError,
-    nonce::Nonce,
-    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
-    INTENT_TRANSFER_SEED,
+        message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole},
+    }, config::state::{ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig, verify_ntt_manager}, send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig}}, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::token::{
-    approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
-    CloseAccount, Mint, Token, TokenAccount, TransferChecked,
-};
+use anchor_spl::{associated_token::AssociatedToken, token::{
+    Approve, CloseAccount, Mint, Token, TokenAccount, TransferChecked, approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked
+}};
 use chain_id::ChainId;
 use solana_intents::Intent;
 
@@ -121,8 +115,6 @@ pub struct BridgeNttTokens<'info> {
     #[account(seeds = [INTENT_TRANSFER_SEED], bump)]
     pub intent_transfer_setter: UncheckedAccount<'info>,
 
-    pub token_program: Program<'info, Token>,
-
     #[account(mut, token::mint = mint)]
     pub source: Account<'info, TokenAccount>,
 
@@ -159,7 +151,22 @@ pub struct BridgeNttTokens<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
 
+    #[account(mut, token::mint = fee_mint, token::authority = source.owner )]
+    pub fee_source: Account<'info, TokenAccount>,
+
+    #[account(init_if_needed, payer = sponsor, associated_token::mint = fee_mint, associated_token::authority = sponsor)]
+    pub fee_destination: Account<'info, TokenAccount>,
+
+    pub fee_mint: Account<'info, Mint>,
+
+    pub fee_metadata: Option<UncheckedAccount<'info>>,
+
+    #[account(seeds = [SEND_TOKEN_FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
+    pub send_token_fee_config: Account<'info, SendTokenFeeConfig>,
+
     pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 
     // NTT-specific accounts
     pub ntt: Ntt<'info>,
@@ -204,6 +211,7 @@ impl<'info> BridgeNttTokens<'info> {
             sponsor,
             system_program,
             ntt,
+            ..
         } = self;
 
         let Ntt {
@@ -238,6 +246,8 @@ impl<'info> BridgeNttTokens<'info> {
             to_chain_id,
             recipient_address,
             nonce: new_nonce,
+            fee_amount,
+            fee_symbol_or_mint,
         } = ntt_message;
 
         if from_chain_id.chain_id != expected_chain_id {

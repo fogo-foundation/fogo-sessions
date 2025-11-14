@@ -15,7 +15,6 @@ use bridge::processor::bridge_ntt_tokens::*;
 use config::processor::register_ntt_config::*;
 use config::processor::register_send_token_fee_config::*;
 use intrachain::processor::send_tokens::*;
-use intrachain::processor::send_tokens_with_fee::*;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
 
@@ -48,17 +47,7 @@ pub mod intent_transfer {
     }
 
     #[instruction(discriminator = [3])]
-    pub fn send_tokens_with_fee<'info>(
-        ctx: Context<'_, '_, '_, 'info, SendTokensWithFee<'info>>,
-    ) -> Result<()> {
-        ctx.accounts.verify_and_send(&[&[
-            INTENT_TRANSFER_SEED,
-            &[ctx.bumps.send_tokens.intent_transfer_setter],
-        ]])
-    }
-
-    #[instruction(discriminator = [4])]
-    pub fn register_send_token_fee_config<'info>(
+    pub fn register_fee_config<'info>(
         ctx: Context<'_, '_, '_, 'info, RegisterSendTokenFeeConfig<'info>>,
         ata_creation_fee: u64,
     ) -> Result<()> {

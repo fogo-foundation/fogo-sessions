@@ -24,6 +24,8 @@ pub struct NttMessage {
     pub amount: String,
     pub to_chain_id: String,
     pub recipient_address: String,
+    pub fee_amount: String,
+    pub fee_symbol_or_mint: SymbolOrMint,
     pub nonce: u64,
 }
 
@@ -74,6 +76,8 @@ where
                 tag_key_value("token"),
                 tag_key_value("amount"),
                 tag_key_value("recipient_address"),
+                tag_key_value("fee_token"),
+                tag_key_value("fee_amount"),
                 tag_key_value("nonce"),
             ),
             eof,
@@ -85,6 +89,8 @@ where
             symbol_or_mint,
             amount,
             recipient_address,
+            fee_amount,
+            fee_symbol_or_mint,
             nonce,
         )| NttMessage {
             version,
@@ -93,6 +99,8 @@ where
             symbol_or_mint,
             amount,
             recipient_address,
+            fee_amount,
+            fee_symbol_or_mint,
             nonce,
         },
     )

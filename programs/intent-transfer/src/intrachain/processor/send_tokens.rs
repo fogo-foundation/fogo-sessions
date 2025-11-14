@@ -1,5 +1,5 @@
 use crate::{
-    INTENT_TRANSFER_SEED, config::state::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig}, error::IntentTransferError, intrachain::message::Message, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
+    INTENT_TRANSFER_SEED, config::state::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig, VerifyAndCollectArgs}, error::IntentTransferError, intrachain::message::Message, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
 };
 use anchor_lang::error::ErrorCode;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
@@ -80,7 +80,14 @@ impl<'info> SendTokens<'info> {
             token_program,
             nonce,
             destination_owner,
-            ..
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            send_token_fee_config,
+            system_program: _,
+            associated_token_program: _,
+            sponsor: _,
         } = self;
 
         let Intent {
@@ -92,6 +99,8 @@ impl<'info> SendTokens<'info> {
                     symbol_or_mint,
                     nonce: new_nonce,
                     version: _,
+                    fee_amount,
+                    fee_symbol_or_mint,
                 },
             signer,
         } = Intent::load(sysvar_instructions.as_ref())
@@ -127,36 +136,13 @@ impl<'info> SendTokens<'info> {
             mint.decimals,
         )?;
 
-        Ok(())
-    }
-
-    fn verify_and_collect_fee(&mut self, fee_amount: String, fee_symbol_or_mint: SymbolOrMint, signer_seeds: &[&[&[u8]]]) -> Result<()> {
-        let Self {
+        send_token_fee_config.verify_and_collect_ata_fee(VerifyAndCollectArgs {
             fee_source,
             fee_destination,
             fee_mint,
             fee_metadata,
-            send_token_fee_config,
-            ..
-        } = self;
-
-        verify_symbol_or_mint(&fee_symbol_or_mint, fee_metadata, fee_mint)?;
-        let fee_amount = try_ui_amount_into_amount(fee_amount, fee_mint.decimals)?;
-        require_eq!(fee_amount, send_token_fee_config.ata_creation_fee, IntentTransferError::FeeAmountMismatch);
-
-        transfer_checked(
-            CpiContext::new_with_signer(
-                self.token_program.to_account_info(),
-                TransferChecked {
-                    authority: self.intent_transfer_setter.to_account_info(),
-                    from: self.fee_source.to_account_info(),
-                    mint: self.fee_mint.to_account_info(),
-                    to: self.fee_destination.to_account_info(),
-                },
-                signer_seeds,
-            ),
-            self.send_token_fee_config.ata_creation_fee,
-            self.fee_mint.decimals,
-        )
+            intent_transfer_setter,
+            token_program,
+        }, fee_amount, fee_symbol_or_mint, signer_seeds)
     }
 }

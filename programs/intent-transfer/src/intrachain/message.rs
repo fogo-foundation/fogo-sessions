@@ -19,6 +19,8 @@ pub struct Message {
     pub symbol_or_mint: SymbolOrMint,
     pub amount: String,
     pub recipient: Pubkey,
+    pub fee_amount: String,
+    pub fee_symbol_or_mint: SymbolOrMint,
     pub nonce: u64,
 }
 
@@ -51,22 +53,26 @@ where
             (tag(MESSAGE_PREFIX), line_ending),
             (
                 verify(tag_key_value("version"), |version: &Version| {
-                    version.major == 0 && version.minor == 1
+                    version.major == 0 && version.minor == 2
                 }),
                 tag_key_value("chain_id"),
                 tag_key_value("token"),
                 tag_key_value("amount"),
                 tag_key_value("recipient"),
+                tag_key_value("fee_token"),
+                tag_key_value("fee_amount"),
                 tag_key_value("nonce"),
             ),
             eof,
         ),
-        |(version, chain_id, symbol_or_mint, amount, recipient, nonce)| Message {
+        |(version, chain_id, symbol_or_mint, amount, recipient, fee_amount, fee_symbol_or_mint, nonce)| Message {
             version,
             chain_id,
             symbol_or_mint,
             amount,
             recipient,
+            fee_amount,
+            fee_symbol_or_mint,
             nonce,
         },
     )
