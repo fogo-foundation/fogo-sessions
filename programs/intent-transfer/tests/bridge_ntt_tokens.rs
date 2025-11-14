@@ -2,29 +2,30 @@ use anchor_lang::{
     solana_program::{ed25519_program, instruction::Instruction, pubkey::Pubkey, sysvar},
     system_program, AnchorSerialize, Discriminator, InstructionData, ToAccountMetas,
 };
-use anchor_spl::token_2022::spl_token_2022::try_ui_amount_into_amount;
+use anchor_spl::{associated_token, token_2022::spl_token_2022::try_ui_amount_into_amount};
 use litesvm::LiteSVM;
 use solana_account::Account;
 use solana_keypair::Keypair;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
+use spl_associated_token_account::get_associated_token_address;
 use spl_token::solana_program::keccak;
 
 use intent_transfer::{
-    bridge::cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
-    bridge::message::convert_chain_id_to_wormhole,
-    bridge::processor::bridge_ntt_tokens::BridgeNttTokensArgs,
-    config::state::ntt_config::ExpectedNttConfig,
+    bridge::{cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID}, message::convert_chain_id_to_wormhole, processor::bridge_ntt_tokens::BridgeNttTokensArgs},
+    config::state::{fee_config::{FEE_CONFIG_SEED, FeeConfig}, ntt_config::ExpectedNttConfig},
 };
 
 mod helpers;
 
 fn create_ntt_bridge_message(
     from_chain_id: &str,
+    to_chain_id: &str,
     token_symbol: &str,
     amount: &str,
-    to_chain_id: &str,
     recipient_address: &str,
+    fee_token_symbol: &str,
+    fee_amount: &str,
     nonce: u64,
 ) -> String {
     format!(
@@ -37,6 +38,8 @@ fn create_ntt_bridge_message(
          token: {token_symbol}\n\
          amount: {amount}\n\
          recipient_address: {recipient_address}\n\
+         fee_token: {fee_token_symbol}\n\
+         fee_amount: {fee_amount}\n\
          nonce: {nonce}",
     )
 }
@@ -107,9 +110,14 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let source_owner = helpers::generate_and_fund_key(&mut svm);
 
     let decimals = 9;
+    let fee_token_decimals = 6;
     let token = helpers::Token::create_mint(&mut svm, spl_token::ID, decimals);
+    let fee_token = helpers::Token::create_mint(&mut svm, spl_token::ID, fee_token_decimals);
 
     let source_token_account = token.airdrop(&mut svm, &source_owner.pubkey(), 1_000.0);
+    let fee_source = fee_token.airdrop(&mut svm, &source_owner.pubkey(), 1_000.0);
+
+    let fee_destination = get_associated_token_address(&payer.pubkey(), &fee_token.mint);
 
     let (intent_transfer_setter, _) =
         Pubkey::find_program_address(&[b"intent_transfer"], &intent_transfer::ID);
@@ -164,6 +172,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         convert_chain_id_to_wormhole(to_chain_id).expect("Invalid to_chain_id");
     let recipient_address_str = "0xabcaA90Df87bf36b051E65331594d9AAB29C739e";
     let amount_str = "0.0001";
+    let fee_amount_str = "0.00001";
 
     let amount = try_ui_amount_into_amount(amount_str.parse().unwrap(), decimals).unwrap();
     let should_queue = false;
@@ -207,10 +216,12 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     let message = create_ntt_bridge_message(
         &chain_id_value,
+        to_chain_id,
         &token.mint.to_string(),
         amount_str,
-        to_chain_id,
         recipient_address_str,
+        &fee_token.mint.to_string(),
+        fee_amount_str,
         1,
     );
 
@@ -229,7 +240,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     .serialize(&mut expected_ntt_config_data)
     .unwrap();
 
-    let result_mock_register_ntt_config = svm.set_account(
+    svm.set_account(
         expected_ntt_config,
         Account {
             lamports: 1_000_000_000,
@@ -238,8 +249,32 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             executable: false,
             rent_epoch: 0,
         },
+    ).expect("Failed to set expected NTT config account");
+
+    let (fee_config, _) = Pubkey::find_program_address(
+        &[FEE_CONFIG_SEED, fee_token.mint.as_ref()],
+        &intent_transfer::ID,
     );
-    result_mock_register_ntt_config.expect("Failed to set expected NTT config account");
+
+    let mut fee_config_data = Vec::new();
+    fee_config_data.extend_from_slice(FeeConfig::DISCRIMINATOR);
+    FeeConfig {
+        ata_creation_fee: 0,
+        bridging_out_fee: 10,
+    }
+    .serialize(&mut fee_config_data)
+    .unwrap();
+
+    svm.set_account(
+        fee_config,
+        Account {
+            lamports: 1_000_000_000,
+            data: fee_config_data,
+            owner: intent_transfer::ID,
+            executable: false,
+            rent_epoch: 0,
+        },
+    ).expect("Failed to set fee config account");
 
     let bridge_ix = Instruction {
         program_id: intent_transfer::ID,
@@ -256,7 +291,13 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             expected_ntt_config,
             nonce: nonce_account,
             sponsor: payer.pubkey(),
+            associated_token_program: associated_token::ID,
             system_program: anchor_lang::solana_program::system_program::ID,
+            fee_source,
+            fee_destination,
+            fee_mint: fee_token.mint,
+            fee_metadata: None,
+            fee_config,
             ntt: intent_transfer::accounts::Ntt {
                 clock: sysvar::clock::ID,
                 rent: sysvar::rent::ID,
@@ -293,8 +334,12 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     };
 
     let transfer_amount = token.get_amount_with_decimals(amount_str.parse::<f64>().unwrap());
+    let fee_amount = fee_token.get_amount_with_decimals(fee_amount_str.parse::<f64>().unwrap());
     let source_balance_before = token.get_balance(&svm, &source_token_account);
     let custody_balance_before = token.get_balance(&svm, &ntt_custody);
+
+    let fee_source_balance_before = fee_token.get_balance(&svm, &fee_source);
+    assert!(svm.get_account(&fee_destination).is_none(), "Fee destination account should not exist before the transaction");
 
     let tx = Transaction::new_signed_with_payer(
         &[ed25519_ix, bridge_ix],
@@ -355,4 +400,22 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         custody_delta, transfer_amount,
         "Custody balance should increase by transfer amount. Expected: {transfer_amount}, Got: {custody_delta}",
     );
+
+    let fee_source_balance_after = fee_token.get_balance(&svm, &fee_source);
+    let fee_destination_balance_after = fee_token.get_balance(&svm, &fee_destination);
+
+    let fee_source_delta = fee_source_balance_before.saturating_sub(fee_source_balance_after);
+    let fee_destination_delta = fee_destination_balance_after;
+
+    assert_eq!(
+        source_delta, fee_amount,
+        "Fee source balance should decrease by fee amount. Expected: {fee_amount}, Got: {fee_source_delta}",
+    );
+
+    assert_eq!(
+        fee_destination_delta, fee_amount,
+        "Fee destination balance should increase by fee amount. Expected: {fee_amount}, Got: {fee_destination_delta}",
+    );
+    
+    
 }
