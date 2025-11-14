@@ -15,6 +15,7 @@ use bridge::processor::bridge_ntt_tokens::*;
 use config::processor::register_ntt_config::*;
 use config::processor::register_fee_config::*;
 use intrachain::processor::send_tokens::*;
+use crate::config::state::fee_config::FeeConfig;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
 
@@ -49,9 +50,9 @@ pub mod intent_transfer {
     #[instruction(discriminator = [3])]
     pub fn register_fee_config<'info>(
         ctx: Context<'_, '_, '_, 'info, RegisterFeeConfig<'info>>,
-        ata_creation_fee: u64,
+        fee_config: FeeConfig,
     ) -> Result<()> {
-        ctx.accounts.process(ata_creation_fee)
+        ctx.accounts.process(fee_config)
     }
 }
 

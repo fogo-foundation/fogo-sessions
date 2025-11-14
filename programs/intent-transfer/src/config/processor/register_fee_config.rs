@@ -16,13 +16,13 @@ pub struct RegisterFeeConfig<'info> {
         seeds = [FEE_CONFIG_SEED, mint.key().as_ref()],
         bump
     )]
-    pub send_token_fee_config: Account<'info, FeeConfig>,
+    pub fee_config: Account<'info, FeeConfig>,
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> RegisterFeeConfig<'info> {
-    pub fn process(&mut self, ata_creation_fee: u64) -> Result<()> {
-        self.send_token_fee_config.ata_creation_fee = ata_creation_fee;
+    pub fn process(&mut self, fee_config: FeeConfig) -> Result<()> {
+        *self.fee_config = fee_config;
         Ok(())
     }
 }
