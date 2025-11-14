@@ -420,8 +420,7 @@ fn compute_relay_ntt_args(
     ]
     .concat();
 
-    let signed_quote = SignedQuote::try_from_slice(&signed_quote_bytes)
-        .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?;
+    let signed_quote = SignedQuote::deserialize(&signed_quote_bytes)?;
     let exec_amount =
         compute_exec_amount(to_chain_id_wormhole, signed_quote, gas_limit, msg_value)?;
 
@@ -453,7 +452,6 @@ fn compute_msg_value_and_gas_limit_solana(pay_destination_ata_rent: bool) -> (u1
 }
 
 // Derived from the documentation: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#off-chain-quote
-#[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SignedQuoteHeader {
     pub prefix: [u8; 4],
     pub quoter_address: [u8; 20],
@@ -463,7 +461,6 @@ pub struct SignedQuoteHeader {
     pub expiry_time: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SignedQuote {
     pub header: SignedQuoteHeader,
     pub base_fee: u64,
@@ -471,6 +468,124 @@ pub struct SignedQuote {
     pub source_price: u64,
     pub destination_price: u64,
     pub signature: [u8; 65],
+}
+
+impl SignedQuote {
+    /// Parse SignedQuote from bytes with big-endian encoding for numeric fields.
+    /// Total size: 165 bytes (4 + 20 + 32 + 2 + 2 + 8 + 8 + 8 + 8 + 8 + 65)
+    pub fn deserialize(bytes: &[u8]) -> Result<Self> {
+        const EXPECTED_LEN: usize = 165;
+
+        if bytes.len() < EXPECTED_LEN {
+            return err!(IntentTransferError::InvalidNttSignedQuote);
+        }
+
+        let mut offset = 0;
+
+        macro_rules! read_bytes {
+            ($len:expr) => {{
+                let start = offset;
+                offset += $len;
+                &bytes[start..offset]
+            }};
+        }
+
+        let mut prefix = [0u8; 4];
+        prefix.copy_from_slice(read_bytes!(4));
+
+        let mut quoter_address = [0u8; 20];
+        quoter_address.copy_from_slice(read_bytes!(20));
+
+        let mut payee_address = [0u8; 32];
+        payee_address.copy_from_slice(read_bytes!(32));
+
+        let source_chain = u16::from_be_bytes(
+            bytes[offset..offset + 2]
+                .try_into()
+                .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?,
+        );
+        offset += 2;
+
+        let destination_chain = u16::from_be_bytes(
+            bytes[offset..offset + 2]
+                .try_into()
+                .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?,
+        );
+        offset += 2;
+
+        let expiry_time = u64::from_be_bytes(
+            bytes[offset..offset + 8]
+                .try_into()
+                .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?,
+        );
+        offset += 8;
+
+        let base_fee = u64::from_be_bytes(
+            bytes[offset..offset + 8]
+                .try_into()
+                .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?,
+        );
+        offset += 8;
+
+        let destination_gas_price = u64::from_be_bytes(
+            bytes[offset..offset + 8]
+                .try_into()
+                .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?,
+        );
+        offset += 8;
+
+        let source_price = u64::from_be_bytes(
+            bytes[offset..offset + 8]
+                .try_into()
+                .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?,
+        );
+        offset += 8;
+
+        let destination_price = u64::from_be_bytes(
+            bytes[offset..offset + 8]
+                .try_into()
+                .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?,
+        );
+        offset += 8;
+
+        let mut signature = [0u8; 65];
+        signature.copy_from_slice(read_bytes!(65));
+
+        Ok(SignedQuote {
+            header: SignedQuoteHeader {
+                prefix,
+                quoter_address,
+                payee_address,
+                source_chain,
+                destination_chain,
+                expiry_time,
+            },
+            base_fee,
+            destination_gas_price,
+            source_price,
+            destination_price,
+            signature,
+        })
+    }
+
+    /// Serialize SignedQuote to bytes with big-endian encoding for numeric fields.
+    pub fn serialize(&self) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(165);
+
+        bytes.extend_from_slice(&self.header.prefix);
+        bytes.extend_from_slice(&self.header.quoter_address);
+        bytes.extend_from_slice(&self.header.payee_address);
+        bytes.extend_from_slice(&self.header.source_chain.to_be_bytes());
+        bytes.extend_from_slice(&self.header.destination_chain.to_be_bytes());
+        bytes.extend_from_slice(&self.header.expiry_time.to_be_bytes());
+        bytes.extend_from_slice(&self.base_fee.to_be_bytes());
+        bytes.extend_from_slice(&self.destination_gas_price.to_be_bytes());
+        bytes.extend_from_slice(&self.source_price.to_be_bytes());
+        bytes.extend_from_slice(&self.destination_price.to_be_bytes());
+        bytes.extend_from_slice(&self.signature);
+
+        bytes
+    }
 }
 
 const DECIMALS_QUOTE: u32 = 10;
