@@ -1,6 +1,6 @@
 use crate::{
-    be::{U16BE, U64BE},
     bridge::{
+        be::{U16BE, U64BE},
         config::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
         cpi::{self, ntt_with_executor::RelayNttMessageArgs},
         message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage, WormholeChainId},

@@ -11,8 +11,8 @@ use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
 use intent_transfer::{
-    be::{U16BE, U64BE},
     bridge::{
+        be::{U16BE, U64BE},
         config::ntt_config::ExpectedNttConfig,
         cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
         message::convert_chain_id_to_wormhole,
