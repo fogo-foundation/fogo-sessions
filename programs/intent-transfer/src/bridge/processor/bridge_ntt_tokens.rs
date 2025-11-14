@@ -258,8 +258,8 @@ impl<'info> BridgeNttTokens<'info> {
             to_chain_id,
             recipient_address,
             nonce: new_nonce,
-            fee_amount,
-            fee_symbol_or_mint,
+            fee_amount: _,
+            fee_symbol_or_mint: _,
         } = ntt_message;
 
         if from_chain_id.chain_id != expected_chain_id {

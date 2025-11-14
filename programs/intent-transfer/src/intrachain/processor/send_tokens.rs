@@ -8,7 +8,6 @@ use crate::{
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
     INTENT_TRANSFER_SEED,
 };
-use anchor_lang::error::ErrorCode;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -18,7 +17,7 @@ use anchor_spl::{
     },
 };
 use chain_id::ChainId;
-use solana_intents::{Intent, SymbolOrMint};
+use solana_intents::Intent;
 
 const NONCE_SEED: &[u8] = b"nonce";
 
