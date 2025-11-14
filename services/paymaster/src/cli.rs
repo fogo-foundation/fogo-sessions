@@ -22,6 +22,11 @@ pub struct RunOptions {
     #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
     pub db_url: String,
 
+    // TODO this is part of the temporary change to load the config from the file. Should be removed.
+    /// Path to TOML config
+    #[arg(short = 'c', long = "config-file", env = "CONFIG_FILE")]
+    pub config_file: String,
+
     /// Path to mnemonic file (env/flag; optional)
     #[arg(long, env = "MNEMONIC_FILE", default_value = "./tilt/secrets/mnemonic")]
     pub mnemonic_file: String,
