@@ -1,6 +1,6 @@
 use crate::{
     config::state::fee_config::{
-        FeeConfig, VerifyAndCollectArgs, FEE_CONFIG_SEED,
+        FeeConfig, VerifyAndCollectAccounts, FEE_CONFIG_SEED,
     },
     error::IntentTransferError,
     intrachain::message::Message,
@@ -147,7 +147,7 @@ impl<'info> SendTokens<'info> {
         )?;
 
         fee_config.verify_and_collect_ata_fee(
-            VerifyAndCollectArgs {
+            VerifyAndCollectAccounts {
                 fee_source,
                 fee_destination,
                 fee_mint,

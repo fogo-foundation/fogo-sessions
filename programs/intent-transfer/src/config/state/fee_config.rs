@@ -14,7 +14,7 @@ pub struct FeeConfig {
     pub bridging_out_fee: u64,
 }
 
-pub struct VerifyAndCollectArgs<'a, 'info> {
+pub struct VerifyAndCollectAccounts<'a, 'info> {
     pub fee_source: &'a Account<'info, TokenAccount>,
     pub fee_destination: &'a Account<'info, TokenAccount>,
     pub fee_mint: &'a Account<'info, Mint>,
@@ -26,7 +26,7 @@ pub struct VerifyAndCollectArgs<'a, 'info> {
 impl FeeConfig {
     pub fn verify_and_collect_ata_fee(
         &self,
-        args: VerifyAndCollectArgs,
+        args: VerifyAndCollectAccounts,
         fee_amount: String,
         fee_symbol_or_mint: SymbolOrMint,
         signer_seeds: &[&[&[u8]]],
@@ -42,7 +42,7 @@ impl FeeConfig {
 
     pub fn verify_and_collect_bridging_out_fee(
         &self,
-        args: VerifyAndCollectArgs,
+        args: VerifyAndCollectAccounts,
         fee_amount: String,
         fee_symbol_or_mint: SymbolOrMint,
         signer_seeds: &[&[&[u8]]],
@@ -59,12 +59,12 @@ impl FeeConfig {
     fn verify_and_collect_fee(
         &self,
         fee: u64,
-        args: VerifyAndCollectArgs,
+        args: VerifyAndCollectAccounts,
         fee_amount: String,
         fee_symbol_or_mint: SymbolOrMint,
         signer_seeds: &[&[&[u8]]],
     ) -> Result<()> {
-        let VerifyAndCollectArgs {
+        let VerifyAndCollectAccounts {
             fee_source,
             fee_destination,
             fee_mint,

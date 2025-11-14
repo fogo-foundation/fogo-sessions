@@ -3,7 +3,7 @@ use crate::{
         cpi,
         message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole},
     }, config::state::{
-        fee_config::{FEE_CONFIG_SEED, FeeConfig, VerifyAndCollectArgs}, ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig, verify_ntt_manager}
+        fee_config::{FEE_CONFIG_SEED, FeeConfig, VerifyAndCollectAccounts}, ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig, verify_ntt_manager}
     }, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
@@ -398,7 +398,7 @@ impl<'info> BridgeNttTokens<'info> {
             signer_seeds,
         ))?;
 
-        fee_config.verify_and_collect_bridging_out_fee(VerifyAndCollectArgs {
+        fee_config.verify_and_collect_bridging_out_fee(VerifyAndCollectAccounts {
             fee_source,
             fee_destination,
             fee_mint,
