@@ -9,7 +9,6 @@ use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod api;
 mod cli;
-#[allow(dead_code)] // TODO: This module is unused until we bring back the DB
 mod config_manager;
 mod constraint;
 mod constraint_templates;
