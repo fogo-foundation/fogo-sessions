@@ -146,7 +146,7 @@ impl<'info> SendTokens<'info> {
             mint.decimals,
         )?;
 
-        fee_config.verify_and_collect_ata_fee(
+        fee_config.verify_and_collect_ata_creation_fee(
             VerifyAndCollectAccounts {
                 fee_source,
                 fee_destination,

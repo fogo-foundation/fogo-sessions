@@ -24,7 +24,7 @@ pub struct VerifyAndCollectAccounts<'a, 'info> {
 }
 
 impl FeeConfig {
-    pub fn verify_and_collect_ata_fee(
+    pub fn verify_and_collect_ata_creation_fee(
         &self,
         args: VerifyAndCollectAccounts,
         fee_amount: String,
