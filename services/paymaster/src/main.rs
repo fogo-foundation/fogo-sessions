@@ -5,11 +5,12 @@ use clap::Parser;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
 use std::sync::Arc;
-use std::{collections::HashMap, fs::File};
+use std::collections::HashMap;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod api;
 mod cli;
-mod config_manager;
+/// TODO: This is public so clippy doesn't shout at us for not using it.
+pub mod config_manager;
 mod constraint;
 mod constraint_templates;
 mod db;
