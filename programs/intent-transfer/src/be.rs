@@ -1,5 +1,6 @@
 use anchor_lang::{AnchorDeserialize, AnchorSerialize};
 
+#[derive(PartialEq, Debug)]
 pub struct U16BE(pub u16);
 
 impl AnchorDeserialize for U16BE {
@@ -22,6 +23,7 @@ impl From<U16BE> for u128 {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub struct U64BE(pub u64);
 
 impl AnchorDeserialize for U64BE {
@@ -41,5 +43,32 @@ impl AnchorSerialize for U64BE {
 impl From<U64BE> for u128 {
     fn from(value: U64BE) -> u128 {
         u128::from(value.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serialize_u16be() {
+        let orig = U16BE(1);
+        
+        let serialized = orig.try_to_vec().unwrap();
+        assert_eq!(serialized, vec![0, 1]);
+
+        let deserialized = U16BE::try_from_slice(&serialized).unwrap();
+        assert_eq!(orig, deserialized);
+    }
+
+    #[test]
+    fn test_serialize_u64be() {
+        let orig = U64BE(1);
+        
+        let serialized = orig.try_to_vec().unwrap();
+        assert_eq!(serialized, vec![0, 0, 0, 0, 0, 0, 0, 1]);
+
+        let deserialized = U64BE::try_from_slice(&serialized).unwrap();
+        assert_eq!(orig, deserialized);
     }
 }
