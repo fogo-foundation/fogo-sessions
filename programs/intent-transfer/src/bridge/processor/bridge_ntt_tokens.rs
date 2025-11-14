@@ -3,11 +3,12 @@ use crate::{
         cpi::{self, ntt_with_executor::RelayNttMessageArgs},
         message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage, WormholeChainId},
     },
-    config::{
-        state::fee_config::{FeeConfig, VerifyAndCollectAccounts, FEE_CONFIG_SEED},
-        state::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
+    config::state::{
+        fee_config::{FeeConfig, FEE_CONFIG_SEED},
+        ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
     },
     error::IntentTransferError,
+    fees::{PaidInstruction, VerifyAndCollectAccounts},
     nonce::Nonce,
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
     INTENT_TRANSFER_SEED,
@@ -179,6 +180,32 @@ pub struct BridgeNttTokens<'info> {
     pub ntt: Ntt<'info>,
 }
 
+impl<'info> PaidInstruction<'info> for BridgeNttTokens<'info> {
+    fn fee_amount(&self) -> u64 {
+        self.fee_config.bridging_out_fee
+    }
+
+    fn verify_and_collect_accounts<'a>(&'a self) -> VerifyAndCollectAccounts<'a, 'info> {
+        let Self {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            intent_transfer_setter,
+            token_program,
+            ..
+        } = self;
+        VerifyAndCollectAccounts {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            intent_transfer_setter,
+            token_program,
+        }
+    }
+}
+
 // TODO: implement slot staleness check for intent messages
 impl<'info> BridgeNttTokens<'info> {
     pub fn verify_and_initiate_bridge(
@@ -218,12 +245,7 @@ impl<'info> BridgeNttTokens<'info> {
             sponsor,
             system_program,
             ntt,
-            fee_source,
-            fee_destination,
-            fee_mint,
-            fee_metadata,
-            fee_config,
-            associated_token_program: _,
+            ..
         } = self;
 
         let Ntt {
@@ -398,21 +420,7 @@ impl<'info> BridgeNttTokens<'info> {
             signer_seeds,
         ))?;
 
-        fee_config.verify_and_collect_bridging_out_fee(
-            VerifyAndCollectAccounts {
-                fee_source,
-                fee_destination,
-                fee_mint,
-                fee_metadata,
-                intent_transfer_setter,
-                token_program,
-            },
-            fee_amount,
-            fee_symbol_or_mint,
-            signer_seeds,
-        )?;
-
-        Ok(())
+        self.verify_and_collect_fee(fee_amount, fee_symbol_or_mint, signer_seeds)
     }
 }
 

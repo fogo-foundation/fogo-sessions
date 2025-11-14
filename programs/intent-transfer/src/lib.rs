@@ -7,6 +7,7 @@ use anchor_lang::prelude::*;
 pub mod bridge;
 pub mod config;
 mod error;
+mod fees;
 mod intrachain;
 mod nonce;
 mod verify;

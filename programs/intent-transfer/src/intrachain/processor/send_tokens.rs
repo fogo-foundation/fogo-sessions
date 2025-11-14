@@ -1,6 +1,7 @@
 use crate::{
     config::state::fee_config::{FeeConfig, VerifyAndCollectAccounts, FEE_CONFIG_SEED},
     error::IntentTransferError,
+    fees::PaidInstruction,
     intrachain::message::Message,
     nonce::Nonce,
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
@@ -75,6 +76,32 @@ pub struct SendTokens<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
+impl<'info> PaidInstruction<'info> for SendTokens<'info> {
+    fn fee_amount(&self) -> u64 {
+        self.fee_config.ata_creation_fee
+    }
+
+    fn verify_and_collect_accounts<'a>(&'a self) -> VerifyAndCollectAccounts<'a, 'info> {
+        let Self {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            intent_transfer_setter,
+            token_program,
+            ..
+        } = self;
+        VerifyAndCollectAccounts {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            intent_transfer_setter,
+            token_program,
+        }
+    }
+}
+
 impl<'info> SendTokens<'info> {
     pub fn verify_and_send(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
         let Self {
@@ -88,14 +115,7 @@ impl<'info> SendTokens<'info> {
             token_program,
             nonce,
             destination_owner,
-            fee_source,
-            fee_destination,
-            fee_mint,
-            fee_metadata,
-            fee_config,
-            system_program: _,
-            associated_token_program: _,
-            sponsor: _,
+            ..
         } = self;
 
         let Intent {
@@ -144,18 +164,6 @@ impl<'info> SendTokens<'info> {
             mint.decimals,
         )?;
 
-        fee_config.verify_and_collect_ata_creation_fee(
-            VerifyAndCollectAccounts {
-                fee_source,
-                fee_destination,
-                fee_mint,
-                fee_metadata,
-                intent_transfer_setter,
-                token_program,
-            },
-            fee_amount,
-            fee_symbol_or_mint,
-            signer_seeds,
-        )
+        self.verify_and_collect_fee(fee_amount, fee_symbol_or_mint, signer_seeds)
     }
 }
