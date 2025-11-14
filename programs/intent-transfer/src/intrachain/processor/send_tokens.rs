@@ -1,11 +1,22 @@
 use crate::{
-    INTENT_TRANSFER_SEED, config::state::send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig, VerifyAndCollectArgs}, error::IntentTransferError, intrachain::message::Message, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
+    config::state::send_token_fee_config::{
+        SendTokenFeeConfig, VerifyAndCollectArgs, SEND_TOKEN_FEE_CONFIG_SEED,
+    },
+    error::IntentTransferError,
+    intrachain::message::Message,
+    nonce::Nonce,
+    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+    INTENT_TRANSFER_SEED,
 };
 use anchor_lang::error::ErrorCode;
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::{associated_token::AssociatedToken, token::{
-    Mint, Token, TokenAccount, TransferChecked, spl_token::try_ui_amount_into_amount, transfer_checked
-}};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{
+        spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
+        TransferChecked,
+    },
+};
 use chain_id::ChainId;
 use solana_intents::{Intent, SymbolOrMint};
 
@@ -136,13 +147,18 @@ impl<'info> SendTokens<'info> {
             mint.decimals,
         )?;
 
-        send_token_fee_config.verify_and_collect_ata_fee(VerifyAndCollectArgs {
-            fee_source,
-            fee_destination,
-            fee_mint,
-            fee_metadata,
-            intent_transfer_setter,
-            token_program,
-        }, fee_amount, fee_symbol_or_mint, signer_seeds)
+        send_token_fee_config.verify_and_collect_ata_fee(
+            VerifyAndCollectArgs {
+                fee_source,
+                fee_destination,
+                fee_mint,
+                fee_metadata,
+                intent_transfer_setter,
+                token_program,
+            },
+            fee_amount,
+            fee_symbol_or_mint,
+            signer_seeds,
+        )
     }
 }

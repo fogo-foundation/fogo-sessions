@@ -1,13 +1,25 @@
 use crate::{
-    INTENT_TRANSFER_SEED, bridge::{
+    bridge::{
         cpi,
-        message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole},
-    }, config::state::{ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig, verify_ntt_manager}, send_token_fee_config::{SEND_TOKEN_FEE_CONFIG_SEED, SendTokenFeeConfig}}, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
+        message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage},
+    },
+    config::state::{
+        ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
+        send_token_fee_config::{SendTokenFeeConfig, SEND_TOKEN_FEE_CONFIG_SEED},
+    },
+    error::IntentTransferError,
+    nonce::Nonce,
+    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+    INTENT_TRANSFER_SEED,
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::{associated_token::AssociatedToken, token::{
-    Approve, CloseAccount, Mint, Token, TokenAccount, TransferChecked, approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked
-}};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{
+        approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
+        CloseAccount, Mint, Token, TokenAccount, TransferChecked,
+    },
+};
 use chain_id::ChainId;
 use solana_intents::Intent;
 

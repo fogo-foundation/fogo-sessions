@@ -65,7 +65,16 @@ where
             ),
             eof,
         ),
-        |(version, chain_id, symbol_or_mint, amount, recipient, fee_amount, fee_symbol_or_mint, nonce)| Message {
+        |(
+            version,
+            chain_id,
+            symbol_or_mint,
+            amount,
+            recipient,
+            fee_amount,
+            fee_symbol_or_mint,
+            nonce,
+        )| Message {
             version,
             chain_id,
             symbol_or_mint,
