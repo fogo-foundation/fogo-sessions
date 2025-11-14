@@ -9,6 +9,7 @@ import { amountToString, stringToAmount } from "../amount-to-string.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
+import { ExplorerLink } from "./explorer-link.js";
 import { TextField } from "./field.js";
 import { Link } from "./link.js";
 import styles from "./send-token-page.module.css";
@@ -40,7 +41,7 @@ export const SendTokenPage = ({
   amountAvailable,
   onSendComplete,
 }: Props) => {
-  const { getSessionContext } = useSessionContext();
+  const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [recipient, setRecipient] = useState("");
@@ -77,7 +78,10 @@ export const SendTokenPage = ({
         )
         .then((result) => {
           if (result.type === TransactionResultType.Success) {
-            toast.success("Tokens sent successfully!");
+            toast.success(
+              "Tokens sent successfully!",
+              <ExplorerLink network={network} txHash={result.signature} />,
+            );
             onSendComplete();
           } else {
             toast.error("Failed to send tokens", errorToString(result.error));
@@ -98,6 +102,7 @@ export const SendTokenPage = ({
       tokenMint,
       onSendComplete,
       toast,
+      network,
     ],
   );
 
