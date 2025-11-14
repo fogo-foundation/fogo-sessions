@@ -1,10 +1,16 @@
 use crate::{
-    INTENT_TRANSFER_SEED, bridge::{
-        cpi,
-        message::{BridgeMessage, NttMessage, convert_chain_id_to_wormhole},
-    }, config::state::{
-        fee_config::{FEE_CONFIG_SEED, FeeConfig, VerifyAndCollectAccounts}, ntt_config::{EXPECTED_NTT_CONFIG_SEED, ExpectedNttConfig, verify_ntt_manager}
-    }, error::IntentTransferError, nonce::Nonce, verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint}
+    bridge::{
+        cpi::{self, ntt_with_executor::RelayNttMessageArgs},
+        message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage, WormholeChainId},
+    },
+    config::{
+        state::fee_config::{FeeConfig, VerifyAndCollectAccounts, FEE_CONFIG_SEED},
+        state::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
+    },
+    error::IntentTransferError,
+    nonce::Nonce,
+    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+    INTENT_TRANSFER_SEED,
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
 use anchor_spl::{
@@ -20,15 +26,10 @@ use solana_intents::Intent;
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
 const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
 
-// TODO: we should do some parsing of the relay_instructions and/or exec_amounts arg(s)
-// in order to ensure the signed intent message does precisely what the user expects
-// this will help to prevent MITM attacks
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct BridgeNttTokensArgs {
-    // TODO: we need to safely ensure the exec_amount cannot be spoofed
-    pub exec_amount: u64,
     pub signed_quote_bytes: Vec<u8>,
-    pub relay_instructions: Vec<u8>,
+    pub pay_destination_ata_rent: bool,
 }
 
 #[derive(Accounts)]
@@ -223,7 +224,6 @@ impl<'info> BridgeNttTokens<'info> {
             fee_metadata,
             fee_config,
             associated_token_program: _,
-            
         } = self;
 
         let Ntt {
@@ -294,7 +294,7 @@ impl<'info> BridgeNttTokens<'info> {
         let transfer_args = cpi::ntt_manager::TransferArgs {
             amount,
             recipient_chain: cpi::ntt_manager::ChainId {
-                id: to_chain_id_wormhole,
+                id: to_chain_id_wormhole.into(),
             },
             recipient_address: parse_recipient_address(&recipient_address)?,
             should_queue: false,
@@ -362,10 +362,15 @@ impl<'info> BridgeNttTokens<'info> {
         )?;
 
         let BridgeNttTokensArgs {
-            exec_amount,
             signed_quote_bytes,
-            relay_instructions,
+            pay_destination_ata_rent,
         } = args;
+
+        let relay_ntt_args = compute_relay_ntt_args(
+            to_chain_id_wormhole,
+            signed_quote_bytes,
+            pay_destination_ata_rent,
+        )?;
 
         cpi::ntt_with_executor::relay_ntt_message(
             CpiContext::new(
@@ -380,12 +385,7 @@ impl<'info> BridgeNttTokens<'info> {
                     system_program: system_program.to_account_info(),
                 },
             ),
-            cpi::ntt_with_executor::RelayNttMessageArgs {
-                recipient_chain: to_chain_id_wormhole,
-                exec_amount,
-                signed_quote_bytes,
-                relay_instructions,
-            },
+            relay_ntt_args,
         )?;
 
         close_account(CpiContext::new_with_signer(
@@ -398,14 +398,19 @@ impl<'info> BridgeNttTokens<'info> {
             signer_seeds,
         ))?;
 
-        fee_config.verify_and_collect_bridging_out_fee(VerifyAndCollectAccounts {
-            fee_source,
-            fee_destination,
-            fee_mint,
-            fee_metadata,
-            intent_transfer_setter,
-            token_program,
-        }, fee_amount, fee_symbol_or_mint, signer_seeds)?;
+        fee_config.verify_and_collect_bridging_out_fee(
+            VerifyAndCollectAccounts {
+                fee_source,
+                fee_destination,
+                fee_mint,
+                fee_metadata,
+                intent_transfer_setter,
+                token_program,
+            },
+            fee_amount,
+            fee_symbol_or_mint,
+            signer_seeds,
+        )?;
 
         Ok(())
     }
@@ -434,4 +439,187 @@ fn parse_recipient_address(address_str: &str) -> Result<[u8; 32]> {
     result[start_idx..].copy_from_slice(&bytes);
 
     Ok(result)
+}
+
+/// Computes the relay ntt args to pass to the NTT with executor CPI.
+fn compute_relay_ntt_args(
+    to_chain_id_wormhole: WormholeChainId,
+    signed_quote_bytes: Vec<u8>,
+    pay_destination_ata_rent: bool,
+) -> Result<RelayNttMessageArgs> {
+    let (msg_value, gas_limit) = if to_chain_id_wormhole == WormholeChainId::Solana {
+        compute_msg_value_and_gas_limit_solana(pay_destination_ata_rent)
+    } else {
+        return Err(IntentTransferError::UnsupportedToChainId.into());
+    };
+
+    // constructed in line with the gas instruction format: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#relay-instructions
+    let relay_instructions = [
+        [1u8].as_slice(),
+        gas_limit.to_be_bytes().as_slice(),
+        msg_value.to_be_bytes().as_slice(),
+    ]
+    .concat();
+
+    let signed_quote = SignedQuote::try_from_slice(&signed_quote_bytes)
+        .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?;
+    let exec_amount =
+        compute_exec_amount(to_chain_id_wormhole, signed_quote, gas_limit, msg_value)?;
+
+    Ok(RelayNttMessageArgs {
+        recipient_chain: to_chain_id_wormhole.into(),
+        exec_amount,
+        signed_quote_bytes,
+        relay_instructions,
+    })
+}
+
+pub const LAMPORTS_PER_SIGNATURE: u128 = 5000;
+pub const RENT_TOKEN_ACCOUNT_SOLANA: u128 = 2_039_280; // equals 0.00203928 SOL
+
+/// Based on the logic encoded in https://github.com/wormhole-foundation/native-token-transfers/blob/20fc162f4a37391694dfb0e31afedf72549ea477/solana/ts/sdk/nttWithExecutor.ts#L304-L344.
+fn compute_msg_value_and_gas_limit_solana(pay_destination_ata_rent: bool) -> (u128, u128) {
+    let mut msg_value = 0u128;
+    msg_value = msg_value
+        .saturating_add(2 * LAMPORTS_PER_SIGNATURE + 7 * LAMPORTS_PER_SIGNATURE + 1_400_000);
+    msg_value = msg_value.saturating_add(2 * LAMPORTS_PER_SIGNATURE + 7 * LAMPORTS_PER_SIGNATURE);
+    msg_value = msg_value.saturating_add(5000 + 3_200_000);
+    msg_value = msg_value.saturating_add(5000 + 5_000_000);
+    msg_value = msg_value.saturating_add(5000);
+    if pay_destination_ata_rent {
+        msg_value = msg_value.saturating_add(RENT_TOKEN_ACCOUNT_SOLANA);
+    }
+
+    (msg_value, 250_000)
+}
+
+// Derived from the documentation: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#off-chain-quote
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct SignedQuoteHeader {
+    pub prefix: [u8; 4],
+    pub quoter_address: [u8; 20],
+    pub payee_address: [u8; 32],
+    pub source_chain: u16,
+    pub destination_chain: u16,
+    pub expiry_time: u64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct SignedQuote {
+    pub header: SignedQuoteHeader,
+    pub base_fee: u64,
+    pub destination_gas_price: u64,
+    pub source_price: u64,
+    pub destination_price: u64,
+    pub signature: [u8; 65],
+}
+
+const DECIMALS_QUOTE: u32 = 10;
+const DECIMALS_MAX: u32 = 18;
+
+fn normalize(amount: u128, decimals_from: u32, decimals_to: u32) -> Result<u128> {
+    if decimals_from > decimals_to {
+        Ok(amount / 10u128.pow(decimals_from - decimals_to))
+    } else {
+        amount
+            .checked_mul(10u128.pow(decimals_to - decimals_from))
+            .ok_or(ProgramError::ArithmeticOverflow.into())
+    }
+}
+
+/// Computes the estimated cost of initiating the relay based on the quote details and the expected gas spend on the destination chain.
+/// Based on the logic in https://github.com/wormholelabs-xyz/example-executor-ci-test/blob/6bf0e7156bf81d54f3ded707e53815a2ff62555e/src/utils.ts#L98.
+fn compute_exec_amount(
+    to_chain_id: WormholeChainId,
+    quote: SignedQuote,
+    gas_limit: u128,
+    msg_value: u128,
+) -> Result<u64> {
+    let decimals_destination_native = to_chain_id.decimals_native();
+    let decimals_destination_gas = to_chain_id.decimals_gas_price();
+    let decimals_source_native = WormholeChainId::Fogo.decimals_native();
+
+    let base_fee = u128::from(quote.base_fee);
+    let source_price = u128::from(quote.source_price);
+    let destination_price = u128::from(quote.destination_price);
+    let destination_gas_price = u128::from(quote.destination_gas_price);
+
+    let amount_base = normalize(base_fee, DECIMALS_QUOTE, decimals_source_native)?;
+
+    let src_price_normalized = normalize(source_price, DECIMALS_QUOTE, DECIMALS_MAX)?;
+    let dst_price_normalized = normalize(destination_price, DECIMALS_QUOTE, DECIMALS_MAX)?;
+    let scaled_conversion = dst_price_normalized
+        .checked_mul(10u128.pow(DECIMALS_MAX))
+        .ok_or(ProgramError::ArithmeticOverflow)?
+        .checked_div(src_price_normalized)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+
+    // Note that for Fogo -> Solana, assuming gas_limit = 250_000, destination_gas_price = 10_000,
+    // the amount_gas computation will overflow when dest_price / src_price >= 136112947.
+    let gas_limit_cost = gas_limit
+        .checked_mul(destination_gas_price)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+    let gas_limit_cost_normalized =
+        normalize(gas_limit_cost, decimals_destination_gas, DECIMALS_MAX)?;
+    let amount_gas = normalize(
+        gas_limit_cost_normalized
+            .checked_mul(scaled_conversion)
+            .ok_or(ProgramError::ArithmeticOverflow)?
+            .checked_div(10u128.pow(DECIMALS_MAX))
+            .ok_or(ProgramError::ArithmeticOverflow)?,
+        DECIMALS_MAX,
+        decimals_source_native,
+    )?;
+
+    // Note that for Fogo -> Solana, assuming msg_val = 11_744_280,
+    // the amount_msg_value computation will overflow when dest_price / src_price >= 28975.
+    let msg_value_normalized = normalize(msg_value, decimals_destination_native, DECIMALS_MAX)?;
+    let amount_msg_value = normalize(
+        msg_value_normalized
+            .checked_mul(scaled_conversion)
+            .ok_or(ProgramError::ArithmeticOverflow)?
+            .checked_div(10u128.pow(DECIMALS_MAX))
+            .ok_or(ProgramError::ArithmeticOverflow)?,
+        DECIMALS_MAX,
+        decimals_source_native,
+    )?;
+
+    let total_amount = amount_base
+        .checked_add(amount_gas)
+        .ok_or(ProgramError::ArithmeticOverflow)?
+        .checked_add(amount_msg_value)
+        .ok_or(ProgramError::ArithmeticOverflow)?;
+
+    Ok(u64::try_from(total_amount)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compute_exec_amount_solana() {
+        let quote = SignedQuote {
+            header: SignedQuoteHeader {
+                prefix: *b"EQ01",
+                quoter_address: [0u8; 20],
+                payee_address: [0u8; 32],
+                source_chain: 0u16,
+                destination_chain: 1u16,
+                expiry_time: 0u64,
+            },
+            base_fee: 500_000_000,
+            destination_gas_price: 10_000,
+            source_price: 2_000_000_000,
+            destination_price: 1_531_800_000_000,
+            signature: [0u8; 65],
+        };
+
+        let gas_limit = 250_000u128;
+        let msg_value = 9_705_000u128;
+
+        let result = compute_exec_amount(WormholeChainId::Solana, quote, gas_limit, msg_value);
+
+        assert_eq!(result, Ok(7484974250));
+    }
 }

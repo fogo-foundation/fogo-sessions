@@ -45,6 +45,8 @@ pub enum IntentTransferError {
     InvalidNttManager,
     #[msg("Unauthorized: only upgrade authority can call this")]
     Unauthorized,
+    #[msg("The signed quote for NTT execution is invalid")]
+    InvalidNttSignedQuote,
     #[msg("The fee amount signed by the user is not enough for this action")]
     InsufficientFeeAmount,
 }

@@ -73,6 +73,7 @@ export const WalletPage = ({
         onPressReceiveTokens={onPressReceive}
         sessionState={sessionState}
         onPressSend={onPressSendForToken}
+        onPressGetTokens={onPressGet}
       />
     </div>
   );

@@ -11,11 +11,11 @@ mod intrachain;
 mod nonce;
 mod verify;
 
-use bridge::processor::bridge_ntt_tokens::*;
-use config::processor::register_ntt_config::*;
-use config::processor::register_fee_config::*;
-use intrachain::processor::send_tokens::*;
 use crate::config::state::fee_config::FeeConfig;
+use bridge::processor::bridge_ntt_tokens::*;
+use config::processor::register_fee_config::*;
+use config::processor::register_ntt_config::*;
+use intrachain::processor::send_tokens::*;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
 

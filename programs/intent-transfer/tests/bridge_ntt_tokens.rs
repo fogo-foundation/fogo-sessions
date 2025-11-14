@@ -12,8 +12,15 @@ use spl_associated_token_account::get_associated_token_address;
 use spl_token::solana_program::keccak;
 
 use intent_transfer::{
-    bridge::{cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID}, message::convert_chain_id_to_wormhole, processor::bridge_ntt_tokens::BridgeNttTokensArgs},
-    config::state::{fee_config::{FEE_CONFIG_SEED, FeeConfig}, ntt_config::ExpectedNttConfig},
+    bridge::{
+        cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
+        message::convert_chain_id_to_wormhole,
+        processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuote, SignedQuoteHeader},
+    },
+    config::state::{
+        fee_config::{FeeConfig, FEE_CONFIG_SEED},
+        ntt_config::ExpectedNttConfig,
+    },
 };
 
 mod helpers;
@@ -167,9 +174,10 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let ntt_outbox_rate_limit = Keypair::new();
     let payee_ntt_with_executor = Keypair::new();
 
-    let to_chain_id = "ethereum";
-    let to_chain_id_wormhole =
-        convert_chain_id_to_wormhole(to_chain_id).expect("Invalid to_chain_id");
+    let to_chain_id = "solana";
+    let to_chain_id_wormhole: u16 = convert_chain_id_to_wormhole(to_chain_id)
+        .expect("Invalid to_chain_id")
+        .into();
     let recipient_address_str = "0xabcaA90Df87bf36b051E65331594d9AAB29C739e";
     let amount_str = "0.0001";
     let fee_amount_str = "0.00001";
@@ -249,7 +257,8 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             executable: false,
             rent_epoch: 0,
         },
-    ).expect("Failed to set expected NTT config account");
+    )
+    .expect("Failed to set expected NTT config account");
 
     let (fee_config, _) = Pubkey::find_program_address(
         &[FEE_CONFIG_SEED, fee_token.mint.as_ref()],
@@ -274,7 +283,27 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
             executable: false,
             rent_epoch: 0,
         },
-    ).expect("Failed to set fee config account");
+    )
+    .expect("Failed to set fee config account");
+
+    let pay_destination_ata_rent = false;
+    let signed_quote_bytes = SignedQuote {
+        header: SignedQuoteHeader {
+            prefix: *b"EQ01",
+            quoter_address: [0u8; 20],
+            payee_address: [0u8; 32],
+            source_chain: 0u16,
+            destination_chain: 0u16,
+            expiry_time: 0u64,
+        },
+        base_fee: 500_000_000,
+        destination_gas_price: 10_000,
+        source_price: 2_000_000_000,
+        destination_price: 1_531_800_000_000,
+        signature: [0u8; 65],
+    }
+    .try_to_vec()
+    .unwrap();
 
     let bridge_ix = Instruction {
         program_id: intent_transfer::ID,
@@ -325,9 +354,8 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         .to_account_metas(None),
         data: intent_transfer::instruction::BridgeNttTokens {
             args: BridgeNttTokensArgs {
-                exec_amount: 1_000,
-                signed_quote_bytes: vec![],
-                relay_instructions: vec![],
+                signed_quote_bytes,
+                pay_destination_ata_rent,
             },
         }
         .data(),
@@ -339,7 +367,10 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let custody_balance_before = token.get_balance(&svm, &ntt_custody);
 
     let fee_source_balance_before = fee_token.get_balance(&svm, &fee_source);
-    assert!(svm.get_account(&fee_destination).is_none(), "Fee destination account should not exist before the transaction");
+    assert!(
+        svm.get_account(&fee_destination).is_none(),
+        "Fee destination account should not exist before the transaction"
+    );
 
     let tx = Transaction::new_signed_with_payer(
         &[ed25519_ix, bridge_ix],
@@ -416,6 +447,4 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         fee_destination_delta, fee_amount,
         "Fee destination balance should increase by fee amount. Expected: {fee_amount}, Got: {fee_destination_delta}",
     );
-    
-    
 }

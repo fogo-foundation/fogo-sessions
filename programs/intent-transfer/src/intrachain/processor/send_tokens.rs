@@ -1,7 +1,5 @@
 use crate::{
-    config::state::fee_config::{
-        FeeConfig, VerifyAndCollectAccounts, FEE_CONFIG_SEED,
-    },
+    config::state::fee_config::{FeeConfig, VerifyAndCollectAccounts, FEE_CONFIG_SEED},
     error::IntentTransferError,
     intrachain::message::Message,
     nonce::Nonce,
