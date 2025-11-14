@@ -70,7 +70,7 @@ pub struct SendTokens<'info> {
     pub fee_metadata: Option<UncheckedAccount<'info>>,
 
     #[account(seeds = [FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
-    pub send_token_fee_config: Account<'info, FeeConfig>,
+    pub fee_config: Account<'info, FeeConfig>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
@@ -94,7 +94,7 @@ impl<'info> SendTokens<'info> {
             fee_destination,
             fee_mint,
             fee_metadata,
-            send_token_fee_config,
+            fee_config: send_token_fee_config,
             system_program: _,
             associated_token_program: _,
             sponsor: _,

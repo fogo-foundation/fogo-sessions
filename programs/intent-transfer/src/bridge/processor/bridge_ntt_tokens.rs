@@ -174,7 +174,7 @@ pub struct BridgeNttTokens<'info> {
     pub fee_metadata: Option<UncheckedAccount<'info>>,
 
     #[account(seeds = [FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
-    pub send_token_fee_config: Account<'info, FeeConfig>,
+    pub fee_config: Account<'info, FeeConfig>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
