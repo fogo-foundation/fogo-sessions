@@ -1,6 +1,6 @@
 use crate::{
-    config::state::send_token_fee_config::{
-        SendTokenFeeConfig, VerifyAndCollectArgs, SEND_TOKEN_FEE_CONFIG_SEED,
+    config::state::fee_config::{
+        FeeConfig, VerifyAndCollectArgs, FEE_CONFIG_SEED,
     },
     error::IntentTransferError,
     intrachain::message::Message,
@@ -69,8 +69,8 @@ pub struct SendTokens<'info> {
 
     pub fee_metadata: Option<UncheckedAccount<'info>>,
 
-    #[account(seeds = [SEND_TOKEN_FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
-    pub send_token_fee_config: Account<'info, SendTokenFeeConfig>,
+    #[account(seeds = [FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
+    pub send_token_fee_config: Account<'info, FeeConfig>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
