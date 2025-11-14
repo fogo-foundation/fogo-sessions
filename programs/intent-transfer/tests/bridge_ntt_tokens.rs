@@ -32,7 +32,7 @@ fn create_ntt_bridge_message(
         "Fogo Bridge Transfer:\n\
          Signing this intent will bridge out the tokens as described below.\n\
          \n\
-         version: 0.1\n\
+         version: 0.2\n\
          from_chain_id: {from_chain_id}\n\
          to_chain_id: {to_chain_id}\n\
          token: {token_symbol}\n\
@@ -408,7 +408,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let fee_destination_delta = fee_destination_balance_after;
 
     assert_eq!(
-        source_delta, fee_amount,
+        fee_source_delta, fee_amount,
         "Fee source balance should decrease by fee amount. Expected: {fee_amount}, Got: {fee_source_delta}",
     );
 
