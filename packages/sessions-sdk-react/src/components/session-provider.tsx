@@ -65,6 +65,7 @@ import { ToastProvider, useToast } from "./toast.js";
 import { SessionContext as SessionReactContext } from "../hooks/use-session.js";
 import { getCacheKey } from "../hooks/use-token-account-data.js";
 import { SessionState } from "../session-state.js";
+import type { SolanaMobileWallet, SolanaWallet } from "../solana-wallet.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
@@ -89,6 +90,27 @@ type Props = ConstrainedOmit<
   privacyPolicyUrl?: string | undefined;
 };
 
+const filterUnwantedWallets = (wallets: SolanaWallet[]) => {
+  let seenMetaMask = false;
+  return wallets.filter((wallet) => {
+    /*
+     * Currently excludes the legacy Solflare MetaMask Snap adapter. The Snap was
+     * decommissioned after MetaMask added native Solana; keeping it around causes
+     * a confusing dead-end modal for most users.
+     *
+     * WARNING: We detect this via the logic that Solflare checks for the Snap adapter
+     * *after* Metamask has already been registered as a wallet.
+     * https://github.com/anza-xyz/wallet-adapter/blob/master/packages/wallets/solflare/src/metamask/detect.ts#L13
+     */
+    if (wallet.name === "MetaMask") {
+      // If we've already kept one MetaMask, drop any subsequent ones.
+      if (seenMetaMask) return false;
+      seenMetaMask = true;
+    }
+    return true;
+  });
+};
+
 export const FogoSessionProvider = ({
   tokens,
   defaultRequestedLimits,
@@ -108,15 +130,18 @@ export const FogoSessionProvider = ({
   const walletsWithStandardAdapters = useStandardWalletAdapters(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
     wallets as any,
-  ) as unknown as (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
-
+  ) as unknown as SolanaWallet[];
+  const filteredWalletsWithStandardAdapters = useMemo(
+    () => filterUnwantedWallets(walletsWithStandardAdapters),
+    [walletsWithStandardAdapters],
+  );
   const mobileWalletAdapter = useMemo(
     () =>
-      isMobile(walletsWithStandardAdapters)
-        ? (walletsWithStandardAdapters.find(
+      isMobile(filteredWalletsWithStandardAdapters)
+        ? (filteredWalletsWithStandardAdapters.find(
             (adapter) => adapter.name === SolanaMobileWalletAdapterWalletName,
           ) ??
-          new SolanaMobileWalletAdapter({
+          (new SolanaMobileWalletAdapter({
             addressSelector: createDefaultAddressSelector(),
             appIdentity: {
               uri:
@@ -128,17 +153,18 @@ export const FogoSessionProvider = ({
             authorizationResultCache: createDefaultAuthorizationResultCache(),
             chain: "mainnet-beta",
             onWalletNotFound: createDefaultWalletNotFoundHandler(),
-          }))
+            // doing type casting to use our type with the EventEmitter types
+          }) as SolanaMobileWallet))
         : undefined,
-    [walletsWithStandardAdapters],
+    [filteredWalletsWithStandardAdapters],
   );
 
   const walletsWithMobileAdapter = useMemo(
     () =>
       mobileWalletAdapter == undefined
-        ? walletsWithStandardAdapters
-        : [mobileWalletAdapter, ...walletsWithStandardAdapters],
-    [walletsWithStandardAdapters, mobileWalletAdapter],
+        ? filteredWalletsWithStandardAdapters
+        : [mobileWalletAdapter, ...filteredWalletsWithStandardAdapters],
+    [filteredWalletsWithStandardAdapters, mobileWalletAdapter],
   );
 
   return (
@@ -169,9 +195,7 @@ export const FogoSessionProvider = ({
 const ANDROID_REGEX = /android/i;
 const WEBVIEW_REGEX =
   /(WebView|Version\/.+(Chrome)\/(\d+)\.(\d+)\.(\d+)\.(\d+)|; wv\).+(Chrome)\/(\d+)\.(\d+)\.(\d+)\.(\d+))/i;
-const isMobile = (
-  wallets: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[],
-) => {
+const isMobile = (wallets: SolanaWallet[]) => {
   if (
     wallets.some(
       (wallet) =>
@@ -305,7 +329,7 @@ const useSessionState = ({
   onOpenExtendSessionExpiry?: (() => void) | undefined;
   onOpenSessionLimitsReached?: (() => void) | undefined;
   setShowBridgeIn: Dispatch<SetStateAction<boolean>>;
-  wallets: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
+  wallets: SolanaWallet[];
   sessionEstablishmentLookupTable?: string | undefined;
 }) => {
   const [state, setState] = useState<SessionState>(SessionState.Initializing());
@@ -426,11 +450,7 @@ const useSessionState = ({
   );
 
   const completeSessionSetup = useCallback(
-    (
-      session: Session,
-      wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
-      onEndSession: () => void,
-    ) => {
+    (session: Session, wallet: SolanaWallet, onEndSession: () => void) => {
       setStoredSession({
         sessionKey: session.sessionKey,
         walletPublicKey: session.walletPublicKey,
@@ -484,7 +504,7 @@ const useSessionState = ({
       onCancel,
       onError,
     }: {
-      wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter;
+      wallet: SolanaWallet;
       walletPublicKey: PublicKey;
       sessionDuration: number;
       limits?: Map<PublicKey, bigint> | undefined;
@@ -535,7 +555,7 @@ const useSessionState = ({
 
   const requestLimits = useCallback(
     (
-      wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
+      wallet: SolanaWallet,
       walletPublicKey: PublicKey,
       requestedLimits: Map<PublicKey, bigint> | undefined,
       onCancel: () => void,
@@ -577,7 +597,7 @@ const useSessionState = ({
       onCancel,
       onError,
     }: {
-      wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter;
+      wallet: SolanaWallet;
       requestedLimits?: Map<PublicKey, bigint> | undefined;
       onCancel: () => void;
       onError: () => void;
@@ -695,10 +715,40 @@ const useSessionState = ({
   return state;
 };
 
+/**
+ * Waits for the wallet to be ready before trying autoConnect. This is especially needed for Nightly Wallet as it's not instantly ready.
+ */
+const waitForWalletReady = async (wallet: SolanaWallet) => {
+  const WALLET_READY_TIMEOUT = 3000;
+  const isWalletInReadyState = wallet.readyState === WalletReadyState.Installed;
+
+  if (isWalletInReadyState) {
+    return true;
+  }
+
+  // If the wallet is not in the ready state, we wait for it to be ready
+  // or for the timeout to expire so that the user can try to connect again (should never happen)
+  return Promise.race([
+    new Promise((resolve) => {
+      wallet.on("readyStateChange", (readyState) => {
+        if (readyState === WalletReadyState.Installed) {
+          resolve(true);
+        }
+      });
+    }),
+    new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(false);
+      }, WALLET_READY_TIMEOUT);
+    }),
+  ]);
+};
+
 const checkStoredSession = async (
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
+  wallet: SolanaWallet,
 ) => {
+  await waitForWalletReady(wallet);
   await wallet.autoConnect();
   if (wallet.publicKey === null) {
     return;
@@ -725,7 +775,7 @@ const checkStoredSession = async (
 
 const connectWalletImpl = async (
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
+  wallet: SolanaWallet,
   abortSignal: AbortSignal,
 ) => {
   await wallet.connect();
@@ -745,7 +795,7 @@ const connectWalletImpl = async (
 
 const tryLoadStoredSession = async (
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
+  wallet: SolanaWallet,
   walletPublicKey: PublicKey,
   abortSignal?: AbortSignal,
 ) => {
@@ -801,7 +851,7 @@ const ConnectWalletState = {
 
 const establishSession = async (
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
+  wallet: SolanaWallet,
   walletPublicKey: PublicKey,
   sessionDuration: number,
   limits: Map<PublicKey, bigint> | undefined,
@@ -843,7 +893,7 @@ const establishSession = async (
 };
 
 const disconnect = (
-  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
+  wallet: SolanaWallet,
   sessionInfo?: {
     session: Session;
     sessionContext: Promise<SessionExecutionContext>;
@@ -869,9 +919,7 @@ const disconnect = (
     });
 };
 
-const ensureWalletPublicKey = (
-  wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter,
-) => {
+const ensureWalletPublicKey = (wallet: SolanaWallet) => {
   if (wallet.publicKey === null) {
     throw new InvariantFailedError("Wallet connected but has no public key");
   } else {

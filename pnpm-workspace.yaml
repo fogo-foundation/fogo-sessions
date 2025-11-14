@@ -2,7 +2,7 @@ packages:
   - apps/*
   - packages/*
   - packages/*/integration-tests/__fixtures__/*
-  - scripts
+  - scripts/ts
 
 catalog:
   "@axe-core/react": ^4.10.2

@@ -676,8 +676,8 @@ const BRIDGING_ADDRESS_LOOKUP_TABLE: Record<
   },
   [Network.Mainnet]: {
     // USDC
-    UsdcSt7U9H5bVy4WaWgeqoowe8RgXpLShCmxUFgZssx:
-      "DjM31fhuQsjxLmpRFQpFUpZvyXzwQeNvyR1DUd8GMVmo",
+    uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG:
+      "BRTw3GAXfEbMUd4GY9P1SQJAvje6LAbj3sRPrdypxpvU",
   },
 };
 
@@ -980,6 +980,13 @@ const getNttPdas = async <N extends WormholeNetwork>(
     options.fromToken.manager,
     coreBridgeContract,
   );
+  const [registeredTransceiverPda] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("registered_transceiver"),
+      options.fromToken.manager.toBytes(),
+    ],
+    options.fromToken.manager,
+  );
 
   return {
     emitter: transceiverPdas.emitterAccount(),
@@ -1000,7 +1007,7 @@ const getNttPdas = async <N extends WormholeNetwork>(
     ),
     nttTokenAuthority: pdas.tokenAuthority(),
     payeeNttWithExecutor: quotePayeeAddress,
-    transceiver: options.fromToken.transceiver,
+    transceiver: registeredTransceiverPda,
     wormholeProgram: coreBridgeContract,
     wormholeBridge: wormholePdas.wormholeBridge,
     wormholeFeeCollector: wormholePdas.wormholeFeeCollector,

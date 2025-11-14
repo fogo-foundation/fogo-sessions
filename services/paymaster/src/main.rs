@@ -1,4 +1,5 @@
 use crate::cli::Cli;
+use crate::config_manager::config::Config;
 use arc_swap::ArcSwap;
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
@@ -6,7 +7,6 @@ use opentelemetry_otlp::WithExportConfig;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
 mod api;
 mod cli;
 mod config_manager;
@@ -61,7 +61,13 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .init();
 
     db::pool::init_db_connection(&opts.db_url).await?;
-    let config = config_manager::load_config::load_db_config().await?;
+    /* TODO Revert this once we have a good way of modifying the config from the DB. */
+    // let config = config_manager::load_config::load_db_config().await?;
+    let mut config: Config = config::Config::builder()
+        .add_source(config::File::with_name(&opts.config_file))
+        .build()?
+        .try_deserialize()?;
+    config.assign_defaults();
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
@@ -69,12 +75,12 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         config.domains,
         &mnemonic,
     )));
-
-    config_manager::load_config::spawn_config_refresher(
-        mnemonic,
-        Arc::clone(&domains),
-        opts.db_refresh_interval_seconds,
-    );
+    // TODO this is commented out as part of the temporary change to load the config from the file.
+    // config_manager::load_config::spawn_config_refresher(
+    //     mnemonic,
+    //     Arc::clone(&domains),
+    //     opts.db_refresh_interval_seconds,
+    // );
 
     let rpc_url_ws = opts
         .rpc_url_ws

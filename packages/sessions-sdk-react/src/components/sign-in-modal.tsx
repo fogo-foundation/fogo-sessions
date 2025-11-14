@@ -2,10 +2,6 @@ import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { useResizeObserver } from "@react-hookz/web";
-import type {
-  MessageSignerWalletAdapterProps,
-  BaseWalletAdapter,
-} from "@solana/wallet-adapter-base";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
@@ -13,6 +9,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import { Heading } from "react-aria-components";
 
 import type { SessionStates } from "../session-state.js";
+import type { SolanaWallet } from "../solana-wallet.js";
 import { Button } from "./button.js";
 import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
@@ -25,7 +22,7 @@ type Props = Omit<
   ComponentProps<typeof ModalDialog>,
   "isOpen" | "onOpenChange" | "children"
 > & {
-  wallets: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
+  wallets: SolanaWallet[];
   termsOfServiceUrl?: string | undefined;
   privacyPolicyUrl?: string | undefined;
 };
@@ -130,10 +127,8 @@ const WalletsPage = ({
   termsOfServiceUrl,
   privacyPolicyUrl,
 }: {
-  wallets: (MessageSignerWalletAdapterProps & BaseWalletAdapter)[];
-  selectWallet?:
-    | ((wallet: MessageSignerWalletAdapterProps & BaseWalletAdapter) => void)
-    | undefined;
+  wallets: SolanaWallet[];
+  selectWallet?: ((wallet: SolanaWallet) => void) | undefined;
   cancel: () => void;
   termsOfServiceUrl?: string | undefined;
   privacyPolicyUrl?: string | undefined;
