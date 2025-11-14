@@ -75,7 +75,7 @@ impl FeeConfig {
 
         verify_symbol_or_mint(&fee_symbol_or_mint, fee_metadata, fee_mint)?;
         let fee_amount = try_ui_amount_into_amount(fee_amount, fee_mint.decimals)?;
-        require_eq!(fee_amount, fee, IntentTransferError::FeeAmountMismatch);
+        require_gte!(fee_amount, fee, IntentTransferError::InsufficientFeeAmount);
 
         transfer_checked(
             CpiContext::new_with_signer(
