@@ -8,7 +8,7 @@ import { PublicKey } from "@solana/web3.js";
 import { SolanaMobileWalletAdapter } from "@solana-mobile/wallet-adapter-mobile";
 
 /**
- * The BaseWalletAdapter is used by all Solana wallet types. It extends EventEmitter but the types from the EventEmitter are not present so we are creating our own 
+ * The BaseWalletAdapter is used by all Solana wallet types. It extends EventEmitter but the types from the EventEmitter are not present so we are creating our own
  * SolanaWallet type here that includes them and also adds some extra typings to only include the available methods and properties.
  */
 

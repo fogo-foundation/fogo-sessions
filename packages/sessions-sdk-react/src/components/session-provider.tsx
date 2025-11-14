@@ -90,9 +90,7 @@ type Props = ConstrainedOmit<
   privacyPolicyUrl?: string | undefined;
 };
 
-const filterUnwantedWallets = (
-  wallets: SolanaWallet[],
-) => {
+const filterUnwantedWallets = (wallets: SolanaWallet[]) => {
   let seenMetaMask = false;
   return wallets.filter((wallet) => {
     /*
@@ -143,20 +141,20 @@ export const FogoSessionProvider = ({
         ? (filteredWalletsWithStandardAdapters.find(
             (adapter) => adapter.name === SolanaMobileWalletAdapterWalletName,
           ) ??
-            (new SolanaMobileWalletAdapter({
-              addressSelector: createDefaultAddressSelector(),
-              appIdentity: {
-                uri:
-                  // eslint-disable-next-line unicorn/no-typeof-undefined
-                  typeof globalThis.window === "undefined"
-                    ? ""
-                    : `${globalThis.window.location.protocol}//${globalThis.window.location.host}`,
-              },
-              authorizationResultCache: createDefaultAuthorizationResultCache(),
-              chain: "mainnet-beta",
-              onWalletNotFound: createDefaultWalletNotFoundHandler(),
+          (new SolanaMobileWalletAdapter({
+            addressSelector: createDefaultAddressSelector(),
+            appIdentity: {
+              uri:
+                // eslint-disable-next-line unicorn/no-typeof-undefined
+                typeof globalThis.window === "undefined"
+                  ? ""
+                  : `${globalThis.window.location.protocol}//${globalThis.window.location.host}`,
+            },
+            authorizationResultCache: createDefaultAuthorizationResultCache(),
+            chain: "mainnet-beta",
+            onWalletNotFound: createDefaultWalletNotFoundHandler(),
             // doing type casting to use our type with the EventEmitter types
-            })) as SolanaMobileWallet)
+          }) as SolanaMobileWallet))
         : undefined,
     [filteredWalletsWithStandardAdapters],
   );
