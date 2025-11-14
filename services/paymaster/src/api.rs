@@ -1,9 +1,12 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
-use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
+use crate::metrics::{
+    obs_actual_confirmation_latency, obs_actual_transaction_costs,
+    obs_confirmation_notification_latency, obs_send, obs_validation,
+};
 use crate::rpc::{
-    fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex,
-    ConfirmationResultInternal, RetryConfig,
+    fetch_confirmed_transaction_details, send_and_confirm_transaction, ChainIndex,
+    ConfirmationResultInternal, ConfirmedTransactionDetails, RetryConfig,
 };
 use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
@@ -38,6 +41,7 @@ use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
@@ -329,6 +333,8 @@ async fn sponsor_and_send_handler(
         .sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
+    let send_transaction_instant = Instant::now();
+    let send_transaction_system_time = SystemTime::now();
     let confirmation_result = send_and_confirm_transaction(
         &state.chain_index.rpc,
         &state.rpc_sub,
@@ -342,6 +348,13 @@ async fn sponsor_and_send_handler(
     .await?;
 
     let confirmation_status = confirmation_result.status_string();
+
+    obs_confirmation_notification_latency(
+        domain.clone(),
+        matched_variation_name.clone(),
+        confirmation_status.clone(),
+        send_transaction_instant.elapsed(),
+    );
 
     obs_send(
         domain.clone(),
@@ -365,7 +378,7 @@ async fn sponsor_and_send_handler(
 
         tokio::spawn(
             async move {
-                match fetch_transaction_cost_details(
+                match fetch_confirmed_transaction_details(
                     &state.chain_index.rpc,
                     &signature_to_fetch,
                     &transaction,
@@ -376,13 +389,23 @@ async fn sponsor_and_send_handler(
                 )
                 .await
                 {
-                    Ok(cost_details) => {
+                    Ok(details) => {
+                        let ConfirmedTransactionDetails { cost_details, block_time } = details;
                         obs_actual_transaction_costs(
-                            domain,
-                            matched_variation_name,
-                            confirmation_status,
+                            domain.clone(),
+                            matched_variation_name.clone(),
+                            confirmation_status.clone(),
                             cost_details,
                         );
+
+                        if let Some(latency) = block_time.and_then(|block_time| block_time.try_into().ok()).map(|block_time| Duration::from_secs(block_time).saturating_sub(send_transaction_system_time.duration_since(UNIX_EPOCH).unwrap_or_default())) {
+                            obs_actual_confirmation_latency(
+                                domain,
+                                matched_variation_name,
+                                confirmation_status,
+                                latency,
+                            );
+                        }
                     }
                     Err(e) => {
                         tracing::warn!(
@@ -457,6 +480,7 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
         )
         .collect::<HashMap<_, _>>()
 }
+
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
@@ -492,6 +516,18 @@ pub async fn run_server(
         .set_buckets_for_metric(
             Matcher::Full(crate::metrics::TOTAL_SPEND_HISTOGRAM.to_string()),
             crate::metrics::TRANSACTION_COST_BUCKETS,
+        )
+        .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(
+                crate::metrics::TRANSACTION_CONFIRMATION_NOTIFICATION_LATENCY.to_string(),
+            ),
+            crate::metrics::TRANSACTION_CONFIRMATION_LATENCY_BUCKETS,
+        )
+        .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::TRANSACTION_ACTUAL_CONFIRMATION_LATENCY.to_string()),
+            crate::metrics::TRANSACTION_CONFIRMATION_LATENCY_BUCKETS,
         )
         .unwrap()
         .install_recorder()

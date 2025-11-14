@@ -304,6 +304,12 @@ async fn subscribe_and_wait_for_signature(
 }
 
 #[derive(Debug, Clone)]
+pub struct ConfirmedTransactionDetails {
+    pub cost_details: TransactionCostDetails,
+    pub block_time: Option<i64>,
+}
+
+#[derive(Debug, Clone)]
 pub struct TransactionCostDetails {
     pub fee: u64,
     pub balance_spend: Option<i64>,
@@ -315,17 +321,18 @@ pub struct RetryConfig {
     pub sleep_ms: u64,
 }
 
-/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
+/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer
+/// and the block time of the block that includes the transaction.
 /// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
 /// retry_config configures the retries of the RPC call with sleep on failure. This is useful in cases where the
 /// transaction was sent with a lower commitment level, so it may not be confirmed yet.
 #[tracing::instrument(skip_all, fields(tx_hash = %signature))]
-pub async fn fetch_transaction_cost_details(
+pub async fn fetch_confirmed_transaction_details(
     rpc: &RpcClient,
     signature: &Signature,
     transaction: &VersionedTransaction,
     retry_config: RetryConfig,
-) -> anyhow::Result<TransactionCostDetails> {
+) -> anyhow::Result<ConfirmedTransactionDetails> {
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Base64),
         max_supported_transaction_version: Some(0),
@@ -342,6 +349,7 @@ pub async fn fetch_transaction_cost_details(
 
         match rpc.get_transaction_with_config(signature, config).await {
             Ok(tx_response) => {
+                let block_time = tx_response.block_time;
                 // balance_spend is positive if balance decreased
                 let (fee, balance_spend) = tx_response
                     .transaction
@@ -368,7 +376,10 @@ pub async fn fetch_transaction_cost_details(
                         (fee, None)
                     });
 
-                return Ok(TransactionCostDetails { fee, balance_spend });
+                return Ok(ConfirmedTransactionDetails {
+                    cost_details: TransactionCostDetails { fee, balance_spend },
+                    block_time,
+                });
             }
             Err(e) => {
                 last_error = Some(e);
