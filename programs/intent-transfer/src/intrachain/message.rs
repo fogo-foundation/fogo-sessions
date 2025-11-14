@@ -71,8 +71,8 @@ where
             symbol_or_mint,
             amount,
             recipient,
-            fee_amount,
             fee_symbol_or_mint,
+            fee_amount,
             nonce,
         )| Message {
             version,
@@ -101,23 +101,27 @@ mod tests {
             Fogo Transfer:
             Signing this intent will transfer the tokens as described below.
 
-            version: 0.1
+            version: 0.2
             chain_id: foo
             token: FOGO
             amount: 42.676
             recipient: Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ
+            fee_token: USDC
+            fee_amount: 0.001
             nonce: 1
         "};
 
         assert_eq!(
             TryInto::<Message>::try_into(message.as_bytes().to_vec()).unwrap(),
             Message {
-                version: Version { major: 0, minor: 1 },
+                version: Version { major: 0, minor: 2 },
                 chain_id: "foo".to_string(),
                 symbol_or_mint: SymbolOrMint::Symbol("FOGO".to_string()),
                 amount: "42.676".to_string(),
                 recipient: Pubkey::from_str("Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ")
                     .unwrap(),
+                fee_amount: "0.001".to_string(),
+                fee_symbol_or_mint: SymbolOrMint::Symbol("USDC".to_string()),
                 nonce: 1
             }
         );
@@ -129,11 +133,13 @@ mod tests {
             Fogo Transfer:
             Signing this intent will transfer the tokens as described below.
 
-            version: 0.1
+            version: 0.2
             chain_id: foo
             token: FOGO
             amount: 42.676
             recipient: Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ
+            fee_token: USDC
+            fee_amount: 0.001
             nonce: 1
             this data should not be here"};
 

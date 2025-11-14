@@ -69,7 +69,7 @@ where
             (tag(BRIDGE_MESSAGE_PREFIX), line_ending),
             (
                 verify(tag_key_value("version"), |version: &Version| {
-                    version.major == 0 && version.minor == 1
+                    version.major == 0 && version.minor == 2
                 }),
                 tag_key_value("from_chain_id"),
                 tag_key_value("to_chain_id"),
@@ -89,8 +89,8 @@ where
             symbol_or_mint,
             amount,
             recipient_address,
-            fee_amount,
             fee_symbol_or_mint,
+            fee_amount,
             nonce,
         )| NttMessage {
             version,
@@ -119,24 +119,28 @@ mod tests {
             Fogo Bridge Transfer:
             Signing this intent will bridge out the tokens as described below.
 
-            version: 0.1
+            version: 0.2
             from_chain_id: foo
             to_chain_id: solana
             token: FOGO
             amount: 42.676
             recipient_address: 0xabc906d4A6074599D5471f04f9d6261030C8debe
+            fee_token: USDC
+            fee_amount: 0.001
             nonce: 1
         "};
 
         assert_eq!(
             TryInto::<BridgeMessage>::try_into(message.as_bytes().to_vec()).unwrap(),
             BridgeMessage::Ntt(NttMessage {
-                version: Version { major: 0, minor: 1 },
+                version: Version { major: 0, minor: 2 },
                 from_chain_id: "foo".to_string(),
                 to_chain_id: "solana".to_string(),
                 symbol_or_mint: SymbolOrMint::Symbol("FOGO".to_string()),
                 amount: "42.676".to_string(),
                 recipient_address: "0xabc906d4A6074599D5471f04f9d6261030C8debe".to_string(),
+                fee_symbol_or_mint: SymbolOrMint::Symbol("USDC".to_string()),
+                fee_amount: "0.001".to_string(),
                 nonce: 1
             })
         );
@@ -148,12 +152,14 @@ mod tests {
             Fogo Bridge Transfer:
             Signing this intent will bridge out the tokens as described below.
 
-            version: 0.1
+            version: 0.2
             from_chain_id: foo
             to_chain_id: solana
             token: FOGO
             amount: 42.676
             recipient_address: 0xabc906d4A6074599D5471f04f9d6261030C8debe
+            fee_token: USDC
+            fee_amount: 0.001
             nonce: 1
             this data should not be here"};
 
