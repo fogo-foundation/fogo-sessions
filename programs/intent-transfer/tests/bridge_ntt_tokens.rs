@@ -258,8 +258,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         destination_price: 1_531_800_000_000,
         signature: [0u8; 65],
     }
-    .try_to_vec()
-    .unwrap();
+    .serialize();
 
     let bridge_ix = Instruction {
         program_id: intent_transfer::ID,
