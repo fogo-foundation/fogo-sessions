@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn test_serialize_u16be() {
         let orig = U16BE(1);
-        
+
         let serialized = orig.try_to_vec().unwrap();
         assert_eq!(serialized, vec![0, 1]);
 
@@ -64,7 +64,7 @@ mod tests {
     #[test]
     fn test_serialize_u64be() {
         let orig = U64BE(1);
-        
+
         let serialized = orig.try_to_vec().unwrap();
         assert_eq!(serialized, vec![0, 0, 0, 0, 0, 0, 0, 1]);
 
