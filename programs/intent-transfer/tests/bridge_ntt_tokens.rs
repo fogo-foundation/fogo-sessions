@@ -39,7 +39,10 @@ fn create_ntt_bridge_message(
     nonce: u64,
 ) -> String {
     let SymbolAndAmount { symbol, amount } = symbol_and_amount;
-    let SymbolAndAmount { symbol: fee_symbol, amount: fee_amount } = fee_symbol_and_amount;
+    let SymbolAndAmount {
+        symbol: fee_symbol,
+        amount: fee_amount,
+    } = fee_symbol_and_amount;
     format!(
         "Fogo Bridge Transfer:\n\
          Signing this intent will bridge out the tokens as described below.\n\
@@ -230,9 +233,15 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let message = create_ntt_bridge_message(
         &chain_id_value,
         to_chain_id,
-        SymbolAndAmount { symbol: &token.mint.to_string(), amount: amount_str },
+        SymbolAndAmount {
+            symbol: &token.mint.to_string(),
+            amount: amount_str,
+        },
         recipient_address_str,
-        SymbolAndAmount { symbol: &fee_token.mint.to_string(), amount: fee_amount_str },
+        SymbolAndAmount {
+            symbol: &fee_token.mint.to_string(),
+            amount: fee_amount_str,
+        },
         1,
     );
 
