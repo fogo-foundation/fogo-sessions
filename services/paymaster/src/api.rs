@@ -1,9 +1,10 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
+use crate::ftl_sender::FtlHttpSender;
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::rpc::{
-    fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex,
-    ConfirmationResultInternal, RetryConfig,
+    fetch_transaction_cost_details, send_and_confirm_transaction, send_and_confirm_transaction_ftl,
+    ChainIndex, ConfirmationResultInternal, RetryConfig,
 };
 use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
@@ -31,6 +32,7 @@ use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
+use solana_rpc_client::rpc_client::RpcClientConfig;
 use solana_seed_derivable::SeedDerivable;
 use solana_signature::Signature;
 use solana_signer::Signer;
@@ -42,6 +44,9 @@ use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
+
+const FTL_POOL_SIZE: usize = 6;
+
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
     pub sponsor: Keypair,
@@ -98,6 +103,7 @@ pub struct ServerState {
     pub domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
+    pub ftl_rpc: Option<RpcClient>,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -329,17 +335,25 @@ async fn sponsor_and_send_handler(
         .sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
-    let confirmation_result = send_and_confirm_transaction(
-        &state.chain_index.rpc,
-        &state.rpc_sub,
-        &transaction,
-        RpcSendTransactionConfig {
-            skip_preflight: !domain_state.enable_preflight_simulation,
-            preflight_commitment: Some(CommitmentLevel::Processed),
-            ..RpcSendTransactionConfig::default()
-        },
-    )
-    .await?;
+    let rpc_config = RpcSendTransactionConfig {
+        skip_preflight: !domain_state.enable_preflight_simulation,
+        preflight_commitment: Some(CommitmentLevel::Processed),
+        ..RpcSendTransactionConfig::default()
+    };
+
+    let confirmation_result = if let Some(ref ftl_rpc) = state.ftl_rpc {
+        // Use FTL service for sending and confirmation
+        send_and_confirm_transaction_ftl(ftl_rpc, &transaction, rpc_config).await?
+    } else {
+        // Use standard RPC method
+        send_and_confirm_transaction(
+            &state.chain_index.rpc,
+            &state.rpc_sub,
+            &transaction,
+            rpc_config,
+        )
+        .await?
+    };
 
     let confirmation_status = confirmation_result.status_string();
 
@@ -460,6 +474,7 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
+    ftl_url: Option<String>,
     listen_address: String,
     domains_states: Arc<ArcSwap<HashMap<String, DomainState>>>,
 ) {
@@ -473,6 +488,21 @@ pub async fn run_server(
         .await
         .expect("Failed to create pubsub client");
     let rpc_sub = PubsubClientWithReconnect::new(rpc_url_ws, rpc_sub_client);
+
+    // Create FTL RPC client with HTTP/2 prior knowledge if FTL URL is provided
+    let ftl_rpc = ftl_url.map(|url| {
+        let http_sender = FtlHttpSender::new(url, FTL_POOL_SIZE);
+
+        RpcClient::new_sender(
+            http_sender,
+            RpcClientConfig {
+                commitment_config: CommitmentConfig {
+                    commitment: CommitmentLevel::Processed,
+                },
+                confirm_transaction_initial_timeout: None,
+            },
+        )
+    });
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
@@ -522,6 +552,7 @@ pub async fn run_server(
                 lookup_table_cache: DashMap::new(),
             },
             rpc_sub,
+            ftl_rpc,
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     tracing::info!("Starting paymaster service...");

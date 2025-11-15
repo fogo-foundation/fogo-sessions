@@ -37,6 +37,9 @@ pub struct RunOptions {
     #[arg(long, env = "RPC_URL_WS")]
     pub rpc_url_ws: Option<String>,
 
+    #[arg(long, env = "FTL_URL")]
+    pub ftl_url: Option<String>,
+
     #[arg(long, env = "LISTEN_ADDRESS", default_value = "0.0.0.0:4000")]
     pub listen_address: String,
 
