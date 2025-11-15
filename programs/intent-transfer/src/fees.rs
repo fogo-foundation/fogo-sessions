@@ -35,9 +35,10 @@ pub trait PaidInstruction<'info> {
 
         verify_symbol_or_mint(&fee_symbol_or_mint, fee_metadata, fee_mint)?;
         let intent_fee_amount = try_ui_amount_into_amount(intent_fee_amount, fee_mint.decimals)?;
+        let fee_amount = self.fee_amount();
         require_gte!(
             intent_fee_amount,
-            self.fee_amount(),
+            fee_amount,
             IntentTransferError::InsufficientFeeAmount
         );
 
@@ -52,7 +53,7 @@ pub trait PaidInstruction<'info> {
                 },
                 signer_seeds,
             ),
-            self.fee_amount(),
+            fee_amount,
             fee_mint.decimals,
         )
     }
