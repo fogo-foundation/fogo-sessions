@@ -4,6 +4,7 @@ pub mod config_manager;
 pub mod constraint;
 pub mod constraint_templates;
 pub mod db;
+pub mod ftl_sender;
 pub mod metrics;
 pub mod parse;
 pub mod rpc;

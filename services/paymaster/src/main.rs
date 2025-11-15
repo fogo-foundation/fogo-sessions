@@ -14,6 +14,7 @@ mod config_manager;
 mod constraint;
 mod constraint_templates;
 mod db;
+mod ftl_sender;
 mod metrics;
 mod rpc;
 mod serde;
