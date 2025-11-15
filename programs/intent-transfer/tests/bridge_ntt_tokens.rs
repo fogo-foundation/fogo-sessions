@@ -13,10 +13,13 @@ use spl_token::solana_program::keccak;
 
 use intent_transfer::{
     bridge::{
-        be::{U16BE, U64BE}, cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID}, message::convert_chain_id_to_wormhole, processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuote, SignedQuoteHeader}
+        be::{U16BE, U64BE},
+        cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
+        message::convert_chain_id_to_wormhole,
+        processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuote, SignedQuoteHeader},
     },
     config::state::{
-        fee_config::{FEE_CONFIG_SEED, FeeConfig},
+        fee_config::{FeeConfig, FEE_CONFIG_SEED},
         ntt_config::ExpectedNttConfig,
     },
 };

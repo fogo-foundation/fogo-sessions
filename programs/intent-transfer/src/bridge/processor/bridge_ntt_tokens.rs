@@ -22,9 +22,9 @@ use anchor_spl::{
         CloseAccount, Mint, Token, TokenAccount, TransferChecked,
     },
 };
+use borsh::{BorshDeserialize, BorshSerialize};
 use chain_id::ChainId;
 use solana_intents::Intent;
-use borsh::{BorshSerialize, BorshDeserialize};
 
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
 const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
