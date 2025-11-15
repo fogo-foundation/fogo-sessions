@@ -17,6 +17,7 @@ use anchor_spl::token::{
 };
 use chain_id::ChainId;
 use solana_intents::Intent;
+use borsh::{BorshSerialize, BorshDeserialize};
 
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
 const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
@@ -454,7 +455,7 @@ fn compute_msg_value_and_gas_limit_solana(pay_destination_ata_rent: bool) -> (u1
 }
 
 // Derived from the documentation: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#off-chain-quote
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct SignedQuoteHeader {
     pub prefix: [u8; 4],
     pub quoter_address: [u8; 20],
@@ -464,7 +465,7 @@ pub struct SignedQuoteHeader {
     pub expiry_time: U64BE,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct SignedQuote {
     pub header: SignedQuoteHeader,
     pub base_fee: U64BE,
