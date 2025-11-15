@@ -15,6 +15,7 @@
     "run:add-program-id-to-domain-registry": "add-program-id-to-domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
     "run:register-ntt-manager": "register-ntt-manager",
+    "run:register-fee-config": "register-fee-config",
     "test:format": "run-jest --colors --selectProjects format",
     "test:lint": "run-jest --colors --selectProjects lint",
     "turbo": "[ ! -d node_modules ] && pnpm install; turbo"

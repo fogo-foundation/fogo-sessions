@@ -889,6 +889,9 @@ importers:
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      bn.js:
+        specifier: 'catalog:'
+        version: 5.2.2
       yargs:
         specifier: 'catalog:'
         version: 18.0.0
@@ -905,6 +908,9 @@ importers:
       '@cprussin/tsconfig':
         specifier: 'catalog:'
         version: 4.0.1(typescript@5.8.3)
+      '@types/bn.js':
+        specifier: 'catalog:'
+        version: 4.11.6
       '@types/jest':
         specifier: 'catalog:'
         version: 29.5.14
@@ -16049,6 +16055,15 @@ snapshots:
       '@solana/subscribable': 2.1.1(typescript@5.8.3)
       typescript: 5.8.3
       ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+
+  '@solana/rpc-subscriptions-channel-websocket@4.0.0(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@solana/errors': 4.0.0(typescript@5.8.3)
+      '@solana/functional': 4.0.0(typescript@5.8.3)
+      '@solana/rpc-subscriptions-spec': 4.0.0(typescript@5.8.3)
+      '@solana/subscribable': 4.0.0(typescript@5.8.3)
+      typescript: 5.8.3
+      ws: 7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
 
   '@solana/rpc-subscriptions-channel-websocket@4.0.0(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:

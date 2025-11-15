@@ -1,14 +1,19 @@
 use crate::{
+    config::state::fee_config::{FeeConfig, FEE_CONFIG_SEED},
     error::IntentTransferError,
+    fees::{PaidInstruction, VerifyAndCollectAccounts},
     intrachain::message::Message,
     nonce::Nonce,
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
     INTENT_TRANSFER_SEED,
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::token::{
-    spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
-    TransferChecked,
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{
+        spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
+        TransferChecked,
+    },
 };
 use chain_id::ChainId;
 use solana_intents::Intent;
@@ -28,12 +33,10 @@ pub struct SendTokens<'info> {
     #[account(seeds = [INTENT_TRANSFER_SEED], bump)]
     pub intent_transfer_setter: UncheckedAccount<'info>,
 
-    pub token_program: Program<'info, Token>,
-
     #[account(mut, token::mint = mint)]
     pub source: Account<'info, TokenAccount>,
 
-    #[account(mut, token::mint = mint)]
+    #[account(init_if_needed, payer = sponsor, associated_token::mint = mint, associated_token::authority = destination_owner)]
     pub destination: Account<'info, TokenAccount>,
 
     pub mint: Account<'info, Mint>,
@@ -52,7 +55,51 @@ pub struct SendTokens<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
 
+    /// CHECK: This account is checked against the signed message
+    pub destination_owner: AccountInfo<'info>,
+
+    #[account(mut, token::mint = fee_mint, token::authority = source.owner )]
+    pub fee_source: Account<'info, TokenAccount>,
+
+    #[account(init_if_needed, payer = sponsor, associated_token::mint = fee_mint, associated_token::authority = sponsor)]
+    pub fee_destination: Account<'info, TokenAccount>,
+
+    pub fee_mint: Account<'info, Mint>,
+
+    pub fee_metadata: Option<UncheckedAccount<'info>>,
+
+    #[account(seeds = [FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
+    pub fee_config: Account<'info, FeeConfig>,
+
     pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+}
+
+impl<'info> PaidInstruction<'info> for SendTokens<'info> {
+    fn fee_amount(&self) -> u64 {
+        self.fee_config.intrachain_transfer_fee
+    }
+
+    fn verify_and_collect_accounts<'a>(&'a self) -> VerifyAndCollectAccounts<'a, 'info> {
+        let Self {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            intent_transfer_setter,
+            token_program,
+            ..
+        } = self;
+        VerifyAndCollectAccounts {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            intent_transfer_setter,
+            token_program,
+        }
+    }
 }
 
 impl<'info> SendTokens<'info> {
@@ -67,9 +114,10 @@ impl<'info> SendTokens<'info> {
             sysvar_instructions,
             token_program,
             nonce,
-            sponsor: _,
-            system_program: _,
+            destination_owner,
+            ..
         } = self;
+
         let Intent {
             message:
                 Message {
@@ -79,6 +127,8 @@ impl<'info> SendTokens<'info> {
                     symbol_or_mint,
                     nonce: new_nonce,
                     version: _,
+                    fee_amount,
+                    fee_symbol_or_mint,
                 },
             signer,
         } = Intent::load(sysvar_instructions.as_ref())
@@ -93,7 +143,7 @@ impl<'info> SendTokens<'info> {
 
         require_keys_eq!(
             recipient,
-            destination.owner,
+            destination_owner.key(),
             IntentTransferError::RecipientMismatch
         );
 
@@ -114,6 +164,6 @@ impl<'info> SendTokens<'info> {
             mint.decimals,
         )?;
 
-        Ok(())
+        self.verify_and_collect_fee(fee_amount, fee_symbol_or_mint, signer_seeds)
     }
 }

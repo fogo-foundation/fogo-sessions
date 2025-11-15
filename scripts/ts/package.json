@@ -6,7 +6,8 @@
   "bin": {
     "initialize-chain-id": "./bin/initialize-chain-id.js",
     "register-ntt-manager": "./bin/register-ntt-manager.js",
-    "add-program-id-to-domain-registry": "./bin/add-program-id-to-domain-registry.js"
+    "add-program-id-to-domain-registry": "./bin/add-program-id-to-domain-registry.js",
+    "register-fee-config": "./bin/register-fee-config.js"
   },
   "scripts": {
     "build": "tsc --noEmit false --outDir ./dist",
@@ -24,6 +25,7 @@
     "@ledgerhq/hw-transport-node-hid": "catalog:",
     "@solana/wallet-adapter-ledger": "catalog:",
     "@solana/web3.js": "catalog:",
+    "bn.js": "catalog:",
     "yargs": "catalog:"
   },
   "devDependencies": {
@@ -31,6 +33,7 @@
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
+    "@types/bn.js": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "@types/yargs": "catalog:",

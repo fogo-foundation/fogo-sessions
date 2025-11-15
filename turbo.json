@@ -51,6 +51,10 @@
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },
+    "//#run:register-fee-config": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
     "//#test": {
       "dependsOn": [
         "//#test:types",
