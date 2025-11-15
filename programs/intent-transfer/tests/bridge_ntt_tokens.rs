@@ -30,7 +30,6 @@ struct SymbolAndAmount<'a> {
     pub amount: &'a str,
 }
 
-#[allow(clippy::too_many_arguments)]
 fn create_ntt_bridge_message(
     from_chain_id: &str,
     to_chain_id: &str,
