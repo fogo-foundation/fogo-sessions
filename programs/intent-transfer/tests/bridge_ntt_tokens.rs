@@ -25,17 +25,22 @@ use intent_transfer::{
 
 mod helpers;
 
+struct SymbolAndAmount<'a> {
+    pub symbol: &'a str,
+    pub amount: &'a str,
+}
+
 #[allow(clippy::too_many_arguments)]
 fn create_ntt_bridge_message(
     from_chain_id: &str,
     to_chain_id: &str,
-    token_symbol: &str,
-    amount: &str,
+    symbol_and_amount: SymbolAndAmount,
     recipient_address: &str,
-    fee_token_symbol: &str,
-    fee_amount: &str,
+    fee_symbol_and_amount: SymbolAndAmount,
     nonce: u64,
 ) -> String {
+    let SymbolAndAmount { symbol, amount } = symbol_and_amount;
+    let SymbolAndAmount { symbol: fee_symbol, amount: fee_amount } = fee_symbol_and_amount;
     format!(
         "Fogo Bridge Transfer:\n\
          Signing this intent will bridge out the tokens as described below.\n\
@@ -43,10 +48,10 @@ fn create_ntt_bridge_message(
          version: 0.2\n\
          from_chain_id: {from_chain_id}\n\
          to_chain_id: {to_chain_id}\n\
-         token: {token_symbol}\n\
+         token: {symbol}\n\
          amount: {amount}\n\
          recipient_address: {recipient_address}\n\
-         fee_token: {fee_token_symbol}\n\
+         fee_token: {fee_symbol}\n\
          fee_amount: {fee_amount}\n\
          nonce: {nonce}",
     )
@@ -226,11 +231,9 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let message = create_ntt_bridge_message(
         &chain_id_value,
         to_chain_id,
-        &token.mint.to_string(),
-        amount_str,
+        SymbolAndAmount { symbol: &token.mint.to_string(), amount: amount_str },
         recipient_address_str,
-        &fee_token.mint.to_string(),
-        fee_amount_str,
+        SymbolAndAmount { symbol: &fee_token.mint.to_string(), amount: fee_amount_str },
         1,
     );
 
