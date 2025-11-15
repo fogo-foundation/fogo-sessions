@@ -1,5 +1,6 @@
 use crate::{
     bridge::{
+        be::{U16BE, U64BE},
         cpi::{self, ntt_with_executor::RelayNttMessageArgs},
         message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage, WormholeChainId},
     },
@@ -23,6 +24,7 @@ use anchor_spl::{
 };
 use chain_id::ChainId;
 use solana_intents::Intent;
+use borsh::{BorshSerialize, BorshDeserialize};
 
 const BRIDGE_NTT_INTERMEDIATE_SEED: &[u8] = b"bridge_ntt_intermediate";
 const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
@@ -502,23 +504,23 @@ fn compute_msg_value_and_gas_limit_solana(pay_destination_ata_rent: bool) -> (u1
 }
 
 // Derived from the documentation: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#off-chain-quote
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct SignedQuoteHeader {
     pub prefix: [u8; 4],
     pub quoter_address: [u8; 20],
     pub payee_address: [u8; 32],
-    pub source_chain: u16,
-    pub destination_chain: u16,
-    pub expiry_time: u64,
+    pub source_chain: U16BE,
+    pub destination_chain: U16BE,
+    pub expiry_time: U64BE,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct SignedQuote {
     pub header: SignedQuoteHeader,
-    pub base_fee: u64,
-    pub destination_gas_price: u64,
-    pub source_price: u64,
-    pub destination_price: u64,
+    pub base_fee: U64BE,
+    pub destination_gas_price: U64BE,
+    pub source_price: U64BE,
+    pub destination_price: U64BE,
     pub signature: [u8; 65],
 }
 
@@ -612,14 +614,14 @@ mod tests {
                 prefix: *b"EQ01",
                 quoter_address: [0u8; 20],
                 payee_address: [0u8; 32],
-                source_chain: 0u16,
-                destination_chain: 1u16,
-                expiry_time: 0u64,
+                source_chain: U16BE(0u16),
+                destination_chain: U16BE(1u16),
+                expiry_time: U64BE(0u64),
             },
-            base_fee: 500_000_000,
-            destination_gas_price: 10_000,
-            source_price: 2_000_000_000,
-            destination_price: 1_531_800_000_000,
+            base_fee: U64BE(500_000_000),
+            destination_gas_price: U64BE(10_000),
+            source_price: U64BE(2_000_000_000),
+            destination_price: U64BE(1_531_800_000_000),
             signature: [0u8; 65],
         };
 
