@@ -9,7 +9,7 @@ import BN from "bn.js";
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)
     .command(
-      "* <mint> <ata-creation-fee> <bridging-out-fee>",
+      "* <mint> <intrachain-transfer-fee> <bridge-transfer-fee>",
       "Register the intent transfer fees for a given fee mint",
     )
     .options(anchorOptions)
@@ -19,22 +19,22 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
       demandOption: true,
       coerce: (mint: string) => new PublicKey(mint),
     })
-    .positional("ata-creation-fee", {
+    .positional("intrachain-transfer-fee", {
       type: "number",
-      description: "ATA creation fee for the mint",
+      description: "Intrachain transfer fee for the mint",
       demandOption: true,
-      coerce: (ataCreationFee: number) => new BN(ataCreationFee),
+      coerce: (intrachainTransferFee: number) => new BN(intrachainTransferFee),
     })
-    .positional("bridging-out-fee", {
+    .positional("bridge-transfer-fee", {
       type: "number",
-      description: "Bridging out fee for the mint",
+      description: "Bridge transfer fee for the mint",
       demandOption: true,
-      coerce: (bridgingOutFee: number) => new BN(bridgingOutFee),
+      coerce: (bridgeTransferFee: number) => new BN(bridgeTransferFee),
     })
     .parse();
 
   await new IntentTransferProgram(createAnchorProvider(args)).methods
-    .registerFeeConfig({ataCreationFee: args.ataCreationFee, bridgingOutFee: args.bridgingOutFee})
+    .registerFeeConfig({intrachainTransferFee: args.intrachainTransferFee, bridgeTransferFee: args.bridgeTransferFee})
     .accounts({ mint: args.mint, upgradeAuthority: {signer: undefined} })
     .rpc();
 };

@@ -269,8 +269,8 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let mut fee_config_data = Vec::new();
     fee_config_data.extend_from_slice(FeeConfig::DISCRIMINATOR);
     FeeConfig {
-        ata_creation_fee: 0,
-        bridging_out_fee: 10,
+        intrachain_transfer_fee: 0,
+        bridge_transfer_fee: 10,
     }
     .serialize(&mut fee_config_data)
     .unwrap();

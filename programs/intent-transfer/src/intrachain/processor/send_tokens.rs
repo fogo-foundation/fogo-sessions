@@ -78,7 +78,7 @@ pub struct SendTokens<'info> {
 
 impl<'info> PaidInstruction<'info> for SendTokens<'info> {
     fn fee_amount(&self) -> u64 {
-        self.fee_config.ata_creation_fee
+        self.fee_config.intrachain_transfer_fee
     }
 
     fn verify_and_collect_accounts<'a>(&'a self) -> VerifyAndCollectAccounts<'a, 'info> {

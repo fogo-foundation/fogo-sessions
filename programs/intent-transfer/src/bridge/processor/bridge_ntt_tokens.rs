@@ -182,7 +182,7 @@ pub struct BridgeNttTokens<'info> {
 
 impl<'info> PaidInstruction<'info> for BridgeNttTokens<'info> {
     fn fee_amount(&self) -> u64 {
-        self.fee_config.bridging_out_fee
+        self.fee_config.bridge_transfer_fee
     }
 
     fn verify_and_collect_accounts<'a>(&'a self) -> VerifyAndCollectAccounts<'a, 'info> {
