@@ -134,5 +134,23 @@
       margin-left: auto;
       margin-right: auto;
     }
+
+    .buttons {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .disclaimer {
+      width: 100%;
+      height: theme.spacing(80);
+      background: rgb(from black r g b / 70%);
+      overflow: auto;
+      padding: theme.spacing(4);
+      border-radius: theme.border-radius("md");
+      margin-bottom: theme.spacing(8);
+      scrollbar-width: thin;
+    }
   }
 }
