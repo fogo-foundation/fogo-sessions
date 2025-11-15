@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.21
+
+### Patch Changes
+
+- 3a04f78: Update wormhole contract addresses in mainnet
+
 ## 0.0.20
 
 ### Patch Changes

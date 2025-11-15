@@ -1,5 +1,17 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.1
+
+### Patch Changes
+
+- cd6eb60: Remove outdated Solflare Metamask adapter
+- 3a04f78: Update wormhole contract addresses in mainnet
+- ddccfad: Silence 1password
+- 1e1272d: Wait for wallet to be ready before autoConnect
+- Updated dependencies [3a04f78]
+  - @fogo/sessions-sdk@0.0.21
+  - @fogo/sessions-sdk-web@0.0.15
+
 ## 0.1.0
 
 ### Minor Changes
