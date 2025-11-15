@@ -118,6 +118,7 @@ const WithdrawForm = ({
       onSendComplete,
       sessionState.sessionKey,
       sessionState.sessionPublicKey,
+      network,
     ],
   );
 

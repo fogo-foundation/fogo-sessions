@@ -143,6 +143,7 @@ const DepositForm = ({
       getSessionContext,
       onSendComplete,
       mutateAmountAvailable,
+      network,
     ],
   );
 
