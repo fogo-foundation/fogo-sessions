@@ -1,5 +1,6 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
+use crate::ftl_sender::FtlHttpSender;
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::rpc::{
     fetch_transaction_cost_details, send_and_confirm_transaction, send_and_confirm_transaction_ftl,
@@ -31,7 +32,6 @@ use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
-use solana_rpc_client::http_sender::HttpSender;
 use solana_rpc_client::rpc_client::RpcClientConfig;
 use solana_seed_derivable::SeedDerivable;
 use solana_signature::Signature;
@@ -44,6 +44,8 @@ use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
+
+const FTL_POOL_SIZE: usize = 6;
 
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
@@ -489,13 +491,7 @@ pub async fn run_server(
 
     // Create FTL RPC client with HTTP/2 prior knowledge if FTL URL is provided
     let ftl_rpc = ftl_url.map(|url| {
-        let http_client = reqwest::Client::builder()
-            .http2_prior_knowledge()
-            .pool_max_idle_per_host(10)
-            .build()
-            .expect("Failed to create FTL HTTP client");
-
-        let http_sender = HttpSender::new_with_client(url.clone(), http_client);
+        let http_sender = FtlHttpSender::new(url, FTL_POOL_SIZE);
 
         RpcClient::new_sender(
             http_sender,
