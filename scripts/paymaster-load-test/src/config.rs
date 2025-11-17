@@ -101,7 +101,7 @@ impl RuntimeConfig {
             + validity_distribution.invalid_fee_payer_rate
             + validity_distribution.invalid_gas_rate;
 
-        let total = validity_distribution.valid_session_creation_rate + validity_distribution.valid_memo_rate + total_invalid;
+        let total = validity_distribution.valid_rate() + total_invalid;
         anyhow::ensure!(
             (total - 1.0).abs() < 0.01,
             "Sum of validity rates must equal 1.0 (currently: {total:.2})"
