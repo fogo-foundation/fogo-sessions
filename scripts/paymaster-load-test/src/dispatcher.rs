@@ -1,10 +1,12 @@
 use crate::config::RuntimeConfig;
 use crate::generator::TransactionGenerator;
 use crate::metrics::LoadTestMetrics;
+use anchor_lang::AccountDeserialize;
 use anyhow::{Context, Result};
 use arc_swap::ArcSwap;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
+use chain_id::{ChainId, ID as CHAIN_ID_PID};
 use governor::{Quota, RateLimiter};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -14,9 +16,8 @@ use solana_hash::Hash;
 use solana_pubkey::Pubkey;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::SocketAddr;
 use std::num::NonZeroU32;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::{task::JoinSet, time::sleep};
@@ -54,20 +55,20 @@ enum SponsorAndSendResponse {
     },
 }
 
+pub const BLOCKHASH_UPDATE_INTERVAL_SECONDS: u64 = 10;
+
 impl LoadTestDispatcher {
     pub async fn new(config: RuntimeConfig, metrics: Arc<LoadTestMetrics>) -> Result<Self> {
-        let http_client =
-        
-        if let Some(ref paymaster_ip_override) = config.external.paymaster_ip_override {
+        let http_client =         if let Some(ref paymaster_ip_override) = config.external.paymaster_ip_override {
             Client::builder()
-            .timeout(Duration::from_secs(120))
+            .timeout(Duration::from_secs(30))
             .resolve(&config.external.paymaster_endpoint,  paymaster_ip_override.parse::<SocketAddr>()?)
             .danger_accept_invalid_certs(true)
             .build()
             .context("Failed to create HTTP client")?
         }else {
             Client::builder()
-            .timeout(Duration::from_secs(120))
+            .timeout(Duration::from_secs(30))
             .build()
             .context("Failed to create HTTP client")?
         };
@@ -100,11 +101,19 @@ impl LoadTestDispatcher {
         let sponsor_pubkey: Pubkey = sponsor_str
             .parse()
             .context("Failed to parse sponsor pubkey")?;
-        tracing::info!("Sponsor pubkey: {sponsor_pubkey}");
+
+        let (chain_id_address, _chain_bump) =
+            Pubkey::find_program_address(&[b"chain_id"], &CHAIN_ID_PID);
+        let chain_id_account = rpc_client
+            .get_account(&chain_id_address)
+            .await
+            .context("Failed to fetch chain ID account")?;
+        let chain_id_data = ChainId::try_deserialize(&mut chain_id_account.data.as_slice())
+            .context("Failed to deserialize chain ID account")?;
 
         let generator = Arc::new(TransactionGenerator::new(
             sponsor_pubkey,
-            config.external.chain_id.clone(),
+            chain_id_data.chain_id,
             config.external.domain.clone(),
         ));
 
@@ -177,7 +186,7 @@ impl LoadTestDispatcher {
                 self.metrics.record_success(validity_type, latency);
             }
             Err(e) => {
-                tracing::info!(
+                tracing::debug!(
                     "Request failed: {:?} ({:?}, {:.2}ms)",
                     e,
                     validity_type,
@@ -248,7 +257,7 @@ impl LoadTestDispatcher {
 
         tokio::spawn(async move {
             loop {
-                sleep(Duration::from_secs(1)).await;
+                sleep(Duration::from_secs(BLOCKHASH_UPDATE_INTERVAL_SECONDS)).await;
 
                 match dispatcher.rpc_client.get_latest_blockhash().await {
                     Ok(new_blockhash) => {
