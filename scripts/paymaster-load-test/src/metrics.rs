@@ -42,33 +42,25 @@ impl LoadTestMetrics {
     pub fn record_success(&self, validity_type: ValidityType, latency: Duration) {
         let latency_us = latency.as_micros() as u64;
 
-        {
-            let mut global = self.0.entry(None).or_default();
-            global.succeeded += 1;
-            let _ = global.e2e_latency.record(latency_us);
-        }
+        let mut global = self.0.entry(None).or_default();
+        global.succeeded += 1;
+        let _ = global.e2e_latency.record(latency_us);
 
-        {
-            let mut entry = self.0.entry(Some(validity_type)).or_default();
-            entry.succeeded += 1;
-            let _ = entry.e2e_latency.record(latency_us);
-        }
+        let mut entry = self.0.entry(Some(validity_type)).or_default();
+        entry.succeeded += 1;
+        let _ = entry.e2e_latency.record(latency_us);
     }
 
     pub fn record_failure(&self, validity_type: ValidityType, latency: Duration) {
         let latency_us = latency.as_micros() as u64;
 
-        {
-            let mut global = self.0.entry(None).or_default();
-            global.failed += 1;
-            let _ = global.e2e_latency.record(latency_us);
-        }
+        let mut global = self.0.entry(None).or_default();
+        global.failed += 1;
+        let _ = global.e2e_latency.record(latency_us);
 
-        {
-            let mut entry = self.0.entry(Some(validity_type)).or_default();
-            entry.failed += 1;
-            let _ = entry.e2e_latency.record(latency_us);
-        }
+        let mut entry = self.0.entry(Some(validity_type)).or_default();
+        entry.failed += 1;
+        let _ = entry.e2e_latency.record(latency_us);
     }
 
     pub fn get_requests_sent(&self) -> u64 {
@@ -85,10 +77,11 @@ impl LoadTestMetrics {
 
     pub fn success_rate(&self) -> Option<f64> {
         if let Some(global) = self.0.get(&None) {
-            if global.sent == 0 {
+            let resolved = global.succeeded + global.failed;
+            if resolved == 0 {
                 return Some(0.0);
             }
-            Some(global.succeeded as f64 / global.sent as f64)
+            Some(global.succeeded as f64 / resolved as f64)
         } else {
             None
         }
