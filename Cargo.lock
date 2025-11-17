@@ -1947,6 +1947,7 @@ dependencies = [
  "opentelemetry_sdk",
  "reqwest",
  "serde",
+ "serde_json",
  "serde_with",
  "solana-address-lookup-table-interface",
  "solana-client",
