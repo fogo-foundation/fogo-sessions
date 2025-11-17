@@ -1,3 +1,4 @@
+import type { Network } from "@fogo/sessions-sdk";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
@@ -6,26 +7,28 @@ import { z } from "zod";
 import { getMetadata } from "../get-metadata.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { useData } from "./use-data.js";
-import { useConnection } from "./use-session.js";
+import { useConnection, useSessionContext } from "./use-session.js";
 
 export { StateType } from "./use-data.js";
 
 export const useTokenAccountData = (sessionState: EstablishedSessionState) => {
   const connection = useConnection();
+  const { network } = useSessionContext();
   const getTokenAccountData = useCallback(
     () => getTokenAccounts(connection, sessionState),
     [connection, sessionState],
   );
 
   return useData(
-    getCacheKey(sessionState.walletPublicKey),
+    getCacheKey(network, sessionState.walletPublicKey),
     getTokenAccountData,
     {},
   );
 };
 
-export const getCacheKey = (walletPublicKey: PublicKey) => [
+export const getCacheKey = (network: Network, walletPublicKey: PublicKey) => [
   "tokenAccountData",
+  network,
   walletPublicKey.toBase58(),
 ];
 

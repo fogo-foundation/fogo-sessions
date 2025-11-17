@@ -4,7 +4,7 @@ import { useCallback, useEffect } from "react";
 
 import { getMetadata } from "../get-metadata.js";
 import { StateType, useData } from "./use-data.js";
-import { useConnection } from "./use-session.js";
+import { useConnection, useSessionContext } from "./use-session.js";
 
 export { StateType } from "./use-data.js";
 
@@ -12,16 +12,21 @@ export type Metadata = Awaited<ReturnType<typeof getTokenMetadata>>;
 
 export const useTokenMetadata = (mint: PublicKey) => {
   const connection = useConnection();
+  const { network } = useSessionContext();
   const getMetadata = useCallback(
     async () => getTokenMetadata(connection, mint),
     [mint, connection],
   );
-  const data = useData(["tokenMetadata", mint.toBase58()], getMetadata, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnMount: false,
-    revalidateOnReconnect: false,
-  });
+  const data = useData(
+    ["tokenMetadata", network, mint.toBase58()],
+    getMetadata,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnMount: false,
+      revalidateOnReconnect: false,
+    },
+  );
 
   useEffect(() => {
     if (data.type === StateType.NotLoaded) {
