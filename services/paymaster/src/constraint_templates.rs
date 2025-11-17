@@ -234,7 +234,6 @@ impl TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Intent Transfer".to_string(),
             instructions: vec![
-                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
                 InstructionConstraint::intent_instruction_constraint(),
                 InstructionConstraint::intent_transfer_send_tokens_instruction_constraint(),
             ],
@@ -247,7 +246,6 @@ impl TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Intent NTT Bridge".to_string(),
             instructions: vec![
-                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
                 InstructionConstraint::intent_instruction_constraint(),
                 InstructionConstraint::intent_transfer_bridge_ntt_instruction_constraint(),
             ],
