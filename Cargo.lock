@@ -3732,7 +3732,6 @@ checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
 name = "paymaster-load-test"
 version = "0.1.0"
 dependencies = [
- "anchor-lang",
  "anyhow",
  "arc-swap",
  "base64 0.22.1",
@@ -3758,6 +3757,7 @@ dependencies = [
  "solana-signature",
  "solana-signer",
  "solana-transaction",
+ "spl-memo",
  "spl-token",
  "time",
  "tokio",

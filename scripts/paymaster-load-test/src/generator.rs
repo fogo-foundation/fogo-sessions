@@ -3,6 +3,7 @@ use anyhow::Result;
 use chain_id::ID as CHAIN_ID_PID;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
+use rand::random;
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_hash::Hash;
 use solana_keypair::Keypair;
@@ -14,7 +15,7 @@ use solana_program::{
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub struct TransactionGenerator {
@@ -64,15 +65,27 @@ impl TransactionGenerator {
         let message =
             v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
 
-        let mut tx = VersionedTransaction {
-            signatures: vec![Default::default(); 2],
+        let tx = VersionedTransaction {
+            signatures: vec![Default::default(); 1],
             message: VersionedMessage::V0(message),
         };
 
         // sign with session keypair only (sponsor signature will be added by paymaster)
-        sign_transaction(&mut tx, &[&session_keypair]);
+        // Self::sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
+    }
+
+    fn sign_transaction(tx: &mut VersionedTransaction, signers: &[&Keypair]) {
+        let message_bytes = tx.message.serialize();
+        for (i, signer) in signers.iter().enumerate() {
+            let signature = signer.sign_message(&message_bytes);
+
+            // skip the first signature slot (reserved for sponsor)
+            if i + 1 < tx.signatures.len() {
+                tx.signatures[i + 1] = signature;
+            }
+        }
     }
 
     /// Generate transaction with invalid signature (wrong keypair)
@@ -89,7 +102,7 @@ impl TransactionGenerator {
 
         // sign with a wrong keypair instead of the correct session keypair
         let wrong_keypair = Keypair::new();
-        sign_transaction(&mut tx, &[&wrong_keypair]);
+        Self::sign_transaction(&mut tx, &[&wrong_keypair]);
 
         Ok(tx)
     }
@@ -130,18 +143,19 @@ impl TransactionGenerator {
             message: VersionedMessage::V0(message),
         };
 
-        sign_transaction(&mut tx, &[&session_keypair]);
+        Self::sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
     }
 
-    /// Generate transaction with invalid compute budget instructions
+    /// Generate transaction exceeding gas limits
+    /// TODO: we should think about making this safe, especially on testnet where we don't want to accidentally cause drainage
     fn generate_invalid_gas(&self, blockhash: Hash) -> Result<VersionedTransaction> {
         let mut instructions = vec![
-            // request compute unit limit
-            ComputeBudgetInstruction::set_compute_unit_limit(200_000),
-            // rerequest compute unit limit (should fail the validation)
-            ComputeBudgetInstruction::set_compute_unit_limit(200_000),
+            // request excessively high compute units
+            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+            // high priority fee
+            ComputeBudgetInstruction::set_compute_unit_price(1_000_000),
         ];
 
         let (session_instructions, session_keypair) =
@@ -156,7 +170,7 @@ impl TransactionGenerator {
             message: VersionedMessage::V0(message),
         };
 
-        sign_transaction(&mut tx, &[&session_keypair]);
+        Self::sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
     }
@@ -165,38 +179,11 @@ impl TransactionGenerator {
     /// Uses a randomly generated keypair as the new session key for the existing user signer
     fn build_session_establishment_instructions(&self) -> Result<(Vec<Instruction>, Keypair)> {
         let session_keypair = Keypair::new();
-        let session_pubkey = session_keypair.pubkey();
 
-        let expires_iso =
-            (OffsetDateTime::now_utc() + Duration::from_secs(3600)).format(&Rfc3339)?;
+        let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(10_000);
+        let memo_ix = spl_memo::build_memo(&random::<u64>().to_string().as_bytes(), &[]);
 
-        let message_bytes =
-            build_intent_message(&self.chain_id, &self.domain, &expires_iso, &session_pubkey);
-        let intent_ix = build_ed25519_verification_ix(&self.user_signer, message_bytes);
-
-        let domain_record_pda = get_domain_record_address(&self.domain);
-
-        let accounts =
-            gather_start_session_accounts(self.sponsor_pubkey, session_pubkey, domain_record_pda);
-        let start_session_ix = Instruction {
-            program_id: SESSION_MANAGER_ID,
-            accounts,
-            data: vec![0u8],
-        };
-
-        Ok((vec![intent_ix, start_session_ix], session_keypair))
-    }
-}
-
-fn sign_transaction(tx: &mut VersionedTransaction, signers: &[&Keypair]) {
-    let message_bytes = tx.message.serialize();
-    for (i, signer) in signers.iter().enumerate() {
-        let signature = signer.sign_message(&message_bytes);
-
-        // skip the first signature slot (reserved for sponsor)
-        if i + 1 < tx.signatures.len() {
-            tx.signatures[i + 1] = signature;
-        }
+        Ok((vec![compute_budget_ix, memo_ix], session_keypair))
     }
 }
 
@@ -258,4 +245,25 @@ fn gather_start_session_accounts(
         AccountMeta::new_readonly(spl_token::id(), false),
         AccountMeta::new_readonly(solana_program::system_program::ID, false),
     ]
+}
+
+fn gather_close_session_accounts(sponsor: Pubkey, session_pubkey: Pubkey) -> Vec<AccountMeta> {
+    let (session_setter_pda, _setter_bump) =
+        Pubkey::find_program_address(&[b"session_setter"], &SESSION_MANAGER_ID);
+    vec![
+        AccountMeta::new(session_pubkey, false),
+        AccountMeta::new(sponsor, true),
+        AccountMeta::new_readonly(session_setter_pda, false),
+        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(solana_program::system_program::ID, false),
+    ]
+}
+
+fn convert_to_iso_string(unix_secs: u64) -> String {
+    match OffsetDateTime::from_unix_timestamp(unix_secs as i64) {
+        Ok(dt) => dt
+            .format(&Rfc3339)
+            .unwrap_or_else(|_| format!("{unix_secs}")),
+        Err(_) => format!("{unix_secs}"),
+    }
 }
