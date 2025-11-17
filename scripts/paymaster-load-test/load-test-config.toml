@@ -2,7 +2,6 @@
 paymaster_endpoint = "https://paymaster.dourolabs.app"
 rpc_url = "https://mainnet.fogo.io"
 domain = "https://sessions-example.fogo.io"
-chain_id = "fogo-mainnet"
 
 [validity]
 valid_rate = 1

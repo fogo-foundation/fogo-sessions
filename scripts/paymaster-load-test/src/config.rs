@@ -52,11 +52,8 @@ pub struct ExternalTarget {
 
     /// Domain to use for requests
     pub domain: String,
-
-    /// Chain ID for session establishment
-    pub chain_id: String,
-
-    /// Paymaster IP override
+    
+    /// Paymaster IP override, useful is the paymaster is behind a load balancer
     pub paymaster_ip_override: Option<String>,
 }
 
