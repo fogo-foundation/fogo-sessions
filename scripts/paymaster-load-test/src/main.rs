@@ -54,20 +54,17 @@ async fn main() -> Result<()> {
 
     let file_config = FileConfig::from_file(&args.config)?;
 
-    let config = RuntimeConfig {
-        duration_secs: args.duration,
-        request_rps: args.rate,
-        validity_distribution: file_config.validity,
-        external: file_config.external,
-    };
-
-    config.validate()?;
+    let config = RuntimeConfig::new(
+        args.duration,
+        args.rate,
+        file_config.validity,
+        file_config.external,
+    )?;
 
     tracing::info!("Configuration loaded successfully");
     tracing::info!(" - Paymaster: {}", config.external.paymaster_endpoint);
     tracing::info!(" - RPC: {}", config.external.rpc_url);
     tracing::info!(" - Domain: {}", config.external.domain);
-    tracing::info!(" - Chain ID: {}", config.external.chain_id);
     tracing::info!(" - Duration: {}s", config.duration_secs);
     tracing::info!(" - Target Rate: {} req/s", config.request_rps);
     tracing::info!(
