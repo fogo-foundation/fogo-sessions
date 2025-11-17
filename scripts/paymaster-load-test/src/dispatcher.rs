@@ -8,7 +8,7 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use chain_id::{ChainId, ID as CHAIN_ID_PID};
 use governor::{Quota, RateLimiter};
-use reqwest::Client;
+use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_commitment_config::CommitmentConfig;
@@ -64,7 +64,10 @@ impl LoadTestDispatcher {
                 Client::builder()
                     .timeout(Duration::from_secs(30))
                     .resolve(
-                        &config.external.paymaster_endpoint,
+                        Url::parse(&config.external.paymaster_endpoint)
+                            .context("Failed to parse paymaster endpoint")?
+                            .host_str()
+                            .context("Failed to get paymaster host from the paymaster endpoint")?,
                         paymaster_ip_override.parse::<SocketAddr>()?,
                     )
                     .danger_accept_invalid_certs(true)
