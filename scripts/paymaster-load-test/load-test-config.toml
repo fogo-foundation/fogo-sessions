@@ -4,7 +4,8 @@ rpc_url = "https://mainnet.fogo.io"
 domain = "https://sessions-example.fogo.io"
 
 [validity]
-valid_rate = 1
+valid_session_creation_rate = 0
+valid_memo_rate = 1
 invalid_signature_rate = 0
 invalid_constraint_rate = 0
 invalid_fee_payer_rate = 0
