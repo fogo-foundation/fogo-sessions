@@ -163,8 +163,8 @@ impl InstructionConstraint {
         }
     }
 
-    /// The template for the constraint for the IntentTransfer instruction.
-    pub fn intent_transfer_instruction_constraint() -> InstructionConstraint {
+    /// The template for the constraint for the SendTokens intent transfer instruction.
+    pub fn intent_transfer_send_tokens_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: fogo_sessions_sdk::intent_transfer::INTENT_TRANSFER_PROGRAM_ID,
             accounts: vec![],
@@ -175,6 +175,25 @@ impl InstructionConstraint {
                     data_type: PrimitiveDataType::U8,
                     constraint: DataConstraintSpecification::EqualTo(vec![PrimitiveDataValue::U8(
                         0,
+                    )]),
+                },
+            ],
+            required: true,
+        }
+    }
+
+    /// The template for the constraint for the BridgeNttTokens intent transfer instruction.
+    pub fn intent_transfer_bridge_ntt_instruction_constraint() -> InstructionConstraint {
+        InstructionConstraint {
+            program: fogo_sessions_sdk::intent_transfer::INTENT_TRANSFER_PROGRAM_ID,
+            accounts: vec![],
+            data: vec![
+                // instruction = 1 (BridgeNttTokens)
+                DataConstraint {
+                    start_byte: 0,
+                    data_type: PrimitiveDataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![PrimitiveDataValue::U8(
+                        1,
                     )]),
                 },
             ],
@@ -210,14 +229,25 @@ impl TransactionVariation {
         })
     }
 
-    /// The template for the transaction variation that conducts intent transfers.
-    pub fn intent_transfer_variation(max_gas_spend: u64) -> TransactionVariation {
+    /// The template for the transaction variation that conducts intent intrachain transfers.
+    pub fn intent_transfer_send_tokens_variation(max_gas_spend: u64) -> TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Intent Transfer".to_string(),
             instructions: vec![
-                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
                 InstructionConstraint::intent_instruction_constraint(),
-                InstructionConstraint::intent_transfer_instruction_constraint(),
+                InstructionConstraint::intent_transfer_send_tokens_instruction_constraint(),
+            ],
+            max_gas_spend,
+        })
+    }
+
+    /// The template for the transaction variation that conducts intent transfer bridging via NTT.
+    pub fn intent_transfer_bridge_ntt_variation(max_gas_spend: u64) -> TransactionVariation {
+        TransactionVariation::V1(VariationOrderedInstructionConstraints {
+            name: "Intent NTT Bridge".to_string(),
+            instructions: vec![
+                InstructionConstraint::intent_instruction_constraint(),
+                InstructionConstraint::intent_transfer_bridge_ntt_instruction_constraint(),
             ],
             max_gas_spend,
         })
