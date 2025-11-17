@@ -87,6 +87,7 @@ impl TransactionGenerator {
         let message =
             v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
 
+        // we don't need to sign this transaction, the single signature will be added by the paymaster
         Ok(VersionedTransaction {
             signatures: vec![Default::default(); 1],
             message: VersionedMessage::V0(message),
