@@ -81,9 +81,9 @@ const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 const CURRENT_MAJOR = "0";
 const CURRENT_MINOR = "3";
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
-const CURRENT_INTENT_TRANSFER_MINOR = "1";
+const CURRENT_INTENT_TRANSFER_MINOR = "2";
 const CURRENT_BRIDGE_OUT_MAJOR = "0";
-const CURRENT_BRIDGE_OUT_MINOR = "1";
+const CURRENT_BRIDGE_OUT_MINOR = "2";
 
 const SESSION_ESTABLISHMENT_LOOKUP_TABLE_ADDRESS = {
   [Network.Testnet]: "B8cUjJMqaWWTNNSTXBmeptjWswwCH1gTSCRYv4nu7kJW",
@@ -761,6 +761,55 @@ export type Session = {
   sessionInfo: NonNullable<z.infer<typeof sessionInfoSchema>>;
 };
 
+const USDC_MINT = {
+  [Network.Mainnet]: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+  [Network.Testnet]: "ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND",
+};
+const USDC_DECIMALS = 6;
+
+export const getTransferFee = async (context: SessionContext) => {
+  const { fee, ...config } = await getFee(context);
+  return {
+    ...config,
+    fee: fee.intrachainTransfer,
+  };
+};
+
+export const getBridgeOutFee = async (context: SessionContext) => {
+  const { fee, ...config } = await getFee(context);
+  return {
+    ...config,
+    fee: fee.bridgeTransfer,
+  };
+};
+
+const getFee = async (context: SessionContext) => {
+  const program = new IntentTransferProgram(
+    new AnchorProvider(context.connection, {} as Wallet, {}),
+  );
+  const umi = createUmi(context.connection.rpcEndpoint);
+  const usdcMintAddress = USDC_MINT[context.network];
+  const usdcMint = new PublicKey(usdcMintAddress);
+  const [feeConfigPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("fee_config"), usdcMint.toBytes()],
+    program.programId,
+  );
+  const feeConfig = await program.account.feeConfig.fetch(feeConfigPda);
+
+  return {
+    metadata: findMetadataPda(umi, {
+      mint: metaplexPublicKey(usdcMintAddress),
+    })[0],
+    mint: usdcMint,
+    symbolOrMint: "USDC",
+    decimals: USDC_DECIMALS,
+    fee: {
+      intrachainTransfer: BigInt(feeConfig.intrachainTransferFee.toString()),
+      bridgeTransfer: BigInt(feeConfig.bridgeTransferFee.toString()),
+    },
+  };
+};
+
 const TRANSFER_MESSAGE_HEADER = `Fogo Transfer:
 Signing this intent will transfer the tokens as described below.
 `;
@@ -772,6 +821,7 @@ type SendTransferOptions = {
   mint: PublicKey;
   amount: bigint;
   recipient: PublicKey;
+  feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
 };
 
 export const sendTransfer = async (options: SendTransferOptions) => {
@@ -799,11 +849,23 @@ export const sendTransfer = async (options: SendTransferOptions) => {
       options.recipient,
       options.mint,
     ),
-    await buildTransferIntentInstruction(program, options, symbol),
+    await buildTransferIntentInstruction(
+      program,
+      options,
+      symbol,
+      options.feeConfig.symbolOrMint,
+      amountToString(options.feeConfig.fee, options.feeConfig.decimals),
+    ),
     await program.methods
       .sendTokens()
       .accounts({
-        destination: destinationAta,
+        destinationOwner: options.recipient,
+        feeMetadata: options.feeConfig.metadata,
+        feeMint: options.feeConfig.mint,
+        feeSource: getAssociatedTokenAddressSync(
+          options.feeConfig.mint,
+          options.walletPublicKey,
+        ),
         mint: options.mint,
         source: sourceAta,
         sponsor: options.context.payer,
@@ -817,7 +879,9 @@ export const sendTransfer = async (options: SendTransferOptions) => {
 const buildTransferIntentInstruction = async (
   program: IntentTransferProgram,
   options: SendTransferOptions,
-  symbol?: string,
+  symbol: string | undefined,
+  feeToken: string,
+  feeAmount: string,
 ) => {
   const [nonce, { decimals }] = await Promise.all([
     getNonce(program, options.walletPublicKey, NonceType.Transfer),
@@ -832,6 +896,8 @@ const buildTransferIntentInstruction = async (
         token: symbol ?? options.mint.toBase58(),
         amount: amountToString(options.amount, decimals),
         recipient: options.recipient.toBase58(),
+        fee_token: feeToken,
+        fee_amount: feeAmount,
         nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
       }),
     ].join("\n"),
@@ -863,6 +929,7 @@ type SendBridgeOutOptions = {
   amount: bigint;
   fromToken: WormholeToken & { chain: "Fogo" };
   toToken: WormholeToken & { chain: "Solana" };
+  feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
 };
 
 type WormholeToken = {
@@ -907,7 +974,14 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
   return options.context.sendTransaction(
     options.sessionKey,
     await Promise.all([
-      buildBridgeOutIntent(program, options, decimals, metadata?.symbol),
+      buildBridgeOutIntent(
+        program,
+        options,
+        decimals,
+        metadata?.symbol,
+        options.feeConfig.symbolOrMint,
+        amountToString(options.feeConfig.fee, options.feeConfig.decimals),
+      ),
       program.methods
         .bridgeNttTokens({
           payDestinationAtaRent: !destinationAtaExists,
@@ -926,6 +1000,12 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
             options.walletPublicKey,
           ),
           ntt: nttPdas,
+          feeMetadata: options.feeConfig.metadata,
+          feeMint: options.feeConfig.mint,
+          feeSource: getAssociatedTokenAddressSync(
+            options.feeConfig.mint,
+            options.walletPublicKey,
+          ),
         })
         .instruction(),
     ]),
@@ -1021,7 +1101,9 @@ const buildBridgeOutIntent = async (
   program: IntentTransferProgram,
   options: SendBridgeOutOptions,
   decimals: number,
-  symbol?: string,
+  symbol: string | undefined,
+  feeToken: string,
+  feeAmount: string,
 ) => {
   const nonce = await getNonce(
     program,
@@ -1038,6 +1120,8 @@ const buildBridgeOutIntent = async (
         token: symbol ?? options.fromToken.mint.toBase58(),
         amount: amountToString(options.amount, decimals),
         recipient_address: options.walletPublicKey.toBase58(),
+        fee_token: feeToken,
+        fee_amount: feeAmount,
         nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
       }),
     ].join("\n"),

@@ -5,13 +5,17 @@ declare_id!("Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD");
 use anchor_lang::prelude::*;
 
 pub mod bridge;
+pub mod config;
 mod error;
+mod fees;
 mod intrachain;
 mod nonce;
 mod verify;
 
-use bridge::config::processor::register_ntt_config::*;
+use crate::config::state::fee_config::FeeConfig;
 use bridge::processor::bridge_ntt_tokens::*;
+use config::processor::register_fee_config::*;
+use config::processor::register_ntt_config::*;
 use intrachain::processor::send_tokens::*;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
@@ -42,6 +46,14 @@ pub mod intent_transfer {
         ctx: Context<'_, '_, '_, 'info, RegisterNttConfig<'info>>,
     ) -> Result<()> {
         ctx.accounts.process()
+    }
+
+    #[instruction(discriminator = [3])]
+    pub fn register_fee_config<'info>(
+        ctx: Context<'_, '_, '_, 'info, RegisterFeeConfig<'info>>,
+        fee_config: FeeConfig,
+    ) -> Result<()> {
+        ctx.accounts.process(fee_config)
     }
 }
 

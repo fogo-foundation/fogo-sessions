@@ -1,6 +1,11 @@
-import { bridgeOut, Network, TransactionResultType } from "@fogo/sessions-sdk";
+import {
+  bridgeOut,
+  Network,
+  TransactionResultType,
+  getBridgeOutFee,
+} from "@fogo/sessions-sdk";
 import type { FormEvent } from "react";
-import { useState, useCallback } from "react";
+import { Suspense, useState, useCallback, useMemo, use } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
@@ -65,6 +70,10 @@ const WithdrawForm = ({
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
+  const feeConfig = useMemo(
+    () => getSessionContext().then((context) => getBridgeOutFee(context)),
+    [getSessionContext],
+  );
 
   const doSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -76,8 +85,8 @@ const WithdrawForm = ({
       }
 
       setIsSubmitting(true);
-      getSessionContext()
-        .then((context) =>
+      Promise.all([getSessionContext(), feeConfig])
+        .then(([context, feeConfig]) =>
           bridgeOut({
             context,
             sessionPublicKey: sessionState.sessionPublicKey,
@@ -87,6 +96,7 @@ const WithdrawForm = ({
             fromToken: USDC.chains[network].fogo,
             toToken: USDC.chains[network].solana,
             amount: stringToAmount(amount, USDC.decimals),
+            feeConfig,
           }),
         )
         .then((result) => {
@@ -120,6 +130,7 @@ const WithdrawForm = ({
       onSendComplete,
       sessionState.sessionKey,
       sessionState.sessionPublicKey,
+      feeConfig,
       network,
     ],
   );
@@ -149,20 +160,31 @@ const WithdrawForm = ({
         onChange={setAmount}
         placeholder="Enter an amount"
         labelExtra={
-          <Link
-            className={styles.action ?? ""}
-            {...(props.isLoading
-              ? { isPending: true }
-              : {
-                  onPress: () => {
-                    setAmount(
-                      amountToString(props.amountAvailable, USDC.decimals),
-                    );
-                  },
-                })}
+          <Suspense
+            fallback={
+              <Link className={styles.action ?? ""} isDisabled>
+                Max
+              </Link>
+            }
           >
-            Max
-          </Link>
+            <MaxButton
+              feeConfig={feeConfig}
+              {...(props.isLoading
+                ? { isPending: true }
+                : {
+                    setAmount: ({ fee, mint: feeMint }) => {
+                      setAmount(
+                        amountToString(
+                          feeMint.equals(USDC.chains[network].fogo.mint)
+                            ? props.amountAvailable - fee
+                            : props.amountAvailable,
+                          USDC.decimals,
+                        ),
+                      );
+                    },
+                  })}
+            />
+          </Suspense>
         }
         {...(props.isLoading
           ? { isPending: true }
@@ -179,6 +201,12 @@ const WithdrawForm = ({
       >
         Transfer
       </Button>
+      <div className={styles.fee}>
+        Fee:{" "}
+        <Suspense fallback={<span className={styles.skeleton} />}>
+          <FeeAmount feeConfig={feeConfig} />
+        </Suspense>
+      </div>
     </Form>
   );
 };
@@ -187,3 +215,43 @@ const getUsdcBalance = (network: Network, tokensInWallet: Token[]) =>
   tokensInWallet.find((token) =>
     token.mint.equals(USDC.chains[network].fogo.mint),
   )?.amountInWallet ?? 0n;
+
+const MaxButton = ({
+  feeConfig,
+  ...props
+}: {
+  feeConfig: ReturnType<typeof getBridgeOutFee>;
+} & (
+  | { isPending: true }
+  | {
+      isPending?: false | undefined;
+      setAmount: (
+        feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>,
+      ) => void;
+    }
+)) => {
+  const resolvedConfig = use(feeConfig);
+  return (
+    <Link
+      className={styles.action ?? ""}
+      {...(props.isPending
+        ? { isPending: true }
+        : {
+            onPress: () => {
+              props.setAmount(resolvedConfig);
+            },
+          })}
+    >
+      Max
+    </Link>
+  );
+};
+
+const FeeAmount = ({
+  feeConfig,
+}: {
+  feeConfig: ReturnType<typeof getBridgeOutFee>;
+}) => {
+  const { fee, decimals, symbolOrMint } = use(feeConfig);
+  return `${amountToString(fee, decimals)} ${symbolOrMint}`;
+};

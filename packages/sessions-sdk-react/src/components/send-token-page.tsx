@@ -1,8 +1,12 @@
-import { sendTransfer, TransactionResultType } from "@fogo/sessions-sdk";
+import {
+  sendTransfer,
+  TransactionResultType,
+  getTransferFee,
+} from "@fogo/sessions-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import type { FormEvent } from "react";
-import { useState, useCallback } from "react";
+import { Suspense, useState, useCallback, useMemo, use } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
@@ -47,6 +51,10 @@ export const SendTokenPage = ({
   const [recipient, setRecipient] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
+  const feeConfig = useMemo(
+    () => getSessionContext().then((context) => getTransferFee(context)),
+    [getSessionContext],
+  );
 
   const doSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -64,8 +72,8 @@ export const SendTokenPage = ({
       }
 
       setIsLoading(true);
-      getSessionContext()
-        .then((context) =>
+      Promise.all([getSessionContext(), feeConfig])
+        .then(([context, feeConfig]) =>
           sendTransfer({
             context,
             walletPublicKey: sessionState.walletPublicKey,
@@ -74,6 +82,7 @@ export const SendTokenPage = ({
             mint: tokenMint,
             amount: stringToAmount(amount, decimals),
             recipient: new PublicKey(recipient),
+            feeConfig,
           }),
         )
         .then((result) => {
@@ -102,6 +111,7 @@ export const SendTokenPage = ({
       tokenMint,
       onSendComplete,
       toast,
+      feeConfig,
       network,
     ],
   );
@@ -185,15 +195,28 @@ export const SendTokenPage = ({
           onChange={setAmount}
           placeholder="Enter an amount"
           labelExtra={
-            <Link
-              excludeFromTabOrder={showScanner}
-              className={styles.action ?? ""}
-              onPress={() => {
-                setAmount(amountToString(amountAvailable, decimals));
-              }}
+            <Suspense
+              fallback={
+                <Link className={styles.action ?? ""} isDisabled>
+                  Max
+                </Link>
+              }
             >
-              Max
-            </Link>
+              <MaxButton
+                feeConfig={feeConfig}
+                excludeFromTabOrder={showScanner}
+                setAmount={({ fee, mint: feeMint }) => {
+                  setAmount(
+                    amountToString(
+                      feeMint.equals(tokenMint)
+                        ? amountAvailable - fee
+                        : amountAvailable,
+                      decimals,
+                    ),
+                  );
+                }}
+              />
+            </Suspense>
           }
         />
         <Button
@@ -205,6 +228,12 @@ export const SendTokenPage = ({
         >
           Send
         </Button>
+        <div className={styles.fee}>
+          Fee:{" "}
+          <Suspense fallback={<span className={styles.skeleton} />}>
+            <FeeAmount feeConfig={feeConfig} />
+          </Suspense>
+        </div>
       </Form>
       {showScanner && (
         <div className={styles.qrCodeScanner}>
@@ -233,4 +262,36 @@ export const SendTokenPage = ({
       )}
     </div>
   );
+};
+
+const MaxButton = ({
+  feeConfig,
+  excludeFromTabOrder,
+  setAmount,
+}: {
+  feeConfig: ReturnType<typeof getTransferFee>;
+  excludeFromTabOrder: boolean;
+  setAmount: (feeConfig: Awaited<ReturnType<typeof getTransferFee>>) => void;
+}) => {
+  const resolvedConfig = use(feeConfig);
+  return (
+    <Link
+      excludeFromTabOrder={excludeFromTabOrder}
+      className={styles.action ?? ""}
+      onPress={() => {
+        setAmount(resolvedConfig);
+      }}
+    >
+      Max
+    </Link>
+  );
+};
+
+const FeeAmount = ({
+  feeConfig,
+}: {
+  feeConfig: ReturnType<typeof getTransferFee>;
+}) => {
+  const { fee, decimals, symbolOrMint } = use(feeConfig);
+  return `${amountToString(fee, decimals)} ${symbolOrMint}`;
 };
