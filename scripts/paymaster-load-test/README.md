@@ -31,7 +31,6 @@ Configuration Parameters
 - paymaster_endpoint: URL of the paymaster service to test
 - rpc_url: Solana RPC endpoint URL (used for fetching blockhashes)
 - domain: Domain string for session establishment (must match paymaster's domain registry)
-- chain_id: Chain identifier (e.g., "localnet", "devnet", "mainnet-beta")
 
 [validity] section - Transaction type distribution:
 
