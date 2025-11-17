@@ -52,7 +52,7 @@ pub struct ExternalTarget {
 
     /// Domain to use for requests
     pub domain: String,
-    
+
     /// Paymaster IP override, useful is the paymaster is behind a load balancer
     pub paymaster_ip_override: Option<String>,
 }
@@ -69,42 +69,43 @@ impl FileConfig {
 }
 
 impl RuntimeConfig {
-    pub fn validate(&self) -> Result<()> {
+    pub fn new(
+        duration_secs: u64,
+        request_rps: u64,
+        validity_distribution: ValidityDistribution,
+        external: ExternalTarget,
+    ) -> Result<Self> {
+        anyhow::ensure!(duration_secs > 0, "Duration must be positive");
+        anyhow::ensure!(request_rps > 0, "Request RPS must be positive");
         anyhow::ensure!(
-            self.duration_secs > 0,
-            "Test duration must be greater than 0"
-        );
-        anyhow::ensure!(self.request_rps > 0, "Request rate must be greater than 0");
-
-        anyhow::ensure!(
-            self.validity_distribution.valid_rate >= 0.0
-                && self.validity_distribution.valid_rate <= 1.0,
+            validity_distribution.valid_rate >= 0.0 && validity_distribution.valid_rate <= 1.0,
             "Valid rate must be between 0.0 and 1.0"
         );
 
-        let total_invalid = self.validity_distribution.invalid_signature_rate
-            + self.validity_distribution.invalid_constraint_rate
-            + self.validity_distribution.invalid_fee_payer_rate
-            + self.validity_distribution.invalid_gas_rate;
+        let total_invalid = validity_distribution.invalid_signature_rate
+            + validity_distribution.invalid_constraint_rate
+            + validity_distribution.invalid_fee_payer_rate
+            + validity_distribution.invalid_gas_rate;
 
-        let total = self.validity_distribution.valid_rate + total_invalid;
+        let total = validity_distribution.valid_rate + total_invalid;
         anyhow::ensure!(
             (total - 1.0).abs() < 0.01,
             "Sum of validity rates must equal 1.0 (currently: {total:.2})"
         );
 
         anyhow::ensure!(
-            !self.external.paymaster_endpoint.is_empty(),
+            !external.paymaster_endpoint.is_empty(),
             "Paymaster endpoint cannot be empty"
         );
-        anyhow::ensure!(!self.external.rpc_url.is_empty(), "RPC URL cannot be empty");
-        anyhow::ensure!(!self.external.domain.is_empty(), "Domain cannot be empty");
-        anyhow::ensure!(
-            !self.external.chain_id.is_empty(),
-            "Chain id cannot be empty"
-        );
+        anyhow::ensure!(!external.rpc_url.is_empty(), "RPC URL cannot be empty");
+        anyhow::ensure!(!external.domain.is_empty(), "Domain cannot be empty");
 
-        Ok(())
+        Ok(Self {
+            duration_secs,
+            request_rps,
+            validity_distribution,
+            external,
+        })
     }
 }
 
