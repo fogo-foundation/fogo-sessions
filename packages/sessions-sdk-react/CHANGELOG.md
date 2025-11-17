@@ -1,5 +1,26 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.1
+
+### Patch Changes
+
+- 79d7449: Add fees when transferring tokens or bridging tokens out
+- cd6eb60: Remove outdated Solflare Metamask adapter
+- f12e2dd: End session on wallet disconnect and handle account switching
+- 3a04f78: Update wormhole contract addresses in mainnet
+- 8bbcca0: Add disclaimer
+- ddccfad: Silence 1password
+- 1e1272d: Wait for wallet to be ready before autoConnect
+- 80a2f42: Add explorer links to confirmation toasts
+- b414fcd: Add network to cache keys
+- Updated dependencies [79d7449]
+- Updated dependencies [3a04f78]
+- Updated dependencies [79d7449]
+- Updated dependencies [b414fcd]
+  - @fogo/sessions-sdk@0.0.21
+  - @fogo/sessions-idls@0.0.9
+  - @fogo/sessions-sdk-web@0.0.15
+
 ## 0.1.0
 
 ### Minor Changes
