@@ -3,7 +3,6 @@ use anyhow::Result;
 use chain_id::ID as CHAIN_ID_PID;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
-use rand::random;
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_hash::Hash;
 use solana_keypair::Keypair;
@@ -12,10 +11,11 @@ use solana_program::{
     ed25519_program,
     instruction::{AccountMeta, Instruction},
 };
+use rand::random;
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub struct TransactionGenerator {
@@ -65,28 +65,30 @@ impl TransactionGenerator {
         let message =
             v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
 
-        let tx = VersionedTransaction {
-            signatures: vec![Default::default(); 1],
+        let mut tx = VersionedTransaction {
+            signatures: vec![Default::default(); 2],
             message: VersionedMessage::V0(message),
         };
 
         // sign with session keypair only (sponsor signature will be added by paymaster)
-        // Self::sign_transaction(&mut tx, &[&session_keypair]);
+        sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
     }
 
-    fn sign_transaction(tx: &mut VersionedTransaction, signers: &[&Keypair]) {
-        let message_bytes = tx.message.serialize();
-        for (i, signer) in signers.iter().enumerate() {
-            let signature = signer.sign_message(&message_bytes);
+    fn generate_memo(&self, blockhash: Hash) -> Result<VersionedTransaction> {
+        let instructions = vec![ComputeBudgetInstruction::set_compute_unit_limit(10_000),
+        spl_memo::build_memo(&random::<u64>().to_string().as_bytes(), &[])];
 
-            // skip the first signature slot (reserved for sponsor)
-            if i + 1 < tx.signatures.len() {
-                tx.signatures[i + 1] = signature;
-            }
-        }
+        let message =
+        v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+
+        Ok(VersionedTransaction {
+            signatures: vec![Default::default(); 1],
+            message: VersionedMessage::V0(message),
+        })
     }
+
 
     /// Generate transaction with invalid signature (wrong keypair)
     fn generate_invalid_signature(&self, blockhash: Hash) -> Result<VersionedTransaction> {
@@ -102,7 +104,7 @@ impl TransactionGenerator {
 
         // sign with a wrong keypair instead of the correct session keypair
         let wrong_keypair = Keypair::new();
-        Self::sign_transaction(&mut tx, &[&wrong_keypair]);
+        sign_transaction(&mut tx, &[&wrong_keypair]);
 
         Ok(tx)
     }
@@ -143,19 +145,18 @@ impl TransactionGenerator {
             message: VersionedMessage::V0(message),
         };
 
-        Self::sign_transaction(&mut tx, &[&session_keypair]);
+        sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
     }
 
-    /// Generate transaction exceeding gas limits
-    /// TODO: we should think about making this safe, especially on testnet where we don't want to accidentally cause drainage
+    /// Generate transaction with invalid compute budget instructions
     fn generate_invalid_gas(&self, blockhash: Hash) -> Result<VersionedTransaction> {
         let mut instructions = vec![
-            // request excessively high compute units
-            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
-            // high priority fee
-            ComputeBudgetInstruction::set_compute_unit_price(1_000_000),
+            // request compute unit limit
+            ComputeBudgetInstruction::set_compute_unit_limit(200_000),
+            // rerequest compute unit limit (should fail the validation)
+            ComputeBudgetInstruction::set_compute_unit_limit(200_000),
         ];
 
         let (session_instructions, session_keypair) =
@@ -170,7 +171,7 @@ impl TransactionGenerator {
             message: VersionedMessage::V0(message),
         };
 
-        Self::sign_transaction(&mut tx, &[&session_keypair]);
+        sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
     }
@@ -179,11 +180,38 @@ impl TransactionGenerator {
     /// Uses a randomly generated keypair as the new session key for the existing user signer
     fn build_session_establishment_instructions(&self) -> Result<(Vec<Instruction>, Keypair)> {
         let session_keypair = Keypair::new();
+        let session_pubkey = session_keypair.pubkey();
 
-        let compute_budget_ix = ComputeBudgetInstruction::set_compute_unit_limit(10_000);
-        let memo_ix = spl_memo::build_memo(&random::<u64>().to_string().as_bytes(), &[]);
+        let expires_iso =
+            (OffsetDateTime::now_utc() + Duration::from_secs(3600)).format(&Rfc3339)?;
 
-        Ok((vec![compute_budget_ix, memo_ix], session_keypair))
+        let message_bytes =
+            build_intent_message(&self.chain_id, &self.domain, &expires_iso, &session_pubkey);
+        let intent_ix = build_ed25519_verification_ix(&self.user_signer, message_bytes);
+
+        let domain_record_pda = get_domain_record_address(&self.domain);
+
+        let accounts =
+            gather_start_session_accounts(self.sponsor_pubkey, session_pubkey, domain_record_pda);
+        let start_session_ix = Instruction {
+            program_id: SESSION_MANAGER_ID,
+            accounts,
+            data: vec![0u8],
+        };
+
+        Ok((vec![intent_ix, start_session_ix], session_keypair))
+    }
+}
+
+fn sign_transaction(tx: &mut VersionedTransaction, signers: &[&Keypair]) {
+    let message_bytes = tx.message.serialize();
+    for (i, signer) in signers.iter().enumerate() {
+        let signature = signer.sign_message(&message_bytes);
+
+        // skip the first signature slot (reserved for sponsor)
+        if i + 1 < tx.signatures.len() {
+            tx.signatures[i + 1] = signature;
+        }
     }
 }
 
