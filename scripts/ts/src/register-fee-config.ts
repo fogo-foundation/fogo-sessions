@@ -1,10 +1,10 @@
 import { IntentTransferProgram } from "@fogo/sessions-idls";
 import { PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 
 import { anchorOptions, createAnchorProvider } from "./anchor-options.js";
-import BN from "bn.js";
 
 export const main = async (argv: string[] = hideBin(process.argv)) => {
   const args = await yargs(argv)
@@ -34,7 +34,10 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     .parse();
 
   await new IntentTransferProgram(createAnchorProvider(args)).methods
-    .registerFeeConfig({intrachainTransferFee: args.intrachainTransferFee, bridgeTransferFee: args.bridgeTransferFee})
-    .accounts({ mint: args.mint, upgradeAuthority: {signer: undefined} })
+    .registerFeeConfig({
+      intrachainTransferFee: args.intrachainTransferFee,
+      bridgeTransferFee: args.bridgeTransferFee,
+    })
+    .accounts({ mint: args.mint, upgradeAuthority: { signer: undefined } })
     .rpc();
 };

@@ -67,5 +67,29 @@
         white-space: nowrap;
       }
     }
+
+    .fee {
+      @include theme.text("xs");
+
+      color: theme.color("muted");
+      font-style: italic;
+      margin-top: -#{theme.spacing(5)};
+
+      .skeleton {
+        display: inline-block;
+        background: theme.color("skeleton");
+        height: 0.8em;
+        margin-left: 0.25em;
+        width: theme.spacing(15);
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        border-radius: theme.border-radius("md");
+
+        @keyframes pulse {
+          50% {
+            opacity: 0.5;
+          }
+        }
+      }
+    }
   }
 }

@@ -24,4 +24,9 @@
     cursor: wait;
     color: theme.color("muted");
   }
+
+  &[data-disabled] {
+    color: theme.color("muted");
+    cursor: not-allowed;
+  }
 }
