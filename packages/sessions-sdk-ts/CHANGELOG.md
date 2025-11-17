@@ -1,5 +1,14 @@
 # @fogo/sessions-sdk
 
+## 0.0.21
+
+### Patch Changes
+
+- 79d7449: Add fees when transferring tokens or bridging tokens out
+- 3a04f78: Update wormhole contract addresses in mainnet
+- Updated dependencies [79d7449]
+  - @fogo/sessions-idls@0.0.9
+
 ## 0.0.20
 
 ### Patch Changes
