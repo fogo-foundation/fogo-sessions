@@ -3,6 +3,7 @@ use anyhow::Result;
 use chain_id::ID as CHAIN_ID_PID;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
+use rand::random;
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_hash::Hash;
 use solana_keypair::Keypair;
@@ -11,7 +12,6 @@ use solana_program::{
     ed25519_program,
     instruction::{AccountMeta, Instruction},
 };
-use rand::random;
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
@@ -79,18 +79,19 @@ impl TransactionGenerator {
 
     /// Generate a valid memo transaction
     fn generate_valid_memo(&self, blockhash: Hash) -> Result<VersionedTransaction> {
-        let instructions = vec![ComputeBudgetInstruction::set_compute_unit_limit(10_000),
-        spl_memo::build_memo(&random::<u64>().to_string().as_bytes(), &[])];
+        let instructions = vec![
+            ComputeBudgetInstruction::set_compute_unit_limit(10_000),
+            spl_memo::build_memo(random::<u64>().to_string().as_bytes(), &[]),
+        ];
 
         let message =
-        v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
 
         Ok(VersionedTransaction {
             signatures: vec![Default::default(); 1],
             message: VersionedMessage::V0(message),
         })
     }
-
 
     /// Generate transaction with invalid signature (wrong keypair)
     fn generate_invalid_signature(&self, blockhash: Hash) -> Result<VersionedTransaction> {

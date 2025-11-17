@@ -87,12 +87,14 @@ impl RuntimeConfig {
         anyhow::ensure!(duration_secs > 0, "Duration must be positive");
         anyhow::ensure!(request_rps > 0, "Request RPS must be positive");
         anyhow::ensure!(
-            validity_distribution.valid_session_creation_rate >= 0.0 && validity_distribution.valid_session_creation_rate <= 1.0,
+            validity_distribution.valid_session_creation_rate >= 0.0
+                && validity_distribution.valid_session_creation_rate <= 1.0,
             "Valid session creation rate must be between 0.0 and 1.0"
         );
 
         anyhow::ensure!(
-            validity_distribution.valid_memo_rate >= 0.0 && validity_distribution.valid_memo_rate <= 1.0,
+            validity_distribution.valid_memo_rate >= 0.0
+                && validity_distribution.valid_memo_rate <= 1.0,
             "Valid memo rate must be between 0.0 and 1.0"
         );
 
