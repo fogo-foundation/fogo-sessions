@@ -10,11 +10,12 @@ use solana_signer::Signer;
 use solana_transaction::Transaction;
 use spl_token::solana_program::keccak;
 
-use intent_transfer::{
-    bridge::config::ntt_config::ExpectedNttConfig,
-    bridge::cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
-    bridge::message::convert_chain_id_to_wormhole,
-    bridge::processor::bridge_ntt_tokens::BridgeNttTokensArgs,
+use intent_transfer::bridge::{
+    be::{U16BE, U64BE},
+    config::ntt_config::ExpectedNttConfig,
+    cpi::ntt_with_executor::{EXECUTOR_PROGRAM_ID, NTT_WITH_EXECUTOR_PROGRAM_ID},
+    message::convert_chain_id_to_wormhole,
+    processor::bridge_ntt_tokens::{BridgeNttTokensArgs, SignedQuote, SignedQuoteHeader},
 };
 
 mod helpers;
@@ -159,9 +160,10 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let ntt_outbox_rate_limit = Keypair::new();
     let payee_ntt_with_executor = Keypair::new();
 
-    let to_chain_id = "ethereum";
-    let to_chain_id_wormhole =
-        convert_chain_id_to_wormhole(to_chain_id).expect("Invalid to_chain_id");
+    let to_chain_id = "solana";
+    let to_chain_id_wormhole: u16 = convert_chain_id_to_wormhole(to_chain_id)
+        .expect("Invalid to_chain_id")
+        .into();
     let recipient_address_str = "0xabcaA90Df87bf36b051E65331594d9AAB29C739e";
     let amount_str = "0.0001";
 
@@ -241,6 +243,25 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     );
     result_mock_register_ntt_config.expect("Failed to set expected NTT config account");
 
+    let pay_destination_ata_rent = false;
+    let signed_quote_bytes = SignedQuote {
+        header: SignedQuoteHeader {
+            prefix: *b"EQ01",
+            quoter_address: [0u8; 20],
+            payee_address: [0u8; 32],
+            source_chain: U16BE(0u16),
+            destination_chain: U16BE(0u16),
+            expiry_time: U64BE(0u64),
+        },
+        base_fee: U64BE(500_000_000),
+        destination_gas_price: U64BE(10_000),
+        source_price: U64BE(2_000_000_000),
+        destination_price: U64BE(1_531_800_000_000),
+        signature: [0u8; 65],
+    }
+    .try_to_vec()
+    .unwrap();
+
     let bridge_ix = Instruction {
         program_id: intent_transfer::ID,
         accounts: intent_transfer::accounts::BridgeNttTokens {
@@ -284,9 +305,8 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         .to_account_metas(None),
         data: intent_transfer::instruction::BridgeNttTokens {
             args: BridgeNttTokensArgs {
-                exec_amount: 1_000,
-                signed_quote_bytes: vec![],
-                relay_instructions: vec![],
+                signed_quote_bytes,
+                pay_destination_ata_rent,
             },
         }
         .data(),

@@ -676,8 +676,8 @@ const BRIDGING_ADDRESS_LOOKUP_TABLE: Record<
   },
   [Network.Mainnet]: {
     // USDC
-    UsdcSt7U9H5bVy4WaWgeqoowe8RgXpLShCmxUFgZssx:
-      "DjM31fhuQsjxLmpRFQpFUpZvyXzwQeNvyR1DUd8GMVmo",
+    uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG:
+      "BRTw3GAXfEbMUd4GY9P1SQJAvje6LAbj3sRPrdypxpvU",
   },
 };
 
@@ -888,7 +888,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
 
   const outboxItem = Keypair.generate();
 
-  const [metadata, nttPdas] = await Promise.all([
+  const [metadata, nttPdas, destinationAtaExists] = await Promise.all([
     safeFetchMetadata(umi, metadataAddress),
     getNttPdas(
       options,
@@ -896,6 +896,11 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       program,
       outboxItem.publicKey,
       new PublicKey(quote.payeeAddress),
+    ),
+    getDestinationAtaExists(
+      options.context,
+      options.toToken.mint,
+      options.walletPublicKey,
     ),
   ]);
 
@@ -905,8 +910,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       buildBridgeOutIntent(program, options, decimals, metadata?.symbol),
       program.methods
         .bridgeNttTokens({
-          execAmount: new BN(quote.estimatedCost.toString()),
-          relayInstructions: Buffer.from(quote.relayInstructions),
+          payDestinationAtaRent: !destinationAtaExists,
           signedQuoteBytes: Buffer.from(quote.signedQuote),
         })
         .accounts({
@@ -933,6 +937,18 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
         ],
     },
   );
+};
+
+const getDestinationAtaExists = async (
+  context: SessionContext,
+  token: PublicKey,
+  wallet: PublicKey,
+) => {
+  const solanaConnection = await context.getSolanaConnection();
+  const ataAccount = await solanaConnection.getAccountInfo(
+    getAssociatedTokenAddressSync(token, wallet),
+  );
+  return ataAccount !== null;
 };
 
 // Here we use the Wormhole SDKs to produce the wormhole pdas that are needed
@@ -964,6 +980,13 @@ const getNttPdas = async <N extends WormholeNetwork>(
     options.fromToken.manager,
     coreBridgeContract,
   );
+  const [registeredTransceiverPda] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("registered_transceiver"),
+      options.fromToken.manager.toBytes(),
+    ],
+    options.fromToken.manager,
+  );
 
   return {
     emitter: transceiverPdas.emitterAccount(),
@@ -984,7 +1007,7 @@ const getNttPdas = async <N extends WormholeNetwork>(
     ),
     nttTokenAuthority: pdas.tokenAuthority(),
     payeeNttWithExecutor: quotePayeeAddress,
-    transceiver: options.fromToken.transceiver,
+    transceiver: registeredTransceiverPda,
     wormholeProgram: coreBridgeContract,
     wormholeBridge: wormholePdas.wormholeBridge,
     wormholeFeeCollector: wormholePdas.wormholeFeeCollector,

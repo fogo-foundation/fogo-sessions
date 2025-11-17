@@ -1,4 +1,4 @@
-import { bridgeIn } from "@fogo/sessions-sdk";
+import { bridgeIn, Network } from "@fogo/sessions-sdk";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import type { RpcResponseAndContext, TokenAmount } from "@solana/web3.js";
 import { TransferState } from "@wormhole-foundation/sdk";
@@ -19,6 +19,7 @@ import { UsdcIcon } from "./usdc-icon.js";
 import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { USDC } from "../wormhole-routes.js";
+import { ExplorerLink, SolanaNetwork } from "./explorer-link.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -116,7 +117,21 @@ const DepositForm = ({
               errorToString(result.error),
             );
           } else {
-            toast.success("Tokens transferred to Fogo successfully!");
+            const txHash =
+              "originTxs" in result ? result.originTxs[0]?.txid : undefined;
+            toast.success(
+              "Tokens transferred to Fogo successfully!",
+              txHash === undefined ? undefined : (
+                <ExplorerLink
+                  network={
+                    network === Network.Mainnet
+                      ? SolanaNetwork.Mainnet
+                      : SolanaNetwork.Devnet
+                  }
+                  txHash={txHash}
+                />
+              ),
+            );
             mutateAmountAvailable?.().catch((error: unknown) => {
               // eslint-disable-next-line no-console
               console.error("Failed to update Solana USDC balance", error);
@@ -143,6 +158,7 @@ const DepositForm = ({
       getSessionContext,
       onSendComplete,
       mutateAmountAvailable,
+      network,
     ],
   );
 

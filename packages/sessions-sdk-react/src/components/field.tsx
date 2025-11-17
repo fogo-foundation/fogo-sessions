@@ -40,9 +40,17 @@ export const TextField = ({
     </div>
     <Group className={clsx(styles.inputGroup, inputGroupClassName)}>
       {props.double ? (
-        <TextArea placeholder={placeholder} className={styles.input ?? ""} />
+        <TextArea
+          data-1p-ignore
+          placeholder={placeholder}
+          className={styles.input ?? ""}
+        />
       ) : (
-        <Input placeholder={placeholder} className={styles.input ?? ""} />
+        <Input
+          data-1p-ignore
+          placeholder={placeholder}
+          className={styles.input ?? ""}
+        />
       )}
       <FieldError className={styles.error ?? ""}>
         {({ defaultChildren }) => (
