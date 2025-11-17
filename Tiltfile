@@ -56,7 +56,7 @@ LOOKUP_TABLE_ADDRESSES=[
 local_resource(
     "initialize-programs",
     """
-    pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json --chain-id localnet &&
+    pnpm turbo run:initialize-chain-id -- localnet -u l -k ./tilt/keypairs/faucet.json &&
     pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3
 
     """,
@@ -76,7 +76,7 @@ local_resource(
 
 local_resource(
     "paymaster",
-    serve_cmd="cargo run --bin fogo-paymaster migrate && cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster",
+    serve_cmd="cargo run --bin fogo-paymaster migrate --db-url postgres://paymaster:paymaster@localhost:5432/paymaster && cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster",
     resource_deps=["svm-localnet"],
 )
 

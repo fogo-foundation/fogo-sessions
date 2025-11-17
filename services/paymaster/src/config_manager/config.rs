@@ -51,6 +51,11 @@ impl Config {
                 .push(TransactionVariation::intent_transfer_variation(
                     DEFAULT_TEMPLATE_MAX_GAS_SPEND,
                 ));
+            domain
+                .tx_variations
+                .push(TransactionVariation::intent_bridge_ntt_variation(
+                    DEFAULT_TEMPLATE_MAX_GAS_SPEND,
+                ))
         }
     }
 }

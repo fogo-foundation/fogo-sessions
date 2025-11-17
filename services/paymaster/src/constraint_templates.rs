@@ -181,6 +181,24 @@ impl InstructionConstraint {
             required: true,
         }
     }
+
+    pub fn intent_bridge_ntt_instruction_constraint() -> InstructionConstraint {
+        InstructionConstraint {
+            program: fogo_sessions_sdk::intent_transfer::INTENT_TRANSFER_PROGRAM_ID,
+            accounts: vec![],
+            data: vec![
+                // instruction = 1 (BridgeNttTokens)
+                DataConstraint {
+                    start_byte: 0,
+                    data_type: PrimitiveDataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![PrimitiveDataValue::U8(
+                        1,
+                    )]),
+                },
+            ],
+            required: true,
+        }
+    }
 }
 
 impl TransactionVariation {
@@ -218,6 +236,19 @@ impl TransactionVariation {
                 InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
                 InstructionConstraint::intent_instruction_constraint(),
                 InstructionConstraint::intent_transfer_instruction_constraint(),
+            ],
+            max_gas_spend,
+        })
+    }
+
+    /// The template for the transaction variation that conducts intent bridging via NTT.
+    pub fn intent_bridge_ntt_variation(max_gas_spend: u64) -> TransactionVariation {
+        TransactionVariation::V1(VariationOrderedInstructionConstraints {
+            name: "Intent NTT Bridge".to_string(),
+            instructions: vec![
+                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
+                InstructionConstraint::intent_instruction_constraint(),
+                InstructionConstraint::intent_bridge_ntt_instruction_constraint(),
             ],
             max_gas_spend,
         })
