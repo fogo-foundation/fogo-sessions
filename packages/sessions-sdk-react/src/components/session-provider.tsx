@@ -522,7 +522,7 @@ const useSessionState = ({
       };
       wallet.on("disconnect", handleEndSession);
       // generally wallets will emit a "connect" event when the wallet has changed the connected address
-      // ("accountChanged" should be emitted but not all wallets do)
+      // ("accountChanged" should be emitted but none of the wallets we use emit it)
       wallet.on("connect", handleSwitchWallet);
       setState(SessionState.Established(establishedOptions));
     },
