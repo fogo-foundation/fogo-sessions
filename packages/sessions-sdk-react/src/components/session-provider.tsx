@@ -470,7 +470,11 @@ const useSessionState = ({
       
       // when the wallet is disconnected, we need to end the session
       const handleEndSession = () => {
-        establishedOptions.endSession();
+        const address = wallet.publicKey?.toBase58();
+        if (address === undefined) {
+          // we know the wallet is most likely completely disconnected by the user, so we can end the session
+          establishedOptions.endSession();
+        }
         wallet.off("disconnect", handleEndSession);
       };
       wallet.on("disconnect", handleEndSession);
