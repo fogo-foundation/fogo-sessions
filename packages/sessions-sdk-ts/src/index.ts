@@ -33,6 +33,7 @@ import type {
 } from "@solana/wallet-adapter-base";
 import type { TransactionError, TransactionInstruction } from "@solana/web3.js";
 import {
+  ComputeBudgetProgram,
   Connection,
   Ed25519Program,
   Keypair,
@@ -919,6 +920,7 @@ const buildTransferIntentInstruction = async (
 const BRIDGE_OUT_MESSAGE_HEADER = `Fogo Bridge Transfer:
 Signing this intent will bridge out the tokens as described below.
 `;
+const BRIDGE_OUT_CUS = 220_000;
 
 type SendBridgeOutOptions = {
   context: SessionContext;
@@ -971,44 +973,49 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
     ),
   ]);
 
+  const instructions = await Promise.all([
+    buildBridgeOutIntent(
+      program,
+      options,
+      decimals,
+      metadata?.symbol,
+      options.feeConfig.symbolOrMint,
+      amountToString(options.feeConfig.fee, options.feeConfig.decimals),
+    ),
+    program.methods
+      .bridgeNttTokens({
+        payDestinationAtaRent: !destinationAtaExists,
+        signedQuoteBytes: Buffer.from(quote.signedQuote),
+      })
+      .accounts({
+        sponsor: options.context.payer,
+        mint: options.fromToken.mint,
+        metadata:
+          metadata?.symbol === undefined
+            ? // eslint-disable-next-line unicorn/no-null
+              null
+            : new PublicKey(metadataAddress),
+        source: getAssociatedTokenAddressSync(
+          options.fromToken.mint,
+          options.walletPublicKey,
+        ),
+        ntt: nttPdas,
+        feeMetadata: options.feeConfig.metadata,
+        feeMint: options.feeConfig.mint,
+        feeSource: getAssociatedTokenAddressSync(
+          options.feeConfig.mint,
+          options.walletPublicKey,
+        ),
+      })
+      .instruction(),
+  ]);
+
   return options.context.sendTransaction(
     options.sessionKey,
-    await Promise.all([
-      buildBridgeOutIntent(
-        program,
-        options,
-        decimals,
-        metadata?.symbol,
-        options.feeConfig.symbolOrMint,
-        amountToString(options.feeConfig.fee, options.feeConfig.decimals),
-      ),
-      program.methods
-        .bridgeNttTokens({
-          payDestinationAtaRent: !destinationAtaExists,
-          signedQuoteBytes: Buffer.from(quote.signedQuote),
-        })
-        .accounts({
-          sponsor: options.context.payer,
-          mint: options.fromToken.mint,
-          metadata:
-            metadata?.symbol === undefined
-              ? // eslint-disable-next-line unicorn/no-null
-                null
-              : new PublicKey(metadataAddress),
-          source: getAssociatedTokenAddressSync(
-            options.fromToken.mint,
-            options.walletPublicKey,
-          ),
-          ntt: nttPdas,
-          feeMetadata: options.feeConfig.metadata,
-          feeMint: options.feeConfig.mint,
-          feeSource: getAssociatedTokenAddressSync(
-            options.feeConfig.mint,
-            options.walletPublicKey,
-          ),
-        })
-        .instruction(),
-    ]),
+    [
+      ComputeBudgetProgram.setComputeUnitLimit({ units: BRIDGE_OUT_CUS }),
+      ...instructions,
+    ],
     {
       extraSigners: [outboxItem],
       addressLookupTable:
