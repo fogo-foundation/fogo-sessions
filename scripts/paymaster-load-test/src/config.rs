@@ -36,6 +36,12 @@ pub struct ValidityDistribution {
     pub invalid_gas_rate: f64,
 }
 
+impl ValidityDistribution {
+    pub fn valid_rate(&self) -> f64 {
+        self.valid_session_creation_rate + self.valid_memo_rate
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct FileConfig {
     /// Validity distribution configuration
