@@ -813,10 +813,10 @@ const checkStoredSession = async (
 const connectWalletImpl = async (
   sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
-  abortSignal?: AbortSignal,
+  abortSignal: AbortSignal,
 ) => {
   await wallet.connect();
-  if (abortSignal?.aborted || !wallet.connected) {
+  if (abortSignal.aborted || !wallet.connected) {
     await wallet.disconnect();
     return ConnectWalletState.Aborted();
   } else {
