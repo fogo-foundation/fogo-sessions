@@ -500,13 +500,13 @@ const useSessionState = ({
         }
         wallet.off("disconnect", handleEndSession);
       };
-      
+
       const currentAddress = wallet.publicKey?.toBase58();
 
       const handleSwitchWallet = (key: PublicKey) => {
         const newAddress = key.toBase58();
         if (newAddress !== currentAddress) {
-        connectWallet({
+          connectWallet({
             wallet,
             requestedLimits: undefined,
             onCancel: () => {
@@ -521,6 +521,8 @@ const useSessionState = ({
         }
       };
       wallet.on("disconnect", handleEndSession);
+      // generally wallets will emit a "connect" event when the wallet has changed the connected address
+      // ("accountChanged" should be emitted but not all wallets do)
       wallet.on("connect", handleSwitchWallet);
       setState(SessionState.Established(establishedOptions));
     },
@@ -746,45 +748,6 @@ const useSessionState = ({
       }
     }
   });
-
-  // useEffect(() => {
-  //   /**
-  //    * This is a workaround to ensure that the session is updated when the wallet address changes.
-  //    * We use a timer to check if the wallet address has changed and if it has, we "connect" the wallet again.
-  //    * this is because the wallets are not always having an accountChanged event, and some wallets emit an 
-  //    * "connect" event again, and some other ones emit "disconnect" and "connect" again. 
-  //    */
-  //   const WALLET_ADDRESS_CHECK_INTERVAL = 1000;
-  //   let interval: NodeJS.Timeout | undefined;
-  //   if (isEstablished(state)) {
-  //     const wallet = state.solanaWallet;
-  //     let currentAddress = wallet.publicKey?.toBase58();
-  //     interval = setInterval(() => {
-  //       const newAddress = wallet.publicKey?.toBase58();
-  //       const isAddressChanged =
-  //         newAddress !== currentAddress &&
-  //         newAddress !== undefined &&
-  //         currentAddress !== undefined;
-  //       if (isAddressChanged) {
-  //         // connectWallet({
-  //         //   wallet,
-  //         //   requestedLimits: undefined,
-  //         //   onCancel: () => {
-  //         //     clearInterval(interval);
-  //         //   },
-  //         //   onError: () => {
-  //         //     clearInterval(interval);
-  //         //   },
-  //         //   skipConnectingState: true,
-  //         // });
-  //         currentAddress = newAddress;
-  //       }
-  //     }, WALLET_ADDRESS_CHECK_INTERVAL);
-  //   }
-  //   return () => {
-  //     clearInterval(interval);
-  //   };
-  // }, [state.type, connectWallet, state]);
 
   return state;
 };
