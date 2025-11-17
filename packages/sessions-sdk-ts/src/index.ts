@@ -849,15 +849,6 @@ export const sendTransfer = async (options: SendTransferOptions) => {
       options.recipient,
       options.mint,
     ),
-    createAssociatedTokenAccountIdempotentInstruction(
-      options.context.payer,
-      getAssociatedTokenAddressSync(
-        options.feeConfig.mint,
-        options.context.payer,
-      ),
-      options.context.payer,
-      options.feeConfig.mint,
-    ),
     await buildTransferIntentInstruction(
       program,
       options,
@@ -980,58 +971,44 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
     ),
   ]);
 
-  const [bridgeOutIntentIntruction, bridgeOutInstruction] = await Promise.all([
-    buildBridgeOutIntent(
-      program,
-      options,
-      decimals,
-      metadata?.symbol,
-      options.feeConfig.symbolOrMint,
-      amountToString(options.feeConfig.fee, options.feeConfig.decimals),
-    ),
-    program.methods
-      .bridgeNttTokens({
-        payDestinationAtaRent: !destinationAtaExists,
-        signedQuoteBytes: Buffer.from(quote.signedQuote),
-      })
-      .accounts({
-        sponsor: options.context.payer,
-        mint: options.fromToken.mint,
-        metadata:
-          metadata?.symbol === undefined
-            ? // eslint-disable-next-line unicorn/no-null
-              null
-            : new PublicKey(metadataAddress),
-        source: getAssociatedTokenAddressSync(
-          options.fromToken.mint,
-          options.walletPublicKey,
-        ),
-        ntt: nttPdas,
-        feeMetadata: options.feeConfig.metadata,
-        feeMint: options.feeConfig.mint,
-        feeSource: getAssociatedTokenAddressSync(
-          options.feeConfig.mint,
-          options.walletPublicKey,
-        ),
-      })
-      .instruction(),
-  ]);
-
   return options.context.sendTransaction(
     options.sessionKey,
-    [
-      createAssociatedTokenAccountIdempotentInstruction(
-        options.context.payer,
-        getAssociatedTokenAddressSync(
-          options.feeConfig.mint,
-          options.context.payer,
-        ),
-        options.context.payer,
-        options.feeConfig.mint,
+    await Promise.all([
+      buildBridgeOutIntent(
+        program,
+        options,
+        decimals,
+        metadata?.symbol,
+        options.feeConfig.symbolOrMint,
+        amountToString(options.feeConfig.fee, options.feeConfig.decimals),
       ),
-      bridgeOutIntentIntruction,
-      bridgeOutInstruction,
-    ],
+      program.methods
+        .bridgeNttTokens({
+          payDestinationAtaRent: !destinationAtaExists,
+          signedQuoteBytes: Buffer.from(quote.signedQuote),
+        })
+        .accounts({
+          sponsor: options.context.payer,
+          mint: options.fromToken.mint,
+          metadata:
+            metadata?.symbol === undefined
+              ? // eslint-disable-next-line unicorn/no-null
+                null
+              : new PublicKey(metadataAddress),
+          source: getAssociatedTokenAddressSync(
+            options.fromToken.mint,
+            options.walletPublicKey,
+          ),
+          ntt: nttPdas,
+          feeMetadata: options.feeConfig.metadata,
+          feeMint: options.feeConfig.mint,
+          feeSource: getAssociatedTokenAddressSync(
+            options.feeConfig.mint,
+            options.walletPublicKey,
+          ),
+        })
+        .instruction(),
+    ]),
     {
       extraSigners: [outboxItem],
       addressLookupTable:
