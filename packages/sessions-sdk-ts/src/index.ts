@@ -677,7 +677,7 @@ const BRIDGING_ADDRESS_LOOKUP_TABLE: Record<
   [Network.Mainnet]: {
     // USDC
     uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG:
-      "BRTw3GAXfEbMUd4GY9P1SQJAvje6LAbj3sRPrdypxpvU",
+      "84k3mfNjmyinpZwyev7F15ChEW3Kqa3NoUkCJXXs4qkw",
   },
 };
 
@@ -801,7 +801,7 @@ const getFee = async (context: SessionContext) => {
       mint: metaplexPublicKey(usdcMintAddress),
     })[0],
     mint: usdcMint,
-    symbolOrMint: "USDC",
+    symbolOrMint: context.network === Network.Mainnet ? "USDC.s" : "USDC",
     decimals: USDC_DECIMALS,
     fee: {
       intrachainTransfer: BigInt(feeConfig.intrachainTransferFee.toString()),
