@@ -1,0 +1,34 @@
+@use "../theme";
+
+.disclaimer {
+  @include theme.text("xs");
+
+  color: theme.color("paragraph");
+
+  p {
+    margin: 0;
+    margin-bottom: theme.spacing(2);
+  }
+
+  ol,
+  ul {
+    padding: 0;
+  }
+
+  ol {
+    margin: theme.spacing(4) 0;
+    padding-left: theme.spacing(2);
+  }
+
+  ul {
+    margin: theme.spacing(2) 0;
+    padding-left: theme.spacing(6);
+  }
+
+  h2 {
+    @include theme.text("sm", "semibold");
+
+    color: theme.color("heading");
+    margin-bottom: theme.spacing(2);
+  }
+}

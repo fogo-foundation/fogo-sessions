@@ -24,6 +24,7 @@ import {
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
 import { USDC } from "../wormhole-routes.js";
+import { ExplorerLink } from "./explorer-link.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -102,6 +103,7 @@ const WithdrawForm = ({
           if (result.type === TransactionResultType.Success) {
             toast.success(
               "Successful transferred tokens to your Solana wallet!",
+              <ExplorerLink network={network} txHash={result.signature} />,
             );
             onSendComplete();
           } else {
