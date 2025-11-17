@@ -30,7 +30,7 @@ type Props = {
 export const DepositPage = ({ onPressBack, ...props }: Props) => {
   const { getSessionContext, network } = useSessionContext();
   const balance = useData(
-    ["solanaUsdcBalance"],
+    ["solanaUsdcBalance", network, props.sessionState.walletPublicKey],
     async () => {
       const { getSolanaConnection } = await getSessionContext();
       const connection = await getSolanaConnection();

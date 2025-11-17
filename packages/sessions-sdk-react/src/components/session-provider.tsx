@@ -1,6 +1,7 @@
 "use client";
 
 import type {
+  Network,
   Session,
   SessionContext as SessionExecutionContext,
 } from "@fogo/sessions-sdk";
@@ -21,7 +22,7 @@ import {
   getStoredSession,
   setStoredSession,
 } from "@fogo/sessions-sdk-web";
-import { useLocalStorageValue, useMountEffect } from "@react-hookz/web";
+import { useLocalStorageValue } from "@react-hookz/web";
 import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
 import type {
   BaseWalletAdapter,
@@ -49,7 +50,7 @@ import type {
   ReactNode,
   SetStateAction,
 } from "react";
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { mutate } from "swr";
 import { z } from "zod";
 
@@ -282,6 +283,7 @@ const SessionProvider = ({
     ...args,
     getSessionContext,
     setShowBridgeIn: setShowBridgeIn,
+    network,
   });
 
   const state = useMemo(
@@ -316,6 +318,7 @@ const SessionProvider = ({
 };
 
 const useSessionState = ({
+  network,
   tokens,
   getSessionContext,
   onOpenExtendSessionExpiry,
@@ -324,6 +327,7 @@ const useSessionState = ({
   sessionEstablishmentLookupTable,
   setShowBridgeIn,
 }: {
+  network: Network;
   getSessionContext: () => Promise<SessionExecutionContext>;
   tokens?: PublicKey[] | undefined;
   onOpenExtendSessionExpiry?: (() => void) | undefined;
@@ -377,7 +381,7 @@ const useSessionState = ({
         }
       } else {
         try {
-          await mutate(getCacheKey(session.walletPublicKey));
+          await mutate(getCacheKey(network, session.walletPublicKey));
         } catch (error: unknown) {
           toast.error(
             "We couldn't update your token balances, please try refreshing the page",
@@ -389,7 +393,7 @@ const useSessionState = ({
       }
       return result;
     },
-    [onOpenExtendSessionExpiry, onOpenSessionLimitsReached, toast],
+    [onOpenExtendSessionExpiry, onOpenSessionLimitsReached, toast, network],
   );
 
   const updateSession = useCallback(
@@ -451,7 +455,7 @@ const useSessionState = ({
 
   const completeSessionSetup = useCallback(
     (session: Session, wallet: SolanaWallet, onEndSession: () => void) => {
-      setStoredSession({
+      setStoredSession(network, {
         sessionKey: session.sessionKey,
         walletPublicKey: session.walletPublicKey,
       }).catch((error: unknown) => {
@@ -460,7 +464,10 @@ const useSessionState = ({
       });
       const establishedOptions: EstablishedOptions = {
         endSession: () => {
-          disconnect(wallet, { session, sessionContext: getSessionContext() });
+          disconnect(wallet, network, {
+            session,
+            sessionContext: getSessionContext(),
+          });
           onEndSession();
         },
         payer: session.payer,
@@ -495,8 +502,7 @@ const useSessionState = ({
       const handleEndSession = () => {
         const address = wallet.publicKey?.toBase58();
         if (address === undefined) {
-          // if there's no address,we know the wallet is most likely completely disconnected by the user, so we can end the session
-          establishedOptions.endSession();
+          onEndSession();
         }
         wallet.off("disconnect", handleEndSession);
       };
@@ -526,7 +532,13 @@ const useSessionState = ({
       wallet.on("connect", handleSwitchWallet);
       setState(SessionState.Established(establishedOptions));
     },
-    [getSessionContext, sendTransaction, setShowBridgeIn, updateSession],
+    [
+      getSessionContext,
+      sendTransaction,
+      setShowBridgeIn,
+      updateSession,
+      network,
+    ],
   );
 
   const submitLimits = useCallback(
@@ -550,7 +562,7 @@ const useSessionState = ({
         SessionState.SettingLimits({
           cancel: () => {
             controller.abort();
-            disconnect(wallet);
+            disconnect(wallet, network);
             onCancel();
           },
         }),
@@ -584,6 +596,7 @@ const useSessionState = ({
       completeSessionSetup,
       toast,
       sessionEstablishmentLookupTable,
+      network,
     ],
   );
 
@@ -598,7 +611,7 @@ const useSessionState = ({
         SessionState.RequestingLimits({
           requestedLimits,
           cancel: () => {
-            disconnect(wallet);
+            disconnect(wallet, network);
             onCancel();
           },
           submitLimits: (sessionDuration, limits) => {
@@ -621,8 +634,9 @@ const useSessionState = ({
         }),
       );
     },
-    [submitLimits],
+    [submitLimits, network],
   );
+
   const connectWallet = useCallback(
     ({
       wallet,
@@ -648,7 +662,7 @@ const useSessionState = ({
           }),
         );
       }
-      connectWalletImpl(getSessionContext(), wallet, controller.signal)
+      connectWalletImpl(network, getSessionContext(), wallet, controller.signal)
         .then((result) => {
           switch (result.type) {
             case ConnectWalletStateType.RestoredSession: {
@@ -694,6 +708,7 @@ const useSessionState = ({
       submitLimits,
       requestLimits,
       toast,
+      network,
     ],
   );
 
@@ -721,7 +736,7 @@ const useSessionState = ({
     [connectWallet],
   );
 
-  useMountEffect(() => {
+  useEffect(() => {
     if (walletName.value === undefined) {
       setState(SessionState.NotEstablished(requestWallet));
     } else {
@@ -730,7 +745,7 @@ const useSessionState = ({
         setState(SessionState.NotEstablished(requestWallet));
       } else {
         setState(SessionState.CheckingStoredSession());
-        checkStoredSession(getSessionContext(), wallet)
+        checkStoredSession(network, getSessionContext(), wallet)
           .then((session) => {
             if (session === undefined) {
               setState(SessionState.NotEstablished(requestWallet));
@@ -747,7 +762,10 @@ const useSessionState = ({
           });
       }
     }
-  });
+    // We very explicitly only want this effect to fire at startup or when the
+    // network changes and never in other cases
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [network]);
 
   return state;
 };
@@ -782,6 +800,7 @@ const waitForWalletReady = async (wallet: SolanaWallet) => {
 };
 
 const checkStoredSession = async (
+  network: Network,
   sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
 ) => {
@@ -791,6 +810,7 @@ const checkStoredSession = async (
     return;
   } else {
     const result = await tryLoadStoredSession(
+      network,
       sessionContext,
       wallet,
       wallet.publicKey,
@@ -811,6 +831,7 @@ const checkStoredSession = async (
 };
 
 const connectWalletImpl = async (
+  network: Network,
   sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
   abortSignal: AbortSignal,
@@ -822,6 +843,7 @@ const connectWalletImpl = async (
   } else {
     const walletPublicKey = ensureWalletPublicKey(wallet);
     return tryLoadStoredSession(
+      network,
       sessionContext,
       wallet,
       walletPublicKey,
@@ -831,12 +853,13 @@ const connectWalletImpl = async (
 };
 
 const tryLoadStoredSession = async (
+  network: Network,
   sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
   walletPublicKey: PublicKey,
   abortSignal?: AbortSignal,
 ) => {
-  const storedSession = await getStoredSession(walletPublicKey);
+  const storedSession = await getStoredSession(network, walletPublicKey);
   if (abortSignal?.aborted) {
     await wallet.disconnect();
     return ConnectWalletState.Aborted();
@@ -852,7 +875,7 @@ const tryLoadStoredSession = async (
       await wallet.disconnect();
       return ConnectWalletState.Aborted();
     } else if (session === undefined) {
-      await clearStoredSession(walletPublicKey);
+      await clearStoredSession(network, walletPublicKey);
       return ConnectWalletState.Connected(walletPublicKey);
     } else {
       return ConnectWalletState.RestoredSession(session);
@@ -931,6 +954,7 @@ const establishSession = async (
 
 const disconnect = (
   wallet: SolanaWallet,
+  network: Network,
   sessionInfo?: {
     session: Session;
     sessionContext: Promise<SessionExecutionContext>;
@@ -944,7 +968,7 @@ const disconnect = (
           sessionInfo.sessionContext.then((context) =>
             revokeSession({ context, session: sessionInfo.session }),
           ),
-          clearStoredSession(sessionInfo.session.walletPublicKey),
+          clearStoredSession(network, sessionInfo.session.walletPublicKey),
         ]),
   ])
     .then(() => {

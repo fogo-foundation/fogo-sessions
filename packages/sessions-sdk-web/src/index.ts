@@ -1,3 +1,4 @@
+import { Network } from "@fogo/sessions-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { install } from "@solana/webcrypto-ed25519-polyfill";
 import type { DBSchema, IDBPObjectStore } from "idb";
@@ -5,9 +6,12 @@ import { openDB } from "idb";
 
 install();
 
-export const getStoredSession = async (walletPublicKey: PublicKey) => {
+export const getStoredSession = async (
+  network: Network,
+  walletPublicKey: PublicKey,
+) => {
   const session = await withStore("readonly", async (store) => {
-    const value = await store.get(walletPublicKey.toBase58());
+    const value = await store.get(getCacheKey(network, walletPublicKey));
     if (
       value === undefined ||
       (value.sessionKey.publicKey instanceof CryptoKey &&
@@ -27,10 +31,16 @@ export const getStoredSession = async (walletPublicKey: PublicKey) => {
     : undefined;
 };
 
-export const clearStoredSession = async (walletPublicKey: PublicKey) =>
-  withStore("readwrite", (store) => store.delete(walletPublicKey.toBase58()));
+export const clearStoredSession = async (
+  network: Network,
+  walletPublicKey: PublicKey,
+) =>
+  withStore("readwrite", (store) =>
+    store.delete(getCacheKey(network, walletPublicKey)),
+  );
 
 export const setStoredSession = async (
+  network: Network,
   sessionData: Omit<StoredSession, "walletPublicKey"> & {
     walletPublicKey: PublicKey;
   },
@@ -40,7 +50,10 @@ export const setStoredSession = async (
     walletPublicKey: sessionData.walletPublicKey.toBase58(),
   };
   return withStore("readwrite", (store) =>
-    store.put(serializedData, serializedData.walletPublicKey),
+    store.put(
+      serializedData,
+      getCacheKey(network, sessionData.walletPublicKey),
+    ),
   );
 };
 
@@ -58,6 +71,14 @@ const withStore = async <Mode extends IDBTransactionMode, Output>(
   const ret = await cb(store);
   await tx.done;
   return ret;
+};
+
+const getCacheKey = (network: Network, wallet: PublicKey) =>
+  `${wallet.toBase58()}:${NETWORK_TO_CACHE_KEY[network]}`;
+
+const NETWORK_TO_CACHE_KEY: Record<Network, string> = {
+  [Network.Mainnet]: "mainnet",
+  [Network.Testnet]: "testnet",
 };
 
 type SessionDBSchema = DBSchema & {
