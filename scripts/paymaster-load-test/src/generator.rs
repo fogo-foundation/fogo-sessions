@@ -246,24 +246,3 @@ fn gather_start_session_accounts(
         AccountMeta::new_readonly(solana_program::system_program::ID, false),
     ]
 }
-
-fn gather_close_session_accounts(sponsor: Pubkey, session_pubkey: Pubkey) -> Vec<AccountMeta> {
-    let (session_setter_pda, _setter_bump) =
-        Pubkey::find_program_address(&[b"session_setter"], &SESSION_MANAGER_ID);
-    vec![
-        AccountMeta::new(session_pubkey, false),
-        AccountMeta::new(sponsor, true),
-        AccountMeta::new_readonly(session_setter_pda, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
-        AccountMeta::new_readonly(solana_program::system_program::ID, false),
-    ]
-}
-
-fn convert_to_iso_string(unix_secs: u64) -> String {
-    match OffsetDateTime::from_unix_timestamp(unix_secs as i64) {
-        Ok(dt) => dt
-            .format(&Rfc3339)
-            .unwrap_or_else(|_| format!("{unix_secs}")),
-        Err(_) => format!("{unix_secs}"),
-    }
-}
