@@ -172,10 +172,12 @@ const WithdrawForm = ({
               {...(props.isLoading
                 ? { isPending: true }
                 : {
-                    setAmount: (fee) => {
+                    setAmount: ({ fee, mint: feeMint }) => {
                       setAmount(
                         amountToString(
-                          props.amountAvailable - fee,
+                          feeMint.equals(USDC.chains[network].fogo.mint)
+                            ? props.amountAvailable - fee
+                            : props.amountAvailable,
                           USDC.decimals,
                         ),
                       );
@@ -221,9 +223,14 @@ const MaxButton = ({
   feeConfig: ReturnType<typeof getBridgeOutFee>;
 } & (
   | { isPending: true }
-  | { isPending?: false | undefined; setAmount: (fee: bigint) => void }
+  | {
+      isPending?: false | undefined;
+      setAmount: (
+        feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>,
+      ) => void;
+    }
 )) => {
-  const { fee } = use(feeConfig);
+  const resolvedConfig = use(feeConfig);
   return (
     <Link
       className={styles.action ?? ""}
@@ -231,7 +238,7 @@ const MaxButton = ({
         ? { isPending: true }
         : {
             onPress: () => {
-              props.setAmount(fee);
+              props.setAmount(resolvedConfig);
             },
           })}
     >

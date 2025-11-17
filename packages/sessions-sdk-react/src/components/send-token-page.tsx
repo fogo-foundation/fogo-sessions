@@ -205,8 +205,15 @@ export const SendTokenPage = ({
               <MaxButton
                 feeConfig={feeConfig}
                 excludeFromTabOrder={showScanner}
-                setAmount={(fee) => {
-                  setAmount(amountToString(amountAvailable - fee, decimals));
+                setAmount={({ fee, mint: feeMint }) => {
+                  setAmount(
+                    amountToString(
+                      feeMint.equals(tokenMint)
+                        ? amountAvailable - fee
+                        : amountAvailable,
+                      decimals,
+                    ),
+                  );
                 }}
               />
             </Suspense>
@@ -264,15 +271,15 @@ const MaxButton = ({
 }: {
   feeConfig: ReturnType<typeof getTransferFee>;
   excludeFromTabOrder: boolean;
-  setAmount: (fee: bigint) => void;
+  setAmount: (feeConfig: Awaited<ReturnType<typeof getTransferFee>>) => void;
 }) => {
-  const { fee } = use(feeConfig);
+  const resolvedConfig = use(feeConfig);
   return (
     <Link
       excludeFromTabOrder={excludeFromTabOrder}
       className={styles.action ?? ""}
       onPress={() => {
-        setAmount(fee);
+        setAmount(resolvedConfig);
       }}
     >
       Max
