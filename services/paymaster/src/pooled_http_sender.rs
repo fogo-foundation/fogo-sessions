@@ -13,16 +13,16 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 
-/// FTL Http sender for an RPC interface, it creates an internal http2 connection pool
+/// Pooled Http sender for an RPC interface, it creates an internal http2 connection pool
 /// to maximize parallel streams to the server
-pub struct FtlHttpSender {
+pub struct PooledHttpSender {
     clients: Vec<Arc<reqwest_middleware::ClientWithMiddleware>>,
     url: String,
     request_id: AtomicU64,
 }
 
 /// Nonblocking [`RpcSender`] over HTTP.
-impl FtlHttpSender {
+impl PooledHttpSender {
     /// Create an HTTP RPC sender.
     ///
     /// The URL is an HTTP URL, usually for port 8899, as in
@@ -75,7 +75,7 @@ impl FtlHttpSender {
 }
 
 #[async_trait]
-impl RpcSender for FtlHttpSender {
+impl RpcSender for PooledHttpSender {
     async fn send(
         &self,
         request: RpcRequest,

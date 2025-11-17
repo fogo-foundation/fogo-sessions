@@ -1,7 +1,7 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
-use crate::ftl_sender::FtlHttpSender;
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
+use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
     fetch_transaction_cost_details, send_and_confirm_transaction, send_and_confirm_transaction_ftl,
     ChainIndex, ConfirmationResultInternal, RetryConfig,
@@ -45,7 +45,7 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-const FTL_POOL_SIZE: usize = 6;
+const RPC_POOL_SIZE: usize = 6;
 
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
@@ -478,12 +478,18 @@ pub async fn run_server(
     listen_address: String,
     domains_states: Arc<ArcSwap<HashMap<String, DomainState>>>,
 ) {
-    let rpc = RpcClient::new_with_commitment(
-        rpc_url_http,
-        CommitmentConfig {
-            commitment: CommitmentLevel::Processed,
+    let rpc_http_sender = PooledHttpSender::new(rpc_url_http, RPC_POOL_SIZE);
+
+    let rpc = RpcClient::new_sender(
+        rpc_http_sender,
+        RpcClientConfig {
+            commitment_config: CommitmentConfig {
+                commitment: CommitmentLevel::Processed,
+            },
+            confirm_transaction_initial_timeout: None,
         },
     );
+
     let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
         .await
         .expect("Failed to create pubsub client");
@@ -491,7 +497,7 @@ pub async fn run_server(
 
     // Create FTL RPC client with HTTP/2 prior knowledge if FTL URL is provided
     let ftl_rpc = ftl_url.map(|url| {
-        let http_sender = FtlHttpSender::new(url, FTL_POOL_SIZE);
+        let http_sender = PooledHttpSender::new(url, RPC_POOL_SIZE);
 
         RpcClient::new_sender(
             http_sender,
