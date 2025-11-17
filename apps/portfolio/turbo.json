@@ -21,6 +21,13 @@
       "dependsOn": ["//#install:modules"],
       "cache": false
     },
+    "start:dev": {
+      "with": [
+        "@fogo/sessions-sdk#start:dev",
+        "@fogo/sessions-sdk-web#start:dev",
+        "@fogo/sessions-sdk-react#start:dev"
+      ]
+    },
     "test:lint": {
       "dependsOn": [
         "//#install:modules",

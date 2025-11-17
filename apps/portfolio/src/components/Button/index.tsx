@@ -1,66 +1,41 @@
-import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr/ArrowRight";
+"use client";
+
 import clsx from "clsx";
-import type { ReactNode } from "react";
+import type { ComponentProps } from "react";
+import { Button as UnstyledButton, Link } from "react-aria-components";
 
 import styles from "./index.module.scss";
-import { Button as UnstyledButton } from "./react-aria";
-import type { ExtendProps } from "../../extend";
-import { UnstyledLink } from "../Link";
 
-type BaseProps = {
-  className?: string | undefined;
-  children: ReactNode;
-  variant?: "primary" | "secondary";
-  fill?: boolean | undefined;
-  isSelected?: boolean | undefined;
-  isNoninteractive?: boolean | undefined;
-  size?: "md" | "sm";
-  icon?: ReactNode | undefined;
+type Variant = "primary" | "secondary" | "solid" | "ghost" | "outline";
+type Size = "sm" | "md" | "lg";
+
+type Props = (
+  | ComponentProps<typeof UnstyledButton>
+  | ComponentProps<typeof Link>
+) & {
+  variant?: Variant | undefined;
+  size?: Size | undefined;
 };
-
-export type LinkProps = ExtendProps<
-  typeof UnstyledLink,
-  BaseProps & { href: string }
->;
-export type ButtonProps = ExtendProps<typeof UnstyledButton, BaseProps>;
-type Props = LinkProps | ButtonProps;
 
 export const Button = (props: Props) =>
   "href" in props ? (
-    <UnstyledLink {...mkProps(props)} />
+    <Link {...mkProps(props)} />
   ) : (
     <UnstyledButton {...mkProps(props)} />
   );
 
-export const mkProps = <T extends BaseProps>({
+const mkProps = ({
   className,
-  children,
-  variant = "secondary",
-  fill,
-  isSelected,
-  isNoninteractive,
+  variant = "primary",
   size = "md",
-  icon: Icon,
-  ...inputProps
-}: T) => ({
+  ...otherProps
+}: {
+  className?: Parameters<typeof clsx>[0];
+  variant?: Variant | undefined;
+  size?: Size | undefined;
+}) => ({
+  ...otherProps,
   className: clsx(styles.button, className),
   "data-variant": variant,
   "data-size": size,
-  "data-fill": fill ? "" : undefined,
-  "data-selected": isSelected ? "" : undefined,
-  "data-noninteractive": isNoninteractive ? "" : undefined,
-  children: (
-    <>
-      <div className={styles.contents1}>
-        <div className={styles.mainContent}>{children}</div>
-        {Icon && <div className={styles.icon}>{Icon}</div>}
-      </div>
-      <div aria-hidden="true" className={styles.contents2}>
-        <div className={styles.mainContent}>{children}</div>
-        {Icon && <div className={styles.icon}>{Icon}</div>}
-      </div>
-      <ArrowRightIcon className={styles.arrow} aria-hidden="true" />
-    </>
-  ),
-  ...inputProps,
 });
