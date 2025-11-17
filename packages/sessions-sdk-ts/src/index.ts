@@ -830,10 +830,6 @@ export const sendTransfer = async (options: SendTransferOptions) => {
     options.mint,
     options.walletPublicKey,
   );
-  const destinationAta = getAssociatedTokenAddressSync(
-    options.mint,
-    options.recipient,
-  );
   const program = new IntentTransferProgram(
     new AnchorProvider(options.context.connection, {} as Wallet, {}),
   );
@@ -844,12 +840,6 @@ export const sendTransfer = async (options: SendTransferOptions) => {
   const symbol = metadata?.symbol ?? undefined;
 
   return options.context.sendTransaction(undefined, [
-    createAssociatedTokenAccountIdempotentInstruction(
-      options.context.payer,
-      destinationAta,
-      options.recipient,
-      options.mint,
-    ),
     await buildTransferIntentInstruction(
       program,
       options,
