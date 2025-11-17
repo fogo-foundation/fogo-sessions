@@ -490,9 +490,43 @@ const useSessionState = ({
           });
         },
       };
+
+      // when the wallet is disconnected, we need to end the session
+      const handleEndSession = () => {
+        const address = wallet.publicKey?.toBase58();
+        if (address === undefined) {
+          // if there's no address,we know the wallet is most likely completely disconnected by the user, so we can end the session
+          establishedOptions.endSession();
+        }
+        wallet.off("disconnect", handleEndSession);
+      };
+
+      const currentAddress = wallet.publicKey?.toBase58();
+
+      const handleSwitchWallet = (key: PublicKey) => {
+        const newAddress = key.toBase58();
+        if (newAddress !== currentAddress) {
+          connectWallet({
+            wallet,
+            requestedLimits: undefined,
+            onCancel: () => {
+              wallet.off("connect", handleSwitchWallet);
+            },
+            onError: () => {
+              wallet.off("connect", handleSwitchWallet);
+            },
+            skipConnectingState: true,
+          });
+          wallet.off("connect", handleSwitchWallet);
+        }
+      };
+      wallet.on("disconnect", handleEndSession);
+      // generally wallets will emit a "connect" event when the wallet has changed the connected address
+      // ("accountChanged" should be emitted but none of the wallets we use emit it)
+      wallet.on("connect", handleSwitchWallet);
       setState(SessionState.Established(establishedOptions));
     },
-    [getSessionContext, updateSession, sendTransaction, setShowBridgeIn],
+    [getSessionContext, sendTransaction, setShowBridgeIn, updateSession],
   );
 
   const submitLimits = useCallback(
@@ -589,28 +623,31 @@ const useSessionState = ({
     },
     [submitLimits],
   );
-
   const connectWallet = useCallback(
     ({
       wallet,
       requestedLimits,
       onCancel,
       onError,
+      skipConnectingState = false,
     }: {
       wallet: SolanaWallet;
       requestedLimits?: Map<PublicKey, bigint> | undefined;
       onCancel: () => void;
       onError: () => void;
+      skipConnectingState?: boolean;
     }) => {
       const controller = new AbortController();
-      setState(
-        SessionState.WalletConnecting({
-          cancel: () => {
-            controller.abort();
-            onCancel();
-          },
-        }),
-      );
+      if (!skipConnectingState) {
+        setState(
+          SessionState.WalletConnecting({
+            cancel: () => {
+              controller.abort();
+              onCancel();
+            },
+          }),
+        );
+      }
       connectWalletImpl(getSessionContext(), wallet, controller.signal)
         .then((result) => {
           switch (result.type) {
@@ -651,12 +688,12 @@ const useSessionState = ({
     },
     [
       getSessionContext,
-      completeSessionSetup,
-      requestLimits,
-      submitLimits,
-      toast,
-      tokens,
       walletName,
+      completeSessionSetup,
+      tokens,
+      submitLimits,
+      requestLimits,
+      toast,
     ],
   );
 
