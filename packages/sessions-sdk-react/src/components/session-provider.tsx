@@ -560,6 +560,7 @@ const useSessionState = ({
       const controller = new AbortController();
       setState(
         SessionState.SettingLimits({
+          walletPublicKey,
           cancel: () => {
             controller.abort();
             disconnect(wallet, network);

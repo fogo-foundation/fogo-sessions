@@ -116,11 +116,6 @@ export type EstablishedSessionState = Extract<
 
 export type WalletConnectedSessionState = EstablishedSessionState |
   Extract<SessionState, {
-    type: StateType.RequestingLimits;
-    walletPublicKey: PublicKey;
-  }> |
-  Extract<SessionState, {
-    type: StateType.SettingLimits;
     walletPublicKey: PublicKey;
   }>;
 

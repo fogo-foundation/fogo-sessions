@@ -5,10 +5,9 @@ import { useCallback } from "react";
 import { z } from "zod";
 
 import { getMetadata } from "../get-metadata.js";
-import { isEstablished, type EstablishedSessionState, type WalletConnectedSessionState } from "../session-state.js";
+import { isEstablished, type WalletConnectedSessionState } from "../session-state.js";
 import { useData } from "./use-data.js";
 import { useConnection, useSessionContext } from "./use-session.js";
-import type { SessionStateType } from "../index.js";
 
 export { StateType } from "./use-data.js";
 
