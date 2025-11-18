@@ -31,7 +31,7 @@ const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct BridgeNttTokensArgs {
-    pub signed_quote_bytes: Vec<u8>,
+    pub signed_quote_bytes: Vec<u8>, // TODO: this should be a fixed-size array of 165 bytes (better for serialization)
     pub pay_destination_ata_rent: bool,
 }
 
