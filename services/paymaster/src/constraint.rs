@@ -513,7 +513,7 @@ impl DataConstraint {
             }
 
             DataType::NttSignedQuote => {
-                use anchor_lang::prelude::borsh::BorshDeserialize;
+                use anchor_lang::AnchorDeserialize;
 
                 // we skip the first 4 bytes which are the borsh length prefix for the Vec<u8>
                 let signed_quote = SignedQuote::deserialize(&mut &data_to_analyze[4..]).map_err(|e| {
@@ -545,7 +545,7 @@ impl DataConstraint {
 }
 
 fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode, String)> {
-    use anchor_lang::prelude::borsh::BorshSerialize;
+    use anchor_lang::AnchorSerialize;
 
     let signature = signed_quote.signature;
     let message = &signed_quote.try_to_vec().map_err(|e| {
