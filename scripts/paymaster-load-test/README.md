@@ -34,7 +34,8 @@ Configuration Parameters
 
 [validity] section - Transaction type distribution:
 
-- valid_rate: Proportion of valid transactions (0.0-1.0)
+- valid_session_creation_rate: Proportion of valid transactions that create a new session (0.0-1.0)
+- valid_memo_rate: Proportion of valid transactions with a single memo instruction (0-1.0)
 - invalid_signature_rate: Proportion with invalid session signatures
 - invalid_constraint_rate: Proportion calling non-whitelisted programs
 - invalid_fee_payer_rate: Proportion with wrong fee payer

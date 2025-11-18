@@ -3758,6 +3758,7 @@ dependencies = [
  "solana-signature",
  "solana-signer",
  "solana-transaction",
+ "spl-memo",
  "spl-token",
  "time",
  "tokio",

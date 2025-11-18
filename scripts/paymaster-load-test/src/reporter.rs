@@ -21,7 +21,7 @@ pub async fn generate_report(
     println!("  Target Rate:     {} req/s", config.request_rps);
     println!(
         "  Valid Rate:      {:.1}%",
-        config.validity_distribution.valid_rate * 100.0
+        config.validity_distribution.valid_rate() * 100.0
     );
     println!("\nTarget Configuration:");
     println!("  Paymaster:       {}", config.external.paymaster_endpoint);

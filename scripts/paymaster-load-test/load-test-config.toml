@@ -4,7 +4,8 @@ rpc_url = "http://localhost:8899"
 domain = "http://localhost:3000"
 
 [validity]
-valid_rate = 0.80
+valid_session_creation_rate = 0.4
+valid_memo_rate = 0.4
 invalid_signature_rate = 0.05
 invalid_constraint_rate = 0.05
 invalid_fee_payer_rate = 0.05
