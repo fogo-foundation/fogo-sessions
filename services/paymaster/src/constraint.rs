@@ -1,3 +1,4 @@
+use anchor_lang::AnchorDeserialize;
 use axum::http::StatusCode;
 use borsh::BorshDeserialize;
 use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
@@ -513,8 +514,6 @@ impl DataConstraint {
             }
 
             DataType::NttSignedQuote => {
-                use anchor_lang::AnchorDeserialize;
-
                 let signed_quote = SignedQuote::deserialize(&mut data_to_analyze).map_err(|e| {
                     (
                         StatusCode::BAD_REQUEST,
@@ -544,40 +543,31 @@ impl DataConstraint {
 }
 
 fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode, String)> {
-    use anchor_lang::AnchorSerialize;
-
-    let signature_full = signed_quote.signature;
-    let signed_quote_bytes = signed_quote.try_to_vec().map_err(|e| {
+    let message_body = signed_quote.try_get_message_body().map_err(|e| {
         (
             StatusCode::BAD_REQUEST,
-            format!("Failed to serialize signed quote for message hashing: {e}"),
-        )
-    })?;
-    let message = signed_quote_bytes.get(..100).ok_or_else(|| {
-        (
-            StatusCode::BAD_REQUEST,
-            "Signed quote bytes too short to extract message for hashing".into(),
+            format!("Failed to extract message from signed quote: {e}"),
         )
     })?;
 
-    let msg = libsecp256k1::Message::parse(&keccak::hash(message).0);
+    let message = libsecp256k1::Message::parse(&keccak::hash(&message_body).0);
 
-    let (signature, recovery_index_unnormalized) = signature_full.split_at(64);
+    let (signature, recovery_index) = signed_quote.try_get_signature_components().map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Failed to extract signature components from signed quote: {e}"),
+        )
+    })?;
     let sig = libsecp256k1::Signature::parse_standard_slice(signature)
         .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid signature: {e}")))?;
+    let recovery_id = libsecp256k1::RecoveryId::parse_rpc(recovery_index).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Invalid recovery index in signature: {e}"),
+        )
+    })?;
 
-    let recovery_index_unnormalized_value = *recovery_index_unnormalized
-        .first()
-        .expect("Recovery index byte should be in the signature");
-    let recovery_id = libsecp256k1::RecoveryId::parse_rpc(recovery_index_unnormalized_value)
-        .map_err(|e| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!("Invalid recovery index in signature: {e}"),
-            )
-        })?;
-
-    let secp_pubkey = libsecp256k1::recover(&msg, &sig, &recovery_id).map_err(|e| {
+    let secp_pubkey = libsecp256k1::recover(&message, &sig, &recovery_id).map_err(|e| {
         (
             StatusCode::BAD_REQUEST,
             format!("Failed to recover secp256k1 public key: {e}"),

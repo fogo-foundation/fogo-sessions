@@ -526,6 +526,30 @@ pub struct SignedQuote {
     pub signature: [u8; 65],
 }
 
+impl SignedQuote {
+    pub fn try_get_message_body(&self) -> Result<[u8; 100]> {
+        let signed_quote_serialized = self.try_to_vec()?;
+        signed_quote_serialized
+            .get(..100)
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or_else(|| IntentTransferError::InvalidNttSignedQuote.into())
+    }
+
+    // Extracts the signature components (the signature, the recovery index).
+    pub fn try_get_signature_components(&self) -> Result<(&[u8; 64], u8)> {
+        let signature = &self.signature;
+        let (sig_bytes, recovery_index_bytes) = signature.split_at(64);
+        let sig_array = sig_bytes
+            .try_into()
+            .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?;
+        let recovery_index = recovery_index_bytes
+            .first()
+            .copied()
+            .ok_or(IntentTransferError::InvalidNttSignedQuote)?;
+        Ok((sig_array, recovery_index))
+    }
+}
+
 const DECIMALS_QUOTE: u32 = 10;
 const DECIMALS_MAX: u32 = 18;
 
