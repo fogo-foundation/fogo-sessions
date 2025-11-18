@@ -516,7 +516,15 @@ impl DataConstraint {
                 use anchor_lang::AnchorDeserialize;
 
                 // we skip the first 4 bytes which are the borsh length prefix for the Vec<u8>
-                let signed_quote = SignedQuote::deserialize(&mut &data_to_analyze[4..]).map_err(|e| {
+                let mut data_to_analyze_substantive = data_to_analyze.get(4..).ok_or_else(|| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Instruction {instruction_index}: Data constraint expects at least 4 bytes for NTT SignedQuote substantive data",
+                        ),
+                    )
+                })?;
+                let signed_quote = SignedQuote::deserialize(&mut data_to_analyze_substantive).map_err(|e| {
                     (
                         StatusCode::BAD_REQUEST,
                         format!(
@@ -544,37 +552,67 @@ impl DataConstraint {
     }
 }
 
+// TODO: can use libsecp256k1 instead of manually implementing recovery
 fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode, String)> {
     use anchor_lang::AnchorSerialize;
 
     let signature = signed_quote.signature;
-    let message = &signed_quote.try_to_vec().map_err(|e| {
+    let signed_quote_bytes = signed_quote.try_to_vec().map_err(|e| {
         (
             StatusCode::BAD_REQUEST,
             format!("Failed to serialize signed quote for message hashing: {e}"),
         )
-    })?[..100];
+    })?;
+    let message = signed_quote_bytes.get(..100).ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            "Signed quote bytes too short to extract message for hashing".into(),
+        )
+    })?;
 
     let r = keccak::hash(message);
-    let v = if signature[64] >= 27 {
-        signature[64] - 27
+    let (sig, recovery_index_unnormalized) = signature.split_at_checked(64).ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            "Signature length is less than 64 bytes".into(),
+        )
+    })?;
+    let recovery_index_unnormalized_value =
+        *recovery_index_unnormalized.first().ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "Signature length is less than 65 bytes".into(),
+            )
+        })?;
+    let v = if recovery_index_unnormalized_value >= 27 {
+        recovery_index_unnormalized_value - 27
     } else {
-        signature[64]
+        recovery_index_unnormalized_value
     };
 
-    let secp_pubkey = secp256k1_recover(r.as_ref(), v, &signature[..64]).map_err(|e| {
+    let secp_pubkey = secp256k1_recover(r.as_ref(), v, sig).map_err(|e| {
         (
             StatusCode::BAD_REQUEST,
             format!("Failed to recover secp256k1 public key: {e}"),
         )
     })?;
     let pubkey_hashed = keccak::hash(&secp_pubkey.0);
-    let evm_address = pubkey_hashed.as_ref()[12..32].try_into().map_err(|e| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Failed to extract EVM address from public key: {e}"),
-        )
-    })?;
+    let evm_address = pubkey_hashed
+        .as_ref()
+        .get(12..32)
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "Failed to extract EVM address from hashed public key".into(),
+            )
+        })?
+        .try_into()
+        .map_err(|e| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Failed to extract EVM address from public key: {e}"),
+            )
+        })?;
 
     if evm_address != signed_quote.header.quoter_address {
         return Err((
