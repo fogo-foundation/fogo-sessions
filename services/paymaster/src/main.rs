@@ -69,7 +69,11 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .build()?
         .try_deserialize()?;
     let ntt_quoter = parse_h160(&opts.ntt_quoter).map_err(|e| {
-        anyhow::anyhow!("Failed to parse NTT_QUOTER address '{}': {}", opts.ntt_quoter, e)
+        anyhow::anyhow!(
+            "Failed to parse NTT_QUOTER address '{}': {}",
+            opts.ntt_quoter,
+            e
+        )
     })?;
     config.assign_defaults(ntt_quoter);
 

@@ -1,13 +1,13 @@
 use axum::http::StatusCode;
 use borsh::BorshDeserialize;
-use intent_transfer::bridge::processor::bridge_ntt_tokens::{H160, SignedQuote};
+use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_message::VersionedMessage;
-use solana_pubkey::Pubkey;
 use solana_program::{keccak, secp256k1_recover::secp256k1_recover};
+use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
 
@@ -520,8 +520,7 @@ impl DataConstraint {
                     (
                         StatusCode::BAD_REQUEST,
                         format!(
-                            "Instruction {instruction_index}: Failed to deserialize NTT SignedQuote: {}",
-                            e
+                            "Instruction {instruction_index}: Failed to deserialize NTT SignedQuote: {e}",
                         ),
                     )
                 })?;
@@ -545,16 +544,14 @@ impl DataConstraint {
     }
 }
 
-fn recover_signer_pubkey(
-    signed_quote: SignedQuote,
-) -> Result<H160, (StatusCode, String)> {
+fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode, String)> {
     use anchor_lang::prelude::borsh::BorshSerialize;
 
     let signature = signed_quote.signature;
     let message = &signed_quote.try_to_vec().map_err(|e| {
         (
             StatusCode::BAD_REQUEST,
-            format!("Failed to serialize signed quote for message hashing: {}", e),
+            format!("Failed to serialize signed quote for message hashing: {e}"),
         )
     })?[..100];
 
@@ -568,14 +565,14 @@ fn recover_signer_pubkey(
     let secp_pubkey = secp256k1_recover(r.as_ref(), v, &signature[..64]).map_err(|e| {
         (
             StatusCode::BAD_REQUEST,
-            format!("Failed to recover secp256k1 public key: {}", e),
+            format!("Failed to recover secp256k1 public key: {e}"),
         )
     })?;
     let pubkey_hashed = keccak::hash(&secp_pubkey.0);
     let evm_address = pubkey_hashed.as_ref()[12..32].try_into().map_err(|e| {
         (
             StatusCode::BAD_REQUEST,
-            format!("Failed to extract Ethereum address from public key: {}", e),
+            format!("Failed to extract EVM address from public key: {e}"),
         )
     })?;
 
@@ -614,7 +611,7 @@ impl DataType {
             DataType::Bool => 1,
             DataType::Pubkey => 32,
             DataType::Bytes { length } => *length,
-            DataType::NttSignedQuote { .. } => 169, // size of SignedQuote struct + 4 bytes for borsh length prefix
+            DataType::NttSignedQuote => 169, // size of SignedQuote struct + 4 bytes for borsh length prefix
         }
     }
 }
