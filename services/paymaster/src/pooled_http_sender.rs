@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use reqwest::header::{CONTENT_TYPE, RETRY_AFTER};
 use reqwest::{header, StatusCode};
+use serde::{Deserialize, Serialize};
 use solana_client::rpc_request::{RpcError, RpcRequest, RpcResponseErrorData};
 use solana_client::rpc_response::RpcSimulateTransactionResult;
 use solana_rpc_client::rpc_sender::RpcSender;
@@ -8,10 +9,19 @@ use solana_rpc_client::rpc_sender::RpcTransportStats;
 use solana_rpc_client_api::client_error::Result;
 use solana_rpc_client_api::custom_error;
 use solana_rpc_client_api::error_object::RpcErrorObject;
+use solana_transaction_error::TransactionError;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
+
+pub const TRANSACTION_CONFIRMED_FAILED: i64 = -32604;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcTransactionFailedResult {
+    pub err: TransactionError,
+}
 
 /// Pooled Http sender for an RPC interface, it creates an internal http2 connection pool
 /// to maximize parallel streams to the server
@@ -136,6 +146,20 @@ impl RpcSender for PooledHttpSender {
                                 match serde_json::from_value::<custom_error::NodeUnhealthyErrorData>(json["error"]["data"].clone()) {
                                     Ok(custom_error::NodeUnhealthyErrorData {num_slots_behind}) => RpcResponseErrorData::NodeUnhealthy {num_slots_behind},
                                     Err(_err) => {
+                                        RpcResponseErrorData::Empty
+                                    }
+                                }
+                            },
+                            TRANSACTION_CONFIRMED_FAILED => {
+                                match serde_json::from_value::<RpcTransactionFailedResult>(json["error"]["data"].clone()) {
+                                    Ok(data) => {
+                                        // transaction is confirmed as failed
+                                        return Err(solana_rpc_client_api::client_error::Error {
+                                            request: None,
+                                            kind: solana_rpc_client_api::client_error::ErrorKind::TransactionError(data.err),
+                                        });
+                                    },
+                                    Err(_) => {
                                         RpcResponseErrorData::Empty
                                     }
                                 }

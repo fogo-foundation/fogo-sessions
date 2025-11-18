@@ -9,7 +9,7 @@ use solana_client::{
 };
 use solana_commitment_config::CommitmentConfig;
 use solana_pubkey::Pubkey;
-use solana_rpc_client_api::client_error::Error;
+use solana_rpc_client_api::client_error::{Error, ErrorKind};
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
@@ -259,17 +259,24 @@ pub async fn send_and_confirm_transaction_ftl(
             sig
         }
         Err(err) => {
+            let preflight = matches!(&err.kind, &ErrorKind::RpcError(_));
             if let Some(error) = err.get_transaction_error() {
-                tracing::Span::current().record("result", "preflight_failure");
-                tracing::warn!(
-                    "Transaction {} failed preflight: {error}",
-                    transaction.signatures[0]
-                );
-                return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
-                    signature: transaction.signatures[0],
-                    error,
-                });
+                if preflight {
+                    tracing::Span::current().record("result", "preflight_failure");
+                    return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
+                        signature: transaction.signatures[0],
+                        error,
+                    });
+                } else {
+                    // confirmed failed
+                    tracing::Span::current().record("result", "failed");
+                    return Ok(ConfirmationResultInternal::Failed {
+                        signature: transaction.signatures[0],
+                        error,
+                    });
+                }
             }
+
             tracing::Span::current().record("result", "send_failed");
             tracing::error!(
                 "Failed to send transaction {}: {err}",
