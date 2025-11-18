@@ -96,7 +96,7 @@ const SignInModalContents = ({
   onClose: () => void;
 }) => {
   const { whitelistedTokens } = useSessionContext();
-  const [didAcceptDisclaimer, setDidAcceptDisclaimer] = useState(false);
+  const [didAcceptDisclaimer, setDidAcceptDisclaimer] = useState(localStorage.getItem("fogo-sessions-disclaimer-accepted") === "true");
   const step1 = useRef<HTMLDivElement | null>(null);
   const step2 = useRef<HTMLDivElement | null>(null);
   const step3 = useRef<HTMLDivElement | null>(null);
@@ -116,6 +116,12 @@ const SignInModalContents = ({
       setHeight(elem.target.scrollHeight);
     }
   });
+
+
+  const handleDidAcceptDisclaimer = useCallback(() => {
+    localStorage.setItem("fogo-sessions-disclaimer-accepted", "true");
+    setDidAcceptDisclaimer(true);
+  }, []);
 
   return (
     <AnimatePresence>
@@ -167,9 +173,7 @@ const SignInModalContents = ({
           >
             <DisclaimerPage
               onCancel={onClose}
-              onAccept={() => {
-                setDidAcceptDisclaimer(true);
-              }}
+              onAccept={handleDidAcceptDisclaimer}
             />
           </motion.div>
         )
