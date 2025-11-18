@@ -15,8 +15,8 @@ export const useTokenAccountData = (sessionState: EstablishedSessionState) => {
   const connection = useConnection();
   const { network } = useSessionContext();
   const getTokenAccountData = useCallback(
-    () => getTokenAccounts(connection, sessionState),
-    [connection, sessionState],
+    () => getTokenAccounts(connection, sessionState, network),
+    [connection, sessionState, network],
   );
 
   return useData(
@@ -39,6 +39,7 @@ export type Token = Awaited<
 const getTokenAccounts = async (
   connection: Connection,
   sessionState: EstablishedSessionState,
+  network: Network,
 ) => {
   const accounts = accountsSchema.parse(
     await connection.getParsedProgramAccounts(TOKEN_PROGRAM_ID, {
@@ -56,7 +57,7 @@ const getTokenAccounts = async (
     }),
   );
 
-  const metadata = await getMetadata(accounts.map((account) => account.mint));
+  const metadata = await getMetadata(accounts.map((account) => account.mint), network);
 
   return {
     tokensInWallet: accounts
