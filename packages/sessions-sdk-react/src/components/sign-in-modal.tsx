@@ -18,6 +18,11 @@ import styles from "./sign-in-modal.module.css";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
 import { isCancelable, StateType } from "../session-state.js";
 import { Link } from "./link.js";
+import {
+  useTokenAccountData,
+  StateType as TokenDataStateType,
+} from "../hooks/use-token-account-data.js";
+import { Spinner } from "./spinner.js";
 
 type Props = Omit<
   ComponentProps<typeof ModalDialog>,
@@ -356,15 +361,18 @@ const LimitsPage = ({
 }) => {
   const { whitelistedTokens, enableUnlimited, defaultRequestedLimits } =
     useSessionContext();
+  const walletTokens = useTokenAccountData(sessionState);
 
-  return (
+  switch (walletTokens.type) {
+    case TokenDataStateType.Loaded: {
+      return (
     <Page
       heading="Session Limits"
       message="Limit how many tokens this app is allowed to interact with"
     >
       <SessionLimits
         enableUnlimited={enableUnlimited}
-        tokens={whitelistedTokens}
+        tokens={whitelistedTokens.filter((token) => walletTokens.data.tokensInWallet.some((t) => t.mint.equals(token)))}
         onSubmit={
           sessionState.type === StateType.RequestingLimits
             ? sessionState.submitLimits
@@ -381,7 +389,14 @@ const LimitsPage = ({
         autoFocus
       />
     </Page>
-  );
+      )
+    }
+    case TokenDataStateType.Error:
+    case TokenDataStateType.NotLoaded:
+    case TokenDataStateType.Loading: {
+      return <Spinner />;
+    }
+  }
 };
 
 const Page = ({

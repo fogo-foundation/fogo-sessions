@@ -610,6 +610,7 @@ const useSessionState = ({
       setState(
         SessionState.RequestingLimits({
           requestedLimits,
+          walletPublicKey,
           cancel: () => {
             disconnect(wallet, network);
             onCancel();
