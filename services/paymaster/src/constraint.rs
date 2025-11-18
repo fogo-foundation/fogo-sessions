@@ -515,16 +515,9 @@ impl DataConstraint {
             DataType::NttSignedQuote => {
                 use anchor_lang::AnchorDeserialize;
 
-                // we skip the first 4 bytes which are the borsh length prefix for the Vec<u8>
-                let mut data_to_analyze_substantive = data_to_analyze.get(4..).ok_or_else(|| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Instruction {instruction_index}: Data constraint expects at least 4 bytes for NTT SignedQuote substantive data",
-                        ),
-                    )
-                })?;
-                let signed_quote = SignedQuote::deserialize(&mut data_to_analyze_substantive).map_err(|e| {
+                let mut data_to_analyze = data_to_analyze;
+
+                let signed_quote = SignedQuote::deserialize(&mut data_to_analyze).map_err(|e| {
                     (
                         StatusCode::BAD_REQUEST,
                         format!(
@@ -636,7 +629,7 @@ impl DataType {
             DataType::Bool => 1,
             DataType::Pubkey => 32,
             DataType::Bytes { length } => *length,
-            DataType::NttSignedQuote => 169, // size of SignedQuote struct + 4 bytes for borsh length prefix
+            DataType::NttSignedQuote => 165,
         }
     }
 }
