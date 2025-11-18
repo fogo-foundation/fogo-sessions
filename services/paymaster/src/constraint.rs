@@ -6,7 +6,7 @@ use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_message::VersionedMessage;
-use solana_program::{keccak, secp256k1_recover::secp256k1_recover};
+use solana_program::keccak;
 use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
@@ -552,11 +552,10 @@ impl DataConstraint {
     }
 }
 
-// TODO: can use libsecp256k1 instead of manually implementing recovery
 fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode, String)> {
     use anchor_lang::AnchorSerialize;
 
-    let signature = signed_quote.signature;
+    let signature_full = signed_quote.signature;
     let signed_quote_bytes = signed_quote.try_to_vec().map_err(|e| {
         (
             StatusCode::BAD_REQUEST,
@@ -570,13 +569,18 @@ fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode,
         )
     })?;
 
-    let r = keccak::hash(message);
-    let (sig, recovery_index_unnormalized) = signature.split_at_checked(64).ok_or_else(|| {
-        (
-            StatusCode::BAD_REQUEST,
-            "Signature length is less than 64 bytes".into(),
-        )
-    })?;
+    let msg = libsecp256k1::Message::parse(&keccak::hash(message).0);
+
+    let (signature, recovery_index_unnormalized) =
+        signature_full.split_at_checked(64).ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "Signature length is less than 64 bytes".into(),
+            )
+        })?;
+    let sig = libsecp256k1::Signature::parse_standard_slice(signature)
+        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid signature: {e}")))?;
+
     let recovery_index_unnormalized_value =
         *recovery_index_unnormalized.first().ok_or_else(|| {
             (
@@ -584,19 +588,22 @@ fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode,
                 "Signature length is less than 65 bytes".into(),
             )
         })?;
-    let v = if recovery_index_unnormalized_value >= 27 {
-        recovery_index_unnormalized_value - 27
-    } else {
-        recovery_index_unnormalized_value
-    };
+    let recovery_id = libsecp256k1::RecoveryId::parse_rpc(recovery_index_unnormalized_value)
+        .map_err(|e| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("Invalid recovery index in signature: {e}"),
+            )
+        })?;
 
-    let secp_pubkey = secp256k1_recover(r.as_ref(), v, sig).map_err(|e| {
+    let secp_pubkey = libsecp256k1::recover(&msg, &sig, &recovery_id).map_err(|e| {
         (
             StatusCode::BAD_REQUEST,
             format!("Failed to recover secp256k1 public key: {e}"),
         )
     })?;
-    let pubkey_hashed = keccak::hash(&secp_pubkey.0);
+
+    let pubkey_hashed = keccak::hash(&secp_pubkey.serialize());
     let evm_address = pubkey_hashed
         .as_ref()
         .get(12..32)
