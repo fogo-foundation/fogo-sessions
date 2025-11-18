@@ -571,23 +571,13 @@ fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode,
 
     let msg = libsecp256k1::Message::parse(&keccak::hash(message).0);
 
-    let (signature, recovery_index_unnormalized) =
-        signature_full.split_at_checked(64).ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                "Signature length is less than 64 bytes".into(),
-            )
-        })?;
+    let (signature, recovery_index_unnormalized) = signature_full.split_at(64);
     let sig = libsecp256k1::Signature::parse_standard_slice(signature)
         .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid signature: {e}")))?;
 
-    let recovery_index_unnormalized_value =
-        *recovery_index_unnormalized.first().ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                "Signature length is less than 65 bytes".into(),
-            )
-        })?;
+    let recovery_index_unnormalized_value = *recovery_index_unnormalized
+        .first()
+        .expect("Recovery index byte should be in the signature");
     let recovery_id = libsecp256k1::RecoveryId::parse_rpc(recovery_index_unnormalized_value)
         .map_err(|e| {
             (
@@ -605,21 +595,11 @@ fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode,
 
     let pubkey_hashed = keccak::hash(&secp_pubkey.serialize());
     let evm_address = pubkey_hashed
-        .as_ref()
-        .get(12..32)
-        .ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                "Failed to extract EVM address from hashed public key".into(),
-            )
-        })?
+        .0
+        .get(12..)
+        .expect("Hash should be 32 bytes")
         .try_into()
-        .map_err(|e| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!("Failed to extract EVM address from public key: {e}"),
-            )
-        })?;
+        .expect("Slice of 20 bytes should convert to H160");
 
     if evm_address != signed_quote.header.quoter_address {
         return Err((
