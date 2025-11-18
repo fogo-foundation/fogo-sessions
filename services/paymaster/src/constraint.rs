@@ -440,7 +440,7 @@ impl DataConstraint {
             ));
         }
 
-        let data_to_analyze = &data[usize::from(self.start_byte)..end_byte];
+        let mut data_to_analyze = &data[usize::from(self.start_byte)..end_byte];
         let data_to_analyze_deserialized = match self.data_type {
             DataType::Bool => DataValue::Bool(data_to_analyze[0] != 0),
             DataType::U8 => DataValue::U8(data_to_analyze[0]),
@@ -514,8 +514,6 @@ impl DataConstraint {
 
             DataType::NttSignedQuote => {
                 use anchor_lang::AnchorDeserialize;
-
-                let mut data_to_analyze = data_to_analyze;
 
                 let signed_quote = SignedQuote::deserialize(&mut data_to_analyze).map_err(|e| {
                     (
