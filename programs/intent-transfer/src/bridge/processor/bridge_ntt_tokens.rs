@@ -503,11 +503,13 @@ fn compute_msg_value_and_gas_limit_solana(pay_destination_ata_rent: bool) -> (u1
     (msg_value, 250_000)
 }
 
+pub type H160 = [u8; 20];
+
 // Derived from the documentation: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#off-chain-quote
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SignedQuoteHeader {
     pub prefix: [u8; 4],
-    pub quoter_address: [u8; 20],
+    pub quoter_address: H160,
     pub payee_address: [u8; 32],
     pub source_chain: U16BE,
     pub destination_chain: U16BE,

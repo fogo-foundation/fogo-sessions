@@ -7,6 +7,7 @@ description = "Fogo paymaster service and transaction validator CLI"
 repository = "https://github.com/fogo-foundation/fogo-sessions"
 
 [dependencies]
+anchor-lang = {workspace = true}
 anyhow = {workspace = true}
 arc-swap = {workspace = true}
 async-recursion = "1.1.1"
@@ -25,6 +26,7 @@ fogo-sessions-sdk = { version = "0.7.0", path = "../../packages/sessions-sdk-rs"
 futures = {workspace = true}
 governor = {workspace = true}
 hex = {workspace = true}
+intent-transfer = {workspace = true}
 opentelemetry = "0.30.0"
 opentelemetry-otlp = {version = "0.30.0", features = ["grpc-tonic"]}
 opentelemetry_sdk = {version = "0.30.0", features = ["rt-tokio"]}

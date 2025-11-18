@@ -49,6 +49,9 @@ pub struct RunOptions {
 
     #[arg(long, env = "DB_REFRESH_INTERVAL_SECONDS", default_value = "10")]
     pub db_refresh_interval_seconds: u64,
+
+    #[arg(long, env = "NTT_QUOTER")]
+    pub ntt_quoter: String,
 }
 
 #[derive(Args, Debug, Clone)]
