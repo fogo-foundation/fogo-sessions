@@ -497,39 +497,6 @@ const useSessionState = ({
           });
         },
       };
-
-      // when the wallet is disconnected, we need to end the session
-      const handleEndSession = () => {
-        const address = wallet.publicKey?.toBase58();
-        if (address === undefined) {
-          onEndSession();
-        }
-        wallet.off("disconnect", handleEndSession);
-      };
-
-      const currentAddress = wallet.publicKey?.toBase58();
-
-      const handleSwitchWallet = (key: PublicKey) => {
-        const newAddress = key.toBase58();
-        if (newAddress !== currentAddress) {
-          connectWallet({
-            wallet,
-            requestedLimits: undefined,
-            onCancel: () => {
-              wallet.off("connect", handleSwitchWallet);
-            },
-            onError: () => {
-              wallet.off("connect", handleSwitchWallet);
-            },
-            skipConnectingState: true,
-          });
-          wallet.off("connect", handleSwitchWallet);
-        }
-      };
-      wallet.on("disconnect", handleEndSession);
-      // generally wallets will emit a "connect" event when the wallet has changed the connected address
-      // ("accountChanged" should be emitted but none of the wallets we use emit it)
-      wallet.on("connect", handleSwitchWallet);
       setState(SessionState.Established(establishedOptions));
     },
     [
@@ -662,7 +629,34 @@ const useSessionState = ({
           }),
         );
       }
-      connectWalletImpl(network, getSessionContext(), wallet, controller.signal)
+      connectWalletImpl(network, getSessionContext(), wallet, controller.signal, {
+        onRestoredSession: (result) => {
+          walletName.set(wallet.name);
+          completeSessionSetup(result.session, wallet, onCancel);
+        },
+        onConnected: () => {
+          walletName.set(wallet.name);
+              if (tokens === undefined || tokens.length === 0) {
+                submitLimits({
+                  sessionDuration: DEFAULT_SESSION_DURATION,
+                  wallet,
+                  walletPublicKey: result.walletPublicKey,
+                  onError,
+                  onCancel,
+                });
+              } else {
+                requestLimits(
+                  wallet,
+                  result.walletPublicKey,
+                  requestedLimits,
+                  onCancel,
+                );
+              }
+        },
+        onAborted: () => {
+          onError();
+        },
+      })
         .then((result) => {
           switch (result.type) {
             case ConnectWalletStateType.RestoredSession: {
@@ -799,6 +793,33 @@ const waitForWalletReady = async (wallet: SolanaWallet) => {
   ]);
 };
 
+
+const addWalletEvents = (wallet: SolanaWallet, network: Network, sessionContext: Promise<SessionExecutionContext>, abortSignal?: AbortSignal, onEndSession?: () => void) => {
+  const handleEndSession = () => {
+        const address = wallet.publicKey?.toBase58();
+        if (address === undefined) {
+          onEndSession?.();
+        }
+        wallet.off("disconnect", handleEndSession);
+      };
+
+      const currentAddress = wallet.publicKey?.toBase58();
+
+      const handleSwitchWallet = (key: PublicKey) => {
+        console.log("handleSwitchWallet", key.toBase58(),currentAddress);
+        const newAddress = key.toBase58();
+        if (newAddress !== currentAddress) {
+          void connectWalletImpl(network, sessionContext, wallet, abortSignal, onEndSession)
+          wallet.off("connect", handleSwitchWallet);
+        }
+      };
+      wallet.on("disconnect", handleEndSession);
+      // generally wallets will emit a "connect" event when the wallet has changed the connected address
+      // ("accountChanged" should be emitted but none of the wallets we use emit it)
+      wallet.on("connect", handleSwitchWallet);
+};
+
+
 const checkStoredSession = async (
   network: Network,
   sessionContext: Promise<SessionExecutionContext>,
@@ -806,6 +827,7 @@ const checkStoredSession = async (
 ) => {
   await waitForWalletReady(wallet);
   await wallet.autoConnect();
+  addWalletEvents(wallet, network, sessionContext);
   if (wallet.publicKey === null) {
     return;
   } else {
@@ -834,10 +856,13 @@ const connectWalletImpl = async (
   network: Network,
   sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
-  abortSignal: AbortSignal,
+  abortSignal?: AbortSignal,
+  onEndSession?: () => void,
 ) => {
   await wallet.connect();
-  if (abortSignal.aborted || !wallet.connected) {
+  console.log("connectWalletImpl", wallet.connected);
+  addWalletEvents(wallet, network, sessionContext, abortSignal, onEndSession);
+  if (abortSignal?.aborted || !wallet.connected) {
     await wallet.disconnect();
     return ConnectWalletState.Aborted();
   } else {
