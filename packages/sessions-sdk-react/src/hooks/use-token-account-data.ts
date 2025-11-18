@@ -57,7 +57,10 @@ const getTokenAccounts = async (
     }),
   );
 
-  const metadata = await getMetadata(accounts.map((account) => account.mint), network);
+  const metadata = await getMetadata(
+    accounts.map((account) => account.mint),
+    network,
+  );
 
   return {
     tokensInWallet: accounts
