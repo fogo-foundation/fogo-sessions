@@ -1,7 +1,7 @@
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
-import { useResizeObserver } from "@react-hookz/web";
+import { useLocalStorageValue, useResizeObserver } from "@react-hookz/web";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
@@ -96,7 +96,11 @@ const SignInModalContents = ({
   onClose: () => void;
 }) => {
   const { whitelistedTokens } = useSessionContext();
-  const [didAcceptDisclaimer, setDidAcceptDisclaimer] = useState(false);
+  const didAcceptDisclaimer = useLocalStorageValue<boolean>(
+    "fogo-sessions-disclaimer-accepted",
+    { defaultValue: false },
+  );
+  const initialDidAcceptDisclaimer = useRef(didAcceptDisclaimer.value);
   const step1 = useRef<HTMLDivElement | null>(null);
   const step2 = useRef<HTMLDivElement | null>(null);
   const step3 = useRef<HTMLDivElement | null>(null);
@@ -117,16 +121,20 @@ const SignInModalContents = ({
     }
   });
 
+  const handleDidAcceptDisclaimer = useCallback(() => {
+    didAcceptDisclaimer.set(true);
+  }, [didAcceptDisclaimer]);
+
   return (
     <AnimatePresence>
       {sessionState.type === StateType.SelectingWallet ||
       sessionState.type === StateType.WalletConnecting ||
       (sessionState.type === StateType.SettingLimits &&
         whitelistedTokens.length === 0) ? (
-        didAcceptDisclaimer ? (
+        didAcceptDisclaimer.value ? (
           <motion.div
             key="wallets"
-            initial={{ x: "100%" }}
+            initial={initialDidAcceptDisclaimer.current ? false : { x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             ref={(elem) => {
@@ -167,9 +175,7 @@ const SignInModalContents = ({
           >
             <DisclaimerPage
               onCancel={onClose}
-              onAccept={() => {
-                setDidAcceptDisclaimer(true);
-              }}
+              onAccept={handleDidAcceptDisclaimer}
             />
           </motion.div>
         )
