@@ -334,11 +334,12 @@ const getSponsor = async (
     Parameters<typeof createSessionConnection>[0],
     "paymaster" | "network"
   >,
-  sponsorCache: Map<string, PublicKey>,
+  sponsorCache: Map<string, PublicKey | Promise<PublicKey>>,
   domain: string,
 ) => {
   const value = sponsorCache.get(domain);
   if (value === undefined) {
+    const promise = (async () => {
     const url = new URL(
       "/api/sponsor_pubkey",
       options.paymaster ?? DEFAULT_PAYMASTER[options.network],
@@ -352,7 +353,9 @@ const getSponsor = async (
       return sponsor;
     } else {
       throw new PaymasterResponseError(response.status, await response.text());
-    }
+    }})();
+    sponsorCache.set(domain, promise);
+    return promise;
   } else {
     return value;
   }
