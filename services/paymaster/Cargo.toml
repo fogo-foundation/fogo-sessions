@@ -67,6 +67,7 @@ utoipa-axum = "0.2.0"
 url = "2.5.7"
 uuid = {version = "1.18.1", features = ["v7"]}
 libsecp256k1 = "0.6.0"
+rand = { workspace = true }
 
 [[bin]]
 name = "paymaster-tx-validator"

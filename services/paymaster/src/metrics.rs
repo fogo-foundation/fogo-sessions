@@ -3,10 +3,10 @@ use axum_prometheus::metrics;
 use crate::rpc::TransactionCostDetails;
 
 pub const TRANSACTION_VALIDATION_COUNT: &str = "paymaster_transaction_validation_total";
-pub fn obs_validation(domain: String, variation: String, result_validation: String) {
+pub fn obs_validation(domain: String, variation: Option<String>, result_validation: String) {
     let labels = &[
         ("domain", domain),
-        ("variation", variation),
+        ("variation", variation.unwrap_or("None".to_string())),
         ("result", result_validation),
     ];
     metrics::counter!(TRANSACTION_VALIDATION_COUNT, labels).increment(1);

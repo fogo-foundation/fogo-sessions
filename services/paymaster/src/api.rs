@@ -37,14 +37,35 @@ use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
+use rand::Rng;
+
+pub struct NonEmptyVec<T> {
+    inner: Vec<T>,
+}
+
+impl<T> NonEmptyVec<T> {
+    pub fn new(inner: Vec<T>) -> Option<NonEmptyVec<T>> {
+        return inner.is_empty().then_some(Self { inner });
+    }
+}
+
+impl<T> Deref for NonEmptyVec<T> {
+    type Target = Vec<T>;
+
+    fn deref(&self) -> &Vec<T> {
+        &self.inner
+    }
+}
+
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
-    pub sponsor: Keypair,
+    pub sponsors: NonEmptyVec<Keypair>,
     pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
 }
@@ -114,18 +135,8 @@ impl DomainState {
         &self,
         transaction: &VersionedTransaction,
         chain_index: &ChainIndex,
+        sponsor: &Pubkey,
     ) -> Result<&TransactionVariation, (StatusCode, String)> {
-        if transaction.message.static_account_keys()[0] != self.sponsor.pubkey() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Transaction fee payer must be the sponsor: expected {}, got {}",
-                    self.sponsor.pubkey(),
-                    transaction.message.static_account_keys()[0],
-                ),
-            ));
-        }
-
         let message_bytes = transaction.message.serialize();
         transaction
             .signatures
@@ -150,7 +161,7 @@ impl DomainState {
             .iter()
             .map(|variation| {
                 Box::pin(async move {
-                    self.validate_transaction_against_variation(transaction, variation, chain_index)
+                    self.validate_transaction_against_variation(transaction, variation, chain_index, sponsor)
                         .await
                         .map(|_| variation)
                 })
@@ -174,6 +185,7 @@ impl DomainState {
         transaction: &VersionedTransaction,
         tx_variation: &TransactionVariation,
         chain_index: &ChainIndex,
+        sponsor: &Pubkey,
     ) -> Result<(), (StatusCode, String)> {
         match tx_variation {
             TransactionVariation::V0(variation) => variation.validate_transaction(transaction),
@@ -183,7 +195,7 @@ impl DomainState {
                         transaction,
                         &ContextualDomainKeys {
                             domain_registry: self.domain_registry_key,
-                            sponsor: self.sponsor.pubkey(),
+                            sponsor: *sponsor,
                         },
                         chain_index,
                     )
@@ -304,28 +316,41 @@ async fn sponsor_and_send_handler(
         bincode::serde::decode_from_slice(&transaction_bytes, bincode::config::standard())
             .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
+    let transaction_sponsor : &Keypair = domain_state.sponsors.iter().find(|sponsor| sponsor.pubkey() == transaction.message.static_account_keys()[0]).ok_or_else(|| -> (StatusCode, String) {
+        let status_code = StatusCode::BAD_REQUEST;
+        obs_validation(domain.clone(), None, status_code.to_string());
+        (
+            status_code,
+            format!(
+                "Transaction fee payer must be one of the sponsors: expected one of {}, got {}",
+                domain_state.sponsors.iter().map(|sponsor| sponsor.pubkey().to_string()).collect::<Vec<_>>().join(","),
+                transaction.message.static_account_keys()[0],
+            ),
+        )
+    })?;
+
+
     let matched_variation_name = match domain_state
-        .validate_transaction(&transaction, &state.chain_index)
+        .validate_transaction(&transaction, &state.chain_index, &transaction_sponsor.pubkey())
         .await
     {
         Ok(variation) => {
             tracing::Span::current().record("variation", variation.name());
             obs_validation(
                 domain.clone(),
-                variation.name().to_owned(),
+                Some(variation.name().to_owned()),
                 "success".to_string(),
             );
             variation.name()
         }
         Err(e) => {
-            obs_validation(domain.clone(), "None".to_string(), e.0.to_string());
+            obs_validation(domain.clone(), None, e.0.to_string());
             return Err(e.into());
         }
     }
     .to_owned();
 
-    transaction.signatures[0] = domain_state
-        .sponsor
+    transaction.signatures[0] = transaction_sponsor
         .sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
@@ -405,24 +430,40 @@ struct SponsorPubkeyQuery {
     #[serde(default)]
     /// Domain to request the sponsor pubkey for
     domain: Option<String>,
+    #[serde(default)]
+    /// If set and the domain has multiple sponsors, this will return the sponsor at the given index, instead of a random one.
+    precise: Option<u8>,
 }
 
 #[utoipa::path(get, path = "/sponsor_pubkey", params(SponsorPubkeyQuery))]
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
+    Query(SponsorPubkeyQuery { domain, precise }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
     let domains_guard = state.domains.load();
     let domain_state = get_domain_state(&domains_guard, &domain)?;
     let DomainState {
         domain_registry_key: _,
-        sponsor,
+        sponsors,
         enable_preflight_simulation: _,
         tx_variations: _,
     } = domain_state;
-    Ok(sponsor.pubkey().to_string())
+
+    let sponsor_index = precise.map(|i| i as usize).map(|i| 
+        if i >= sponsors.len() {
+            Err::<usize, (StatusCode, String)>((
+                StatusCode::BAD_REQUEST,
+                format!("Sponsor index {i} is out of bounds for domain {domain} with {} sponsors", sponsors.len()),
+            )
+                .into())
+        } else {
+            Ok(i)
+        }
+    ).transpose()?.unwrap_or(rand::rng().random_range(0usize..sponsors.len()));
+    
+    Ok(sponsors[sponsor_index].pubkey().to_string())
 }
 
 pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<String, DomainState> {
@@ -433,22 +474,22 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                  domain,
                  enable_preflight_simulation,
                  tx_variations,
+                 number_of_signers,
                  ..
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
-                let sponsor = Keypair::from_seed_and_derivation_path(
+                let sponsors = NonEmptyVec::new((0u8..number_of_signers.into()).map(|i| Keypair::from_seed_and_derivation_path(
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
                         mnemonic, &domain,
                     ),
-                    Some(DerivationPath::new_bip44(Some(0), Some(0))),
-                )
-                .expect("Failed to derive keypair from mnemonic_file");
+                    Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
+                ).expect("Failed to derive keypair from mnemonic_file")).collect());
 
                 (
                     domain,
                     DomainState {
                         domain_registry_key,
-                        sponsor,
+                        sponsors,
                         enable_preflight_simulation,
                         tx_variations,
                     },
