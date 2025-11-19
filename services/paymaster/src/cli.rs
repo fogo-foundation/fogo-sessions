@@ -9,20 +9,12 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Run the paymaster service (uses DB + env vars, no TOML)
+    /// Run the paymaster service
     Run(RunOptions),
-
-    /// Run DB migrations and exit (requires only DATABASE_URL)
-    Migrate(MigrateOptions),
 }
 
 #[derive(Args, Debug, Clone)]
 pub struct RunOptions {
-    /// Postgres connection string (required via flag or env)
-    #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
-    pub db_url: String,
-
-    // TODO this is part of the temporary change to load the config from the file. Should be removed.
     /// Path to TOML config
     #[arg(short = 'c', long = "config-file", env = "CONFIG_FILE")]
     pub config_file: String,
@@ -47,17 +39,7 @@ pub struct RunOptions {
     )]
     pub otlp_endpoint: String,
 
-    #[arg(long, env = "DB_REFRESH_INTERVAL_SECONDS", default_value = "10")]
-    pub db_refresh_interval_seconds: u64,
-
     // TODO: this is a temporary change and should be removed once we load the ntt_quoter from the DB
     #[arg(long, env = "NTT_QUOTER")]
     pub ntt_quoter: String,
-}
-
-#[derive(Args, Debug, Clone)]
-pub struct MigrateOptions {
-    /// Postgres connection string (required via flag or env)
-    #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
-    pub db_url: String,
 }

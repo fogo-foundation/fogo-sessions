@@ -1,5 +1,5 @@
 use crate::cli::Cli;
-use crate::config_manager::config::Config;
+use crate::config::Config;
 use arc_swap::ArcSwap;
 use clap::Parser;
 use fogo_paymaster::parse::parse_h160;
@@ -10,10 +10,9 @@ use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod api;
 mod cli;
-mod config_manager;
+mod config;
 mod constraint;
 mod constraint_templates;
-mod db;
 mod metrics;
 mod rpc;
 mod serde;
@@ -61,11 +60,8 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .with(telemetry)
         .init();
 
-    db::pool::init_db_connection(&opts.db_url).await?;
-    /* TODO Revert this once we have a good way of modifying the config from the DB. */
-    // let config = config_manager::load_config::load_db_config().await?;
-    let mut config: Config = config::Config::builder()
-        .add_source(config::File::with_name(&opts.config_file))
+    let mut config: Config = ::config::Config::builder()
+        .add_source(::config::File::with_name(&opts.config_file))
         .build()?
         .try_deserialize()?;
     let ntt_quoter = parse_h160(&opts.ntt_quoter).map_err(|e| {
@@ -83,12 +79,6 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         config.domains,
         &mnemonic,
     )));
-    // TODO this is commented out as part of the temporary change to load the config from the file.
-    // config_manager::load_config::spawn_config_refresher(
-    //     mnemonic,
-    //     Arc::clone(&domains),
-    //     opts.db_refresh_interval_seconds,
-    // );
 
     let rpc_url_ws = opts
         .rpc_url_ws
@@ -97,18 +87,11 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn run_migrations(opts: cli::MigrateOptions) -> anyhow::Result<()> {
-    db::pool::init_db_connection(&opts.db_url).await?;
-    db::pool::run_migrations().await?;
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
     match Cli::parse().command {
         cli::Command::Run(opts) => run_server(opts).await?,
-        cli::Command::Migrate(opts) => run_migrations(opts).await?,
     }
 
     Ok(())

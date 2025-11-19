@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
-    config_manager::config::{Config, Domain},
+    config::{Config, Domain},
     constraint::{ContextualDomainKeys, TransactionVariation},
     rpc::ChainIndex,
 };
@@ -187,7 +187,7 @@ async fn main() -> Result<()> {
 }
 
 fn get_domains_for_validation<'a>(
-    config: &'a fogo_paymaster::config_manager::config::Config,
+    config: &'a fogo_paymaster::config::Config,
     domain: &Option<String>,
 ) -> Vec<&'a Domain> {
     if let Some(domain_name) = domain {

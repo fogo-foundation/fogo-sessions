@@ -66,7 +66,7 @@ cargo run --bin fogo-paymaster migrate
 Seeding is optional, but simplifies bootstrapping a local configuration. Provide both a database URL and a path to a TOML config (an example lives at `tilt/configs/paymaster.toml`):
 
 ```bash
-cargo run --bin paymaster-seed -- --db-url "postgres://paymaster:paymaster@localhost:5432/paymaster" --config tilt/configs/paymaster.toml
+cargo run --bin paymaster-seed -- --config tilt/configs/paymaster.toml
 ```
 
 ### Running the paymaster
@@ -75,7 +75,6 @@ Launch the service with either environment variables or explicit flags. The mini
 
 ```bash
 cargo run --bin fogo-paymaster run \
-  --db-url "postgres://paymaster:paymaster@localhost:5432/paymaster" \
   --rpc-url-http https://testnet-alt.fogo.io \
   --mnemonic-file ./tilt/secrets/mnemonic
 ```
@@ -85,7 +84,6 @@ Optional flags:
 - `--rpc-url-ws` (defaults to replacing `http` with `ws` on the HTTP URL)
 - `--listen-address` (default `0.0.0.0:4000`)
 - `--otlp-endpoint` for exporting OpenTelemetry traces (default `http://localhost:4317`)
-- `--db-refresh-interval-seconds` for how frequently domain config is refreshed (default `10` secs)
 
 You can also rely on the `.env`(see `.env.example`) values and simply run `cargo run --bin fogo-paymaster run`.
 
