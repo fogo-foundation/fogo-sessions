@@ -216,6 +216,13 @@ const DisclaimerPage = (props: {
   </Page>
 );
 
+/**
+ * Solflare wallet is always present in the available wallets even if it's not installed, but with the ready state of Loadable.
+ * This is used to filter it out to avoid showing it in the list of installed wallets.
+ */
+const isSolflareWalletNotInstalled = (wallet: SolanaWallet) =>
+  wallet.name === "Solflare" && wallet.readyState === WalletReadyState.Loadable;
+
 const WalletsPage = ({
   wallets,
   selectWallet,
@@ -233,8 +240,9 @@ const WalletsPage = ({
 
   const { otherWallets, installedWallets } = useMemo(() => {
     const { otherWallets, installedWallets } = groupBy(wallets, (wallet) =>
-      wallet.readyState === WalletReadyState.Installed ||
-      wallet.readyState === WalletReadyState.Loadable
+      (wallet.readyState === WalletReadyState.Installed ||
+        wallet.readyState === WalletReadyState.Loadable) &&
+      !isSolflareWalletNotInstalled(wallet)
         ? "installedWallets"
         : "otherWallets",
     );
@@ -243,7 +251,6 @@ const WalletsPage = ({
       installedWallets: installedWallets ?? [],
     };
   }, [wallets]);
-
   return (
     <Page heading="Select a wallet" message="Select a Solana wallet to connect">
       <Button
