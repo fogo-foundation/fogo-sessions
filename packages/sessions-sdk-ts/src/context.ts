@@ -54,8 +54,8 @@ export const createSessionContext = async (options: {
 };
 
 export type SendTransactionOptions = SendTransactionBaseOptions & ({
-  paymasterDomain?: string | undefined;
-} | { sponsor?: PublicKey | undefined });
+  paymasterDomain?: string | undefined, sponsor?: undefined
+} | { paymasterDomain?: undefined, sponsor?: PublicKey | undefined });
 
 export type SessionContext = Awaited<ReturnType<typeof createSessionContext>>;
 

@@ -230,7 +230,7 @@ const buildTransaction = async (
     sponsorCache: Map<string, PublicKey>;
   },
   domain: string,
-  sponsor: PublicKey | undefined,
+  sponsorOverride: PublicKey | undefined,
   signerKeys: CryptoKeyPair[],
   instructions: (TransactionInstruction | Instruction)[],
   extraConfig?: {
@@ -238,11 +238,11 @@ const buildTransaction = async (
     extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
   },
 ) => {
-  const [{ value: latestBlockhash }, addressLookupTable, signers] =
+  const [{ value: latestBlockhash }, sponsor, addressLookupTable, signers] =
     await Promise.all([
       connection.rpc.getLatestBlockhash().send(),
-      sponsor ? 
-      Promise.resolve(sponsor) : connection.sponsor === undefined
+      sponsorOverride ? 
+      Promise.resolve(sponsorOverride) : connection.sponsor === undefined
         ? getSponsor(connection, connection.sponsorCache, domain)
         : Promise.resolve(connection.sponsor),
       extraConfig?.addressLookupTable === undefined

@@ -51,7 +51,7 @@ pub struct NonEmptyVec<T> {
 
 impl<T> NonEmptyVec<T> {
     pub fn new(inner: Vec<T>) -> Option<NonEmptyVec<T>> {
-        return inner.is_empty().then_some(Self { inner });
+        return (!inner.is_empty()).then_some(Self { inner });
     }
 }
 
@@ -482,8 +482,8 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                     &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
                         mnemonic, &domain,
                     ),
-                    Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
-                ).expect("Failed to derive keypair from mnemonic_file")).collect());
+                    Some(DerivationPath::new_bip44(Some(i.into()), Some(0)))
+                ).expect("Failed to derive keypair from mnemonic_file")).collect()).expect("number_of_signers in NonZero so this should never be empty");
 
                 (
                     domain,

@@ -225,7 +225,7 @@ export const revokeSession = async (options: {
       .instruction();
     return options.context.sendTransaction(options.session.sessionKey, [
       instruction,
-    ]);
+    ], { sponsor: options.session.sessionInfo.sponsor });
   } else {
     return;
   }
