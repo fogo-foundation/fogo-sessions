@@ -1,9 +1,11 @@
 "use client";
 
 import type {
+  SendTransactionOptions,
   Network,
   Session,
   SessionContext as SessionExecutionContext,
+  TransactionOrInstructions,
 } from "@fogo/sessions-sdk";
 import {
   establishSession as establishSessionImpl,
@@ -343,10 +345,11 @@ const useSessionState = ({
   const sendTransaction = useCallback(
     async (
       session: Session,
-      instructions: Parameters<EstablishedOptions["sendTransaction"]>[0],
       establishedOptions: EstablishedOptions,
+      instructions: TransactionOrInstructions,
+      options?: SendTransactionOptions,
     ) => {
-      const result = await session.sendTransaction(instructions);
+      const result = await session.sendTransaction(instructions, options);
       if (result.type === TransactionResultType.Failed) {
         const parsedError = instructionErrorCustomSchema.safeParse(
           result.error,
@@ -471,8 +474,8 @@ const useSessionState = ({
           onEndSession();
         },
         payer: session.payer,
-        sendTransaction: (instructions) =>
-          sendTransaction(session, instructions, establishedOptions),
+        sendTransaction: (instructions, options) =>
+          sendTransaction(session, establishedOptions, instructions, options),
         sessionKey: session.sessionKey,
         isLimited:
           session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
