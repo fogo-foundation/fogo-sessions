@@ -54,12 +54,14 @@ const SessionLimitsForm = ({
           tokens={
             state.type === TokenDataStateType.Error
               ? []
-              : whitelistedTokens.filter((token) =>
-                  state.data.tokensInWallet.some(
-                    (tokenInWallet) =>
-                      tokenInWallet.mint.equals(token) &&
-                      tokenInWallet.amountInWallet > 0n,
-                  ),
+              : whitelistedTokens.filter(
+                  (token) =>
+                    state.data.sessionLimits.some((tokenInSessionLimit) =>
+                      tokenInSessionLimit.mint.equals(token),
+                    ) ||
+                    state.data.tokensInWallet.some((tokenInWallet) =>
+                      tokenInWallet.mint.equals(token),
+                    ),
                 )
           }
           hideCancel
