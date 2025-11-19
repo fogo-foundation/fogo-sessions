@@ -92,6 +92,7 @@ impl RpcSender for PooledHttpSender {
         params: serde_json::Value,
     ) -> Result<serde_json::Value> {
         let request_id = self.request_id.fetch_add(1, Ordering::Relaxed);
+        let method = format!("{}", request);
         let request_json = request.build_request_json(request_id, params).to_string();
 
         let client = self.clients[(request_id as usize) % self.clients.len()].clone();
@@ -106,8 +107,11 @@ impl RpcSender for PooledHttpSender {
                     .send()
                     .await
             }?;
+            let headers = response.headers().iter().map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string())).collect::<Vec<_>>();
 
             if !response.status().is_success() {
+                tracing::warn!("Status Failed RPC call: {} status: {}, headers: {:?}", method, response.status(), headers);
+
                 if response.status() == StatusCode::TOO_MANY_REQUESTS
                     && too_many_requests_retries > 0
                 {
@@ -131,6 +135,8 @@ impl RpcSender for PooledHttpSender {
 
             let mut json = response.json::<serde_json::Value>().await?;
             if json["error"].is_object() {
+                tracing::warn!("Error in RPC call: {}, headers: {:?}", method, headers);
+
                 return match serde_json::from_value::<RpcErrorObject>(json["error"].clone()) {
                     Ok(rpc_error_object) => {
                         let data = match rpc_error_object.code {
