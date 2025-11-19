@@ -7,7 +7,8 @@
     "initialize-chain-id": "./bin/initialize-chain-id.js",
     "register-ntt-manager": "./bin/register-ntt-manager.js",
     "add-program-id-to-domain-registry": "./bin/add-program-id-to-domain-registry.js",
-    "register-fee-config": "./bin/register-fee-config.js"
+    "register-fee-config": "./bin/register-fee-config.js",
+    "update-metadata": "./bin/update-metadata.js"
   },
   "scripts": {
     "build": "tsc --noEmit false --outDir ./dist",
@@ -23,6 +24,9 @@
     "@fogo/sessions-sdk": "workspace:*",
     "@ledgerhq/hw-transport": "catalog:",
     "@ledgerhq/hw-transport-node-hid": "catalog:",
+    "@metaplex-foundation/mpl-token-metadata": "catalog:",
+    "@metaplex-foundation/umi": "catalog:",
+    "@metaplex-foundation/umi-bundle-defaults": "catalog:",
     "@solana/wallet-adapter-ledger": "catalog:",
     "@solana/web3.js": "catalog:",
     "bn.js": "catalog:",
