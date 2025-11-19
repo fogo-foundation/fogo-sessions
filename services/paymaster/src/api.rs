@@ -177,7 +177,10 @@ impl DomainState {
             ));
         } else if variation_name.is_some() {
             // If variation_name was specified, only one future will be present, and we can propagate its specific error.
-            let future = validation_futures.into_iter().next().expect("validation_futures is not empty, so this must exist");
+            let future = validation_futures
+                .into_iter()
+                .next()
+                .expect("validation_futures is not empty, so this must exist");
             let variation = future.await?;
             Ok(variation)
         } else {
@@ -308,7 +311,9 @@ pub enum ConfirmationResult {
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(SponsorAndSendQuery { domain, variation, .. }): Query<SponsorAndSendQuery>,
+    Query(SponsorAndSendQuery {
+        domain, variation, ..
+    }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<Json<ConfirmationResult>, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
@@ -455,7 +460,10 @@ async fn sponsor_pubkey_handler(
     Ok(sponsor.pubkey().to_string())
 }
 
-pub fn get_domain_state_map(domains: Vec<ParsedDomain>, mnemonic: &str) -> HashMap<String, DomainState> {
+pub fn get_domain_state_map(
+    domains: Vec<ParsedDomain>,
+    mnemonic: &str,
+) -> HashMap<String, DomainState> {
     domains
         .into_iter()
         .map(
