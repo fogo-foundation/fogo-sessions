@@ -243,9 +243,9 @@ const buildTransaction = async (
       connection.rpc.getLatestBlockhash().send(),
       sponsorOverride
         ? Promise.resolve(sponsorOverride)
-        : connection.sponsor === undefined
+        : (connection.sponsor === undefined
           ? getSponsor(connection, connection.sponsorCache, domain)
-          : Promise.resolve(connection.sponsor),
+          : Promise.resolve(connection.sponsor)),
       extraConfig?.addressLookupTable === undefined
         ? Promise.resolve(undefined)
         : getAddressLookupTable(
