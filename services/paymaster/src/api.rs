@@ -467,15 +467,23 @@ async fn sponsor_pubkey_handler(
         tx_variations: _,
     } = domain_state;
 
-    let sponsor_index = precise.map(|i| i as usize).map(|i| if i >= sponsors.len() {
-            Err::<usize, (StatusCode, String)>((
-                StatusCode::BAD_REQUEST,
-                format!("Sponsor index {i} is out of bounds for domain {domain} with {} sponsors", sponsors.len()),
-            ))
-        } else {
-            Ok(i)
-        }
-    ).transpose()?.unwrap_or(rand::rng().random_range(0usize..sponsors.len()));
+    let sponsor_index = precise
+        .map(|i| i as usize)
+        .map(|i| {
+            if i >= sponsors.len() {
+                Err::<usize, (StatusCode, String)>((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Sponsor index {i} is out of bounds for domain {domain} with {} sponsors",
+                        sponsors.len()
+                    ),
+                ))
+            } else {
+                Ok(i)
+            }
+        })
+        .transpose()?
+        .unwrap_or(rand::rng().random_range(0usize..sponsors.len()));
 
     Ok(sponsors[sponsor_index].pubkey().to_string())
 }
