@@ -77,7 +77,7 @@ const RenewSessionsContents = ({
         <SessionLimits
           tokens={
             state.type === TokenDataStateType.Error
-              ? whitelistedTokens
+              ? []
               : whitelistedTokens.filter((token) =>
                   state.data.tokensInWallet.some(
                     (tokenInWallet) =>
