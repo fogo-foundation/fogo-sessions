@@ -52,7 +52,6 @@ impl PooledHttpSender {
                 Arc::new(
                     reqwest_middleware::ClientBuilder::new(
                         reqwest::Client::builder()
-                            .http2_prior_knowledge()
                             .default_headers(Self::default_headers())
                             .pool_max_idle_per_host(1)
                             .timeout(timeout)
