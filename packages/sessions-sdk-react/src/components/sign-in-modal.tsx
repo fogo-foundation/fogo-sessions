@@ -3,7 +3,6 @@ import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { useLocalStorageValue, useResizeObserver } from "@react-hookz/web";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
-import type { PublicKey } from "@solana/web3.js";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { useState, useRef, useCallback, useMemo } from "react";
@@ -381,14 +380,11 @@ const LimitsPage = ({
         >
           <SessionLimits
             enableUnlimited={enableUnlimited}
-            tokens={
+            whitelistedTokens={whitelistedTokens}
+            userTokens={
               state.type === TokenDataStateType.Error
-                ? []
-                : whitelistedTokens.filter((token) =>
-                    state.data.tokensInWallet.some((tokenInWallet) =>
-                      tokenInWallet.mint.equals(token),
-                    ),
-                  )
+                ? []:
+                state.data.tokensInWallet.map((token) => token.mint)
             }
             onSubmit={
               sessionState.type === StateType.RequestingLimits

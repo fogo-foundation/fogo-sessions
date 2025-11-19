@@ -4,7 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import type { FormEvent, ReactNode } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Button as UnstyledButton,
   Checkbox,
@@ -30,7 +30,8 @@ const ONE_HOUR_IN_MS = 60 * ONE_MINUTE_IN_MS;
 const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
 
 export const SessionLimits = <Token extends PublicKey>({
-  tokens,
+  whitelistedTokens,
+  userTokens,
   initialLimits,
   onSubmit,
   buttonText = "Log in",
@@ -43,7 +44,8 @@ export const SessionLimits = <Token extends PublicKey>({
   bodyClassName,
   footerClassName,
 }: {
-  tokens: Token[];
+  whitelistedTokens: Token[];
+  userTokens: Token[];
   initialLimits: Map<Token, bigint>;
   onSubmit?:
     | ((duration: number, tokens?: Map<Token, bigint>) => void)
@@ -62,6 +64,11 @@ export const SessionLimits = <Token extends PublicKey>({
   const [applyLimits, setApplyLimits] = useState(
     !(isSessionUnlimited ?? enableUnlimited),
   );
+  const whitelistedTokensThatUserHas = useMemo(() => {
+    return whitelistedTokens.filter((mint) =>
+      userTokens.some((userToken) => userToken.equals(mint)),
+    );
+  }, [whitelistedTokens, userTokens]);
   const doSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -79,7 +86,7 @@ export const SessionLimits = <Token extends PublicKey>({
           enableUnlimited && !data.get("applyLimits")
             ? undefined
             : new Map(
-                tokens
+              whitelistedTokensThatUserHas
                   .map((mint) => {
                     const value = data.get(mint.toBase58());
                     const decimals = data.get(`${mint.toBase58()}-decimals`);
@@ -96,7 +103,7 @@ export const SessionLimits = <Token extends PublicKey>({
         );
       }
     },
-    [tokens, onSubmit, enableUnlimited],
+    [whitelistedTokensThatUserHas, onSubmit, enableUnlimited],
   );
 
   return (
@@ -145,7 +152,7 @@ export const SessionLimits = <Token extends PublicKey>({
                 exit={{ height: 0 }}
                 className={styles.tokenList}
               >
-                {tokens.map((mint) => (
+                {whitelistedTokensThatUserHas.map((mint) => (
                   <li key={mint.toBase58()}>
                     <Token
                       mint={mint}
