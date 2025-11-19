@@ -56,9 +56,7 @@ LOOKUP_TABLE_ADDRESSES=[
 local_resource(
     "initialize-programs",
     """
-    pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json localnet &&
-    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3
-
+    pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json localnet
     """,
     resource_deps=["svm-localnet"],
 )
