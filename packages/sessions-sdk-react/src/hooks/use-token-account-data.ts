@@ -5,13 +5,16 @@ import { useCallback } from "react";
 import { z } from "zod";
 
 import { getMetadata } from "../get-metadata.js";
-import { isEstablished, type WalletConnectedSessionState } from "../session-state.js";
+import type { WalletConnectedSessionState } from "../session-state.js";
+import { isEstablished } from "../session-state.js";
 import { useData } from "./use-data.js";
 import { useConnection, useSessionContext } from "./use-session.js";
 
 export { StateType } from "./use-data.js";
 
-export const useTokenAccountData = (sessionState: WalletConnectedSessionState) => {
+export const useTokenAccountData = (
+  sessionState: WalletConnectedSessionState,
+) => {
   const connection = useConnection();
   const { network } = useSessionContext();
   const getTokenAccountData = useCallback(
@@ -71,23 +74,25 @@ const getTokenAccounts = async (
         decimals,
         ...metadata[mint],
       })),
-    sessionLimits: isEstablished(sessionState) ? accounts
-      .filter(
-        ({ delegate, delegateAmount }) =>
-          delegate === sessionState.sessionPublicKey.toBase58() &&
-          delegateAmount !== 0n,
-      )
-      .map(({ mint, delegateAmount, decimals }) =>
-        delegateAmount === undefined
-          ? undefined
-          : {
-              mint: new PublicKey(mint),
-              sessionLimit: delegateAmount,
-              decimals,
-              ...metadata[mint],
-            },
-      )
-      .filter((account) => account !== undefined) : [],
+    sessionLimits: isEstablished(sessionState)
+      ? accounts
+          .filter(
+            ({ delegate, delegateAmount }) =>
+              delegate === sessionState.sessionPublicKey.toBase58() &&
+              delegateAmount !== 0n,
+          )
+          .map(({ mint, delegateAmount, decimals }) =>
+            delegateAmount === undefined
+              ? undefined
+              : {
+                  mint: new PublicKey(mint),
+                  sessionLimit: delegateAmount,
+                  decimals,
+                  ...metadata[mint],
+                },
+          )
+          .filter((account) => account !== undefined)
+      : [],
   };
 };
 

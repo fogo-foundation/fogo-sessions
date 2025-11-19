@@ -3,6 +3,7 @@ import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { useLocalStorageValue, useResizeObserver } from "@react-hookz/web";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
+import type { PublicKey } from "@solana/web3.js";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { useState, useRef, useCallback, useMemo } from "react";
@@ -18,12 +19,11 @@ import styles from "./sign-in-modal.module.css";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
 import { isCancelable, StateType } from "../session-state.js";
 import { Link } from "./link.js";
+import { Spinner } from "./spinner.js";
 import {
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
-import { Spinner } from "./spinner.js";
-import type { PublicKey } from "@solana/web3.js";
 
 type Props = Omit<
   ComponentProps<typeof ModalDialog>,
@@ -369,44 +369,58 @@ const LimitsPage = ({
   const { whitelistedTokens, enableUnlimited, defaultRequestedLimits } =
     useSessionContext();
 
-    console.log("defaultRequestedLimits", defaultRequestedLimits);
   const state = useTokenAccountData(sessionState);
 
   switch (state.type) {
     case TokenDataStateType.Error:
     case TokenDataStateType.Loaded: {
       return (
-    <Page
-      heading="Session Limits"
-      message="Limit how many tokens this app is allowed to interact with"
-    >
-      <SessionLimits
-        enableUnlimited={enableUnlimited}
-        tokens={state.type === TokenDataStateType.Error ? whitelistedTokens : whitelistedTokens.filter(token => state.data.tokensInWallet.some(tokenInWallet => tokenInWallet.mint.equals(token) && tokenInWallet.amountInWallet > 0n))}
-        onSubmit={
-          sessionState.type === StateType.RequestingLimits
-            ? sessionState.submitLimits
-            : undefined
-        }
-        initialLimits={
-            (sessionState.type === StateType.RequestingLimits
-              ? sessionState.requestedLimits
-              : undefined) ??
+        <Page
+          heading="Session Limits"
+          message="Limit how many tokens this app is allowed to interact with"
+        >
+          <SessionLimits
+            enableUnlimited={enableUnlimited}
+            tokens={
+              state.type === TokenDataStateType.Error
+                ? whitelistedTokens
+                : whitelistedTokens.filter((token) =>
+                    state.data.tokensInWallet.some(
+                      (tokenInWallet) =>
+                        tokenInWallet.mint.equals(token) &&
+                        tokenInWallet.amountInWallet > 0n,
+                    ),
+                  )
+            }
+            onSubmit={
+              sessionState.type === StateType.RequestingLimits
+                ? sessionState.submitLimits
+                : undefined
+            }
+            initialLimits={
+              (sessionState.type === StateType.RequestingLimits
+                ? sessionState.requestedLimits
+                : undefined) ??
               defaultRequestedLimits ??
-            (state.type === TokenDataStateType.Loaded
-              ? new Map(
-                  state.data.tokensInWallet.map(({ mint, amountInWallet }: { mint: PublicKey, amountInWallet: bigint }) => [
-                    mint,
-                    amountInWallet,
-                  ]),
-                )
-              : new Map())
-        }
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus
-      />
-      </Page>
-    );
+              (state.type === TokenDataStateType.Loaded
+                ? new Map(
+                    state.data.tokensInWallet.map(
+                      ({
+                        mint,
+                        amountInWallet,
+                      }: {
+                        mint: PublicKey;
+                        amountInWallet: bigint;
+                      }) => [mint, amountInWallet],
+                    ),
+                  )
+                : new Map())
+            }
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus
+          />
+        </Page>
+      );
     }
     case TokenDataStateType.NotLoaded:
     case TokenDataStateType.Loading: {

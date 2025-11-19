@@ -65,7 +65,10 @@ export const SessionState = {
     ...args,
   }),
 
-  SettingLimits: (args: { cancel: () => void, walletPublicKey: PublicKey }) => ({
+  SettingLimits: (args: {
+    cancel: () => void;
+    walletPublicKey: PublicKey;
+  }) => ({
     type: StateType.SettingLimits as const,
     ...args,
   }),
@@ -114,10 +117,14 @@ export type EstablishedSessionState = Extract<
   }
 >;
 
-export type WalletConnectedSessionState = EstablishedSessionState |
-  Extract<SessionState, {
-    walletPublicKey: PublicKey;
-  }>;
+export type WalletConnectedSessionState =
+  | EstablishedSessionState
+  | Extract<
+      SessionState,
+      {
+        walletPublicKey: PublicKey;
+      }
+    >;
 
 export const isEstablished = (
   sessionState: SessionState,
