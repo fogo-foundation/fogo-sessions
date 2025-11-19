@@ -400,19 +400,7 @@ const LimitsPage = ({
                 ? sessionState.requestedLimits
                 : undefined) ??
               defaultRequestedLimits ??
-              (state.type === TokenDataStateType.Loaded
-                ? new Map(
-                    state.data.tokensInWallet.map(
-                      ({
-                        mint,
-                        amountInWallet,
-                      }: {
-                        mint: PublicKey;
-                        amountInWallet: bigint;
-                      }) => [mint, amountInWallet],
-                    ),
-                  )
-                : new Map())
+              new Map()
             }
             // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
