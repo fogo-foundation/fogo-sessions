@@ -5,5 +5,6 @@ pub mod constraint;
 pub mod constraint_templates;
 pub mod db;
 pub mod metrics;
+pub mod parse;
 pub mod rpc;
 pub mod serde;

@@ -1,3 +1,4 @@
+use intent_transfer::bridge::processor::bridge_ntt_tokens::H160;
 use serde::{Deserialize, Serialize};
 
 use crate::constraint::TransactionVariation;
@@ -32,7 +33,7 @@ pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
 impl Config {
     /// Populate default tx variations for each domain.
     /// Call this after loading from file/DB to ensure required variations exist.
-    pub fn assign_defaults(&mut self) {
+    pub fn assign_defaults(&mut self, ntt_quoter: H160) {
         for domain in &mut self.domains {
             if domain.enable_session_management {
                 domain
@@ -54,6 +55,7 @@ impl Config {
             domain
                 .tx_variations
                 .push(TransactionVariation::intent_transfer_bridge_ntt_variation(
+                    ntt_quoter,
                     DEFAULT_TEMPLATE_MAX_GAS_SPEND,
                 ))
         }

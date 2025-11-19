@@ -31,7 +31,7 @@ const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct BridgeNttTokensArgs {
-    pub signed_quote_bytes: Vec<u8>,
+    pub signed_quote_bytes: [u8; 165],
     pub pay_destination_ata_rent: bool,
 }
 
@@ -392,7 +392,7 @@ impl<'info> BridgeNttTokens<'info> {
 
         let relay_ntt_args = compute_relay_ntt_args(
             to_chain_id_wormhole,
-            signed_quote_bytes,
+            signed_quote_bytes.to_vec(),
             pay_destination_ata_rent,
         )?;
 
@@ -503,11 +503,13 @@ fn compute_msg_value_and_gas_limit_solana(pay_destination_ata_rent: bool) -> (u1
     (msg_value, 250_000)
 }
 
+pub type H160 = [u8; 20];
+
 // Derived from the documentation: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#off-chain-quote
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SignedQuoteHeader {
     pub prefix: [u8; 4],
-    pub quoter_address: [u8; 20],
+    pub quoter_address: H160,
     pub payee_address: [u8; 32],
     pub source_chain: U16BE,
     pub destination_chain: U16BE,
@@ -522,6 +524,30 @@ pub struct SignedQuote {
     pub source_price: U64BE,
     pub destination_price: U64BE,
     pub signature: [u8; 65],
+}
+
+impl SignedQuote {
+    pub fn try_get_message_body(&self) -> Result<[u8; 100]> {
+        let signed_quote_serialized = self.try_to_vec()?;
+        signed_quote_serialized
+            .get(..100)
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or_else(|| IntentTransferError::InvalidNttSignedQuote.into())
+    }
+
+    // Extracts the signature components (the signature, the recovery index).
+    pub fn try_get_signature_components(&self) -> Result<(&[u8; 64], u8)> {
+        let signature = &self.signature;
+        let (sig_bytes, recovery_index_bytes) = signature.split_at(64);
+        let sig_array = sig_bytes
+            .try_into()
+            .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?;
+        let recovery_index = recovery_index_bytes
+            .first()
+            .copied()
+            .ok_or(IntentTransferError::InvalidNttSignedQuote)?;
+        Ok((sig_array, recovery_index))
+    }
 }
 
 const DECIMALS_QUOTE: u32 = 10;

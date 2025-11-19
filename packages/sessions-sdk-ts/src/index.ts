@@ -975,7 +975,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
     program.methods
       .bridgeNttTokens({
         payDestinationAtaRent: !destinationAtaExists,
-        signedQuoteBytes: Buffer.from(quote.signedQuote),
+        signedQuoteBytes: [...quote.signedQuote],
       })
       .accounts({
         sponsor: options.context.payer,

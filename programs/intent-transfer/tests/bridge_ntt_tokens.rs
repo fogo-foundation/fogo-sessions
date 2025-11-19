@@ -300,7 +300,7 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     .expect("Failed to set fee config account");
 
     let pay_destination_ata_rent = false;
-    let signed_quote_bytes = SignedQuote {
+    let signed_quote = SignedQuote {
         header: SignedQuoteHeader {
             prefix: *b"EQ01",
             quoter_address: [0u8; 20],
@@ -314,9 +314,10 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         source_price: U64BE(2_000_000_000),
         destination_price: U64BE(1_531_800_000_000),
         signature: [0u8; 65],
-    }
-    .try_to_vec()
-    .unwrap();
+    };
+    let mut signed_quote_bytes = [0u8; 165];
+    let mut writer = &mut signed_quote_bytes[..];
+    signed_quote.serialize(&mut writer).unwrap();
 
     let bridge_ix = Instruction {
         program_id: intent_transfer::ID,
