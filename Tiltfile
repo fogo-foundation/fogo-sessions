@@ -38,7 +38,10 @@ local_resource(
 
 local_resource(
     "setup-sponsor",
-    """solana -u l airdrop 1 5SKUh8pPXYCa5GroGKgniL1Gjt7XHKQkkjK94nVXfSkF""",
+    """
+    solana -u l airdrop 1 5SKUh8pPXYCa5GroGKgniL1Gjt7XHKQkkjK94nVXfSkF && # http://localhost:3000 domain
+    solana -u l airdrop 1 HCHyvfDFW8tvefdaSX9XLeemqYoC5gYPfh5HnzbyfaMy # sessions domain
+    """,
     resource_deps=["svm-localnet"],
 )
 
