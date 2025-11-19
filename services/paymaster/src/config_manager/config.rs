@@ -1,5 +1,6 @@
 use intent_transfer::bridge::processor::bridge_ntt_tokens::H160;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use crate::constraint::TransactionVariation;
 
@@ -59,5 +60,66 @@ impl Config {
                     DEFAULT_TEMPLATE_MAX_GAS_SPEND,
                 ))
         }
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct ParsedDomain {
+    /// The domain that the paymaster should sponsor.
+    pub domain: String,
+
+    /// Whether to enable paymaster sponsoring session management (start/revoke) transactions.
+    #[serde(default = "default_true")]
+    pub enable_session_management: bool,
+
+    /// Whether to enable preflight simulation for transactions before submitting them.
+    #[serde(default = "default_true")]
+    pub enable_preflight_simulation: bool,
+
+    /// The list of transaction types that the paymaster should sponsor.
+    pub tx_variations: HashMap<String, TransactionVariation>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct ParsedConfig {
+    pub domains: Vec<ParsedDomain>,
+}
+
+impl TryFrom<Config> for ParsedConfig {
+    type Error = anyhow::Error;
+
+    fn try_from(value: Config) -> Result<Self, Self::Error> {
+        let parsed_domains: Vec<ParsedDomain> = value.domains.into_iter().map(|domain| {
+            let tx_variations_map = domain.tx_variations.into_iter().try_fold(HashMap::new(), |mut map, variation| {
+                let key = variation.name().to_string();
+
+                match map.entry(key.clone()) {
+                    std::collections::hash_map::Entry::Vacant(entry) => {
+                        entry.insert(variation);
+                        Ok(map)
+                    }
+                    std::collections::hash_map::Entry::Occupied(_) => {
+                        return Err(anyhow::anyhow!(
+                            "Duplicate transaction variation '{}' for domain '{}'",
+                            variation.name(),
+                            domain.domain
+                        ));
+                    }
+                }
+            })?;
+
+            let parsed_domain = ParsedDomain {
+                domain: domain.domain,
+                enable_session_management: domain.enable_session_management,
+                enable_preflight_simulation: domain.enable_preflight_simulation,
+                tx_variations: tx_variations_map,
+            };
+
+            Ok(parsed_domain)
+        }).collect::<anyhow::Result<_>>()?;
+
+        Ok(ParsedConfig {
+            domains: parsed_domains,
+        })
     }
 }
