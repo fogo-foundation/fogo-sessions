@@ -23,6 +23,7 @@ use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
+use rand::Rng;
 use serde_with::{serde_as, DisplayFromStr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
@@ -43,7 +44,6 @@ use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
-use rand::Rng;
 
 pub struct NonEmptyVec<T> {
     inner: Vec<T>,
@@ -161,9 +161,14 @@ impl DomainState {
             .iter()
             .map(|variation| {
                 Box::pin(async move {
-                    self.validate_transaction_against_variation(transaction, variation, chain_index, sponsor)
-                        .await
-                        .map(|_| variation)
+                    self.validate_transaction_against_variation(
+                        transaction,
+                        variation,
+                        chain_index,
+                        sponsor,
+                    )
+                    .await
+                    .map(|_| variation)
                 })
             })
             .collect();
@@ -316,22 +321,34 @@ async fn sponsor_and_send_handler(
         bincode::serde::decode_from_slice(&transaction_bytes, bincode::config::standard())
             .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    let transaction_sponsor : &Keypair = domain_state.sponsors.iter().find(|sponsor| sponsor.pubkey() == transaction.message.static_account_keys()[0]).ok_or_else(|| -> (StatusCode, String) {
-        let status_code = StatusCode::BAD_REQUEST;
-        obs_validation(domain.clone(), None, status_code.to_string());
-        (
-            status_code,
-            format!(
-                "Transaction fee payer must be one of the sponsors: expected one of {}, got {}",
-                domain_state.sponsors.iter().map(|sponsor| sponsor.pubkey().to_string()).collect::<Vec<_>>().join(","),
-                transaction.message.static_account_keys()[0],
-            ),
-        )
-    })?;
-
+    let transaction_sponsor: &Keypair = domain_state
+        .sponsors
+        .iter()
+        .find(|sponsor| sponsor.pubkey() == transaction.message.static_account_keys()[0])
+        .ok_or_else(|| -> (StatusCode, String) {
+            let status_code = StatusCode::BAD_REQUEST;
+            obs_validation(domain.clone(), None, status_code.to_string());
+            (
+                status_code,
+                format!(
+                    "Transaction fee payer must be one of the sponsors: expected one of {}, got {}",
+                    domain_state
+                        .sponsors
+                        .iter()
+                        .map(|sponsor| sponsor.pubkey().to_string())
+                        .collect::<Vec<_>>()
+                        .join(","),
+                    transaction.message.static_account_keys()[0],
+                ),
+            )
+        })?;
 
     let matched_variation_name = match domain_state
-        .validate_transaction(&transaction, &state.chain_index, &transaction_sponsor.pubkey())
+        .validate_transaction(
+            &transaction,
+            &state.chain_index,
+            &transaction_sponsor.pubkey(),
+        )
         .await
     {
         Ok(variation) => {
@@ -350,8 +367,7 @@ async fn sponsor_and_send_handler(
     }
     .to_owned();
 
-    transaction.signatures[0] = transaction_sponsor
-        .sign_message(&transaction.message.serialize());
+    transaction.signatures[0] = transaction_sponsor.sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
     let confirmation_result = send_and_confirm_transaction(
@@ -451,8 +467,7 @@ async fn sponsor_pubkey_handler(
         tx_variations: _,
     } = domain_state;
 
-    let sponsor_index = precise.map(|i| i as usize).map(|i| 
-        if i >= sponsors.len() {
+    let sponsor_index = precise.map(|i| i as usize).map(|i| if i >= sponsors.len() {
             Err::<usize, (StatusCode, String)>((
                 StatusCode::BAD_REQUEST,
                 format!("Sponsor index {i} is out of bounds for domain {domain} with {} sponsors", sponsors.len()),
@@ -462,7 +477,7 @@ async fn sponsor_pubkey_handler(
             Ok(i)
         }
     ).transpose()?.unwrap_or(rand::rng().random_range(0usize..sponsors.len()));
-    
+
     Ok(sponsors[sponsor_index].pubkey().to_string())
 }
 
@@ -478,12 +493,20 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                  ..
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
-                let sponsors = NonEmptyVec::new((0u8..number_of_signers.into()).map(|i| Keypair::from_seed_and_derivation_path(
-                    &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
-                        mnemonic, &domain,
-                    ),
-                    Some(DerivationPath::new_bip44(Some(i.into()), Some(0)))
-                ).expect("Failed to derive keypair from mnemonic_file")).collect()).expect("number_of_signers in NonZero so this should never be empty");
+                let sponsors = NonEmptyVec::new(
+                    (0u8..number_of_signers.into())
+                        .map(|i| {
+                            Keypair::from_seed_and_derivation_path(
+                                &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
+                                    mnemonic, &domain,
+                                ),
+                                Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
+                            )
+                            .expect("Failed to derive keypair from mnemonic_file")
+                        })
+                        .collect(),
+                )
+                .expect("number_of_signers in NonZero so this should never be empty");
 
                 (
                     domain,

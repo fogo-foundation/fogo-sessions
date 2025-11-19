@@ -1,6 +1,6 @@
-use std::num::NonZeroU8;
 use intent_transfer::bridge::processor::bridge_ntt_tokens::H160;
 use serde::{Deserialize, Serialize};
+use std::num::NonZeroU8;
 
 use crate::constraint::TransactionVariation;
 
