@@ -51,7 +51,7 @@ pub struct NonEmptyVec<T> {
 
 impl<T> NonEmptyVec<T> {
     pub fn new(inner: Vec<T>) -> Option<NonEmptyVec<T>> {
-        return (!inner.is_empty()).then_some(Self { inner });
+        (!inner.is_empty()).then_some(Self { inner })
     }
 }
 
@@ -471,8 +471,7 @@ async fn sponsor_pubkey_handler(
             Err::<usize, (StatusCode, String)>((
                 StatusCode::BAD_REQUEST,
                 format!("Sponsor index {i} is out of bounds for domain {domain} with {} sponsors", sponsors.len()),
-            )
-                .into())
+            ))
         } else {
             Ok(i)
         }
