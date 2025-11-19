@@ -17,7 +17,6 @@ axum-prometheus = "0.9.0"
 base64 = {workspace = true}
 bincode = {workspace = true, features = ["serde"]}
 borsh = {workspace = true}
-bytemuck = {workspace = true}
 clap = {workspace = true}
 config = "0.15.13"
 dashmap = {workspace = true}
@@ -38,8 +37,6 @@ solana-client = {workspace = true}
 solana-commitment-config = {workspace = true}
 solana-compute-budget-interface = { workspace = true, features = ["borsh"] }
 solana-derivation-path = {workspace = true}
-solana-ed25519-program = {workspace = true}
-solana-hash = {workspace = true}
 solana-keypair = {workspace = true, features = ["seed-derivable"]}
 solana-message = {workspace = true}
 solana-packet = {workspace = true}
@@ -56,7 +53,6 @@ solana-transaction = {workspace = true}
 solana-transaction-error = {workspace = true}
 solana-transaction-status-client-types = {workspace = true}
 spl-associated-token-account = {workspace = true}
-sqlx = { version = "0.8", features = [ "postgres", "runtime-tokio", "tls-native-tls", "uuid" ] }
 tokio = {workspace = true}
 tower-http = {version = "0.6.6", features = ["cors"]}
 tracing = {workspace = true}
@@ -64,14 +60,8 @@ tracing-opentelemetry = "0.31.0"
 tracing-subscriber = {workspace = true}
 utoipa = "5.4.0"
 utoipa-axum = "0.2.0"
-url = "2.5.7"
-uuid = {version = "1.18.1", features = ["v7"]}
 libsecp256k1 = "0.6.0"
 
 [[bin]]
 name = "paymaster-tx-validator"
 path = "src/bin/tx_validator.rs"
-
-[[bin]]
-name = "paymaster-seed"
-path = "src/bin/seed.rs"
