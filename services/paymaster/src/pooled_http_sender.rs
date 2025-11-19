@@ -10,6 +10,8 @@ use solana_rpc_client_api::client_error::Result;
 use solana_rpc_client_api::custom_error;
 use solana_rpc_client_api::error_object::RpcErrorObject;
 use solana_transaction_error::TransactionError;
+use std::error::Error;
+use std::fmt::Write;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -106,6 +108,16 @@ impl RpcSender for PooledHttpSender {
                     .body(request_json)
                     .send()
                     .await
+                    .inspect_err(|send_err| {
+                        let mut err: &dyn Error = send_err;
+                        let mut s = format!("{}", err);
+                        while let Some(src) = err.source() {
+                            let _ = write!(s, "-- Caused by: {}", src);
+                            err = src;
+                        }
+
+                        tracing::warn!("Failed to send RPC request: {}", s);
+                    })
             }?;
             let headers = response
                 .headers()
