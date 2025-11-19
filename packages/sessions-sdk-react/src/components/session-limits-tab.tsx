@@ -1,15 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 
 import type { EstablishedSessionState } from "../session-state.js";
-import { isUpdatable } from "../session-state.js";
 import styles from "./session-limits-tab.module.css";
 import { SessionLimits } from "./session-limits.js";
-import { Spinner } from "./spinner.js";
-import { useSessionContext } from "../hooks/use-session.js";
-import {
-  StateType as TokenDataStateType,
-  useTokenAccountData,
-} from "../hooks/use-token-account-data.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
@@ -23,79 +16,24 @@ export const SessionLimitsTab = ({
 }) => (
   <div className={styles.sessionLimitsTab}>
     <SessionExpiryBanner expiration={sessionState.expiration} />
-    <SessionLimitsForm sessionState={sessionState} />
+    <SessionLimits
+      sessionState={sessionState}
+      className={styles.sessionLimits}
+      bodyClassName={styles.body}
+      footerClassName={styles.footer}
+      hideCancel
+      buttonText="Update Limits"
+      header={
+        <div className={styles.header}>
+          <h2 className={styles.title}>Session Limits</h2>
+          <span className={styles.description}>
+            Limit how many tokens this app is allowed to interact with
+          </span>
+        </div>
+      }
+    />
   </div>
 );
-
-const SessionLimitsForm = ({
-  sessionState,
-}: {
-  sessionState: EstablishedSessionState;
-}) => {
-  const state = useTokenAccountData(sessionState);
-  const { whitelistedTokens, enableUnlimited } = useSessionContext();
-
-  switch (state.type) {
-    case TokenDataStateType.Error:
-    case TokenDataStateType.Loaded: {
-      return (
-        <SessionLimits
-          header={
-            <div className={styles.header}>
-              <h2 className={styles.title}>Session Limits</h2>
-              <span className={styles.description}>
-                Limit how many tokens this app is allowed to interact with
-              </span>
-            </div>
-          }
-          className={styles.sessionLimits}
-          bodyClassName={styles.body}
-          footerClassName={styles.footer}
-          whitelistedTokens={whitelistedTokens}
-          userTokens={
-            state.type === TokenDataStateType.Error
-              ? []
-              : [
-                  ...state.data.tokensInWallet.map((token) => token.mint),
-                  ...state.data.sessionLimits.map((token) => token.mint),
-                ]
-          }
-          hideCancel
-          initialLimits={
-            new Map(
-              state.type === TokenDataStateType.Error
-                ? undefined
-                : state.data.sessionLimits.map(({ mint, sessionLimit }) => [
-                    mint,
-                    sessionLimit,
-                  ]),
-            )
-          }
-          onSubmit={
-            isUpdatable(sessionState)
-              ? (duration, tokens) => {
-                  sessionState.updateSession(
-                    sessionState.type,
-                    duration,
-                    tokens,
-                  );
-                }
-              : undefined
-          }
-          buttonText="Update Limits"
-          {...(enableUnlimited && {
-            enableUnlimited: true,
-            isSessionUnlimited: !sessionState.isLimited,
-          })}
-        />
-      );
-    }
-    case TokenDataStateType.NotLoaded:
-    case TokenDataStateType.Loading: {
-      return <Spinner />;
-    }
-  }
-};
 
 const relativeTimeFormat = new Intl.RelativeTimeFormat("en", { style: "long" });
 

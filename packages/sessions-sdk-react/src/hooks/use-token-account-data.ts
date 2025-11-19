@@ -35,6 +35,8 @@ export const getCacheKey = (network: Network, walletPublicKey: PublicKey) => [
   walletPublicKey.toBase58(),
 ];
 
+export type TokenAccountData = Awaited<ReturnType<typeof getTokenAccounts>>;
+
 export type Token = Awaited<
   ReturnType<typeof getTokenAccounts>
 >["tokensInWallet"][number];

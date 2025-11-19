@@ -18,11 +18,6 @@ import styles from "./sign-in-modal.module.css";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
 import { isCancelable, StateType } from "../session-state.js";
 import { Link } from "./link.js";
-import { Spinner } from "./spinner.js";
-import {
-  StateType as TokenDataStateType,
-  useTokenAccountData,
-} from "../hooks/use-token-account-data.js";
 
 type Props = Omit<
   ComponentProps<typeof ModalDialog>,
@@ -364,52 +359,20 @@ const LimitsPage = ({
   sessionState:
     | SessionStates["RequestingLimits"]
     | SessionStates["SettingLimits"];
-}) => {
-  const { whitelistedTokens, enableUnlimited, defaultRequestedLimits } =
-    useSessionContext();
-
-  const state = useTokenAccountData(sessionState);
-
-  switch (state.type) {
-    case TokenDataStateType.Error:
-    case TokenDataStateType.Loaded: {
-      return (
-        <Page
-          heading="Session Limits"
-          message="Limit how many tokens this app is allowed to interact with"
-        >
-          <SessionLimits
-            enableUnlimited={enableUnlimited}
-            whitelistedTokens={whitelistedTokens}
-            userTokens={
-              state.type === TokenDataStateType.Error
-                ? []
-                : state.data.tokensInWallet.map((token) => token.mint)
-            }
-            onSubmit={
-              sessionState.type === StateType.RequestingLimits
-                ? sessionState.submitLimits
-                : undefined
-            }
-            initialLimits={
-              (sessionState.type === StateType.RequestingLimits
-                ? sessionState.requestedLimits
-                : undefined) ??
-              defaultRequestedLimits ??
-              new Map()
-            }
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-          />
-        </Page>
-      );
-    }
-    case TokenDataStateType.NotLoaded:
-    case TokenDataStateType.Loading: {
-      return <Spinner />;
-    }
-  }
-};
+}) => (
+  <Page
+    heading="Session Limits"
+    message="Limit how many tokens this app is allowed to interact with"
+  >
+    <SessionLimits
+      className={styles.sessionLimits}
+      sessionState={sessionState}
+      buttonText="Log in"
+      // eslint-disable-next-line jsx-a11y/no-autofocus
+      autoFocus
+    />
+  </Page>
+);
 
 const Page = ({
   heading,
