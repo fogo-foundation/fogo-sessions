@@ -573,8 +573,12 @@ fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode,
             format!("Failed to recover secp256k1 public key: {e}"),
         )
     })?;
-
-    let pubkey_hashed = keccak::hash(&secp_pubkey.serialize());
+    let secp_pubkey_serialized = secp_pubkey.serialize();
+    let pubkey_hashed = keccak::hash(
+        secp_pubkey_serialized
+            .get(1..)
+            .expect("Serialized key should be 65 bytes"),
+    );
     let evm_address = pubkey_hashed
         .0
         .get(12..)
