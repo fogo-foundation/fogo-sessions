@@ -241,10 +241,11 @@ const buildTransaction = async (
   const [{ value: latestBlockhash }, sponsor, addressLookupTable, signers] =
     await Promise.all([
       connection.rpc.getLatestBlockhash().send(),
-      sponsorOverride ? 
-      Promise.resolve(sponsorOverride) : connection.sponsor === undefined
-        ? getSponsor(connection, connection.sponsorCache, domain)
-        : Promise.resolve(connection.sponsor),
+      sponsorOverride
+        ? Promise.resolve(sponsorOverride)
+        : connection.sponsor === undefined
+          ? getSponsor(connection, connection.sponsorCache, domain)
+          : Promise.resolve(connection.sponsor),
       extraConfig?.addressLookupTable === undefined
         ? Promise.resolve(undefined)
         : getAddressLookupTable(
@@ -346,20 +347,24 @@ const getSponsor = async (
   const value = sponsorCache.get(domain);
   if (value === undefined) {
     const promise = (async () => {
-    const url = new URL(
-      "/api/sponsor_pubkey",
-      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
-    );
-    url.searchParams.set("domain", domain);
-    const response = await fetch(url);
+      const url = new URL(
+        "/api/sponsor_pubkey",
+        options.paymaster ?? DEFAULT_PAYMASTER[options.network],
+      );
+      url.searchParams.set("domain", domain);
+      const response = await fetch(url);
 
-    if (response.status === 200) {
-      const sponsor = new PublicKey(z.string().parse(await response.text()));
-      sponsorCache.set(domain, sponsor);
-      return sponsor;
-    } else {
-      throw new PaymasterResponseError(response.status, await response.text());
-    }})();
+      if (response.status === 200) {
+        const sponsor = new PublicKey(z.string().parse(await response.text()));
+        sponsorCache.set(domain, sponsor);
+        return sponsor;
+      } else {
+        throw new PaymasterResponseError(
+          response.status,
+          await response.text(),
+        );
+      }
+    })();
     sponsorCache.set(domain, promise);
     return promise;
   } else {
