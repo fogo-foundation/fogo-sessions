@@ -89,34 +89,39 @@ impl TryFrom<Config> for ParsedConfig {
     type Error = anyhow::Error;
 
     fn try_from(value: Config) -> Result<Self, Self::Error> {
-        let parsed_domains: Vec<ParsedDomain> = value.domains.into_iter().map(|domain| {
-            let tx_variations_map = domain.tx_variations.into_iter().try_fold(HashMap::new(), |mut map, variation| {
-                let key = variation.name().to_string();
+        let parsed_domains: Vec<ParsedDomain> = value
+            .domains
+            .into_iter()
+            .map(|domain| {
+                let tx_variations_map = domain.tx_variations.into_iter().try_fold(
+                    HashMap::new(),
+                    |mut map, variation| {
+                        let key = variation.name().to_string();
 
-                match map.entry(key.clone()) {
-                    std::collections::hash_map::Entry::Vacant(entry) => {
-                        entry.insert(variation);
-                        Ok(map)
-                    }
-                    std::collections::hash_map::Entry::Occupied(_) => {
-                        return Err(anyhow::anyhow!(
-                            "Duplicate transaction variation '{}' for domain '{}'",
-                            variation.name(),
-                            domain.domain
-                        ));
-                    }
-                }
-            })?;
+                        match map.entry(key.clone()) {
+                            std::collections::hash_map::Entry::Vacant(entry) => {
+                                entry.insert(variation);
+                                Ok(map)
+                            }
+                            std::collections::hash_map::Entry::Occupied(_) => Err(anyhow::anyhow!(
+                                "Duplicate transaction variation '{}' for domain '{}'",
+                                variation.name(),
+                                domain.domain
+                            )),
+                        }
+                    },
+                )?;
 
-            let parsed_domain = ParsedDomain {
-                domain: domain.domain,
-                enable_session_management: domain.enable_session_management,
-                enable_preflight_simulation: domain.enable_preflight_simulation,
-                tx_variations: tx_variations_map,
-            };
+                let parsed_domain = ParsedDomain {
+                    domain: domain.domain,
+                    enable_session_management: domain.enable_session_management,
+                    enable_preflight_simulation: domain.enable_preflight_simulation,
+                    tx_variations: tx_variations_map,
+                };
 
-            Ok(parsed_domain)
-        }).collect::<anyhow::Result<_>>()?;
+                Ok(parsed_domain)
+            })
+            .collect::<anyhow::Result<_>>()?;
 
         Ok(ParsedConfig {
             domains: parsed_domains,
