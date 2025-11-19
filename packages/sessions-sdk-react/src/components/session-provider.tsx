@@ -565,6 +565,7 @@ const useSessionState = ({
             disconnect(wallet, network);
             onCancel();
           },
+          walletPublicKey,
         }),
       );
       establishSession(
@@ -614,6 +615,7 @@ const useSessionState = ({
             disconnect(wallet, network);
             onCancel();
           },
+          walletPublicKey,
           submitLimits: (sessionDuration, limits) => {
             submitLimits({
               wallet,

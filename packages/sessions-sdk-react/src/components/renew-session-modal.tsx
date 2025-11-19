@@ -75,7 +75,7 @@ const RenewSessionsContents = ({
     case TokenDataStateType.Loaded: {
       return (
         <SessionLimits
-          tokens={whitelistedTokens}
+          tokens={state.type === TokenDataStateType.Error ? whitelistedTokens : whitelistedTokens.filter(token => state.data.tokensInWallet.some(tokenInWallet => tokenInWallet.mint.equals(token) && tokenInWallet.amountInWallet > 0n))}
           initialLimits={
             new Map(
               state.type === TokenDataStateType.Error

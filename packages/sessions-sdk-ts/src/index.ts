@@ -22,11 +22,7 @@ import {
   signatureBytes,
   verifySignature,
 } from "@solana/kit";
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  getAssociatedTokenAddressSync,
-  getMint,
-} from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type {
   BaseWalletAdapter,
   MessageSignerWalletAdapterProps,
@@ -137,11 +133,7 @@ export const establishSession = async (
     return sendSessionEstablishTransaction(
       options,
       sessionKey,
-      [
-        ...buildCreateAssociatedTokenAccountInstructions(options, tokenInfo),
-        intentInstruction,
-        startSessionInstruction,
-      ],
+      [intentInstruction, startSessionInstruction],
       options.sessionEstablishmentLookupTable,
     );
   }
@@ -644,19 +636,6 @@ const amountToString = (amount: bigint, decimals: number): string => {
     ...(decimalTruncated === "" ? [] : [".", decimalTruncated]),
   ].join("");
 };
-
-const buildCreateAssociatedTokenAccountInstructions = (
-  options: EstablishSessionOptions,
-  tokens: TokenInfo[],
-) =>
-  tokens.map(({ mint }) =>
-    createAssociatedTokenAccountIdempotentInstruction(
-      options.context.payer,
-      getAssociatedTokenAddressSync(mint, options.walletPublicKey),
-      options.walletPublicKey,
-      mint,
-    ),
-  );
 
 export const getDomainRecordAddress = (domain: string) => {
   const hash = sha256(domain);
