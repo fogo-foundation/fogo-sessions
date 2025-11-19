@@ -239,13 +239,14 @@ const WalletsPage = ({
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
   const { otherWallets, installedWallets } = useMemo(() => {
-    const { otherWallets, installedWallets } = groupBy(wallets, (wallet) =>
-      (wallet.readyState === WalletReadyState.Installed ||
+    const { otherWallets, installedWallets } = groupBy(wallets, (wallet) => {
+      const isSolflareWalletInstalled = !isLoadableSolflareWallet(wallet);
+      return (wallet.readyState === WalletReadyState.Installed ||
         wallet.readyState === WalletReadyState.Loadable) &&
-      !isLoadableSolflareWallet(wallet)
+        isSolflareWalletInstalled
         ? "installedWallets"
-        : "otherWallets",
-    );
+        : "otherWallets";
+    });
     return {
       otherWallets: otherWallets ?? [],
       installedWallets: installedWallets ?? [],
