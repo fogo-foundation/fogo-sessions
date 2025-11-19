@@ -383,12 +383,10 @@ const LimitsPage = ({
             enableUnlimited={enableUnlimited}
             tokens={
               state.type === TokenDataStateType.Error
-                ? whitelistedTokens
+                ? []
                 : whitelistedTokens.filter((token) =>
-                    state.data.tokensInWallet.some(
-                      (tokenInWallet) =>
-                        tokenInWallet.mint.equals(token) &&
-                        tokenInWallet.amountInWallet > 0n,
+                    state.data.tokensInWallet.some((tokenInWallet) =>
+                      tokenInWallet.mint.equals(token),
                     ),
                   )
             }
