@@ -107,10 +107,19 @@ impl RpcSender for PooledHttpSender {
                     .send()
                     .await
             }?;
-            let headers = response.headers().iter().map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string())).collect::<Vec<_>>();
+            let headers = response
+                .headers()
+                .iter()
+                .map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string()))
+                .collect::<Vec<_>>();
 
             if !response.status().is_success() {
-                tracing::warn!("Status Failed RPC call: {} status: {}, headers: {:?}", method, response.status(), headers);
+                tracing::warn!(
+                    "Status Failed RPC call: {} status: {}, headers: {:?}",
+                    method,
+                    response.status(),
+                    headers
+                );
 
                 if response.status() == StatusCode::TOO_MANY_REQUESTS
                     && too_many_requests_retries > 0
