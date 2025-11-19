@@ -383,8 +383,8 @@ const LimitsPage = ({
             whitelistedTokens={whitelistedTokens}
             userTokens={
               state.type === TokenDataStateType.Error
-                ? []:
-                state.data.tokensInWallet.map((token) => token.mint)
+                ? []
+                : state.data.tokensInWallet.map((token) => token.mint)
             }
             onSubmit={
               sessionState.type === StateType.RequestingLimits

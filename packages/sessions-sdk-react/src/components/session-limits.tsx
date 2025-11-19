@@ -86,7 +86,7 @@ export const SessionLimits = <Token extends PublicKey>({
           enableUnlimited && !data.get("applyLimits")
             ? undefined
             : new Map(
-              whitelistedTokensThatUserHas
+                whitelistedTokensThatUserHas
                   .map((mint) => {
                     const value = data.get(mint.toBase58());
                     const decimals = data.get(`${mint.toBase58()}-decimals`);

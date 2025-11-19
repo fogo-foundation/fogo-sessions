@@ -51,13 +51,14 @@ const SessionLimitsForm = ({
           className={styles.sessionLimits}
           bodyClassName={styles.body}
           footerClassName={styles.footer}
-          whitelistedTokens={
-            whitelistedTokens
-          }
+          whitelistedTokens={whitelistedTokens}
           userTokens={
-          state.type === TokenDataStateType.Error
-          ? []
-          : [...state.data.tokensInWallet.map((token) => token.mint), ...state.data.sessionLimits.map((token) => token.mint)]
+            state.type === TokenDataStateType.Error
+              ? []
+              : [
+                  ...state.data.tokensInWallet.map((token) => token.mint),
+                  ...state.data.sessionLimits.map((token) => token.mint),
+                ]
           }
           hideCancel
           initialLimits={
