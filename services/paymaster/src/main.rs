@@ -1,5 +1,4 @@
-use crate::cli::Cli;
-use crate::config::Config;
+use crate::{cli::Cli, config::{Config, ParsedConfig}};
 use arc_swap::ArcSwap;
 use clap::Parser;
 use fogo_paymaster::parse::parse_h160;
@@ -73,10 +72,12 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     })?;
     config.assign_defaults(ntt_quoter);
 
+    let parsed_config = ParsedConfig::try_from(config)?;
+
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
     let domains: SharedDomains = Arc::new(ArcSwap::from_pointee(api::get_domain_state_map(
-        config.domains,
+        parsed_config.domains,
         &mnemonic,
     )));
 
