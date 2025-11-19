@@ -53,20 +53,29 @@ import BN from "bn.js";
 import bs58 from "bs58";
 import { z } from "zod";
 
-import type { TransactionResult } from "./connection.js";
+import type {
+  TransactionOrInstructions,
+  TransactionResult,
+} from "./connection.js";
 import { Network, TransactionResultType } from "./connection.js";
-import type { SessionContext } from "./context.js";
+import type { SendTransactionOptions, SessionContext } from "./context.js";
+import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
 import {
   importKey,
   signMessageWithKey,
   verifyMessageWithKey,
 } from "./crypto.js";
 
-export { type SessionContext, createSessionContext } from "./context.js";
+export {
+  type SessionContext,
+  type SendTransactionOptions,
+  createSessionContext,
+} from "./context.js";
 
 export {
   type TransactionResult,
   type Connection,
+  type TransactionOrInstructions,
   Network,
   TransactionResultType,
   createSessionConnection,
@@ -263,8 +272,8 @@ const createSession = async (
         walletPublicKey,
         sessionKey,
         payer: context.payer,
-        sendTransaction: (instructions) =>
-          context.sendTransaction(sessionKey, instructions),
+        sendTransaction: (instructions, extraConfig) =>
+          context.sendTransaction(sessionKey, instructions, extraConfig),
         sessionInfo,
       };
 };
@@ -757,7 +766,8 @@ export type Session = {
   walletPublicKey: PublicKey;
   payer: PublicKey;
   sendTransaction: (
-    instructions: Parameters<SessionContext["sendTransaction"]>[1],
+    instructions: TransactionOrInstructions,
+    extraConfig?: SendTransactionOptions,
   ) => Promise<TransactionResult>;
   sessionInfo: NonNullable<z.infer<typeof sessionInfoSchema>>;
 };
@@ -839,32 +849,39 @@ export const sendTransfer = async (options: SendTransferOptions) => {
   const metadata = await safeFetchMetadata(umi, metadataAddress);
   const symbol = metadata?.symbol ?? undefined;
 
-  return options.context.sendTransaction(undefined, [
-    await buildTransferIntentInstruction(
-      program,
-      options,
-      symbol,
-      options.feeConfig.symbolOrMint,
-      amountToString(options.feeConfig.fee, options.feeConfig.decimals),
-    ),
-    await program.methods
-      .sendTokens()
-      .accounts({
-        destinationOwner: options.recipient,
-        feeMetadata: options.feeConfig.metadata,
-        feeMint: options.feeConfig.mint,
-        feeSource: getAssociatedTokenAddressSync(
-          options.feeConfig.mint,
-          options.walletPublicKey,
-        ),
-        mint: options.mint,
-        source: sourceAta,
-        sponsor: options.context.payer,
-        // eslint-disable-next-line unicorn/no-null
-        metadata: symbol === undefined ? null : new PublicKey(metadataAddress),
-      })
-      .instruction(),
-  ]);
+  return options.context.sendTransaction(
+    undefined,
+    [
+      await buildTransferIntentInstruction(
+        program,
+        options,
+        symbol,
+        options.feeConfig.symbolOrMint,
+        amountToString(options.feeConfig.fee, options.feeConfig.decimals),
+      ),
+      await program.methods
+        .sendTokens()
+        .accounts({
+          destinationOwner: options.recipient,
+          feeMetadata: options.feeConfig.metadata,
+          feeMint: options.feeConfig.mint,
+          feeSource: getAssociatedTokenAddressSync(
+            options.feeConfig.mint,
+            options.walletPublicKey,
+          ),
+          mint: options.mint,
+          source: sourceAta,
+          sponsor: options.context.internalPayer,
+          metadata:
+            // eslint-disable-next-line unicorn/no-null
+            symbol === undefined ? null : new PublicKey(metadataAddress),
+        })
+        .instruction(),
+    ],
+    {
+      paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+    },
+  );
 };
 
 const buildTransferIntentInstruction = async (
@@ -978,7 +995,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
         signedQuoteBytes: [...quote.signedQuote],
       })
       .accounts({
-        sponsor: options.context.payer,
+        sponsor: options.context.internalPayer,
         mint: options.fromToken.mint,
         metadata:
           metadata?.symbol === undefined
@@ -1007,6 +1024,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       ...instructions,
     ],
     {
+      paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
       extraSigners: [outboxItem],
       addressLookupTable:
         BRIDGING_ADDRESS_LOOKUP_TABLE[options.context.network]?.[
