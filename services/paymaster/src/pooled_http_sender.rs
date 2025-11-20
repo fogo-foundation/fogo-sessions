@@ -93,7 +93,7 @@ impl RpcSender for PooledHttpSender {
         params: serde_json::Value,
     ) -> Result<serde_json::Value> {
         let request_id = self.request_id.fetch_add(1, Ordering::Relaxed);
-        let method = format!("{}", request);
+        let method = format!("{request}");
         let request_json = request.build_request_json(request_id, params).to_string();
 
         let client = self.clients[(request_id as usize) % self.clients.len()].clone();
@@ -109,13 +109,13 @@ impl RpcSender for PooledHttpSender {
                     .await
                     .inspect_err(|send_err| {
                         let mut err: &dyn Error = send_err;
-                        let mut s = format!("{}", err);
+                        let mut s = format!("{err}");
                         while let Some(src) = err.source() {
-                            let _ = write!(s, "-- Caused by: {}", src);
+                            let _ = write!(s, "-- Caused by: {src}");
                             err = src;
                         }
 
-                        tracing::warn!("Failed to send RPC request: {}", s);
+                        tracing::warn!("Failed to send RPC request: {method} {}", s);
                     })
             }?;
             let headers = response
