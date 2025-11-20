@@ -223,11 +223,9 @@ export const revokeSession = async (options: {
         session: options.session.sessionPublicKey,
       })
       .instruction();
-    return options.context.sendTransaction(
-      options.session.sessionKey,
-      [instruction],
-      { sponsor: options.session.sessionInfo.sponsor },
-    );
+    return options.context.sendTransaction(options.session.sessionKey, [
+      instruction,
+    ]);
   } else {
     return;
   }
