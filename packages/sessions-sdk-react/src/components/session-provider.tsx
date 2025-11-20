@@ -6,6 +6,7 @@ import type {
   Session,
   SessionContext as SessionExecutionContext,
   TransactionOrInstructions,
+  SessionContext,
 } from "@fogo/sessions-sdk";
 import {
   establishSession as establishSessionImpl,
@@ -261,25 +262,17 @@ const SessionProvider = ({
     [network, rpc, paymaster, sendToPaymaster, sponsor],
   );
 
-  const sessionContext = useMemo(
-    () =>
-      // eslint-disable-next-line unicorn/no-typeof-undefined
-      typeof globalThis.window === "undefined"
-        ? undefined
-        : createSessionContext({
-            connection: sessionConnection,
-            defaultAddressLookupTableAddress,
-            domain,
-          }),
-    [sessionConnection, defaultAddressLookupTableAddress, domain],
-  );
-  const getSessionContext = useCallback(async () => {
-    if (sessionContext === undefined) {
-      throw new BrowserOnlyError();
-    } else {
-      return await sessionContext;
-    }
-  }, [sessionContext]);
+  const getSessionContext = useMemo(() => {
+    let sessionContext: SessionContext | undefined;
+    return async () => {
+      sessionContext ??= await createSessionContext({
+        connection: sessionConnection,
+        defaultAddressLookupTableAddress,
+        domain,
+      });
+      return sessionContext;
+    };
+  }, [sessionConnection, defaultAddressLookupTableAddress, domain]);
 
   const sessionState = useSessionState({
     ...args,
@@ -995,13 +988,6 @@ class InvariantFailedError extends Error {
   constructor(message: string) {
     super(`An expected invariant failed: ${message}`);
     this.name = "InvariantFailedError";
-  }
-}
-
-class BrowserOnlyError extends Error {
-  constructor() {
-    super(``);
-    this.name = "BrowserOnlyError";
   }
 }
 

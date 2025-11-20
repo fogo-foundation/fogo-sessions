@@ -334,33 +334,26 @@ const getSponsor = async (
     Parameters<typeof createSessionConnection>[0],
     "paymaster" | "network"
   >,
-  sponsorCache: Map<string, PublicKey | Promise<PublicKey>>,
+  sponsorCache: Map<string, PublicKey>,
   domain: string,
 ) => {
   const value = sponsorCache.get(domain);
   if (value === undefined) {
-    const promise = (async () => {
-      const url = new URL(
-        "/api/sponsor_pubkey",
-        options.paymaster ?? DEFAULT_PAYMASTER[options.network],
-      );
-      url.searchParams.set("domain", domain);
-      url.searchParams.set("index", "autoassign");
-      const response = await fetch(url);
+    const url = new URL(
+      "/api/sponsor_pubkey",
+      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
+    );
+    url.searchParams.set("domain", domain);
+    url.searchParams.set("index", "autoassign");
+    const response = await fetch(url);
 
-      if (response.status === 200) {
-        const sponsor = new PublicKey(z.string().parse(await response.text()));
-        sponsorCache.set(domain, sponsor);
-        return sponsor;
-      } else {
-        throw new PaymasterResponseError(
-          response.status,
-          await response.text(),
-        );
-      }
-    })();
-    sponsorCache.set(domain, promise);
-    return promise;
+    if (response.status === 200) {
+      const sponsor = new PublicKey(z.string().parse(await response.text()));
+      sponsorCache.set(domain, sponsor);
+      return sponsor;
+    } else {
+      throw new PaymasterResponseError(response.status, await response.text());
+    }
   } else {
     return value;
   }
