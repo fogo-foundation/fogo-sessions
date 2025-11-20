@@ -1,4 +1,4 @@
-use crate::config_manager::config::{Config, Domain, default_one};
+use crate::config_manager::config::{default_one, Config, Domain};
 use crate::constraint::TransactionVariation;
 use sqlx::{types::Json, FromRow};
 use std::collections::HashMap;

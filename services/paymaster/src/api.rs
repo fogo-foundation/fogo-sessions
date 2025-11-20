@@ -38,8 +38,8 @@ use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
@@ -449,7 +449,9 @@ impl TryFrom<String> for IndexSelector {
             Ok(IndexSelector::Autoassign)
         } else {
             let i: u8 = value.parse().map_err(|_| {
-                format!("Invalid index value: {value}. Use a number between 0 and 255 or 'autoassign'")
+                format!(
+                    "Invalid index value: {value}. Use a number between 0 and 255 or 'autoassign'"
+                )
             })?;
             Ok(IndexSelector::Index(i))
         }
