@@ -36,27 +36,30 @@ struct DomainHelper {
 }
 
 impl<'de> Deserialize<'de> for Domain {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
         let helper = DomainHelper::deserialize(deserializer)?;
-        let tx_variations_map = helper.tx_variations.into_iter().try_fold(
-            HashMap::new(),
-            |mut map, variation| {
-                let key = variation.name().to_string();
-                match map.entry(key.clone()) {
-                    std::collections::hash_map::Entry::Vacant(entry) => {
-                        entry.insert(variation);
+        let tx_variations_map =
+            helper
+                .tx_variations
+                .into_iter()
+                .try_fold(HashMap::new(), |mut map, variation| {
+                    let key = variation.name().to_string();
+                    match map.entry(key.clone()) {
+                        std::collections::hash_map::Entry::Vacant(entry) => {
+                            entry.insert(variation);
+                        }
+                        std::collections::hash_map::Entry::Occupied(_) => {
+                            return Err(serde::de::Error::custom(format!(
+                                "Duplicate transaction variation '{}' for domain '{}'",
+                                key, helper.domain
+                            )));
+                        }
                     }
-                    std::collections::hash_map::Entry::Occupied(_) => {
-                        return Err(serde::de::Error::custom(format!(
-                            "Duplicate transaction variation '{}' for domain '{}'",
-                            key,
-                            helper.domain
-                        )));
-                    }
-                }
-                Ok(map)
-            },
-        )?;
+                    Ok(map)
+                })?;
 
         Ok(Domain {
             domain: helper.domain,
@@ -111,10 +114,9 @@ impl Config {
                     }
                 }
             }
-            let variation_send_tokens =
-                TransactionVariation::intent_transfer_send_tokens_variation(
-                    DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-                );
+            let variation_send_tokens = TransactionVariation::intent_transfer_send_tokens_variation(
+                DEFAULT_TEMPLATE_MAX_GAS_SPEND,
+            );
             let key_send_tokens = variation_send_tokens.name().to_string();
             match domain.tx_variations.entry(key_send_tokens.clone()) {
                 std::collections::hash_map::Entry::Vacant(entry) => {
@@ -128,11 +130,10 @@ impl Config {
                 }
             }
 
-            let variation_bridge_ntt =
-                TransactionVariation::intent_transfer_bridge_ntt_variation(
-                    ntt_quoter,
-                    DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-                );
+            let variation_bridge_ntt = TransactionVariation::intent_transfer_bridge_ntt_variation(
+                ntt_quoter,
+                DEFAULT_TEMPLATE_MAX_GAS_SPEND,
+            );
             let key_bridge_ntt = variation_bridge_ntt.name().to_string();
             match domain.tx_variations.entry(key_bridge_ntt.clone()) {
                 std::collections::hash_map::Entry::Vacant(entry) => {

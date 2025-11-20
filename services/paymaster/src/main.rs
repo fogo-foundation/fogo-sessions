@@ -1,7 +1,4 @@
-use crate::{
-    cli::Cli,
-    config_manager::config::Config,
-};
+use crate::{cli::Cli, config_manager::config::Config};
 use arc_swap::ArcSwap;
 use clap::Parser;
 use fogo_paymaster::parse::parse_h160;

@@ -460,10 +460,7 @@ async fn sponsor_pubkey_handler(
     Ok(sponsor.pubkey().to_string())
 }
 
-pub fn get_domain_state_map(
-    domains: Vec<Domain>,
-    mnemonic: &str,
-) -> HashMap<String, DomainState> {
+pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<String, DomainState> {
     domains
         .into_iter()
         .map(

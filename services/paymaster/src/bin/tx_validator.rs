@@ -462,7 +462,7 @@ async fn get_matching_variations<'a>(
     let mut matching_variations = Vec::new();
 
     let contextual_keys = contextual_keys_cache.get(&domain.domain).await?;
-    for (_, variation) in &domain.tx_variations {
+    for variation in domain.tx_variations.values() {
         let matches = match variation {
             TransactionVariation::V0(v0_variation) => {
                 v0_variation.validate_transaction(transaction).is_ok()

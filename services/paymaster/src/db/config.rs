@@ -50,7 +50,10 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
             tx_variations: HashMap::new(),
         });
 
-        domain_ref.tx_variations.insert(transaction_variation.0.name().to_string(), transaction_variation.0);
+        domain_ref.tx_variations.insert(
+            transaction_variation.0.name().to_string(),
+            transaction_variation.0,
+        );
     }
 
     Ok(Config {
