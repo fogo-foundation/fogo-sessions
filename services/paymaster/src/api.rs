@@ -109,7 +109,7 @@ impl DomainState {
     /// Checks that the transaction meets at least one of the specified variations for this domain.
     /// If so, returns the variation this transaction matched against.
     /// Otherwise, returns an error with a message indicating why the transaction is invalid.
-    #[tracing::instrument(skip_all, fields(variation = variation_name.as_deref()))]
+    #[tracing::instrument(skip_all, fields(specified_variation = variation_name.as_deref(), matched_variation))]
     pub async fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
@@ -182,11 +182,13 @@ impl DomainState {
                 .next()
                 .expect("validation_futures is not empty, so this must exist");
             let variation = future.await?;
+            tracing::Span::current().record("matched_variation", variation.name().to_string());
             Ok(variation)
         } else {
             match futures::future::select_ok(validation_futures).await {
                 Ok((variation, _remaining)) => {
-                    tracing::Span::current().record("variation", variation.name().to_string());
+                    tracing::Span::current()
+                        .record("matched_variation", variation.name().to_string());
                     Ok(variation)
                 }
                 Err(_) => Err((
@@ -306,7 +308,7 @@ pub enum ConfirmationResult {
 #[tracing::instrument(
     skip_all,
     name = "sponsor_and_send",
-    fields(domain, variation, tx_hash)
+    fields(domain, specified_variation = variation.as_deref(), matched_variation, tx_hash)
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
@@ -344,7 +346,7 @@ async fn sponsor_and_send_handler(
         .await
     {
         Ok(variation) => {
-            tracing::Span::current().record("variation", variation.name());
+            tracing::Span::current().record("matched_variation", variation.name());
             obs_validation(
                 domain.clone(),
                 variation.name().to_owned(),
