@@ -1,8 +1,7 @@
-use crate::config_manager::config::{Config, Domain};
+use crate::config_manager::config::{Config, Domain, default_one};
 use crate::constraint::TransactionVariation;
 use sqlx::{types::Json, FromRow};
 use std::collections::HashMap;
-use std::num::NonZeroU8;
 use uuid::Uuid;
 
 use crate::db::pool;
@@ -48,7 +47,7 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
             domain,
             enable_session_management,
             enable_preflight_simulation,
-            number_of_signers: NonZeroU8::new(1).expect("1 is not 0"), // TODO: Get number of signers from database
+            number_of_signers: default_one(), // TODO: Get number of signers from database
             tx_variations: Vec::new(),
         });
 

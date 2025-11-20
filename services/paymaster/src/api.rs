@@ -10,6 +10,7 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
 use axum::Json;
+use nonempty::NonEmpty;
 use solana_derivation_path::DerivationPath;
 
 use axum::{
@@ -38,34 +39,15 @@ use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
-use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-pub struct NonEmptyVec<T> {
-    inner: Vec<T>,
-}
-
-impl<T> NonEmptyVec<T> {
-    pub fn new(inner: Vec<T>) -> Option<NonEmptyVec<T>> {
-        (!inner.is_empty()).then_some(Self { inner })
-    }
-}
-
-impl<T> Deref for NonEmptyVec<T> {
-    type Target = Vec<T>;
-
-    fn deref(&self) -> &Vec<T> {
-        &self.inner
-    }
-}
-
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
-    pub sponsors: NonEmptyVec<Keypair>,
+    pub sponsors: NonEmpty<Keypair>,
     pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
 }
@@ -500,19 +482,15 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                  ..
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
-                let sponsors = NonEmptyVec::new(
-                    (0u8..number_of_signers.into())
-                        .map(|i| {
-                            Keypair::from_seed_and_derivation_path(
-                                &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
-                                    mnemonic, &domain,
-                                ),
-                                Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
-                            )
-                            .expect("Failed to derive keypair from mnemonic_file")
-                        })
-                        .collect(),
-                )
+                let sponsors = NonEmpty::collect((0u8..number_of_signers.into()).map(|i| {
+                    Keypair::from_seed_and_derivation_path(
+                        &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
+                            mnemonic, &domain,
+                        ),
+                        Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
+                    )
+                    .expect("Failed to derive keypair from mnemonic_file")
+                }))
                 .expect("number_of_signers in NonZero so this should never be empty");
 
                 (
