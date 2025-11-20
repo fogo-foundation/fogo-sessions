@@ -9,7 +9,7 @@ fn default_true() -> bool {
 }
 
 pub fn default_one() -> NonZeroU8 {
-    NonZeroU8::new(1).expect("1 is not 0")
+    NonZeroU8::new(1).expect("non-zero u8 provided, should not panic")
 }
 
 #[derive(Deserialize, Serialize)]
