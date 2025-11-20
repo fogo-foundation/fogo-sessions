@@ -431,7 +431,7 @@ struct SponsorPubkeyQuery {
     domain: Option<String>,
     #[serde(default)]
     #[param(value_type = String)]
-    /// Index of the sponsor to select. Can be a number or the string "autoassign" which may give you any of the sponsors
+    /// Index of the sponsor to select. Can be a number or the string "autoassign" which may give you a different sponsor every time
     index: Option<IndexSelector>,
 }
 
