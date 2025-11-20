@@ -812,7 +812,7 @@ const getFee = async (context: SessionContext) => {
       mint: metaplexPublicKey(usdcMintAddress),
     })[0],
     mint: usdcMint,
-    symbolOrMint: context.network === Network.Mainnet ? "USDC.s" : "USDC",
+    symbolOrMint: "USDC.s",
     decimals: USDC_DECIMALS,
     fee: {
       intrachainTransfer: BigInt(feeConfig.intrachainTransferFee.toString()),
