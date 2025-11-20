@@ -24,7 +24,6 @@ use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
-use rand::Rng;
 use serde_with::{serde_as, DisplayFromStr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
@@ -40,6 +39,7 @@ use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
@@ -48,6 +48,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
     pub sponsors: NonEmpty<Keypair>,
+    pub next_sponsor_index: Arc<AtomicUsize>,
     pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
 }
@@ -429,15 +430,37 @@ struct SponsorPubkeyQuery {
     /// Domain to request the sponsor pubkey for
     domain: Option<String>,
     #[serde(default)]
-    /// If set and the domain has multiple sponsors, this will return the sponsor at the given index, instead of a random one.
-    precise: Option<u8>,
+    #[param(value_type = String)]
+    /// Index of the sponsor to select. Can be a number or the string "autoassign" which may give you any of the sponsors
+    index: Option<IndexSelector>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(try_from = "String")]
+enum IndexSelector {
+    Autoassign,
+    Index(u8),
+}
+
+impl TryFrom<String> for IndexSelector {
+    type Error = String;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if value == "autoassign" {
+            Ok(IndexSelector::Autoassign)
+        } else {
+            let i: u8 = value.parse().map_err(|_| {
+                format!("Invalid index value: {value}. Use a number between 0 and 255 or 'autoassign'")
+            })?;
+            Ok(IndexSelector::Index(i))
+        }
+    }
 }
 
 #[utoipa::path(get, path = "/sponsor_pubkey", params(SponsorPubkeyQuery))]
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(SponsorPubkeyQuery { domain, precise }): Query<SponsorPubkeyQuery>,
+    Query(SponsorPubkeyQuery { domain, index }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
     let domains_guard = state.domains.load();
@@ -447,26 +470,32 @@ async fn sponsor_pubkey_handler(
         sponsors,
         enable_preflight_simulation: _,
         tx_variations: _,
+        next_sponsor_index,
     } = domain_state;
 
-    let sponsor_index = precise
-        .map(|i| i as usize)
-        .map(|i| {
-            if i >= sponsors.len() {
-                Err::<usize, (StatusCode, String)>((
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Sponsor index {i} is out of bounds for domain {domain} with {} sponsors",
-                        sponsors.len()
-                    ),
-                ))
-            } else {
-                Ok(i)
+    let sponsor_index = if let Some(selector) = index {
+        match selector {
+            IndexSelector::Autoassign => {
+                next_sponsor_index.fetch_add(1, Ordering::Relaxed) % sponsors.len()
             }
-        })
-        .transpose()?
-        .unwrap_or(rand::rng().random_range(0usize..sponsors.len()));
-
+            IndexSelector::Index(i) => {
+                let index = usize::from(i);
+                if index >= sponsors.len() {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Sponsor index {index} is out of bounds for domain {domain} with {} sponsors",
+                            sponsors.len()
+                        ),
+                    )
+                        .into());
+                }
+                index
+            }
+        }
+    } else {
+        0usize
+    };
     Ok(sponsors[sponsor_index].pubkey().to_string())
 }
 
@@ -500,6 +529,7 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                         sponsors,
                         enable_preflight_simulation,
                         tx_variations,
+                        next_sponsor_index: Arc::new(AtomicUsize::new(0)),
                     },
                 )
             },
