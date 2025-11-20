@@ -48,7 +48,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
     pub sponsors: NonEmpty<Keypair>,
-    pub next_sponsor_index: Arc<AtomicUsize>,
+    pub next_autoassigned_sponsor_index: Arc<AtomicUsize>,
     pub enable_preflight_simulation: bool,
     pub tx_variations: Vec<TransactionVariation>,
 }
@@ -472,13 +472,13 @@ async fn sponsor_pubkey_handler(
         sponsors,
         enable_preflight_simulation: _,
         tx_variations: _,
-        next_sponsor_index,
+        next_autoassigned_sponsor_index,
     } = domain_state;
 
     let sponsor_index = if let Some(selector) = index {
         match selector {
             IndexSelector::Autoassign => {
-                next_sponsor_index.fetch_add(1, Ordering::Relaxed) % sponsors.len()
+                next_autoassigned_sponsor_index.fetch_add(1, Ordering::Relaxed) % sponsors.len()
             }
             IndexSelector::Index(i) => {
                 let index = usize::from(i);
@@ -531,7 +531,7 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                         sponsors,
                         enable_preflight_simulation,
                         tx_variations,
-                        next_sponsor_index: Arc::new(AtomicUsize::new(0)),
+                        next_autoassigned_sponsor_index: Arc::new(AtomicUsize::new(0)),
                     },
                 )
             },
