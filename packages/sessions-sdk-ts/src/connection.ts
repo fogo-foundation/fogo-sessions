@@ -106,7 +106,6 @@ export const createSessionConnection = (
     getSolanaConnection: createSolanaConnectionGetter(options.network),
     sendToPaymaster: async (
       domain: string,
-      sponsor: PublicKey | undefined,
       sessionKey: CryptoKeyPair | undefined,
       instructions: TransactionOrInstructions,
       extraConfig?: SendTransactionOptions,
@@ -114,7 +113,6 @@ export const createSessionConnection = (
       sendToPaymaster(
         { ...options, rpc, connection, addressLookupTableCache, sponsorCache },
         domain,
-        sponsor,
         sessionKey,
         instructions,
         extraConfig,
@@ -169,7 +167,6 @@ const sendToPaymaster = async (
     sponsorCache: Map<string, PublicKey>;
   },
   domain: string,
-  sponsor: PublicKey | undefined,
   sessionKey: CryptoKeyPair | undefined,
   instructions:
     | (TransactionInstruction | Instruction)[]
@@ -186,7 +183,6 @@ const sendToPaymaster = async (
     ? await buildTransaction(
         connection,
         domain,
-        sponsor,
         signerKeys,
         instructions,
         extraConfig,
@@ -230,7 +226,6 @@ const buildTransaction = async (
     sponsorCache: Map<string, PublicKey>;
   },
   domain: string,
-  sponsorOverride: PublicKey | undefined,
   signerKeys: CryptoKeyPair[],
   instructions: (TransactionInstruction | Instruction)[],
   extraConfig?: {
@@ -241,11 +236,9 @@ const buildTransaction = async (
   const [{ value: latestBlockhash }, sponsor, addressLookupTable, signers] =
     await Promise.all([
       connection.rpc.getLatestBlockhash().send(),
-      sponsorOverride
-        ? Promise.resolve(sponsorOverride)
-        : (connection.sponsor === undefined
-          ? getSponsor(connection, connection.sponsorCache, domain)
-          : Promise.resolve(connection.sponsor)),
+      connection.sponsor === undefined
+        ? getSponsor(connection, connection.sponsorCache, domain)
+        : Promise.resolve(connection.sponsor),
       extraConfig?.addressLookupTable === undefined
         ? Promise.resolve(undefined)
         : getAddressLookupTable(
