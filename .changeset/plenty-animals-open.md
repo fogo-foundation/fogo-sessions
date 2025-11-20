@@ -2,4 +2,4 @@
 "@fogo/sessions-sdk-react": patch
 ---
 
-Fix stretch animation whenh loading token list
+Fix stretch animation when loading token list
