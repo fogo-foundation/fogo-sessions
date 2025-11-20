@@ -118,7 +118,7 @@ pub fn load_file_config(config_path: &str, ntt_quoter: H160) -> Result<Config> {
         .add_source(File::with_name(config_path))
         .build()?
         .try_deserialize()?;
-    config.assign_defaults(ntt_quoter);
+    config.assign_defaults(ntt_quoter)?;
     Ok(config)
 }
 #[tokio::main]
@@ -462,7 +462,7 @@ async fn get_matching_variations<'a>(
     let mut matching_variations = Vec::new();
 
     let contextual_keys = contextual_keys_cache.get(&domain.domain).await?;
-    for variation in &domain.tx_variations {
+    for (_, variation) in &domain.tx_variations {
         let matches = match variation {
             TransactionVariation::V0(v0_variation) => {
                 v0_variation.validate_transaction(transaction).is_ok()

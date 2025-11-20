@@ -1,4 +1,4 @@
-use crate::config_manager::config::ParsedDomain;
+use crate::config_manager::config::Domain;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::rpc::{
@@ -461,13 +461,13 @@ async fn sponsor_pubkey_handler(
 }
 
 pub fn get_domain_state_map(
-    domains: Vec<ParsedDomain>,
+    domains: Vec<Domain>,
     mnemonic: &str,
 ) -> HashMap<String, DomainState> {
     domains
         .into_iter()
         .map(
-            |ParsedDomain {
+            |Domain {
                  domain,
                  enable_preflight_simulation,
                  tx_variations,
