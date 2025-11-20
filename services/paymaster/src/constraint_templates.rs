@@ -114,11 +114,6 @@ impl InstructionConstraint {
                     include: vec![ContextualPubkey::NonFeePayerSigner],
                     exclude: vec![],
                 },
-                AccountConstraint {
-                    index: 1,
-                    include: vec![ContextualPubkey::Sponsor],
-                    exclude: vec![],
-                },
             ],
             data: vec![
                 // instruction = 1 (RevokeSession)
