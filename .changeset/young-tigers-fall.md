@@ -2,4 +2,4 @@
 "@fogo/sessions-sdk": patch
 ---
 
-Allow overriding the sponsor in sendTransaction, ensure sponsor pubkey only gets fetched once
+Fetch a different sponsor every web session if multiple are available.
