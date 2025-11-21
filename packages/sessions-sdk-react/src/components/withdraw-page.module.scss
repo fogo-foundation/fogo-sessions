@@ -73,16 +73,15 @@
 
       color: theme.color("muted");
       font-style: italic;
-      margin-top: -#{theme.spacing(5)};
+      margin-top: -#{theme.spacing(3)};
 
-      .skeleton {
+      &[data-is-loading] {
         display: inline-block;
         background: theme.color("skeleton");
-        height: 0.8em;
-        margin-left: 0.25em;
-        width: theme.spacing(15);
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        height: 1em;
+        width: theme.spacing(25);
         border-radius: theme.border-radius("md");
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
         @keyframes pulse {
           50% {
@@ -91,5 +90,11 @@
         }
       }
     }
+  }
+
+  .fetchError {
+    height: 100%;
+    padding-left: theme.spacing(8);
+    padding-right: theme.spacing(8);
   }
 }

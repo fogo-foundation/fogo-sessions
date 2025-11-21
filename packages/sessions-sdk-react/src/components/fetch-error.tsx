@@ -9,7 +9,7 @@ import styles from "./fetch-error.module.css";
 type Props = {
   headline: ReactNode;
   error: unknown;
-  reset: () => void;
+  reset?: (() => void) | undefined;
 } & ComponentProps<"div">;
 
 export const FetchError = ({
@@ -23,12 +23,14 @@ export const FetchError = ({
     <WarningCircleIcon className={styles.icon} />
     <span className={styles.headline}>{headline}</span>
     <span className={styles.message}>{errorToString(error)}</span>
-    <Button
-      className={styles.retryButton ?? ""}
-      variant="solid"
-      onPress={reset}
-    >
-      Retry
-    </Button>
+    {reset !== undefined && (
+      <Button
+        className={styles.retryButton ?? ""}
+        variant="solid"
+        onPress={reset}
+      >
+        Retry
+      </Button>
+    )}
   </div>
 );
