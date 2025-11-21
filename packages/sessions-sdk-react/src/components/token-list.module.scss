@@ -100,6 +100,15 @@
           overflow-x: clip;
           text-overflow: ellipsis;
         }
+
+        .notional {
+          @include theme.text("xs");
+
+          color: theme.color("muted");
+          opacity: 0.65;
+          overflow-x: clip;
+          text-overflow: ellipsis;
+        }
       }
     }
 
@@ -108,7 +117,8 @@
       .nameAndIcon .nameAndMint .name,
       .nameAndIcon .nameAndMint .mint,
       .amountAndSymbol .amount,
-      .amountAndSymbol .symbol {
+      .amountAndSymbol .symbol,
+      .amountAndSymbol .notional {
         display: inline-block;
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
       }
@@ -122,7 +132,8 @@
       .nameAndIcon .nameAndMint .name,
       .nameAndIcon .nameAndMint .mint,
       .amountAndSymbol .amount,
-      .amountAndSymbol .symbol {
+      .amountAndSymbol .symbol,
+      .amountAndSymbol .notional {
         background: theme.color("skeleton");
         height: 0.8em;
         border-radius: theme.border-radius("md");
@@ -154,6 +165,10 @@
 
       .amountAndActions .symbol {
         width: theme.spacing(14);
+      }
+
+      .amountAndActions .notional {
+        width: theme.spacing(16);
       }
     }
 

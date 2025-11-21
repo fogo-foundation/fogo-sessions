@@ -76,9 +76,13 @@ export const TokenList = ({
             })}
         >
           {(token) => {
-            const { mint, amountInWallet, decimals, image, name, symbol } =
+            const { mint, amountInWallet, decimals, image, name, symbol, price } =
               token;
             const amountAsString = amountToString(amountInWallet, decimals);
+            const notionalValue =
+              price !== undefined
+                ? (Number(amountInWallet) / 10 ** decimals) * price
+                : undefined;
             const contents = (
               <>
                 <div className={styles.nameAndIcon}>
@@ -103,6 +107,11 @@ export const TokenList = ({
                   <div className={styles.amountAndSymbol}>
                     <span className={styles.amount}>{amountAsString}</span>
                     {symbol && <span className={styles.symbol}>{symbol}</span>}
+                    {notionalValue !== undefined && (
+                      <span className={styles.symbol}>
+                        ${notionalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
                   </div>
                   {"onPressSend" in props && (
                     <div className={styles.actions}>
@@ -166,6 +175,7 @@ const LoadingToken = () => (
       <div className={styles.amountAndSymbol}>
         <span className={styles.amount} />
         <span className={styles.symbol} />
+        <span className={styles.notional} />
       </div>
     </div>
   </div>

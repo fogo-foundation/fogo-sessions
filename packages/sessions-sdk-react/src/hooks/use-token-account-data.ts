@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import { z } from "zod";
 
 import { getMetadata } from "../get-metadata.js";
+import { getPrices } from "../get-prices.js";
 import type { WalletConnectedSessionState } from "../session-state.js";
 import { isEstablished } from "../session-state.js";
 import { useData } from "./use-data.js";
@@ -67,6 +68,10 @@ const getTokenAccounts = async (
     network,
   );
 
+  const prices = await getPrices(
+    accounts.map((account) => account.mint),
+  );
+
   return {
     tokensInWallet: accounts
       .filter(({ amountInWallet }) => amountInWallet !== 0n)
@@ -75,6 +80,7 @@ const getTokenAccounts = async (
         amountInWallet,
         decimals,
         ...metadata[mint],
+        price: prices[mint],
       })),
     sessionLimits: isEstablished(sessionState)
       ? accounts
