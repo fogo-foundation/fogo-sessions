@@ -1,4 +1,5 @@
 use axum::{http::StatusCode, response::ErrorResponse};
+use base64::prelude::*;
 use dashmap::DashMap;
 use futures::stream::StreamExt;
 use serde_json::json;
@@ -10,6 +11,7 @@ use solana_client::{
 use solana_commitment_config::CommitmentConfig;
 use solana_pubkey::Pubkey;
 use solana_rpc_client_api::client_error::{Error, ErrorKind};
+use solana_rpc_client_api::request::RpcRequest;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
@@ -210,14 +212,6 @@ pub async fn send_and_confirm_transaction_ftl(
     transaction: &VersionedTransaction,
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
-    use base64::prelude::*;
-    use solana_rpc_client_api::request::RpcRequest;
-
-    let encoding = config.encoding.unwrap_or(UiTransactionEncoding::Base64);
-    let preflight_commitment = CommitmentConfig {
-        commitment: config.preflight_commitment.unwrap_or_default(),
-    };
-
     let tx_bytes = bincode::serde::encode_to_vec(transaction, bincode::config::standard())
         .map_err(|e| {
             tracing::error!("Failed to serialize transaction: {e}");
@@ -229,8 +223,8 @@ pub async fn send_and_confirm_transaction_ftl(
     let tx_base64 = BASE64_STANDARD.encode(&tx_bytes);
 
     let mut config_value = serde_json::to_value(RpcSendTransactionConfig {
-        encoding: Some(encoding),
-        preflight_commitment: Some(preflight_commitment.commitment),
+        encoding: Some(config.encoding.unwrap_or(UiTransactionEncoding::Base64)),
+        preflight_commitment: Some(config.preflight_commitment.unwrap_or_default()),
         ..config
     })
     .map_err(|e| {

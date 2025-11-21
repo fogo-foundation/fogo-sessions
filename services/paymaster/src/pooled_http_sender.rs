@@ -10,8 +10,6 @@ use solana_rpc_client_api::client_error::Result;
 use solana_rpc_client_api::custom_error;
 use solana_rpc_client_api::error_object::RpcErrorObject;
 use solana_transaction_error::TransactionError;
-use std::error::Error;
-use std::fmt::Write;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -25,7 +23,7 @@ pub struct RpcTransactionFailedResult {
     pub err: TransactionError,
 }
 
-/// Pooled Http sender for an RPC interface, it creates an internal http2 connection pool
+/// Pooled Http sender for an RPC interface, it creates an internal http connection pool
 /// to maximize parallel streams to the server
 pub struct PooledHttpSender {
     clients: Vec<Arc<reqwest_middleware::ClientWithMiddleware>>,
@@ -76,10 +74,7 @@ impl PooledHttpSender {
         let mut default_headers = header::HeaderMap::new();
         default_headers.append(
             header::HeaderName::from_static("solana-client"),
-            header::HeaderValue::from_str(
-                format!("paymaster/{}", env!("CARGO_PKG_VERSION")).as_str(),
-            )
-            .unwrap(),
+            header::HeaderValue::from_str("paymaster").unwrap(),
         );
         default_headers
     }
@@ -93,7 +88,6 @@ impl RpcSender for PooledHttpSender {
         params: serde_json::Value,
     ) -> Result<serde_json::Value> {
         let request_id = self.request_id.fetch_add(1, Ordering::Relaxed);
-        let method = format!("{request}");
         let request_json = request.build_request_json(request_id, params).to_string();
 
         let client = self.clients[(request_id as usize) % self.clients.len()].clone();
@@ -107,31 +101,9 @@ impl RpcSender for PooledHttpSender {
                     .body(request_json)
                     .send()
                     .await
-                    .inspect_err(|send_err| {
-                        let mut err: &dyn Error = send_err;
-                        let mut s = format!("{err}");
-                        while let Some(src) = err.source() {
-                            let _ = write!(s, "-- Caused by: {src}");
-                            err = src;
-                        }
-
-                        tracing::warn!("Failed to send RPC request: {method} {}", s);
-                    })
             }?;
-            let headers = response
-                .headers()
-                .iter()
-                .map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string()))
-                .collect::<Vec<_>>();
 
             if !response.status().is_success() {
-                tracing::warn!(
-                    "Status Failed RPC call: {} status: {}, headers: {:?}",
-                    method,
-                    response.status(),
-                    headers
-                );
-
                 if response.status() == StatusCode::TOO_MANY_REQUESTS
                     && too_many_requests_retries > 0
                 {
@@ -155,8 +127,6 @@ impl RpcSender for PooledHttpSender {
 
             let mut json = response.json::<serde_json::Value>().await?;
             if json["error"].is_object() {
-                tracing::warn!("Error in RPC call: {}, headers: {:?}", method, headers);
-
                 return match serde_json::from_value::<RpcErrorObject>(json["error"].clone()) {
                     Ok(rpc_error_object) => {
                         let data = match rpc_error_object.code {

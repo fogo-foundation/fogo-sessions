@@ -45,8 +45,6 @@ use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-const RPC_POOL_SIZE: usize = 6;
-
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
     pub sponsor: Keypair,
@@ -471,6 +469,10 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
         )
         .collect::<HashMap<_, _>>()
 }
+
+/// How many RPC clients to create for both FTL and the regular RPC client for read operations
+const RPC_POOL_SIZE: usize = 6;
+
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
@@ -482,12 +484,7 @@ pub async fn run_server(
 
     let rpc = RpcClient::new_sender(
         rpc_http_sender,
-        RpcClientConfig {
-            commitment_config: CommitmentConfig {
-                commitment: CommitmentLevel::Processed,
-            },
-            confirm_transaction_initial_timeout: None,
-        },
+        RpcClientConfig::with_commitment(CommitmentConfig::processed()),
     );
 
     let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
@@ -501,12 +498,7 @@ pub async fn run_server(
 
         RpcClient::new_sender(
             http_sender,
-            RpcClientConfig {
-                commitment_config: CommitmentConfig {
-                    commitment: CommitmentLevel::Processed,
-                },
-                confirm_transaction_initial_timeout: None,
-            },
+            RpcClientConfig::with_commitment(CommitmentConfig::processed()),
         )
     });
 
