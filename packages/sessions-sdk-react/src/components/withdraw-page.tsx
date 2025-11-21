@@ -4,14 +4,15 @@ import {
   TransactionResultType,
   getBridgeOutFee,
 } from "@fogo/sessions-sdk";
-import type { FormEvent } from "react";
-import { Suspense, useState, useCallback, useMemo, use } from "react";
+import type { FormEvent, FormEventHandler } from "react";
+import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
+import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
@@ -19,12 +20,10 @@ import { UsdcIcon } from "./usdc-icon.js";
 import styles from "./withdraw-page.module.css";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
-import {
-  StateType as TokenAccountStateType,
-  useTokenAccountData,
-} from "../hooks/use-token-account-data.js";
+import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import { USDC } from "../wormhole-routes.js";
 import { ExplorerLink } from "./explorer-link.js";
+import { StateType, useData } from "../hooks/use-data.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -32,50 +31,116 @@ type Props = {
   onSendComplete: () => void;
 };
 
-export const WithdrawPage = ({ onPressBack, ...props }: Props) => {
+export const WithdrawPage = ({ onPressBack, ...props }: Props) => (
+  <div className={styles.withdrawPage ?? ""}>
+    <Button
+      onPress={onPressBack}
+      variant="outline"
+      className={styles.backButton ?? ""}
+    >
+      Back
+    </Button>
+    <WithdrawForm {...props} />
+  </div>
+);
+
+const WithdrawForm = (props: Omit<Props, "onPressBack">) => {
+  const feeConfig = useFeeConfig();
+  switch (feeConfig.type) {
+    case StateType.Error: {
+      return (
+        <FetchError
+          className={styles.fetchError}
+          headline="Failed to load fee information"
+          error={feeConfig.error}
+          reset={feeConfig.reset}
+        />
+      );
+    }
+    case StateType.Loaded: {
+      return (
+        <WithdrawFormWithFeeConfig feeConfig={feeConfig.data} {...props} />
+      );
+    }
+    case StateType.Loading:
+    case StateType.NotLoaded: {
+      return <WithdrawFormImpl {...props} isLoading />;
+    }
+  }
+};
+
+const useFeeConfig = () => {
+  const { getSessionContext, network } = useSessionContext();
+  const getFeeConfig = useCallback(
+    async () => await getBridgeOutFee(await getSessionContext()),
+    [getSessionContext],
+  );
+  return useData(["feeConfig", "bridge", network], getFeeConfig, {});
+};
+
+const WithdrawFormWithFeeConfig = (
+  props: Omit<Props, "onPressBack"> & {
+    feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
+  },
+) => {
   const { network } = useSessionContext();
   const tokenAccountState = useTokenAccountData(props.sessionState);
 
-  return (
-    <div className={styles.withdrawPage ?? ""}>
-      <Button
-        onPress={onPressBack}
-        variant="outline"
-        className={styles.backButton ?? ""}
-      >
-        Back
-      </Button>
-      <WithdrawForm
-        {...props}
-        {...(tokenAccountState.type === TokenAccountStateType.Loaded
-          ? {
-              amountAvailable: getUsdcBalance(
-                network,
-                tokenAccountState.data.tokensInWallet,
-              ),
-            }
-          : { isLoading: true })}
-      />
-    </div>
-  );
+  switch (tokenAccountState.type) {
+    case StateType.Error: {
+      return (
+        <FetchError
+          className={styles.fetchError}
+          headline="Failed to load token account balance"
+          error={tokenAccountState.error}
+          reset={tokenAccountState.reset}
+        />
+      );
+    }
+    case StateType.Loaded: {
+      const feeTokenAccountBalance =
+        tokenAccountState.data.tokensInWallet.find((token) =>
+          token.mint.equals(props.feeConfig.mint),
+        )?.amountInWallet ?? 0n;
+
+      return feeTokenAccountBalance < props.feeConfig.fee ? (
+        <FetchError
+          className={styles.fetchError}
+          headline={`Not enough ${props.feeConfig.symbolOrMint}`}
+          error={`You need at least ${amountToString(props.feeConfig.fee, props.feeConfig.decimals)} ${props.feeConfig.symbolOrMint} to pay network fees to transfer tokens out.`}
+        />
+      ) : (
+        <LoadedWithdrawForm
+          amountAvailable={getUsdcBalance(
+            network,
+            tokenAccountState.data.tokensInWallet,
+          )}
+          {...props}
+        />
+      );
+    }
+    case StateType.Loading:
+    case StateType.NotLoaded: {
+      return <WithdrawFormImpl {...props} isLoading />;
+    }
+  }
 };
 
-const WithdrawForm = ({
+const LoadedWithdrawForm = ({
   onSendComplete,
   sessionState,
-  ...props
-}: Omit<Props, "onPressBack"> &
-  ({ isLoading?: false; amountAvailable: bigint } | { isLoading: true })) => {
+  feeConfig,
+  amountAvailable,
+}: Omit<Props, "onPressBack"> & {
+  amountAvailable: bigint;
+  feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
+}) => {
   const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
-  const feeConfig = useMemo(
-    () => getSessionContext().then((context) => getBridgeOutFee(context)),
-    [getSessionContext],
-  );
 
-  const doSubmit = useCallback(
+  const onSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);
@@ -85,8 +150,8 @@ const WithdrawForm = ({
       }
 
       setIsSubmitting(true);
-      Promise.all([getSessionContext(), feeConfig])
-        .then(([context, feeConfig]) =>
+      getSessionContext()
+        .then((context) =>
           bridgeOut({
             context,
             sessionPublicKey: sessionState.sessionPublicKey,
@@ -136,7 +201,37 @@ const WithdrawForm = ({
   );
 
   return (
-    <Form className={styles.withdrawForm ?? ""} onSubmit={doSubmit}>
+    <WithdrawFormImpl
+      isSubmitting={isSubmitting}
+      amountAvailable={amountAvailable}
+      feeConfig={feeConfig}
+      onSubmit={onSubmit}
+      amount={amount}
+      onChangeAmount={setAmount}
+    />
+  );
+};
+
+const WithdrawFormImpl = (
+  props:
+    | { isLoading: true }
+    | {
+        isLoading?: false | undefined;
+        isSubmitting: boolean;
+        amountAvailable: bigint;
+        feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
+        onSubmit: FormEventHandler;
+        amount: string;
+        onChangeAmount: (newValue: string) => void;
+      },
+) => {
+  const { network } = useSessionContext();
+  const tokenMint = USDC.chains[network].fogo.mint;
+  return (
+    <Form
+      className={styles.withdrawForm ?? ""}
+      {...(!props.isLoading && { onSubmit: props.onSubmit })}
+    >
       <div className={styles.header}>
         <UsdcIcon className={styles.tokenIcon} />
         <h2 className={styles.tokenName}>Transfer USD Coin to Solana</h2>
@@ -156,56 +251,58 @@ const WithdrawForm = ({
         symbol="USDC"
         isRequired
         gt={0n}
-        value={amount}
-        onChange={setAmount}
         placeholder="Enter an amount"
         labelExtra={
-          <Suspense
-            fallback={
-              <Link className={styles.action ?? ""} isDisabled>
-                Max
-              </Link>
-            }
+          <Link
+            className={styles.action ?? ""}
+            {...(props.isLoading || props.isSubmitting
+              ? { isPending: true }
+              : {
+                  onPress: () => {
+                    props.onChangeAmount(
+                      amountToString(
+                        props.feeConfig.mint.equals(tokenMint)
+                          ? props.amountAvailable - props.feeConfig.fee
+                          : props.amountAvailable,
+                        USDC.decimals,
+                      ),
+                    );
+                  },
+                })}
           >
-            <MaxButton
-              feeConfig={feeConfig}
-              {...(props.isLoading
-                ? { isPending: true }
-                : {
-                    setAmount: ({ fee, mint: feeMint }) => {
-                      setAmount(
-                        amountToString(
-                          feeMint.equals(USDC.chains[network].fogo.mint)
-                            ? props.amountAvailable - fee
-                            : props.amountAvailable,
-                          USDC.decimals,
-                        ),
-                      );
-                    },
-                  })}
-            />
-          </Suspense>
+            Max
+          </Link>
         }
-        {...(props.isLoading
+        {...(props.isLoading || props.isSubmitting
           ? { isPending: true }
           : {
-              max: props.amountAvailable,
-              isPending: isSubmitting,
+              max: props.feeConfig.mint.equals(tokenMint)
+                ? props.amountAvailable - props.feeConfig.fee
+                : props.amountAvailable,
+              onChange: props.onChangeAmount,
             })}
+        {...(!props.isLoading && {
+          value: props.amount,
+        })}
       />
       <Button
         type="submit"
         variant="secondary"
         className={styles.submitButton ?? ""}
-        isPending={props.isLoading === true || isSubmitting}
+        isPending={props.isLoading === true || props.isSubmitting}
       >
         Transfer
       </Button>
-      <div className={styles.fee}>
-        Fee:{" "}
-        <Suspense fallback={<span className={styles.skeleton} />}>
-          <FeeAmount feeConfig={feeConfig} />
-        </Suspense>
+      <div
+        className={styles.fee}
+        data-is-loading={props.isLoading ? "" : undefined}
+      >
+        {!props.isLoading && (
+          <>
+            Fee: {amountToString(props.feeConfig.fee, props.feeConfig.decimals)}{" "}
+            {props.feeConfig.symbolOrMint}
+          </>
+        )}
       </div>
     </Form>
   );
@@ -215,43 +312,3 @@ const getUsdcBalance = (network: Network, tokensInWallet: Token[]) =>
   tokensInWallet.find((token) =>
     token.mint.equals(USDC.chains[network].fogo.mint),
   )?.amountInWallet ?? 0n;
-
-const MaxButton = ({
-  feeConfig,
-  ...props
-}: {
-  feeConfig: ReturnType<typeof getBridgeOutFee>;
-} & (
-  | { isPending: true }
-  | {
-      isPending?: false | undefined;
-      setAmount: (
-        feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>,
-      ) => void;
-    }
-)) => {
-  const resolvedConfig = use(feeConfig);
-  return (
-    <Link
-      className={styles.action ?? ""}
-      {...(props.isPending
-        ? { isPending: true }
-        : {
-            onPress: () => {
-              props.setAmount(resolvedConfig);
-            },
-          })}
-    >
-      Max
-    </Link>
-  );
-};
-
-const FeeAmount = ({
-  feeConfig,
-}: {
-  feeConfig: ReturnType<typeof getBridgeOutFee>;
-}) => {
-  const { fee, decimals, symbolOrMint } = use(feeConfig);
-  return `${amountToString(fee, decimals)} ${symbolOrMint}`;
-};
