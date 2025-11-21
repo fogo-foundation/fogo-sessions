@@ -52,7 +52,7 @@ pub struct DomainState {
     pub sponsors: NonEmpty<Keypair>,
     pub next_autoassigned_sponsor_index: Arc<AtomicUsize>,
     pub enable_preflight_simulation: bool,
-    pub tx_variations: Vec<TransactionVariation>,
+    pub tx_variations: HashMap<String, TransactionVariation>,
 }
 
 pub struct PubsubClientWithReconnect {
@@ -116,12 +116,13 @@ impl DomainState {
     /// Checks that the transaction meets at least one of the specified variations for this domain.
     /// If so, returns the variation this transaction matched against.
     /// Otherwise, returns an error with a message indicating why the transaction is invalid.
-    #[tracing::instrument(skip_all, fields(variation))]
+    #[tracing::instrument(skip_all, fields(specified_variation = variation_name.as_deref(), matched_variation))]
     pub async fn validate_transaction(
         &self,
         transaction: &VersionedTransaction,
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
+        variation_name: Option<String>,
     ) -> Result<&TransactionVariation, (StatusCode, String)> {
         let message_bytes = transaction.message.serialize();
         transaction
@@ -145,29 +146,53 @@ impl DomainState {
         let validation_futures: Vec<_> = self
             .tx_variations
             .iter()
-            .map(|variation| {
-                Box::pin(async move {
-                    self.validate_transaction_against_variation(
-                        transaction,
-                        variation,
-                        chain_index,
-                        sponsor,
-                    )
-                    .await
-                    .map(|_| variation)
-                })
+            .filter_map(|(name, variation)| {
+                if let Some(ref expected_name) = variation_name {
+                    if name != expected_name {
+                        return None;
+                    }
+                }
+
+                Some(Box::pin(async move {
+                    self.validate_transaction_against_variation(transaction, variation, chain_index, sponsor)
+                        .await
+                        .map(|_| variation)
+                }))
             })
             .collect();
 
-        match futures::future::select_ok(validation_futures).await {
-            Ok((variation, _remaining)) => {
-                tracing::Span::current().record("variation", variation.name().to_string());
-                Ok(variation)
-            }
-            Err(_) => Err((
+        // If no variations were validated and the variation_name was specified, return an error indicating no such variation.
+        // If no variation_name was specified, return an error indicating no variations are configured for this domain.
+        if validation_futures.is_empty() {
+            return Err((
                 StatusCode::BAD_REQUEST,
-                "Transaction does not match any allowed variations".to_string(),
-            )),
+                if let Some(name) = variation_name {
+                    format!("No transaction variation named '{name}' for domain")
+                } else {
+                    "No transaction variations configured for domain".to_string()
+                },
+            ));
+        } else if variation_name.is_some() {
+            // If variation_name was specified, only one future will be present, and we can propagate its specific error.
+            let future = validation_futures
+                .into_iter()
+                .next()
+                .expect("validation_futures is not empty, so this must exist");
+            let variation = future.await?;
+            tracing::Span::current().record("matched_variation", variation.name().to_string());
+            Ok(variation)
+        } else {
+            match futures::future::select_ok(validation_futures).await {
+                Ok((variation, _remaining)) => {
+                    tracing::Span::current()
+                        .record("matched_variation", variation.name().to_string());
+                    Ok(variation)
+                }
+                Err(_) => Err((
+                    StatusCode::BAD_REQUEST,
+                    "Transaction does not match any allowed variations".to_string(),
+                )),
+            }
         }
     }
 
@@ -204,9 +229,14 @@ struct SponsorAndSendQuery {
     #[deprecated]
     /// Whether to confirm the transaction
     _confirm: bool,
+
     #[serde(default)]
     /// Domain to request the sponsor pubkey for
     domain: Option<String>,
+
+    #[serde(default)]
+    /// Variation name to validate against. If not provided, all variations for the domain will be tried.
+    variation: Option<String>,
 }
 
 fn get_domain_name(
@@ -276,12 +306,14 @@ pub enum ConfirmationResult {
 #[tracing::instrument(
     skip_all,
     name = "sponsor_and_send",
-    fields(domain, variation, tx_hash)
+    fields(domain, specified_variation = variation.as_deref(), matched_variation, tx_hash)
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(SponsorAndSendQuery { domain, .. }): Query<SponsorAndSendQuery>,
+    Query(SponsorAndSendQuery {
+        domain, variation, ..
+    }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<Json<ConfirmationResult>, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
@@ -334,11 +366,12 @@ async fn sponsor_and_send_handler(
             &transaction,
             &state.chain_index,
             &transaction_sponsor.pubkey(),
+            variation
         )
         .await
     {
         Ok(variation) => {
-            tracing::Span::current().record("variation", variation.name());
+            tracing::Span::current().record("matched_variation", variation.name());
             obs_validation(
                 domain.clone(),
                 Some(variation.name().to_owned()),

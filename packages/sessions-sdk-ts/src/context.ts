@@ -43,10 +43,10 @@ export const createSessionContext = async (options: {
         sessionKey,
         instructions,
         {
+          ...sendTxOptions,
           addressLookupTable:
             sendTxOptions?.addressLookupTable ??
             options.defaultAddressLookupTableAddress,
-          extraSigners: sendTxOptions?.extraSigners,
         },
       ),
   };

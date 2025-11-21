@@ -48,10 +48,13 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
             enable_session_management,
             enable_preflight_simulation,
             number_of_signers: default_one(), // TODO: Get number of signers from database
-            tx_variations: Vec::new(),
+            tx_variations: HashMap::new(),
         });
 
-        domain_ref.tx_variations.push(transaction_variation.0);
+        domain_ref.tx_variations.insert(
+            transaction_variation.0.name().to_string(),
+            transaction_variation.0,
+        );
     }
 
     Ok(Config {
