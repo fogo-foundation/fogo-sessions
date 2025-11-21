@@ -154,9 +154,14 @@ impl DomainState {
                 }
 
                 Some(Box::pin(async move {
-                    self.validate_transaction_against_variation(transaction, variation, chain_index, sponsor)
-                        .await
-                        .map(|_| variation)
+                    self.validate_transaction_against_variation(
+                        transaction,
+                        variation,
+                        chain_index,
+                        sponsor,
+                    )
+                    .await
+                    .map(|_| variation)
                 }))
             })
             .collect();
@@ -366,7 +371,7 @@ async fn sponsor_and_send_handler(
             &transaction,
             &state.chain_index,
             &transaction_sponsor.pubkey(),
-            variation
+            variation,
         )
         .await
     {
