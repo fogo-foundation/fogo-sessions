@@ -32,7 +32,7 @@ type Props = {
 };
 
 export const WithdrawPage = ({ onPressBack, ...props }: Props) => (
-  <div className={styles.withdrawPage ?? ""}>
+  <div className={styles.withdrawPage}>
     <Button
       onPress={onPressBack}
       variant="outline"
