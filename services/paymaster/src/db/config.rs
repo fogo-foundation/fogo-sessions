@@ -1,23 +1,24 @@
 use crate::config_manager::config::{Config, Domain};
 use crate::constraint::TransactionVariation;
+use serde_json::Value;
 use sqlx::{types::Json, FromRow};
 use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::db::pool;
 
-/// A row from the database that represents a domain and its transaction variations.
+/// Database row where JSON is untyped.
 #[derive(FromRow)]
-struct Row {
+struct RawRow {
     domain_id: Uuid,
     domain: String,
     enable_session_management: bool,
     enable_preflight_simulation: bool,
-    transaction_variation: Json<TransactionVariation>,
+    transaction_variation: Json<Value>,
 }
 
 pub async fn load_config() -> Result<Config, sqlx::Error> {
-    let rows: Vec<Row> = sqlx::query_as::<_, Row>(
+    let rows: Vec<RawRow> = sqlx::query_as::<_, RawRow>(
         r#"
         SELECT
           d.id            AS domain_id,
@@ -35,7 +36,7 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
 
     let mut map: HashMap<Uuid, Domain> = HashMap::new();
 
-    for Row {
+    for RawRow {
         domain_id,
         domain,
         enable_session_management,
@@ -43,6 +44,20 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
         transaction_variation,
     } in rows
     {
+        let transaction_variation: TransactionVariation =
+            match serde_json::from_value(transaction_variation.0) {
+                Ok(tv) => tv,
+                Err(err) => {
+                    // log and skip this row instead of failing the whole query
+                    tracing::warn!(
+                        ?err,
+                        ?domain,
+                        "Skipping row with invalid transaction_variation"
+                    );
+                    continue;
+                }
+            };
+
         let domain_ref = map.entry(domain_id).or_insert_with(|| Domain {
             domain,
             enable_session_management,
@@ -50,7 +65,7 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
             tx_variations: Vec::new(),
         });
 
-        domain_ref.tx_variations.push(transaction_variation.0);
+        domain_ref.tx_variations.push(transaction_variation);
     }
 
     Ok(Config {
