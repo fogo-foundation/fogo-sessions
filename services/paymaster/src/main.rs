@@ -1,5 +1,4 @@
-use crate::cli::Cli;
-use crate::config_manager::config::Config;
+use crate::{cli::Cli, config_manager::config::Config};
 use arc_swap::ArcSwap;
 use clap::Parser;
 use fogo_paymaster::parse::parse_h160;
@@ -76,7 +75,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
             e
         )
     })?;
-    config.assign_defaults(ntt_quoter);
+    config.assign_defaults(ntt_quoter)?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");

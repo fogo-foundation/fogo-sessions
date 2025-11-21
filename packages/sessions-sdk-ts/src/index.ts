@@ -158,6 +158,7 @@ const sendSessionEstablishTransaction = async (
     sessionKey,
     instructions,
     {
+      variation: "Session Establishment",
       addressLookupTable:
         sessionEstablishmentLookupTable ??
         SESSION_ESTABLISHMENT_LOOKUP_TABLE_ADDRESS[options.context.network],
@@ -215,9 +216,13 @@ export const revokeSession = async (options: {
         session: options.session.sessionPublicKey,
       })
       .instruction();
-    return options.context.sendTransaction(options.session.sessionKey, [
-      instruction,
-    ]);
+    return options.context.sendTransaction(
+      options.session.sessionKey,
+      [instruction],
+      {
+        variation: "Session Revocation",
+      },
+    );
   } else {
     return;
   }
@@ -858,6 +863,7 @@ export const sendTransfer = async (options: SendTransferOptions) => {
         .instruction(),
     ],
     {
+      variation: "Intent Transfer",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
     },
   );
@@ -1003,6 +1009,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       ...instructions,
     ],
     {
+      variation: "Intent NTT Bridge",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
       extraSigners: [outboxItem],
       addressLookupTable:

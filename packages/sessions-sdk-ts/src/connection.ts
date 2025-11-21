@@ -127,6 +127,7 @@ export type TransactionOrInstructions =
   | (Transaction & TransactionWithLifetime);
 
 export type SendTransactionOptions = {
+  variation?: string | undefined;
   addressLookupTable?: string | undefined;
   extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
 };
@@ -168,14 +169,8 @@ const sendToPaymaster = async (
   },
   domain: string,
   sessionKey: CryptoKeyPair | undefined,
-  instructions:
-    | (TransactionInstruction | Instruction)[]
-    | VersionedTransaction
-    | (Transaction & TransactionWithLifetime),
-  extraConfig?: {
-    addressLookupTable?: string | undefined;
-    extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
-  },
+  instructions: TransactionOrInstructions,
+  extraConfig?: SendTransactionOptions,
 ): Promise<TransactionResult> => {
   const signerKeys = await getSignerKeys(sessionKey, extraConfig?.extraSigners);
 
@@ -195,6 +190,9 @@ const sendToPaymaster = async (
       connection.paymaster ?? DEFAULT_PAYMASTER[connection.network],
     );
     url.searchParams.set("domain", domain);
+    if (extraConfig?.variation !== undefined) {
+      url.searchParams.set("variation", extraConfig.variation);
+    }
     const response = await fetch(url, {
       method: "POST",
       headers: {
