@@ -1,11 +1,16 @@
 use intent_transfer::bridge::processor::bridge_ntt_tokens::H160;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::{hash_map::Entry, HashMap};
+use std::num::NonZeroU8;
 
 use crate::constraint::TransactionVariation;
 
 fn default_true() -> bool {
     true
+}
+
+pub fn default_one() -> NonZeroU8 {
+    NonZeroU8::new(1).expect("non-zero u8 provided, should not panic")
 }
 
 #[derive(Deserialize, Serialize)]
@@ -20,6 +25,9 @@ pub struct Domain {
     /// Whether to enable preflight simulation for transactions before submitting them.
     #[serde(default = "default_true")]
     pub enable_preflight_simulation: bool,
+
+    #[serde(default = "default_one")]
+    pub number_of_signers: NonZeroU8,
 
     /// The list of transaction types that the paymaster should sponsor.
     #[serde(deserialize_with = "deserialize_transaction_variations")]

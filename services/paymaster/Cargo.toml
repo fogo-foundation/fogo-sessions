@@ -11,6 +11,7 @@ anchor-lang = {workspace = true}
 anyhow = {workspace = true}
 arc-swap = {workspace = true}
 async-recursion = "1.1.1"
+async-trait = "0.1.89"
 axum = "0.8.4"
 axum-extra = {version = "0.10.1", features = ["typed-header"]}
 axum-prometheus = "0.9.0"
@@ -27,10 +28,13 @@ futures = {workspace = true}
 governor = {workspace = true}
 hex = {workspace = true}
 intent-transfer = {workspace = true}
+libsecp256k1 = "0.6.0"
+nonempty = "0.12.0"
 opentelemetry = "0.30.0"
 opentelemetry-otlp = {version = "0.30.0", features = ["grpc-tonic"]}
 opentelemetry_sdk = {version = "0.30.0", features = ["rt-tokio"]}
 reqwest = {workspace = true}
+reqwest-middleware = "0.4.2"
 serde = {workspace = true}
 serde_json = "1.0"
 serde_with = { version = "3.14.0", features = ["base64"] }
@@ -68,10 +72,6 @@ utoipa = "5.4.0"
 utoipa-axum = "0.2.0"
 url = "2.5.7"
 uuid = {version = "1.18.1", features = ["v7"]}
-libsecp256k1 = "0.6.0"
-reqwest-middleware = "0.4.2"
-async-trait = "0.1.89"
-
 
 [[bin]]
 name = "paymaster-tx-validator"

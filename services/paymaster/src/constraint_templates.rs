@@ -108,18 +108,11 @@ impl InstructionConstraint {
     pub fn revoke_session_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: fogo_sessions_sdk::session::SESSION_MANAGER_ID,
-            accounts: vec![
-                AccountConstraint {
-                    index: 0,
-                    include: vec![ContextualPubkey::NonFeePayerSigner],
-                    exclude: vec![],
-                },
-                AccountConstraint {
-                    index: 1,
-                    include: vec![ContextualPubkey::Sponsor],
-                    exclude: vec![],
-                },
-            ],
+            accounts: vec![AccountConstraint {
+                index: 0,
+                include: vec![ContextualPubkey::NonFeePayerSigner],
+                exclude: vec![],
+            }],
             data: vec![
                 // instruction = 1 (RevokeSession)
                 DataConstraint {

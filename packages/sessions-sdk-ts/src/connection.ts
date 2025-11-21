@@ -342,6 +342,7 @@ const getSponsor = async (
       options.paymaster ?? DEFAULT_PAYMASTER[options.network],
     );
     url.searchParams.set("domain", domain);
+    url.searchParams.set("index", "autoassign");
     const response = await fetch(url);
 
     if (response.status === 200) {

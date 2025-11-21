@@ -1,4 +1,4 @@
-use crate::config_manager::config::{Config, Domain};
+use crate::config_manager::config::{default_one, Config, Domain};
 use crate::constraint::TransactionVariation;
 use sqlx::{types::Json, FromRow};
 use std::collections::HashMap;
@@ -47,6 +47,7 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
             domain,
             enable_session_management,
             enable_preflight_simulation,
+            number_of_signers: default_one(), // TODO: Get number of signers from database
             tx_variations: HashMap::new(),
         });
 
