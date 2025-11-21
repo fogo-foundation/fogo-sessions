@@ -1,5 +1,16 @@
 # @fogo/sessions-sdk
 
+## 0.0.22
+
+### Patch Changes
+
+- c3b04b7: Use central paymaster for transfers & bridging
+- d46b221: Disallow setting limits for tokens that the user doesn't have
+- aa33949: Fix fee symbol in testnet
+- 91bef2a: Add support for explicitly specifying the tx variation when sending a tx to the paymaster
+- d9bc9dc: Ensure session context only gets initialized once
+- d063d55: update signed quote bytes array in bridge ix
+
 ## 0.0.21
 
 ### Patch Changes
