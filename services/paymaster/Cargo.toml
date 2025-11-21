@@ -73,7 +73,6 @@ utoipa-axum = "0.2.0"
 url = "2.5.7"
 uuid = {version = "1.18.1", features = ["v7"]}
 
-
 [[bin]]
 name = "paymaster-tx-validator"
 path = "src/bin/tx_validator.rs"
