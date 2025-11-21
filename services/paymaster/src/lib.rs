@@ -6,5 +6,6 @@ pub mod constraint_templates;
 pub mod db;
 pub mod metrics;
 pub mod parse;
+pub mod pooled_http_sender;
 pub mod rpc;
 pub mod serde;
