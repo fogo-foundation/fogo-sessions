@@ -105,8 +105,7 @@ export const TokenList = ({
                 </div>
                 <div className={styles.amountAndActions}>
                   <div className={styles.amountAndDetails}>
-                    <span className={styles.amount}>{amountAsString}</span>
-                    {symbol && <span className={styles.symbol}>{symbol}</span>}
+                    <span className={styles.amount}>{amountAsString}{symbol && ` ${symbol}`}</span>
                     {notionalValue !== undefined && (
                       <span className={styles.notional}>
                         ${notionalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
