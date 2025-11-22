@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// TODO: uncomment when endpoint is live
 export const getPrices = async (mints: string[]) => {
 //   const priceUrl = new URL("https://api.fogo.io/api/token-price");
 //   for (const mint of mints) {
