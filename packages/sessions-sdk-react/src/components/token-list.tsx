@@ -104,11 +104,11 @@ export const TokenList = ({
                   </div>
                 </div>
                 <div className={styles.amountAndActions}>
-                  <div className={styles.amountAndSymbol}>
+                  <div className={styles.amountAndDetails}>
                     <span className={styles.amount}>{amountAsString}</span>
                     {symbol && <span className={styles.symbol}>{symbol}</span>}
                     {notionalValue !== undefined && (
-                      <span className={styles.symbol}>
+                      <span className={styles.notional}>
                         ${notionalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     )}
@@ -172,7 +172,7 @@ const LoadingToken = () => (
       </div>
     </div>
     <div className={styles.amountAndActions}>
-      <div className={styles.amountAndSymbol}>
+      <div className={styles.amountAndDetails}>
         <span className={styles.amount} />
         <span className={styles.symbol} />
         <span className={styles.notional} />

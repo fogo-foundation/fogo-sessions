@@ -194,7 +194,6 @@ const Tokens = ({
   }, [setCurrentScreen]);
   switch (currentScreen.type) {
     case TokenScreenType.SelectTokenToSend: {
-      console.log("SELECT TOKEN TO SEND");
       return (
         <SelectTokenPage
           onPressBack={showWallet}
@@ -216,7 +215,6 @@ const Tokens = ({
       );
     }
     case TokenScreenType.Send: {
-      console.log("SEND TOKEN");
       {
         return (
           <SendTokenPage
@@ -242,7 +240,6 @@ const Tokens = ({
       }
     }
     case TokenScreenType.Receive: {
-      console.log("RECEIVE TOKEN");
       return (
         <ReceivePage
           key="receive"
@@ -252,7 +249,6 @@ const Tokens = ({
       );
     }
     case TokenScreenType.Get: {
-      console.log("GET TOKENS");
       return (
         <GetTokensPage
           onPressBack={showWallet}
@@ -262,7 +258,6 @@ const Tokens = ({
       );
     }
     case TokenScreenType.Withdraw: {
-      console.log("WITHDRAW TOKEN");
       return (
         <WithdrawPage
           key="withdraw"
@@ -273,7 +268,6 @@ const Tokens = ({
       );
     }
     case TokenScreenType.Deposit: {
-      console.log("DEPOSIT TOKEN");
       return (
         <DepositPage
           sessionState={sessionState}
@@ -283,7 +277,6 @@ const Tokens = ({
       );
     }
     case TokenScreenType.Wallet: {
-      console.log("WALLET OVERVIEW");
       return (
         <WalletPage
           key="wallet"
