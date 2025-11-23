@@ -24,4 +24,4 @@ export const GOOGLE_ANALYTICS_ID = defaultInProduction(
 export const ENABLE_ACCESSIBILITY_REPORTING =
   !IS_PRODUCTION_SERVER && !process.env.DISABLE_ACCESSIBILITY_REPORTING;
 
-export const DOMAIN = getEnvOrDefault("DOMAIN", "sessions");
+export const DOMAIN = getEnvOrDefault("DOMAIN", "https://portfolio.fogo.io");
