@@ -1,5 +1,12 @@
 # @fogo/sessions-sdk
 
+## 0.0.23
+
+### Patch Changes
+
+- 5086061: Bump bridge-out compute units limit to 240,000
+- d23c949: Silence Phantom warnings
+
 ## 0.0.22
 
 ### Patch Changes

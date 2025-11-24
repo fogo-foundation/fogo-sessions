@@ -1,5 +1,18 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.3
+
+### Patch Changes
+
+- 4543a2a: Simplify empty wallet UX & omit Get Tokens page in mainnet
+- d23c949: Silence Phantom warnings
+- fffd28a: Gracefully handle when Solana USDC ATA does not exist
+- d86d984: Fix bug that allowed creating unlimited sessions when enableUnlimited is false or undefined. Ensure the Session Limits modal pops up before creating unlimited sessions
+- Updated dependencies [5086061]
+- Updated dependencies [d23c949]
+  - @fogo/sessions-sdk@0.0.23
+  - @fogo/sessions-sdk-web@0.0.17
+
 ## 0.1.2
 
 ### Patch Changes
