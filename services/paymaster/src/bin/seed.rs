@@ -51,7 +51,7 @@ async fn insert_user(host: &str) -> Result<Uuid, anyhow::Error> {
     let new_user = sqlx::query_as::<_, (Uuid,)>(
         "INSERT INTO \"user\" (id, username, wallet_address) VALUES ($1, $2, $3) RETURNING id",
     )
-    .bind(Uuid::new_v7(Timestamp::now(NoContext)))
+    .bind(Uuid::new_v4())
     .bind(&username)
     .bind(format!("wallet-address-{username}"))
     .fetch_one(pool())
@@ -61,18 +61,14 @@ async fn insert_user(host: &str) -> Result<Uuid, anyhow::Error> {
 }
 
 async fn insert_app(user_id: &Uuid, name: &str) -> Result<Uuid, sqlx::Error> {
-    let app =
-        sqlx::query_as::<_, (Uuid,)>("INSERT INTO app (id, name) VALUES ($1, $2) RETURNING id")
-            .bind(Uuid::new_v7(Timestamp::now(NoContext)))
-            .bind(name)
-            .fetch_one(pool())
-            .await?;
-
-    sqlx::query_as::<_, (Uuid,)>("INSERT INTO app_user (app_id, user_id) VALUES ($1, $2)")
-        .bind(app.0)
-        .bind(user_id)
-        .fetch_optional(pool())
-        .await?;
+    let app = sqlx::query_as::<_, (Uuid,)>(
+        "INSERT INTO app (id, name, user_id) VALUES ($1, $2, $3) RETURNING id",
+    )
+    .bind(Uuid::new_v4())
+    .bind(name)
+    .bind(user_id)
+    .fetch_one(pool())
+    .await?;
 
     Ok(app.0)
 }
@@ -81,7 +77,7 @@ async fn insert_domain_config(app_id: &Uuid, domain: &Domain) -> Result<Uuid, sq
     let domain_config = sqlx::query_as::<_, (Uuid,)>(
         "INSERT INTO domain_config (id, app_id, domain, enable_session_management, enable_preflight_simulation) VALUES ($1, $2, $3, $4, $5) RETURNING id",
     )
-    .bind(Uuid::new_v7(Timestamp::now(NoContext)))
+    .bind(Uuid::new_v4())
     .bind(app_id)
     .bind(domain.domain.to_string())
     .bind(domain.enable_session_management)
@@ -120,7 +116,7 @@ async fn insert_variation(
     let variation = sqlx::query_as::<_, (Uuid,)>(
         "INSERT INTO variation (id, domain_config_id, name, version, max_gas_spend, transaction_variation) VALUES ($1, $2, $3, $4::variation_version, $5::bigint, $6::jsonb) RETURNING id",
     )
-    .bind(Uuid::new_v7(Timestamp::now(NoContext)))
+    .bind(Uuid::new_v4())
     .bind(domain_config_id)
     .bind(variation.name())
     .bind(version)
