@@ -62,20 +62,19 @@ const HTTP_CLIENT_COUNT: usize = 6;
 
 impl LoadTestDispatcher {
     pub async fn new(config: RuntimeConfig, metrics: Arc<LoadTestMetrics>) -> Result<Self> {
-        let paymaster_resolution = if let Some(ref paymaster_ip_override) =
-            config.external.paymaster_ip_override
-        {
-            let endpoint = Url::parse(&config.external.paymaster_endpoint)
-                .context("Failed to parse paymaster endpoint")?;
-            let host = endpoint
-                .host_str()
-                .context("Failed to get paymaster host from the paymaster endpoint")?
-                .to_string();
-            let socket_addr = paymaster_ip_override.parse::<SocketAddr>()?;
-            Some((host, socket_addr))
-        } else {
-            None
-        };
+        let paymaster_resolution =
+            if let Some(ref paymaster_ip_override) = config.external.paymaster_ip_override {
+                let endpoint = Url::parse(&config.external.paymaster_endpoint)
+                    .context("Failed to parse paymaster endpoint")?;
+                let host = endpoint
+                    .host_str()
+                    .context("Failed to get paymaster host from the paymaster endpoint")?
+                    .to_string();
+                let socket_addr = paymaster_ip_override.parse::<SocketAddr>()?;
+                Some((host, socket_addr))
+            } else {
+                None
+            };
 
         let mut http_clients = Vec::with_capacity(HTTP_CLIENT_COUNT);
         for _ in 0..HTTP_CLIENT_COUNT {
@@ -87,8 +86,7 @@ impl LoadTestDispatcher {
                     .resolve(host.as_str(), *addr)
                     .danger_accept_invalid_certs(true);
             }
-            http_clients
-                .push(builder.build().context("Failed to create HTTP client")?);
+            http_clients.push(builder.build().context("Failed to create HTTP client")?);
         }
 
         let rpc_client = Arc::new(RpcClient::new_with_commitment(
@@ -294,9 +292,7 @@ impl LoadTestDispatcher {
     }
 
     fn next_http_client(&self) -> &Client {
-        let idx = self
-            .http_client_counter
-            .fetch_add(1, Ordering::Relaxed)
+        let idx = self.http_client_counter.fetch_add(1, Ordering::Relaxed)
             % self.http_clients.len() as u64;
         let idx = idx as usize;
         &self.http_clients[idx]
