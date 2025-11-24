@@ -21,10 +21,10 @@ struct RawRow {
     domain: String,
     enable_session_management: bool,
     enable_preflight_simulation: bool,
-    version: String,
-    name: String,
+    version: Option<String>,
+    name: Option<String>,
     max_gas_spend: Option<i64>,
-    transaction_variation: Json<Value>,
+    transaction_variation: Option<Json<Value>>,
 }
 
 pub async fn load_config() -> Result<Config, sqlx::Error> {
@@ -40,7 +40,7 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
           v.max_gas_spend AS max_gas_spend,
           v.transaction_variation  AS transaction_variation
         FROM domain_config d
-        JOIN variation v ON v.domain_config_id = d.id
+        LEFT JOIN variation v ON v.domain_config_id = d.id
         ORDER BY d.id
         "#,
     )
@@ -60,85 +60,91 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
         transaction_variation,
     } in rows
     {
-        let transaction_variation_fin: TransactionVariation;
-
-        if version == "v0" {
-            // Extract the whitelisted_programs array as Vec<String>
-            let strings: Vec<String> = match transaction_variation.0 {
-                JsonValue::Array(arr) => arr
-                    .iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect(),
-                _ => {
-                    tracing::warn!(
-                        ?domain,
-                        ?version,
-                        ?name,
-                        "Missing or invalid whitelisted_programs field",
-                    );
-                    continue;
-                }
-            };
-
-            // Convert Vec<String> to Vec<Pubkey>
-            let whitelisted_programs: Vec<Pubkey> = match strings
-                .into_iter()
-                .map(|s| Pubkey::from_str(&s))
-                .collect::<Result<Vec<_>, _>>()
-            {
-                Ok(pubkeys) => pubkeys,
-                Err(err) => {
-                    tracing::warn!(
-                        ?err,
-                        ?domain,
-                        ?version,
-                        ?name,
-                        "Failed to parse pubkeys from whitelisted_programs",
-                    );
-                    continue;
-                }
-            };
-
-            transaction_variation_fin = TransactionVariation::V0(VariationProgramWhitelist {
-                name,
-                whitelisted_programs,
-            });
-        } else {
-            let instructions = match serde_json::from_value(transaction_variation.0) {
-                Ok(tv) => tv,
-                Err(err) => {
-                    // log and skip this row instead of failing the whole query
-                    tracing::warn!(
-                        ?err,
-                        ?domain,
-                        ?version,
-                        ?name,
-                        "Skipping row with invalid transaction_variation",
-                    );
-                    continue;
-                }
-            };
-
-            transaction_variation_fin =
-                TransactionVariation::V1(VariationOrderedInstructionConstraints {
-                    name,
-                    instructions,
-                    max_gas_spend: max_gas_spend.map(|v| v as u64).unwrap_or(0),
-                });
-        }
-
         let domain_ref = map.entry(domain_id).or_insert_with(|| Domain {
-            domain,
+            domain: domain.clone(),
             enable_session_management,
             enable_preflight_simulation,
             number_of_signers: default_one(), // TODO: Get number of signers from database
             tx_variations: HashMap::new(),
         });
 
-        domain_ref.tx_variations.insert(
-            transaction_variation.0.name().to_string(),
-            transaction_variation.0,
-        );
+        let transaction_variation_fin: TransactionVariation;
+
+        if let (Some(version), Some(name), Some(transaction_variation)) =
+            (version, name, transaction_variation)
+        {
+            if version == "v0" {
+                // Extract the whitelisted_programs array as Vec<String>
+                let strings: Vec<String> = match transaction_variation.0 {
+                    JsonValue::Array(arr) => arr
+                        .iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect(),
+                    _ => {
+                        tracing::warn!(
+                            ?domain,
+                            ?version,
+                            ?name,
+                            "Missing or invalid whitelisted_programs field",
+                        );
+                        continue;
+                    }
+                };
+
+                // Convert Vec<String> to Vec<Pubkey>
+                let whitelisted_programs: Vec<Pubkey> = match strings
+                    .into_iter()
+                    .map(|s| Pubkey::from_str(&s))
+                    .collect::<Result<Vec<_>, _>>()
+                {
+                    Ok(pubkeys) => pubkeys,
+                    Err(err) => {
+                        tracing::warn!(
+                            ?err,
+                            ?domain,
+                            ?version,
+                            ?name,
+                            "Failed to parse pubkeys from whitelisted_programs",
+                        );
+                        continue;
+                    }
+                };
+
+                transaction_variation_fin = TransactionVariation::V0(VariationProgramWhitelist {
+                    name,
+                    whitelisted_programs,
+                });
+            } else {
+                let instructions = match serde_json::from_value(transaction_variation.0) {
+                    Ok(tv) => tv,
+                    Err(err) => {
+                        // log and skip this row instead of failing the whole query
+                        tracing::warn!(
+                            ?err,
+                            ?domain,
+                            ?version,
+                            ?name,
+                            "Skipping row with invalid transaction_variation",
+                        );
+                        continue;
+                    }
+                };
+
+                transaction_variation_fin =
+                    TransactionVariation::V1(VariationOrderedInstructionConstraints {
+                        name,
+                        instructions,
+                        max_gas_spend: max_gas_spend.map(|v| v as u64).unwrap_or(0),
+                    });
+            }
+
+            domain_ref.tx_variations.insert(
+                transaction_variation_fin.name().to_string(),
+                transaction_variation_fin,
+            );
+        } else {
+            continue;
+        }
     }
 
     Ok(Config {
