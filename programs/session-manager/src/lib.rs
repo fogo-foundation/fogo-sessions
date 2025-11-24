@@ -181,6 +181,20 @@ pub mod session_manager {
                 authorized_tokens_with_mints,
                 user,
                 ..
+            }))
+            | SessionInfo::V4(V4::Active(ActiveSessionInfoWithDomainHash {
+                active_session_info:
+                    ActiveSessionInfo {
+                        authorized_tokens: authorized_tokens_with_mints,
+                        user,
+                        ..
+                    },
+                ..
+            }))
+            | SessionInfo::V4(V4::Revoked(RevokedSessionInfo {
+                authorized_tokens_with_mints,
+                user,
+                ..
             })) => match &authorized_tokens_with_mints {
                 AuthorizedTokensWithMints::Specific(mints) => (user, mints),
                 AuthorizedTokensWithMints::All => (user, &vec![]),
@@ -193,7 +207,9 @@ pub mod session_manager {
                 }
                 AuthorizedTokens::All => (&active_session_info.user, &vec![]),
             },
-            _ => return Err(error!(SessionManagerError::InvalidVersion)),
+            SessionInfo::V2(V2::Revoked(_)) | SessionInfo::Invalid => {
+                return Err(error!(SessionManagerError::InvalidVersion))
+            }
         };
         let pending_revocations =
             convert_remaining_accounts_and_mints_to_revoke_to_pending_revocations(
@@ -205,12 +221,6 @@ pub mod session_manager {
         ctx.accounts
             .revoke_tokens(pending_revocations, ctx.bumps.session_setter)?;
         Ok(())
-    }
-
-    /// This is just to trick anchor into generating the IDL for the Session account since we don't use it in the context for `start_session`
-    #[instruction(discriminator = [3])]
-    pub fn _unused<'info>(_ctx: Context<'_, '_, '_, 'info, Unused<'info>>) -> Result<()> {
-        err!(ErrorCode::InstructionDidNotDeserialize)
     }
 }
 
@@ -256,11 +266,6 @@ pub struct CloseSession<'info> {
     pub session_setter: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct Unused<'info> {
-    pub session: Account<'info, Session>,
 }
 
 impl<'info> StartSession<'info> {
