@@ -16,8 +16,7 @@
     .topButton {
       display: grid;
       grid-template-rows: repeat(2, max-content);
-      padding-top: theme.spacing(3);
-      padding-bottom: theme.spacing(3);
+      padding: theme.spacing(3) theme.spacing(1.5);
       gap: theme.spacing(2);
       background-color: theme.color("button-base");
       border: none;
@@ -28,6 +27,7 @@
       cursor: pointer;
       text-decoration: none;
       justify-items: center;
+      text-align: center;
       outline: 2px solid transparent;
       outline-offset: theme.spacing(0.5);
       transition:

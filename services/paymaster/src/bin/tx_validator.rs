@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use base64::prelude::*;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
@@ -16,10 +16,12 @@ use governor::{
     state::{InMemoryState, NotKeyed},
     Quota, RateLimiter,
 };
+use intent_transfer::bridge::processor::bridge_ntt_tokens::H160;
 use solana_client::{
     nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config,
     rpc_config::RpcTransactionConfig,
 };
+use solana_pubkey::Pubkey;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
@@ -44,6 +46,14 @@ enum Commands {
         #[arg(short, long)]
         domain: Option<String>,
 
+        /// Fogo network to target, this determines the paymaster instance and the default RPC endpoint to use.
+        #[arg(long, value_enum, default_value_t = Network::Testnet)]
+        network: Network,
+
+        /// Sponsor pubkey for the provided domain, if this is provided the sponsor pubkey won't be fetched from the paymaster server. This is useful if your domain is not registered with the paymaster server yet.
+        #[arg(long, requires = "domain")]
+        sponsor: Option<Pubkey>,
+
         /// Transaction hash to fetch from RPC
         #[arg(long, conflicts_with_all = ["transaction", "recent_sponsor_txs"])]
         transaction_hash: Option<String>,
@@ -60,20 +70,55 @@ enum Commands {
         #[arg(long, default_value_t = 10)]
         rpc_quota_per_second: u32,
 
-        /// RPC HTTP URL
+        /// RPC HTTP URL (defaults to the network-specific endpoint)
         #[arg(long)]
-        rpc_url_http: String,
+        rpc_url_http: Option<String>,
     },
 }
 
 type RpcRateLimiter = RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>;
 
-pub fn load_file_config(config_path: &str) -> Result<Config> {
+#[derive(Copy, Clone, ValueEnum)]
+enum Network {
+    Mainnet,
+    Testnet,
+}
+
+impl Network {
+    fn paymaster_base_url(self) -> &'static str {
+        match self {
+            Network::Mainnet => "https://paymaster.dourolabs.app",
+            Network::Testnet => "https://paymaster.fogo.io",
+        }
+    }
+
+    fn default_rpc_url_http(self) -> &'static str {
+        match self {
+            Network::Mainnet => "https://mainnet.fogo.io",
+            Network::Testnet => "https://testnet.fogo.io",
+        }
+    }
+
+    fn default_ntt_quoter_address(self) -> H160 {
+        match self {
+            Network::Mainnet => [
+                82, 65, 201, 39, 102, 152, 67, 159, 239, 39, 128, 219, 171, 118, 254, 201, 11, 99,
+                63, 189,
+            ],
+            Network::Testnet => [
+                165, 64, 8, 1, 121, 65, 236, 233, 104, 98, 58, 13, 216, 238, 144, 126, 43, 19, 53,
+                150,
+            ],
+        }
+    }
+}
+
+pub fn load_file_config(config_path: &str, ntt_quoter: H160) -> Result<Config> {
     let mut config: Config = config::Config::builder()
         .add_source(File::with_name(config_path))
         .build()?
         .try_deserialize()?;
-    config.assign_defaults();
+    config.assign_defaults(ntt_quoter)?;
     Ok(config)
 }
 #[tokio::main]
@@ -84,14 +129,19 @@ async fn main() -> Result<()> {
         Commands::Validate {
             config,
             domain,
+            network,
+            sponsor,
             transaction_hash,
             transaction,
             recent_sponsor_txs,
             rpc_quota_per_second,
             rpc_url_http,
         } => {
-            let config = load_file_config(&config)?;
+            let ntt_quoter = network.default_ntt_quoter_address();
+            let config = load_file_config(&config, ntt_quoter)?;
             let domains = get_domains_for_validation(&config, &domain);
+            let rpc_url_http =
+                rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
                 rpc: RpcClient::new(rpc_url_http),
                 lookup_table_cache: DashMap::new(),
@@ -102,6 +152,9 @@ async fn main() -> Result<()> {
                     .expect("RPC quota per second must be greater than zero"),
             ));
 
+            let contextual_keys_cache: ContextualKeysCache =
+                ContextualKeysCache::new(&domains, network, sponsor).await?;
+
             let (transactions, is_batch) = fetch_transactions(
                 recent_sponsor_txs,
                 transaction_hash,
@@ -110,17 +163,9 @@ async fn main() -> Result<()> {
                 &domains,
                 &chain_index,
                 &rpc_limiter,
+                &contextual_keys_cache,
             )
             .await?;
-
-            let contextual_keys_cache: HashMap<_, _> =
-                futures::future::try_join_all(domains.iter().map(|domain| async {
-                    let keys = compute_contextual_keys(&domain.domain).await?;
-                    Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
-                }))
-                .await?
-                .into_iter()
-                .collect();
 
             let (validation_counts, failure_count) = validate_transactions(
                 &transactions,
@@ -156,6 +201,7 @@ fn get_domains_for_validation<'a>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn fetch_transactions(
     recent_sponsor_txs: Option<usize>,
     transaction_hash: Option<String>,
@@ -164,6 +210,7 @@ async fn fetch_transactions(
     domains: &[&Domain],
     chain_index: &ChainIndex,
     rpc_limiter: &RpcRateLimiter,
+    contextual_keys_cache: &ContextualKeysCache,
 ) -> Result<(Vec<VersionedTransaction>, bool)> {
     if let Some(limit) = recent_sponsor_txs {
         let domain_for_sponsor = if let Some(domain_name) = domain {
@@ -177,7 +224,7 @@ async fn fetch_transactions(
                 "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
             ));
         };
-        let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
+        let sponsor = contextual_keys_cache.get(domain_for_sponsor).await?.sponsor;
         let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc, rpc_limiter)
             .await?;
         println!(
@@ -205,7 +252,7 @@ async fn validate_transactions(
     transactions: &[VersionedTransaction],
     domains: &[&Domain],
     chain_index: &ChainIndex,
-    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
+    contextual_keys_cache: &ContextualKeysCache,
     is_batch: bool,
     verbose: bool,
 ) -> (HashMap<(String, String), usize>, usize) {
@@ -400,30 +447,28 @@ fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransactio
         .decode(encoded_tx)
         .context("Failed to decode base64 transaction")?;
 
-    bincode::deserialize(&tx_bytes).context("Failed to deserialize transaction")
+    let (transaction, _) =
+        bincode::serde::decode_from_slice(&tx_bytes, bincode::config::standard())
+            .context("Failed to deserialize transaction")?;
+    Ok(transaction)
 }
 
 async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
     domain: &'a Domain,
     chain_index: &ChainIndex,
-    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
+    contextual_keys_cache: &ContextualKeysCache,
 ) -> Result<Vec<&'a TransactionVariation>> {
     let mut matching_variations = Vec::new();
 
-    let contextual_keys = if let Some(keys) = contextual_keys_cache.get(&domain.domain) {
-        keys
-    } else {
-        &compute_contextual_keys(&domain.domain).await?
-    };
-
-    for variation in &domain.tx_variations {
+    let contextual_keys = contextual_keys_cache.get(&domain.domain).await?;
+    for variation in domain.tx_variations.values() {
         let matches = match variation {
             TransactionVariation::V0(v0_variation) => {
                 v0_variation.validate_transaction(transaction).is_ok()
             }
             TransactionVariation::V1(v1_variation) => v1_variation
-                .validate_transaction(transaction, contextual_keys, chain_index)
+                .validate_transaction(transaction, &contextual_keys, chain_index)
                 .await
                 .is_ok(),
         };
@@ -436,10 +481,11 @@ async fn get_matching_variations<'a>(
     Ok(matching_variations)
 }
 
-async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
-    let domain_registry = get_domain_record_address(domain);
-
-    let url = format!("https://paymaster.fogo.io/api/sponsor_pubkey?domain={domain}");
+async fn fetch_sponsor_pubkey(domain: &str, network: Network) -> Result<Pubkey> {
+    let url = format!(
+        "{}/api/sponsor_pubkey?domain={domain}",
+        network.paymaster_base_url()
+    );
     let client = reqwest::Client::new();
     let response =
         client.get(&url).send().await.with_context(|| {
@@ -458,12 +504,56 @@ async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
         .await
         .with_context(|| format!("Failed to read response body for domain: {domain}"))?;
 
-    let sponsor = solana_pubkey::Pubkey::from_str(sponsor_str.trim()).with_context(|| {
+    solana_pubkey::Pubkey::from_str(sponsor_str.trim()).with_context(|| {
         format!("Failed to parse sponsor pubkey from API response for domain: {domain}")
-    })?;
+    })
+}
 
+struct ContextualKeysCache {
+    pub cache: DashMap<String, ContextualDomainKeys>,
+    pub network: Network,
+    /// If this is Some, the sponsor pubkey won't be fetched from the paymaster server and the inner pubkey will be used instead. This is useful for apps whose domain is not registered with the paymaster server, so they don't have a sponsor wallet.
+    pub sponsor_override: Option<Pubkey>,
+}
+
+impl ContextualKeysCache {
+    pub async fn new(
+        domains: &[&Domain],
+        network: Network,
+        sponsor_override: Option<Pubkey>,
+    ) -> Result<Self> {
+        Ok(Self {
+            cache: futures::future::try_join_all(domains.iter().map(|domain| async {
+                let keys =
+                    compute_contextual_keys(&domain.domain, network, sponsor_override).await?;
+                Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
+            }))
+            .await?
+            .into_iter()
+            .collect(),
+            network,
+            sponsor_override,
+        })
+    }
+
+    pub async fn get(&self, domain: &str) -> Result<ContextualDomainKeys> {
+        if let Some(keys) = self.cache.get(domain) {
+            Ok(keys.clone())
+        } else {
+            let keys = compute_contextual_keys(domain, self.network, self.sponsor_override).await?;
+            self.cache.insert(domain.to_string(), keys.clone());
+            Ok(keys)
+        }
+    }
+}
+
+async fn compute_contextual_keys(
+    domain: &str,
+    network: Network,
+    sponsor_override: Option<Pubkey>,
+) -> Result<ContextualDomainKeys> {
     Ok(ContextualDomainKeys {
-        domain_registry,
-        sponsor,
+        domain_registry: get_domain_record_address(domain),
+        sponsor: sponsor_override.unwrap_or(fetch_sponsor_pubkey(domain, network).await?),
     })
 }

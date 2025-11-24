@@ -1,12 +1,12 @@
-use crate::cli::Cli;
+use crate::{cli::Cli, config_manager::config::Config};
 use arc_swap::ArcSwap;
 use clap::Parser;
+use fogo_paymaster::parse::parse_h160;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
 mod api;
 mod cli;
 mod config_manager;
@@ -14,6 +14,7 @@ mod constraint;
 mod constraint_templates;
 mod db;
 mod metrics;
+mod pooled_http_sender;
 mod rpc;
 mod serde;
 
@@ -61,7 +62,20 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .init();
 
     db::pool::init_db_connection(&opts.db_url).await?;
-    let config = config_manager::load_config::load_db_config().await?;
+    /* TODO Revert this once we have a good way of modifying the config from the DB. */
+    // let config = config_manager::load_config::load_db_config().await?;
+    let mut config: Config = config::Config::builder()
+        .add_source(config::File::with_name(&opts.config_file))
+        .build()?
+        .try_deserialize()?;
+    let ntt_quoter = parse_h160(&opts.ntt_quoter).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to parse NTT_QUOTER address '{}': {}",
+            opts.ntt_quoter,
+            e
+        )
+    })?;
+    config.assign_defaults(ntt_quoter)?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
@@ -69,17 +83,24 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         config.domains,
         &mnemonic,
     )));
-
-    config_manager::load_config::spawn_config_refresher(
-        mnemonic,
-        Arc::clone(&domains),
-        opts.db_refresh_interval_seconds,
-    );
+    // TODO this is commented out as part of the temporary change to load the config from the file.
+    // config_manager::load_config::spawn_config_refresher(
+    //     mnemonic,
+    //     Arc::clone(&domains),
+    //     opts.db_refresh_interval_seconds,
+    // );
 
     let rpc_url_ws = opts
         .rpc_url_ws
         .unwrap_or_else(|| opts.rpc_url_http.replace("http", "ws"));
-    api::run_server(opts.rpc_url_http, rpc_url_ws, opts.listen_address, domains).await;
+    api::run_server(
+        opts.rpc_url_http,
+        rpc_url_ws,
+        opts.ftl_url,
+        opts.listen_address,
+        domains,
+    )
+    .await;
     Ok(())
 }
 
@@ -91,8 +112,7 @@ async fn run_migrations(opts: cli::MigrateOptions) -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    dotenvy::dotenv()?;
-
+    dotenvy::dotenv().ok();
     match Cli::parse().command {
         cli::Command::Run(opts) => run_server(opts).await?,
         cli::Command::Migrate(opts) => run_migrations(opts).await?,

@@ -4,18 +4,19 @@
   height: 100%;
   position: relative;
 
+  .backButton {
+    position: absolute;
+    top: theme.spacing(4);
+    left: theme.spacing(4);
+  }
+
   .sendTokenForm {
     display: flex;
     flex-flow: column nowrap;
-    gap: theme.spacing(8);
+    gap: theme.spacing(6);
     padding: theme.spacing(8);
+    padding-top: theme.spacing(10);
     align-items: center;
-
-    .backButton {
-      position: absolute;
-      top: theme.spacing(4);
-      left: theme.spacing(4);
-    }
 
     .header {
       display: flex;
@@ -52,6 +53,29 @@
         white-space: nowrap;
       }
     }
+
+    .fee {
+      @include theme.text("xs");
+
+      color: theme.color("muted");
+      font-style: italic;
+      margin-top: -#{theme.spacing(3)};
+
+      &[data-is-loading] {
+        display: inline-block;
+        background: theme.color("skeleton");
+        height: 1em;
+        width: theme.spacing(25);
+        border-radius: theme.border-radius("md");
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+        @keyframes pulse {
+          50% {
+            opacity: 0.5;
+          }
+        }
+      }
+    }
   }
 
   .qrCodeScanner {
@@ -74,5 +98,11 @@
       position: absolute !important;
       inset: 0;
     }
+  }
+
+  .fetchError {
+    height: 100%;
+    padding-left: theme.spacing(8);
+    padding-right: theme.spacing(8);
   }
 }

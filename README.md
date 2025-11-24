@@ -57,3 +57,5 @@ cargo-build-sbf # Build on-chain programs
 pnpm turbo test # Run app tests
 cargo test # Run program tests
 ```
+
+You may need to run `anchor build` before running `cargo test`, in order to generate the compiled programs needed for some tests that load those programs in via litesvm.

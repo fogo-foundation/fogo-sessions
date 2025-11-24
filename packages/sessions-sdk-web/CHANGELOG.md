@@ -1,5 +1,40 @@
 # @fogo/sessions-sdk-web
 
+## 0.0.16
+
+### Patch Changes
+
+- Updated dependencies [c3b04b7]
+- Updated dependencies [d46b221]
+- Updated dependencies [aa33949]
+- Updated dependencies [91bef2a]
+- Updated dependencies [d9bc9dc]
+- Updated dependencies [d063d55]
+  - @fogo/sessions-sdk@0.0.22
+
+## 0.0.15
+
+### Patch Changes
+
+- b414fcd: Add network to cache keys
+- Updated dependencies [79d7449]
+- Updated dependencies [3a04f78]
+  - @fogo/sessions-sdk@0.0.21
+
+## 0.0.14
+
+### Patch Changes
+
+- Updated dependencies [55ad299]
+  - @fogo/sessions-sdk@0.0.20
+
+## 0.0.13
+
+### Patch Changes
+
+- Updated dependencies [c69ea06]
+  - @fogo/sessions-sdk@0.0.19
+
 ## 0.0.12
 
 ### Patch Changes

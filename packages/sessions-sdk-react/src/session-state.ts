@@ -1,6 +1,7 @@
 import type { Session } from "@fogo/sessions-sdk";
-import type { MessageSignerWalletAdapterProps } from "@solana/wallet-adapter-base";
 import type { PublicKey } from "@solana/web3.js";
+
+import type { SolanaWallet } from "./solana-wallet.js";
 
 export enum StateType {
   Initializing,
@@ -18,10 +19,11 @@ export enum StateType {
 
 export type EstablishedOptions = Omit<Session, "sessionInfo"> & {
   expiration: Date;
-  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  solanaWallet: SolanaWallet;
   createLogInToken: () => Promise<string>;
   isLimited: boolean;
   endSession: () => void;
+  showBridgeIn: () => void;
   updateSession: (
     prevState: StateType,
     duration: number,
@@ -44,7 +46,7 @@ export const SessionState = {
   }),
 
   SelectingWallet: (args: {
-    selectWallet: (wallet: MessageSignerWalletAdapterProps) => void;
+    selectWallet: (wallet: SolanaWallet) => void;
     cancel: () => void;
   }) => ({ type: StateType.SelectingWallet as const, ...args }),
 
@@ -57,12 +59,16 @@ export const SessionState = {
     requestedLimits?: Map<PublicKey, bigint> | undefined;
     submitLimits: (duration: number, limits?: Map<PublicKey, bigint>) => void;
     cancel: () => void;
+    walletPublicKey: PublicKey;
   }) => ({
     type: StateType.RequestingLimits as const,
     ...args,
   }),
 
-  SettingLimits: (args: { cancel: () => void }) => ({
+  SettingLimits: (args: {
+    cancel: () => void;
+    walletPublicKey: PublicKey;
+  }) => ({
     type: StateType.SettingLimits as const,
     ...args,
   }),
@@ -110,6 +116,15 @@ export type EstablishedSessionState = Extract<
     sessionKey: EstablishedOptions["sessionKey"];
   }
 >;
+
+export type WalletConnectedSessionState =
+  | EstablishedSessionState
+  | Extract<
+      SessionState,
+      {
+        walletPublicKey: PublicKey;
+      }
+    >;
 
 export const isEstablished = (
   sessionState: SessionState,

@@ -1,9 +1,16 @@
-use serde::{Deserialize, Serialize};
+use intent_transfer::bridge::processor::bridge_ntt_tokens::H160;
+use serde::{Deserialize, Deserializer, Serialize};
+use std::collections::{hash_map::Entry, HashMap};
+use std::num::NonZeroU8;
 
 use crate::constraint::TransactionVariation;
 
 fn default_true() -> bool {
     true
+}
+
+pub fn default_one() -> NonZeroU8 {
+    NonZeroU8::new(1).expect("non-zero u8 provided, should not panic")
 }
 
 #[derive(Deserialize, Serialize)]
@@ -19,11 +26,54 @@ pub struct Domain {
     #[serde(default = "default_true")]
     pub enable_preflight_simulation: bool,
 
+    #[serde(default = "default_one")]
+    pub number_of_signers: NonZeroU8,
+
     /// The list of transaction types that the paymaster should sponsor.
-    pub tx_variations: Vec<TransactionVariation>,
+    #[serde(deserialize_with = "deserialize_transaction_variations")]
+    pub tx_variations: HashMap<String, TransactionVariation>,
 }
 
-#[derive(Deserialize, serde::Serialize, Default)]
+fn insert_variation(
+    tx_variations: &mut HashMap<String, TransactionVariation>,
+    variation: TransactionVariation,
+    templated: bool,
+) -> anyhow::Result<()> {
+    let key = variation.name().to_string();
+    match tx_variations.entry(key.clone()) {
+        Entry::Vacant(entry) => {
+            entry.insert(variation);
+        }
+        Entry::Occupied(_) => {
+            let error_msg = if templated {
+                format!(
+                    "Template transaction variation '{key}' conflicts with user-defined variation"
+                )
+            } else {
+                format!("Duplicate transaction variation '{key}'")
+            };
+            Err(anyhow::anyhow!(error_msg))?
+        }
+    }
+    Ok(())
+}
+
+fn deserialize_transaction_variations<'de, D>(
+    deserializer: D,
+) -> Result<HashMap<String, TransactionVariation>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let variations: Vec<TransactionVariation> = Vec::deserialize(deserializer)?;
+    variations
+        .into_iter()
+        .try_fold(HashMap::new(), |mut map, variation| {
+            insert_variation(&mut map, variation, false).map_err(serde::de::Error::custom)?;
+            Ok(map)
+        })
+}
+
+#[derive(Deserialize, Serialize, Default)]
 pub struct Config {
     pub domains: Vec<Domain>,
 }
@@ -32,25 +82,44 @@ pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
 impl Config {
     /// Populate default tx variations for each domain.
     /// Call this after loading from file/DB to ensure required variations exist.
-    pub fn assign_defaults(&mut self) {
+    pub fn assign_defaults(&mut self, ntt_quoter: H160) -> anyhow::Result<()> {
         for domain in &mut self.domains {
             if domain.enable_session_management {
-                domain
-                    .tx_variations
-                    .push(TransactionVariation::session_establishment_variation(
+                insert_variation(
+                    &mut domain.tx_variations,
+                    TransactionVariation::session_establishment_variation(
                         DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-                    ));
-                domain
-                    .tx_variations
-                    .push(TransactionVariation::session_revocation_variation(
+                    ),
+                    true,
+                )?;
+
+                insert_variation(
+                    &mut domain.tx_variations,
+                    TransactionVariation::session_revocation_variation(
                         DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-                    ));
+                    ),
+                    true,
+                )?;
             }
-            domain
-                .tx_variations
-                .push(TransactionVariation::intent_transfer_variation(
+
+            insert_variation(
+                &mut domain.tx_variations,
+                TransactionVariation::intent_transfer_send_tokens_variation(
                     DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-                ));
+                ),
+                true,
+            )?;
+
+            insert_variation(
+                &mut domain.tx_variations,
+                TransactionVariation::intent_transfer_bridge_ntt_variation(
+                    ntt_quoter,
+                    DEFAULT_TEMPLATE_MAX_GAS_SPEND,
+                ),
+                true,
+            )?;
         }
+
+        Ok(())
     }
 }

@@ -1,5 +1,39 @@
 # @fogo/sessions-sdk
 
+## 0.0.22
+
+### Patch Changes
+
+- c3b04b7: Use central paymaster for transfers & bridging
+- d46b221: Disallow setting limits for tokens that the user doesn't have
+- aa33949: Fix fee symbol in testnet
+- 91bef2a: Add support for explicitly specifying the tx variation when sending a tx to the paymaster
+- d9bc9dc: Ensure session context only gets initialized once
+- d063d55: update signed quote bytes array in bridge ix
+
+## 0.0.21
+
+### Patch Changes
+
+- 79d7449: Add fees when transferring tokens or bridging tokens out
+- 3a04f78: Update wormhole contract addresses in mainnet
+- Updated dependencies [79d7449]
+  - @fogo/sessions-idls@0.0.9
+
+## 0.0.20
+
+### Patch Changes
+
+- 55ad299: Add mainnet bridging config
+
+## 0.0.19
+
+### Patch Changes
+
+- c69ea06: Add support for bridging tokens to/from Solana
+- Updated dependencies [c69ea06]
+  - @fogo/sessions-idls@0.0.8
+
 ## 0.0.18
 
 ### Patch Changes

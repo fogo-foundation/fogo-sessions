@@ -24,6 +24,7 @@
     "@phosphor-icons/react": "catalog:",
     "clsx": "catalog:",
     "next": "catalog:",
+    "nuqs": "^2.8.0",
     "pino": "catalog:",
     "react": "catalog:",
     "react-aria": "catalog:",

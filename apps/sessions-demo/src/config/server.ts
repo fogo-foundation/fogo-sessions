@@ -1,7 +1,8 @@
 /* eslint-disable n/no-process-env */
 
 import "server-only";
-import { Network } from "@fogo/sessions-sdk-react";
+import { FogoSessionProvider, Network } from "@fogo/sessions-sdk-react";
+import type { ComponentProps } from "react";
 
 const getNetwork = () => {
   switch (process.env.NETWORK) {
@@ -31,13 +32,17 @@ export const FAUCET_KEY =
 const getProviderConfig = () => {
   if (NETWORK === undefined) {
     return {
-      addressLookupTableAddress:
+      // This option only matters for the wormhole bridge which won't work in
+      // localnet regardless, so let's just set it to Testnet to appease
+      // typescript.
+      network: Network.Testnet,
+      defaultAddressLookupTableAddress:
         process.env.ADDRESS_LOOKUP_TABLE_ADDRESS ??
         "93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3",
       domain: process.env.FOGO_SESSIONS_DOMAIN,
       rpc: process.env.RPC ?? "http://127.0.0.1:8899",
       paymaster: process.env.PAYMASTER ?? "http://localhost:4000",
-    };
+    } satisfies Partial<ComponentProps<typeof FogoSessionProvider>>;
   } else if (
     process.env.PAYMASTER === undefined ||
     process.env.RPC === undefined
@@ -45,18 +50,21 @@ const getProviderConfig = () => {
     return {
       network: NETWORK,
       rpc: process.env.RPC,
-      addressLookupTableAddress: process.env.ADDRESS_LOOKUP_TABLE_ADDRESS,
+      defaultAddressLookupTableAddress:
+        process.env.ADDRESS_LOOKUP_TABLE_ADDRESS,
       domain:
         process.env.FOGO_SESSIONS_DOMAIN ?? "https://sessions-example.fogo.io",
-    };
+    } satisfies Partial<ComponentProps<typeof FogoSessionProvider>>;
   } else {
     return {
+      network: NETWORK,
       rpc: process.env.RPC,
       paymaster: process.env.PAYMASTER,
-      addressLookupTableAddress: process.env.ADDRESS_LOOKUP_TABLE_ADDRESS,
+      defaultAddressLookupTableAddress:
+        process.env.ADDRESS_LOOKUP_TABLE_ADDRESS,
       domain:
         process.env.FOGO_SESSIONS_DOMAIN ?? "https://sessions-example.fogo.io",
-    };
+    } satisfies Partial<ComponentProps<typeof FogoSessionProvider>>;
   }
 };
 

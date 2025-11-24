@@ -22,6 +22,11 @@ pub struct RunOptions {
     #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
     pub db_url: String,
 
+    // TODO this is part of the temporary change to load the config from the file. Should be removed.
+    /// Path to TOML config
+    #[arg(short = 'c', long = "config-file", env = "CONFIG_FILE")]
+    pub config_file: String,
+
     /// Path to mnemonic file (env/flag; optional)
     #[arg(long, env = "MNEMONIC_FILE", default_value = "./tilt/secrets/mnemonic")]
     pub mnemonic_file: String,
@@ -31,6 +36,9 @@ pub struct RunOptions {
 
     #[arg(long, env = "RPC_URL_WS")]
     pub rpc_url_ws: Option<String>,
+
+    #[arg(long, env = "FTL_URL")]
+    pub ftl_url: Option<String>,
 
     #[arg(long, env = "LISTEN_ADDRESS", default_value = "0.0.0.0:4000")]
     pub listen_address: String,
@@ -44,6 +52,10 @@ pub struct RunOptions {
 
     #[arg(long, env = "DB_REFRESH_INTERVAL_SECONDS", default_value = "10")]
     pub db_refresh_interval_seconds: u64,
+
+    // TODO: this is a temporary change and should be removed once we load the ntt_quoter from the DB
+    #[arg(long, env = "NTT_QUOTER")]
+    pub ntt_quoter: String,
 }
 
 #[derive(Args, Debug, Clone)]

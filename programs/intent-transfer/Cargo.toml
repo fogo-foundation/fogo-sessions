@@ -19,9 +19,21 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 anchor-lang = { workspace = true, features = ["init-if-needed"] }
 anchor-spl = { workspace = true }
 chain-id = { path = "../chain-id", features = ["no-entrypoint"] }
+hex = {workspace = true}
 mpl-token-metadata = { workspace = true }
 nom = { workspace = true }
 solana-intents = { path = "../../packages/solana-intents" }
 
 [dev-dependencies]
 indoc = "2.0.6"
+litesvm = "0.7.1"
+solana-account = {workspace = true}
+solana-address = {workspace = true}
+solana-instruction = {workspace = true}
+solana-keypair = {workspace = true}
+solana-pubkey = {workspace = true}
+solana-signature = {workspace = true}
+solana-signer = {workspace = true}
+solana-transaction = {workspace = true}
+spl-associated-token-account = {workspace = true}
+spl-token = {workspace = true}
