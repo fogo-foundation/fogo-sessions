@@ -62,9 +62,7 @@ const HTTP_CLIENT_COUNT: usize = 6;
 
 impl LoadTestDispatcher {
     pub async fn new(config: RuntimeConfig, metrics: Arc<LoadTestMetrics>) -> Result<Self> {
-        let mut http_clients = Vec::with_capacity(HTTP_CLIENT_COUNT);
-        for _ in 0..HTTP_CLIENT_COUNT {
-            http_clients.push(
+        let  http_client = 
                 if let Some(ref paymaster_ip_override) = config.external.paymaster_ip_override {
                     Client::builder()
                         .timeout(Duration::from_secs(30))
@@ -85,9 +83,8 @@ impl LoadTestDispatcher {
                         .timeout(Duration::from_secs(30))
                         .build()
                         .context("Failed to create HTTP client")?
-                },
-            );
-        }
+                };
+        let http_clients = vec![http_client; HTTP_CLIENT_COUNT];
 
         let rpc_client = Arc::new(RpcClient::new_with_commitment(
             config.external.rpc_url.clone(),
