@@ -327,7 +327,7 @@ const useSessionState = ({
   network: Network;
   getSessionContext: () => Promise<SessionExecutionContext>;
   tokens?: PublicKey[] | undefined;
-  enableUnlimited: boolean | undefined;
+  enableUnlimited?: boolean | undefined;
   onOpenExtendSessionExpiry?: (() => void) | undefined;
   onOpenSessionLimitsReached?: (() => void) | undefined;
   setShowBridgeIn: Dispatch<SetStateAction<boolean>>;
