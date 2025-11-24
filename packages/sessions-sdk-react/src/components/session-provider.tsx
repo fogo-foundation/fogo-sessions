@@ -672,10 +672,11 @@ const useSessionState = ({
               return;
             }
             case ConnectWalletStateType.Connected: {
-              console.log("enableUnlimited:", enableUnlimited);
-              console.log("tokens:", tokens);
               walletName.set(wallet.name);
-              if ((tokens === undefined || tokens.length === 0) && !enableUnlimited) {
+              if (
+                (tokens === undefined || tokens.length === 0) &&
+                !enableUnlimited
+              ) {
                 submitLimits({
                   sessionDuration: DEFAULT_SESSION_DURATION,
                   wallet,
