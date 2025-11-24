@@ -3,7 +3,7 @@ use anyhow::Result;
 use chain_id::ID as CHAIN_ID_PID;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
-use rand::{Rng, random};
+use rand::{random, Rng};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_hash::Hash;
 use solana_keypair::Keypair;
@@ -199,8 +199,11 @@ impl TransactionGenerator {
 
         let domain_record_pda = get_domain_record_address(&self.domain);
 
-        let accounts =
-            gather_start_session_accounts(self.random_sponsor_pubkey(), session_pubkey, domain_record_pda);
+        let accounts = gather_start_session_accounts(
+            self.random_sponsor_pubkey(),
+            session_pubkey,
+            domain_record_pda,
+        );
         let start_session_ix = Instruction {
             program_id: SESSION_MANAGER_ID,
             accounts,

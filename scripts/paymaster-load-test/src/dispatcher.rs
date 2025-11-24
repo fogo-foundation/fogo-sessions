@@ -18,7 +18,7 @@ use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use std::net::SocketAddr;
 use std::num::NonZeroU32;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::{task::JoinSet, time::sleep};
@@ -62,28 +62,26 @@ const HTTP_CLIENT_COUNT: usize = 6;
 
 impl LoadTestDispatcher {
     pub async fn new(config: RuntimeConfig, metrics: Arc<LoadTestMetrics>) -> Result<Self> {
-        let  http_client = 
-                if let Some(ref paymaster_ip_override) = config.external.paymaster_ip_override {
-                    Client::builder()
-                        .timeout(Duration::from_secs(30))
-                        .resolve(
-                            Url::parse(&config.external.paymaster_endpoint)
-                                .context("Failed to parse paymaster endpoint")?
-                                .host_str()
-                                .context(
-                                    "Failed to get paymaster host from the paymaster endpoint",
-                                )?,
-                            paymaster_ip_override.parse::<SocketAddr>()?,
-                        )
-                        .danger_accept_invalid_certs(true)
-                        .build()
-                        .context("Failed to create HTTP client")?
-                } else {
-                    Client::builder()
-                        .timeout(Duration::from_secs(30))
-                        .build()
-                        .context("Failed to create HTTP client")?
-                };
+        let http_client =
+            if let Some(ref paymaster_ip_override) = config.external.paymaster_ip_override {
+                Client::builder()
+                    .timeout(Duration::from_secs(30))
+                    .resolve(
+                        Url::parse(&config.external.paymaster_endpoint)
+                            .context("Failed to parse paymaster endpoint")?
+                            .host_str()
+                            .context("Failed to get paymaster host from the paymaster endpoint")?,
+                        paymaster_ip_override.parse::<SocketAddr>()?,
+                    )
+                    .danger_accept_invalid_certs(true)
+                    .build()
+                    .context("Failed to create HTTP client")?
+            } else {
+                Client::builder()
+                    .timeout(Duration::from_secs(30))
+                    .build()
+                    .context("Failed to create HTTP client")?
+            };
         let http_clients = vec![http_client; HTTP_CLIENT_COUNT];
 
         let rpc_client = Arc::new(RpcClient::new_with_commitment(
@@ -92,15 +90,12 @@ impl LoadTestDispatcher {
         ));
 
         tracing::info!("Fetching initial blockhash from RPC...");
-
-
         let initial_blockhash = rpc_client
             .get_latest_blockhash()
             .await
             .context("Failed to fetch initial blockhash")?;
 
-        tracing::info!("Fetching sponsor pubkey from paymaster...");
-
+        tracing::info!("Fetching sponsor pubkeys from paymaster...");
         let sponsor_pubkeys = futures::future::try_join_all((0..config.external.number_of_sponsors.get()).map(async |i| -> Result<Pubkey> {
             let sponsor_url = format!(
                 "{}/api/sponsor_pubkey?domain={}&index={}",
