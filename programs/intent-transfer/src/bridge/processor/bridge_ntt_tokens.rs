@@ -1,19 +1,26 @@
 use crate::{
     bridge::{
         be::{U16BE, U64BE},
-        config::ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
         cpi::{self, ntt_with_executor::RelayNttMessageArgs},
         message::{convert_chain_id_to_wormhole, BridgeMessage, NttMessage, WormholeChainId},
     },
+    config::state::{
+        fee_config::{FeeConfig, FEE_CONFIG_SEED},
+        ntt_config::{verify_ntt_manager, ExpectedNttConfig, EXPECTED_NTT_CONFIG_SEED},
+    },
     error::IntentTransferError,
+    fees::{PaidInstruction, VerifyAndCollectAccounts},
     nonce::Nonce,
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
     INTENT_TRANSFER_SEED,
 };
 use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
-use anchor_spl::token::{
-    approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
-    CloseAccount, Mint, Token, TokenAccount, TransferChecked,
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{
+        approve, close_account, spl_token::try_ui_amount_into_amount, transfer_checked, Approve,
+        CloseAccount, Mint, Token, TokenAccount, TransferChecked,
+    },
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use chain_id::ChainId;
@@ -24,7 +31,7 @@ const BRIDGE_NTT_NONCE_SEED: &[u8] = b"bridge_ntt_nonce";
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct BridgeNttTokensArgs {
-    pub signed_quote_bytes: Vec<u8>,
+    pub signed_quote_bytes: [u8; 165],
     pub pay_destination_ata_rent: bool,
 }
 
@@ -118,8 +125,6 @@ pub struct BridgeNttTokens<'info> {
     #[account(seeds = [INTENT_TRANSFER_SEED], bump)]
     pub intent_transfer_setter: UncheckedAccount<'info>,
 
-    pub token_program: Program<'info, Token>,
-
     #[account(mut, token::mint = mint)]
     pub source: Account<'info, TokenAccount>,
 
@@ -156,10 +161,51 @@ pub struct BridgeNttTokens<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
 
+    #[account(mut, token::mint = fee_mint, token::authority = source.owner )]
+    pub fee_source: Account<'info, TokenAccount>,
+
+    #[account(init_if_needed, payer = sponsor, associated_token::mint = fee_mint, associated_token::authority = sponsor)]
+    pub fee_destination: Account<'info, TokenAccount>,
+
+    pub fee_mint: Account<'info, Mint>,
+
+    pub fee_metadata: Option<UncheckedAccount<'info>>,
+
+    #[account(seeds = [FEE_CONFIG_SEED, fee_mint.key().as_ref()], bump)]
+    pub fee_config: Account<'info, FeeConfig>,
+
     pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 
     // NTT-specific accounts
     pub ntt: Ntt<'info>,
+}
+
+impl<'info> PaidInstruction<'info> for BridgeNttTokens<'info> {
+    fn fee_amount(&self) -> u64 {
+        self.fee_config.bridge_transfer_fee
+    }
+
+    fn verify_and_collect_accounts<'a>(&'a self) -> VerifyAndCollectAccounts<'a, 'info> {
+        let Self {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            intent_transfer_setter,
+            token_program,
+            ..
+        } = self;
+        VerifyAndCollectAccounts {
+            fee_source,
+            fee_destination,
+            fee_mint,
+            fee_metadata,
+            intent_transfer_setter,
+            token_program,
+        }
+    }
 }
 
 // TODO: implement slot staleness check for intent messages
@@ -201,6 +247,7 @@ impl<'info> BridgeNttTokens<'info> {
             sponsor,
             system_program,
             ntt,
+            ..
         } = self;
 
         let Ntt {
@@ -235,6 +282,8 @@ impl<'info> BridgeNttTokens<'info> {
             to_chain_id,
             recipient_address,
             nonce: new_nonce,
+            fee_amount,
+            fee_symbol_or_mint,
         } = ntt_message;
 
         if from_chain_id.chain_id != expected_chain_id {
@@ -343,7 +392,7 @@ impl<'info> BridgeNttTokens<'info> {
 
         let relay_ntt_args = compute_relay_ntt_args(
             to_chain_id_wormhole,
-            signed_quote_bytes,
+            signed_quote_bytes.to_vec(),
             pay_destination_ata_rent,
         )?;
 
@@ -373,7 +422,7 @@ impl<'info> BridgeNttTokens<'info> {
             signer_seeds,
         ))?;
 
-        Ok(())
+        self.verify_and_collect_fee(fee_amount, fee_symbol_or_mint, signer_seeds)
     }
 }
 
@@ -454,11 +503,13 @@ fn compute_msg_value_and_gas_limit_solana(pay_destination_ata_rent: bool) -> (u1
     (msg_value, 250_000)
 }
 
+pub type H160 = [u8; 20];
+
 // Derived from the documentation: https://github.com/wormholelabs-xyz/example-messaging-executor?tab=readme-ov-file#off-chain-quote
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct SignedQuoteHeader {
     pub prefix: [u8; 4],
-    pub quoter_address: [u8; 20],
+    pub quoter_address: H160,
     pub payee_address: [u8; 32],
     pub source_chain: U16BE,
     pub destination_chain: U16BE,
@@ -473,6 +524,30 @@ pub struct SignedQuote {
     pub source_price: U64BE,
     pub destination_price: U64BE,
     pub signature: [u8; 65],
+}
+
+impl SignedQuote {
+    pub fn try_get_message_body(&self) -> Result<[u8; 100]> {
+        let signed_quote_serialized = self.try_to_vec()?;
+        signed_quote_serialized
+            .get(..100)
+            .and_then(|slice| slice.try_into().ok())
+            .ok_or_else(|| IntentTransferError::InvalidNttSignedQuote.into())
+    }
+
+    // Extracts the signature components (the signature, the recovery index).
+    pub fn try_get_signature_components(&self) -> Result<(&[u8; 64], u8)> {
+        let signature = &self.signature;
+        let (sig_bytes, recovery_index_bytes) = signature.split_at(64);
+        let sig_array = sig_bytes
+            .try_into()
+            .map_err(|_| IntentTransferError::InvalidNttSignedQuote)?;
+        let recovery_index = recovery_index_bytes
+            .first()
+            .copied()
+            .ok_or(IntentTransferError::InvalidNttSignedQuote)?;
+        Ok((sig_array, recovery_index))
+    }
 }
 
 const DECIMALS_QUOTE: u32 = 10;

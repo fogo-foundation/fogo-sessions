@@ -22,17 +22,14 @@ import {
   signatureBytes,
   verifySignature,
 } from "@solana/kit";
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  getAssociatedTokenAddressSync,
-  getMint,
-} from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type {
   BaseWalletAdapter,
   MessageSignerWalletAdapterProps,
 } from "@solana/wallet-adapter-base";
 import type { TransactionError, TransactionInstruction } from "@solana/web3.js";
 import {
+  ComputeBudgetProgram,
   Connection,
   Ed25519Program,
   Keypair,
@@ -52,20 +49,29 @@ import BN from "bn.js";
 import bs58 from "bs58";
 import { z } from "zod";
 
-import type { TransactionResult } from "./connection.js";
+import type {
+  TransactionOrInstructions,
+  TransactionResult,
+} from "./connection.js";
 import { Network, TransactionResultType } from "./connection.js";
-import type { SessionContext } from "./context.js";
+import type { SendTransactionOptions, SessionContext } from "./context.js";
+import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
 import {
   importKey,
   signMessageWithKey,
   verifyMessageWithKey,
 } from "./crypto.js";
 
-export { type SessionContext, createSessionContext } from "./context.js";
+export {
+  type SessionContext,
+  type SendTransactionOptions,
+  createSessionContext,
+} from "./context.js";
 
 export {
   type TransactionResult,
   type Connection,
+  type TransactionOrInstructions,
   Network,
   TransactionResultType,
   createSessionConnection,
@@ -81,9 +87,9 @@ const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 const CURRENT_MAJOR = "0";
 const CURRENT_MINOR = "3";
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
-const CURRENT_INTENT_TRANSFER_MINOR = "1";
+const CURRENT_INTENT_TRANSFER_MINOR = "2";
 const CURRENT_BRIDGE_OUT_MAJOR = "0";
-const CURRENT_BRIDGE_OUT_MINOR = "1";
+const CURRENT_BRIDGE_OUT_MINOR = "2";
 
 const SESSION_ESTABLISHMENT_LOOKUP_TABLE_ADDRESS = {
   [Network.Testnet]: "B8cUjJMqaWWTNNSTXBmeptjWswwCH1gTSCRYv4nu7kJW",
@@ -136,11 +142,7 @@ export const establishSession = async (
     return sendSessionEstablishTransaction(
       options,
       sessionKey,
-      [
-        ...buildCreateAssociatedTokenAccountInstructions(options, tokenInfo),
-        intentInstruction,
-        startSessionInstruction,
-      ],
+      [intentInstruction, startSessionInstruction],
       options.sessionEstablishmentLookupTable,
     );
   }
@@ -156,6 +158,7 @@ const sendSessionEstablishTransaction = async (
     sessionKey,
     instructions,
     {
+      variation: "Session Establishment",
       addressLookupTable:
         sessionEstablishmentLookupTable ??
         SESSION_ESTABLISHMENT_LOOKUP_TABLE_ADDRESS[options.context.network],
@@ -213,9 +216,13 @@ export const revokeSession = async (options: {
         session: options.session.sessionPublicKey,
       })
       .instruction();
-    return options.context.sendTransaction(options.session.sessionKey, [
-      instruction,
-    ]);
+    return options.context.sendTransaction(
+      options.session.sessionKey,
+      [instruction],
+      {
+        variation: "Session Revocation",
+      },
+    );
   } else {
     return;
   }
@@ -262,8 +269,8 @@ const createSession = async (
         walletPublicKey,
         sessionKey,
         payer: context.payer,
-        sendTransaction: (instructions) =>
-          context.sendTransaction(sessionKey, instructions),
+        sendTransaction: (instructions, extraConfig) =>
+          context.sendTransaction(sessionKey, instructions, extraConfig),
         sessionInfo,
       };
 };
@@ -644,19 +651,6 @@ const amountToString = (amount: bigint, decimals: number): string => {
   ].join("");
 };
 
-const buildCreateAssociatedTokenAccountInstructions = (
-  options: EstablishSessionOptions,
-  tokens: TokenInfo[],
-) =>
-  tokens.map(({ mint }) =>
-    createAssociatedTokenAccountIdempotentInstruction(
-      options.context.payer,
-      getAssociatedTokenAddressSync(mint, options.walletPublicKey),
-      options.walletPublicKey,
-      mint,
-    ),
-  );
-
 export const getDomainRecordAddress = (domain: string) => {
   const hash = sha256(domain);
   return PublicKey.findProgramAddressSync(
@@ -677,7 +671,7 @@ const BRIDGING_ADDRESS_LOOKUP_TABLE: Record<
   [Network.Mainnet]: {
     // USDC
     uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG:
-      "BRTw3GAXfEbMUd4GY9P1SQJAvje6LAbj3sRPrdypxpvU",
+      "84k3mfNjmyinpZwyev7F15ChEW3Kqa3NoUkCJXXs4qkw",
   },
 };
 
@@ -756,9 +750,59 @@ export type Session = {
   walletPublicKey: PublicKey;
   payer: PublicKey;
   sendTransaction: (
-    instructions: Parameters<SessionContext["sendTransaction"]>[1],
+    instructions: TransactionOrInstructions,
+    extraConfig?: SendTransactionOptions,
   ) => Promise<TransactionResult>;
   sessionInfo: NonNullable<z.infer<typeof sessionInfoSchema>>;
+};
+
+const USDC_MINT = {
+  [Network.Mainnet]: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
+  [Network.Testnet]: "ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND",
+};
+const USDC_DECIMALS = 6;
+
+export const getTransferFee = async (context: SessionContext) => {
+  const { fee, ...config } = await getFee(context);
+  return {
+    ...config,
+    fee: fee.intrachainTransfer,
+  };
+};
+
+export const getBridgeOutFee = async (context: SessionContext) => {
+  const { fee, ...config } = await getFee(context);
+  return {
+    ...config,
+    fee: fee.bridgeTransfer,
+  };
+};
+
+const getFee = async (context: SessionContext) => {
+  const program = new IntentTransferProgram(
+    new AnchorProvider(context.connection, {} as Wallet, {}),
+  );
+  const umi = createUmi(context.connection.rpcEndpoint);
+  const usdcMintAddress = USDC_MINT[context.network];
+  const usdcMint = new PublicKey(usdcMintAddress);
+  const [feeConfigPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("fee_config"), usdcMint.toBytes()],
+    program.programId,
+  );
+  const feeConfig = await program.account.feeConfig.fetch(feeConfigPda);
+
+  return {
+    metadata: findMetadataPda(umi, {
+      mint: metaplexPublicKey(usdcMintAddress),
+    })[0],
+    mint: usdcMint,
+    symbolOrMint: "USDC.s",
+    decimals: USDC_DECIMALS,
+    fee: {
+      intrachainTransfer: BigInt(feeConfig.intrachainTransferFee.toString()),
+      bridgeTransfer: BigInt(feeConfig.bridgeTransferFee.toString()),
+    },
+  };
 };
 
 const TRANSFER_MESSAGE_HEADER = `Fogo Transfer:
@@ -772,16 +816,13 @@ type SendTransferOptions = {
   mint: PublicKey;
   amount: bigint;
   recipient: PublicKey;
+  feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
 };
 
 export const sendTransfer = async (options: SendTransferOptions) => {
   const sourceAta = getAssociatedTokenAddressSync(
     options.mint,
     options.walletPublicKey,
-  );
-  const destinationAta = getAssociatedTokenAddressSync(
-    options.mint,
-    options.recipient,
   );
   const program = new IntentTransferProgram(
     new AnchorProvider(options.context.connection, {} as Wallet, {}),
@@ -792,32 +833,48 @@ export const sendTransfer = async (options: SendTransferOptions) => {
   const metadata = await safeFetchMetadata(umi, metadataAddress);
   const symbol = metadata?.symbol ?? undefined;
 
-  return options.context.sendTransaction(undefined, [
-    createAssociatedTokenAccountIdempotentInstruction(
-      options.context.payer,
-      destinationAta,
-      options.recipient,
-      options.mint,
-    ),
-    await buildTransferIntentInstruction(program, options, symbol),
-    await program.methods
-      .sendTokens()
-      .accounts({
-        destination: destinationAta,
-        mint: options.mint,
-        source: sourceAta,
-        sponsor: options.context.payer,
-        // eslint-disable-next-line unicorn/no-null
-        metadata: symbol === undefined ? null : new PublicKey(metadataAddress),
-      })
-      .instruction(),
-  ]);
+  return options.context.sendTransaction(
+    undefined,
+    [
+      await buildTransferIntentInstruction(
+        program,
+        options,
+        symbol,
+        options.feeConfig.symbolOrMint,
+        amountToString(options.feeConfig.fee, options.feeConfig.decimals),
+      ),
+      await program.methods
+        .sendTokens()
+        .accounts({
+          destinationOwner: options.recipient,
+          feeMetadata: options.feeConfig.metadata,
+          feeMint: options.feeConfig.mint,
+          feeSource: getAssociatedTokenAddressSync(
+            options.feeConfig.mint,
+            options.walletPublicKey,
+          ),
+          mint: options.mint,
+          source: sourceAta,
+          sponsor: options.context.internalPayer,
+          metadata:
+            // eslint-disable-next-line unicorn/no-null
+            symbol === undefined ? null : new PublicKey(metadataAddress),
+        })
+        .instruction(),
+    ],
+    {
+      variation: "Intent Transfer",
+      paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+    },
+  );
 };
 
 const buildTransferIntentInstruction = async (
   program: IntentTransferProgram,
   options: SendTransferOptions,
-  symbol?: string,
+  symbol: string | undefined,
+  feeToken: string,
+  feeAmount: string,
 ) => {
   const [nonce, { decimals }] = await Promise.all([
     getNonce(program, options.walletPublicKey, NonceType.Transfer),
@@ -832,6 +889,8 @@ const buildTransferIntentInstruction = async (
         token: symbol ?? options.mint.toBase58(),
         amount: amountToString(options.amount, decimals),
         recipient: options.recipient.toBase58(),
+        fee_token: feeToken,
+        fee_amount: feeAmount,
         nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
       }),
     ].join("\n"),
@@ -853,6 +912,7 @@ const buildTransferIntentInstruction = async (
 const BRIDGE_OUT_MESSAGE_HEADER = `Fogo Bridge Transfer:
 Signing this intent will bridge out the tokens as described below.
 `;
+const BRIDGE_OUT_CUS = 220_000;
 
 type SendBridgeOutOptions = {
   context: SessionContext;
@@ -863,6 +923,7 @@ type SendBridgeOutOptions = {
   amount: bigint;
   fromToken: WormholeToken & { chain: "Fogo" };
   toToken: WormholeToken & { chain: "Solana" };
+  feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
 };
 
 type WormholeToken = {
@@ -904,32 +965,52 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
     ),
   ]);
 
+  const instructions = await Promise.all([
+    buildBridgeOutIntent(
+      program,
+      options,
+      decimals,
+      metadata?.symbol,
+      options.feeConfig.symbolOrMint,
+      amountToString(options.feeConfig.fee, options.feeConfig.decimals),
+    ),
+    program.methods
+      .bridgeNttTokens({
+        payDestinationAtaRent: !destinationAtaExists,
+        signedQuoteBytes: [...quote.signedQuote],
+      })
+      .accounts({
+        sponsor: options.context.internalPayer,
+        mint: options.fromToken.mint,
+        metadata:
+          metadata?.symbol === undefined
+            ? // eslint-disable-next-line unicorn/no-null
+              null
+            : new PublicKey(metadataAddress),
+        source: getAssociatedTokenAddressSync(
+          options.fromToken.mint,
+          options.walletPublicKey,
+        ),
+        ntt: nttPdas,
+        feeMetadata: options.feeConfig.metadata,
+        feeMint: options.feeConfig.mint,
+        feeSource: getAssociatedTokenAddressSync(
+          options.feeConfig.mint,
+          options.walletPublicKey,
+        ),
+      })
+      .instruction(),
+  ]);
+
   return options.context.sendTransaction(
     options.sessionKey,
-    await Promise.all([
-      buildBridgeOutIntent(program, options, decimals, metadata?.symbol),
-      program.methods
-        .bridgeNttTokens({
-          payDestinationAtaRent: !destinationAtaExists,
-          signedQuoteBytes: Buffer.from(quote.signedQuote),
-        })
-        .accounts({
-          sponsor: options.context.payer,
-          mint: options.fromToken.mint,
-          metadata:
-            metadata?.symbol === undefined
-              ? // eslint-disable-next-line unicorn/no-null
-                null
-              : new PublicKey(metadataAddress),
-          source: getAssociatedTokenAddressSync(
-            options.fromToken.mint,
-            options.walletPublicKey,
-          ),
-          ntt: nttPdas,
-        })
-        .instruction(),
-    ]),
+    [
+      ComputeBudgetProgram.setComputeUnitLimit({ units: BRIDGE_OUT_CUS }),
+      ...instructions,
+    ],
     {
+      variation: "Intent NTT Bridge",
+      paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
       extraSigners: [outboxItem],
       addressLookupTable:
         BRIDGING_ADDRESS_LOOKUP_TABLE[options.context.network]?.[
@@ -1021,7 +1102,9 @@ const buildBridgeOutIntent = async (
   program: IntentTransferProgram,
   options: SendBridgeOutOptions,
   decimals: number,
-  symbol?: string,
+  symbol: string | undefined,
+  feeToken: string,
+  feeAmount: string,
 ) => {
   const nonce = await getNonce(
     program,
@@ -1038,6 +1121,8 @@ const buildBridgeOutIntent = async (
         token: symbol ?? options.fromToken.mint.toBase58(),
         amount: amountToString(options.amount, decimals),
         recipient_address: options.walletPublicKey.toBase58(),
+        fee_token: feeToken,
+        fee_amount: feeAmount,
         nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
       }),
     ].join("\n"),

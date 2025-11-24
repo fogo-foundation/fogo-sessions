@@ -1,7 +1,7 @@
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
-import { useResizeObserver } from "@react-hookz/web";
+import { useLocalStorageValue, useResizeObserver } from "@react-hookz/web";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
@@ -96,7 +96,11 @@ const SignInModalContents = ({
   onClose: () => void;
 }) => {
   const { whitelistedTokens } = useSessionContext();
-  const [didAcceptDisclaimer, setDidAcceptDisclaimer] = useState(false);
+  const didAcceptDisclaimer = useLocalStorageValue<boolean>(
+    "fogo-sessions-disclaimer-accepted",
+    { defaultValue: false },
+  );
+  const initialDidAcceptDisclaimer = useRef(didAcceptDisclaimer.value);
   const step1 = useRef<HTMLDivElement | null>(null);
   const step2 = useRef<HTMLDivElement | null>(null);
   const step3 = useRef<HTMLDivElement | null>(null);
@@ -117,16 +121,20 @@ const SignInModalContents = ({
     }
   });
 
+  const handleDidAcceptDisclaimer = useCallback(() => {
+    didAcceptDisclaimer.set(true);
+  }, [didAcceptDisclaimer]);
+
   return (
     <AnimatePresence>
       {sessionState.type === StateType.SelectingWallet ||
       sessionState.type === StateType.WalletConnecting ||
       (sessionState.type === StateType.SettingLimits &&
         whitelistedTokens.length === 0) ? (
-        didAcceptDisclaimer ? (
+        didAcceptDisclaimer.value ? (
           <motion.div
             key="wallets"
-            initial={{ x: "100%" }}
+            initial={initialDidAcceptDisclaimer.current ? false : { x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             ref={(elem) => {
@@ -167,9 +175,7 @@ const SignInModalContents = ({
           >
             <DisclaimerPage
               onCancel={onClose}
-              onAccept={() => {
-                setDidAcceptDisclaimer(true);
-              }}
+              onAccept={handleDidAcceptDisclaimer}
             />
           </motion.div>
         )
@@ -210,6 +216,13 @@ const DisclaimerPage = (props: {
   </Page>
 );
 
+/**
+ * Solflare wallet is always present in the available wallets even if it's not installed, but with the ready state of Loadable.
+ * This is used to filter it out to avoid showing it in the list of installed wallets.
+ */
+const isLoadableSolflareWallet = (wallet: SolanaWallet) =>
+  wallet.name === "Solflare" && wallet.readyState === WalletReadyState.Loadable;
+
 const WalletsPage = ({
   wallets,
   selectWallet,
@@ -226,18 +239,19 @@ const WalletsPage = ({
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
   const { otherWallets, installedWallets } = useMemo(() => {
-    const { otherWallets, installedWallets } = groupBy(wallets, (wallet) =>
-      wallet.readyState === WalletReadyState.Installed ||
-      wallet.readyState === WalletReadyState.Loadable
+    const { otherWallets, installedWallets } = groupBy(wallets, (wallet) => {
+      const isSolflareWalletInstalled = !isLoadableSolflareWallet(wallet);
+      return (wallet.readyState === WalletReadyState.Installed ||
+        wallet.readyState === WalletReadyState.Loadable) &&
+        isSolflareWalletInstalled
         ? "installedWallets"
-        : "otherWallets",
-    );
+        : "otherWallets";
+    });
     return {
       otherWallets: otherWallets ?? [],
       installedWallets: installedWallets ?? [],
     };
   }, [wallets]);
-
   return (
     <Page heading="Select a wallet" message="Select a Solana wallet to connect">
       <Button
@@ -353,36 +367,20 @@ const LimitsPage = ({
   sessionState:
     | SessionStates["RequestingLimits"]
     | SessionStates["SettingLimits"];
-}) => {
-  const { whitelistedTokens, enableUnlimited, defaultRequestedLimits } =
-    useSessionContext();
-
-  return (
-    <Page
-      heading="Session Limits"
-      message="Limit how many tokens this app is allowed to interact with"
-    >
-      <SessionLimits
-        enableUnlimited={enableUnlimited}
-        tokens={whitelistedTokens}
-        onSubmit={
-          sessionState.type === StateType.RequestingLimits
-            ? sessionState.submitLimits
-            : undefined
-        }
-        initialLimits={
-          (sessionState.type === StateType.RequestingLimits
-            ? sessionState.requestedLimits
-            : undefined) ??
-          defaultRequestedLimits ??
-          new Map()
-        }
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus
-      />
-    </Page>
-  );
-};
+}) => (
+  <Page
+    heading="Session Limits"
+    message="Limit how many tokens this app is allowed to interact with"
+  >
+    <SessionLimits
+      className={styles.sessionLimits}
+      sessionState={sessionState}
+      buttonText="Log in"
+      // eslint-disable-next-line jsx-a11y/no-autofocus
+      autoFocus
+    />
+  </Page>
+);
 
 const Page = ({
   heading,

@@ -1,10 +1,11 @@
+import type { Network } from "@fogo/sessions-sdk";
 import { getMint } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect } from "react";
 
 import { getMetadata } from "../get-metadata.js";
 import { StateType, useData } from "./use-data.js";
-import { useConnection } from "./use-session.js";
+import { useConnection, useSessionContext } from "./use-session.js";
 
 export { StateType } from "./use-data.js";
 
@@ -12,16 +13,21 @@ export type Metadata = Awaited<ReturnType<typeof getTokenMetadata>>;
 
 export const useTokenMetadata = (mint: PublicKey) => {
   const connection = useConnection();
+  const { network } = useSessionContext();
   const getMetadata = useCallback(
-    async () => getTokenMetadata(connection, mint),
-    [mint, connection],
+    async () => getTokenMetadata(connection, mint, network),
+    [mint, connection, network],
   );
-  const data = useData(["tokenMetadata", mint.toBase58()], getMetadata, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnMount: false,
-    revalidateOnReconnect: false,
-  });
+  const data = useData(
+    ["tokenMetadata", network, mint.toBase58()],
+    getMetadata,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnMount: false,
+      revalidateOnReconnect: false,
+    },
+  );
 
   useEffect(() => {
     if (data.type === StateType.NotLoaded) {
@@ -35,11 +41,15 @@ export const useTokenMetadata = (mint: PublicKey) => {
   return data;
 };
 
-const getTokenMetadata = async (connection: Connection, mint: PublicKey) => {
+const getTokenMetadata = async (
+  connection: Connection,
+  mint: PublicKey,
+  network: Network,
+) => {
   const mintAsString = mint.toString();
   const [mintInfo, metadata] = await Promise.all([
     getMint(connection, mint),
-    getMetadata([mintAsString]).then((meta) => meta[mintAsString]),
+    getMetadata([mintAsString], network).then((meta) => meta[mintAsString]),
   ]);
 
   return { ...mintInfo, ...metadata };

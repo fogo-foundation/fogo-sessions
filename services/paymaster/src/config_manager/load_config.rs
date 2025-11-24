@@ -9,8 +9,8 @@ use std::time::Duration;
 use tokio::time::interval;
 #[allow(dead_code)] // TODO: This module is unused until we bring back the DB
 pub async fn load_db_config() -> Result<Config> {
-    let mut config = db::config::load_config().await?;
-    config.assign_defaults();
+    let config = db::config::load_config().await?;
+    // config.assign_defaults(); TODO: we need to load ntt_quoter from db
     Ok(config)
 }
 

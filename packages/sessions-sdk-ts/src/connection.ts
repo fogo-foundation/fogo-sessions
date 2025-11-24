@@ -7,8 +7,9 @@ import {
 import type {
   Transaction,
   Instruction,
-  Blockhash,
   TransactionWithLifetime,
+  Rpc,
+  GetLatestBlockhashApi,
 } from "@solana/kit";
 import {
   createSolanaRpc,
@@ -96,6 +97,7 @@ export const createSessionConnection = (
   const rpc = createSolanaRpc(rpcUrl);
   const connection = new Web3Connection(rpcUrl, "confirmed");
   const addressLookupTableCache = new Map<string, AddressLookupTableAccount>();
+  const sponsorCache = new Map<string, PublicKey>();
 
   return {
     rpc,
@@ -104,31 +106,30 @@ export const createSessionConnection = (
     getSolanaConnection: createSolanaConnectionGetter(options.network),
     sendToPaymaster: async (
       domain: string,
-      sponsor: PublicKey,
       sessionKey: CryptoKeyPair | undefined,
-      instructions:
-        | (TransactionInstruction | Instruction)[]
-        | VersionedTransaction
-        | (Transaction & TransactionWithLifetime),
-      extraConfig?: {
-        addressLookupTable?: string | undefined;
-        extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
-      },
-    ) => {
-      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-      const transaction = await buildTransaction(
-        connection,
-        latestBlockhash,
+      instructions: TransactionOrInstructions,
+      extraConfig?: SendTransactionOptions,
+    ) =>
+      sendToPaymaster(
+        { ...options, rpc, connection, addressLookupTableCache, sponsorCache },
+        domain,
         sessionKey,
-        sponsor,
         instructions,
-        addressLookupTableCache,
         extraConfig,
-      );
-      return sendToPaymaster(options, domain, transaction);
-    },
-    getSponsor: (domain: string) => getSponsor(options, domain),
+      ),
+    getSponsor: (domain: string) => getSponsor(options, sponsorCache, domain),
   };
+};
+
+export type TransactionOrInstructions =
+  | (TransactionInstruction | Instruction)[]
+  | VersionedTransaction
+  | (Transaction & TransactionWithLifetime);
+
+export type SendTransactionOptions = {
+  variation?: string | undefined;
+  addressLookupTable?: string | undefined;
+  extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
 };
 
 export type Connection = ReturnType<typeof createSessionConnection>;
@@ -157,16 +158,41 @@ const NETWORK_TO_QUERY_PARAM = {
 };
 
 const sendToPaymaster = async (
-  options: Parameters<typeof createSessionConnection>[0],
+  connection: Pick<
+    Parameters<typeof createSessionConnection>[0],
+    "paymaster" | "network" | "sponsor" | "sendToPaymaster"
+  > & {
+    rpc: Rpc<GetLatestBlockhashApi>;
+    connection: Web3Connection;
+    addressLookupTableCache: Map<string, AddressLookupTableAccount>;
+    sponsorCache: Map<string, PublicKey>;
+  },
   domain: string,
-  transaction: Transaction,
+  sessionKey: CryptoKeyPair | undefined,
+  instructions: TransactionOrInstructions,
+  extraConfig?: SendTransactionOptions,
 ): Promise<TransactionResult> => {
-  if (options.sendToPaymaster === undefined) {
+  const signerKeys = await getSignerKeys(sessionKey, extraConfig?.extraSigners);
+
+  const transaction = Array.isArray(instructions)
+    ? await buildTransaction(
+        connection,
+        domain,
+        signerKeys,
+        instructions,
+        extraConfig,
+      )
+    : await addSignaturesToExistingTransaction(instructions, signerKeys);
+
+  if (connection.sendToPaymaster === undefined) {
     const url = new URL(
       "/api/sponsor_and_send",
-      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
+      connection.paymaster ?? DEFAULT_PAYMASTER[connection.network],
     );
     url.searchParams.set("domain", domain);
+    if (extraConfig?.variation !== undefined) {
+      url.searchParams.set("variation", extraConfig.variation);
+    }
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -183,82 +209,85 @@ const sendToPaymaster = async (
       throw new PaymasterResponseError(response.status, await response.text());
     }
   } else {
-    return options.sendToPaymaster(transaction);
+    return connection.sendToPaymaster(transaction);
   }
 };
 
 const buildTransaction = async (
-  connection: Web3Connection,
-  latestBlockhash: Readonly<{
-    blockhash: Blockhash;
-    lastValidBlockHeight: bigint;
-  }>,
-  sessionKey: CryptoKeyPair | undefined,
-  sponsor: PublicKey,
-  instructions:
-    | (TransactionInstruction | Instruction)[]
-    | VersionedTransaction
-    | (Transaction & TransactionWithLifetime),
-  addressLookupTableCache: Map<string, AddressLookupTableAccount>,
+  connection: Pick<
+    Parameters<typeof createSessionConnection>[0],
+    "paymaster" | "network" | "sponsor"
+  > & {
+    rpc: Rpc<GetLatestBlockhashApi>;
+    connection: Web3Connection;
+    addressLookupTableCache: Map<string, AddressLookupTableAccount>;
+    sponsorCache: Map<string, PublicKey>;
+  },
+  domain: string,
+  signerKeys: CryptoKeyPair[],
+  instructions: (TransactionInstruction | Instruction)[],
   extraConfig?: {
     addressLookupTable?: string | undefined;
     extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
   },
 ) => {
-  const [signerKeys, addressLookupTable] = await Promise.all([
-    getSignerKeys(sessionKey, extraConfig?.extraSigners),
-    extraConfig?.addressLookupTable === undefined
-      ? Promise.resolve(undefined)
-      : getAddressLookupTable(
-          connection,
-          addressLookupTableCache,
-          extraConfig.addressLookupTable,
-        ),
-  ]);
-
-  if (Array.isArray(instructions)) {
-    const signers = await Promise.all(
-      signerKeys.map((signer) => createSignerFromKeyPair(signer)),
-    );
-
-    return partiallySignTransactionMessageWithSigners(
-      pipe(
-        createTransactionMessage({ version: 0 }),
-        (tx) => setTransactionMessageFeePayer(fromLegacyPublicKey(sponsor), tx),
-        (tx) =>
-          setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        (tx) =>
-          appendTransactionMessageInstructions(
-            instructions.map((instruction) =>
-              instruction instanceof TransactionInstruction
-                ? fromLegacyTransactionInstruction(instruction)
-                : instruction,
-            ),
-            tx,
+  const [{ value: latestBlockhash }, sponsor, addressLookupTable, signers] =
+    await Promise.all([
+      connection.rpc.getLatestBlockhash().send(),
+      connection.sponsor === undefined
+        ? getSponsor(connection, connection.sponsorCache, domain)
+        : Promise.resolve(connection.sponsor),
+      extraConfig?.addressLookupTable === undefined
+        ? Promise.resolve(undefined)
+        : getAddressLookupTable(
+            connection.connection,
+            connection.addressLookupTableCache,
+            extraConfig.addressLookupTable,
           ),
-        (tx) =>
-          addressLookupTable === undefined
-            ? tx
-            : compressTransactionMessageUsingAddressLookupTables(tx, {
-                [fromLegacyPublicKey(addressLookupTable.key)]:
-                  addressLookupTable.state.addresses.map((address) =>
-                    fromLegacyPublicKey(address),
-                  ),
-              }),
-        (tx) => addSignersToTransactionMessage(signers, tx),
-      ),
-    );
-  } else {
-    const tx =
-      instructions instanceof VersionedTransaction
-        ? (fromVersionedTransaction(instructions) as ReturnType<
-            typeof fromVersionedTransaction
-          > &
-            TransactionWithLifetime) // VersionedTransaction has a lifetime so it's fine to cast it so we can call partiallySignTransaction
-        : instructions;
-    return partiallySignTransaction(signerKeys, tx);
-  }
+      Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
+    ]);
+
+  return partiallySignTransactionMessageWithSigners(
+    pipe(
+      createTransactionMessage({ version: 0 }),
+      (tx) => setTransactionMessageFeePayer(fromLegacyPublicKey(sponsor), tx),
+      (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+      (tx) =>
+        appendTransactionMessageInstructions(
+          instructions.map((instruction) =>
+            instruction instanceof TransactionInstruction
+              ? fromLegacyTransactionInstruction(instruction)
+              : instruction,
+          ),
+          tx,
+        ),
+      (tx) =>
+        addressLookupTable === undefined
+          ? tx
+          : compressTransactionMessageUsingAddressLookupTables(tx, {
+              [fromLegacyPublicKey(addressLookupTable.key)]:
+                addressLookupTable.state.addresses.map((address) =>
+                  fromLegacyPublicKey(address),
+                ),
+            }),
+      (tx) => addSignersToTransactionMessage(signers, tx),
+    ),
+  );
 };
+
+const addSignaturesToExistingTransaction = (
+  transaction: VersionedTransaction | (Transaction & TransactionWithLifetime),
+  signerKeys: CryptoKeyPair[],
+) =>
+  partiallySignTransaction(
+    signerKeys,
+    transaction instanceof VersionedTransaction
+      ? (fromVersionedTransaction(transaction) as ReturnType<
+          typeof fromVersionedTransaction
+        > &
+          TransactionWithLifetime) // VersionedTransaction has a lifetime so it's fine to cast it so we can call partiallySignTransaction
+      : transaction,
+  );
 
 const getSignerKeys = async (
   sessionKey: CryptoKeyPair | undefined,
@@ -299,24 +328,32 @@ const sponsorAndSendResponseSchema = z
   });
 
 const getSponsor = async (
-  options: Parameters<typeof createSessionConnection>[0],
+  options: Pick<
+    Parameters<typeof createSessionConnection>[0],
+    "paymaster" | "network"
+  >,
+  sponsorCache: Map<string, PublicKey>,
   domain: string,
 ) => {
-  if (options.sponsor === undefined) {
+  const value = sponsorCache.get(domain);
+  if (value === undefined) {
     const url = new URL(
       "/api/sponsor_pubkey",
       options.paymaster ?? DEFAULT_PAYMASTER[options.network],
     );
     url.searchParams.set("domain", domain);
+    url.searchParams.set("index", "autoassign");
     const response = await fetch(url);
 
     if (response.status === 200) {
-      return new PublicKey(z.string().parse(await response.text()));
+      const sponsor = new PublicKey(z.string().parse(await response.text()));
+      sponsorCache.set(domain, sponsor);
+      return sponsor;
     } else {
       throw new PaymasterResponseError(response.status, await response.text());
     }
   } else {
-    return options.sponsor;
+    return value;
   }
 };
 

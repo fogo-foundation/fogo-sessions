@@ -8,7 +8,7 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use chain_id::{ChainId, ID as CHAIN_ID_PID};
 use governor::{Quota, RateLimiter};
-use reqwest::Client;
+use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_commitment_config::CommitmentConfig;
@@ -16,6 +16,7 @@ use solana_hash::Hash;
 use solana_pubkey::Pubkey;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
+use std::net::SocketAddr;
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -58,10 +59,26 @@ pub const BLOCKHASH_UPDATE_INTERVAL_SECONDS: u64 = 10;
 
 impl LoadTestDispatcher {
     pub async fn new(config: RuntimeConfig, metrics: Arc<LoadTestMetrics>) -> Result<Self> {
-        let http_client = Client::builder()
-            .timeout(Duration::from_secs(30))
-            .build()
-            .context("Failed to create HTTP client")?;
+        let http_client =
+            if let Some(ref paymaster_ip_override) = config.external.paymaster_ip_override {
+                Client::builder()
+                    .timeout(Duration::from_secs(30))
+                    .resolve(
+                        Url::parse(&config.external.paymaster_endpoint)
+                            .context("Failed to parse paymaster endpoint")?
+                            .host_str()
+                            .context("Failed to get paymaster host from the paymaster endpoint")?,
+                        paymaster_ip_override.parse::<SocketAddr>()?,
+                    )
+                    .danger_accept_invalid_certs(true)
+                    .build()
+                    .context("Failed to create HTTP client")?
+            } else {
+                Client::builder()
+                    .timeout(Duration::from_secs(30))
+                    .build()
+                    .context("Failed to create HTTP client")?
+            };
 
         let rpc_client = Arc::new(RpcClient::new_with_commitment(
             config.external.rpc_url.clone(),

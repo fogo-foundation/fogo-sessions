@@ -17,6 +17,7 @@ export const TextField = ({
   labelExtra,
   placeholder,
   inputGroupClassName,
+  labelLineClassName,
   isPending,
   ...props
 }: ComponentProps<typeof TextFieldImpl> & {
@@ -24,6 +25,7 @@ export const TextField = ({
   labelExtra?: ReactNode;
   placeholder?: ComponentProps<typeof Input>["placeholder"] | undefined;
   inputGroupClassName?: string | undefined;
+  labelLineClassName?: string | undefined;
   isPending?: boolean | undefined;
   double?: boolean | undefined;
 }) => (
@@ -34,7 +36,7 @@ export const TextField = ({
     isDisabled={isPending ?? props.isDisabled ?? false}
     {...props}
   >
-    <div className={styles.labelLine}>
+    <div className={clsx(styles.labelLine, labelLineClassName)}>
       {label && <Label className={styles.label ?? ""}>{label}</Label>}
       {labelExtra && <div className={styles.labelExtra}>{labelExtra}</div>}
     </div>

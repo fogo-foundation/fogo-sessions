@@ -17,7 +17,7 @@ import {
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
 
-const MotionGridList = motion.create(GridList<Token>);
+const MotionGridListItem = motion.create(GridListItem<Token>);
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -57,8 +57,7 @@ export const TokenList = ({
           </span>
         </div>
       ) : (
-        <MotionGridList
-          layoutId="token-list"
+        <GridList
           className={styles.tokenList ?? ""}
           selectionMode="none"
           aria-label="Tokens"
@@ -123,7 +122,9 @@ export const TokenList = ({
               </>
             );
             return (
-              <GridListItem
+              <MotionGridListItem
+                layoutId={mint.toBase58()}
+                layoutScroll
                 textValue={name ?? mint.toBase58()}
                 key={mint.toString()}
                 className={styles.token ?? ""}
@@ -135,10 +136,10 @@ export const TokenList = ({
                 })}
               >
                 {contents}
-              </GridListItem>
+              </MotionGridListItem>
             );
           }}
-        </MotionGridList>
+        </GridList>
       );
     }
     case TokenDataStateType.NotLoaded:

@@ -1,4 +1,4 @@
-use crate::config_manager::config::{Config, Domain};
+use crate::config_manager::config::{default_one, Config, Domain};
 use crate::constraint::{
     TransactionVariation, VariationOrderedInstructionConstraints, VariationProgramWhitelist,
 };
@@ -131,10 +131,14 @@ pub async fn load_config() -> Result<Config, sqlx::Error> {
             domain,
             enable_session_management,
             enable_preflight_simulation,
-            tx_variations: Vec::new(),
+            number_of_signers: default_one(), // TODO: Get number of signers from database
+            tx_variations: HashMap::new(),
         });
 
-        domain_ref.tx_variations.push(transaction_variation_fin);
+        domain_ref.tx_variations.insert(
+            transaction_variation.0.name().to_string(),
+            transaction_variation.0,
+        );
     }
 
     Ok(Config {

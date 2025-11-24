@@ -1,5 +1,11 @@
 # @fogo/sessions-idls
 
+## 0.0.9
+
+### Patch Changes
+
+- 79d7449: Add fees to send_tokens and bridge_ntt_tokens
+
 ## 0.0.8
 
 ### Patch Changes

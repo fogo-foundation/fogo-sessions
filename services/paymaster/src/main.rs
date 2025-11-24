@@ -1,7 +1,7 @@
-use crate::cli::Cli;
-use crate::config_manager::config::Config;
+use crate::{cli::Cli, config_manager::config::Config};
 use arc_swap::ArcSwap;
 use clap::Parser;
+use fogo_paymaster::parse::parse_h160;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
 use std::collections::HashMap;
@@ -14,6 +14,7 @@ mod constraint;
 mod constraint_templates;
 mod db;
 mod metrics;
+mod pooled_http_sender;
 mod rpc;
 mod serde;
 
@@ -67,7 +68,14 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .add_source(config::File::with_name(&opts.config_file))
         .build()?
         .try_deserialize()?;
-    config.assign_defaults();
+    let ntt_quoter = parse_h160(&opts.ntt_quoter).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to parse NTT_QUOTER address '{}': {}",
+            opts.ntt_quoter,
+            e
+        )
+    })?;
+    config.assign_defaults(ntt_quoter)?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
@@ -85,7 +93,14 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let rpc_url_ws = opts
         .rpc_url_ws
         .unwrap_or_else(|| opts.rpc_url_http.replace("http", "ws"));
-    api::run_server(opts.rpc_url_http, rpc_url_ws, opts.listen_address, domains).await;
+    api::run_server(
+        opts.rpc_url_http,
+        rpc_url_ws,
+        opts.ftl_url,
+        opts.listen_address,
+        domains,
+    )
+    .await;
     Ok(())
 }
 

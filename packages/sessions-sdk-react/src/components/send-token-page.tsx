@@ -1,7 +1,17 @@
-import { sendTransfer, TransactionResultType } from "@fogo/sessions-sdk";
+import {
+  sendTransfer,
+  TransactionResultType,
+  getTransferFee,
+} from "@fogo/sessions-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import type { FormEvent } from "react";
+import clsx from "clsx";
+import type {
+  ComponentProps,
+  FormEvent,
+  FormEventHandler,
+  ReactNode,
+} from "react";
 import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
 
@@ -10,13 +20,16 @@ import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
 import { ExplorerLink } from "./explorer-link.js";
+import { FetchError as FetchErrorImpl } from "./fetch-error.js";
 import { TextField } from "./field.js";
 import { Link } from "./link.js";
 import styles from "./send-token-page.module.css";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { TruncateKey } from "./truncate-key.js";
+import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
+import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 
 type Props = {
   icon?: string | undefined;
@@ -30,25 +43,119 @@ type Props = {
   onSendComplete: () => void;
 };
 
-export const SendTokenPage = ({
-  onPressBack,
-  sessionState,
-  tokenName,
-  tokenMint,
+export const SendTokenPage = (props: Props) => {
+  const feeConfig = useFeeConfig();
+  switch (feeConfig.type) {
+    case StateType.Error: {
+      return (
+        <FetchError
+          headline="Failed to load fee information"
+          error={feeConfig.error}
+          reset={feeConfig.reset}
+          onPressBack={props.onPressBack}
+        />
+      );
+    }
+    case StateType.Loaded: {
+      return <SendTokenWithFeeConfig feeConfig={feeConfig.data} {...props} />;
+    }
+    case StateType.Loading:
+    case StateType.NotLoaded: {
+      return <SendTokenPageImpl {...props} isLoading />;
+    }
+  }
+};
+
+const useFeeConfig = () => {
+  const { getSessionContext, network } = useSessionContext();
+  const getFeeConfig = useCallback(
+    async () => await getTransferFee(await getSessionContext()),
+    [getSessionContext],
+  );
+  return useData(["feeConfig", "transfer", network], getFeeConfig, {});
+};
+
+const SendTokenWithFeeConfig = (
+  props: Props & {
+    sessionState: EstablishedSessionState;
+    feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
+  },
+) => {
+  const feeTokenAccountBalance = useFeeTokenAccountBalance(
+    props.sessionState,
+    props.feeConfig,
+  );
+
+  switch (feeTokenAccountBalance.type) {
+    case StateType.Error: {
+      return (
+        <FetchError
+          headline="Failed to load token account balance"
+          error={feeTokenAccountBalance.error}
+          reset={feeTokenAccountBalance.reset}
+          onPressBack={props.onPressBack}
+        />
+      );
+    }
+    case StateType.Loaded: {
+      return feeTokenAccountBalance.data < props.feeConfig.fee ? (
+        <FetchError
+          headline={`Not enough ${props.feeConfig.symbolOrMint}`}
+          error={`You need at least ${amountToString(props.feeConfig.fee, props.feeConfig.decimals)} ${props.feeConfig.symbolOrMint} to pay network fees to send tokens.`}
+          onPressBack={props.onPressBack}
+        />
+      ) : (
+        <LoadedSendTokenPage {...props} />
+      );
+    }
+    case StateType.Loading:
+    case StateType.NotLoaded: {
+      return <SendTokenPageImpl {...props} isLoading />;
+    }
+  }
+};
+
+const useFeeTokenAccountBalance = (
+  sessionState: EstablishedSessionState,
+  feeConfig: Awaited<ReturnType<typeof getTransferFee>>,
+) => {
+  const accountData = useTokenAccountData(sessionState);
+  switch (accountData.type) {
+    case StateType.Error:
+    case StateType.Loading:
+    case StateType.NotLoaded: {
+      return accountData;
+    }
+    case StateType.Loaded: {
+      return {
+        ...accountData,
+        data:
+          accountData.data.tokensInWallet.find((token) =>
+            token.mint.equals(feeConfig.mint),
+          )?.amountInWallet ?? 0n,
+      };
+    }
+  }
+};
+
+const LoadedSendTokenPage = ({
   decimals,
-  icon,
-  symbol,
-  amountAvailable,
+  sessionState,
+  tokenMint,
   onSendComplete,
-}: Props) => {
+  feeConfig,
+  ...props
+}: Props & {
+  feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
+}) => {
   const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [recipient, setRecipient] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
 
-  const doSubmit = useCallback(
+  const onSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);
@@ -63,7 +170,7 @@ export const SendTokenPage = ({
         throw new Error("Invalid input");
       }
 
-      setIsLoading(true);
+      setIsSubmitting(true);
       getSessionContext()
         .then((context) =>
           sendTransfer({
@@ -74,6 +181,7 @@ export const SendTokenPage = ({
             mint: tokenMint,
             amount: stringToAmount(amount, decimals),
             recipient: new PublicKey(recipient),
+            feeConfig,
           }),
         )
         .then((result) => {
@@ -91,7 +199,7 @@ export const SendTokenPage = ({
           toast.error("Failed to send tokens", errorToString(error));
         })
         .finally(() => {
-          setIsLoading(false);
+          setIsSubmitting(false);
         });
     },
     [
@@ -102,25 +210,102 @@ export const SendTokenPage = ({
       tokenMint,
       onSendComplete,
       toast,
+      feeConfig,
       network,
     ],
   );
 
   return (
+    <SendTokenPageImpl
+      {...props}
+      decimals={decimals}
+      sessionState={sessionState}
+      tokenMint={tokenMint}
+      onSendComplete={onSendComplete}
+      isSubmitting={isSubmitting}
+      onSubmit={onSubmit}
+      recipient={recipient}
+      amount={amount}
+      onChangeRecipient={setRecipient}
+      onPressScanner={() => {
+        setShowScanner(true);
+      }}
+      onChangeAmount={setAmount}
+      feeConfig={feeConfig}
+      scanner={
+        showScanner ? (
+          <div className={styles.qrCodeScanner}>
+            <Button
+              // eslint-disable-next-line jsx-a11y/no-autofocus
+              autoFocus
+              variant="solid"
+              className={styles.closeButton ?? ""}
+              onPress={() => {
+                setShowScanner(false);
+              }}
+            >
+              <span className={styles.label}>Close</span>
+            </Button>
+            <Scanner
+              classNames={{ container: styles.camera ?? "" }}
+              onScan={(results) => {
+                const value = results[0]?.rawValue;
+                if (value) {
+                  setShowScanner(false);
+                  setRecipient(value);
+                }
+              }}
+            />
+          </div>
+        ) : undefined
+      }
+    />
+  );
+};
+
+const SendTokenPageImpl = ({
+  onPressBack,
+  sessionState,
+  tokenName,
+  tokenMint,
+  decimals,
+  icon,
+  symbol,
+  amountAvailable,
+  ...props
+}: Props &
+  (
+    | { isLoading: true }
+    | {
+        isLoading?: false;
+        isSubmitting: boolean;
+        scanner: ReactNode | undefined;
+        onSubmit: FormEventHandler;
+        recipient: string;
+        amount: string;
+        onChangeRecipient: (newRecipient: string) => void;
+        onPressScanner: () => void;
+        onChangeAmount: (newAmount: string) => void;
+        feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
+      }
+  )) => {
+  const scannerShowing = !props.isLoading && props.scanner !== undefined;
+  return (
     <div className={styles.sendTokenPage ?? ""}>
-      <Form
-        aria-hidden={showScanner ? "true" : undefined}
-        className={styles.sendTokenForm ?? ""}
-        onSubmit={doSubmit}
+      <Button
+        excludeFromTabOrder={scannerShowing}
+        onPress={onPressBack}
+        variant="outline"
+        className={styles.backButton ?? ""}
       >
-        <Button
-          excludeFromTabOrder={showScanner}
-          onPress={onPressBack}
-          variant="outline"
-          className={styles.backButton ?? ""}
-        >
-          Back
-        </Button>
+        Back
+      </Button>
+      <Form
+        aria-hidden={scannerShowing ? "true" : undefined}
+        className={styles.sendTokenForm ?? ""}
+        {...(!props.isLoading &&
+          !props.isSubmitting && { onSubmit: props.onSubmit })}
+      >
         <div className={styles.header}>
           {icon ? (
             <img alt="" src={icon} className={styles.tokenIcon} />
@@ -135,24 +320,24 @@ export const SendTokenPage = ({
           </div>
         </div>
         <TextField
-          excludeFromTabOrder={showScanner}
+          excludeFromTabOrder={scannerShowing}
           className={styles.field ?? ""}
           name="recipient"
           label="Recipient"
           isRequired
-          value={recipient}
-          onChange={setRecipient}
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
           placeholder="Enter recipient address"
           double
           labelExtra={
             <Link
-              excludeFromTabOrder={showScanner}
+              excludeFromTabOrder={scannerShowing}
               className={styles.action ?? ""}
-              onPress={() => {
-                setShowScanner(true);
-              }}
+              {...(props.isLoading || props.isSubmitting
+                ? { isPending: true }
+                : {
+                    onPress: props.onPressScanner,
+                  })}
             >
               Scan QR
             </Link>
@@ -170,9 +355,17 @@ export const SendTokenPage = ({
               return;
             }
           }}
+          {...(props.isLoading || props.isSubmitting
+            ? { isPending: true }
+            : {
+                onChange: props.onChangeRecipient,
+              })}
+          {...(!props.isLoading && {
+            value: props.recipient,
+          })}
         />
         <TokenAmountInput
-          excludeFromTabOrder={showScanner}
+          excludeFromTabOrder={scannerShowing}
           className={styles.field ?? ""}
           decimals={decimals}
           label="Amount"
@@ -180,57 +373,83 @@ export const SendTokenPage = ({
           symbol={symbol}
           isRequired
           gt={0n}
-          max={amountAvailable}
-          value={amount}
-          onChange={setAmount}
           placeholder="Enter an amount"
           labelExtra={
             <Link
-              excludeFromTabOrder={showScanner}
+              excludeFromTabOrder={scannerShowing}
               className={styles.action ?? ""}
-              onPress={() => {
-                setAmount(amountToString(amountAvailable, decimals));
-              }}
+              {...(props.isLoading || props.isSubmitting
+                ? { isPending: true }
+                : {
+                    onPress: () => {
+                      props.onChangeAmount(
+                        amountToString(
+                          props.feeConfig.mint.equals(tokenMint)
+                            ? amountAvailable - props.feeConfig.fee
+                            : amountAvailable,
+                          decimals,
+                        ),
+                      );
+                    },
+                  })}
             >
               Max
             </Link>
           }
+          {...(props.isLoading || props.isSubmitting
+            ? { isPending: true }
+            : {
+                max: props.feeConfig.mint.equals(tokenMint)
+                  ? amountAvailable - props.feeConfig.fee
+                  : amountAvailable,
+                onChange: props.onChangeAmount,
+              })}
+          {...(!props.isLoading && {
+            value: props.amount,
+          })}
         />
         <Button
-          excludeFromTabOrder={showScanner}
+          excludeFromTabOrder={scannerShowing}
           type="submit"
           variant="secondary"
           className={styles.submitButton ?? ""}
-          isPending={isLoading}
+          isPending={props.isLoading === true || props.isSubmitting}
         >
           Send
         </Button>
-      </Form>
-      {showScanner && (
-        <div className={styles.qrCodeScanner}>
-          <Button
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-            variant="solid"
-            className={styles.closeButton ?? ""}
-            onPress={() => {
-              setShowScanner(false);
-            }}
-          >
-            <span className={styles.label}>Close</span>
-          </Button>
-          <Scanner
-            classNames={{ container: styles.camera ?? "" }}
-            onScan={(results) => {
-              const value = results[0]?.rawValue;
-              if (value) {
-                setShowScanner(false);
-                setRecipient(value);
-              }
-            }}
-          />
+        <div
+          className={styles.fee}
+          data-is-loading={props.isLoading ? "" : undefined}
+        >
+          {!props.isLoading && (
+            <>
+              Fee:{" "}
+              {amountToString(props.feeConfig.fee, props.feeConfig.decimals)}{" "}
+              {props.feeConfig.symbolOrMint}
+            </>
+          )}
         </div>
-      )}
+      </Form>
+      {!props.isLoading && props.scanner}
     </div>
   );
 };
+
+const FetchError = ({
+  onPressBack,
+  className,
+  ...props
+}: ComponentProps<typeof FetchErrorImpl> & {
+  onPressBack: () => void;
+}) => (
+  <div className={clsx(styles.sendTokenPage, className)}>
+    <Button
+      onPress={onPressBack}
+      variant="outline"
+      className={styles.backButton ?? ""}
+    >
+      Back
+    </Button>
+    <FetchErrorImpl className={styles.fetchError} {...props} />
+  </div>
+);
