@@ -39,7 +39,7 @@ export const GOOGLE_ANALYTICS_ID = defaultInProduction(
   "G-8SYVHSS051",
 );
 
-export const RPC = getEnvOrDefault("RPC", "https://mainnet.fogo.io");
+export const RPC = getEnvOrDefault("RPC", "https://testnet.fogo.io");
 
 // TODO Replace this domain with https://paymaster-admin.fogo.io after setting up a
 // new paymaster for it

@@ -9,6 +9,9 @@ const querySchema = z.object({
 });
 
 export const PATCH = async (req: NextRequest) => {
+  // 1. Verify the user is authenticated (has sesssion token in cookies)
+  // 2. get the public key from the session token
+  // 3. check if the public key is the same as the one in the database
   try {
     const { variationId } = querySchema.parse(Object.fromEntries(req.nextUrl.searchParams));
     const data = TransactionVariationSchema.parse(await req.json());

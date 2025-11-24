@@ -11,7 +11,7 @@ type Props = {
 export const Root = ({ children }: Props) => (
   <html lang="en">
     <body>
-      <FogoSessionProvider network={Network.Mainnet} domain={DOMAIN}>
+      <FogoSessionProvider network={Network.Testnet} domain={DOMAIN}>
         <AuthManager>{children}</AuthManager>
       </FogoSessionProvider>
     </body>

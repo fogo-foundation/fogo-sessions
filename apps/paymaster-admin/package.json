@@ -14,7 +14,8 @@
     "start:prod": "next start --port 3002",
     "test:format": "prettier --check .",
     "test:lint": "eslint . --max-warnings 0",
-    "test:types": "tsc"
+    "test:types": "tsc",
+    "pull:env": "[ $CI ] || VERCEL_ORG_ID=team_M8yTQcRiKOduAwHNMhHQInWq VERCEL_PROJECT_ID=prj_0YVLB5TIHu7VXdMyib1Zmjq4iwtZ vercel env pull"
   },
   "dependencies": {
     "react": "catalog:",
