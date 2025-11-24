@@ -106,10 +106,9 @@ impl LoadTestDispatcher {
             config.external.paymaster_endpoint,
             urlencoding::encode(&config.external.domain)
         );
-        let sponsor_client = http_clients
+        let sponsor_str: String = http_clients
             .first()
-            .expect("HTTP client list must contain at least one client");
-        let sponsor_str: String = sponsor_client
+            .expect("HTTP client list must contain at least one client")
             .get(&sponsor_url)
             .send()
             .await
@@ -206,7 +205,7 @@ impl LoadTestDispatcher {
                 self.metrics.record_success(validity_type, latency);
             }
             Err(e) => {
-                tracing::info!(
+                tracing::debug!(
                     "Request failed: {:?} ({:?}, {:.2}ms)",
                     e,
                     validity_type,
