@@ -59,7 +59,7 @@ export const DepositPage = ({ onPressBack, ...props }: Props) => {
         throw error;
       }
     }
-  }, [getSessionContext, props.sessionState.walletPublicKey]);
+  }, [getSessionContext, props.sessionState.walletPublicKey, network]);
   const balance = useData(
     ["solanaUsdcBalance", network, props.sessionState.walletPublicKey],
     getSolanaBalance,
