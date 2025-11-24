@@ -152,5 +152,12 @@
       margin-bottom: theme.spacing(8);
       scrollbar-width: thin;
     }
+
+    .sessionLimits {
+      max-width: calc(100% + theme.spacing(4));
+      margin: -#{theme.spacing(2)};
+      padding: theme.spacing(2);
+      overflow: hidden;
+    }
   }
 }

@@ -400,17 +400,89 @@ $color-pallette: (
 }
 
 $color: (
-  "background": pallette-color("slate", 950),
-  "foreground": pallette-color("slate", 200),
-  "heading": pallette-color("slate", 300),
-  "paragraph": pallette-color("slate", 400),
-  "muted": pallette-color("slate", 500),
-  "border": pallette-color("slate", 600),
-  "button-border": pallette-color("slate", 400),
-  "border-muted": pallette-color("slate", 800),
-  "brand": #ff3d00,
-  "brand-accent-1": #d91772,
-  "brand-accent-2": #8908c8,
+  "button-signin-bg": #333,
+  "button-base": rgb(from pallette-color("white") r g b / 5%),
+  "button-hover": #404144,
+  "button-pressed": #3a3a3b,
+  "foreground": pallette-color("white"),
+  "heading": rgb(from pallette-color("white") r g b / 90%),
+  "paragraph": rgb(from pallette-color("white") r g b / 80%),
+  "card": #1f1f24,
+  "card-opaque": rgb(from #1f1f24 r g b / 60%),
+  "widget-border": #33333d,
+  "utils-widget-shadow": rgb(from pallette-color("black") r g b / 50%),
+  "modal-overlay": rgb(from pallette-color("black") r g b / 40%),
+  "qr-code-scanner-overlay": rgb(from pallette-color("black") r g b / 60%),
+  "border": #3e3e47,
+  "border-hover": #565662,
+  "background": #27272c,
+  "checkbox-hover": #24252b,
+  "accent": #66ceff,
+  "accent-opaque": rgb(from #66ceff r g b / 10%),
+  "spinner": #b9bad9,
+  "demo-bg": #141418,
+  "input-bg": #151519,
+  "muted": rgb(from pallette-color("white") r g b / 65%),
+  "image-placeholder": rgb(from pallette-color("white") r g b / 30%),
+  "skeleton": rgb(from pallette-color("white") r g b / 10%),
+  "button": (
+    "primary": (
+      "foreground": pallette-color("white"),
+      "background": (
+        "normal": #ff3d00,
+        "hover": #f3582b,
+        "pressed": #cc3100,
+      ),
+    ),
+    "solid": (
+      "foreground": pallette-color("black"),
+      "background": (
+        "normal": pallette-color("white"),
+        "hover": #f3f3f7,
+        "pressed": #ccc,
+      ),
+    ),
+    "secondary": (
+      "foreground": pallette-color("black"),
+      "background": (
+        "normal": #66ceff,
+        "hover": #79ccf7,
+        "pressed": #52a5cc,
+      ),
+    ),
+    "ghost": (
+      "foreground": pallette-color("white"),
+      "background": (
+        "normal": transparent,
+        "hover": rgb(from #b9bad9 r g b / 10%),
+        "pressed": rgb(from #c3c4d5 r g b / 5%),
+      ),
+    ),
+    "outline": (
+      "border": rgb(from #c3c4d5 r g b / 30%),
+      "foreground": pallette-color("white"),
+      "background": (
+        "normal": transparent,
+        "hover": rgb(from #b9bad9 r g b / 10%),
+        "pressed": rgb(from #c3c4d5 r g b / 5%),
+      ),
+    ),
+    "disabled": (
+      "foreground": rgb(from #b9bad9 r g b / 45%),
+      "background": rgb(from #b9bad9 r g b / 25%),
+    ),
+  ),
+
+  "states": (
+    "error": (
+      "foreground": #ff5227,
+      "background": rgb(from #ff5227 r g b / 30%),
+    ),
+    "success": (
+      "foreground": #38e97c,
+      "background": rgb(from #38e97c r g b / 15%),
+    ),
+  ),
 );
 
 @function color($color-path...) {
@@ -429,6 +501,14 @@ $breakpoints: (
   @media (min-width: map-get-strict($breakpoints, $point)) {
     @content;
   }
+}
+
+$shadow: (
+  "base": 0 4px 12px 0 color("utils-widget-shadow"),
+);
+
+@function shadow($size: "base") {
+  @return map-get-strict($shadow, $size);
 }
 
 @mixin sr-only {

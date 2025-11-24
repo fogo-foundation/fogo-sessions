@@ -14,6 +14,7 @@ import { useMemo } from "react";
 
 import styles from "./demo.module.scss";
 import { useAirdrop } from "./use-airdrop";
+import { useAirdropUsdc } from "./use-airdrop-usdc";
 import { useTrade } from "./use-trade";
 import type { Transaction } from "./use-transaction-log";
 import { useTransactionLog } from "./use-transaction-log";
@@ -45,10 +46,16 @@ export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
         {isEstablished(sessionState) && (
           <div className={styles.buttons}>
             {faucetAvailable && (
-              <AirdropButton
-                sessionState={sessionState}
-                appendTransaction={appendTransaction}
-              />
+              <>
+                <AirdropButton
+                  sessionState={sessionState}
+                  appendTransaction={appendTransaction}
+                />
+                <AirdropUsdcButton
+                  sessionState={sessionState}
+                  appendTransaction={appendTransaction}
+                />
+              </>
             )}
             <TradeButton
               sessionState={sessionState}
@@ -99,6 +106,21 @@ const AirdropButton = ({
   return (
     <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
       Airdrop 1 FOGO
+    </Button>
+  );
+};
+
+const AirdropUsdcButton = ({
+  sessionState,
+  appendTransaction,
+}: {
+  sessionState: EstablishedSessionState;
+  appendTransaction: (tx: Transaction) => void;
+}) => {
+  const { state, execute } = useAirdropUsdc(sessionState, appendTransaction);
+  return (
+    <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
+      Airdrop 100 USDC
     </Button>
   );
 };

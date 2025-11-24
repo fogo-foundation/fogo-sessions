@@ -69,7 +69,7 @@ async fn main() -> Result<()> {
     tracing::info!(" - Target Rate: {} req/s", config.request_rps);
     tracing::info!(
         " - Valid Rate: {:.1}%",
-        config.validity_distribution.valid_rate * 100.0
+        (config.validity_distribution.valid_rate()) * 100.0
     );
 
     let metrics = Arc::new(LoadTestMetrics::new());

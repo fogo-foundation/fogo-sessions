@@ -3,6 +3,7 @@ use anyhow::Result;
 use chain_id::ID as CHAIN_ID_PID;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
+use rand::random;
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_hash::Hash;
 use solana_keypair::Keypair;
@@ -49,7 +50,8 @@ impl TransactionGenerator {
         blockhash: Hash,
     ) -> Result<VersionedTransaction> {
         match validity_type {
-            ValidityType::Valid => self.generate_valid(blockhash),
+            ValidityType::ValidSessionCreation => self.generate_valid_session_creation(blockhash),
+            ValidityType::ValidMemo => self.generate_valid_memo(blockhash),
             ValidityType::InvalidSignature => self.generate_invalid_signature(blockhash),
             ValidityType::InvalidConstraint => self.generate_invalid_constraint(blockhash),
             ValidityType::InvalidFeePayer => self.generate_invalid_fee_payer(blockhash),
@@ -57,8 +59,8 @@ impl TransactionGenerator {
         }
     }
 
-    /// Generate a valid transaction
-    fn generate_valid(&self, blockhash: Hash) -> Result<VersionedTransaction> {
+    /// Generate a valid session creation transaction
+    fn generate_valid_session_creation(&self, blockhash: Hash) -> Result<VersionedTransaction> {
         let (instructions, session_keypair) = self.build_session_establishment_instructions()?;
 
         let message =
@@ -73,6 +75,23 @@ impl TransactionGenerator {
         sign_transaction(&mut tx, &[&session_keypair]);
 
         Ok(tx)
+    }
+
+    /// Generate a valid memo transaction
+    fn generate_valid_memo(&self, blockhash: Hash) -> Result<VersionedTransaction> {
+        let instructions = vec![
+            ComputeBudgetInstruction::set_compute_unit_limit(10_000),
+            spl_memo::build_memo(random::<u64>().to_string().as_bytes(), &[]),
+        ];
+
+        let message =
+            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+
+        // we don't need to sign this transaction, the single signature will be added by the paymaster
+        Ok(VersionedTransaction {
+            signatures: vec![Default::default(); 1],
+            message: VersionedMessage::V0(message),
+        })
     }
 
     /// Generate transaction with invalid signature (wrong keypair)

@@ -17,8 +17,11 @@ pub struct RuntimeConfig {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ValidityDistribution {
-    /// Percentage of valid transactions (0.0 to 1.0)
-    pub valid_rate: f64,
+    /// Percentage of valid session creation transactions (0.0 to 1.0)
+    pub valid_session_creation_rate: f64,
+
+    /// Percentage of valid memo transactions (0.0 to 1.0)
+    pub valid_memo_rate: f64,
 
     /// Percentage of transactions with invalid signatures
     pub invalid_signature_rate: f64,
@@ -31,6 +34,12 @@ pub struct ValidityDistribution {
 
     /// Percentage of transactions exceeding gas limits
     pub invalid_gas_rate: f64,
+}
+
+impl ValidityDistribution {
+    pub fn valid_rate(&self) -> f64 {
+        self.valid_session_creation_rate + self.valid_memo_rate
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -52,6 +61,9 @@ pub struct ExternalTarget {
 
     /// Domain to use for requests
     pub domain: String,
+
+    /// Paymaster IP override, useful is the paymaster is behind a load balancer
+    pub paymaster_ip_override: Option<String>,
 }
 
 impl FileConfig {
@@ -75,8 +87,15 @@ impl RuntimeConfig {
         anyhow::ensure!(duration_secs > 0, "Duration must be positive");
         anyhow::ensure!(request_rps > 0, "Request RPS must be positive");
         anyhow::ensure!(
-            validity_distribution.valid_rate >= 0.0 && validity_distribution.valid_rate <= 1.0,
-            "Valid rate must be between 0.0 and 1.0"
+            validity_distribution.valid_session_creation_rate >= 0.0
+                && validity_distribution.valid_session_creation_rate <= 1.0,
+            "Valid session creation rate must be between 0.0 and 1.0"
+        );
+
+        anyhow::ensure!(
+            validity_distribution.valid_memo_rate >= 0.0
+                && validity_distribution.valid_memo_rate <= 1.0,
+            "Valid memo rate must be between 0.0 and 1.0"
         );
 
         let total_invalid = validity_distribution.invalid_signature_rate
@@ -84,7 +103,7 @@ impl RuntimeConfig {
             + validity_distribution.invalid_fee_payer_rate
             + validity_distribution.invalid_gas_rate;
 
-        let total = validity_distribution.valid_rate + total_invalid;
+        let total = validity_distribution.valid_rate() + total_invalid;
         anyhow::ensure!(
             (total - 1.0).abs() < 0.01,
             "Sum of validity rates must equal 1.0 (currently: {total:.2})"
@@ -112,9 +131,14 @@ impl ValidityDistribution {
         let rand_val: f64 = rand::random();
         let mut cumulative = 0.0;
 
-        cumulative += self.valid_rate;
+        cumulative += self.valid_session_creation_rate;
         if rand_val < cumulative {
-            return ValidityType::Valid;
+            return ValidityType::ValidSessionCreation;
+        }
+
+        cumulative += self.valid_memo_rate;
+        if rand_val < cumulative {
+            return ValidityType::ValidMemo;
         }
 
         cumulative += self.invalid_signature_rate;
@@ -138,7 +162,8 @@ impl ValidityDistribution {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ValidityType {
-    Valid,
+    ValidSessionCreation,
+    ValidMemo,
     InvalidSignature,
     InvalidConstraint,
     InvalidFeePayer,
@@ -148,7 +173,8 @@ pub enum ValidityType {
 impl ValidityType {
     pub fn as_str(&self) -> &'static str {
         match self {
-            ValidityType::Valid => "valid",
+            ValidityType::ValidSessionCreation => "valid_session_creation",
+            ValidityType::ValidMemo => "valid_memo",
             ValidityType::InvalidSignature => "invalid_signature",
             ValidityType::InvalidConstraint => "invalid_constraint",
             ValidityType::InvalidFeePayer => "invalid_fee_payer",

@@ -11,7 +11,7 @@
 
   .wordmark {
     height: theme.spacing(14);
-    color: theme.color("brand");
+    color: theme.color("button", "primary", "background", "normal");
   }
 
   .header {

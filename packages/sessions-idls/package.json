@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-idls",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "private": true,
   "description": "The IDLs for the on-chain programs involved in the Fogo Sessions protocol",
   "keywords": [
@@ -27,7 +27,7 @@
     "build:esm": "swc src -d dist/esm --strip-leading-paths --copy-files -C jsc.experimental.keepImportAttributes=true && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
     "build:types": "tsc --project tsconfig.build.json",
-    "build:idl:mkdir": "mkdir -p src/idl && mkdir -p src/types && ls -al",
+    "build:idl:mkdir": "mkdir -p src/idl && mkdir -p src/types",
     "build:idl:chain-id": "anchor idl build --program-name chain-id --out-ts src/types/chain-id.ts --out src/idl/chain-id.json",
     "build:idl:domain-registry": "anchor idl build --program-name domain-registry --out-ts src/types/domain-registry.ts --out src/idl/domain-registry.json",
     "build:idl:example": "anchor idl build --program-name example --out-ts src/types/example.ts --out src/idl/example.json",

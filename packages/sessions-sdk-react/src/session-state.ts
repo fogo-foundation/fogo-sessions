@@ -59,12 +59,16 @@ export const SessionState = {
     requestedLimits?: Map<PublicKey, bigint> | undefined;
     submitLimits: (duration: number, limits?: Map<PublicKey, bigint>) => void;
     cancel: () => void;
+    walletPublicKey: PublicKey;
   }) => ({
     type: StateType.RequestingLimits as const,
     ...args,
   }),
 
-  SettingLimits: (args: { cancel: () => void }) => ({
+  SettingLimits: (args: {
+    cancel: () => void;
+    walletPublicKey: PublicKey;
+  }) => ({
     type: StateType.SettingLimits as const,
     ...args,
   }),
@@ -112,6 +116,15 @@ export type EstablishedSessionState = Extract<
     sessionKey: EstablishedOptions["sessionKey"];
   }
 >;
+
+export type WalletConnectedSessionState =
+  | EstablishedSessionState
+  | Extract<
+      SessionState,
+      {
+        walletPublicKey: PublicKey;
+      }
+    >;
 
 export const isEstablished = (
   sessionState: SessionState,

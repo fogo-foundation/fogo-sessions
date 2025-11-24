@@ -643,9 +643,9 @@ dependencies = [
 
 [[package]]
 name = "async-trait"
-version = "0.1.88"
+version = "0.1.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e539d3fca749fcee5236ab05e93a52867dd549cc157c8cb7f99595f3cedffdb5"
+checksum = "9035ad2d096bed7955a320ee7e2230574d28fd3c3a0f186cbea1ff3c7eed5dbb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1789,7 +1789,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1924,9 +1924,11 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 name = "fogo-paymaster"
 version = "0.4.0"
 dependencies = [
+ "anchor-lang",
  "anyhow",
  "arc-swap",
  "async-recursion",
+ "async-trait",
  "axum",
  "axum-extra",
  "axum-prometheus",
@@ -1942,10 +1944,14 @@ dependencies = [
  "futures",
  "governor",
  "hex",
+ "intent-transfer",
+ "libsecp256k1",
+ "nonempty",
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "reqwest",
+ "reqwest-middleware",
  "serde",
  "serde_json",
  "serde_with",
@@ -1962,6 +1968,7 @@ dependencies = [
  "solana-program",
  "solana-pubkey",
  "solana-pubsub-client",
+ "solana-rpc-client",
  "solana-rpc-client-api",
  "solana-sdk-ids",
  "solana-seed-derivable",
@@ -3338,6 +3345,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "nonempty"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9737e026353e5cd0736f98eddae28665118eb6f6600902a7f50db585621fecb6"
+
+[[package]]
 name = "nonzero_ext"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3759,6 +3772,7 @@ dependencies = [
  "solana-signature",
  "solana-signer",
  "solana-transaction",
+ "spl-memo",
  "spl-token",
  "time",
  "tokio",
@@ -4467,7 +4481,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -7967,7 +7981,7 @@ dependencies = [
  "getrandom 0.3.3",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
