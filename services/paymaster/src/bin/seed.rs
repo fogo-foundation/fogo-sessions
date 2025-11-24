@@ -5,7 +5,6 @@ use fogo_paymaster::config_manager::config::Config;
 use fogo_paymaster::config_manager::config::Domain;
 use fogo_paymaster::constraint::TransactionVariation;
 use fogo_paymaster::db::pool::pool;
-use sqlx::types::Json;
 use url::Url;
 use uuid::NoContext;
 use uuid::Timestamp;
@@ -97,12 +96,36 @@ async fn insert_variation(
     domain_config_id: &Uuid,
     variation: &TransactionVariation,
 ) -> Result<Uuid, sqlx::Error> {
+    let transaction_variation_json = match variation {
+        TransactionVariation::V0(v) => {
+            // Convert Pubkeys to strings (base58 format) before serializing
+            let pubkey_strings: Vec<String> = v
+                .whitelisted_programs
+                .iter()
+                .map(|k| k.to_string())
+                .collect();
+            serde_json::to_string(&pubkey_strings)
+        }
+        TransactionVariation::V1(v) => serde_json::to_string(&v.instructions),
+    };
+
+    let version = match variation {
+        TransactionVariation::V0(_) => "v0",
+        TransactionVariation::V1(_) => "v1",
+    };
+    let max_gas_spend = match variation {
+        TransactionVariation::V0(_) => None,
+        TransactionVariation::V1(v) => Some(v.max_gas_spend as i64),
+    };
     let variation = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO variation (id, domain_config_id, transaction_variation) VALUES ($1, $2, $3) RETURNING id",
+        "INSERT INTO variation (id, domain_config_id, name, version, max_gas_spend, transaction_variation) VALUES ($1, $2, $3, $4::variation_version, $5::bigint, $6::jsonb) RETURNING id",
     )
     .bind(Uuid::new_v7(Timestamp::now(NoContext)))
     .bind(domain_config_id)
-    .bind(Json(&variation))
+    .bind(variation.name())
+    .bind(version)
+    .bind(max_gas_spend)
+    .bind(transaction_variation_json.unwrap())
     .fetch_one(pool())
     .await?;
 
