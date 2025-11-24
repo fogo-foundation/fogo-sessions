@@ -219,6 +219,11 @@ impl LoadTestDispatcher {
         Ok(())
     }
 
+    fn next_http_client(&self) -> &Client {
+        &self.http_clients
+            [self.next_http_client_index.fetch_add(1, Ordering::Relaxed) % self.http_clients.len()]
+    }
+
     async fn send_sponsor_and_send_request(
         &self,
         transaction: &VersionedTransaction,
@@ -238,8 +243,8 @@ impl LoadTestDispatcher {
             urlencoding::encode(&self.config.external.domain)
         );
 
-        let http_client = &self.http_clients[self.next_http_client_index.fetch_add(1, Ordering::Relaxed) % self.http_clients.len()];
-        let response = http_client
+        let response = self
+            .next_http_client()
             .post(&url)
             .json(&request_body)
             .send()
