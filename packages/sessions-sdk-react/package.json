@@ -66,6 +66,7 @@
     "@yudiel/react-qr-scanner": "catalog:",
     "bs58": "catalog:",
     "clsx": "catalog:",
+    "dnum": "^2.15.0",
     "idb": "catalog:",
     "modern-normalize": "catalog:",
     "motion": "catalog:",

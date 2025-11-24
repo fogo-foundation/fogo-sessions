@@ -16,6 +16,7 @@ import {
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
+import * as dnum from 'dnum';
 
 const MotionGridListItem = motion.create(GridListItem<Token>);
 
@@ -76,12 +77,12 @@ export const TokenList = ({
             })}
         >
           {(token) => {
-            const { mint, amountInWallet, decimals, image, name, symbol, price } =
+            const { mint, amountInWallet, decimals, image, name, symbol: _, price } =
               token;
             const amountAsString = amountToString(amountInWallet, decimals);
             const notionalValue =
               price !== undefined
-                ? (Number(amountInWallet) / 10 ** decimals) * price
+                ? (amountInWallet / 10n ** BigInt(decimals)) * price
                 : undefined;
             const contents = (
               <>
@@ -105,10 +106,10 @@ export const TokenList = ({
                 </div>
                 <div className={styles.amountAndActions}>
                   <div className={styles.amountAndDetails}>
-                    <span className={styles.amount}>{amountAsString}{symbol && ` ${symbol}`}</span>
+                    <span className={styles.amount}>{amountAsString}</span>
                     {notionalValue !== undefined && (
                       <span className={styles.notional}>
-                        ${notionalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${dnum.format(dnum.from(notionalValue), { digits: 2, trailingZeros: true })}
                       </span>
                     )}
                   </div>

@@ -1,4 +1,4 @@
-import { z } from "zod";
+// import { z } from "zod";
 
 // TODO: uncomment when endpoint is live
 export const getPrices = async (mints: string[]) => {
@@ -8,10 +8,10 @@ export const getPrices = async (mints: string[]) => {
 //   }
 //   const priceResult = await fetch(priceUrl);
 //   return priceSchema.parse(await priceResult.json());
-    return Object.fromEntries(mints.map((mint) => [mint, 2]));
+    return Object.fromEntries(mints.map((mint) => [mint, 2n]));
 };
 
-const priceSchema = z.record(
-  z.string(),
-  z.number().min(0),
-);
+// const priceSchema = z.record(
+//   z.string(),
+//   z.bigint(),
+// );
