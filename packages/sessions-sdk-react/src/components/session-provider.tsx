@@ -276,6 +276,7 @@ const SessionProvider = ({
 
   const sessionState = useSessionState({
     ...args,
+    enableUnlimited,
     getSessionContext,
     setShowBridgeIn: setShowBridgeIn,
     network,
@@ -315,6 +316,7 @@ const SessionProvider = ({
 const useSessionState = ({
   network,
   tokens,
+  enableUnlimited,
   getSessionContext,
   onOpenExtendSessionExpiry,
   onOpenSessionLimitsReached,
@@ -325,6 +327,7 @@ const useSessionState = ({
   network: Network;
   getSessionContext: () => Promise<SessionExecutionContext>;
   tokens?: PublicKey[] | undefined;
+  enableUnlimited: boolean | undefined;
   onOpenExtendSessionExpiry?: (() => void) | undefined;
   onOpenSessionLimitsReached?: (() => void) | undefined;
   setShowBridgeIn: Dispatch<SetStateAction<boolean>>;
@@ -669,14 +672,17 @@ const useSessionState = ({
               return;
             }
             case ConnectWalletStateType.Connected: {
+              console.log("enableUnlimited:", enableUnlimited);
+              console.log("tokens:", tokens);
               walletName.set(wallet.name);
-              if (tokens === undefined || tokens.length === 0) {
+              if ((tokens === undefined || tokens.length === 0) && !enableUnlimited) {
                 submitLimits({
                   sessionDuration: DEFAULT_SESSION_DURATION,
                   wallet,
                   walletPublicKey: result.walletPublicKey,
                   onError,
                   onCancel,
+                  limits: new Map(),
                 });
               } else {
                 requestLimits(
@@ -703,6 +709,7 @@ const useSessionState = ({
       walletName,
       completeSessionSetup,
       tokens,
+      enableUnlimited,
       submitLimits,
       requestLimits,
       toast,
