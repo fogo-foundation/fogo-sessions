@@ -9,7 +9,7 @@ anchor-lang = {workspace = true}
 anyhow = {workspace = true}
 arc-swap = {workspace = true}
 base64 = {workspace = true}
-bincode = { workspace = true }
+bincode = { workspace = true, features = ["serde"] }
 chain-id = { path = "../../programs/chain-id" }
 clap = {workspace = true}
 dashmap = {workspace = true}

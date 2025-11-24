@@ -175,8 +175,7 @@ impl TransactionGenerator {
             self.build_session_establishment_instructions(sponsor_pubkey)?;
         instructions.extend(session_instructions);
 
-        let message =
-            v0::Message::try_compile(&sponsor_pubkey, &instructions, &[], blockhash)?;
+        let message = v0::Message::try_compile(&sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
