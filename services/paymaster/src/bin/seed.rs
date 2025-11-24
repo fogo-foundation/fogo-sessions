@@ -141,18 +141,16 @@ pub async fn seed_from_config(config: &Config) -> Result<(), anyhow::Error> {
     if user_count.0 == 0 {
         tracing::info!("Seeding database from config");
         for domain in &config.domains {
-            let host: String;
             // exception for "sessions" domain, insert that as url in the db
-            if domain.domain == "sessions" {
-                host = domain.domain.clone();
+            let host = if domain.domain == "sessions" {
+                domain.domain.clone()
             } else {
-                let domain_url = Url::parse(&domain.domain)
-                    .map_err(|e| anyhow::anyhow!("Invalid URL to parse: {}", e))?;
-                host = domain_url
+                Url::parse(&domain.domain)
+                    .map_err(|e| anyhow::anyhow!("Invalid URL to parse: {e}"))?
                     .host_str()
                     .ok_or(anyhow::anyhow!("Invalid URL to get host"))?
-                    .to_string();
-            }
+                    .to_string()
+            };
             let user = insert_user(&host).await?;
             let app = insert_app(&user, &host).await?;
             let domain_config = insert_domain_config(&app, domain).await?;
