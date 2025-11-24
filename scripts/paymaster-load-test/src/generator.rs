@@ -65,10 +65,11 @@ impl TransactionGenerator {
 
     /// Generate a valid session creation transaction
     fn generate_valid_session_creation(&self, blockhash: Hash) -> Result<VersionedTransaction> {
-        let (instructions, session_keypair) = self.build_session_establishment_instructions()?;
+        let sponsor_pubkey = self.random_sponsor_pubkey();
+        let (instructions, session_keypair) = self.build_session_establishment_instructions(sponsor_pubkey)?;
 
         let message =
-            v0::Message::try_compile(&self.random_sponsor_pubkey(), &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -100,10 +101,11 @@ impl TransactionGenerator {
 
     /// Generate transaction with invalid signature (wrong keypair)
     fn generate_invalid_signature(&self, blockhash: Hash) -> Result<VersionedTransaction> {
-        let (instructions, _session_keypair) = self.build_session_establishment_instructions()?;
+        let sponsor_pubkey = self.random_sponsor_pubkey();
+        let (instructions, _session_keypair) = self.build_session_establishment_instructions(sponsor_pubkey)?;
 
         let message =
-            v0::Message::try_compile(&self.random_sponsor_pubkey(), &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -142,7 +144,7 @@ impl TransactionGenerator {
 
     /// Generate transaction with wrong fee payer
     fn generate_invalid_fee_payer(&self, blockhash: Hash) -> Result<VersionedTransaction> {
-        let (instructions, session_keypair) = self.build_session_establishment_instructions()?;
+        let (instructions, session_keypair) = self.build_session_establishment_instructions(self.random_sponsor_pubkey())?;
 
         // use user as fee payer instead of sponsor (this should be rejected by paymaster)
         let message =
@@ -167,8 +169,9 @@ impl TransactionGenerator {
             ComputeBudgetInstruction::set_compute_unit_limit(200_000),
         ];
 
+        let sponsor_pubkey = self.random_sponsor_pubkey();
         let (session_instructions, session_keypair) =
-            self.build_session_establishment_instructions()?;
+            self.build_session_establishment_instructions(sponsor_pubkey)?;
         instructions.extend(session_instructions);
 
         let message =
@@ -186,7 +189,7 @@ impl TransactionGenerator {
 
     /// Builds the instruction set for establishing a session with no limits
     /// Uses a randomly generated keypair as the new session key for the existing user signer
-    fn build_session_establishment_instructions(&self) -> Result<(Vec<Instruction>, Keypair)> {
+    fn build_session_establishment_instructions(&self, sponsor_pubkey: Pubkey) -> Result<(Vec<Instruction>, Keypair)> {
         let session_keypair = Keypair::new();
         let session_pubkey = session_keypair.pubkey();
 
@@ -200,7 +203,7 @@ impl TransactionGenerator {
         let domain_record_pda = get_domain_record_address(&self.domain);
 
         let accounts = gather_start_session_accounts(
-            self.random_sponsor_pubkey(),
+            sponsor_pubkey,
             session_pubkey,
             domain_record_pda,
         );
