@@ -8,7 +8,7 @@ export const getPrices = async (mints: string[]) => {
 //   }
 //   const priceResult = await fetch(priceUrl);
 //   return priceSchema.parse(await priceResult.json());
-    return Object.fromEntries(mints.map((mint) => [mint, 2n]));
+    return Object.fromEntries(mints.map((mint) => [mint, 2]));
 };
 
 // const priceSchema = z.record(

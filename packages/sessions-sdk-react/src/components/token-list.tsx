@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { GridList, GridListItem } from "react-aria-components";
 
 import { amountToString } from "../amount-to-string.js";
+import { calculateNotional } from "../calculate-notional.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
@@ -80,10 +81,7 @@ export const TokenList = ({
             const { mint, amountInWallet, decimals, image, name, symbol: _, price } =
               token;
             const amountAsString = amountToString(amountInWallet, decimals);
-            const notionalValue =
-              price !== undefined
-                ? (amountInWallet / 10n ** BigInt(decimals)) * price
-                : undefined;
+            const notionalValue = calculateNotional(amountInWallet, decimals, price);
             const contents = (
               <>
                 <div className={styles.nameAndIcon}>
@@ -109,7 +107,7 @@ export const TokenList = ({
                     <span className={styles.amount}>{amountAsString}</span>
                     {notionalValue !== undefined && (
                       <span className={styles.notional}>
-                        ${dnum.format(dnum.from(notionalValue), { digits: 2, trailingZeros: true })}
+                        ${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}
                       </span>
                     )}
                   </div>
