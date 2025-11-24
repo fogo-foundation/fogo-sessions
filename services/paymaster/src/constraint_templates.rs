@@ -125,22 +125,6 @@ impl InstructionConstraint {
         }
     }
 
-    pub fn create_ata_idempotent_instruction_constraint(required: bool) -> InstructionConstraint {
-        InstructionConstraint {
-            program: spl_associated_token_account::id(),
-            accounts: vec![],
-            data: vec![
-                // instruction = 1 (CreateAssociatedTokenAccountIdempotent)
-                DataConstraint {
-                    start_byte: 0,
-                    data_type: DataType::U8,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
-                },
-            ],
-            required,
-        }
-    }
-
     /// The template for the constraint for the SendTokens intent transfer instruction.
     pub fn intent_transfer_send_tokens_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
@@ -191,11 +175,6 @@ impl TransactionVariation {
         TransactionVariation::V1(VariationOrderedInstructionConstraints {
             name: "Session Establishment".to_string(),
             instructions: vec![
-                // Allow for idempotent associated token account creation. For now, we allow up to 4 such optional instructions.
-                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
-                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
-                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
-                InstructionConstraint::create_ata_idempotent_instruction_constraint(false),
                 InstructionConstraint::intent_instruction_constraint(),
                 InstructionConstraint::start_session_instruction_constraint(),
             ],
