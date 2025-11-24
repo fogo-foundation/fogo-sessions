@@ -92,30 +92,36 @@ impl LoadTestDispatcher {
         ));
 
         tracing::info!("Fetching initial blockhash from RPC...");
+
+
         let initial_blockhash = rpc_client
             .get_latest_blockhash()
             .await
             .context("Failed to fetch initial blockhash")?;
 
         tracing::info!("Fetching sponsor pubkey from paymaster...");
-        let sponsor_url = format!(
-            "{}/api/sponsor_pubkey?domain={}",
-            config.external.paymaster_endpoint,
-            urlencoding::encode(&config.external.domain)
-        );
-        let sponsor_str: String = http_clients
-            .first()
-            .expect("HTTP client list must contain at least one client")
-            .get(&sponsor_url)
-            .send()
-            .await
-            .context("Failed to fetch sponsor pubkey")?
-            .text()
-            .await
-            .context("Failed to parse sponsor pubkey response")?;
-        let sponsor_pubkey: Pubkey = sponsor_str
-            .parse()
-            .context("Failed to parse sponsor pubkey")?;
+
+        let sponsor_pubkeys = futures::future::try_join_all((0..config.external.number_of_sponsors.get()).map(async |i| -> Result<Pubkey> {
+            let sponsor_url = format!(
+                "{}/api/sponsor_pubkey?domain={}&index={}",
+                config.external.paymaster_endpoint,
+                urlencoding::encode(&config.external.domain),
+                i
+            );
+            let sponsor_pubkey: Pubkey = http_clients
+                .first()
+                .expect("HTTP client list must contain at least one client")
+                .get(&sponsor_url)
+                .send()
+                .await
+                .context("Failed to fetch sponsor pubkey")?
+                .text()
+                .await
+                .context(format!("Failed to parse sponsor pubkey response, make sure {} supports {} sponsors", config.external.domain, config.external.number_of_sponsors))?
+                .parse()
+                .context("Failed to parse sponsor pubkey")?;
+            Ok(sponsor_pubkey)
+        })).await?;
 
         let (chain_id_address, _chain_bump) =
             Pubkey::find_program_address(&[b"chain_id"], &CHAIN_ID_PID);
@@ -127,7 +133,7 @@ impl LoadTestDispatcher {
             .context("Failed to deserialize chain ID account")?;
 
         let generator = Arc::new(TransactionGenerator::new(
-            sponsor_pubkey,
+            sponsor_pubkeys,
             chain_id_data.chain_id,
             config.external.domain.clone(),
         ));

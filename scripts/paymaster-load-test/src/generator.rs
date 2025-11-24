@@ -3,7 +3,7 @@ use anyhow::Result;
 use chain_id::ID as CHAIN_ID_PID;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
-use rand::random;
+use rand::{Rng, random};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_hash::Hash;
 use solana_keypair::Keypair;
@@ -19,7 +19,7 @@ use std::time::Duration;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub struct TransactionGenerator {
-    sponsor_pubkey: Pubkey,
+    sponsor_pubkeys: Vec<Pubkey>,
 
     // wallet keypair of user (used to sign intents)
     user_signer: Keypair,
@@ -31,12 +31,12 @@ pub struct TransactionGenerator {
 
 impl TransactionGenerator {
     pub fn new(
-        sponsor_pubkey: Pubkey,
+        sponsor_pubkeys: Vec<Pubkey>,
         chain_id: impl Into<String>,
         domain: impl Into<String>,
     ) -> Self {
         Self {
-            sponsor_pubkey,
+            sponsor_pubkeys,
             user_signer: Keypair::new(),
             chain_id: chain_id.into(),
             domain: domain.into(),
@@ -59,12 +59,16 @@ impl TransactionGenerator {
         }
     }
 
+    fn random_sponsor_pubkey(&self) -> Pubkey {
+        self.sponsor_pubkeys[rand::rng().random_range(0..self.sponsor_pubkeys.len())]
+    }
+
     /// Generate a valid session creation transaction
     fn generate_valid_session_creation(&self, blockhash: Hash) -> Result<VersionedTransaction> {
         let (instructions, session_keypair) = self.build_session_establishment_instructions()?;
 
         let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.random_sponsor_pubkey(), &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -85,7 +89,7 @@ impl TransactionGenerator {
         ];
 
         let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.random_sponsor_pubkey(), &instructions, &[], blockhash)?;
 
         // we don't need to sign this transaction, the single signature will be added by the paymaster
         Ok(VersionedTransaction {
@@ -99,7 +103,7 @@ impl TransactionGenerator {
         let (instructions, _session_keypair) = self.build_session_establishment_instructions()?;
 
         let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.random_sponsor_pubkey(), &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -126,7 +130,7 @@ impl TransactionGenerator {
         let instructions = vec![invalid_instruction];
 
         let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.random_sponsor_pubkey(), &instructions, &[], blockhash)?;
 
         let tx = VersionedTransaction {
             signatures: vec![Default::default(); 1], // only sponsor (fee payer)
@@ -168,7 +172,7 @@ impl TransactionGenerator {
         instructions.extend(session_instructions);
 
         let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.random_sponsor_pubkey(), &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -196,7 +200,7 @@ impl TransactionGenerator {
         let domain_record_pda = get_domain_record_address(&self.domain);
 
         let accounts =
-            gather_start_session_accounts(self.sponsor_pubkey, session_pubkey, domain_record_pda);
+            gather_start_session_accounts(self.random_sponsor_pubkey(), session_pubkey, domain_record_pda);
         let start_session_ix = Instruction {
             program_id: SESSION_MANAGER_ID,
             accounts,
