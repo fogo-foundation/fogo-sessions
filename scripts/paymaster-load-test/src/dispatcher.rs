@@ -18,7 +18,7 @@ use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use std::net::SocketAddr;
 use std::num::NonZeroU32;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::{task::JoinSet, time::sleep};
@@ -33,7 +33,7 @@ pub struct LoadTestDispatcher {
     config: RuntimeConfig,
     metrics: Arc<LoadTestMetrics>,
     http_clients: Vec<Client>,
-    http_client_counter: AtomicU64,
+    next_http_client_index: AtomicUsize,
     rpc_client: Arc<RpcClient>,
     rate_limiter: Arc<DirectRateLimiter>,
     generator: Arc<TransactionGenerator>,
@@ -145,7 +145,7 @@ impl LoadTestDispatcher {
             config,
             metrics,
             http_clients,
-            http_client_counter: AtomicU64::new(0),
+            next_http_client_index: AtomicUsize::new(0),
             rpc_client,
             rate_limiter,
             generator,
@@ -238,7 +238,7 @@ impl LoadTestDispatcher {
             urlencoding::encode(&self.config.external.domain)
         );
 
-        let http_client = self.next_http_client();
+        let http_client = &self.http_clients[self.next_http_client_index.fetch_add(1, Ordering::Relaxed) % self.http_clients.len()];
         let response = http_client
             .post(&url)
             .json(&request_body)
@@ -289,12 +289,5 @@ impl LoadTestDispatcher {
                 }
             }
         })
-    }
-
-    fn next_http_client(&self) -> &Client {
-        let idx = self.http_client_counter.fetch_add(1, Ordering::Relaxed)
-            % self.http_clients.len() as u64;
-        let idx = idx as usize;
-        &self.http_clients[idx]
     }
 }
