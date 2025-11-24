@@ -6,8 +6,6 @@ use fogo_paymaster::config_manager::config::Domain;
 use fogo_paymaster::constraint::TransactionVariation;
 use fogo_paymaster::db::pool::pool;
 use url::Url;
-use uuid::NoContext;
-use uuid::Timestamp;
 use uuid::Uuid;
 
 #[derive(Debug, Parser)]
