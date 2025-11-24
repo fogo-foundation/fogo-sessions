@@ -916,7 +916,7 @@ const buildTransferIntentInstruction = async (
 const BRIDGE_OUT_MESSAGE_HEADER = `Fogo Bridge Transfer:
 Signing this intent will bridge out the tokens as described below.
 `;
-const BRIDGE_OUT_CUS = 220_000;
+const BRIDGE_OUT_CUS = 240_000;
 
 type SendBridgeOutOptions = {
   context: SessionContext;
