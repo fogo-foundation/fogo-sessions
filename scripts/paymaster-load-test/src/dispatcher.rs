@@ -117,9 +117,9 @@ impl LoadTestDispatcher {
                 .context("Failed to fetch sponsor pubkey")?
                 .text()
                 .await
-                .context(format!("Failed to parse sponsor pubkey response, make sure {} supports {} sponsors", config.external.domain, config.external.number_of_sponsors))?
+                .context("Failed to parse sponsor pubkey response")?
                 .parse()
-                .context("Failed to parse sponsor pubkey")?;
+                .context(format!("Failed to parse sponsor pubkey, make sure the domain \"{}\" supports {} sponsors", config.external.domain, config.external.number_of_sponsors))?;
             Ok(sponsor_pubkey)
         })).await?;
 
