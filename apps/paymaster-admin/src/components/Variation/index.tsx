@@ -30,7 +30,6 @@ export const Variation = async ({
           <li>No constraints for v0</li>
         ) : (
           <>
-            <li>Instruction Constraints:</li>
             {variation.transaction_variation.map((instruction) => (
               <li key={instruction.program}>
                 {JSON.stringify(instruction, undefined, 2)}
