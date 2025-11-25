@@ -248,8 +248,8 @@ pub struct StartSession<'info> {
 pub struct RevokeSession<'info> {
     #[account(mut, signer)]
     pub session: Account<'info, Session>,
-    #[account(constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
     /// CHECK: we check it against the session's sponsor
+    #[account(mut, constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
     pub sponsor: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
@@ -260,6 +260,7 @@ pub struct CloseSession<'info> {
     pub session: Account<'info, Session>,
     #[account(constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
     /// CHECK: we check it against the session's sponsor
+    #[account(mut)]
     pub sponsor: AccountInfo<'info>,
     /// CHECK: this is just a signer for token program CPIs
     #[account(seeds = [SESSION_SETTER_SEED], bump)]
