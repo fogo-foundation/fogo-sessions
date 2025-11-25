@@ -55,6 +55,10 @@
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },
+    "//#run:update-metadata": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
     "//#test": {
       "dependsOn": [
         "//#test:types",

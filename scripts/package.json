@@ -1,5 +1,0 @@
-{
-	"dependencies": {
-		"@metaplex-foundation/umi-web3js-adapters": "^1.4.1"
-	}
-}

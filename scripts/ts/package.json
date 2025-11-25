@@ -27,6 +27,7 @@
     "@metaplex-foundation/mpl-token-metadata": "catalog:",
     "@metaplex-foundation/umi": "catalog:",
     "@metaplex-foundation/umi-bundle-defaults": "catalog:",
+    "@metaplex-foundation/umi-web3js-adapters": "catalog:",
     "@solana/wallet-adapter-ledger": "catalog:",
     "@solana/web3.js": "catalog:",
     "bn.js": "catalog:",
