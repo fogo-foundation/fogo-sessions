@@ -18,12 +18,18 @@ export const TokenAmountInput = ({
   Parameters<typeof useTokenAmountInput>[0]) => {
   const handleChange = useCallback((value: string) => {
     // Filter to only allow numbers and at most one decimal point
-    const filtered = value
+    let filtered = value
       .replace(/[^\d.]/g, '')
       .replace(/^(\d*\.?\d*).*/, '$1');
-      
+
+    // Cut off mantissa after decimals places
+    const decimalIndex = filtered.indexOf('.');
+    if (decimalIndex !== -1 && filtered.slice(decimalIndex + 1).length > decimals) {
+      filtered = filtered.slice(0, decimalIndex + decimals + 1);
+    }
+
     onChange?.(filtered);
-  }, [onChange]);
+  }, [onChange, decimals]);
 
   return (
     <TextField
