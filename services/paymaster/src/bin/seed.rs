@@ -108,7 +108,7 @@ async fn insert_variation(
         }
         TransactionVariation::V1(v) => serde_json::to_string(&v.instructions),
     }
-    .map_err(|e| anyhow::anyhow!("Error serializing transaction variation: {}", e))?;
+    .map_err(|e| anyhow::anyhow!("Error serializing transaction variation: {e}"))?;
 
     let version = match variation {
         TransactionVariation::V0(_) => "v0",
