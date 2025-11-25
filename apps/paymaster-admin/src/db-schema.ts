@@ -73,30 +73,34 @@ export const InstructionConstraintSchema = z.object({
   required: z.boolean(),
 });
 
-export const VariationProgramWhitelistSchema = z.object({
+// Database variation schemas (version, name, max_gas_spend are separate columns)
+// The transaction_variation JSONB field contains different data based on version:
+// - v0: array of program pubkeys (whitelisted_programs)
+// - v1: array of instruction constraints
+export const VariationV0Schema = z.object({
+  id: UUID,
   version: z.literal("v0"),
   name: z.string(),
-  whitelisted_programs: z.array(Base58Pubkey),
-});
-
-export const VariationOrderedInstructionConstraintsSchema = z.object({
-  version: z.literal("v1"),
-  name: z.string(),
-  instructions: z.array(InstructionConstraintSchema).default([]),
+  transaction_variation: z.array(Base58Pubkey),
   max_gas_spend: u64,
-});
-
-export const TransactionVariationSchema = z.discriminatedUnion("version", [
-  VariationProgramWhitelistSchema,
-  VariationOrderedInstructionConstraintsSchema,
-]);
-
-export const VariationSchema = z.object({
-  id: UUID,
-  transaction_variation: TransactionVariationSchema,
   created_at: TimeStr,
   updated_at: TimeStr,
 });
+
+export const VariationV1Schema = z.object({
+  id: UUID,
+  version: z.literal("v1"),
+  name: z.string(),
+  transaction_variation: z.array(InstructionConstraintSchema),
+  max_gas_spend: u64,
+  created_at: TimeStr,
+  updated_at: TimeStr,
+});
+
+export const VariationSchema = z.discriminatedUnion("version", [
+  VariationV0Schema,
+  VariationV1Schema,
+]);
 
 export const DomainConfigWithVariationsSchema = z.object({
   id: UUID,

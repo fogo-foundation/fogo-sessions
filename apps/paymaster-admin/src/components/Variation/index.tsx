@@ -22,17 +22,21 @@ export const Variation = async ({
   }
   return (
     <div>
-      <h1>Variation: {variation.transaction_variation.name}</h1>
+      <h1>Variation: {variation.name}</h1>
+      <h2>Max Gas Spend: {variation.max_gas_spend}</h2>
       <h2>Constraints:</h2>
       <ul>
-        {variation.transaction_variation.version === "v0" ? (
+        {variation.version === "v0" ? (
           <li>No constraints for v0</li>
         ) : (
-          variation.transaction_variation.instructions.map((instruction) => (
-            <li key={instruction.program}>
-              {JSON.stringify(instruction, undefined, 2)}
-            </li>
-          ))
+          <>
+            <li>Instruction Constraints:</li>
+            {variation.transaction_variation.map((instruction) => (
+              <li key={instruction.program}>
+                {JSON.stringify(instruction, undefined, 2)}
+              </li>
+            ))}
+          </>
         )}
       </ul>
     </div>

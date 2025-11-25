@@ -22,13 +22,12 @@ export const Domain = async ({
   }
   return (
     <div>
-      <h1>Domain: {domainConfig.domain}</h1>
       <h2>Variations:</h2>
       <ul>
         {domainConfig.variations.map((variation) => (
           <li key={variation.id}>
             <Link href={`/dashboard/${appId}/${domainId}/${variation.id}`}>
-              {variation.transaction_variation.name}
+              {variation.name}
             </Link>
           </li>
         ))}

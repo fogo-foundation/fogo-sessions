@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { redirect } from "next/navigation";
-import { TransactionVariationSchema, UserSchema, VariationSchema } from "../db-schema";
+import { UserSchema, VariationSchema } from "../db-schema";
 import { connection } from "../fogo-connection";
 import pool from "./pg";
 
@@ -17,7 +17,7 @@ export const getUserPaymasterData = async () => {
   return fetchUserPaymasterData( acc.user.toString());
 };
 
-export const updateVariation = async (variationId: string, data: z.infer<typeof TransactionVariationSchema>) => {
+export const updateVariation = async (variationId: string, data: z.infer<typeof VariationSchema>) => {
   const res = await pool.query(
     `UPDATE variation SET transaction_variation = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
     [data, variationId],
@@ -54,7 +54,10 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
                     FROM (
                       SELECT
                         v.id,
+                        v.name,
+                        v.version,
                         v.transaction_variation,
+                        v.max_gas_spend,
                         v.created_at,
                         v.updated_at
                       FROM variation v
@@ -66,7 +69,8 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
               ) AS dc_row
             ) AS domain_configs
           FROM app a
-          WHERE a.user_id = u.id
+          INNER JOIN app_user au ON au.app_id = a.id
+          WHERE au.user_id = u.id
         ) AS app_row
       ) AS apps,
       u.id,
@@ -75,11 +79,27 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
       u.created_at,
       u.updated_at
     FROM "user" u
-    WHERE u.wallet_address = $1
     `,
-    [walletAddress],
+    // TODO: add back this wallet_address filter to restrict to only the logged in user
+    // WHERE u.wallet_address = $1
+    // [walletAddress],
   );
-console.log("rows", rows[0], JSON.stringify(rows[0], null, 2));
-  // const userPaymasterData = UserSchema.parse(rows[0]);
-  return rows[0];
+
+  // If user doesn't exist in database, return default structure
+  if (!rows[0]) {
+    console.log("User not found in database:", walletAddress);
+    return {
+      id: null,
+      username: null,
+      wallet_address: walletAddress,
+      created_at: null,
+      updated_at: null,
+      apps: [],
+    };
+  }
+  
+  // TODO: fix the schema: no version, name, max_gas_spend in variation
+  console.log("rows", rows[0], JSON.stringify(rows[0], null, 2));
+  const userPaymasterData = UserSchema.parse(rows[0]);
+  return userPaymasterData;
 };
