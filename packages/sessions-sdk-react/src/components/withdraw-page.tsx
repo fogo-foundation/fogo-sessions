@@ -9,6 +9,7 @@ import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
+import { calculateNotional } from "../calculate-notional.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
@@ -18,6 +19,7 @@ import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
 import styles from "./withdraw-page.module.css";
+import * as dnum from "dnum";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
@@ -115,6 +117,9 @@ const WithdrawFormWithFeeConfig = (
             network,
             tokenAccountState.data.tokensInWallet,
           )}
+          price={tokenAccountState.data.tokensInWallet.find((token) =>
+            token.mint.equals(USDC.chains[network].fogo.mint),
+          )?.price}
           {...props}
         />
       );
@@ -131,8 +136,10 @@ const LoadedWithdrawForm = ({
   sessionState,
   feeConfig,
   amountAvailable,
+  price,
 }: Omit<Props, "onPressBack"> & {
   amountAvailable: bigint;
+  price: number | undefined;
   feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
 }) => {
   const { getSessionContext, network } = useSessionContext();
@@ -204,6 +211,7 @@ const LoadedWithdrawForm = ({
     <WithdrawFormImpl
       isSubmitting={isSubmitting}
       amountAvailable={amountAvailable}
+      price={price}
       feeConfig={feeConfig}
       onSubmit={onSubmit}
       amount={amount}
@@ -219,6 +227,7 @@ const WithdrawFormImpl = (
         isLoading?: false | undefined;
         isSubmitting: boolean;
         amountAvailable: bigint;
+        price: number | undefined;
         feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
         onSubmit: FormEventHandler;
         amount: string;
@@ -227,6 +236,27 @@ const WithdrawFormImpl = (
 ) => {
   const { network } = useSessionContext();
   const tokenMint = USDC.chains[network].fogo.mint;
+  const amountAvailable = props.isLoading ? 0n : props.amountAvailable;
+  const maxSendAmount = !props.isLoading && !props.isSubmitting
+    ? props.feeConfig.mint.equals(tokenMint)
+      ? amountAvailable - props.feeConfig.fee
+      : amountAvailable
+    : amountAvailable;
+  const price = props.isLoading? undefined : props.price;
+
+  const currentAmount = (() => {
+    if (props.isLoading || !props.amount) {
+      return 0n;
+    }
+    try {
+      return stringToAmount(props.amount, USDC.decimals);
+    } catch {
+      return 0n;
+    }
+  })();
+  const notionalValue = price !== undefined
+    ? calculateNotional(currentAmount, USDC.decimals, price)
+    : undefined;
   return (
     <Form
       className={styles.withdrawForm ?? ""}
@@ -285,6 +315,13 @@ const WithdrawFormImpl = (
           value: props.amount,
         })}
       />
+      {!props.isLoading && notionalValue !== undefined && (
+        <div className={styles.notionalAvailable}>
+          {currentAmount > maxSendAmount
+            ? "Insufficient balance"
+            : `$${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}`}
+        </div>
+      )}
       <Button
         type="submit"
         variant="secondary"
