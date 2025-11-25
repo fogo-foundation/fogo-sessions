@@ -23,7 +23,6 @@ import * as dnum from "dnum";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
-import { usePrices } from "../hooks/use-prices.js";
 import { USDC } from "../wormhole-routes.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { StateType, useData } from "../hooks/use-data.js";
@@ -48,14 +47,6 @@ export const WithdrawPage = ({ onPressBack, ...props }: Props) => (
 );
 
 const WithdrawForm = (props: Omit<Props, "onPressBack">) => {
-  const { network } = useSessionContext();
-  const usdcMint = USDC.chains[network].fogo.mint.toBase58();
-
-  const pricesState = usePrices([usdcMint]);
-  const livePrice = pricesState.type === StateType.Loaded
-    ? pricesState.data[usdcMint]
-    : undefined;
-
   const feeConfig = useFeeConfig();
   switch (feeConfig.type) {
     case StateType.Error: {
@@ -70,12 +61,12 @@ const WithdrawForm = (props: Omit<Props, "onPressBack">) => {
     }
     case StateType.Loaded: {
       return (
-        <WithdrawFormWithFeeConfig feeConfig={feeConfig.data} price={livePrice} {...props} />
+        <WithdrawFormWithFeeConfig feeConfig={feeConfig.data} {...props} />
       );
     }
     case StateType.Loading:
     case StateType.NotLoaded: {
-      return <WithdrawFormImpl {...props} price={livePrice} isLoading />;
+      return <WithdrawFormImpl {...props} isLoading />;
     }
   }
 };
@@ -92,7 +83,6 @@ const useFeeConfig = () => {
 const WithdrawFormWithFeeConfig = (
   props: Omit<Props, "onPressBack"> & {
     feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
-    price: number | undefined;
   },
 ) => {
   const { network } = useSessionContext();
@@ -127,13 +117,16 @@ const WithdrawFormWithFeeConfig = (
             network,
             tokenAccountState.data.tokensInWallet,
           )}
+          price={tokenAccountState.data.tokensInWallet.find((token) =>
+            token.mint.equals(USDC.chains[network].fogo.mint),
+          )?.price}
           {...props}
         />
       );
     }
     case StateType.Loading:
     case StateType.NotLoaded: {
-      return <WithdrawFormImpl {...props} price={props.price} isLoading />;
+      return <WithdrawFormImpl {...props} isLoading />;
     }
   }
 };
@@ -229,7 +222,7 @@ const LoadedWithdrawForm = ({
 
 const WithdrawFormImpl = (
   props:
-    | { isLoading: true; price: number | undefined }
+    | { isLoading: true }
     | {
         isLoading?: false | undefined;
         isSubmitting: boolean;
@@ -249,7 +242,7 @@ const WithdrawFormImpl = (
       ? amountAvailable - props.feeConfig.fee
       : amountAvailable
     : amountAvailable;
-  const price = props.isLoading? undefined : props.price;
+  const price = props.isLoading ? undefined : props.price;
 
   const currentAmount = (() => {
     if (props.isLoading || !props.amount) {
