@@ -248,9 +248,8 @@ pub struct StartSession<'info> {
 pub struct RevokeSession<'info> {
     #[account(mut, signer)]
     pub session: Account<'info, Session>,
-    #[account(constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
     /// CHECK: we check it against the session's sponsor
-    #[account(mut)]
+    #[account(mut, constraint = session.sponsor == sponsor.key() @ SessionManagerError::SponsorMismatch)]
     pub sponsor: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
