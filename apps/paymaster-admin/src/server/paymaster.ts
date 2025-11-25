@@ -98,8 +98,6 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
     };
   }
   
-  // TODO: fix the schema: no version, name, max_gas_spend in variation
-  console.log("rows", rows[0], JSON.stringify(rows[0], null, 2));
   const userPaymasterData = UserSchema.parse(rows[0]);
   return userPaymasterData;
 };

@@ -22,6 +22,28 @@ export const Domain = async ({
   }
   return (
     <div>
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={domainConfig.enable_session_management}
+            readOnly
+          />
+          Enable Session Management
+        </label>
+      </div>
+
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={domainConfig.enable_preflight_simulation}
+            readOnly
+          />
+          Enable Preflight Simulation
+        </label>
+      </div>
+
       <h2>Variations:</h2>
       <ul>
         {domainConfig.variations.map((variation) => (
