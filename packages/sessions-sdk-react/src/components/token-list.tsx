@@ -172,7 +172,6 @@ const LoadingToken = () => (
     <div className={styles.amountAndActions}>
       <div className={styles.amountAndDetails}>
         <span className={styles.amount} />
-        <span className={styles.symbol} />
         <span className={styles.notional} />
       </div>
     </div>
