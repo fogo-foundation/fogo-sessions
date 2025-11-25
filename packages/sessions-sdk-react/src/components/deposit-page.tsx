@@ -1,6 +1,6 @@
 import { bridgeIn, Network } from "@fogo/sessions-sdk";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-import type { TokenAmount } from "@solana/web3.js";
+import type { Connection, PublicKey, TokenAmount } from "@solana/web3.js";
 import { SolanaJSONRPCError } from "@solana/web3.js";
 import { TransferState } from "@wormhole-foundation/sdk";
 import type { FormEvent } from "react";
@@ -21,6 +21,7 @@ import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { USDC } from "../wormhole-routes.js";
 import { ExplorerLink, SolanaNetwork } from "./explorer-link.js";
+import { FetchError } from "./fetch-error.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -28,64 +29,119 @@ type Props = {
   onSendComplete: () => void;
 };
 
-type SolanaBalance = Pick<TokenAmount, "amount" | "uiAmountString">;
+type SolanaBalances = {
+  usdc: Pick<TokenAmount, "amount" | "uiAmountString">;
+  sol: number;
+};
 
 const NO_ACCOUNT_MESSAGE =
   "failed to get token account balance: Invalid param: could not find account";
 
-export const DepositPage = ({ onPressBack, ...props }: Props) => {
+export const DepositPage = ({ onPressBack, ...props }: Props) => (
+  <div className={styles.depositPage ?? ""}>
+    <Button
+      onPress={onPressBack}
+      variant="outline"
+      className={styles.backButton ?? ""}
+    >
+      Back
+    </Button>
+    <DepositPageContents {...props} />
+  </div>
+);
+
+const DepositPageContents = (props: Omit<Props, "onPressBack">) => {
   const { getSessionContext, network } = useSessionContext();
-  const getSolanaBalance = useCallback(async (): Promise<SolanaBalance> => {
+  const getSolanaBalance = useCallback(async (): Promise<SolanaBalances> => {
     const { getSolanaConnection } = await getSessionContext();
     const connection = await getSolanaConnection();
-    try {
-      const result = await connection.getTokenAccountBalance(
-        getAssociatedTokenAddressSync(
-          USDC.chains[network].solana.mint,
-          props.sessionState.walletPublicKey,
-        ),
-      );
-      return result.value;
-    } catch (error: unknown) {
-      if (
-        error instanceof SolanaJSONRPCError &&
-        error.message === NO_ACCOUNT_MESSAGE
-      ) {
-        return {
-          amount: "0",
-          uiAmountString: "0",
-        };
-      } else {
-        throw error;
-      }
-    }
+    const [usdc, sol] = await Promise.all([
+      getSolanaUsdcBalance(
+        connection,
+        network,
+        props.sessionState.walletPublicKey,
+      ),
+      connection.getBalance(props.sessionState.walletPublicKey),
+    ]);
+    return { usdc, sol };
   }, [getSessionContext, props.sessionState.walletPublicKey, network]);
-  const balance = useData(
-    ["solanaUsdcBalance", network, props.sessionState.walletPublicKey],
+  const solanaBalances = useData(
+    ["solanaBalances", network, props.sessionState.walletPublicKey],
     getSolanaBalance,
     {},
   );
 
-  return (
-    <div className={styles.depositPage ?? ""}>
-      <Button
-        onPress={onPressBack}
-        variant="outline"
-        className={styles.backButton ?? ""}
-      >
-        Back
-      </Button>
-      <DepositForm
-        {...props}
-        {...(balance.type === StateType.Loaded
-          ? {
-              amountAvailable: balance.data,
-              mutateAmountAvailable: balance.mutate,
-            }
-          : { isLoading: true })}
-      />
-    </div>
-  );
+  switch (solanaBalances.type) {
+    case StateType.Error: {
+      return (
+        <FetchError
+          className={styles.fetchError}
+          headline="Failed to load Solana account balances"
+          error={solanaBalances.error}
+          reset={solanaBalances.reset}
+        />
+      );
+    }
+    case StateType.Loaded: {
+      if (solanaBalances.data.sol === 0) {
+        return (
+          <FetchError
+            className={styles.fetchError}
+            headline="No SOL in your Solana wallet"
+            error="You must have SOL in your Solana wallet to pay gas on Solana to transfer to Fogo."
+          />
+        );
+      } else if (solanaBalances.data.usdc.amount === "0") {
+        return (
+          <FetchError
+            className={styles.fetchError}
+            headline="No USDC in your Solana wallet"
+            error="You have no USDC on Solana to transfer to Fogo."
+          />
+        );
+      } else {
+        return (
+          <DepositForm
+            {...props}
+            balances={solanaBalances.data}
+            mutateAmountAvailable={solanaBalances.mutate}
+          />
+        );
+      }
+    }
+    case StateType.Loading:
+    case StateType.NotLoaded: {
+      return <DepositForm {...props} isLoading />;
+    }
+  }
+};
+
+const getSolanaUsdcBalance = async (
+  connection: Connection,
+  network: Network,
+  walletPublicKey: PublicKey,
+) => {
+  try {
+    const result = await connection.getTokenAccountBalance(
+      getAssociatedTokenAddressSync(
+        USDC.chains[network].solana.mint,
+        walletPublicKey,
+      ),
+    );
+    return result.value;
+  } catch (error: unknown) {
+    if (
+      error instanceof SolanaJSONRPCError &&
+      error.message === NO_ACCOUNT_MESSAGE
+    ) {
+      return {
+        amount: "0",
+        uiAmountString: "0",
+      };
+    } else {
+      throw error;
+    }
+  }
 };
 
 const DepositForm = ({
@@ -97,12 +153,12 @@ const DepositForm = ({
   (
     | {
         isLoading?: false;
-        amountAvailable: SolanaBalance;
-        mutateAmountAvailable: KeyedMutator<SolanaBalance>;
+        balances: SolanaBalances;
+        mutateAmountAvailable: KeyedMutator<SolanaBalances>;
       }
     | {
         isLoading: true;
-        amountAvailable?: undefined;
+        balances?: undefined;
         mutateAmountAvailable?: undefined;
       }
   )) => {
@@ -196,7 +252,7 @@ const DepositForm = ({
           data-is-loading={props.isLoading ? "" : undefined}
         >
           {!props.isLoading &&
-            `${props.amountAvailable.uiAmountString ?? "0"} USDC available`}
+            `${props.balances.usdc.uiAmountString ?? "0"} USDC available`}
         </div>
       </div>
       <TokenAmountInput
@@ -217,7 +273,7 @@ const DepositForm = ({
               ? { isPending: true }
               : {
                   onPress: () => {
-                    setAmount(props.amountAvailable.uiAmountString ?? "0");
+                    setAmount(props.balances.usdc.uiAmountString ?? "0");
                   },
                 })}
           >
@@ -227,7 +283,7 @@ const DepositForm = ({
         {...(props.isLoading
           ? { isPending: true }
           : {
-              max: BigInt(props.amountAvailable.amount),
+              max: BigInt(props.balances.usdc.amount),
               isPending: isSubmitting,
             })}
       />
