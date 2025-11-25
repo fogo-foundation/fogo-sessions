@@ -5,10 +5,10 @@ import { useCallback } from "react";
 import { z } from "zod";
 
 import { getMetadata } from "../get-metadata.js";
-import { getPrices } from "../get-prices.js";
+import { usePrices } from "./use-prices.js";
 import type { WalletConnectedSessionState } from "../session-state.js";
 import { isEstablished } from "../session-state.js";
-import { useData } from "./use-data.js";
+import { StateType, useData } from "./use-data.js";
 import { useConnection, useSessionContext } from "./use-session.js";
 
 export { StateType } from "./use-data.js";
@@ -23,11 +23,32 @@ export const useTokenAccountData = (
     [connection, sessionState, network],
   );
 
-  return useData(
+  const tokenAccountsState = useData(
     getCacheKey(network, sessionState.walletPublicKey),
     getTokenAccountData,
     {},
   );
+
+  const mints = tokenAccountsState.type === StateType.Loaded ? tokenAccountsState.data.tokensInWallet.map(t => t.mint.toBase58()) : [];
+
+  const pricesState = usePrices(mints);
+
+  if (tokenAccountsState.type === StateType.Loaded) {
+    const pricesData = pricesState.type === StateType.Loaded ? pricesState.data : {};
+    const tokensWithPrices = tokenAccountsState.data.tokensInWallet.map(token => ({
+      ...token,
+      price: pricesData[token.mint.toBase58()] ?? token.price,
+    }));
+    return {
+      ...tokenAccountsState,
+      data: {
+        ...tokenAccountsState.data,
+        tokensInWallet: tokensWithPrices,
+      },
+    };
+  }
+
+  return tokenAccountsState;
 };
 
 export const getCacheKey = (network: Network, walletPublicKey: PublicKey) => [
@@ -68,10 +89,6 @@ const getTokenAccounts = async (
     network,
   );
 
-  const prices = await getPrices(
-    accounts.map((account) => account.mint),
-  );
-
   return {
     tokensInWallet: accounts
       .filter(({ amountInWallet }) => amountInWallet !== 0n)
@@ -79,8 +96,8 @@ const getTokenAccounts = async (
         mint: new PublicKey(mint),
         amountInWallet,
         decimals,
+        price: undefined as number | undefined,
         ...metadata[mint],
-        price: prices[mint],
       })),
     sessionLimits: isEstablished(sessionState)
       ? accounts

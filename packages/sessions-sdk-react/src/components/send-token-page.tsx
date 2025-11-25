@@ -31,6 +31,7 @@ import { TruncateKey } from "./truncate-key.js";
 import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
+import { usePrices } from "../hooks/use-prices.js";
 import * as dnum from "dnum";
 
 type Props = {
@@ -47,6 +48,11 @@ type Props = {
 };
 
 export const SendTokenPage = (props: Props) => {
+  const pricesState = usePrices([props.tokenMint.toBase58()]);
+  const livePrice = pricesState.type === StateType.Loaded
+    ? pricesState.data[props.tokenMint.toBase58()]
+    : props.price;
+
   const feeConfig = useFeeConfig();
   switch (feeConfig.type) {
     case StateType.Error: {
@@ -60,11 +66,11 @@ export const SendTokenPage = (props: Props) => {
       );
     }
     case StateType.Loaded: {
-      return <SendTokenWithFeeConfig feeConfig={feeConfig.data} {...props} />;
+      return <SendTokenWithFeeConfig feeConfig={feeConfig.data} {...props} price={livePrice} />;
     }
     case StateType.Loading:
     case StateType.NotLoaded: {
-      return <SendTokenPageImpl {...props} isLoading />;
+      return <SendTokenPageImpl {...props} price={livePrice} isLoading />;
     }
   }
 };
