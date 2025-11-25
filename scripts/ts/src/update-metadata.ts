@@ -26,15 +26,15 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
       ...anchorOptions,
       name: {
         type: "string",
-        description: "Token name",
+        description: "Token name to update to, omit to leave as-is",
       },
       symbol: {
         type: "string",
-        description: "Token symbol",
+        description: "Token symbol to update to, omit to leave as-is",
       },
       tokenUri: {
         type: "string",
-        description: "Token metadata uri",
+        description: "Token metadata uri to update to, omit to leave as-is",
       },
     })
     .positional("mint", {
@@ -49,7 +49,9 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
 
   const umi = createUmi(provider.connection.rpcEndpoint);
   if (provider.wallet.payer === undefined) {
-    throw new Error("Wallet has no payer");
+    throw new Error(
+      "Wallet has no payer.  Note this script does not currently work with ledgers.",
+    );
   }
   umi.use(keypairIdentity(fromWeb3JsKeypair(provider.wallet.payer), true));
   const mint = umiPublicKey(args.mint);
