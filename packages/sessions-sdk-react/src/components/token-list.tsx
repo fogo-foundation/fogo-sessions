@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { GridList, GridListItem } from "react-aria-components";
 
 import { amountToString } from "../amount-to-string.js";
+import { calculateNotional } from "../calculate-notional.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
@@ -16,6 +17,7 @@ import {
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
+import * as dnum from 'dnum';
 
 const MotionGridListItem = motion.create(GridListItem<Token>);
 
@@ -73,9 +75,10 @@ export const TokenList = ({
             })}
         >
           {(token) => {
-            const { mint, amountInWallet, decimals, image, name, symbol } =
+            const { mint, amountInWallet, decimals, image, name, symbol: _, price } =
               token;
             const amountAsString = amountToString(amountInWallet, decimals);
+            const notionalValue = calculateNotional(amountInWallet, decimals, price);
             const contents = (
               <>
                 <div className={styles.nameAndIcon}>
@@ -97,9 +100,13 @@ export const TokenList = ({
                   </div>
                 </div>
                 <div className={styles.amountAndActions}>
-                  <div className={styles.amountAndSymbol}>
+                  <div className={styles.amountAndDetails}>
                     <span className={styles.amount}>{amountAsString}</span>
-                    {symbol && <span className={styles.symbol}>{symbol}</span>}
+                    {notionalValue !== undefined && (
+                      <span className={styles.notional}>
+                        ${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}
+                      </span>
+                    )}
                   </div>
                   {"onPressSend" in props && (
                     <div className={styles.actions}>
@@ -160,9 +167,9 @@ const LoadingToken = () => (
       </div>
     </div>
     <div className={styles.amountAndActions}>
-      <div className={styles.amountAndSymbol}>
+      <div className={styles.amountAndDetails}>
         <span className={styles.amount} />
-        <span className={styles.symbol} />
+        <span className={styles.notional} />
       </div>
     </div>
   </div>
