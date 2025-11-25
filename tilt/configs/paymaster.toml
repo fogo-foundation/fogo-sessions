@@ -65,3 +65,9 @@ required = false
 [[domains.tx_variations.instructions]]
 program = "Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3"
 required = true
+
+[[domains]]
+domain = "sessions"
+enable_session_management = true
+enable_preflight_simulation = false
+tx_variations = []

@@ -367,36 +367,20 @@ const LimitsPage = ({
   sessionState:
     | SessionStates["RequestingLimits"]
     | SessionStates["SettingLimits"];
-}) => {
-  const { whitelistedTokens, enableUnlimited, defaultRequestedLimits } =
-    useSessionContext();
-
-  return (
-    <Page
-      heading="Session Limits"
-      message="Limit how many tokens this app is allowed to interact with"
-    >
-      <SessionLimits
-        enableUnlimited={enableUnlimited}
-        tokens={whitelistedTokens}
-        onSubmit={
-          sessionState.type === StateType.RequestingLimits
-            ? sessionState.submitLimits
-            : undefined
-        }
-        initialLimits={
-          (sessionState.type === StateType.RequestingLimits
-            ? sessionState.requestedLimits
-            : undefined) ??
-          defaultRequestedLimits ??
-          new Map()
-        }
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus
-      />
-    </Page>
-  );
-};
+}) => (
+  <Page
+    heading="Session Limits"
+    message="Limit how many tokens this app is allowed to interact with"
+  >
+    <SessionLimits
+      className={styles.sessionLimits}
+      sessionState={sessionState}
+      buttonText="Log in"
+      // eslint-disable-next-line jsx-a11y/no-autofocus
+      autoFocus
+    />
+  </Page>
+);
 
 const Page = ({
   heading,

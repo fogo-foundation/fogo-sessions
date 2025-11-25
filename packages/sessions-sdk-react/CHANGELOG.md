@@ -1,5 +1,49 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [02d8d5c]
+  - @fogo/sessions-idls@0.0.10
+  - @fogo/sessions-sdk@0.0.24
+  - @fogo/sessions-sdk-web@0.0.18
+
+## 0.1.3
+
+### Patch Changes
+
+- 4543a2a: Simplify empty wallet UX & omit Get Tokens page in mainnet
+- d23c949: Silence Phantom warnings
+- fffd28a: Gracefully handle when Solana USDC ATA does not exist
+- d86d984: Fix bug that allowed creating unlimited sessions when enableUnlimited is false or undefined. Ensure the Session Limits modal pops up before creating unlimited sessions
+- Updated dependencies [5086061]
+- Updated dependencies [d23c949]
+  - @fogo/sessions-sdk@0.0.23
+  - @fogo/sessions-sdk-web@0.0.17
+
+## 0.1.2
+
+### Patch Changes
+
+- c3b04b7: Use central paymaster for transfers & bridging
+- d46b221: Disallow setting limits for tokens that the user doesn't have
+- 0a7b81e: feat: fetch metadata when on mainnet
+- d10d8bd: Fix an issue with Solflare wallet always showing up in the wallets list
+- d9bc9dc: Ensure session context only gets initialized once
+- 33133b9: Fix stretch animation when loading token list
+- f43fc19: Show explicit error if the wallet does not contain enough tokens to pay fees when transferring or bridging out
+- 1e32ae7: Persist disclaimer accepted state
+- 334b3cb: Enable modals to scroll
+- Updated dependencies [c3b04b7]
+- Updated dependencies [d46b221]
+- Updated dependencies [aa33949]
+- Updated dependencies [91bef2a]
+- Updated dependencies [d9bc9dc]
+- Updated dependencies [d063d55]
+  - @fogo/sessions-sdk@0.0.22
+  - @fogo/sessions-sdk-web@0.0.16
+
 ## 0.1.1
 
 ### Patch Changes

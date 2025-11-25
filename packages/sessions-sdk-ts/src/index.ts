@@ -22,16 +22,16 @@ import {
   signatureBytes,
   verifySignature,
 } from "@solana/kit";
-import {
-  createAssociatedTokenAccountIdempotentInstruction,
-  getAssociatedTokenAddressSync,
-  getMint,
-} from "@solana/spl-token";
+import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type {
-  BaseWalletAdapter,
+  BaseSignerWalletAdapter,
   MessageSignerWalletAdapterProps,
 } from "@solana/wallet-adapter-base";
-import type { TransactionError, TransactionInstruction } from "@solana/web3.js";
+import type {
+  TransactionError,
+  TransactionInstruction,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import {
   ComputeBudgetProgram,
   Connection,
@@ -146,11 +146,7 @@ export const establishSession = async (
     return sendSessionEstablishTransaction(
       options,
       sessionKey,
-      [
-        ...buildCreateAssociatedTokenAccountInstructions(options, tokenInfo),
-        intentInstruction,
-        startSessionInstruction,
-      ],
+      [intentInstruction, startSessionInstruction],
       options.sessionEstablishmentLookupTable,
     );
   }
@@ -166,6 +162,7 @@ const sendSessionEstablishTransaction = async (
     sessionKey,
     instructions,
     {
+      variation: "Session Establishment",
       addressLookupTable:
         sessionEstablishmentLookupTable ??
         SESSION_ESTABLISHMENT_LOOKUP_TABLE_ADDRESS[options.context.network],
@@ -223,9 +220,13 @@ export const revokeSession = async (options: {
         session: options.session.sessionPublicKey,
       })
       .instruction();
-    return options.context.sendTransaction(options.session.sessionKey, [
-      instruction,
-    ]);
+    return options.context.sendTransaction(
+      options.session.sessionKey,
+      [instruction],
+      {
+        variation: "Session Revocation",
+      },
+    );
   } else {
     return;
   }
@@ -654,19 +655,6 @@ const amountToString = (amount: bigint, decimals: number): string => {
   ].join("");
 };
 
-const buildCreateAssociatedTokenAccountInstructions = (
-  options: EstablishSessionOptions,
-  tokens: TokenInfo[],
-) =>
-  tokens.map(({ mint }) =>
-    createAssociatedTokenAccountIdempotentInstruction(
-      options.context.payer,
-      getAssociatedTokenAddressSync(mint, options.walletPublicKey),
-      options.walletPublicKey,
-      mint,
-    ),
-  );
-
 export const getDomainRecordAddress = (domain: string) => {
   const hash = sha256(domain);
   return PublicKey.findProgramAddressSync(
@@ -812,7 +800,7 @@ const getFee = async (context: SessionContext) => {
       mint: metaplexPublicKey(usdcMintAddress),
     })[0],
     mint: usdcMint,
-    symbolOrMint: context.network === Network.Mainnet ? "USDC.s" : "USDC",
+    symbolOrMint: "USDC.s",
     decimals: USDC_DECIMALS,
     fee: {
       intrachainTransfer: BigInt(feeConfig.intrachainTransferFee.toString()),
@@ -879,6 +867,7 @@ export const sendTransfer = async (options: SendTransferOptions) => {
         .instruction(),
     ],
     {
+      variation: "Intent Transfer",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
     },
   );
@@ -927,7 +916,7 @@ const buildTransferIntentInstruction = async (
 const BRIDGE_OUT_MESSAGE_HEADER = `Fogo Bridge Transfer:
 Signing this intent will bridge out the tokens as described below.
 `;
-const BRIDGE_OUT_CUS = 220_000;
+const BRIDGE_OUT_CUS = 240_000;
 
 type SendBridgeOutOptions = {
   context: SessionContext;
@@ -1024,6 +1013,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       ...instructions,
     ],
     {
+      variation: "Intent NTT Bridge",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
       extraSigners: [outboxItem],
       addressLookupTable:
@@ -1160,7 +1150,7 @@ const buildBridgeOutIntent = async (
 type SendBridgeInOptions = {
   context: SessionContext;
   walletPublicKey: PublicKey;
-  solanaWallet: BaseWalletAdapter;
+  solanaWallet: BaseSignerWalletAdapter;
   amount: bigint;
   fromToken: WormholeToken & { chain: "Solana" };
   toToken: WormholeToken & { chain: "Fogo" };
@@ -1181,18 +1171,21 @@ export const bridgeIn = async (options: SendBridgeInOptions) => {
         {
           address: () => options.walletPublicKey.toBase58(),
           chain: () => "Solana",
-          signAndSend: (transactions) =>
+          sign: (transactions) =>
             Promise.all(
-              transactions.map(({ transaction }) =>
-                options.solanaWallet.sendTransaction(
-                  // Hooray for Wormhole's incomplete typing eh?
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-                  transaction.transaction,
-                  solanaConnection,
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                  { signers: transaction.signers },
-                ),
-              ),
+              transactions.map(async ({ transaction }) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                const signedTx: VersionedTransaction =
+                  await options.solanaWallet.signTransaction(
+                    // Hooray for Wormhole's incomplete typing eh?
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    transaction.transaction,
+                  );
+                // Hooray for Wormhole's incomplete typing eh?
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                signedTx.sign(transaction.signers);
+                return signedTx.serialize();
+              }),
             ),
         },
         quote,

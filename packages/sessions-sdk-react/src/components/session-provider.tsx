@@ -6,6 +6,7 @@ import type {
   Session,
   SessionContext as SessionExecutionContext,
   TransactionOrInstructions,
+  SessionContext,
 } from "@fogo/sessions-sdk";
 import {
   establishSession as establishSessionImpl,
@@ -261,28 +262,21 @@ const SessionProvider = ({
     [network, rpc, paymaster, sendToPaymaster, sponsor],
   );
 
-  const sessionContext = useMemo(
-    () =>
-      // eslint-disable-next-line unicorn/no-typeof-undefined
-      typeof globalThis.window === "undefined"
-        ? undefined
-        : createSessionContext({
-            connection: sessionConnection,
-            defaultAddressLookupTableAddress,
-            domain,
-          }),
-    [sessionConnection, defaultAddressLookupTableAddress, domain],
-  );
-  const getSessionContext = useCallback(async () => {
-    if (sessionContext === undefined) {
-      throw new BrowserOnlyError();
-    } else {
-      return await sessionContext;
-    }
-  }, [sessionContext]);
+  const getSessionContext = useMemo(() => {
+    let sessionContext: SessionContext | undefined;
+    return async () => {
+      sessionContext ??= await createSessionContext({
+        connection: sessionConnection,
+        defaultAddressLookupTableAddress,
+        domain,
+      });
+      return sessionContext;
+    };
+  }, [sessionConnection, defaultAddressLookupTableAddress, domain]);
 
   const sessionState = useSessionState({
     ...args,
+    enableUnlimited,
     getSessionContext,
     setShowBridgeIn: setShowBridgeIn,
     network,
@@ -322,6 +316,7 @@ const SessionProvider = ({
 const useSessionState = ({
   network,
   tokens,
+  enableUnlimited,
   getSessionContext,
   onOpenExtendSessionExpiry,
   onOpenSessionLimitsReached,
@@ -332,6 +327,7 @@ const useSessionState = ({
   network: Network;
   getSessionContext: () => Promise<SessionExecutionContext>;
   tokens?: PublicKey[] | undefined;
+  enableUnlimited?: boolean | undefined;
   onOpenExtendSessionExpiry?: (() => void) | undefined;
   onOpenSessionLimitsReached?: (() => void) | undefined;
   setShowBridgeIn: Dispatch<SetStateAction<boolean>>;
@@ -568,6 +564,7 @@ const useSessionState = ({
             disconnect(wallet, network);
             onCancel();
           },
+          walletPublicKey,
         }),
       );
       establishSession(
@@ -617,6 +614,7 @@ const useSessionState = ({
             disconnect(wallet, network);
             onCancel();
           },
+          walletPublicKey,
           submitLimits: (sessionDuration, limits) => {
             submitLimits({
               wallet,
@@ -675,13 +673,17 @@ const useSessionState = ({
             }
             case ConnectWalletStateType.Connected: {
               walletName.set(wallet.name);
-              if (tokens === undefined || tokens.length === 0) {
+              if (
+                (tokens === undefined || tokens.length === 0) &&
+                !enableUnlimited
+              ) {
                 submitLimits({
                   sessionDuration: DEFAULT_SESSION_DURATION,
                   wallet,
                   walletPublicKey: result.walletPublicKey,
                   onError,
                   onCancel,
+                  limits: new Map(),
                 });
               } else {
                 requestLimits(
@@ -708,6 +710,7 @@ const useSessionState = ({
       walletName,
       completeSessionSetup,
       tokens,
+      enableUnlimited,
       submitLimits,
       requestLimits,
       toast,
@@ -995,13 +998,6 @@ class InvariantFailedError extends Error {
   constructor(message: string) {
     super(`An expected invariant failed: ${message}`);
     this.name = "InvariantFailedError";
-  }
-}
-
-class BrowserOnlyError extends Error {
-  constructor() {
-    super(``);
-    this.name = "BrowserOnlyError";
   }
 }
 

@@ -4,7 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import type { FormEvent, ReactNode } from "react";
-import { useCallback, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Button as UnstyledButton,
   Checkbox,
@@ -18,36 +18,29 @@ import {
 } from "react-aria-components";
 
 import { stringToAmount, amountToString } from "../amount-to-string.js";
+import type { WalletConnectedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { TextField } from "./field.js";
 import styles from "./session-limits.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";
-import { StateType, useTokenMetadata } from "../hooks/use-token-metadata.js";
+import { useSessionContext } from "../hooks/use-session.js";
+import type { TokenAccountData } from "../hooks/use-token-account-data.js";
+import {
+  useTokenAccountData,
+  StateType as TokenDataStateType,
+} from "../hooks/use-token-account-data.js";
+import {
+  StateType as TokenMetadataStateType,
+  useTokenMetadata,
+} from "../hooks/use-token-metadata.js";
+import { StateType, isEstablished, isUpdatable } from "../session-state.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
 const ONE_HOUR_IN_MS = 60 * ONE_MINUTE_IN_MS;
 const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
 
-export const SessionLimits = <Token extends PublicKey>({
-  tokens,
-  initialLimits,
-  onSubmit,
-  buttonText = "Log in",
-  className,
-  enableUnlimited,
-  isSessionUnlimited,
-  autoFocus,
-  hideCancel,
-  header,
-  bodyClassName,
-  footerClassName,
-}: {
-  tokens: Token[];
-  initialLimits: Map<Token, bigint>;
-  onSubmit?:
-    | ((duration: number, tokens?: Map<Token, bigint>) => void)
-    | undefined;
+type Props = {
   buttonText?: string | undefined;
   className?: string | undefined;
   autoFocus?: boolean | undefined;
@@ -55,57 +48,91 @@ export const SessionLimits = <Token extends PublicKey>({
   header?: ReactNode | undefined;
   bodyClassName?: ReactNode | undefined;
   footerClassName?: ReactNode | undefined;
-} & (
-  | { enableUnlimited?: false | undefined; isSessionUnlimited?: undefined }
-  | { enableUnlimited: true; isSessionUnlimited?: boolean }
-)) => {
-  const [applyLimits, setApplyLimits] = useState(
-    !(isSessionUnlimited ?? enableUnlimited),
-  );
-  const doSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
+  sessionState: WalletConnectedSessionState;
+};
 
-      if (onSubmit !== undefined) {
-        const data = new FormData(event.currentTarget);
-        const durationSelection = data.get("duration");
-        onSubmit(
-          DURATION[
-            typeof durationSelection === "string" &&
-            isDurationValue(durationSelection)
-              ? durationSelection
-              : "one-week"
-          ].value,
-          enableUnlimited && !data.get("applyLimits")
-            ? undefined
-            : new Map(
-                tokens
-                  .map((mint) => {
-                    const value = data.get(mint.toBase58());
-                    const decimals = data.get(`${mint.toBase58()}-decimals`);
-                    return typeof value === "string" &&
-                      typeof decimals === "string"
-                      ? ([
-                          mint,
-                          stringToAmount(value, Number.parseInt(decimals, 10)),
-                        ] as const)
-                      : undefined;
-                  })
-                  .filter((value) => value !== undefined),
-              ),
-        );
-      }
-    },
-    [tokens, onSubmit, enableUnlimited],
+export const SessionLimits = ({
+  sessionState,
+  className,
+  bodyClassName,
+  footerClassName,
+  header,
+  hideCancel,
+  autoFocus,
+  buttonText,
+}: Props) => {
+  const { enableUnlimited, whitelistedTokens } = useSessionContext();
+
+  const [applyLimits, setApplyLimits] = useState(
+    isEstablished(sessionState) ? sessionState.isLimited : !enableUnlimited,
+  );
+
+  const submitHandler = useMemo(() => {
+    if (isUpdatable(sessionState)) {
+      return (duration: number, limits?: Map<PublicKey, bigint>) => {
+        sessionState.updateSession(sessionState.type, duration, limits);
+      };
+    } else if (sessionState.type === StateType.RequestingLimits) {
+      return sessionState.submitLimits;
+    } else {
+      return;
+    }
+  }, [sessionState]);
+
+  const onSubmit = useMemo(
+    () =>
+      submitHandler === undefined
+        ? undefined
+        : (event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+
+            const data = new FormData(event.currentTarget);
+            const durationSelection = data.get("duration");
+            submitHandler(
+              DURATION[
+                typeof durationSelection === "string" &&
+                isDurationValue(durationSelection)
+                  ? durationSelection
+                  : "one-week"
+              ].value,
+              enableUnlimited && !data.get("applyLimits")
+                ? undefined
+                : new Map(
+                    whitelistedTokens
+                      .map((mint) => {
+                        const value = data.get(mint.toBase58());
+                        const decimals = data.get(
+                          `${mint.toBase58()}-decimals`,
+                        );
+                        return typeof value === "string" &&
+                          typeof decimals === "string"
+                          ? ([
+                              mint,
+                              stringToAmount(
+                                value,
+                                Number.parseInt(decimals, 10),
+                              ),
+                            ] as const)
+                          : undefined;
+                      })
+                      .filter((value) => value !== undefined),
+                  ),
+            );
+          },
+    [whitelistedTokens, enableUnlimited, submitHandler],
   );
 
   return (
-    <Form className={clsx(styles.sessionLimits, className)} onSubmit={doSubmit}>
+    <Form
+      className={clsx(styles.sessionLimits, className)}
+      {...(onSubmit !== undefined && { onSubmit })}
+    >
       <div className={clsx(styles.body, bodyClassName)}>
         {header}
         <Select
           name="duration"
           defaultSelectedKey="one-week"
+          isDisabled={onSubmit === undefined}
           className={styles.sessionExpiry ?? ""}
         >
           <Label className={styles.label ?? ""}>Session duration</Label>
@@ -128,6 +155,7 @@ export const SessionLimits = <Token extends PublicKey>({
             <Checkbox
               name="applyLimits"
               className={styles.applyLimits ?? ""}
+              isDisabled={onSubmit === undefined}
               isSelected={applyLimits}
               onChange={setApplyLimits}
             >
@@ -140,24 +168,13 @@ export const SessionLimits = <Token extends PublicKey>({
           <AnimatePresence>
             {applyLimits && (
               <motion.ul
-                initial={{ height: 0 }}
-                animate={{ height: "auto" }}
-                exit={{ height: 0 }}
+                initial={enableUnlimited ? { height: 0 } : false}
+                animate={enableUnlimited ? { height: "auto" } : false}
+                exit={enableUnlimited ? { height: 0 } : {}}
                 className={styles.tokenList}
+                data-enable-unlimited={enableUnlimited ? "" : undefined}
               >
-                {tokens.map((mint) => (
-                  <li key={mint.toBase58()}>
-                    <Token
-                      mint={mint}
-                      initialAmount={
-                        initialLimits
-                          .entries()
-                          .find(([limitMint]) => limitMint.equals(mint))?.[1] ??
-                        0n
-                      }
-                    />
-                  </li>
-                ))}
+                <TokenLimits sessionState={sessionState} />
               </motion.ul>
             )}
           </AnimatePresence>
@@ -165,7 +182,11 @@ export const SessionLimits = <Token extends PublicKey>({
       </div>
       <div className={clsx(styles.footer, footerClassName)}>
         {!hideCancel && (
-          <Button variant="outline" slot="close">
+          <Button
+            variant="outline"
+            slot="close"
+            isDisabled={onSubmit === undefined}
+          >
             Cancel
           </Button>
         )}
@@ -183,6 +204,107 @@ export const SessionLimits = <Token extends PublicKey>({
   );
 };
 
+const TokenLimits = ({
+  sessionState,
+}: {
+  sessionState: WalletConnectedSessionState;
+}) => {
+  const tokenAccountData = useTokenAccountData(sessionState);
+
+  switch (tokenAccountData.type) {
+    case TokenDataStateType.Error: {
+      return <LoadedTokenLimits sessionState={sessionState} />;
+    }
+
+    case TokenDataStateType.Loaded: {
+      return (
+        <LoadedTokenLimits
+          sessionState={sessionState}
+          tokenAccountData={tokenAccountData.data}
+        />
+      );
+    }
+
+    case TokenDataStateType.NotLoaded:
+    case TokenDataStateType.Loading: {
+      return (
+        <li>
+          <LoadingToken />
+        </li>
+      );
+    }
+  }
+};
+
+const LoadedTokenLimits = ({
+  sessionState,
+  tokenAccountData,
+}: {
+  sessionState: WalletConnectedSessionState;
+  tokenAccountData?: TokenAccountData | undefined;
+}) => {
+  const { whitelistedTokens, defaultRequestedLimits } = useSessionContext();
+
+  const userTokens = useMemo(
+    () =>
+      tokenAccountData === undefined
+        ? []
+        : [
+            ...tokenAccountData.tokensInWallet,
+            ...tokenAccountData.sessionLimits,
+          ].map((token) => token.mint),
+    [tokenAccountData],
+  );
+
+  const whitelistedTokensThatUserHas = useMemo(
+    () =>
+      whitelistedTokens.filter((mint) =>
+        userTokens.some((token) => token.equals(mint)),
+      ),
+    [whitelistedTokens, userTokens],
+  );
+
+  const initialLimits = useMemo(() => {
+    switch (sessionState.type) {
+      case StateType.RequestingLimits: {
+        return sessionState.requestedLimits ?? defaultRequestedLimits;
+      }
+      case StateType.SettingLimits: {
+        return defaultRequestedLimits;
+      }
+      default: {
+        return tokenAccountData === undefined
+          ? undefined
+          : new Map(
+              tokenAccountData.sessionLimits.map(({ mint, sessionLimit }) => [
+                mint,
+                sessionLimit,
+              ]),
+            );
+      }
+    }
+  }, [sessionState, defaultRequestedLimits, tokenAccountData]);
+
+  return (
+    <>
+      {whitelistedTokensThatUserHas.map((mint) => (
+        <li key={mint.toBase58()}>
+          <Token
+            mint={mint}
+            initialAmount={
+              initialLimits === undefined
+                ? 0n
+                : (initialLimits
+                    .entries()
+                    .find(([limitMint]) => limitMint.equals(mint))?.[1] ?? 0n)
+            }
+          />
+        </li>
+      ))}
+    </>
+  );
+};
+
 const Token = ({
   mint,
   initialAmount,
@@ -193,11 +315,11 @@ const Token = ({
   const metadata = useTokenMetadata(mint);
 
   switch (metadata.type) {
-    case StateType.Error: {
+    case TokenMetadataStateType.Error: {
       return <></>; // TODO
     }
 
-    case StateType.Loaded: {
+    case TokenMetadataStateType.Loaded: {
       return (
         <>
           <input
@@ -208,6 +330,7 @@ const Token = ({
           <TokenAmountInput
             className={styles.tokenAmountInput ?? ""}
             inputGroupClassName={styles.inputGroup}
+            labelLineClassName={styles.labelLine}
             label={
               <div className={styles.label}>
                 {metadata.data.image ? (
@@ -236,24 +359,26 @@ const Token = ({
       );
     }
 
-    case StateType.Loading:
-    case StateType.NotLoaded: {
-      return (
-        <TextField
-          className={styles.tokenAmountInput ?? ""}
-          inputGroupClassName={styles.inputGroup}
-          label={
-            <div className={styles.label}>
-              <div className={styles.icon} />
-              <div className={styles.name} />
-            </div>
-          }
-          isPending
-        />
-      );
+    case TokenMetadataStateType.Loading:
+    case TokenMetadataStateType.NotLoaded: {
+      return <LoadingToken />;
     }
   }
 };
+
+const LoadingToken = () => (
+  <TextField
+    className={styles.tokenAmountInput ?? ""}
+    inputGroupClassName={styles.inputGroup}
+    label={
+      <div className={styles.label}>
+        <div className={styles.icon} />
+        <div className={styles.name} />
+      </div>
+    }
+    isPending
+  />
+);
 
 const DURATION = {
   "30-seconds": {

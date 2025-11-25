@@ -9,16 +9,14 @@ import type { Token } from "../hooks/use-token-account-data.js";
 type Props = {
   onPressBack: () => void;
   onPressSend: (token: Token) => void;
-  onPressReceive: () => void;
-  onPressGetTokens: () => void;
+  onPressTransferIn: () => void;
   sessionState: EstablishedSessionState;
 };
 
 export const SelectTokenPage = ({
   onPressBack,
   onPressSend,
-  onPressReceive,
-  onPressGetTokens,
+  onPressTransferIn,
   sessionState,
 }: Props) => (
   <div className={styles.selectTokenPage}>
@@ -38,10 +36,9 @@ export const SelectTokenPage = ({
       </Button>
     </div>
     <TokenList
-      onPressReceiveTokens={onPressReceive}
       sessionState={sessionState}
       onPressToken={onPressSend}
-      onPressGetTokens={onPressGetTokens}
+      onPressTransferIn={onPressTransferIn}
     />
   </div>
 );

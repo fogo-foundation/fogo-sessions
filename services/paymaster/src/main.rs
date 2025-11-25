@@ -1,5 +1,4 @@
-use crate::cli::Cli;
-use crate::config_manager::config::Config;
+use crate::{cli::Cli, config_manager::config::Config};
 use arc_swap::ArcSwap;
 use clap::Parser;
 use fogo_paymaster::parse::parse_h160;
@@ -15,6 +14,7 @@ mod constraint;
 mod constraint_templates;
 mod db;
 mod metrics;
+mod pooled_http_sender;
 mod rpc;
 mod serde;
 
@@ -75,7 +75,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
             e
         )
     })?;
-    config.assign_defaults(ntt_quoter);
+    config.assign_defaults(ntt_quoter)?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
@@ -93,7 +93,14 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let rpc_url_ws = opts
         .rpc_url_ws
         .unwrap_or_else(|| opts.rpc_url_http.replace("http", "ws"));
-    api::run_server(opts.rpc_url_http, rpc_url_ws, opts.listen_address, domains).await;
+    api::run_server(
+        opts.rpc_url_http,
+        rpc_url_ws,
+        opts.ftl_url,
+        opts.listen_address,
+        domains,
+    )
+    .await;
     Ok(())
 }
 

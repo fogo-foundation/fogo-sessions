@@ -1,6 +1,7 @@
 import { bridgeIn, Network } from "@fogo/sessions-sdk";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
-import type { RpcResponseAndContext, TokenAmount } from "@solana/web3.js";
+import type { TokenAmount } from "@solana/web3.js";
+import { SolanaJSONRPCError } from "@solana/web3.js";
 import { TransferState } from "@wormhole-foundation/sdk";
 import type { FormEvent } from "react";
 import { useState, useCallback } from "react";
@@ -27,20 +28,41 @@ type Props = {
   onSendComplete: () => void;
 };
 
+type SolanaBalance = Pick<TokenAmount, "amount" | "uiAmountString">;
+
+const NO_ACCOUNT_MESSAGE =
+  "failed to get token account balance: Invalid param: could not find account";
+
 export const DepositPage = ({ onPressBack, ...props }: Props) => {
   const { getSessionContext, network } = useSessionContext();
-  const balance = useData(
-    ["solanaUsdcBalance", network, props.sessionState.walletPublicKey],
-    async () => {
-      const { getSolanaConnection } = await getSessionContext();
-      const connection = await getSolanaConnection();
-      return connection.getTokenAccountBalance(
+  const getSolanaBalance = useCallback(async (): Promise<SolanaBalance> => {
+    const { getSolanaConnection } = await getSessionContext();
+    const connection = await getSolanaConnection();
+    try {
+      const result = await connection.getTokenAccountBalance(
         getAssociatedTokenAddressSync(
           USDC.chains[network].solana.mint,
           props.sessionState.walletPublicKey,
         ),
       );
-    },
+      return result.value;
+    } catch (error: unknown) {
+      if (
+        error instanceof SolanaJSONRPCError &&
+        error.message === NO_ACCOUNT_MESSAGE
+      ) {
+        return {
+          amount: "0",
+          uiAmountString: "0",
+        };
+      } else {
+        throw error;
+      }
+    }
+  }, [getSessionContext, props.sessionState.walletPublicKey, network]);
+  const balance = useData(
+    ["solanaUsdcBalance", network, props.sessionState.walletPublicKey],
+    getSolanaBalance,
     {},
   );
 
@@ -57,7 +79,7 @@ export const DepositPage = ({ onPressBack, ...props }: Props) => {
         {...props}
         {...(balance.type === StateType.Loaded
           ? {
-              amountAvailable: balance.data.value,
+              amountAvailable: balance.data,
               mutateAmountAvailable: balance.mutate,
             }
           : { isLoading: true })}
@@ -75,8 +97,8 @@ const DepositForm = ({
   (
     | {
         isLoading?: false;
-        amountAvailable: TokenAmount;
-        mutateAmountAvailable: KeyedMutator<RpcResponseAndContext<TokenAmount>>;
+        amountAvailable: SolanaBalance;
+        mutateAmountAvailable: KeyedMutator<SolanaBalance>;
       }
     | {
         isLoading: true;

@@ -1,5 +1,30 @@
 # @fogo/sessions-sdk
 
+## 0.0.24
+
+### Patch Changes
+
+- Updated dependencies [02d8d5c]
+  - @fogo/sessions-idls@0.0.10
+
+## 0.0.23
+
+### Patch Changes
+
+- 5086061: Bump bridge-out compute units limit to 240,000
+- d23c949: Silence Phantom warnings
+
+## 0.0.22
+
+### Patch Changes
+
+- c3b04b7: Use central paymaster for transfers & bridging
+- d46b221: Disallow setting limits for tokens that the user doesn't have
+- aa33949: Fix fee symbol in testnet
+- 91bef2a: Add support for explicitly specifying the tx variation when sending a tx to the paymaster
+- d9bc9dc: Ensure session context only gets initialized once
+- d063d55: update signed quote bytes array in bridge ix
+
 ## 0.0.21
 
 ### Patch Changes
