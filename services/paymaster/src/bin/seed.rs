@@ -59,6 +59,17 @@ async fn insert_user(host: &str) -> Result<Uuid, anyhow::Error> {
 }
 
 async fn insert_app(user_id: &Uuid, name: &str) -> Result<Uuid, sqlx::Error> {
+    let existing_app =
+        sqlx::query_as::<_, (Uuid,)>("SELECT id FROM app WHERE user_id = $1 AND name = $2")
+            .bind(user_id)
+            .bind(name)
+            .fetch_optional(pool())
+            .await?;
+
+    if let Some(app_result) = existing_app {
+        return Ok(app_result.0);
+    }
+    println!("Inserting new app: {name}");
     let app = sqlx::query_as::<_, (Uuid,)>(
         "INSERT INTO app (id, name, user_id) VALUES ($1, $2, $3) RETURNING id",
     )
@@ -71,7 +82,46 @@ async fn insert_app(user_id: &Uuid, name: &str) -> Result<Uuid, sqlx::Error> {
     Ok(app.0)
 }
 
-async fn insert_domain_config(app_id: &Uuid, domain: &Domain) -> Result<Uuid, sqlx::Error> {
+async fn insert_or_update_domain_config(
+    app_id: &Uuid,
+    domain: &Domain,
+) -> Result<Uuid, sqlx::Error> {
+    let existing_domain_config = sqlx::query_as::<_, (Uuid,)>(
+        "SELECT id FROM domain_config WHERE app_id = $1 AND domain = $2",
+    )
+    .bind(app_id)
+    .bind(domain.domain.to_string())
+    .fetch_optional(pool())
+    .await?;
+
+    if let Some(domain_config_result) = existing_domain_config {
+        let id = domain_config_result.0;
+        let res = sqlx::query(
+            r#"
+                UPDATE domain_config
+                SET
+                enable_session_management      = $1,
+                enable_preflight_simulation    = $2
+                WHERE id = $3
+                AND (
+                    enable_session_management   IS DISTINCT FROM $1 OR
+                    enable_preflight_simulation IS DISTINCT FROM $2
+                )
+            "#,
+        )
+        .bind(domain.enable_session_management)
+        .bind(domain.enable_preflight_simulation)
+        .bind(id)
+        .execute(pool())
+        .await?;
+
+        if res.rows_affected() > 0 {
+            println!("Updated domain config: {}", domain.domain);
+        }
+
+        return Ok(id);
+    }
+    println!("Inserting new domain config: {}", domain.domain);
     let domain_config = sqlx::query_as::<_, (Uuid,)>(
         "INSERT INTO domain_config (id, app_id, domain, enable_session_management, enable_preflight_simulation) VALUES ($1, $2, $3, $4, $5) RETURNING id",
     )
@@ -86,7 +136,7 @@ async fn insert_domain_config(app_id: &Uuid, domain: &Domain) -> Result<Uuid, sq
     Ok(domain_config.0)
 }
 
-async fn insert_variation(
+async fn insert_or_update_variation(
     domain_config_id: &Uuid,
     variation: &TransactionVariation,
 ) -> Result<Uuid, anyhow::Error> {
@@ -112,6 +162,43 @@ async fn insert_variation(
         TransactionVariation::V0(_) => None,
         TransactionVariation::V1(v) => Some(v.max_gas_spend as i64),
     };
+    let existing_variation = sqlx::query_as::<_, (Uuid,)>(
+        "SELECT id FROM variation WHERE domain_config_id = $1 AND name = $2 ",
+    )
+    .bind(domain_config_id)
+    .bind(variation.name())
+    .fetch_optional(pool())
+    .await?;
+
+    if let Some(variation_result) = existing_variation {
+        let id = variation_result.0;
+
+        let res = sqlx::query(
+            r#"
+                UPDATE variation
+                SET
+                max_gas_spend        = $1::bigint,
+                transaction_variation = $2::jsonb
+                WHERE id = $3
+                AND (
+                    max_gas_spend        IS DISTINCT FROM $1::bigint OR
+                    transaction_variation IS DISTINCT FROM $2::jsonb
+                )
+            "#,
+        )
+        .bind(max_gas_spend)
+        .bind(&transaction_variation_json)
+        .bind(id)
+        .execute(pool())
+        .await?;
+
+        if res.rows_affected() > 0 {
+            println!("Updated variation: {}", variation.name());
+        }
+
+        return Ok(id);
+    }
+    println!("Inserting new variation: {}", variation.name());
     let variation = sqlx::query_as::<_, (Uuid,)>(
         "INSERT INTO variation (id, domain_config_id, name, version, max_gas_spend, transaction_variation) VALUES ($1, $2, $3, $4::variation_version, $5::bigint, $6::jsonb) RETURNING id",
     )
@@ -129,31 +216,23 @@ async fn insert_variation(
 
 /// Seed the database from the config.
 pub async fn seed_from_config(config: &Config) -> Result<(), anyhow::Error> {
-    let user_count = sqlx::query_as::<_, (i64,)>("SELECT count(*) from \"user\"")
-        .fetch_one(pool())
-        .await?;
+    println!("Syncing database from config");
+    for domain in &config.domains {
+        // try to parse the domain as a url and get the host or just return the domain if it's not a valid url
+        let host = match Url::parse(&domain.domain) {
+            Ok(url) => url
+                .host_str()
+                .map(|h| h.to_string())
+                .unwrap_or_else(|| domain.domain.clone()),
+            Err(_) => domain.domain.clone(),
+        };
 
-    if user_count.0 == 0 {
-        tracing::info!("Seeding database from config");
-        for domain in &config.domains {
-            // try to parse the domain as a url and get the host or just return the domain if it's not a valid url
-            let host = match Url::parse(&domain.domain) {
-                Ok(url) => url
-                    .host_str()
-                    .map(|h| h.to_string())
-                    .unwrap_or_else(|| domain.domain.clone()),
-                Err(_) => domain.domain.clone(),
-            };
-
-            let user = insert_user(&host).await?;
-            let app = insert_app(&user, &host).await?;
-            let domain_config = insert_domain_config(&app, domain).await?;
-            for variation in domain.tx_variations.values() {
-                insert_variation(&domain_config, variation).await?;
-            }
+        let user = insert_user(&host).await?;
+        let app = insert_app(&user, &host).await?;
+        let domain_config = insert_or_update_domain_config(&app, domain).await?;
+        for variation in domain.tx_variations.values() {
+            insert_or_update_variation(&domain_config, variation).await?;
         }
-    } else {
-        tracing::info!("Some users already exist, skipping seeding");
     }
 
     Ok(())
