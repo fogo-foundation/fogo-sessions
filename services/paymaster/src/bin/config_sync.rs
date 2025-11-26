@@ -214,8 +214,7 @@ async fn insert_or_update_variation(
     Ok(variation.0)
 }
 
-/// Seed the database from the config.
-pub async fn seed_from_config(config: &Config) -> Result<(), anyhow::Error> {
+pub async fn sync_from_config(config: &Config) -> Result<(), anyhow::Error> {
     println!("Syncing database from config");
     for domain in &config.domains {
         // try to parse the domain as a url and get the host or just return the domain if it's not a valid url
@@ -249,7 +248,7 @@ pub fn load_file_config(config_path: &str) -> Result<Config> {
 async fn run_seed(db_url: &str, config_path: &str) -> anyhow::Result<()> {
     fogo_paymaster::db::pool::init_db_connection(db_url).await?;
     let config = load_file_config(config_path)?;
-    seed_from_config(&config).await?;
+    sync_from_config(&config).await?;
     Ok(())
 }
 
