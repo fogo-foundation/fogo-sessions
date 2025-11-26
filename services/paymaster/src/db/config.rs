@@ -14,140 +14,155 @@ use uuid::Uuid;
 
 use crate::db::pool;
 
-/// Database row where JSON is untyped.
 #[derive(FromRow)]
-struct RawRow {
-    domain_id: Uuid,
+struct DomainConfigRow {
+    id: Uuid,
     domain: String,
     enable_session_management: bool,
     enable_preflight_simulation: bool,
-    version: Option<String>,
-    name: Option<String>,
-    max_gas_spend: Option<i64>,
-    transaction_variation: Option<Json<Value>>,
 }
 
-pub async fn load_config() -> Result<Config, sqlx::Error> {
-    let rows: Vec<RawRow> = sqlx::query_as::<_, RawRow>(
+#[derive(FromRow)]
+struct VariationRow {
+    domain_config_id: Uuid,
+    version: String,
+    name: String,
+    max_gas_spend: i64,
+    transaction_variation: Json<Value>,
+}
+
+fn handle_transaction_variation_v0(
+    transaction_variation: Json<Value>,
+    name: String,
+) -> Result<TransactionVariation, anyhow::Error> {
+    // Extract the whitelisted_programs array as Vec<String>
+    let strings: Vec<String> = match transaction_variation.0 {
+        JsonValue::Array(arr) => arr
+            .iter()
+            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+            .collect(),
+        _ => {
+            return Err(anyhow::anyhow!(
+                "Missing or invalid whitelisted_programs field"
+            ));
+        }
+    };
+
+    let whitelisted_programs: Vec<Pubkey> = strings
+        .into_iter()
+        .map(|s| Pubkey::from_str(&s))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(TransactionVariation::V0(VariationProgramWhitelist {
+        name,
+        whitelisted_programs,
+    }))
+}
+
+fn handle_transaction_variation_v1(
+    transaction_variation: Json<Value>,
+    name: String,
+    max_gas_spend: u64,
+) -> Result<TransactionVariation, anyhow::Error> {
+    let instructions = serde_json::from_value(transaction_variation.0)?;
+    Ok(TransactionVariation::V1(
+        VariationOrderedInstructionConstraints {
+            name,
+            instructions,
+            max_gas_spend,
+        },
+    ))
+}
+
+pub async fn load_config() -> Result<Config, anyhow::Error> {
+    let domain_rows: Vec<DomainConfigRow> = sqlx::query_as::<_, DomainConfigRow>(
         r#"
         SELECT
-          d.id            AS domain_id,
-          d.domain        AS domain,
-          d.enable_session_management,
-          d.enable_preflight_simulation,
-          v.version::text AS version,
-          v.name          AS name,
-          v.max_gas_spend AS max_gas_spend,
-          v.transaction_variation  AS transaction_variation
-        FROM domain_config d
-        LEFT JOIN variation v ON v.domain_config_id = d.id
-        ORDER BY d.id
+          id,
+          domain,
+          enable_session_management,
+          enable_preflight_simulation
+        FROM domain_config
         "#,
     )
     .fetch_all(pool::pool())
     .await?;
 
-    let mut map: HashMap<Uuid, Domain> = HashMap::new();
+    let variation_rows: Vec<VariationRow> = sqlx::query_as::<_, VariationRow>(
+        r#"
+        SELECT
+          domain_config_id,
+          version::text AS version,
+          name,
+          max_gas_spend,
+          transaction_variation
+        FROM variation
+        "#,
+    )
+    .fetch_all(pool::pool())
+    .await?;
 
-    for RawRow {
-        domain_id,
+    let mut domain_map: HashMap<Uuid, Domain> = HashMap::new();
+
+    for DomainConfigRow {
+        id,
         domain,
         enable_session_management,
         enable_preflight_simulation,
+    } in domain_rows
+    {
+        domain_map.insert(
+            id,
+            Domain {
+                domain: domain.clone(),
+                enable_session_management,
+                enable_preflight_simulation,
+                number_of_signers: default_one(), // TODO: Get number of signers from database
+                tx_variations: HashMap::new(),
+            },
+        );
+    }
+
+    for VariationRow {
+        domain_config_id,
         version,
         name,
         max_gas_spend,
         transaction_variation,
-    } in rows
+    } in variation_rows
     {
-        let domain_ref = map.entry(domain_id).or_insert_with(|| Domain {
-            domain: domain.clone(),
-            enable_session_management,
-            enable_preflight_simulation,
-            number_of_signers: default_one(), // TODO: Get number of signers from database
-            tx_variations: HashMap::new(),
-        });
-
-        let transaction_variation_fin: TransactionVariation;
-
-        if let (Some(version), Some(name), Some(transaction_variation)) =
-            (version, name, transaction_variation)
-        {
-            if version == "v0" {
-                // Extract the whitelisted_programs array as Vec<String>
-                let strings: Vec<String> = match transaction_variation.0 {
-                    JsonValue::Array(arr) => arr
-                        .iter()
-                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                        .collect(),
-                    _ => {
-                        tracing::warn!(
-                            ?domain,
-                            ?version,
-                            ?name,
-                            "Missing or invalid whitelisted_programs field",
-                        );
-                        continue;
-                    }
-                };
-
-                // Convert Vec<String> to Vec<Pubkey>
-                let whitelisted_programs: Vec<Pubkey> = match strings
-                    .into_iter()
-                    .map(|s| Pubkey::from_str(&s))
-                    .collect::<Result<Vec<_>, _>>()
-                {
-                    Ok(pubkeys) => pubkeys,
-                    Err(err) => {
-                        tracing::warn!(
-                            ?err,
-                            ?domain,
-                            ?version,
-                            ?name,
-                            "Failed to parse pubkeys from whitelisted_programs",
-                        );
-                        continue;
-                    }
-                };
-
-                transaction_variation_fin = TransactionVariation::V0(VariationProgramWhitelist {
+        if let Some(domain_ref) = domain_map.get_mut(&domain_config_id) {
+            let transaction_variation_fin: TransactionVariation = match version.as_str() {
+                "v0" => handle_transaction_variation_v0(transaction_variation, name)?,
+                "v1" => handle_transaction_variation_v1(
+                    transaction_variation,
                     name,
-                    whitelisted_programs,
-                });
-            } else {
-                let instructions = match serde_json::from_value(transaction_variation.0) {
-                    Ok(tv) => tv,
-                    Err(err) => {
-                        // log and skip this row instead of failing the whole query
-                        tracing::warn!(
-                            ?err,
-                            ?domain,
-                            ?version,
-                            ?name,
-                            "Skipping row with invalid transaction_variation",
-                        );
-                        continue;
-                    }
-                };
-
-                transaction_variation_fin =
-                    TransactionVariation::V1(VariationOrderedInstructionConstraints {
-                        name,
-                        instructions,
-                        max_gas_spend: max_gas_spend.map(|v| v as u64).unwrap_or(0),
-                    });
-            }
-
+                    u64::try_from(max_gas_spend)
+                        .map_err(|e| anyhow::anyhow!("Invalid max gas spend: {e}"))?,
+                )?,
+                _ => {
+                    tracing::warn!(
+                        domain_id = ?domain_config_id,
+                        ?version,
+                        ?name,
+                        "Skipping row with invalid transaction_variation",
+                    );
+                    continue;
+                }
+            };
             domain_ref.tx_variations.insert(
                 transaction_variation_fin.name().to_string(),
                 transaction_variation_fin,
             );
         } else {
-            continue;
+            tracing::warn!(
+                domain_id = ?domain_config_id,
+                "Variation references non-existent domain_config",
+            );
         }
     }
 
     Ok(Config {
-        domains: map.into_values().collect(),
+        domains: domain_map.into_values().collect(),
     })
 }
