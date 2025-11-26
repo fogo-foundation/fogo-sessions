@@ -675,7 +675,7 @@ const BRIDGING_ADDRESS_LOOKUP_TABLE: Record<
   [Network.Mainnet]: {
     // USDC
     uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG:
-      "84k3mfNjmyinpZwyev7F15ChEW3Kqa3NoUkCJXXs4qkw",
+      "7hmMz3nZDnPJfksLuPotKmUBAFDneM2D9wWg3R1VcKSv",
   },
 };
 
