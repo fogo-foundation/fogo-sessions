@@ -248,8 +248,14 @@ const DepositForm = ({
           className={styles.amountInWallet}
           data-is-loading={props.isLoading ? "" : undefined}
         >
-          {!props.isLoading &&
-            `${props.balances.usdc.uiAmountString ?? "0"} USDC available`}
+          {!props.isLoading && (
+            <>
+              <span className={styles.amount}>
+                {props.balances.usdc.uiAmountString ?? "0"}
+              </span>{" "}
+              USDC available
+            </>
+          )}
         </div>
       </div>
       <TokenAmountInput
