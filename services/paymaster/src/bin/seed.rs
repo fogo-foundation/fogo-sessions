@@ -89,7 +89,7 @@ async fn insert_domain_config(app_id: &Uuid, domain: &Domain) -> Result<Uuid, sq
 async fn insert_variation(
     domain_config_id: &Uuid,
     variation: &TransactionVariation,
-) -> Result<Uuid, sqlx::Error> {
+) -> Result<Uuid, anyhow::Error> {
     let transaction_variation_json = match variation {
         TransactionVariation::V0(v) => {
             // Convert Pubkeys to strings (base58 format) before serializing
@@ -101,7 +101,8 @@ async fn insert_variation(
             serde_json::to_string(&pubkey_strings)
         }
         TransactionVariation::V1(v) => serde_json::to_string(&v.instructions),
-    };
+    }
+    .map_err(|e| anyhow::anyhow!("Error serializing transaction variation: {e}"))?;
 
     let version = match variation {
         TransactionVariation::V0(_) => "v0",
@@ -119,7 +120,7 @@ async fn insert_variation(
     .bind(variation.name())
     .bind(version)
     .bind(max_gas_spend)
-    .bind(transaction_variation_json.unwrap())
+    .bind(transaction_variation_json)
     .fetch_one(pool())
     .await?;
 
@@ -135,16 +136,15 @@ pub async fn seed_from_config(config: &Config) -> Result<(), anyhow::Error> {
     if user_count.0 == 0 {
         tracing::info!("Seeding database from config");
         for domain in &config.domains {
-            // exception for "sessions" domain, insert that as url in the db
-            let host = if domain.domain == "sessions" {
-                domain.domain.clone()
-            } else {
-                Url::parse(&domain.domain)
-                    .map_err(|e| anyhow::anyhow!("Invalid URL to parse: {e}"))?
+            // try to parse the domain as a url and get the host or just return the domain if it's not a valid url
+            let host = match Url::parse(&domain.domain) {
+                Ok(url) => url
                     .host_str()
-                    .ok_or(anyhow::anyhow!("Invalid URL to get host"))?
-                    .to_string()
+                    .map(|h| h.to_string())
+                    .unwrap_or_else(|| domain.domain.clone()),
+                Err(_) => domain.domain.clone(),
             };
+
             let user = insert_user(&host).await?;
             let app = insert_app(&user, &host).await?;
             let domain_config = insert_domain_config(&app, domain).await?;
