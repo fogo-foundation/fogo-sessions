@@ -71,7 +71,7 @@ tracing-subscriber = {workspace = true}
 utoipa = "5.4.0"
 utoipa-axum = "0.2.0"
 url = "2.5.7"
-uuid = {version = "1.18.1", features = ["v7"]}
+uuid = {version = "1.18.1", features = ["v4"]}
 
 [[bin]]
 name = "paymaster-tx-validator"
