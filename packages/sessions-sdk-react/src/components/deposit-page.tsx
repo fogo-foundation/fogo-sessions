@@ -20,7 +20,7 @@ import { UsdcIcon } from "./usdc-icon.js";
 import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { USDC } from "../wormhole-routes.js";
-import { ExplorerLink, SolanaNetwork } from "./explorer-link.js";
+import { ExplorerLink, Chain } from "./explorer-link.js";
 import { FetchError } from "./fetch-error.js";
 
 type Props = {
@@ -201,11 +201,8 @@ const DepositForm = ({
               "Tokens transferred to Fogo successfully!",
               txHash === undefined ? undefined : (
                 <ExplorerLink
-                  network={
-                    network === Network.Mainnet
-                      ? SolanaNetwork.Mainnet
-                      : SolanaNetwork.Devnet
-                  }
+                  network={network}
+                  chain={Chain.Solana}
                   txHash={txHash}
                 />
               ),
