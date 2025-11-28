@@ -18,7 +18,8 @@ export const getDomainRecordAddress = (domain: string) => {
 };
 
 export const main = async (argv: string[] = hideBin(process.argv)) =>
-  yargs(argv).options(anchorOptions)
+  yargs(argv)
+    .options(anchorOptions)
     .command(
       ["add <domain> <program-id>"],
       "Add the given program ID to the whitelist of programs for the given domain",
@@ -68,64 +69,68 @@ export const main = async (argv: string[] = hideBin(process.argv)) =>
     .strict()
     .parse();
 
-    const handleAdd = async (args: {
-      domain: string;
-      "program-id": string;
-    } & AnchorArgs) => {
-      const program = new DomainRegistryProgram(createAnchorProvider(args));
-    
-      const { config: configPubkey } = await program.methods.initialize().pubkeys();
-      const config = configPubkey
-        ? await program.account.config.fetchNullable(configPubkey)
-        : undefined;
-    
-      await program.methods
-        .addProgram(args.domain)
-        .accounts({
-          programId: new PublicKey(args["program-id"]),
-          domainRecord: getDomainRecordAddress(args.domain),
-        })
-        .preInstructions(
-          config ? [] : [await program.methods.initialize().instruction()],
-        )
-        .rpc();
-    };
-    
-    const handleList = async (args: { domain: string } & AnchorArgs) => {
-      const domainRecord = getDomainRecordAddress(args.domain);
-      const provider = createAnchorProvider(args);
-      const {data: domainRecordData} = await provider.connection.getAccountInfo(domainRecord) ?? {data: undefined};
-    
-      if (domainRecordData) {
-        const programs = [];
-        for (let i = 0; i < domainRecordData.length; i += 64) {
-          programs.push(new PublicKey(domainRecordData.subarray(i, i + 32)));
-        }
-        // eslint-disable-next-line no-console
-        console.log(`Programs in domain record for "${args.domain}":`);
-        for (const program of programs) {
-          // eslint-disable-next-line no-console
-          console.log(`- ${program.toBase58()}`);
-        }
-    
-      }
-      else {
-        // eslint-disable-next-line no-console
-        console.log(`No domain record found for domain "${args.domain}"`);
-      }
-    };
-    
-    const handleRemove = async (args: {
-      domain: string;
-      "program-id": string;
-    } & AnchorArgs) => {
-      const program = new DomainRegistryProgram(createAnchorProvider(args));
-    
-      await program.methods
-        .removeProgram(args.domain)
-        .accounts({
-          programId: new PublicKey(args["program-id"]),
-          domainRecord: getDomainRecordAddress(args.domain),
-        })
-        .rpc();
-    };
+const handleAdd = async (
+  args: {
+    domain: string;
+    "program-id": string;
+  } & AnchorArgs,
+) => {
+  const program = new DomainRegistryProgram(createAnchorProvider(args));
+
+  const { config: configPubkey } = await program.methods.initialize().pubkeys();
+  const config = configPubkey
+    ? await program.account.config.fetchNullable(configPubkey)
+    : undefined;
+
+  await program.methods
+    .addProgram(args.domain)
+    .accounts({
+      programId: new PublicKey(args["program-id"]),
+      domainRecord: getDomainRecordAddress(args.domain),
+    })
+    .preInstructions(
+      config ? [] : [await program.methods.initialize().instruction()],
+    )
+    .rpc();
+};
+
+const handleList = async (args: { domain: string } & AnchorArgs) => {
+  const domainRecord = getDomainRecordAddress(args.domain);
+  const provider = createAnchorProvider(args);
+  const { data: domainRecordData } = (await provider.connection.getAccountInfo(
+    domainRecord,
+  )) ?? { data: undefined };
+
+  if (domainRecordData) {
+    const programs = [];
+    for (let i = 0; i < domainRecordData.length; i += 64) {
+      programs.push(new PublicKey(domainRecordData.subarray(i, i + 32)));
+    }
+    // eslint-disable-next-line no-console
+    console.log(`Programs in domain record for "${args.domain}":`);
+    for (const program of programs) {
+      // eslint-disable-next-line no-console
+      console.log(`- ${program.toBase58()}`);
+    }
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(`No domain record found for domain "${args.domain}"`);
+  }
+};
+
+const handleRemove = async (
+  args: {
+    domain: string;
+    "program-id": string;
+  } & AnchorArgs,
+) => {
+  const program = new DomainRegistryProgram(createAnchorProvider(args));
+
+  await program.methods
+    .removeProgram(args.domain)
+    .accounts({
+      programId: new PublicKey(args["program-id"]),
+      domainRecord: getDomainRecordAddress(args.domain),
+    })
+    .rpc();
+};
