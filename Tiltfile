@@ -78,7 +78,7 @@ local_resource(
     "initialize-programs",
     """
     pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json localnet &&
-    pnpm turbo run:add-program-id-to-domain-registry -- add http://localhost:3000 Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 -u l -k ./tilt/keypairs/faucet.json &&
+    pnpm turbo run:domain-registry -- add http://localhost:3000 Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 -u l -k ./tilt/keypairs/faucet.json &&
     pnpm turbo run:register-fee-config -- %s 100000 100000 -u l -k ./tilt/keypairs/faucet.json
     """ % USDC_MINT,
     resource_deps=["svm-localnet", "check-fee-mint-authority"],
