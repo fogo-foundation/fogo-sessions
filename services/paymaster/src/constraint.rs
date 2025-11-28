@@ -627,7 +627,7 @@ impl DataType {
 }
 
 #[derive(PartialEq, Eq)]
-pub struct NttSignedQuoter ([u8; 20]);
+pub struct NttSignedQuoter([u8; 20]);
 
 impl Serialize for NttSignedQuoter {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -645,16 +645,16 @@ impl<'de> Deserialize<'de> for NttSignedQuoter {
     {
         let s = <String as serde::Deserialize>::deserialize(deserializer)?;
         let hex_part = s.strip_prefix("0x").unwrap_or(&s);
-        let bytes = hex::decode(hex_part).map_err(|e| {
-            serde::de::Error::custom(format!("Invalid hex string {hex_part}: {e}"))
-        })?;
+        let bytes = hex::decode(hex_part)
+            .map_err(|e| serde::de::Error::custom(format!("Invalid hex string {hex_part}: {e}")))?;
         let arr: [u8; 20] = bytes.try_into().map_err(|_| {
-            serde::de::Error::custom("Failed to convert bytes to H160 address: invalid byte array length")
+            serde::de::Error::custom(
+                "Failed to convert bytes to H160 address: invalid byte array length",
+            )
         })?;
         Ok(NttSignedQuoter(arr))
     }
 }
-
 
 #[derive(Serialize, Deserialize)]
 pub enum DataValue {
