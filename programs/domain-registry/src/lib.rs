@@ -50,6 +50,29 @@ pub mod domain_registry {
         domain_record.push(domain_program)?;
         Ok(())
     }
+
+    pub fn remove_program<'info>(
+        ctx: Context<'_, '_, '_, 'info, RemoveProgram<'info>>,
+        domain: String,
+    ) -> Result<()> {
+        let domain = Domain::new_checked(&domain)?;
+        require_eq!(
+            ctx.accounts.domain_record.key(),
+            domain.get_domain_record_address(),
+            DomainRegistryError::InvalidDomainRecordPda
+        );
+        let mut domain_record = DomainRecordInner::load(
+            ctx.accounts.domain_record.to_account_info(),
+            ctx.accounts.authority.to_account_info(),
+        );
+        let index_to_remove = domain_record
+            .position(|program: &DomainProgram| {
+                program.program_id == ctx.accounts.program_id.key()
+            })?
+            .ok_or(DomainRegistryError::ProgramNotFound)?;
+        domain_record.swap_remove(index_to_remove)?;
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -76,6 +99,21 @@ pub struct AddProgram<'info> {
     /// CHECK: We check the PDA derivation
     #[account(seeds = [PROGRAM_SIGNER_SEED], bump, seeds::program = program_id.key())]
     pub signer_pda: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(domain: String)]
+pub struct RemoveProgram<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(seeds = [CONFIG_SEED], bump, has_one = authority)]
+    pub config: Account<'info, Config>,
+    /// CHECK: We will do the checks in the function since Anchor isn't expressive enough
+    #[account(mut)]
+    pub domain_record: AccountInfo<'info>,
+    /// CHECK: The only requirement for program_id is that it is a valid Pubkey
+    pub program_id: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
 
