@@ -324,7 +324,6 @@ const TokenScreen = {
     decimals: number;
     symbol?: string | undefined;
     amountAvailable: bigint;
-    price?: number | undefined;
   }) => ({ type: TokenScreenType.Send as const, ...opts }),
   Receive: () => ({ type: TokenScreenType.Receive as const }),
   Get: () => ({ type: TokenScreenType.Get as const }),
