@@ -75,7 +75,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
             e
         )
     })?;
-    config.assign_defaults(ntt_quoter)?;
+    config.assign_defaults()?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");

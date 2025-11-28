@@ -70,4 +70,144 @@ required = true
 domain = "sessions"
 enable_session_management = true
 enable_preflight_simulation = false
-tx_variations = []
+
+[[domains.tx_variations]]
+version = "v1"
+name = "Intent Transfer"
+max_gas_spend = 10000
+
+[[domains.tx_variations.instructions]]
+program = "Ed25519SigVerify111111111111111111111111111"
+required = true
+
+# numSignatures = 1
+[[domains.tx_variations.instructions.data]]
+start_byte = 0
+data_type = "U8"
+constraint = { EqualTo = [ {U8 = 1} ] }
+
+# padding = 0
+[[domains.tx_variations.instructions.data]]
+start_byte = 1
+data_type = "U8"
+constraint = { EqualTo = [ {U8 = 0} ] }
+
+# signatureOffset = 16 + 32 = 48
+[[domains.tx_variations.instructions.data]]
+start_byte = 2
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 48} ] }
+
+# signatureInstructionIndex = 0xffff
+[[domains.tx_variations.instructions.data]]
+start_byte = 4
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 0xffff} ] }
+
+# publicKeyOffset = 16
+[[domains.tx_variations.instructions.data]]
+start_byte = 6
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 16} ] }
+
+# publicKeyInstructionIndex = 0xffff
+[[domains.tx_variations.instructions.data]]
+start_byte = 8
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 0xffff} ] }
+
+# messageOffset = 16 + 32 + 64 = 112
+[[domains.tx_variations.instructions.data]]
+start_byte = 10
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 112} ] }
+
+# messageInstructionIndex = 0xffff
+[[domains.tx_variations.instructions.data]]
+start_byte = 14
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 0xffff} ] }
+
+[[domains.tx_variations.instructions]]
+program = "Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD"
+required = true
+
+# instruction = 0 (SendTokens)
+[[domains.tx_variations.instructions.data]]
+start_byte = 0
+data_type = "U8"
+constraint = { EqualTo = [ {U8 = 0} ] }
+
+
+
+[[domains.tx_variations]]
+version = "v1"
+name = "Intent NTT Bridge"
+max_gas_spend = 15000
+
+[[domains.tx_variations.instructions]]
+program = "Ed25519SigVerify111111111111111111111111111"
+required = true
+
+# numSignatures = 1
+[[domains.tx_variations.instructions.data]]
+start_byte = 0
+data_type = "U8"
+constraint = { EqualTo = [ {U8 = 1} ] }
+
+# padding = 0
+[[domains.tx_variations.instructions.data]]
+start_byte = 1
+data_type = "U8"
+constraint = { EqualTo = [ {U8 = 0} ] }
+
+# signatureOffset = 16 + 32 = 48
+[[domains.tx_variations.instructions.data]]
+start_byte = 2
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 48} ] }
+
+# signatureInstructionIndex = 0xffff
+[[domains.tx_variations.instructions.data]]
+start_byte = 4
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 0xffff} ] }
+
+# publicKeyOffset = 16
+[[domains.tx_variations.instructions.data]]
+start_byte = 6
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 16} ] }
+
+# publicKeyInstructionIndex = 0xffff
+[[domains.tx_variations.instructions.data]]
+start_byte = 8
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 0xffff} ] }
+
+# messageOffset = 16 + 32 + 64 = 112
+[[domains.tx_variations.instructions.data]]
+start_byte = 10
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 112} ] }
+
+# messageInstructionIndex = 0xffff
+[[domains.tx_variations.instructions.data]]
+start_byte = 14
+data_type = "U16"
+constraint = { EqualTo = [ {U16 = 0xffff} ] }
+
+[[domains.tx_variations.instructions]]
+program = "Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD"
+required = true
+
+# instruction = 1 (BridgeNttTokens)
+[[domains.tx_variations.instructions.data]]
+start_byte = 0
+data_type = "U8"
+constraint = { EqualTo = [ {U8 = 1} ] }
+
+[[domains.tx_variations.instructions.data]]
+start_byte = 1
+data_type = "NttSignedQuoter"
+constraint = { EqualTo = [ {NttSignedQuoter = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"} ] }
