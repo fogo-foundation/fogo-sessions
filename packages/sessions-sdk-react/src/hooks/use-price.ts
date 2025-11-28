@@ -2,30 +2,30 @@
 import { useData } from "./use-data.js";
 import { useCallback } from "react";
 
-export const usePrices = (
-    mints: string[]
+export const usePrice = (
+    mint: string
 ) => {
     const getPriceData = useCallback(
-        () => getPrices(mints),
-        [mints],
+        () => getPrice(mint),
+        [mint],
     );
 
     return useData(
-        ["prices", mints],
+        ["price", mint],
         getPriceData,
         { refreshInterval: 2000 }
     );
 }
 
 // TODO: uncomment when endpoint is live
-export const getPrices = async (mints: string[]) => {
+export const getPrice = async (_mint: string) => {
 //   const priceUrl = new URL("https://api.fogo.io/api/token-price");
 //   for (const mint of mints) {
 //     priceUrl.searchParams.append("mint[]", mint);
 //   }
 //   const priceResult = await fetch(priceUrl);
 //   return priceSchema.parse(await priceResult.json());
-    return Object.fromEntries(mints.map((mint) => [mint, 1 + (Math.random() - 0.5) * 0.1 ]));
+    return 1 + (Math.random() - 0.5) * 0.1; // dummy price
 };
 
 // const priceSchema = z.record(

@@ -12,33 +12,14 @@ export const TokenAmountInput = ({
   max,
   gt,
   lt,
-  onChange,
   ...props
 }: ComponentProps<typeof TextField> &
-  Parameters<typeof useTokenAmountInput>[0]) => {
-  const handleChange = useCallback((value: string) => {
-    // Filter to only allow numbers and at most one decimal point
-    let filtered = value
-      .replace(/[^\d.]/g, '')
-      .replace(/^(\d*\.?\d*).*/, '$1');
-
-    // Cut off mantissa after decimals places
-    const decimalIndex = filtered.indexOf('.');
-    if (decimalIndex !== -1 && filtered.slice(decimalIndex + 1).length > decimals) {
-      filtered = filtered.slice(0, decimalIndex + decimals + 1);
-    }
-
-    onChange?.(filtered);
-  }, [onChange, decimals]);
-
-  return (
-    <TextField
-      {...useTokenAmountInput({ decimals, symbol, min, max, gt, lt })}
-      {...props}
-      onChange={handleChange}
-    />
-  );
-};
+  Parameters<typeof useTokenAmountInput>[0]) => (
+  <TextField
+    {...useTokenAmountInput({ decimals, symbol, min, max, gt, lt })}
+    {...props}
+  />
+);
 
 const useTokenAmountInput = ({
   decimals,

@@ -15,9 +15,11 @@ import { TruncateKey } from "./truncate-key.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
   StateType as TokenDataStateType,
+  StateType as PriceDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
 import * as dnum from 'dnum';
+import { usePrice } from "../hooks/use-price.js";
 
 const MotionGridListItem = motion.create(GridListItem<Token>);
 
@@ -77,75 +79,13 @@ export const TokenList = ({
               }
             })}
         >
-          {(token) => {
-            const { mint, amountInWallet, decimals, image, name, symbol: _, price } =
-              token;
-            const amountAsString = amountToString(amountInWallet, decimals);
-            const notionalValue = calculateNotional(amountInWallet, decimals, price);
-            const contents = (
-              <>
-                <div className={styles.nameAndIcon}>
-                  {image ? (
-                    <img alt="" src={image} className={styles.icon} />
-                  ) : (
-                    <div className={styles.icon} />
-                  )}
-                  <div className={styles.nameAndMint}>
-                    <span className={styles.name}>
-                      {name ?? mint.toBase58()}
-                    </span>
-                    <CopyButton
-                      className={styles.mint ?? ""}
-                      text={mint.toBase58()}
-                    >
-                      <TruncateKey keyValue={mint} />
-                    </CopyButton>
-                  </div>
-                </div>
-                <div className={styles.amountAndActions}>
-                  <div className={styles.amountAndDetails}>
-                    <span className={styles.amount}>{amountAsString}</span>
-                    {notionalValue !== undefined && (
-                      <span className={styles.notional}>
-                        ${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}
-                      </span>
-                    )}
-                  </div>
-                  {"onPressSend" in props && (
-                    <div className={styles.actions}>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className={styles.sendButton ?? ""}
-                        onPress={() => {
-                          props.onPressSend(token);
-                        }}
-                      >
-                        <PaperPlaneTiltIcon />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </>
-            );
-            return (
-              <MotionGridListItem
-                layoutId={mint.toBase58()}
-                layoutScroll
-                textValue={name ?? mint.toBase58()}
-                key={mint.toString()}
-                className={styles.token ?? ""}
-                data-is-button={"onPressToken" in props ? "" : undefined}
-                {...("onPressToken" in props && {
-                  onAction: () => {
-                    props.onPressToken(token);
-                  },
-                })}
-              >
-                {contents}
-              </MotionGridListItem>
-            );
-          }}
+          {(token) => (
+            <TokenItem
+              token={token}
+              {...("onPressSend" in props && { onPressSend: props.onPressSend })}
+              {...("onPressToken" in props && { onPressToken: props.onPressToken })}
+            />
+          )}
         </GridList>
       );
     }
@@ -158,6 +98,86 @@ export const TokenList = ({
       );
     }
   }
+};
+
+type TokenItemProps = {
+  token: Token;
+  onPressSend?: (token: Token) => void;
+  onPressToken?: (token: Token) => void;
+};
+
+const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
+  const { mint, amountInWallet, decimals, image, name } = token;
+  const amountAsString = amountToString(amountInWallet, decimals);
+  const price = usePrice(mint.toBase58());
+  const notionalValue = price.type === PriceDataStateType.Loaded
+    ? calculateNotional(amountInWallet, decimals, price.data)
+    : undefined;
+
+  const contents = (
+    <>
+      <div className={styles.nameAndIcon}>
+        {image ? (
+          <img alt="" src={image} className={styles.icon} />
+        ) : (
+          <div className={styles.icon} />
+        )}
+        <div className={styles.nameAndMint}>
+          <span className={styles.name}>
+            {name ?? mint.toBase58()}
+          </span>
+          <CopyButton
+            className={styles.mint ?? ""}
+            text={mint.toBase58()}
+          >
+            <TruncateKey keyValue={mint} />
+          </CopyButton>
+        </div>
+      </div>
+      <div className={styles.amountAndActions}>
+        <div className={styles.amountAndDetails}>
+          <span className={styles.amount}>{amountAsString}</span>
+          {notionalValue !== undefined && (
+            <span className={styles.notional}>
+              ${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}
+            </span>
+          )}
+        </div>
+        {onPressSend && (
+          <div className={styles.actions}>
+            <Button
+              variant="secondary"
+              size="sm"
+              className={styles.sendButton ?? ""}
+              onPress={() => {
+                onPressSend(token);
+              }}
+            >
+              <PaperPlaneTiltIcon />
+            </Button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  return (
+    <MotionGridListItem
+      layoutId={mint.toBase58()}
+      layoutScroll
+      textValue={name ?? mint.toBase58()}
+      key={mint.toString()}
+      className={styles.token ?? ""}
+      data-is-button={onPressToken ? "" : undefined}
+      {...(onPressToken && {
+        onAction: () => {
+          onPressToken(token);
+        },
+      })}
+    >
+      {contents}
+    </MotionGridListItem>
+  );
 };
 
 const LoadingToken = () => (

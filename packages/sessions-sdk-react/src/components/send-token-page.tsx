@@ -17,6 +17,7 @@ import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
 import { calculateNotional } from "../calculate-notional.js";
+import { parseAmountToSend } from "../parse-amount-to-send.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
@@ -31,7 +32,7 @@ import { TruncateKey } from "./truncate-key.js";
 import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
-import { usePrices } from "../hooks/use-prices.js";
+import { usePrice } from "../hooks/use-price.js";
 import * as dnum from "dnum";
 
 type Props = {
@@ -41,17 +42,14 @@ type Props = {
   decimals: number;
   symbol?: string | undefined;
   amountAvailable: bigint;
-  price?: number | undefined;
   sessionState: EstablishedSessionState;
   onPressBack: () => void;
   onSendComplete: () => void;
 };
 
 export const SendTokenPage = (props: Props) => {
-  const pricesState = usePrices([props.tokenMint.toBase58()]);
-  const livePrice = pricesState.type === StateType.Loaded
-    ? pricesState.data[props.tokenMint.toBase58()]
-    : props.price;
+  const priceState = usePrice(props.tokenMint.toBase58());
+  const price = priceState.type === StateType.Loaded ? priceState.data : undefined;
 
   const feeConfig = useFeeConfig();
   switch (feeConfig.type) {
@@ -66,11 +64,11 @@ export const SendTokenPage = (props: Props) => {
       );
     }
     case StateType.Loaded: {
-      return <SendTokenWithFeeConfig feeConfig={feeConfig.data} {...props} price={livePrice} />;
+      return <SendTokenWithFeeConfig feeConfig={feeConfig.data} {...props} price={price} />;
     }
     case StateType.Loading:
     case StateType.NotLoaded: {
-      return <SendTokenPageImpl {...props} price={livePrice} isLoading />;
+      return <SendTokenPageImpl {...props} isLoading />;
     }
   }
 };
@@ -88,6 +86,7 @@ const SendTokenWithFeeConfig = (
   props: Props & {
     sessionState: EstablishedSessionState;
     feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
+    price: number | undefined;
   },
 ) => {
   const feeTokenAccountBalance = useFeeTokenAccountBalance(
@@ -114,7 +113,7 @@ const SendTokenWithFeeConfig = (
           onPressBack={props.onPressBack}
         />
       ) : (
-        <LoadedSendTokenPage {...props} />
+        <LoadedSendTokenPage {...props} price={props.price} />
       );
     }
     case StateType.Loading:
@@ -153,9 +152,11 @@ const LoadedSendTokenPage = ({
   tokenMint,
   onSendComplete,
   feeConfig,
+  price,
   ...props
 }: Props & {
   feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
+  price: number | undefined;
 }) => {
   const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
@@ -235,6 +236,7 @@ const LoadedSendTokenPage = ({
       onSubmit={onSubmit}
       recipient={recipient}
       amount={amount}
+      price={price}
       onChangeRecipient={setRecipient}
       onPressScanner={() => {
         setShowScanner(true);
@@ -281,7 +283,6 @@ const SendTokenPageImpl = ({
   icon,
   symbol,
   amountAvailable,
-  price,
   ...props
 }: Props &
   (
@@ -293,6 +294,7 @@ const SendTokenPageImpl = ({
         onSubmit: FormEventHandler;
         recipient: string;
         amount: string;
+        price: number | undefined;
         onChangeRecipient: (newRecipient: string) => void;
         onPressScanner: () => void;
         onChangeAmount: (newAmount: string) => void;
@@ -300,24 +302,14 @@ const SendTokenPageImpl = ({
       }
   )) => {
   const scannerShowing = !props.isLoading && props.scanner !== undefined;
-  const maxSendAmount = !props.isLoading && !props.isSubmitting
-    ? props.feeConfig.mint.equals(tokenMint)
-      ? amountAvailable - props.feeConfig.fee
-      : amountAvailable
+  const maxSendAmount = !props.isLoading && !props.isSubmitting && props.feeConfig.mint.equals(tokenMint)
+    ? amountAvailable - props.feeConfig.fee
     : amountAvailable;
 
-  const currentAmount = (() => {
-    if (props.isLoading || !props.amount) {
-      return 0n;
-    }
-    try {
-      return stringToAmount(props.amount, decimals);
-    } catch {
-      return 0n;
-    }
-  })();
-  const notionalValue = price !== undefined
-    ? calculateNotional(currentAmount, decimals, price)
+  const amountToSend = parseAmountToSend(props, decimals) ?? undefined;
+  const price = props.isLoading ? undefined : props.price;
+  const notionalValue = (price !== undefined && amountToSend !== undefined)
+    ? calculateNotional(amountToSend, decimals, price)
     : undefined;
 
   return (
@@ -431,9 +423,9 @@ const SendTokenPageImpl = ({
             value: props.amount,
           })}
         />
-        {!props.isLoading && notionalValue !== undefined && (
+        {!props.isLoading && amountToSend !== undefined && notionalValue && (
           <div className={styles.notionalAvailable}>
-            {currentAmount > maxSendAmount
+            {amountToSend > maxSendAmount
               ? "Insufficient balance"
               : `$${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}`}
           </div>

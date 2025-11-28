@@ -10,6 +10,7 @@ import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
 import { calculateNotional } from "../calculate-notional.js";
+import { parseAmountToSend } from "../parse-amount-to-send.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
@@ -26,6 +27,7 @@ import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import { USDC } from "../wormhole-routes.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { StateType, useData } from "../hooks/use-data.js";
+import { usePrice } from "../hooks/use-price.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -33,20 +35,26 @@ type Props = {
   onSendComplete: () => void;
 };
 
-export const WithdrawPage = ({ onPressBack, ...props }: Props) => (
-  <div className={styles.withdrawPage}>
-    <Button
-      onPress={onPressBack}
-      variant="outline"
-      className={styles.backButton ?? ""}
-    >
-      Back
-    </Button>
-    <WithdrawForm {...props} />
-  </div>
-);
+export const WithdrawPage = ({ onPressBack, ...props }: Props) => {
+  const { network } = useSessionContext();
+  const priceState = usePrice(USDC.chains[network].fogo.mint.toBase58());
+  const price = priceState.type === StateType.Loaded ? priceState.data : undefined;
 
-const WithdrawForm = (props: Omit<Props, "onPressBack">) => {
+  return (
+    <div className={styles.withdrawPage}>
+      <Button
+        onPress={onPressBack}
+        variant="outline"
+        className={styles.backButton ?? ""}
+      >
+        Back
+      </Button>
+      <WithdrawForm {...props} price={price} />
+    </div>
+  );
+};
+
+const WithdrawForm = (props: Omit<Props, "onPressBack"> & { price: number | undefined }) => {
   const feeConfig = useFeeConfig();
   switch (feeConfig.type) {
     case StateType.Error: {
@@ -83,6 +91,7 @@ const useFeeConfig = () => {
 const WithdrawFormWithFeeConfig = (
   props: Omit<Props, "onPressBack"> & {
     feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
+    price: number | undefined;
   },
 ) => {
   const { network } = useSessionContext();
@@ -117,9 +126,6 @@ const WithdrawFormWithFeeConfig = (
             network,
             tokenAccountState.data.tokensInWallet,
           )}
-          price={tokenAccountState.data.tokensInWallet.find((token) =>
-            token.mint.equals(USDC.chains[network].fogo.mint),
-          )?.price}
           {...props}
         />
       );
@@ -224,7 +230,7 @@ const WithdrawFormImpl = (
   props:
     | { isLoading: true }
     | {
-        isLoading?: false | undefined;
+        isLoading?: false;
         isSubmitting: boolean;
         amountAvailable: bigint;
         price: number | undefined;
@@ -237,25 +243,14 @@ const WithdrawFormImpl = (
   const { network } = useSessionContext();
   const tokenMint = USDC.chains[network].fogo.mint;
   const amountAvailable = props.isLoading ? 0n : props.amountAvailable;
-  const maxSendAmount = !props.isLoading && !props.isSubmitting
-    ? props.feeConfig.mint.equals(tokenMint)
-      ? amountAvailable - props.feeConfig.fee
-      : amountAvailable
+  const maxSendAmount = !props.isLoading && !props.isSubmitting && props.feeConfig.mint.equals(tokenMint)
+    ? amountAvailable - props.feeConfig.fee
     : amountAvailable;
-  const price = props.isLoading ? undefined : props.price;
 
-  const currentAmount = (() => {
-    if (props.isLoading || !props.amount) {
-      return 0n;
-    }
-    try {
-      return stringToAmount(props.amount, USDC.decimals);
-    } catch {
-      return 0n;
-    }
-  })();
-  const notionalValue = price !== undefined
-    ? calculateNotional(currentAmount, USDC.decimals, price)
+  const amountToSend = parseAmountToSend(props, USDC.decimals);
+  const price = props.isLoading ? undefined : props.price;
+  const notionalValue = (price !== undefined && amountToSend !== undefined)
+    ? calculateNotional(amountToSend, USDC.decimals, price)
     : undefined;
   return (
     <Form
@@ -315,9 +310,9 @@ const WithdrawFormImpl = (
           value: props.amount,
         })}
       />
-      {!props.isLoading && notionalValue !== undefined && (
+      {!props.isLoading && amountToSend !== undefined && notionalValue && (
         <div className={styles.notionalAvailable}>
-          {currentAmount > maxSendAmount
+          {amountToSend > maxSendAmount
             ? "Insufficient balance"
             : `$${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}`}
         </div>

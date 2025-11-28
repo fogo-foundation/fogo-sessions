@@ -5,10 +5,9 @@ import { useCallback } from "react";
 import { z } from "zod";
 
 import { getMetadata } from "../get-metadata.js";
-import { usePrices } from "./use-prices.js";
 import type { WalletConnectedSessionState } from "../session-state.js";
 import { isEstablished } from "../session-state.js";
-import { StateType, useData } from "./use-data.js";
+import { useData } from "./use-data.js";
 import { useConnection, useSessionContext } from "./use-session.js";
 
 export { StateType } from "./use-data.js";
@@ -23,32 +22,11 @@ export const useTokenAccountData = (
     [connection, sessionState, network],
   );
 
-  const tokenAccountsState = useData(
+  return useData(
     getCacheKey(network, sessionState.walletPublicKey),
     getTokenAccountData,
     {},
   );
-
-  const mints = tokenAccountsState.type === StateType.Loaded ? tokenAccountsState.data.tokensInWallet.map(t => t.mint.toBase58()) : [];
-
-  const pricesState = usePrices(mints);
-
-  if (tokenAccountsState.type === StateType.Loaded) {
-    const pricesData = pricesState.type === StateType.Loaded ? pricesState.data : {};
-    const tokensWithPrices = tokenAccountsState.data.tokensInWallet.map(token => ({
-      ...token,
-      price: pricesData[token.mint.toBase58()] ?? token.price,
-    }));
-    return {
-      ...tokenAccountsState,
-      data: {
-        ...tokenAccountsState.data,
-        tokensInWallet: tokensWithPrices,
-      },
-    };
-  }
-
-  return tokenAccountsState;
 };
 
 export const getCacheKey = (network: Network, walletPublicKey: PublicKey) => [
