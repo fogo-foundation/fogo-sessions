@@ -208,7 +208,6 @@ const Tokens = ({
               icon: token.image,
               symbol: token.symbol,
               tokenName: token.name,
-              price: token.price,
             });
           }}
           sessionState={sessionState}
@@ -235,7 +234,6 @@ const Tokens = ({
             icon={currentScreen.icon}
             symbol={currentScreen.symbol}
             amountAvailable={currentScreen.amountAvailable}
-            price={currentScreen.price}
             onSendComplete={showWallet}
           />
         );
@@ -295,7 +293,6 @@ const Tokens = ({
               icon: token.image,
               symbol: token.symbol,
               tokenName: token.name,
-              price: token.price,
             });
           }}
           sessionState={sessionState}
