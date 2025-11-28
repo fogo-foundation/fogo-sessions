@@ -15,7 +15,10 @@ use solana_program::{
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
-use std::{sync::atomic::{AtomicUsize, Ordering}, time::Duration};
+use std::{
+    sync::atomic::{AtomicUsize, Ordering},
+    time::Duration,
+};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub struct TransactionGenerator {
@@ -63,7 +66,8 @@ impl TransactionGenerator {
     }
 
     fn next_sponsor_pubkey(&self) -> Pubkey {
-        self.sponsor_pubkeys[self.next_sponsor_index.fetch_add(1, Ordering::Relaxed) % self.sponsor_pubkeys.len()]
+        self.sponsor_pubkeys
+            [self.next_sponsor_index.fetch_add(1, Ordering::Relaxed) % self.sponsor_pubkeys.len()]
     }
 
     /// Generate a valid session creation transaction
