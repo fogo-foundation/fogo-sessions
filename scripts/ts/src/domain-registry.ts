@@ -8,6 +8,7 @@ import { anchorOptions, createAnchorProvider } from "./anchor-options.js";
 
 type AnchorArgs = Parameters<typeof createAnchorProvider>[0];
 
+// Remove this if we fix the @fogo/sessions-sdk import issue
 export const getDomainRecordAddress = (domain: string) => {
   const hash = sha256(domain);
   return PublicKey.findProgramAddressSync(
@@ -19,7 +20,7 @@ export const getDomainRecordAddress = (domain: string) => {
 export const main = async (argv: string[] = hideBin(process.argv)) =>
   yargs(argv).options(anchorOptions)
     .command(
-      ["add <domain> <program-id>", "* <domain> <program-id>"],
+      ["add <domain> <program-id>"],
       "Add the given program ID to the whitelist of programs for the given domain",
       (y) =>
         y
@@ -74,7 +75,6 @@ export const main = async (argv: string[] = hideBin(process.argv)) =>
       const program = new DomainRegistryProgram(createAnchorProvider(args));
     
       const { config: configPubkey } = await program.methods.initialize().pubkeys();
-    
       const config = configPubkey
         ? await program.account.config.fetchNullable(configPubkey)
         : undefined;
@@ -92,22 +92,25 @@ export const main = async (argv: string[] = hideBin(process.argv)) =>
     };
     
     const handleList = async (args: { domain: string } & AnchorArgs) => {
-      const domainRecord = await getDomainRecordAddress(args.domain);
+      const domainRecord = getDomainRecordAddress(args.domain);
       const provider = createAnchorProvider(args);
-      const domainRecordData = (await provider.connection.getAccountInfo(domainRecord))?.data;
+      const {data: domainRecordData} = await provider.connection.getAccountInfo(domainRecord) ?? {data: undefined};
     
       if (domainRecordData) {
         const programs = [];
         for (let i = 0; i < domainRecordData.length; i += 64) {
           programs.push(new PublicKey(domainRecordData.subarray(i, i + 32)));
         }
+        // eslint-disable-next-line no-console
         console.log(`Programs in domain record for "${args.domain}":`);
         for (const program of programs) {
+          // eslint-disable-next-line no-console
           console.log(`- ${program.toBase58()}`);
         }
     
       }
       else {
+        // eslint-disable-next-line no-console
         console.log(`No domain record found for domain "${args.domain}"`);
       }
     };
