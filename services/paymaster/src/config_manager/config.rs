@@ -76,7 +76,7 @@ where
 pub struct Config {
     pub domains: Vec<Domain>,
 }
-pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
+pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 15_000;
 
 impl Config {
     /// Populate default tx variations for each domain.
