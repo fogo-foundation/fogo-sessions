@@ -62,7 +62,9 @@ mod resizable_account_array {
             Ok(())
         }
 
+        /// Remove the element at an index efficiently and simply without preserving the order of the elements
         pub fn swap_remove(&mut self, index: usize) -> Result<()> {
+            // swap the element at index `index` with the last element
             {
                 let mut data = self.acc_info.try_borrow_mut_data()?;
                 let elements = bytemuck::cast_slice_mut::<_, T>(&mut data);
@@ -73,6 +75,7 @@ mod resizable_account_array {
                 }
             }
 
+            // remove the last element by reallocating down the account
             let data_len = self.acc_info.data_len();
             self.acc_info.realloc(data_len - size_of::<T>(), false)?;
             self.adjust_rent_if_needed()?;
