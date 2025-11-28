@@ -3,7 +3,7 @@ use anyhow::Result;
 use chain_id::ID as CHAIN_ID_PID;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
-use rand::{random, Rng};
+use rand::random;
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_hash::Hash;
 use solana_keypair::Keypair;
@@ -15,11 +15,13 @@ use solana_program::{
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
-use std::time::Duration;
+use std::{sync::atomic::{AtomicUsize, Ordering}, time::Duration};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub struct TransactionGenerator {
     sponsor_pubkeys: Vec<Pubkey>,
+
+    next_sponsor_index: AtomicUsize,
 
     // wallet keypair of user (used to sign intents)
     user_signer: Keypair,
@@ -37,6 +39,7 @@ impl TransactionGenerator {
     ) -> Self {
         Self {
             sponsor_pubkeys,
+            next_sponsor_index: AtomicUsize::new(0),
             user_signer: Keypair::new(),
             chain_id: chain_id.into(),
             domain: domain.into(),
@@ -59,13 +62,13 @@ impl TransactionGenerator {
         }
     }
 
-    fn random_sponsor_pubkey(&self) -> Pubkey {
-        self.sponsor_pubkeys[rand::rng().random_range(0..self.sponsor_pubkeys.len())]
+    fn next_sponsor_pubkey(&self) -> Pubkey {
+        self.sponsor_pubkeys[self.next_sponsor_index.fetch_add(1, Ordering::Relaxed) % self.sponsor_pubkeys.len()]
     }
 
     /// Generate a valid session creation transaction
     fn generate_valid_session_creation(&self, blockhash: Hash) -> Result<VersionedTransaction> {
-        let sponsor_pubkey = self.random_sponsor_pubkey();
+        let sponsor_pubkey = self.next_sponsor_pubkey();
         let (instructions, session_keypair) =
             self.build_session_establishment_instructions(sponsor_pubkey)?;
 
@@ -90,7 +93,7 @@ impl TransactionGenerator {
         ];
 
         let message =
-            v0::Message::try_compile(&self.random_sponsor_pubkey(), &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.next_sponsor_pubkey(), &instructions, &[], blockhash)?;
 
         // we don't need to sign this transaction, the single signature will be added by the paymaster
         Ok(VersionedTransaction {
@@ -101,7 +104,7 @@ impl TransactionGenerator {
 
     /// Generate transaction with invalid signature (wrong keypair)
     fn generate_invalid_signature(&self, blockhash: Hash) -> Result<VersionedTransaction> {
-        let sponsor_pubkey = self.random_sponsor_pubkey();
+        let sponsor_pubkey = self.next_sponsor_pubkey();
         let (instructions, _session_keypair) =
             self.build_session_establishment_instructions(sponsor_pubkey)?;
 
@@ -132,7 +135,7 @@ impl TransactionGenerator {
         let instructions = vec![invalid_instruction];
 
         let message =
-            v0::Message::try_compile(&self.random_sponsor_pubkey(), &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.next_sponsor_pubkey(), &instructions, &[], blockhash)?;
 
         let tx = VersionedTransaction {
             signatures: vec![Default::default(); 1], // only sponsor (fee payer)
@@ -145,7 +148,7 @@ impl TransactionGenerator {
     /// Generate transaction with wrong fee payer
     fn generate_invalid_fee_payer(&self, blockhash: Hash) -> Result<VersionedTransaction> {
         let (instructions, session_keypair) =
-            self.build_session_establishment_instructions(self.random_sponsor_pubkey())?;
+            self.build_session_establishment_instructions(self.next_sponsor_pubkey())?;
 
         // use user as fee payer instead of sponsor (this should be rejected by paymaster)
         let message =
@@ -170,7 +173,7 @@ impl TransactionGenerator {
             ComputeBudgetInstruction::set_compute_unit_limit(200_000),
         ];
 
-        let sponsor_pubkey = self.random_sponsor_pubkey();
+        let sponsor_pubkey = self.next_sponsor_pubkey();
         let (session_instructions, session_keypair) =
             self.build_session_establishment_instructions(sponsor_pubkey)?;
         instructions.extend(session_instructions);
