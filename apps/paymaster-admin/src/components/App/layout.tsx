@@ -1,4 +1,5 @@
 import { getUserPaymasterData } from "../../server/paymaster";
+import { UserNotFound } from "../UserNotFound";
 
 export const AppLayout = async ({
   children,
@@ -9,6 +10,11 @@ export const AppLayout = async ({
 }) => {
   const { appId } = await params;
   const data = await getUserPaymasterData();
+
+  if (!data) {
+    return <UserNotFound />;
+  }
+
   const app = data.apps.find((app) => app.id === appId);
   if (!app) {
     return (

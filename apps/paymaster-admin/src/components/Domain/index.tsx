@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getUserPaymasterData } from "../../server/paymaster";
+import { UserNotFound } from "../UserNotFound";
 
 export const Domain = async ({
   params,
@@ -9,6 +10,11 @@ export const Domain = async ({
 }) => {
   const { appId, domainId } = await params;
   const data = await getUserPaymasterData();
+
+  if (!data) {
+    return <UserNotFound />;
+  }
+
   const domainConfig = data.apps
     .find((app) => app.id === appId)
     ?.domain_configs.find((domainConfig) => domainConfig.id === domainId);
@@ -22,13 +28,34 @@ export const Domain = async ({
   }
   return (
     <div>
-      <h1>Domain: {domainConfig.domain}</h1>
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={domainConfig.enable_session_management}
+            readOnly
+          />
+          Enable Session Management
+        </label>
+      </div>
+
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={domainConfig.enable_preflight_simulation}
+            readOnly
+          />
+          Enable Preflight Simulation
+        </label>
+      </div>
+
       <h2>Variations:</h2>
       <ul>
         {domainConfig.variations.map((variation) => (
           <li key={variation.id}>
             <Link href={`/dashboard/${appId}/${domainId}/${variation.id}`}>
-              {variation.transaction_variation.name}
+              {variation.name}
             </Link>
           </li>
         ))}
