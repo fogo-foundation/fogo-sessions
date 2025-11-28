@@ -85,7 +85,7 @@ mod resizable_account_array {
         }
         pub fn position(&self, predicate: impl Fn(&T) -> bool) -> Result<Option<usize>> {
             let data = self.acc_info.try_borrow_data()?;
-            Ok(bytemuck::cast_slice(&data).into_iter().position(predicate))
+            Ok(bytemuck::cast_slice(&data).iter().position(predicate))
         }
 
         pub fn to_vec<U>(&self) -> Result<Vec<U>>
