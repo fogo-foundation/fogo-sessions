@@ -47,7 +47,6 @@
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@solana/wallet-adapter-base": "catalog:",
-    "@types/bn.js": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
@@ -56,23 +55,18 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "catalog:",
-    "@fogo/sessions-idls": "workspace:^",
-    "@metaplex-foundation/mpl-token-metadata": "catalog:",
-    "@metaplex-foundation/umi": "catalog:",
-    "@metaplex-foundation/umi-bundle-defaults": "catalog:",
-    "@noble/hashes": "catalog:",
     "@solana/compat": "catalog:",
     "@solana/kit": "catalog:",
-    "@solana/spl-token": "catalog:",
+    "@solana-program/compute-budget": "catalog:",
     "@solana/web3.js": "catalog:",
+    "@xlabs-xyz/const-utils": "catalog:",
+    "@xlabs-xyz/binary-layout": "catalog:",
+    "@xlabs-xyz/utils": "catalog:",
+    "@xlabs-xyz/common": "catalog:",
+    "@xlabs-xyz/svm": "catalog:",
     "@wormhole-foundation/sdk": "catalog:",
     "@wormhole-foundation/sdk-base": "catalog:",
     "@wormhole-foundation/sdk-route-ntt": "catalog:",
-    "@wormhole-foundation/sdk-solana-core": "catalog:",
-    "@wormhole-foundation/sdk-solana-ntt": "catalog:",
-    "bn.js": "catalog:",
-    "bs58": "catalog:",
     "zod": "catalog:"
   }
 }

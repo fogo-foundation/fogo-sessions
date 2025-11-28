@@ -51,9 +51,6 @@ catalogs:
     '@next/third-parties':
       specifier: ^15.3.4
       version: 15.3.4
-    '@noble/hashes':
-      specifier: ^1.8.0
-      version: 1.8.0
     '@phosphor-icons/react':
       specifier: ^2.1.10
       version: 2.1.10
@@ -66,6 +63,12 @@ catalogs:
     '@solana-mobile/wallet-adapter-mobile':
       specifier: ^2.2.4
       version: 2.2.4
+    '@solana-program/compute-budget':
+      specifier: ^0.10.0
+      version: 0.10.0
+    '@solana-program/stake':
+      specifier: ^0.5.0
+      version: 0.5.0
     '@solana-program/token':
       specifier: ^0.5.1
       version: 0.5.1
@@ -144,12 +147,27 @@ catalogs:
     '@wormhole-foundation/sdk-route-ntt':
       specifier: ^4.0.1
       version: 4.0.1
-    '@wormhole-foundation/sdk-solana-core':
-      specifier: ^3.10.0
-      version: 3.10.0
-    '@wormhole-foundation/sdk-solana-ntt':
-      specifier: ^4.0.1
-      version: 4.0.1
+    '@xlabs-xyz/amount':
+      specifier: ^3.0.0
+      version: 3.0.0
+    '@xlabs-xyz/binary-layout':
+      specifier: ^3.0.0
+      version: 3.0.0
+    '@xlabs-xyz/common':
+      specifier: ^3.0.0
+      version: 3.0.0
+    '@xlabs-xyz/const-utils':
+      specifier: ^3.0.0
+      version: 3.0.0
+    '@xlabs-xyz/fork-svm':
+      specifier: ^3.0.0
+      version: 3.0.0
+    '@xlabs-xyz/svm':
+      specifier: ^3.0.0
+      version: 3.0.0
+    '@xlabs-xyz/utils':
+      specifier: ^3.0.0
+      version: 3.0.0
     '@yudiel/react-qr-scanner':
       specifier: ^2.3.1
       version: 2.3.1
@@ -429,10 +447,10 @@ importers:
         version: 25.1.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@solana-program/token':
         specifier: 'catalog:'
-        version: 0.5.1(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
+        version: 0.5.1(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
       '@solana/kit':
         specifier: 'catalog:'
-        version: 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@solana/spl-token':
         specifier: 'catalog:'
         version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -706,33 +724,15 @@ importers:
 
   packages/sessions-sdk-ts:
     dependencies:
-      '@coral-xyz/anchor':
+      '@solana-program/compute-budget':
         specifier: 'catalog:'
-        version: 0.31.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      '@fogo/sessions-idls':
-        specifier: workspace:^
-        version: link:../sessions-idls
-      '@metaplex-foundation/mpl-token-metadata':
-        specifier: 'catalog:'
-        version: 3.4.0(@metaplex-foundation/umi@1.2.0)
-      '@metaplex-foundation/umi':
-        specifier: 'catalog:'
-        version: 1.2.0
-      '@metaplex-foundation/umi-bundle-defaults':
-        specifier: 'catalog:'
-        version: 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
-      '@noble/hashes':
-        specifier: 'catalog:'
-        version: 1.8.0
+        version: 0.10.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
       '@solana/compat':
         specifier: 'catalog:'
         version: 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       '@solana/kit':
         specifier: 'catalog:'
         version: 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@solana/spl-token':
-        specifier: 'catalog:'
-        version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -745,18 +745,21 @@ importers:
       '@wormhole-foundation/sdk-route-ntt':
         specifier: 'catalog:'
         version: 4.0.1(@wormhole-foundation/sdk-base@3.11.0)(@wormhole-foundation/sdk-connect@3.10.0)(@wormhole-foundation/sdk-definitions@3.10.0)(@wormhole-foundation/sdk-evm-core@3.10.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@wormhole-foundation/sdk-evm@3.10.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@wormhole-foundation/sdk-solana-core@3.10.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))(@wormhole-foundation/sdk-solana@3.10.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))(axios@1.10.0)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      '@wormhole-foundation/sdk-solana-core':
+      '@xlabs-xyz/binary-layout':
         specifier: 'catalog:'
-        version: 3.10.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      '@wormhole-foundation/sdk-solana-ntt':
+        version: 3.0.0(@xlabs-xyz/const-utils@3.0.0)
+      '@xlabs-xyz/common':
         specifier: 'catalog:'
-        version: 4.0.1(@wormhole-foundation/sdk-base@3.11.0)(@wormhole-foundation/sdk-definitions@3.10.0)(@wormhole-foundation/sdk-solana-core@3.10.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))(@wormhole-foundation/sdk-solana@3.10.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
-      bn.js:
+        version: 3.0.0(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0))
+      '@xlabs-xyz/const-utils':
         specifier: 'catalog:'
-        version: 5.2.2
-      bs58:
+        version: 3.0.0
+      '@xlabs-xyz/svm':
         specifier: 'catalog:'
-        version: 6.0.0
+        version: 3.0.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/common@3.0.0(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0))
+      '@xlabs-xyz/utils':
+        specifier: 'catalog:'
+        version: 3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)
       zod:
         specifier: 'catalog:'
         version: 3.25.67
@@ -779,9 +782,6 @@ importers:
       '@solana/wallet-adapter-base':
         specifier: 'catalog:'
         version: 0.9.27(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
-      '@types/bn.js':
-        specifier: 'catalog:'
-        version: 4.11.6
       '@types/jest':
         specifier: 'catalog:'
         version: 29.5.14
@@ -871,6 +871,43 @@ importers:
       webpack-cli:
         specifier: ^6.0.1
         version: 6.0.1(webpack@5.101.3)
+
+  program-tests:
+    dependencies:
+      '@fogo/sessions-sdk':
+        specifier: workspace:*
+        version: link:../packages/sessions-sdk-ts
+      '@solana-program/stake':
+        specifier: 'catalog:'
+        version: 0.5.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
+      '@solana/kit':
+        specifier: 'catalog:'
+        version: 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@xlabs-xyz/amount':
+        specifier: 'catalog:'
+        version: 3.0.0
+      '@xlabs-xyz/binary-layout':
+        specifier: 'catalog:'
+        version: 3.0.0(@xlabs-xyz/const-utils@3.0.0)
+      '@xlabs-xyz/const-utils':
+        specifier: 'catalog:'
+        version: 3.0.0
+      '@xlabs-xyz/fork-svm':
+        specifier: 'catalog:'
+        version: 3.0.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(@solana/rpc-spec-types@4.0.0(typescript@5.8.3))(@solana/rpc-spec@4.0.0(typescript@5.8.3))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/svm@3.0.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/common@3.0.0(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)))(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0))
+      '@xlabs-xyz/svm':
+        specifier: 'catalog:'
+        version: 3.0.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/common@3.0.0(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0))
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.0.3
+      tsx:
+        specifier: ^4.20.6
+        version: 4.20.6
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
 
   scripts/ts:
     dependencies:
@@ -3798,6 +3835,9 @@ packages:
   '@scure/base@1.2.6':
     resolution: {integrity: sha512-g/nm5FgUa//MCj1gV09zTJTaM6KBAHqLN907YVQqf7zC49+DcO4B1so4ZX07Ef10Twr6nuqYEH9GEggFXA4Fmg==}
 
+  '@scure/base@2.0.0':
+    resolution: {integrity: sha512-3E1kpuZginKkek01ovG8krQ0Z44E3DHPjc5S2rjJw9lZn3KSQOs8S7wqikF/AH7iRanHypj85uGyxk0XAyC37w==}
+
   '@scure/bip32@1.4.0':
     resolution: {integrity: sha512-sVUpc0Vq3tXCkDGYVWGIZTRfnvu8LoTDaev7vbwh0omSvVORONr960MQWdKqJDCReIEmTj3PAr73O3aoxz7OPg==}
 
@@ -3862,6 +3902,11 @@ packages:
   '@solana-mobile/wallet-standard-mobile@0.4.2':
     resolution: {integrity: sha512-D/ebTRcpSEdCxfp7OZ0NRg+ScguJHqp208EGWI1R5rMBoGdoeu4ZvIi3VeJdi+Y9qcJFji8p2gf/wdHRL+6RkQ==}
 
+  '@solana-program/compute-budget@0.10.0':
+    resolution: {integrity: sha512-UAJpPViY4N/6HtaxBfE92YGob6RDaasIb2v9BiVf44JIpue5b7pNJ2wbFxE/89EPX91xhGCwkDP/+ZgsuCQT1A==}
+    peerDependencies:
+      '@solana/kit': ^4.0
+
   '@solana-program/compute-budget@0.7.0':
     resolution: {integrity: sha512-/JJSE1fKO5zx7Z55Z2tLGWBDDi7tUE+xMlK8qqkHlY51KpqksMsIBzQMkG9Dqhoe2Cnn5/t3QK1nJKqW6eHzpg==}
     peerDependencies:
@@ -3871,6 +3916,11 @@ packages:
     resolution: {integrity: sha512-ssNPsJv9XHaA+L7ihzmWGYcm/+XYURQ8UA3wQMKf6ccEHyHOUgoglkkDU/BoA0+wul6HxZUN0tHFymC0qFw6sg==}
     peerDependencies:
       '@solana/kit': ^2.1.0
+
+  '@solana-program/stake@0.5.0':
+    resolution: {integrity: sha512-G3G1kcyTDTqcDEUqJkKyPfHAGh6AociXnDu4dZ87LprWeV3qZ26tReiOu3HN7inf2wCyJ32BWJyxoKNFVL9C8w==}
+    peerDependencies:
+      '@solana/kit': ^5.0
 
   '@solana-program/system@0.7.0':
     resolution: {integrity: sha512-FKTBsKHpvHHNc1ATRm7SlC5nF/VdJtOSjldhcyfMN9R7xo712Mo2jHIzvBgn8zQO5Kg0DcWuKB7268Kv1ocicw==}
@@ -5721,6 +5771,52 @@ packages:
   '@xhmikosr/os-filter-obj@3.0.0':
     resolution: {integrity: sha512-siPY6BD5dQ2SZPl3I0OZBHL27ZqZvLEosObsZRQ1NUB8qcxegwt0T9eKtV96JMFQpIz1elhkzqOg4c/Ri6Dp9A==}
     engines: {node: ^14.14.0 || >=16.0.0}
+
+  '@xlabs-xyz/amount@3.0.0':
+    resolution: {integrity: sha512-MDx8Gp9zKdIDyLD1D88D3AwW3kexlj4faTxfyNyIGW1wk5tR0lHAAOQ1PfTRev9/QWW3XRcaDKJCxulxo7w55Q==}
+
+  '@xlabs-xyz/binary-layout@3.0.0':
+    resolution: {integrity: sha512-1uzgJcK3i8ZueRj/Q468bLuQ1ji8AUSmU2XR0JYIAZsXXiu4RgmtSLyjMYaHI2Byq9yudRy2aXLnkGnsWWLlXA==}
+    peerDependencies:
+      '@xlabs-xyz/const-utils': ^3.0.0
+
+  '@xlabs-xyz/common@3.0.0':
+    resolution: {integrity: sha512-R3ZBE3vl9zsfMGuvmVovzV7k/QImj+Y454NfAIkImWRS8RrqaUN6LSH2g3VHyD/5fYqzr8ng5BGT8ptNf7WERw==}
+    peerDependencies:
+      '@xlabs-xyz/amount': ^3.0.0
+      '@xlabs-xyz/binary-layout': ^3.0.0
+      '@xlabs-xyz/const-utils': ^3.0.0
+      '@xlabs-xyz/utils': ^3.0.0
+
+  '@xlabs-xyz/const-utils@3.0.0':
+    resolution: {integrity: sha512-fOiE4t2vA/8Uw5nKdpUXwNGAnkXJQZBOidoqMTig6G/Tr1+aHL0fi3sSDKrcawVKF5TjWQPXZpGJ01X8m5KZ/Q==}
+
+  '@xlabs-xyz/fork-svm@3.0.0':
+    resolution: {integrity: sha512-RORrDjEBsrXxL9V8xn38fkFGubE254+iuEtoDCYoMZQ3m0K1MvVYdsus8iJKF07k1EyD3TMNN724l0PoypX+kQ==}
+    peerDependencies:
+      '@solana/kit': '*'
+      '@solana/rpc-spec': '*'
+      '@solana/rpc-spec-types': '*'
+      '@xlabs-xyz/const-utils': ^3.0.0
+      '@xlabs-xyz/svm': ^3.0.0
+      '@xlabs-xyz/utils': ^3.0.0
+
+  '@xlabs-xyz/svm@3.0.0':
+    resolution: {integrity: sha512-Fc/EwNb1rRAtLZbPKDr4azfKnoUq1uUEHgXCVXe/pP4QLSU8n9yBoi9Sl5geZ+mih67N+eUSTrVLZsYxmdhNfw==}
+    peerDependencies:
+      '@solana/kit': '*'
+      '@xlabs-xyz/amount': ^3.0.0
+      '@xlabs-xyz/binary-layout': ^3.0.0
+      '@xlabs-xyz/common': ^3.0.0
+      '@xlabs-xyz/const-utils': ^3.0.0
+      '@xlabs-xyz/utils': ^3.0.0
+
+  '@xlabs-xyz/utils@3.0.0':
+    resolution: {integrity: sha512-BBPPArIdqFFk9SafSpPKXDanBsdLFytZWWsweb3oQ0v1uTFfGpBCjcu8eHrxfWZ7Yhq5Z4Yw91y9y76haKzGzw==}
+    peerDependencies:
+      '@noble/curves': ^2.0.1
+      '@noble/hashes': ^2.0.1
+      '@xlabs-xyz/const-utils': ^3.0.0
 
   '@xrplf/isomorphic@1.0.1':
     resolution: {integrity: sha512-0bIpgx8PDjYdrLFeC3csF305QQ1L7sxaWnL5y71mCvhenZzJgku9QsA+9QCXBC1eNYtxWO/xR91zrXJy2T/ixg==}
@@ -10584,6 +10680,11 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
+  tsx@4.20.6:
+    resolution: {integrity: sha512-ytQKuwgmrrkDTFP4LjR0ToE2nqgy886GpvRSpU0JAnrdBYppuY5rLkRUYPU1yCryb24SsKBTL/hlDQAEFVwtZg==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
@@ -15298,6 +15399,8 @@ snapshots:
 
   '@scure/base@1.2.6': {}
 
+  '@scure/base@2.0.0': {}
+
   '@scure/bip32@1.4.0':
     dependencies:
       '@noble/curves': 1.4.2
@@ -15409,6 +15512,10 @@ snapshots:
       - react
       - react-native
 
+  '@solana-program/compute-budget@0.10.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
+    dependencies:
+      '@solana/kit': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+
   '@solana-program/compute-budget@0.7.0(@solana/kit@2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
     dependencies:
       '@solana/kit': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
@@ -15416,6 +15523,10 @@ snapshots:
   '@solana-program/stake@0.2.1(@solana/kit@2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
     dependencies:
       '@solana/kit': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+
+  '@solana-program/stake@0.5.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
+    dependencies:
+      '@solana/kit': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
 
   '@solana-program/system@0.7.0(@solana/kit@2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
     dependencies:
@@ -15430,9 +15541,9 @@ snapshots:
     dependencies:
       '@solana/kit': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
 
-  '@solana-program/token@0.5.1(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
+  '@solana-program/token@0.5.1(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
     dependencies:
-      '@solana/kit': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@solana/kit': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
 
   '@solana/accounts@2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)':
     dependencies:
@@ -15733,32 +15844,6 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - ws
 
-  '@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/accounts': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/addresses': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/codecs': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/errors': 4.0.0(typescript@5.8.3)
-      '@solana/functional': 4.0.0(typescript@5.8.3)
-      '@solana/instruction-plans': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/instructions': 4.0.0(typescript@5.8.3)
-      '@solana/keys': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/programs': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/rpc': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/rpc-parsed-types': 4.0.0(typescript@5.8.3)
-      '@solana/rpc-spec-types': 4.0.0(typescript@5.8.3)
-      '@solana/rpc-subscriptions': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@solana/rpc-types': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/signers': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/sysvars': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/transaction-confirmation': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@solana/transaction-messages': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/transactions': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      typescript: 5.8.3
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - ws
-
   '@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
       '@solana/accounts': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
@@ -15947,15 +16032,6 @@ snapshots:
       typescript: 5.8.3
       ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
 
-  '@solana/rpc-subscriptions-channel-websocket@4.0.0(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/errors': 4.0.0(typescript@5.8.3)
-      '@solana/functional': 4.0.0(typescript@5.8.3)
-      '@solana/rpc-subscriptions-spec': 4.0.0(typescript@5.8.3)
-      '@solana/subscribable': 4.0.0(typescript@5.8.3)
-      typescript: 5.8.3
-      ws: 7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-
   '@solana/rpc-subscriptions-channel-websocket@4.0.0(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
       '@solana/errors': 4.0.0(typescript@5.8.3)
@@ -15994,24 +16070,6 @@ snapshots:
       '@solana/rpc-transformers': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       '@solana/rpc-types': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       '@solana/subscribable': 2.1.1(typescript@5.8.3)
-      typescript: 5.8.3
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - ws
-
-  '@solana/rpc-subscriptions@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/errors': 4.0.0(typescript@5.8.3)
-      '@solana/fast-stable-stringify': 4.0.0(typescript@5.8.3)
-      '@solana/functional': 4.0.0(typescript@5.8.3)
-      '@solana/promises': 4.0.0(typescript@5.8.3)
-      '@solana/rpc-spec-types': 4.0.0(typescript@5.8.3)
-      '@solana/rpc-subscriptions-api': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/rpc-subscriptions-channel-websocket': 4.0.0(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@solana/rpc-subscriptions-spec': 4.0.0(typescript@5.8.3)
-      '@solana/rpc-transformers': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/rpc-types': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/subscribable': 4.0.0(typescript@5.8.3)
       typescript: 5.8.3
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
@@ -16254,23 +16312,6 @@ snapshots:
       '@solana/rpc-types': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       '@solana/transaction-messages': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       '@solana/transactions': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      typescript: 5.8.3
-    transitivePeerDependencies:
-      - fastestsmallesttextencoderdecoder
-      - ws
-
-  '@solana/transaction-confirmation@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
-    dependencies:
-      '@solana/addresses': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/codecs-strings': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/errors': 4.0.0(typescript@5.8.3)
-      '@solana/keys': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/promises': 4.0.0(typescript@5.8.3)
-      '@solana/rpc': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/rpc-subscriptions': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
-      '@solana/rpc-types': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/transaction-messages': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
-      '@solana/transactions': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       typescript: 5.8.3
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
@@ -18897,6 +18938,46 @@ snapshots:
   '@xhmikosr/os-filter-obj@3.0.0':
     dependencies:
       arch: 3.0.0
+
+  '@xlabs-xyz/amount@3.0.0': {}
+
+  '@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0)':
+    dependencies:
+      '@xlabs-xyz/const-utils': 3.0.0
+
+  '@xlabs-xyz/common@3.0.0(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0))':
+    dependencies:
+      '@xlabs-xyz/amount': 3.0.0
+      '@xlabs-xyz/binary-layout': 3.0.0(@xlabs-xyz/const-utils@3.0.0)
+      '@xlabs-xyz/const-utils': 3.0.0
+      '@xlabs-xyz/utils': 3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)
+
+  '@xlabs-xyz/const-utils@3.0.0': {}
+
+  '@xlabs-xyz/fork-svm@3.0.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(@solana/rpc-spec-types@4.0.0(typescript@5.8.3))(@solana/rpc-spec@4.0.0(typescript@5.8.3))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/svm@3.0.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/common@3.0.0(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)))(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0))':
+    dependencies:
+      '@solana/kit': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@solana/rpc-spec': 4.0.0(typescript@5.8.3)
+      '@solana/rpc-spec-types': 4.0.0(typescript@5.8.3)
+      '@xlabs-xyz/const-utils': 3.0.0
+      '@xlabs-xyz/svm': 3.0.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/common@3.0.0(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0))
+      '@xlabs-xyz/utils': 3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)
+
+  '@xlabs-xyz/svm@3.0.0(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/common@3.0.0(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0))':
+    dependencies:
+      '@solana/kit': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@xlabs-xyz/amount': 3.0.0
+      '@xlabs-xyz/binary-layout': 3.0.0(@xlabs-xyz/const-utils@3.0.0)
+      '@xlabs-xyz/common': 3.0.0(@xlabs-xyz/amount@3.0.0)(@xlabs-xyz/binary-layout@3.0.0(@xlabs-xyz/const-utils@3.0.0))(@xlabs-xyz/const-utils@3.0.0)(@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0))
+      '@xlabs-xyz/const-utils': 3.0.0
+      '@xlabs-xyz/utils': 3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)
+
+  '@xlabs-xyz/utils@3.0.0(@noble/curves@1.9.4)(@noble/hashes@1.8.0)(@xlabs-xyz/const-utils@3.0.0)':
+    dependencies:
+      '@noble/curves': 1.9.4
+      '@noble/hashes': 1.8.0
+      '@scure/base': 2.0.0
+      '@xlabs-xyz/const-utils': 3.0.0
 
   '@xrplf/isomorphic@1.0.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
     dependencies:
@@ -24696,6 +24777,13 @@ snapshots:
   tslib@2.7.0: {}
 
   tslib@2.8.1: {}
+
+  tsx@4.20.6:
+    dependencies:
+      esbuild: 0.25.5
+      get-tsconfig: 4.10.1
+    optionalDependencies:
+      fsevents: 2.3.3
 
   tunnel-agent@0.6.0:
     dependencies:

@@ -1,13 +1,11 @@
-import type { Wallet } from "@coral-xyz/anchor";
-import { AnchorProvider } from "@coral-xyz/anchor";
-import { ChainIdProgram } from "@fogo/sessions-idls";
-import { Connection as Web3Connection, Keypair } from "@solana/web3.js";
+import { definedOrThrow } from "@xlabs-xyz/utils";
 
 import type {
   Connection,
   SendTransactionOptions as SendTransactionBaseOptions,
   TransactionOrInstructions,
 } from "./connection.js";
+import { getChainId } from "./onchain/chainid.js";
 
 // eslint-disable-next-line unicorn/no-typeof-undefined
 const IS_BROWSER = typeof globalThis.window !== "undefined";
@@ -25,7 +23,10 @@ export const createSessionContext = async (options: {
     options.connection.getSponsor(SESSIONS_INTERNAL_PAYMASTER_DOMAIN),
   ]);
   return {
-    chainId: await fetchChainId(options.connection.connection),
+    chainId: definedOrThrow(
+      await getChainId(options.connection.rpc),
+      "couldn't fetch chain id",
+    ),
     domain: getDomain(options.domain),
     payer: sponsor,
     internalPayer: internalSponsor,
@@ -58,24 +59,6 @@ export type SendTransactionOptions = SendTransactionBaseOptions & {
 
 export type SessionContext = Awaited<ReturnType<typeof createSessionContext>>;
 
-const fetchChainId = async (connection: Web3Connection) => {
-  const chainIdProgram = new ChainIdProgram(
-    new AnchorProvider(
-      connection,
-      { publicKey: new Keypair().publicKey } as Wallet,
-      {},
-    ),
-  ); // We mock the wallet because we don't need to sign anything
-  const { chainIdAccount: chainIdAddress } = await chainIdProgram.methods
-    .set("")
-    .pubkeys(); // We use Anchor to derive the chain ID address, not caring about the actual argument of `set`
-  if (chainIdAddress === undefined) {
-    throw new NoChainIdAddressError();
-  }
-  const chainId = await chainIdProgram.account.chainId.fetch(chainIdAddress);
-  return chainId.chainId;
-};
-
 const getDomain = (requestedDomain?: string) => {
   const detectedDomain = IS_BROWSER ? globalThis.location.origin : undefined;
 
@@ -89,13 +72,6 @@ const getDomain = (requestedDomain?: string) => {
     return requestedDomain;
   }
 };
-
-class NoChainIdAddressError extends Error {
-  constructor() {
-    super("Failed to derive chain ID address");
-    this.name = "NoChainIdAddressError";
-  }
-}
 
 class DomainRequiredError extends Error {
   constructor() {
