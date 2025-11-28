@@ -24,6 +24,7 @@
     "@fogo/sessions-sdk": "workspace:*",
     "@ledgerhq/hw-transport": "catalog:",
     "@ledgerhq/hw-transport-node-hid": "catalog:",
+    "@noble/hashes": "catalog:",
     "@metaplex-foundation/mpl-token-metadata": "catalog:",
     "@metaplex-foundation/umi": "catalog:",
     "@metaplex-foundation/umi-bundle-defaults": "catalog:",
