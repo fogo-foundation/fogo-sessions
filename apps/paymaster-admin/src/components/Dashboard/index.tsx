@@ -1,9 +1,15 @@
 import Link from "next/link";
 
 import { getUserPaymasterData } from "../../server/paymaster";
+import { UserNotFound } from "../UserNotFound";
 
 export const Dashboard = async () => {
   const data = await getUserPaymasterData();
+
+  if (!data) {
+    return <UserNotFound />;
+  }
+
   return (
     <div>
       <h2>Apps</h2>

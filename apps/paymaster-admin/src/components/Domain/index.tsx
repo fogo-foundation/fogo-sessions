@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getUserPaymasterData } from "../../server/paymaster";
+import { UserNotFound } from "../UserNotFound";
 
 export const Domain = async ({
   params,
@@ -9,6 +10,11 @@ export const Domain = async ({
 }) => {
   const { appId, domainId } = await params;
   const data = await getUserPaymasterData();
+
+  if (!data) {
+    return <UserNotFound />;
+  }
+
   const domainConfig = data.apps
     .find((app) => app.id === appId)
     ?.domain_configs.find((domainConfig) => domainConfig.id === domainId);

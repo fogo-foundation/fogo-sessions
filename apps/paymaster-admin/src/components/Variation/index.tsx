@@ -1,4 +1,5 @@
 import { getUserPaymasterData } from "../../server/paymaster";
+import { UserNotFound } from "../UserNotFound";
 
 export const Variation = async ({
   params,
@@ -7,6 +8,11 @@ export const Variation = async ({
 }) => {
   const { appId, domainId, variationId } = await params;
   const data = await getUserPaymasterData();
+
+  if (!data) {
+    return <UserNotFound />;
+  }
+
   const variation = data.apps
     .find((app) => app.id === appId)
     ?.domain_configs.find((domainConfig) => domainConfig.id === domainId)

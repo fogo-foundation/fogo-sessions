@@ -85,17 +85,9 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
     // [walletAddress],
   );
 
-  // If user doesn't exist in database, return default structure
+  // If user doesn't exist in database, return undefined
   if (!rows[0]) {
-    console.log("User not found in database:", walletAddress);
-    return {
-      id: null,
-      username: null,
-      wallet_address: walletAddress,
-      created_at: null,
-      updated_at: null,
-      apps: [],
-    };
+    return undefined;
   }
   
   const userPaymasterData = UserSchema.parse(rows[0]);
