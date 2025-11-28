@@ -209,5 +209,5 @@ constraint = { EqualTo = [ {U8 = 1} ] }
 
 [[domains.tx_variations.instructions.data]]
 start_byte = 1
-data_type = "NttSignedQuoter"
-constraint = { EqualTo = [ {NttSignedQuoter = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"} ] }
+data_type = "NttSignedQuote"
+constraint = { EqualTo = [ {NttSignedQuoter = "0x5241c9276698439fef2780dbab76fec90b633fbd"} ] }

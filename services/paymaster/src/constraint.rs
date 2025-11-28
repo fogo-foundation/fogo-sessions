@@ -627,7 +627,7 @@ impl DataType {
 }
 
 #[derive(PartialEq, Eq)]
-struct NttSignedQuoter ([u8; 20]);
+pub struct NttSignedQuoter ([u8; 20]);
 
 impl Serialize for NttSignedQuoter {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -655,11 +655,6 @@ impl<'de> Deserialize<'de> for NttSignedQuoter {
     }
 }
 
-impl Into<[u8; 20]> for NttSignedQuoter {
-    fn into(self) -> [u8; 20] {
-        self.0
-    }
-}
 
 #[derive(Serialize, Deserialize)]
 pub enum DataValue {
