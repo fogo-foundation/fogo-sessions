@@ -3755,6 +3755,7 @@ dependencies = [
  "clap",
  "dashmap 6.1.0",
  "fogo-sessions-sdk",
+ "futures",
  "governor",
  "hdrhistogram",
  "rand 0.9.2",
