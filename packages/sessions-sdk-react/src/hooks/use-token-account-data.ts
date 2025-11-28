@@ -74,7 +74,6 @@ const getTokenAccounts = async (
         mint: new PublicKey(mint),
         amountInWallet,
         decimals,
-        price: undefined as number | undefined,
         ...metadata[mint],
       })),
     sessionLimits: isEstablished(sessionState)
