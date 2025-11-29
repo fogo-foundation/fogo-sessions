@@ -1,4 +1,5 @@
 CREATE TYPE app_role AS ENUM ('owner', 'admin');
+CREATE TYPE variation_version AS ENUM ('v0', 'v1');
 
 CREATE TABLE "user" (
   id uuid PRIMARY KEY,
@@ -44,6 +45,9 @@ CREATE TABLE domain_config (
 CREATE TABLE variation (
   id uuid PRIMARY KEY,                           
   domain_config_id uuid NOT NULL REFERENCES domain_config(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  version variation_version NOT NULL,
+  max_gas_spend bigint,
   transaction_variation jsonb NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
