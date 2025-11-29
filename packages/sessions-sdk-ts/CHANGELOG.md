@@ -1,5 +1,13 @@
 # @fogo/sessions-sdk
 
+## 0.0.25
+
+### Patch Changes
+
+- cf63fff: Update mainnet USDC bridge out ALT
+- Updated dependencies [f28e02a]
+  - @fogo/sessions-idls@0.0.11
+
 ## 0.0.24
 
 ### Patch Changes
