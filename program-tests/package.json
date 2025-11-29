@@ -1,0 +1,24 @@
+{
+  "name": "@fogo/program-tests",
+  "private": true,
+  "scripts": {
+    "pretest": "test -f ../target/deploy/session_stake.so || (echo 'Error: Program not built. Run: cargo build-sbf or anchor build' && exit 1)",
+    "test": "tsx --test *.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "^4.20.6",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@fogo/sessions-sdk": "workspace:*",
+    "@solana/kit": "catalog:",
+    "@solana-program/stake": "catalog:",
+    "@xlabs-xyz/binary-layout": "catalog:",
+    "@xlabs-xyz/const-utils": "catalog:",
+    "@xlabs-xyz/fork-svm": "catalog:",
+    "@xlabs-xyz/amount": "catalog:",
+    "@xlabs-xyz/svm": "catalog:"
+  }
+}
+
