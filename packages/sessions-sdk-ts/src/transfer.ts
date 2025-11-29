@@ -1,12 +1,7 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { IntentTransferProgram } from "@fogo/sessions-idls";
-import {
-  findMetadataPda,
-  safeFetchMetadata,
-} from "@metaplex-foundation/mpl-token-metadata";
-import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { fromLegacyPublicKey } from "@solana/compat";
 import { signatureBytes } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import { Ed25519Program, PublicKey } from "@solana/web3.js";
@@ -24,6 +19,7 @@ import {
 } from "./common.js";
 import type { SessionContext } from "./context.js";
 import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
+import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
 
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
 const CURRENT_INTENT_TRANSFER_MINOR = "2";
@@ -36,7 +32,6 @@ const getFee = async (context: SessionContext) => {
   const program = new IntentTransferProgram(
     new AnchorProvider(context.connection, {} as Wallet, {}),
   );
-  const umi = createUmi(context.connection.rpcEndpoint);
   const usdcMintAddress = USDC_MINT[context.network];
   const usdcMint = new PublicKey(usdcMintAddress);
   const [feeConfigPda] = PublicKey.findProgramAddressSync(
@@ -46,9 +41,7 @@ const getFee = async (context: SessionContext) => {
   const feeConfig = await program.account.feeConfig.fetch(feeConfigPda);
 
   return {
-    metadata: findMetadataPda(umi, {
-      mint: metaplexPublicKey(usdcMintAddress),
-    })[0],
+    metadata: mplMetadataPda(fromLegacyPublicKey(usdcMint)),
     mint: usdcMint,
     symbolOrMint: "USDC.s",
     decimals: USDC_DECIMALS,
@@ -125,10 +118,8 @@ export const sendTransfer = async (options: SendTransferOptions) => {
   const program = new IntentTransferProgram(
     new AnchorProvider(options.context.connection, {} as Wallet, {}),
   );
-  const umi = createUmi(options.context.connection.rpcEndpoint);
-  const metaplexMint = metaplexPublicKey(options.mint.toBase58());
-  const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
-  const metadata = await safeFetchMetadata(umi, metadataAddress);
+  const mintAddress = fromLegacyPublicKey(options.mint);
+  const metadata = await getMplMetadataTruncated(options.context.rpc, { mint: mintAddress });
   const symbol = metadata?.symbol ?? undefined;
 
   return options.context.sendTransaction(
@@ -156,7 +147,7 @@ export const sendTransfer = async (options: SendTransferOptions) => {
           sponsor: options.context.internalPayer,
           metadata:
             // eslint-disable-next-line unicorn/no-null
-            symbol === undefined ? null : new PublicKey(metadataAddress),
+            symbol === undefined ? null : new PublicKey(mplMetadataPda(mintAddress)),
         })
         .instruction(),
     ],

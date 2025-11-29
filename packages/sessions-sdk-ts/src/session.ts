@@ -5,13 +5,8 @@ import {
   SessionManagerIdl,
   SessionManagerProgram,
 } from "@fogo/sessions-idls";
-import {
-  findMetadataPda,
-  safeFetchMetadata,
-} from "@metaplex-foundation/mpl-token-metadata";
-import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { sha256 } from "@noble/hashes/sha2";
+import { fromLegacyPublicKey } from "@solana/compat";
 import { generateKeyPair, getAddressFromPublicKey, signatureBytes } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type { TransactionError } from "@solana/web3.js";
@@ -30,6 +25,7 @@ import type {
 } from "./connection.js";
 import { Network, TransactionResultType } from "./connection.js";
 import type { SendTransactionOptions, SessionContext } from "./context.js";
+import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
@@ -69,14 +65,12 @@ const getTokenInfo = async (
   context: SessionContext,
   limits: Map<PublicKey, bigint>,
 ) => {
-  const umi = createUmi(context.connection.rpcEndpoint);
   return Promise.all(
     limits.entries().map(async ([mint, amount]) => {
-      const metaplexMint = metaplexPublicKey(mint.toBase58());
-      const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
+      const metadataAddress = mplMetadataPda(fromLegacyPublicKey(mint));
       const [mintInfo, metadata] = await Promise.all([
         getMint(context.connection, mint),
-        safeFetchMetadata(umi, metadataAddress),
+        getMplMetadataTruncated(context.rpc, { metadata: metadataAddress }),
       ]);
 
       return {

@@ -1,12 +1,7 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { IntentTransferProgram } from "@fogo/sessions-idls";
-import {
-  findMetadataPda,
-  safeFetchMetadata,
-} from "@metaplex-foundation/mpl-token-metadata";
-import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { fromLegacyPublicKey } from "@solana/compat";
 import { signatureBytes } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type {
@@ -46,6 +41,7 @@ import {
 import { Network } from "./connection.js";
 import type { SessionContext } from "./context.js";
 import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
+import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
 
 const CURRENT_BRIDGE_OUT_MAJOR = "0";
 const CURRENT_BRIDGE_OUT_MINOR = "2";
@@ -80,7 +76,6 @@ const getFee = async (context: SessionContext) => {
   const program = new IntentTransferProgram(
     new AnchorProvider(context.connection, {} as Wallet, {}),
   );
-  const umi = createUmi(context.connection.rpcEndpoint);
   const usdcMintAddress = USDC_MINT[context.network];
   const usdcMint = new PublicKey(usdcMintAddress);
   const [feeConfigPda] = PublicKey.findProgramAddressSync(
@@ -90,9 +85,7 @@ const getFee = async (context: SessionContext) => {
   const feeConfig = await program.account.feeConfig.fetch(feeConfigPda);
 
   return {
-    metadata: findMetadataPda(umi, {
-      mint: metaplexPublicKey(usdcMintAddress),
-    })[0],
+    metadata: mplMetadataPda(fromLegacyPublicKey(usdcMint)),
     mint: usdcMint,
     symbolOrMint: "USDC.s",
     decimals: USDC_DECIMALS,
@@ -140,14 +133,12 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
     new AnchorProvider(options.context.connection, {} as Wallet, {}),
   );
 
-  const umi = createUmi(options.context.connection.rpcEndpoint);
-  const metaplexMint = metaplexPublicKey(options.fromToken.mint.toBase58());
-  const metadataAddress = findMetadataPda(umi, { mint: metaplexMint })[0];
+  const metadataAddress = mplMetadataPda(fromLegacyPublicKey(options.fromToken.mint));
 
   const outboxItem = Keypair.generate();
 
   const [metadata, nttPdas, destinationAtaExists] = await Promise.all([
-    safeFetchMetadata(umi, metadataAddress),
+    getMplMetadataTruncated(options.context.rpc, { metadata: metadataAddress }),
     getNttPdas(
       options,
       wh,

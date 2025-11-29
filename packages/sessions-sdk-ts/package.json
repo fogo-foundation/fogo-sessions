@@ -58,9 +58,6 @@
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
     "@fogo/sessions-idls": "workspace:^",
-    "@metaplex-foundation/mpl-token-metadata": "catalog:",
-    "@metaplex-foundation/umi": "catalog:",
-    "@metaplex-foundation/umi-bundle-defaults": "catalog:",
     "@noble/hashes": "catalog:",
     "@solana/compat": "catalog:",
     "@solana/kit": "catalog:",
@@ -71,6 +68,13 @@
     "@wormhole-foundation/sdk-route-ntt": "catalog:",
     "@wormhole-foundation/sdk-solana-core": "catalog:",
     "@wormhole-foundation/sdk-solana-ntt": "catalog:",
+    "@xlabs-xyz/amount": "^4.0.0",
+    "@xlabs-xyz/binary-layout": "^4.0.0",
+    "@xlabs-xyz/common": "^4.0.0",
+    "@xlabs-xyz/const-utils": "^4.0.0",
+    "@xlabs-xyz/fork-svm": "^4.0.0",
+    "@xlabs-xyz/svm": "^4.0.0",
+    "@xlabs-xyz/utils": "^4.0.0",
     "bn.js": "catalog:",
     "bs58": "catalog:",
     "zod": "catalog:"
