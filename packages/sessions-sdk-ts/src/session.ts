@@ -1,11 +1,9 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider, BorshAccountsCoder } from "@coral-xyz/anchor";
 import {
-  DomainRegistryIdl,
   SessionManagerIdl,
   SessionManagerProgram,
 } from "@fogo/sessions-idls";
-import { sha256 } from "@noble/hashes/sha2";
 import { fromLegacyPublicKey } from "@solana/compat";
 import { generateKeyPair, getAddressFromPublicKey, signatureBytes } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
@@ -26,6 +24,7 @@ import type {
 import { TransactionResultType } from "./connection.js";
 import type { SendTransactionOptions, SessionContext } from "./context.js";
 import { chainIdToSessionStartAlt } from "./onchain/constants.js";
+import { domainRecordPda } from "./onchain/domain-registry.js";
 import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
@@ -97,13 +96,8 @@ const serializeExtra = (extra: Record<string, string>) => {
   return serializeKV(extra);
 };
 
-export const getDomainRecordAddress = (domain: string) => {
-  const hash = sha256(domain);
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from("domain-record"), hash],
-    new PublicKey(DomainRegistryIdl.address),
-  )[0];
-};
+export const getDomainRecordAddress = (domain: string) =>
+  new PublicKey(domainRecordPda(domain));
 
 export type EstablishSessionOptions = {
   context: SessionContext;

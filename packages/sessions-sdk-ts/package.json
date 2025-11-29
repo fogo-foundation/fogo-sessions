@@ -58,7 +58,6 @@
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
     "@fogo/sessions-idls": "workspace:^",
-    "@noble/hashes": "catalog:",
     "@solana/compat": "catalog:",
     "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
