@@ -1,0 +1,101 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+lib/
+dist/
+build/
+web-build/
+docs/
+
+# IDE files
+.vscode/
+.idea/
+jsconfig.json
+
+# OS files
+.DS_Store
+
+# Environment files
+.env*.local
+
+# Debug logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+
+# Turborepo
+.turbo/
+
+# Expo
+.expo/
+expo-env.d.ts
+
+# React Native Codegen
+ios/generated/
+android/generated/
+
+# React Native Nitro Modules
+nitrogen/
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Platform-specific (iOS)
+xcuserdata/
+*.xcuserstate
+*.xcworkspace
+DerivedData/
+*.hmap
+*.ipa
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.xccheckout
+*.moved-aside
+**/.xcode.env.local
+
+# Platform-specific (Android)
+.gradle/
+.cxx/
+local.properties
+android.iml
+.project
+.settings/
+.classpath
+buck-out/
+\.buckd/
+android/app/libs/
+android/keystores/debug.keystore
+
+# Native certificates and keys
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Metro
+.metro-health-check*
+
+# Example app dependencies (if present)
+example/ios/Pods/
+example/vendor/

@@ -9,7 +9,8 @@
         "@fogo/sessions-idls#build",
         "@fogo/sessions-sdk-react#build",
         "@fogo/sessions-sdk#build",
-        "@fogo/sessions-sdk-web#build"
+        "@fogo/sessions-sdk-web#build",
+        "@fogo/sessions-sdk-react-native#build"
       ]
     },
     "//#fix": {

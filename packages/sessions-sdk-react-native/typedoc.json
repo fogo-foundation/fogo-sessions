@@ -1,0 +1,98 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.tsx"],
+  "out": "docs",
+  "theme": "default",
+  "includeVersion": false,
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "readme": "README.md",
+  "plugin": [],
+  "sort": [
+    "documents-first",
+    "kind",
+    "instance-first",
+    "required-first",
+    "alphabetical-ignoring-documents"
+  ],
+  "categorizeByGroup": true,
+  "defaultCategory": "Other",
+  "categoryOrder": [
+    "Core Providers",
+    "UI Components",
+    "React Hooks",
+    "Utilities",
+    "Types & Enums",
+    "Wallet Adapters",
+    "*"
+  ],
+  "groupOrder": [
+    "Core Providers",
+    "UI Components",
+    "React Hooks",
+    "Utilities",
+    "Types & Enums",
+    "Wallet Adapters",
+    "*"
+  ],
+  "kindSortOrder": [
+    "Project",
+    "Module",
+    "Namespace",
+    "Enum",
+    "EnumMember",
+    "Class",
+    "Interface",
+    "TypeAlias",
+    "Constructor",
+    "Property",
+    "Method",
+    "Function",
+    "Accessor",
+    "Variable",
+    "Reference"
+  ],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true,
+    "excludeReferences": false,
+    "includeFolders": true,
+    "compactFolders": false
+  },
+  "validation": {
+    "notExported": false,
+    "invalidLink": false,
+    "notDocumented": false
+  },
+  "treatWarningsAsErrors": false,
+  "skipErrorChecking": true,
+  "githubPages": true,
+  "cname": "",
+  "hideGenerator": true,
+  "searchInComments": true,
+  "searchInDocuments": true,
+  "cleanOutputDir": true,
+  "sortEntryPoints": true,
+  "includeHierarchySummary": true,
+  "visibilityFilters": {
+    "protected": false,
+    "private": false,
+    "inherited": true,
+    "external": false
+  },
+  "navigationLinks": {
+    "GitHub": "https://github.com/leapwallet/sessions-sdk-react-native"
+  },
+  "lightHighlightTheme": "github-light",
+  "darkHighlightTheme": "github-dark",
+  "highlightLanguages": [
+    "bash",
+    "shell",
+    "json",
+    "javascript",
+    "typescript",
+    "tsx"
+  ],
+  "cacheBust": true
+}
