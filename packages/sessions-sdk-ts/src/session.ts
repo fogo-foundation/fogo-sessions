@@ -1,86 +1,20 @@
-import type { Wallet } from "@coral-xyz/anchor";
-import { AnchorProvider, BorshAccountsCoder } from "@coral-xyz/anchor";
-import {
-  SessionManagerIdl,
-  SessionManagerProgram,
-} from "@fogo/sessions-idls";
 import { fromLegacyPublicKey } from "@solana/compat";
 import { generateKeyPair, getAddressFromPublicKey } from "@solana/kit";
-import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type { TransactionError } from "@solana/web3.js";
 import { Connection, PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
-import { z } from "zod";
+import { deserialize } from "@xlabs-xyz/binary-layout";
 
-import { amountToString } from "./common.js";
-import type {
-  TransactionOrInstructions,
-  TransactionResult,
-} from "./connection.js";
+import type { TransactionOrInstructions, TransactionResult } from "./connection.js";
 import { TransactionResultType } from "./connection.js";
 import type { SendTransactionOptions, SessionContext } from "./context.js";
-import { chainIdToSessionStartAlt } from "./onchain/constants.js";
 import { domainRecordPda } from "./onchain/domain-registry.js";
-import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
-import type { SigningFunc } from "./onchain/svm-intent.js";
-import { composeEd25519IntentVerifyIx  } from "./onchain/svm-intent.js";
-
-const MESSAGE_HEADER = `Fogo Sessions:
-Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
-`;
-const UNLIMITED_TOKEN_PERMISSIONS_VALUE =
-  "this app may spend any amount of any token";
-const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
-
-const CURRENT_MAJOR = "0";
-const CURRENT_MINOR = "3";
-
-
-enum SymbolOrMintType {
-  Symbol,
-  Mint,
-}
-
-const SymbolOrMint = {
-  Symbol: (symbol: string) => ({
-    type: SymbolOrMintType.Symbol as const,
-    symbol,
-  }),
-  Mint: (mint: PublicKey) => ({
-    type: SymbolOrMintType.Mint as const,
-    mint,
-  }),
-};
-type SymbolOrMint = ReturnType<
-  (typeof SymbolOrMint)[keyof typeof SymbolOrMint]
->;
-
-const getTokenInfo = async (
-  context: SessionContext,
-  limits: Map<PublicKey, bigint>,
-) => {
-  return Promise.all(
-    limits.entries().map(async ([mint, amount]) => {
-      const metadataAddress = mplMetadataPda(fromLegacyPublicKey(mint));
-      const [mintInfo, metadata] = await Promise.all([
-        getMint(context.connection, mint),
-        getMplMetadataTruncated(context.rpc, { metadata: metadataAddress }),
-      ]);
-
-      return {
-        symbolOrMint: metadata?.symbol
-          ? SymbolOrMint.Symbol(metadata.symbol)
-          : SymbolOrMint.Mint(mint),
-        metadataAddress: new PublicKey(metadataAddress),
-        amount,
-        mint,
-        decimals: mintInfo.decimals,
-      };
-    }),
-  );
-};
-
-type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
+import type { SigningFunc } from "./onchain/index.js";
+import { chainIdToSessionStartAlt } from "./onchain/index.js";
+import {
+  composeStartSessionIxs,
+  composeRevokeSessionIx,
+  sessionAccountLayout,
+} from "./onchain/session-manager.js";
 
 export const getDomainRecordAddress = (domain: string) =>
   new PublicKey(domainRecordPda(domain));
@@ -101,63 +35,50 @@ export type EstablishSessionOptions = {
 export const establishSession = async (
   options: EstablishSessionOptions,
 ): Promise<EstablishSessionResult> => {
+  const { context, walletPublicKey } = options;
   const sessionKey = options.createUnsafeExtractableSessionKey
     ? await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"])
     : await generateKeyPair();
 
-  if (options.unlimited) {
-    return sendSessionEstablishTransaction(
-      options,
-      sessionKey,
-      await Promise.all([
-        buildIntentInstruction(options, sessionKey),
-        buildStartSessionInstruction(options, sessionKey),
-      ]),
-      options.sessionEstablishmentLookupTable,
-    );
-  } else {
-    const filteredLimits = new Map(
-      options.limits?.entries().filter(([, amount]) => amount > 0n),
-    );
-    const tokenInfo =
-      filteredLimits.size > 0
-        ? await getTokenInfo(options.context, filteredLimits)
-        : [];
+  const sessionAddress = await getAddressFromPublicKey(sessionKey.publicKey);
+  const limits = options.unlimited
+    ? "Unlimited"
+    : Object.fromEntries(
+        options.limits?.entries().map(([mint, amount]) =>
+          [fromLegacyPublicKey(mint), amount]) ?? []
+      );
 
-    const [intentInstruction, startSessionInstruction] = await Promise.all([
-      buildIntentInstruction(options, sessionKey, tokenInfo),
-      buildStartSessionInstruction(options, sessionKey, tokenInfo),
-    ]);
-    return sendSessionEstablishTransaction(
-      options,
-      sessionKey,
-      [intentInstruction, startSessionInstruction],
-      options.sessionEstablishmentLookupTable,
-    );
-  }
-};
+  const chainId = context.chainId;
+  const instructions = await composeStartSessionIxs(
+    context.rpc,
+    options.signMessage as SigningFunc,
+    chainId,
+    context.domain,
+    options.expires,
+    limits,
+    options.extra ?? {},
+    {
+      user:    fromLegacyPublicKey(walletPublicKey),
+      sponsor: fromLegacyPublicKey(context.payer),
+      session: sessionAddress,
+    },
+  );
 
-const sendSessionEstablishTransaction = async (
-  options: EstablishSessionOptions,
-  sessionKey: CryptoKeyPair,
-  instructions: TransactionOrInstructions,
-  sessionEstablishmentLookupTable: string | undefined,
-) => {
-  const result = await options.context.sendTransaction(
+  const result = await context.sendTransaction(
     sessionKey,
     instructions,
     {
       variation: "Session Establishment",
       addressLookupTable:
-        sessionEstablishmentLookupTable ??
-        chainIdToSessionStartAlt[options.context.chainId],
+        options.sessionEstablishmentLookupTable
+          ?? chainIdToSessionStartAlt[chainId],
     },
   );
 
   switch (result.type) {
     case TransactionResultType.Success: {
       const session = await createSession(
-        options.context,
+        context,
         options.walletPublicKey,
         sessionKey,
       );
@@ -195,49 +116,109 @@ export const revokeSession = async (options: {
   context: SessionContext;
   session: Session;
 }) => {
-  if (options.session.sessionInfo.minor >= 2) {
-    const instruction = await new SessionManagerProgram(
-      new AnchorProvider(options.context.connection, {} as Wallet, {}),
-    ).methods
-      .revokeSession()
-      .accounts({
-        sponsor: options.session.sessionInfo.sponsor,
-        session: options.session.sessionPublicKey,
-      })
-      .instruction();
-    return options.context.sendTransaction(
-      options.session.sessionKey,
-      [instruction],
-      {
-        variation: "Session Revocation",
-      },
-    );
-  } else {
+  const { context, session } = options;
+  if (session.sessionInfo.minor < 2)
     return;
-  }
+
+  const instruction = composeRevokeSessionIx(
+    {
+      session: fromLegacyPublicKey(session.sessionPublicKey),
+      sponsor: fromLegacyPublicKey(session.sessionInfo.sponsor),
+    },
+  );
+
+  return context.sendTransaction(
+    session.sessionKey,
+    [instruction],
+    { variation: "Session Revocation" },
+  );
 };
 
-export const reestablishSession = async (
-  context: SessionContext,
-  walletPublicKey: PublicKey,
-  sessionKey: CryptoKeyPair,
-): Promise<Session | undefined> =>
-  createSession(context, walletPublicKey, sessionKey);
+export enum AuthorizedProgramsType {
+  All,
+  Specific,
+}
+
+const AuthorizedPrograms = {
+  All: () => ({ type: AuthorizedProgramsType.All as const }),
+  Specific: (programs: { programId: PublicKey; signerPda: PublicKey }[]) => ({
+    type: AuthorizedProgramsType.Specific as const,
+    programs,
+  }),
+};
+
+export enum AuthorizedTokens {
+  All,
+  Specific,
+}
+
+type SessionInfo = {
+  authorizedPrograms: {
+    type: AuthorizedProgramsType.All;
+  } | {
+    type: AuthorizedProgramsType.Specific;
+    programs: {
+        programId: PublicKey;
+        signerPda: PublicKey;
+    }[];
+  };
+  authorizedTokens: AuthorizedTokens;
+  expiration: Date;
+  extra: Record<string, string>;
+  major: number;
+  minor: 1 | 2 | 3;
+  user: PublicKey;
+  sponsor: PublicKey;
+};
 
 export const getSessionAccount = async (
   connection: Connection,
   sessionPublicKey: PublicKey,
-) => {
+): Promise<SessionInfo | undefined> => {
   const result = await connection.getAccountInfo(sessionPublicKey, "confirmed");
-  return result === null
-    ? undefined
-    : sessionInfoSchema.parse(
-        new BorshAccountsCoder(SessionManagerIdl).decode(
-          "Session",
-          result.data,
+  if (result === null)
+    return;
+
+  const sessionAcc = deserialize(sessionAccountLayout, result.data);
+  const { sessionInfo } = sessionAcc;
+
+  const activeSessionInfo =
+    sessionInfo.minor === 1
+    ? sessionInfo
+    : sessionInfo.minor === 2 || sessionInfo.minor === 3
+    // eslint-disable-next-line unicorn/no-nested-ternary
+    ? sessionInfo.status.active
+      ? sessionInfo.status
+      : undefined
+    : undefined;
+
+  if (activeSessionInfo === undefined)
+    return;
+
+  return {
+    major: sessionAcc.major,
+    minor: sessionInfo.minor as 1 | 2 | 3,
+    user: new PublicKey(activeSessionInfo.user),
+    expiration: activeSessionInfo.expiration,
+    sponsor: new PublicKey(sessionAcc.sponsor),
+    authorizedPrograms:
+      activeSessionInfo.authorizedPrograms.all
+      ? AuthorizedPrograms.All()
+      : AuthorizedPrograms.Specific(
+          activeSessionInfo.authorizedPrograms.programs.map(
+            ({ programId, signerPda }) => ({
+              programId: new PublicKey(programId),
+              signerPda: new PublicKey(signerPda),
+            }),
+          ),
         ),
-      );
-};
+    authorizedTokens:
+      activeSessionInfo.authorizedTokens.all
+        ? AuthorizedTokens.All
+        : AuthorizedTokens.Specific,
+    extra: activeSessionInfo.extra,
+  };
+}
 
 const createSession = async (
   context: SessionContext,
@@ -264,287 +245,7 @@ const createSession = async (
       };
 };
 
-const sessionInfoSchema = z
-  .object({
-    session_info: z.union([
-      z.object({
-        V1: z.object({
-          "0": z.object({
-            authorized_programs: z.union([
-              z.object({
-                Specific: z.object({
-                  0: z.array(
-                    z.object({
-                      program_id: z.instanceof(PublicKey),
-                      signer_pda: z.instanceof(PublicKey),
-                    }),
-                  ),
-                }),
-              }),
-              z.object({
-                All: z.object({}),
-              }),
-            ]),
-            authorized_tokens: z.union([
-              z.object({ Specific: z.object({}) }),
-              z.object({ All: z.object({}) }),
-            ]),
-            expiration: z.instanceof(BN),
-            extra: z.object({
-              0: z.unknown(),
-            }),
-            user: z.instanceof(PublicKey),
-          }),
-        }),
-      }),
-      z.object({
-        V2: z.object({
-          "0": z.union([
-            z.object({
-              Revoked: z.instanceof(BN),
-            }),
-            z.object({
-              Active: z.object({
-                "0": z.object({
-                  authorized_programs: z.union([
-                    z.object({
-                      Specific: z.object({
-                        0: z.array(
-                          z.object({
-                            program_id: z.instanceof(PublicKey),
-                            signer_pda: z.instanceof(PublicKey),
-                          }),
-                        ),
-                      }),
-                    }),
-                    z.object({
-                      All: z.object({}),
-                    }),
-                  ]),
-                  authorized_tokens: z.union([
-                    z.object({ Specific: z.object({}) }),
-                    z.object({ All: z.object({}) }),
-                  ]),
-                  expiration: z.instanceof(BN),
-                  extra: z.object({
-                    0: z.unknown(),
-                  }),
-                  user: z.instanceof(PublicKey),
-                }),
-              }),
-            }),
-          ]),
-        }),
-      }),
-      z.object({
-        V3: z.object({
-          "0": z.union([
-            z.object({
-              Revoked: z.instanceof(BN),
-            }),
-            z.object({
-              Active: z.object({
-                "0": z.object({
-                  authorized_programs: z.union([
-                    z.object({
-                      Specific: z.object({
-                        0: z.array(
-                          z.object({
-                            program_id: z.instanceof(PublicKey),
-                            signer_pda: z.instanceof(PublicKey),
-                          }),
-                        ),
-                      }),
-                    }),
-                    z.object({
-                      All: z.object({}),
-                    }),
-                  ]),
-                  authorized_tokens: z.union([
-                    z.object({
-                      Specific: z.object({
-                        "0": z.array(z.instanceof(PublicKey)),
-                      }),
-                    }),
-                    z.object({ All: z.object({}) }),
-                  ]),
-                  expiration: z.instanceof(BN),
-                  extra: z.object({
-                    0: z.unknown(),
-                  }),
-                  user: z.instanceof(PublicKey),
-                }),
-              }),
-            }),
-          ]),
-        }),
-      }),
-    ]),
-    major: z.number(),
-    sponsor: z.instanceof(PublicKey),
-  })
-  .transform(({ session_info, major, sponsor }) => {
-    let activeSessionInfo;
-    let minor: 1 | 2 | 3;
-
-    if ("V1" in session_info) {
-      activeSessionInfo = session_info.V1["0"];
-      minor = 1;
-    } else if ("V2" in session_info && "Active" in session_info.V2["0"]) {
-      activeSessionInfo = session_info.V2["0"].Active["0"];
-      minor = 2;
-    } else if ("V3" in session_info && "Active" in session_info.V3["0"]) {
-      activeSessionInfo = session_info.V3["0"].Active["0"];
-      minor = 3;
-    } else {
-      return;
-    }
-
-    return {
-      authorizedPrograms:
-        "All" in activeSessionInfo.authorized_programs
-          ? AuthorizedPrograms.All()
-          : AuthorizedPrograms.Specific(
-              activeSessionInfo.authorized_programs.Specific[0].map(
-                ({ program_id, signer_pda }) => ({
-                  programId: program_id,
-                  signerPda: signer_pda,
-                }),
-              ),
-            ),
-      authorizedTokens:
-        "All" in activeSessionInfo.authorized_tokens
-          ? AuthorizedTokens.All
-          : AuthorizedTokens.Specific,
-      expiration: new Date(Number(activeSessionInfo.expiration) * 1000),
-      extra: activeSessionInfo.extra[0],
-      major: major,
-      minor: minor,
-      user: activeSessionInfo.user,
-      sponsor,
-    };
-  });
-
-export enum AuthorizedProgramsType {
-  All,
-  Specific,
-}
-
-const AuthorizedPrograms = {
-  All: () => ({ type: AuthorizedProgramsType.All as const }),
-  Specific: (programs: { programId: PublicKey; signerPda: PublicKey }[]) => ({
-    type: AuthorizedProgramsType.Specific as const,
-    programs,
-  }),
-};
-
-export enum AuthorizedTokens {
-  All,
-  Specific,
-}
-
-const serializeTokenList = (tokens?: TokenInfo[]) => {
-  if (tokens === undefined) {
-    return UNLIMITED_TOKEN_PERMISSIONS_VALUE;
-  } else if (tokens.length === 0) {
-    return TOKENLESS_PERMISSIONS_VALUE;
-  } else {
-    return tokens
-      .values()
-      .map(
-        ({ symbolOrMint, amount, decimals }) =>
-          `\n-${symbolOrMint.type === SymbolOrMintType.Symbol ? symbolOrMint.symbol : symbolOrMint.mint.toBase58()}: ${amountToString(amount, decimals)}`,
-      )
-      .toArray()
-      .join("");
-  }
-};
-
-const reservedKeys = new Set(["version", "chain_id", "domain", "expires", "session_key", "tokens"]);
-const buildIntentInstruction = async (
-  options: EstablishSessionOptions,
-  sessionKey: CryptoKeyPair,
-  tokens?: TokenInfo[],
-) => {
-  if (options.extra) {
-    for (const [key, value] of Object.entries(options.extra)) {
-      if (reservedKeys.has(key))
-        throw new Error(`Extra key ${key} is reserved`);
-
-      if (!/^[a-z]+(_[a-z0-9]+)*$/.test(key))
-        throw new Error(`Extra key must be a snake_case string: ${key}`);
-
-      if (value.includes("\n"))
-        throw new Error(`Extra value must not contain a line break: ${value}`);
-    }
-  }
-
-  const intent = {
-    description: MESSAGE_HEADER,
-    parameters: {
-      version: `${CURRENT_MAJOR}.${CURRENT_MINOR}`,
-      chain_id: options.context.chainId,
-      domain: options.context.domain,
-      expires: options.expires.toISOString(),
-      session_key: await getAddressFromPublicKey(sessionKey.publicKey),
-      tokens: serializeTokenList(tokens),
-      ...options.extra,
-    }
-  };
-
-  return composeEd25519IntentVerifyIx(
-    fromLegacyPublicKey(options.walletPublicKey),
-    options.signMessage as SigningFunc,
-    intent,
-  );
-};
-
-const buildStartSessionInstruction = async (
-  options: EstablishSessionOptions,
-  sessionKey: CryptoKeyPair,
-  tokens?: TokenInfo[],
-) => {
-  const instruction = new SessionManagerProgram(
-    new AnchorProvider(options.context.connection, {} as Wallet, {}),
-  ).methods
-    .startSession()
-    .accounts({
-      sponsor: options.context.payer,
-      session: await getAddressFromPublicKey(sessionKey.publicKey),
-      domainRegistry: getDomainRecordAddress(options.context.domain),
-    });
-
-  return tokens === undefined
-    ? instruction.instruction()
-    : instruction
-        .remainingAccounts(
-          tokens.flatMap(({ symbolOrMint, mint, metadataAddress }) => [
-            {
-              pubkey: getAssociatedTokenAddressSync(
-                mint,
-                options.walletPublicKey,
-              ),
-              isWritable: true,
-              isSigner: false,
-            },
-            {
-              pubkey: mint,
-              isWritable: false,
-              isSigner: false,
-            },
-            ...(symbolOrMint.type === SymbolOrMintType.Symbol
-              ? [
-                  {
-                    pubkey: metadataAddress,
-                    isWritable: false,
-                    isSigner: false,
-                  },
-                ]
-              : []),
-          ]),
-        )
-        .instruction();
-};
+export const reestablishSession = createSession;
 
 export enum SessionResultType {
   Success,
@@ -577,6 +278,5 @@ export type Session = {
     instructions: TransactionOrInstructions,
     extraConfig?: SendTransactionOptions,
   ) => Promise<TransactionResult>;
-  sessionInfo: NonNullable<z.infer<typeof sessionInfoSchema>>;
+  sessionInfo: SessionInfo;
 };
-

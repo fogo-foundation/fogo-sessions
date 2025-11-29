@@ -6,9 +6,10 @@ import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 
-import { NonceType, amountToString, getNonce } from "./common.js";
+import { NonceType, getNonce } from "./common.js";
 import type { SessionContext } from "./context.js";
 import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
+import { amountToString } from "./onchain/common.js";
 import { chainIdToUsdcMint, usdcDecimals, usdcSymbol } from "./onchain/constants.js";
 import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
 import type { SigningFunc } from "./onchain/svm-intent.js";
