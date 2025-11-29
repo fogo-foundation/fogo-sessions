@@ -31,8 +31,6 @@ import BN from "bn.js";
 
 import {
   NonceType,
-  USDC_DECIMALS,
-  USDC_MINT,
   amountToString,
   addOffchainMessagePrefixToMessageIfNeeded,
   getNonce,
@@ -41,6 +39,7 @@ import {
 import { Network } from "./connection.js";
 import type { SessionContext } from "./context.js";
 import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
+import { chainIdToUsdcMint, usdcDecimals, usdcSymbol } from "./onchain/constants.js";
 import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
 
 const CURRENT_BRIDGE_OUT_MAJOR = "0";
@@ -76,8 +75,7 @@ const getFee = async (context: SessionContext) => {
   const program = new IntentTransferProgram(
     new AnchorProvider(context.connection, {} as Wallet, {}),
   );
-  const usdcMintAddress = USDC_MINT[context.network];
-  const usdcMint = new PublicKey(usdcMintAddress);
+  const usdcMint = new PublicKey(chainIdToUsdcMint[context.chainId]);
   const [feeConfigPda] = PublicKey.findProgramAddressSync(
     [Buffer.from("fee_config"), usdcMint.toBytes()],
     program.programId,
@@ -87,8 +85,8 @@ const getFee = async (context: SessionContext) => {
   return {
     metadata: mplMetadataPda(fromLegacyPublicKey(usdcMint)),
     mint: usdcMint,
-    symbolOrMint: "USDC.s",
-    decimals: USDC_DECIMALS,
+    symbolOrMint: usdcSymbol,
+    decimals: usdcDecimals,
     fee: {
       intrachainTransfer: BigInt(feeConfig.intrachainTransferFee.toString()),
       bridgeTransfer: BigInt(feeConfig.bridgeTransferFee.toString()),

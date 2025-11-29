@@ -7,15 +7,6 @@ import {
 } from "@solana/kit";
 import { PublicKey } from "@solana/web3.js";
 
-import { Network } from "./connection.js";
-
-export const USDC_MINT = {
-  [Network.Mainnet]: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-  [Network.Testnet]: "ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND",
-};
-
-export const USDC_DECIMALS = 6;
-
 export const serializeU16LE = (value: number) => {
   const result = new ArrayBuffer(2);
   new DataView(result).setUint16(0, value, true); // littleEndian = true

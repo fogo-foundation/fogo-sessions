@@ -23,8 +23,9 @@ import type {
   TransactionOrInstructions,
   TransactionResult,
 } from "./connection.js";
-import { Network, TransactionResultType } from "./connection.js";
+import { TransactionResultType } from "./connection.js";
 import type { SendTransactionOptions, SessionContext } from "./context.js";
+import { chainIdToSessionStartAlt } from "./onchain/constants.js";
 import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
@@ -37,10 +38,6 @@ const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 const CURRENT_MAJOR = "0";
 const CURRENT_MINOR = "3";
 
-const SESSION_ESTABLISHMENT_LOOKUP_TABLE_ADDRESS = {
-  [Network.Testnet]: "B8cUjJMqaWWTNNSTXBmeptjWswwCH1gTSCRYv4nu7kJW",
-  [Network.Mainnet]: undefined,
-};
 
 enum SymbolOrMintType {
   Symbol,
@@ -173,7 +170,7 @@ const sendSessionEstablishTransaction = async (
       variation: "Session Establishment",
       addressLookupTable:
         sessionEstablishmentLookupTable ??
-        SESSION_ESTABLISHMENT_LOOKUP_TABLE_ADDRESS[options.context.network],
+        chainIdToSessionStartAlt[options.context.chainId],
     },
   );
 
