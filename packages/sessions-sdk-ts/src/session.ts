@@ -5,18 +5,14 @@ import {
   SessionManagerProgram,
 } from "@fogo/sessions-idls";
 import { fromLegacyPublicKey } from "@solana/compat";
-import { generateKeyPair, getAddressFromPublicKey, signatureBytes } from "@solana/kit";
+import { generateKeyPair, getAddressFromPublicKey } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type { TransactionError } from "@solana/web3.js";
-import { Connection, Ed25519Program, PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { z } from "zod";
 
-import {
-  amountToString,
-  addOffchainMessagePrefixToMessageIfNeeded,
-  serializeKV,
-} from "./common.js";
+import { amountToString } from "./common.js";
 import type {
   TransactionOrInstructions,
   TransactionResult,
@@ -26,6 +22,8 @@ import type { SendTransactionOptions, SessionContext } from "./context.js";
 import { chainIdToSessionStartAlt } from "./onchain/constants.js";
 import { domainRecordPda } from "./onchain/domain-registry.js";
 import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
+import type { SigningFunc } from "./onchain/svm-intent.js";
+import { composeEd25519IntentVerifyIx  } from "./onchain/svm-intent.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
@@ -83,18 +81,6 @@ const getTokenInfo = async (
 };
 
 type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
-
-const serializeExtra = (extra: Record<string, string>) => {
-  for (const [key, value] of Object.entries(extra)) {
-    if (!/^[a-z]+(_[a-z0-9]+)*$/.test(key)) {
-      throw new Error(`Extra key must be a snake_case string: ${key}`);
-    }
-    if (value.includes("\n")) {
-      throw new Error(`Extra value must not contain a line break: ${value}`);
-    }
-  }
-  return serializeKV(extra);
-};
 
 export const getDomainRecordAddress = (domain: string) =>
   new PublicKey(domainRecordPda(domain));
@@ -154,7 +140,7 @@ export const establishSession = async (
 const sendSessionEstablishTransaction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
-  instructions: import("@solana/web3.js").TransactionInstruction[],
+  instructions: TransactionOrInstructions,
   sessionEstablishmentLookupTable: string | undefined,
 ) => {
   const result = await options.context.sendTransaction(
@@ -474,54 +460,43 @@ const serializeTokenList = (tokens?: TokenInfo[]) => {
   }
 };
 
-const buildMessage = async (
-  body: Pick<EstablishSessionOptions, "expires" | "extra"> & {
-    chainId: string;
-    domain: string;
-    sessionKey: CryptoKeyPair;
-    tokens?: TokenInfo[] | undefined;
-  },
-) =>
-  new TextEncoder().encode(
-    [
-      MESSAGE_HEADER,
-      serializeKV({
-        version: `${CURRENT_MAJOR}.${CURRENT_MINOR}`,
-        chain_id: body.chainId,
-        domain: body.domain,
-        expires: body.expires.toISOString(),
-        session_key: await getAddressFromPublicKey(body.sessionKey.publicKey),
-        tokens: serializeTokenList(body.tokens),
-      }),
-      body.extra && serializeExtra(body.extra),
-    ].join("\n"),
-  );
-
+const reservedKeys = new Set(["version", "chain_id", "domain", "expires", "session_key", "tokens"]);
 const buildIntentInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
   tokens?: TokenInfo[],
 ) => {
-  const message = await buildMessage({
-    chainId: options.context.chainId,
-    domain: options.context.domain,
-    sessionKey,
-    expires: options.expires,
-    tokens,
-    extra: options.extra,
-  });
+  if (options.extra) {
+    for (const [key, value] of Object.entries(options.extra)) {
+      if (reservedKeys.has(key))
+        throw new Error(`Extra key ${key} is reserved`);
 
-  const intentSignature = signatureBytes(await options.signMessage(message));
+      if (!/^[a-z]+(_[a-z0-9]+)*$/.test(key))
+        throw new Error(`Extra key must be a snake_case string: ${key}`);
 
-  return Ed25519Program.createInstructionWithPublicKey({
-    publicKey: options.walletPublicKey.toBytes(),
-    signature: intentSignature,
-    message: await addOffchainMessagePrefixToMessageIfNeeded(
-      options.walletPublicKey,
-      intentSignature,
-      message,
-    ),
-  });
+      if (value.includes("\n"))
+        throw new Error(`Extra value must not contain a line break: ${value}`);
+    }
+  }
+
+  const intent = {
+    description: MESSAGE_HEADER,
+    parameters: {
+      version: `${CURRENT_MAJOR}.${CURRENT_MINOR}`,
+      chain_id: options.context.chainId,
+      domain: options.context.domain,
+      expires: options.expires.toISOString(),
+      session_key: await getAddressFromPublicKey(sessionKey.publicKey),
+      tokens: serializeTokenList(tokens),
+      ...options.extra,
+    }
+  };
+
+  return composeEd25519IntentVerifyIx(
+    fromLegacyPublicKey(options.walletPublicKey),
+    options.signMessage as SigningFunc,
+    intent,
+  );
 };
 
 const buildStartSessionInstruction = async (

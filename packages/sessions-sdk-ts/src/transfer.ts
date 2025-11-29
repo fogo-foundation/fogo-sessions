@@ -2,23 +2,17 @@ import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { IntentTransferProgram } from "@fogo/sessions-idls";
 import { fromLegacyPublicKey } from "@solana/compat";
-import { signatureBytes } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
-import { Ed25519Program, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 
-
-import {
-  NonceType,
-  amountToString,
-  addOffchainMessagePrefixToMessageIfNeeded,
-  getNonce,
-  serializeKV,
-} from "./common.js";
+import { NonceType, amountToString, getNonce } from "./common.js";
 import type { SessionContext } from "./context.js";
 import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
 import { chainIdToUsdcMint, usdcDecimals, usdcSymbol } from "./onchain/constants.js";
 import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
+import type { SigningFunc } from "./onchain/svm-intent.js";
+import { composeEd25519IntentVerifyIx  } from "./onchain/svm-intent.js";
 
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
 const CURRENT_INTENT_TRANSFER_MINOR = "2";
@@ -79,33 +73,26 @@ const buildTransferIntentInstruction = async (
     getNonce(program, options.walletPublicKey, NonceType.Transfer),
     getMint(options.context.connection, options.mint),
   ]);
-  const message = new TextEncoder().encode(
-    [
-      TRANSFER_MESSAGE_HEADER,
-      serializeKV({
-        version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
-        chain_id: options.context.chainId,
-        token: symbol ?? options.mint.toBase58(),
-        amount: amountToString(options.amount, decimals),
-        recipient: options.recipient.toBase58(),
-        fee_token: feeToken,
-        fee_amount: feeAmount,
-        nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
-      }),
-    ].join("\n"),
+
+  const intent = {
+    description: TRANSFER_MESSAGE_HEADER,
+    parameters: {
+      version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
+      chain_id: options.context.chainId,
+      token: symbol ?? options.mint.toBase58(),
+      amount: amountToString(options.amount, decimals),
+      recipient: options.recipient.toBase58(),
+      fee_token: feeToken,
+      fee_amount: feeAmount,
+      nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
+    },
+  };
+
+  return composeEd25519IntentVerifyIx(
+    fromLegacyPublicKey(options.walletPublicKey),
+    options.signMessage as SigningFunc,
+    intent,
   );
-
-  const intentSignature = signatureBytes(await options.signMessage(message));
-
-  return Ed25519Program.createInstructionWithPublicKey({
-    publicKey: options.walletPublicKey.toBytes(),
-    signature: intentSignature,
-    message: await addOffchainMessagePrefixToMessageIfNeeded(
-      options.walletPublicKey,
-      intentSignature,
-      message,
-    ),
-  });
 };
 
 export const sendTransfer = async (options: SendTransferOptions) => {

@@ -2,7 +2,6 @@ import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { IntentTransferProgram } from "@fogo/sessions-idls";
 import { fromLegacyPublicKey } from "@solana/compat";
-import { signatureBytes } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type {
   BaseSignerWalletAdapter,
@@ -12,7 +11,6 @@ import type { VersionedTransaction } from "@solana/web3.js";
 import {
   ComputeBudgetProgram,
   Connection,
-  Ed25519Program,
   Keypair,
   PublicKey,
 } from "@solana/web3.js";
@@ -32,15 +30,15 @@ import BN from "bn.js";
 import {
   NonceType,
   amountToString,
-  addOffchainMessagePrefixToMessageIfNeeded,
   getNonce,
-  serializeKV,
 } from "./common.js";
 import { Network } from "./connection.js";
 import type { SessionContext } from "./context.js";
 import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
 import { chainIdToUsdcMint, usdcDecimals, usdcSymbol } from "./onchain/constants.js";
 import { getMplMetadataTruncated, mplMetadataPda } from "./onchain/mpl-metadata.js";
+import type { SigningFunc } from "./onchain/svm-intent.js";
+import { composeEd25519IntentVerifyIx  } from "./onchain/svm-intent.js";
 
 const CURRENT_BRIDGE_OUT_MAJOR = "0";
 const CURRENT_BRIDGE_OUT_MINOR = "2";
@@ -297,36 +295,27 @@ const buildBridgeOutIntent = async (
     options.walletPublicKey,
     NonceType.Bridge,
   );
-  const message = new TextEncoder().encode(
-    [
-      BRIDGE_OUT_MESSAGE_HEADER,
-      serializeKV({
-        version: `${CURRENT_BRIDGE_OUT_MAJOR}.${CURRENT_BRIDGE_OUT_MINOR}`,
-        from_chain_id: options.context.chainId,
-        to_chain_id: "solana",
-        token: symbol ?? options.fromToken.mint.toBase58(),
-        amount: amountToString(options.amount, decimals),
-        recipient_address: options.walletPublicKey.toBase58(),
-        fee_token: feeToken,
-        fee_amount: feeAmount,
-        nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
-      }),
-    ].join("\n"),
-  );
 
-  const intentSignature = signatureBytes(
-    await options.solanaWallet.signMessage(message),
-  );
+  const intent = {
+    description: BRIDGE_OUT_MESSAGE_HEADER,
+    parameters: {
+      version: `${CURRENT_BRIDGE_OUT_MAJOR}.${CURRENT_BRIDGE_OUT_MINOR}`,
+      from_chain_id: options.context.chainId,
+      to_chain_id: "solana",
+      token: symbol ?? options.fromToken.mint.toBase58(),
+      amount: amountToString(options.amount, decimals),
+      recipient_address: options.walletPublicKey.toBase58(),
+      fee_token: feeToken,
+      fee_amount: feeAmount,
+      nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
+    },
+  };
 
-  return Ed25519Program.createInstructionWithPublicKey({
-    publicKey: options.walletPublicKey.toBytes(),
-    signature: intentSignature,
-    message: await addOffchainMessagePrefixToMessageIfNeeded(
-      options.walletPublicKey,
-      intentSignature,
-      message,
-    ),
-  });
+  return composeEd25519IntentVerifyIx(
+    fromLegacyPublicKey(options.walletPublicKey),
+    ((message: Uint8Array) => options.solanaWallet.signMessage(message)) as SigningFunc,
+    intent,
+  );
 };
 
 export type SendBridgeInOptions = {
