@@ -1,10 +1,13 @@
-import { type Address, address } from "@solana/kit";
-import { type RoUint8Array } from "@xlabs-xyz/const-utils";
-import { type DeriveType,serialize, boolItem } from "@xlabs-xyz/binary-layout";
-import { keccak256 } from "@xlabs-xyz/utils";
+import type { Address } from "@solana/kit";
+import { address } from "@solana/kit";
+import type { DeriveType } from "@xlabs-xyz/binary-layout";
+import { serialize, boolItem } from "@xlabs-xyz/binary-layout";
+import type { RoUint8Array } from "@xlabs-xyz/const-utils";
 import { findAta } from "@xlabs-xyz/svm";
-import { type ChainId } from "./constants.js";
+import { keccak256 } from "@xlabs-xyz/utils";
+
 import { u64Item, pdaOfProgram } from "./common.js";
+import type { ChainId } from "./constants.js";
 
 export const solanaChainId = 1;
 

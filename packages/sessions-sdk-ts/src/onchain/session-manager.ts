@@ -1,10 +1,10 @@
-import { type Address, address, AccountRole } from "@solana/kit";
+import type { Address } from "@solana/kit";
+import {  address, AccountRole } from "@solana/kit";
 import type { DeriveType, ProperLayout, Item } from "@xlabs-xyz/binary-layout";
 import { stringConversion } from "@xlabs-xyz/binary-layout";
+import { hashItem, timestampItem } from "@xlabs-xyz/common";
 import type { RoArray, RoPair } from "@xlabs-xyz/const-utils";
 import { range, mapTo, zip } from "@xlabs-xyz/const-utils";
-import { definedOrThrow } from "@xlabs-xyz/utils";
-import { hashItem, timestampItem } from "@xlabs-xyz/common";
 import type { SvmClient, Ix } from "@xlabs-xyz/svm";
 import {
   accountLayout,
@@ -19,13 +19,15 @@ import {
   tokenProgramId,
   systemProgramId,
 } from "@xlabs-xyz/svm";
-import { type ChainId } from "./constants.js";
-import { byteDiscriminatedLayout, amountToString } from "./common.js";
+import { definedOrThrow } from "@xlabs-xyz/utils";
+
 import { chainIdPda } from "./chainid.js";
+import { byteDiscriminatedLayout, amountToString } from "./common.js";
+import type { ChainId } from "./constants.js";
+import { domainRecordPda } from "./domain-registry.js";
 import { getMplMetadataTruncated } from "./mpl-metadata.js";
 import type { KV, SigningFunc } from "./svm-intent.js";
 import { composeEd25519IntentVerifyIx } from "./svm-intent.js";
-import { domainRecordPda } from "./domain-registry.js";
 
 const description = "Fogo Sessions:\nSigning this intent will allow this app to interact with " +
   "your on-chain balances. Please make sure you trust this app and the domain in the message " +
@@ -37,7 +39,7 @@ const tokenPermissions = {
 };
 
 const version = "0.3";
-const reservedKeys = ["version", "chain_id", "domain", "expires", "session_key", "tokens"];
+const reservedKeys = new Set(["version", "chain_id", "domain", "expires", "session_key", "tokens"]);
 
 export const sessionManagerProgramId = address("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");
 
@@ -164,12 +166,12 @@ export async function composeStartSessionIxs(
     sponsor: Address;
     session: Address;
   },
-  cachedTokenInfo?: RoAddressRecord<Readonly<{ symbol?: string; decimals?: number }>> | undefined,
+  cachedTokenInfo?: RoAddressRecord<Readonly<{ symbol?: string; decimals?: number }>>  ,
 ): Promise<[Ix, Ix]> {
   const { user, sponsor, session } = addresses;
 
   for (const [key, value] of Object.entries(extra)) {
-    if (reservedKeys.includes(key))
+    if (reservedKeys.has(key))
       throw new Error(`Extra key ${key} is reserved`);
 
     if (!/^[a-z]+(_[a-z0-9]+)*$/.test(key))
@@ -183,14 +185,14 @@ export async function composeStartSessionIxs(
     if (tokens === "Unlimited")
       return [tokenPermissions.Unlimited, []] as const;
 
-    const filtered = Object.entries(tokens).filter(([_mint, amount]) => amount > 0) as
+    const filtered = Object.entries(tokens).filter(([, amount]) => amount > 0) as
       unknown as RoArray<RoPair<Address, bigint>>;
     if (filtered.length === 0)
       return [tokenPermissions.Tokenless, []] as const;
 
     const getDecimals = (mint: Address) =>
       getDeserializedAccount(client, mint, mintAccountLayout())
-        .then(mint => definedOrThrow(mint, `mint ${mint} not found`).decimals);
+        .then(acc => definedOrThrow(acc, `mint ${mint} not found`).decimals);
 
     const getSymbol = (mint: Address) =>
       getMplMetadataTruncated(client, { mint }).then(val => val?.symbol);

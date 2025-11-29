@@ -1,10 +1,9 @@
 import type { Address, Lamports } from "@solana/kit";
 import { address, AccountRole } from "@solana/kit";
-import type { SvmClient } from "@xlabs-xyz/svm";
-import { valueIndexEntries } from "@xlabs-xyz/const-utils";
 import { enumItem } from "@xlabs-xyz/binary-layout";
+import { valueIndexEntries } from "@xlabs-xyz/const-utils";
+import type { SvmClient ,Ix} from "@xlabs-xyz/svm";
 import {
-  type Ix,
   composeIx,
   lamportsItem,
   svmAddressItem,
@@ -17,13 +16,15 @@ import {
   stakeProgramId,
   nativeMint,
   getDeserializedAccount,
-  findPda,
+  findPda
 } from "@xlabs-xyz/svm";
-import { byteDiscriminatedLayout, nonceLayout } from "./common.js";
+
 import { chainIdPda } from "./chainid.js";
-import { type SigningFunc, composeEd25519IntentVerifyIx } from "./svm-intent.js";
+import { byteDiscriminatedLayout, nonceLayout } from "./common.js";
+import type {ChainId} from "./constants.js";
 import { programSignerPda } from "./session-manager.js";
-import { type ChainId } from "./constants.js";
+import type {SigningFunc} from "./svm-intent.js";
+import {  composeEd25519IntentVerifyIx } from "./svm-intent.js";
 
 export const sessionStakeProgramId = address("sStk2sQ71PdRbmfmMxivMsnowytotYGpDaQrp4WN7qj");
 
@@ -114,7 +115,7 @@ export function composeDepositIx(
     [rentSysvarId,    AccountRole.READONLY       ],
   ] as const;
 
-  return composeIx(accounts as any, depositIxLayout, lamports, sessionStakeProgramId);
+  return composeIx(accounts, depositIxLayout, lamports, sessionStakeProgramId);
 }
 
 export function composeWithdrawIx(
@@ -224,7 +225,7 @@ export async function composeAuthorizeIntentIxs(
     sponsor:      Address;
     newAuthority: Address;
   },
-  currentNonce?: bigint | undefined,
+  currentNonce?: bigint  ,
 ): Promise<[Ix, Ix]> {
   const { user, stake, sponsor, newAuthority } = addresses;
   const authority = sessionStakeAuthorityPda(user);
@@ -282,7 +283,7 @@ type TransferAddresses = {
 
 const transferAccounts = (
   addresses:                TransferAddresses,
-  destinationStakeIsSigner: boolean = false
+  destinationStakeIsSigner = false
 ) => {
   const { signerOrSession, sourceStake, destinationStake, authority } = addresses;
   const destinationStakeRole =

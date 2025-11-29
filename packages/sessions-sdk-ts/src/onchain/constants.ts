@@ -1,4 +1,5 @@
-import { type Address, address } from "@solana/kit";
+import type { Address } from "@solana/kit";
+import { address } from "@solana/kit";
 
 export const chainIds = ["fogo-mainnet", "fogo-testnet"] as const;
 export type ChainId = typeof chainIds[number];

@@ -1,9 +1,9 @@
-import { type Address, address, AccountRole } from "@solana/kit";
-import type { RoUint8Array } from "@xlabs-xyz/const-utils";
+import type { Address } from "@solana/kit";
+import {  address, AccountRole } from "@solana/kit";
 import { boolItem } from "@xlabs-xyz/binary-layout";
-import { base58, definedOrThrow } from "@xlabs-xyz/utils";
+import type { RoUint8Array } from "@xlabs-xyz/const-utils";
+import type { SvmClient, Ix } from "@xlabs-xyz/svm";
 import {
-  type SvmClient,
   findPda,
   getDeserializedAccount,
   findAta,
@@ -16,20 +16,22 @@ import {
   instructionsSysvarId,
   systemProgramId,
   tokenProgramId,
-  associatedTokenProgramId,
-  type Ix,
+  associatedTokenProgramId
 } from "@xlabs-xyz/svm";
-import type { ChainId } from "./constants.js";
+import { base58, definedOrThrow } from "@xlabs-xyz/utils";
+
+import { chainIdPda, getChainId } from "./chainid.js";
+import type { Opts } from "./common.js";
 import {
-  type Opts,
   byteDiscriminatedLayout,
   amountToString,
   nonceLayout,
-  u64Item,
+  u64Item
 } from "./common.js";
-import { chainIdPda, getChainId } from "./chainid.js";
+import type { ChainId } from "./constants.js";
 import { mplMetadataPda, getMplMetadataTruncated } from "./mpl-metadata.js";
-import { type SigningFunc, composeEd25519IntentVerifyIx } from "./svm-intent.js";
+import type { SigningFunc } from "./svm-intent.js";
+import { composeEd25519IntentVerifyIx } from "./svm-intent.js";
 import {
   signedQuoteItem,
   solanaChainId,
@@ -287,8 +289,8 @@ const ixsImpl = (intentType: IntentType) => async function (
   
   const source      = findAta({ owner: user, mint });
   const feeSource   = findAta({ owner: user, mint: feeMint });
-  const metadata    = mintSymbol !== undefined ? mintMetadataPda : undefined;
-  const feeMetadata = feeSymbol  !== undefined ? feeMetadataPda  : undefined;
+  const metadata    = mintSymbol === undefined ? undefined : mintMetadataPda;
+  const feeMetadata = feeSymbol  === undefined ? undefined  : feeMetadataPda;
 
   const { version, description } = intentFields[intentType];
   //ugly discrepancy between intent types
@@ -321,8 +323,8 @@ const ixsImpl = (intentType: IntentType) => async function (
 
 function commonAccountsImpl(intentType: IntentType, addresses: CommonAddressesIxImpl) {
   const { user, recipient, source, mint, sponsor, feeSource, feeMint } = addresses;
-  const metadata       = addresses?.metadata    ?? intentTransferProgramId;
-  const feeMetadata    = addresses?.feeMetadata ?? intentTransferProgramId;
+  const metadata       = addresses.metadata    ?? intentTransferProgramId;
+  const feeMetadata    = addresses.feeMetadata ?? intentTransferProgramId;
   const destination    = findAta({ owner: recipient, mint          });
   const feeDestination = findAta({ owner: sponsor,   mint: feeMint });
   const nonce          = noncePda(intentType, user);

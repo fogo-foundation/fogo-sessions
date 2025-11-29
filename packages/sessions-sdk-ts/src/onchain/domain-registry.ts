@@ -1,12 +1,12 @@
 import { address } from "@solana/kit";
 import type { DeriveType } from "@xlabs-xyz/binary-layout";
-import { sha256, bytes } from "@xlabs-xyz/utils";
+import type { SvmClient } from "@xlabs-xyz/svm";
 import {
-  type SvmClient,
   svmAddressItem,
   findPda,
-  getDeserializedAccount,
+  getDeserializedAccount
 } from "@xlabs-xyz/svm";
+import { sha256, bytes } from "@xlabs-xyz/utils";
 
 export const domainRegistryProgramId = address("DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog");
 

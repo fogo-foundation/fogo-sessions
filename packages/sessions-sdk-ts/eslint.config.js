@@ -1,6 +1,1 @@
-import { base } from "@cprussin/eslint-config";
-
-export default [
-  { ignores: ["src/onchain/**"] },
-  ...base,
-];
+export { base as default } from "@cprussin/eslint-config";

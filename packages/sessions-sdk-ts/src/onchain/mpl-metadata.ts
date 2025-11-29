@@ -1,11 +1,13 @@
-import { type Address, address } from "@solana/kit";
-import { type DeriveType, stringConversion } from "@xlabs-xyz/binary-layout";
+import type { Address } from "@solana/kit";
+import { address } from "@solana/kit";
+import type { DeriveType } from "@xlabs-xyz/binary-layout";
+import { stringConversion } from "@xlabs-xyz/binary-layout";
+import type { SvmClient } from "@xlabs-xyz/svm";
 import {
-  type SvmClient,
   svmAddressItem,
   vecBytesItem,
   findPda,
-  getDeserializedAccount,
+  getDeserializedAccount
 } from "@xlabs-xyz/svm";
 
 //see https://github.com/metaplex-foundation/mpl-token-metadata/blob/9b514cdecb4d85da1c3046d2d7239d19e384a706/programs/token-metadata/program/src/lib.rs#L25

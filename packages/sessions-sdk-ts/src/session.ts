@@ -8,7 +8,7 @@ import type { TransactionOrInstructions, TransactionResult } from "./connection.
 import { TransactionResultType } from "./connection.js";
 import type { SendTransactionOptions, SessionContext } from "./context.js";
 import { domainRecordPda } from "./onchain/domain-registry.js";
-import type { ChainId as FogoChainId, SigningFunc } from "./onchain/index.js";
+import type { SigningFunc } from "./onchain/index.js";
 import { chainIdToSessionStartAlt } from "./onchain/index.js";
 import {
   composeStartSessionIxs,
@@ -48,7 +48,7 @@ export const establishSession = async (
           [fromLegacyPublicKey(mint), amount]) ?? []
       );
 
-  const chainId = context.chainId as FogoChainId;
+  const chainId = context.chainId;
   const instructions = await composeStartSessionIxs(
     context.rpc,
     options.signMessage as SigningFunc,

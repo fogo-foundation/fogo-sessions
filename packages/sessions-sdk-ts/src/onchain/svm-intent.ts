@@ -1,9 +1,10 @@
 import type{ Address, SignatureBytes } from "@solana/kit";
 import { getPublicKeyFromAddress, verifySignature } from "@solana/kit";
-import { type RoUint8Array } from "@xlabs-xyz/const-utils";
 import { serialize } from "@xlabs-xyz/binary-layout";
+import type {RoUint8Array} from "@xlabs-xyz/const-utils";
+import type {Ix} from "@xlabs-xyz/svm";
+import {  offchainMessageLayout, composeEd25519VerifyIx } from "@xlabs-xyz/svm";
 import { bytes } from "@xlabs-xyz/utils";
-import { type Ix, offchainMessageLayout, composeEd25519VerifyIx } from "@xlabs-xyz/svm";
 
 export type SigningFunc = (msg: RoUint8Array) => Promise<Uint8Array>;
 
