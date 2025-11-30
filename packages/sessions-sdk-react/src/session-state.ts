@@ -1,4 +1,5 @@
 import type { Session } from "@fogo/sessions-sdk";
+import type { Transaction } from "@solana/kit";
 import type { PublicKey } from "@solana/web3.js";
 
 import type { SolanaWallet } from "./solana-wallet.js";
@@ -24,6 +25,7 @@ export type EstablishedOptions = Omit<Session, "sessionInfo"> & {
   isLimited: boolean;
   endSession: () => void;
   showBridgeIn: () => void;
+  signTxWithWallet: (transaction: Transaction) => Promise<Transaction>;
   updateSession: (
     prevState: StateType,
     duration: number,

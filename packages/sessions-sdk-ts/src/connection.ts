@@ -130,6 +130,9 @@ export type SendTransactionOptions = {
   variation?: string | undefined;
   addressLookupTable?: string | undefined;
   extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
+  preprocessTransaction?:
+    | ((tx: Transaction) => Promise<Transaction>)
+    | undefined;
 };
 
 export type Connection = ReturnType<typeof createSessionConnection>;
@@ -184,6 +187,9 @@ const sendToPaymaster = async (
       )
     : await addSignaturesToExistingTransaction(instructions, signerKeys);
 
+  const preprocessedTransaction =
+    (await extraConfig?.preprocessTransaction?.(transaction)) ?? transaction;
+
   if (connection.sendToPaymaster === undefined) {
     const url = new URL(
       "/api/sponsor_and_send",
@@ -199,7 +205,7 @@ const sendToPaymaster = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        transaction: getBase64EncodedWireTransaction(transaction),
+        transaction: getBase64EncodedWireTransaction(preprocessedTransaction),
       }),
     });
 
@@ -209,7 +215,7 @@ const sendToPaymaster = async (
       throw new PaymasterResponseError(response.status, await response.text());
     }
   } else {
-    return connection.sendToPaymaster(transaction);
+    return connection.sendToPaymaster(preprocessedTransaction);
   }
 };
 

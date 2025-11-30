@@ -20,6 +20,7 @@ import type { Transaction } from "./use-transaction-log";
 import { useTransactionLog } from "./use-transaction-log";
 import { StateType as AsyncStateType } from "../../hooks/use-async";
 import { Button } from "../Button";
+import { useTradeNative } from "./use-trade-native";
 
 export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
   const connection = useConnection();
@@ -57,11 +58,16 @@ export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
                 />
               </>
             )}
-            <TradeButton
+            <TradeSplButton
               sessionState={sessionState}
               appendTransaction={appendTransaction}
-              amount={0.5}
+              amount={0.1}
               mint={NATIVE_MINT}
+            />
+            <TradeNativeButton
+              sessionState={sessionState}
+              appendTransaction={appendTransaction}
+              amount={0.1}
             />
             <Button
               onPress={() => {
@@ -125,7 +131,7 @@ const AirdropUsdcButton = ({
   );
 };
 
-const TradeButton = ({
+const TradeSplButton = ({
   amount,
   sessionState,
   appendTransaction,
@@ -144,7 +150,28 @@ const TradeButton = ({
   );
   return (
     <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
-      Trade {amount} FOGO
+      Trade {amount} wFOGO
+    </Button>
+  );
+};
+
+const TradeNativeButton = ({
+  amount,
+  sessionState,
+  appendTransaction,
+}: {
+  amount: number;
+  sessionState: EstablishedSessionState;
+  appendTransaction: (tx: Transaction) => void;
+}) => {
+  const { state, execute } = useTradeNative(
+    sessionState,
+    appendTransaction,
+    amount,
+  );
+  return (
+    <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
+      Trade {amount} Native FOGO
     </Button>
   );
 };
