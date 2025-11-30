@@ -55,6 +55,7 @@
     "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana-mobile/wallet-adapter-mobile": "catalog:",
+    "@solana/compat": "catalog:",
     "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-backpack": "catalog:",

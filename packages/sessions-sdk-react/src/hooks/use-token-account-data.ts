@@ -46,29 +46,23 @@ const getTokenAccounts = async (
   sessionState: WalletConnectedSessionState,
   network: Network,
 ) => {
-  const accounts = accountsSchema.parse(
-    await connection.getParsedProgramAccounts(TOKEN_PROGRAM_ID, {
-      filters: [
-        {
-          dataSize: 165,
-        },
-        {
-          memcmp: {
-            offset: 32,
-            bytes: sessionState.walletPublicKey.toBase58(),
-          },
-        },
-      ],
+  const [nativeBalance, unparsedSplAccounts] = await Promise.all([
+    connection.getBalance(sessionState.walletPublicKey),
+    connection.getParsedTokenAccountsByOwner(sessionState.walletPublicKey, {
+      programId: TOKEN_PROGRAM_ID,
     }),
-  );
+  ]);
+
+  const splAccounts = accountsSchema.parse(unparsedSplAccounts.value);
 
   const metadata = await getMetadata(
-    accounts.map((account) => account.mint),
+    splAccounts.map((account) => account.mint),
     network,
   );
 
   return {
-    tokensInWallet: accounts
+    nativeBalance: BigInt(nativeBalance),
+    tokensInWallet: splAccounts
       .filter(({ amountInWallet }) => amountInWallet !== 0n)
       .map(({ mint, amountInWallet, decimals }) => ({
         mint: new PublicKey(mint),
@@ -77,7 +71,7 @@ const getTokenAccounts = async (
         ...metadata[mint],
       })),
     sessionLimits: isEstablished(sessionState)
-      ? accounts
+      ? splAccounts
           .filter(
             ({ delegate, delegateAmount }) =>
               delegate === sessionState.sessionPublicKey.toBase58() &&

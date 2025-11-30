@@ -26,8 +26,8 @@ catalog:
   "@react-hookz/web": 25.1.1
   "@solana-mobile/wallet-adapter-mobile": ^2.2.4
   "@solana-program/token": ^0.5.1
-  "@solana/compat": ^4.0.0
-  "@solana/kit": ^4.0.0
+  "@solana/compat": 4.0.0
+  "@solana/kit": 4.0.0
   "@solana/spl-token": ^0.4.13
   "@solana/wallet-adapter-backpack": 0.1.14
   "@solana/wallet-adapter-base": 0.9.27

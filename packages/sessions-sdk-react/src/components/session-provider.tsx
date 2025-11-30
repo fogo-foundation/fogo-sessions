@@ -26,6 +26,8 @@ import {
   setStoredSession,
 } from "@fogo/sessions-sdk-web";
 import { useLocalStorageValue } from "@react-hookz/web";
+import { fromVersionedTransaction } from "@solana/compat";
+import { getTransactionEncoder } from "@solana/kit";
 import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
 import type {
   BaseWalletAdapter,
@@ -39,7 +41,7 @@ import {
   BitgetWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { useStandardWalletAdapters } from "@solana/wallet-standard-wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, VersionedTransaction } from "@solana/web3.js";
 import {
   createDefaultAddressSelector,
   createDefaultAuthorizationResultCache,
@@ -494,6 +496,35 @@ const useSessionState = ({
               completeSessionSetup(newSession, wallet, onEndSession);
             },
           });
+        },
+        signTxWithWallet: async (tx) => {
+          // This is a total hack to convert a `@solana/kit` `Transaction` to a
+          // `@solana/web3.js` `VersionedTransaction`.
+          //
+          // Currently we still use the Solana wallet adapter libraries, which
+          // require passing `VersionedTransaction` objects to the
+          // `signTransaction` function.  Solana ships the `@solana/compat`
+          // library which enables converting legacy objects to Kit objects, but
+          // it does not enable the reverse conversion and I'm not sure there's
+          // any direct mechanism to do so, since kit `Transaction` objects
+          // store the transaction partially encoded where
+          // `VersionedTransaction` objects do not.
+          //
+          // Note that this will all go away before long for two reasons:
+          //
+          // 1. The only reason we have the `signTxWithWallet` function here is
+          //    to enable native transfers temporarily until we can do native
+          //    transfers with session keys
+          // 2. We will soon work to move from the Solana wallet adapter
+          //    libraries to using the Wallet Standard adapters instead, which
+          //    are newer and are directly supported by Kit.  This will allow us
+          //    to remove much of the internal code which still relies on
+          //    `@solana/web3.js`, including this kludge.
+          const legacyTx = VersionedTransaction.deserialize(
+            new Uint8Array(getTransactionEncoder().encode(tx)),
+          );
+          const signedTx = await wallet.signTransaction(legacyTx);
+          return fromVersionedTransaction(signedTx);
         },
       };
 
