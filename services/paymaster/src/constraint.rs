@@ -2,7 +2,7 @@ use anchor_lang::AnchorDeserialize;
 use axum::http::StatusCode;
 use borsh::BorshDeserialize;
 use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_message::compiled_instruction::CompiledInstruction;
@@ -523,7 +523,7 @@ impl DataConstraint {
                     )
                 })?;
                 let recovered_quoter = recover_signer_pubkey(signed_quote)?;
-                DataValue::NttSignedQuoter(recovered_quoter)
+                DataValue::NttSignedQuoter(NttSignedQuoter(recovered_quoter))
             }
         };
 
@@ -626,6 +626,36 @@ impl DataType {
     }
 }
 
+#[derive(PartialEq, Eq)]
+pub struct NttSignedQuoter([u8; 20]);
+
+impl Serialize for NttSignedQuoter {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&format!("0x{}", hex::encode(self.0)))
+    }
+}
+
+impl<'de> Deserialize<'de> for NttSignedQuoter {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = <String as serde::Deserialize>::deserialize(deserializer)?;
+        let hex_part = s.strip_prefix("0x").unwrap_or(&s);
+        let bytes = hex::decode(hex_part)
+            .map_err(|e| serde::de::Error::custom(format!("Invalid hex string {hex_part}: {e}")))?;
+        let arr: [u8; 20] = bytes.try_into().map_err(|_| {
+            serde::de::Error::custom(
+                "Failed to convert bytes to H160 address: invalid byte array length",
+            )
+        })?;
+        Ok(NttSignedQuoter(arr))
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub enum DataValue {
     U8(u8),
@@ -637,7 +667,7 @@ pub enum DataValue {
     /// Fixed-size byte array specified as hex-encoded string
     Bytes(String),
     /// NTT quoter
-    NttSignedQuoter(H160),
+    NttSignedQuoter(NttSignedQuoter),
 }
 
 #[derive(Serialize, Deserialize)]

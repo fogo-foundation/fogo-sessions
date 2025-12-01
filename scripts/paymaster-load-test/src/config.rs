@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
-use std::path::Path;
+use std::{num::NonZeroUsize, path::Path};
 
 #[derive(Debug, Clone)]
 pub struct RuntimeConfig {
@@ -51,6 +51,10 @@ pub struct FileConfig {
     pub external: ExternalTarget,
 }
 
+fn default_one() -> NonZeroUsize {
+    NonZeroUsize::new(1).expect("non-zero u8 provided, should not panic")
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct ExternalTarget {
     /// Paymaster endpoint URL
@@ -64,6 +68,10 @@ pub struct ExternalTarget {
 
     /// Paymaster IP override, useful is the paymaster is behind a load balancer
     pub paymaster_ip_override: Option<String>,
+
+    /// Number of sponsor keys to request from the paymaster
+    #[serde(default = "default_one")]
+    pub number_of_sponsors: NonZeroUsize,
 }
 
 impl FileConfig {

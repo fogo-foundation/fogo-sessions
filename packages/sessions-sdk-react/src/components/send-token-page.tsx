@@ -338,7 +338,10 @@ const SendTokenPageImpl = ({
             Send {tokenName ?? <TruncateKey keyValue={tokenMint} />}
           </h2>
           <div className={styles.amountInWallet}>
-            {amountToString(amountAvailable, decimals)} {symbol} available
+            <span className={styles.amount}>
+              {amountToString(amountAvailable, decimals)}
+            </span>{" "}
+            {symbol} available
           </div>
         </div>
         <TextField

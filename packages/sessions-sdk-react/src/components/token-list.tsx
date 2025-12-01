@@ -25,8 +25,7 @@ const MotionGridListItem = motion.create(GridListItem<Token>);
 
 type Props = {
   sessionState: EstablishedSessionState;
-  onPressGetTokens: () => void;
-  onPressReceiveTokens: () => void;
+  onPressTransferIn: () => void;
 } & (
   | { onPressToken: (token: Token) => void }
   | { onPressSend: (token: Token) => void }
@@ -34,8 +33,7 @@ type Props = {
 
 export const TokenList = ({
   sessionState,
-  onPressReceiveTokens,
-  onPressGetTokens,
+  onPressTransferIn,
   ...props
 }: Props) => {
   const state = useTokenAccountData(sessionState);
@@ -56,8 +54,7 @@ export const TokenList = ({
           <WalletIcon className={styles.emptyIcon} />
           <span className={styles.message}>Your wallet is empty</span>
           <span className={styles.hints}>
-            <Link onPress={onPressReceiveTokens}>Receive</Link> or{" "}
-            <Link onPress={onPressGetTokens}>Get tokens</Link>
+            <Link onPress={onPressTransferIn}>Transfer USDC to Fogo</Link>
           </span>
         </div>
       ) : (

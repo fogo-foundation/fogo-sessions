@@ -1,5 +1,11 @@
 # @fogo/sessions-idls
 
+## 0.0.10
+
+### Patch Changes
+
+- 02d8d5c: Rev idl version to account for different arg format for executor quote
+
 ## 0.0.9
 
 ### Patch Changes

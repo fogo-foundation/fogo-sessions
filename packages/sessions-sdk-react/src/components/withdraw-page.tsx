@@ -264,8 +264,17 @@ const WithdrawFormImpl = (
           className={styles.amountInWallet}
           data-is-loading={props.isLoading ? "" : undefined}
         >
-          {!props.isLoading &&
-            `${amountToString(props.amountAvailable, USDC.decimals).toString()} USDC available`}
+          {!props.isLoading && (
+            <>
+              <span className={styles.amount}>
+                {amountToString(
+                  props.amountAvailable,
+                  USDC.decimals,
+                ).toString()}
+              </span>{" "}
+              USDC available
+            </>
+          )}
         </div>
       </div>
       <TokenAmountInput
