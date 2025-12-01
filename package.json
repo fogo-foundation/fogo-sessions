@@ -19,6 +19,7 @@
     "run:update-metadata": "update-metadata",
     "test:format": "run-jest --colors --selectProjects format",
     "test:lint": "run-jest --colors --selectProjects lint",
+    "test:programs": "pnpm --filter @fogo/program-tests test",
     "turbo": "[ ! -d node_modules ] && pnpm install; turbo"
   },
   "devDependencies": {

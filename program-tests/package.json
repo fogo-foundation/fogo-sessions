@@ -1,0 +1,25 @@
+{
+  "name": "@fogo/program-tests",
+  "private": true,
+  "scripts": {
+    "test": "tsx --test *.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "^4.20.6",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@fogo/sessions-sdk": "workspace:*",
+    "@solana/kit": "catalog:",
+    "@solana-program/compute-budget": "catalog:",
+    "@xlabs-xyz/amount": "catalog:",
+    "@xlabs-xyz/binary-layout": "catalog:",
+    "@xlabs-xyz/common": "catalog:",
+    "@xlabs-xyz/const-utils": "catalog:",
+    "@xlabs-xyz/fork-svm": "catalog:",
+    "@xlabs-xyz/svm": "catalog:",
+    "@xlabs-xyz/utils": "catalog:"
+  }
+}
+
