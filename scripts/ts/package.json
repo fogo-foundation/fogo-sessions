@@ -6,7 +6,7 @@
   "bin": {
     "initialize-chain-id": "./bin/initialize-chain-id.js",
     "register-ntt-manager": "./bin/register-ntt-manager.js",
-    "add-program-id-to-domain-registry": "./bin/add-program-id-to-domain-registry.js",
+    "domain-registry": "./bin/domain-registry.js",
     "register-fee-config": "./bin/register-fee-config.js",
     "update-metadata": "./bin/update-metadata.js"
   },
@@ -24,6 +24,7 @@
     "@fogo/sessions-sdk": "workspace:*",
     "@ledgerhq/hw-transport": "catalog:",
     "@ledgerhq/hw-transport-node-hid": "catalog:",
+    "@noble/hashes": "catalog:",
     "@metaplex-foundation/mpl-token-metadata": "catalog:",
     "@metaplex-foundation/umi": "catalog:",
     "@metaplex-foundation/umi-bundle-defaults": "catalog:",
