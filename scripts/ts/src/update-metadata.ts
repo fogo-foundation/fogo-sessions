@@ -2,8 +2,12 @@ import {
   findMetadataPda,
   safeFetchMetadata,
   updateV1,
+  createV1,
+  TokenStandard,
 } from "@metaplex-foundation/mpl-token-metadata";
+import type { TransactionSignature } from "@metaplex-foundation/umi";
 import {
+  percentAmount,
   keypairIdentity,
   publicKey as umiPublicKey,
 } from "@metaplex-foundation/umi";
@@ -59,26 +63,49 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
   const metadata = await safeFetchMetadata(umi, metadataPda);
 
   if (metadata === null) {
-    throw new Error(
-      `No metadata account found for mint ${args.mint.toBase58()}.`,
+    if (args.name === undefined) {
+      throw new Error(
+        "Name is required when setting metadata for the first time",
+      );
+    }
+    if (args.symbol === undefined) {
+      throw new Error(
+        "Symbol is required when setting metadata for the first time",
+      );
+    }
+    printSignature(
+      await createV1(umi, {
+        mint,
+        authority: umi.identity,
+        name: args.name,
+        symbol: args.symbol,
+        uri: args.tokenUri ?? "",
+        sellerFeeBasisPoints: percentAmount(0),
+        tokenStandard: TokenStandard.Fungible,
+        // eslint-disable-next-line unicorn/no-null
+        creators: null,
+      }).sendAndConfirm(umi),
+    );
+  } else {
+    printSignature(
+      await updateV1(umi, {
+        mint,
+        metadata: metadataPda,
+        authority: umi.identity,
+        data: {
+          name: args.name ?? metadata.name,
+          symbol: args.symbol ?? metadata.symbol,
+          uri: args.tokenUri ?? metadata.uri,
+          sellerFeeBasisPoints: 0,
+          // eslint-disable-next-line unicorn/no-null
+          creators: null,
+        },
+      }).sendAndConfirm(umi),
     );
   }
+};
 
-  const { signature } = await updateV1(umi, {
-    mint,
-    metadata: metadataPda,
-    authority: umi.identity,
-    data: {
-      name: args.name ?? metadata.name,
-      symbol: args.symbol ?? metadata.symbol,
-      uri: args.tokenUri ?? metadata.uri,
-      sellerFeeBasisPoints: 0,
-      // eslint-disable-next-line unicorn/no-null
-      creators: null,
-    },
-  }).sendAndConfirm(umi);
-
-  const signatureString = base58.deserialize(signature)[0];
+const printSignature = ({ signature }: { signature: TransactionSignature }) => {
   // eslint-disable-next-line no-console
-  console.log(`Transaction signature: ${signatureString}`);
+  console.log(`Transaction signature: ${base58.deserialize(signature)[0]}`);
 };
