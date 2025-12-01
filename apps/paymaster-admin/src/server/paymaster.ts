@@ -20,12 +20,12 @@ export const getUserPaymasterData = async () => {
 export const updateVariation = async (variationId: string, data: z.infer<typeof VariationSchema>) => {
   const res = await pool.query(
     `UPDATE variation SET transaction_variation = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-    [data, variationId],
+    [data.transaction_variation, variationId],
   );
   return VariationSchema.parse(res.rows[0]);
 }
 
-export const fetchUserPaymasterData = async (walletAddress: string) => {
+export const fetchUserPaymasterData = async (_walletAddress: string) => {
   const { rows } = await pool.query(
     `SELECT
       (

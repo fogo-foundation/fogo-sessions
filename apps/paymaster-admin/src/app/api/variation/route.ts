@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import z, { ZodError } from "zod";
 
-import { TransactionVariationSchema, UUID } from "../../../db-schema";
+import { VariationSchema, UUID } from "../../../db-schema";
 import { updateVariation } from "../../../server/paymaster";
 
 const querySchema = z.object({
@@ -14,7 +14,7 @@ export const PATCH = async (req: NextRequest) => {
   // 3. check if the public key is the same as the one in the database
   try {
     const { variationId } = querySchema.parse(Object.fromEntries(req.nextUrl.searchParams));
-    const data = TransactionVariationSchema.parse(await req.json());
+    const data = VariationSchema.parse(await req.json());
     await updateVariation(variationId, data);
     return NextResponse.json({ message: "Variation updated" });
   } catch (error) {
