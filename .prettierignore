@@ -17,3 +17,4 @@ packages/
 scripts/
 pnpm-lock.yaml
 tilt/keypairs/
+.sqlx/

@@ -15,7 +15,7 @@ use uuid::Uuid;
 use crate::db::pool;
 
 #[derive(FromRow)]
-struct DomainConfigRow {
+struct DomainConfig {
     id: Uuid,
     domain: String,
     enable_session_management: bool,
@@ -23,11 +23,11 @@ struct DomainConfigRow {
 }
 
 #[derive(FromRow)]
-struct VariationRow {
+struct Variation {
     domain_config_id: Uuid,
     version: String,
     name: String,
-    max_gas_spend: i64,
+    max_gas_spend: Option<i64>,
     transaction_variation: Json<Value>,
 }
 
@@ -75,7 +75,8 @@ fn handle_transaction_variation_v1(
 }
 
 pub async fn load_config() -> Result<Config, anyhow::Error> {
-    let domain_rows: Vec<DomainConfigRow> = sqlx::query_as::<_, DomainConfigRow>(
+    let domain_rows = sqlx::query_as!(
+        DomainConfig,
         r#"
         SELECT
           id,
@@ -88,14 +89,15 @@ pub async fn load_config() -> Result<Config, anyhow::Error> {
     .fetch_all(pool::pool())
     .await?;
 
-    let variation_rows: Vec<VariationRow> = sqlx::query_as::<_, VariationRow>(
+    let variation_rows = sqlx::query_as!(
+        Variation,
         r#"
         SELECT
           domain_config_id,
-          version::text AS version,
+          version::text AS "version!",
           name,
           max_gas_spend,
-          transaction_variation
+          transaction_variation AS "transaction_variation: Json<Value>"
         FROM variation
         "#,
     )
@@ -104,7 +106,7 @@ pub async fn load_config() -> Result<Config, anyhow::Error> {
 
     let mut domain_map: HashMap<Uuid, Domain> = HashMap::new();
 
-    for DomainConfigRow {
+    for DomainConfig {
         id,
         domain,
         enable_session_management,
@@ -123,7 +125,7 @@ pub async fn load_config() -> Result<Config, anyhow::Error> {
         );
     }
 
-    for VariationRow {
+    for Variation {
         domain_config_id,
         version,
         name,
@@ -134,12 +136,28 @@ pub async fn load_config() -> Result<Config, anyhow::Error> {
         if let Some(domain_ref) = domain_map.get_mut(&domain_config_id) {
             let transaction_variation_fin: TransactionVariation = match version.as_str() {
                 "v0" => handle_transaction_variation_v0(transaction_variation, name)?,
-                "v1" => handle_transaction_variation_v1(
-                    transaction_variation,
-                    name,
-                    u64::try_from(max_gas_spend)
-                        .map_err(|e| anyhow::anyhow!("Invalid max gas spend: {e}"))?,
-                )?,
+                "v1" => {
+                    // v1 *requires* max_gas_spend
+                    let max = match max_gas_spend {
+                        Some(v) => v,
+                        None => {
+                            tracing::warn!(
+                                domain_id = ?domain_config_id,
+                                ?version,
+                                ?name,
+                                "v1 row missing max_gas_spend, skipping",
+                            );
+                            continue;
+                        }
+                    };
+
+                    handle_transaction_variation_v1(
+                        transaction_variation,
+                        name,
+                        u64::try_from(max)
+                            .map_err(|e| anyhow::anyhow!("Invalid max gas spend: {e}"))?,
+                    )?
+                }
                 _ => {
                     tracing::warn!(
                         domain_id = ?domain_config_id,
