@@ -30,7 +30,7 @@ export default meta;
 export const Link = {
   args: {
     children: "Link",
-    href: "https://www.pyth.network",
+    href: "https://www.fogo.io",
     target: "_blank",
     isDisabled: false,
     invert: false,
