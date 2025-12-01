@@ -1,4 +1,5 @@
 import { getUserPaymasterData } from "../../server/paymaster";
+import { UserNotFound } from "../UserNotFound";
 
 export const DomainLayout = async ({
   children,
@@ -9,6 +10,11 @@ export const DomainLayout = async ({
 }) => {
   const { appId, domainId } = await params;
   const data = await getUserPaymasterData();
+
+  if (!data) {
+    return <UserNotFound />;
+  }
+
   const domainConfig = data.apps
     .find((app) => app.id === appId)
     ?.domain_configs.find((domainConfig) => domainConfig.id === domainId);

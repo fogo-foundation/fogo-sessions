@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getUserPaymasterData } from "../../server/paymaster";
+import { UserNotFound } from "../UserNotFound";
 
 export const App = async ({
   params,
@@ -9,6 +10,11 @@ export const App = async ({
 }) => {
   const { appId } = await params;
   const data = await getUserPaymasterData();
+
+  if (!data) {
+    return <UserNotFound />;
+  }
+
   const app = data.apps.find((app) => app.id === appId);
   if (!app) {
     return (

@@ -13,7 +13,7 @@ const TimeStr = z.preprocess((val) => {
   if (val instanceof Date) return val;
   if (typeof val === "string" || typeof val === "number") {
     const d = new Date(val);
-    return Number.isNaN(d.getTime()) ? undefined : d; 
+    return Number.isNaN(d.getTime()) ? undefined : d;
   }
   return val; // will fail against z.date() below
 }, z.date());
@@ -21,6 +21,7 @@ const TimeStr = z.preprocess((val) => {
 export const PrimitiveDataValueSchema = z.union([
   z.object({ U8: z.number().int().min(0).max(255) }),
   z.object({ U16: z.number().int().min(0).max(65_535) }),
+  // prettier-ignore
   z.object({ U32: z.number().int().min(0).max(0xFF_FF_FF_FF) }),
   z.object({ U64: u64 }),
   z.object({ Bool: z.boolean() }),
@@ -73,30 +74,34 @@ export const InstructionConstraintSchema = z.object({
   required: z.boolean(),
 });
 
-export const VariationProgramWhitelistSchema = z.object({
+// Database variation schemas (version, name, max_gas_spend are separate columns)
+// The transaction_variation JSONB field contains different data based on version:
+// - v0: array of program pubkeys (whitelisted_programs)
+// - v1: array of instruction constraints
+export const VariationV0Schema = z.object({
+  id: UUID,
   version: z.literal("v0"),
   name: z.string(),
-  whitelisted_programs: z.array(Base58Pubkey),
-});
-
-export const VariationOrderedInstructionConstraintsSchema = z.object({
-  version: z.literal("v1"),
-  name: z.string(),
-  instructions: z.array(InstructionConstraintSchema).default([]),
+  transaction_variation: z.array(Base58Pubkey),
   max_gas_spend: u64,
-});
-
-export const TransactionVariationSchema = z.discriminatedUnion("version", [
-  VariationProgramWhitelistSchema,
-  VariationOrderedInstructionConstraintsSchema,
-]);
-
-export const VariationSchema = z.object({
-  id: UUID,
-  transaction_variation: TransactionVariationSchema,
   created_at: TimeStr,
   updated_at: TimeStr,
 });
+
+export const VariationV1Schema = z.object({
+  id: UUID,
+  version: z.literal("v1"),
+  name: z.string(),
+  transaction_variation: z.array(InstructionConstraintSchema),
+  max_gas_spend: u64,
+  created_at: TimeStr,
+  updated_at: TimeStr,
+});
+
+export const VariationSchema = z.discriminatedUnion("version", [
+  VariationV0Schema,
+  VariationV1Schema,
+]);
 
 export const DomainConfigWithVariationsSchema = z.object({
   id: UUID,
