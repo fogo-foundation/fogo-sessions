@@ -13,7 +13,7 @@ const TimeStr = z.preprocess((val) => {
   if (val instanceof Date) return val;
   if (typeof val === "string" || typeof val === "number") {
     const d = new Date(val);
-    return Number.isNaN(d.getTime()) ? undefined : d; 
+    return Number.isNaN(d.getTime()) ? undefined : d;
   }
   return val; // will fail against z.date() below
 }, z.date());

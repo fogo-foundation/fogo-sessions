@@ -12,18 +12,21 @@ export const getUserPaymasterData = async () => {
   const sessionToken = cookieStore.get("sessionToken")?.value ?? "";
   const acc = await verifyLogInToken(sessionToken, connection);
   if (!acc) {
-    return redirect(`/`)
+    return redirect(`/`);
   }
-  return fetchUserPaymasterData( acc.user.toString());
+  return fetchUserPaymasterData(acc.user.toString());
 };
 
-export const updateVariation = async (variationId: string, data: z.infer<typeof VariationSchema>) => {
+export const updateVariation = async (
+  variationId: string,
+  data: z.infer<typeof VariationSchema>,
+) => {
   const res = await pool.query(
     `UPDATE variation SET transaction_variation = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
     [data.transaction_variation, variationId],
   );
   return VariationSchema.parse(res.rows[0]);
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const fetchUserPaymasterData = async (_walletAddress: string) => {
@@ -90,7 +93,7 @@ export const fetchUserPaymasterData = async (_walletAddress: string) => {
   if (!rows[0]) {
     return;
   }
-  
+
   const userPaymasterData = UserSchema.parse(rows[0]);
   return userPaymasterData;
 };
