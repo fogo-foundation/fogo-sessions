@@ -4851,6 +4851,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "session-stake"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "chain-id",
+ "fogo-sessions-sdk",
+ "nom 8.0.0",
+ "solana-intents",
+ "solana-stake-interface",
+ "solana-system-interface",
+]
+
+[[package]]
 name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,15 +1,18 @@
 import { describe, test, before, beforeEach } from "node:test";
 import assert from "node:assert";
+import { onchain } from "@fogo/sessions-sdk";
 import type { Address, KeyPairSigner } from "@solana/kit";
 import { address } from "@solana/kit";
 import { getSetComputeUnitLimitInstruction } from "@solana-program/compute-budget";
 import { serialize, deserialize } from "@xlabs-xyz/binary-layout";
-import { type Snapshot, ForkSvm } from "@xlabs-xyz/fork-svm";
+import type { Snapshot } from "@xlabs-xyz/fork-svm";
+import { ForkSvm } from "@xlabs-xyz/fork-svm";
 import {
   nativeMint,
   svmAddressItem,
   addressLookupTableLayout,
 } from "@xlabs-xyz/svm";
+
 import {
   fogoRpcUrl,
   fogo,
@@ -18,7 +21,6 @@ import {
   createHelpers,
   signMessageFunc,
 } from "./utils.js";
-import { onchain } from "@fogo/sessions-sdk";
 
 const {
   chainIdToUsdcMint,

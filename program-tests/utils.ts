@@ -27,6 +27,7 @@ import {
   type Ix,
   addressLookupTableLayout,
   tokenProgramId,
+  nativeMint,
   findAta,
   minimumBalanceForRentExemption,
   tokenAccountLayout,
@@ -75,34 +76,37 @@ export const signMessageFunc =
 export const createHelpers = (forkSvm: ForkSvm) => {
   const rpc = forkSvm.createForkRpc();
 
-  const createAccount = (address: Address, data: Uint8Array, programId: Address, lamports?: bigint) =>
+  const createAccount = (
+    address:   Address,
+    data:      RoUint8Array,
+    programId: Address,
+    lamports:  bigint = 0n) =>
     forkSvm.setAccount(address, {
       owner: programId,
       executable: false,
-      lamports: lamports ?? minimumBalanceForRentExemption(data.length),
+      lamports,
+      space:   BigInt(data.length),
       data,
-      space: BigInt(data.length),
     });
 
   const createAta = (owner: Address, mint: Address, balance: bigint) => {
     const ata = findAta({ owner, mint });
-    const rentExempt = minimumBalanceForRentExemption(calcStaticSize(tokenAccountLayout())!);
-    const totalLamports = rentExempt + balance;
+    const rentExempt = minimumBalanceForRentExemption(calcStaticSize(tokenAccountLayout())!)
 
     createAccount(
       ata,
       serialize(tokenAccountLayout(), {
         mint,
         owner,
-        amount: balance as Lamports,
-        state: "Initialized",
-        isNative: 0n as Lamports,
-        delegate: undefined,
+        amount:          balance as Lamports,
+        state:           "Initialized",
+        isNative:        mint === nativeMint ? rentExempt : undefined,
+        delegate:        undefined,
         delegatedAmount: 0n as Lamports,
-        closeAuthority: undefined,
+        closeAuthority:  undefined,
       }),
       tokenProgramId,
-      totalLamports,
+      rentExempt + (mint === nativeMint ? balance : 0n),
     );
     return ata;
   };

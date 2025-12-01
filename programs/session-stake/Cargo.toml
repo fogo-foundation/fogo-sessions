@@ -1,0 +1,26 @@
+[package]
+name = "session-stake"
+version = "0.1.0"
+edition = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "session_stake"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-spl = { workspace = true }
+chain-id = { path = "../chain-id", features = ["no-entrypoint"] }
+fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["anchor"] }
+nom = { workspace = true }
+solana-intents = { path = "../../packages/solana-intents" }
+solana-stake-interface = { version = "1", features = ["bincode", "borsh"] }
+solana-system-interface = { version = "1", features = ["bincode"] }
