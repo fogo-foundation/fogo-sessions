@@ -22,7 +22,7 @@ const meta = {
       table: {
         category: "State",
       },
-    }
+    },
   },
 } satisfies Meta<typeof LinkComponent>;
 export default meta;
@@ -34,18 +34,10 @@ export const Link = {
     target: "_blank",
     isDisabled: false,
   },
-  argTypes: {
-    href: {
-      control: "text",
-      table: {
-        category: "Link",
-      },
-    },
-    target: {
-      control: "text",
-      table: {
-        category: "Link",
-      },
-    },
+} satisfies StoryObj<typeof LinkComponent>;
+
+export const Button = {
+  args: {
+    children: "Link Button",
   },
 } satisfies StoryObj<typeof LinkComponent>;
