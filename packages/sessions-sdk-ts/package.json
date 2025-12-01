@@ -70,7 +70,6 @@
     "@xlabs-xyz/fork-svm": "catalog:",
     "@xlabs-xyz/svm": "catalog:",
     "@xlabs-xyz/utils": "catalog:",
-    "bs58": "catalog:",
     "zod": "catalog:"
   }
 }

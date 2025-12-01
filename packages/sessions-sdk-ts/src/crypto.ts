@@ -1,4 +1,4 @@
-import bs58 from "bs58";
+import { base58, bytes } from "@xlabs-xyz/utils";
 
 /**
  * Sign a message using a CryptoKeyPair session key
@@ -9,14 +9,13 @@ import bs58 from "bs58";
 export const signMessageWithKey = async (
   publicPrivateKeyPair: CryptoKeyPair,
   message: string,
-) => {
-  const signature = await crypto.subtle.sign(
+): Promise<string> =>
+  crypto.subtle.sign(
     { name: "Ed25519" },
     publicPrivateKeyPair.privateKey,
-    new TextEncoder().encode(message),
-  );
-  return bs58.encode(new Uint8Array(signature));
-};
+    bytes.encode(message),
+  ).then((signature) => base58.encode(new Uint8Array(signature)));
+
 
 /**
  * Verify a message with a CryptoKey public key
@@ -29,28 +28,25 @@ export const verifyMessageWithKey = async (
   publicKey: CryptoKey,
   message: string,
   signature: string,
-): Promise<boolean> => {
-  const isValid = await crypto.subtle.verify(
+): Promise<boolean> =>
+  crypto.subtle.verify(
     { name: "Ed25519" },
     publicKey,
-    bs58.decode(signature),
-    new TextEncoder().encode(message),
+    base58.decode(signature),
+    bytes.encode(message),
   );
 
-  return isValid;
-};
 
 /**
  * Import a public key into a CryptoKey
  * @param publicKey - The public key to import
  * @returns The imported CryptoKey
  */
-export const importKey = async (publicKey: string) => {
-  return await crypto.subtle.importKey(
+export const importKey = (publicKey: string) =>
+  crypto.subtle.importKey(
     "raw",
-    new Uint8Array(bs58.decode(publicKey)),
+    base58.decode(publicKey),
     { name: "Ed25519" },
     false,
     ["verify"],
   );
-};

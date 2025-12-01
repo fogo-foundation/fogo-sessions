@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import bs58 from "bs58";
+import { base58, bytes } from "@xlabs-xyz/utils";
 import { z } from "zod";
 
 import {
@@ -33,7 +33,7 @@ export const createLogInToken = async (session: Session) => {
   const signature = await signMessageWithKey(session.sessionKey, message);
 
   // Return base58(message) + base58(signature)
-  return `${bs58.encode(new TextEncoder().encode(message))}.${signature}`;
+  return `${base58.encode(bytes.encode(message))}.${signature}`;
 };
 
 /**
@@ -50,7 +50,7 @@ export const verifyLogInToken = async (
   if (!rawMessage || !signature) return;
 
   // Decode + parse payload
-  const messageStr = new TextDecoder().decode(bs58.decode(rawMessage));
+  const messageStr = bytes.decode(base58.decode(rawMessage));
   const payload = loginTokenPayloadSchema.parse(JSON.parse(messageStr));
 
   // Verify signature with sessionPublicKey
@@ -74,4 +74,3 @@ export const verifyLogInToken = async (
 
   return sessionAccount;
 };
-
