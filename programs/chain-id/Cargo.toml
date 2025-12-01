@@ -1,6 +1,9 @@
 [package]
 name = "chain-id"
 version = "0.1.0"
+description = "Fogo Sessions chain-id program"
+license = { workspace = true }
+repository = "https://github.com/fogo-foundation/fogo-sessions"
 edition = { workspace = true }
 
 [lib]
