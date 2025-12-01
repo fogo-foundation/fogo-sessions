@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
+    "@fogo/component-library": "workspace:^",
     "@fogo/sessions-idls": "workspace:^",
     "@fogo/sessions-sdk": "workspace:^",
     "@fogo/sessions-sdk-web": "workspace:^",

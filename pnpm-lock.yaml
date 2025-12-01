@@ -709,6 +709,9 @@ importers:
       '@coral-xyz/anchor':
         specifier: 'catalog:'
         version: 0.31.1(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
+      '@fogo/component-library':
+        specifier: workspace:^
+        version: link:../component-library
       '@fogo/sessions-idls':
         specifier: workspace:^
         version: link:../sessions-idls

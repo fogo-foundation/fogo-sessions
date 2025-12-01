@@ -7,7 +7,12 @@
     "node": ">=22.14.0"
   },
   "exports": {
+    "./Button": {
+      "types": "./dist/Button/index.d.ts",
+      "default": "./dist/Button/index.mjs"
+    },
     "./Link": {
+      "types": "./dist/Link/index.d.ts",
       "default": "./dist/Link/index.mjs"
     },
     "./package.json": "./package.json",

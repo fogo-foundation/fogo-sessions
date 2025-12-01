@@ -1,3 +1,5 @@
+import { Button } from "@fogo/component-library/Button";
+import { Link } from "@fogo/component-library/Link";
 import { bridgeIn, Network } from "@fogo/sessions-sdk";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import type { Connection, PublicKey, TokenAmount } from "@solana/web3.js";
@@ -9,19 +11,17 @@ import { Form } from "react-aria-components";
 import type { KeyedMutator } from "swr";
 
 import { stringToAmount } from "../amount-to-string.js";
-import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
+import type { EstablishedSessionState } from "../session-state.js";
 import styles from "./deposit-page.module.css";
-import { Link } from "./link.js";
+import { ExplorerLink, Chain } from "./explorer-link.js";
+import { FetchError } from "./fetch-error.js";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
 import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { USDC } from "../wormhole-routes.js";
-import { ExplorerLink, Chain } from "./explorer-link.js";
-import { FetchError } from "./fetch-error.js";
 
 type Props = {
   sessionState: EstablishedSessionState;

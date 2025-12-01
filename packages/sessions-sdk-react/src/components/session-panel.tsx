@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@fogo/component-library/Button";
 import { Network } from "@fogo/sessions-sdk";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { PublicKey } from "@solana/web3.js";
@@ -13,7 +14,6 @@ import type {
   EstablishedSessionState,
   SessionState,
 } from "../session-state.js";
-import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
 import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";

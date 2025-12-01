@@ -1,3 +1,5 @@
+import { Button } from "@fogo/component-library/Button";
+import { Link } from "@fogo/component-library/Link";
 import {
   sendTransfer,
   TransactionResultType,
@@ -16,13 +18,11 @@ import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
-import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
+import type { EstablishedSessionState } from "../session-state.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { FetchError as FetchErrorImpl } from "./fetch-error.js";
 import { TextField } from "./field.js";
-import { Link } from "./link.js";
 import styles from "./send-token-page.module.css";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
@@ -98,15 +98,7 @@ const SendTokenWithFeeConfig = (
       );
     }
     case StateType.Loaded: {
-      return feeTokenAccountBalance.data < props.feeConfig.fee ? (
-        <FetchError
-          headline={`Not enough ${props.feeConfig.symbolOrMint}`}
-          error={`You need at least ${amountToString(props.feeConfig.fee, props.feeConfig.decimals)} ${props.feeConfig.symbolOrMint} to pay network fees to send tokens.`}
-          onPressBack={props.onPressBack}
-        />
-      ) : (
-        <LoadedSendTokenPage {...props} />
-      );
+      return <LoadedSendTokenPage {...props} />;
     }
     case StateType.Loading:
     case StateType.NotLoaded: {
