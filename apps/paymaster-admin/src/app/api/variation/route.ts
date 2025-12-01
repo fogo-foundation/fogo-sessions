@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import z, { ZodError } from "zod";
+import { z, ZodError } from "zod";
 
 import { VariationSchema, UUID } from "../../../db-schema";
 import { updateVariation } from "../../../server/paymaster";

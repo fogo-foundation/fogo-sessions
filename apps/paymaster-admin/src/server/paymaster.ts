@@ -1,8 +1,8 @@
 import { verifyLogInToken } from "@fogo/sessions-sdk";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { redirect } from "next/navigation";
 import { UserSchema, VariationSchema } from "../db-schema";
 import { connection } from "../fogo-connection";
 import pool from "./pg";
@@ -25,6 +25,7 @@ export const updateVariation = async (variationId: string, data: z.infer<typeof 
   return VariationSchema.parse(res.rows[0]);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const fetchUserPaymasterData = async (_walletAddress: string) => {
   const { rows } = await pool.query(
     `SELECT
@@ -87,7 +88,7 @@ export const fetchUserPaymasterData = async (_walletAddress: string) => {
 
   // If user doesn't exist in database, return undefined
   if (!rows[0]) {
-    return undefined;
+    return;
   }
   
   const userPaymasterData = UserSchema.parse(rows[0]);
