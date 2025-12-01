@@ -108,6 +108,7 @@ onlyBuiltDependencies:
   - bigint-buffer
   - blake-hash
   - bufferutil
+  - core-js-pure
   - esbuild
   - node-hid
   - protobufjs
