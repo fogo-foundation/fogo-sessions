@@ -151,6 +151,7 @@ const LoadedWithdrawForm = ({
 }) => {
   const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
+  const [amountValidationError, setAmountValidationError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
 
@@ -230,6 +231,8 @@ const LoadedWithdrawForm = ({
       amount={amount}
       onChangeAmount={setAmount}
       maxWithdrawAmount={maxWithdrawAmount}
+      amountValidationError={amountValidationError}
+      onAmountValidationChange={setAmountValidationError}
     />
   );
 };
@@ -247,6 +250,8 @@ const WithdrawFormImpl = (
         amount: string;
         onChangeAmount: (newValue: string) => void;
         maxWithdrawAmount: bigint;
+        amountValidationError?: string | undefined;
+        onAmountValidationChange?: (error: string | undefined) => void;
       },
 ) => {
   return (
@@ -304,6 +309,7 @@ const WithdrawFormImpl = (
           : {
               max: props.maxWithdrawAmount,
               onChange: props.onChangeAmount,
+              onValidationChange: props.onAmountValidationChange,
             })}
         {...(!props.isLoading && {
           value: props.amount,
@@ -315,6 +321,7 @@ const WithdrawFormImpl = (
           decimals={USDC.decimals}
           price={props.price}
           className={styles.notionalAmount}
+          validationError={props.amountValidationError}
         />
       )}
       <Button

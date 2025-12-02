@@ -12,11 +12,12 @@ export const TokenAmountInput = ({
   max,
   gt,
   lt,
+  onValidationChange,
   ...props
 }: ComponentProps<typeof TextField> &
   Parameters<typeof useTokenAmountInput>[0]) => (
   <TextField
-    {...useTokenAmountInput({ decimals, symbol, min, max, gt, lt })}
+    {...useTokenAmountInput({ decimals, symbol, min, max, gt, lt, onValidationChange })}
     {...props}
   />
 );
@@ -28,6 +29,7 @@ const useTokenAmountInput = ({
   max,
   gt,
   lt,
+  onValidationChange,
 }: {
   decimals: number;
   symbol?: string | undefined;
@@ -35,29 +37,31 @@ const useTokenAmountInput = ({
   max?: bigint | undefined;
   gt?: bigint | undefined;
   lt?: bigint | undefined;
+  onValidationChange?: ((error: string | undefined) => void) | undefined;
 }) => {
   const validate = useCallback(
     (value: string) => {
+      let error: string | undefined;
+
       if (value) {
         try {
           const amount = stringToAmount(value, decimals);
           if (gt !== undefined && amount <= gt) {
-            return `Must be greater than ${amountToString(gt, decimals).toString()} ${symbol}`;
+            error = `Must be greater than ${amountToString(gt, decimals).toString()} ${symbol}`;
           } else if (lt !== undefined && amount >= lt) {
-            return `Must be less than ${amountToString(lt, decimals).toString()} ${symbol}`;
+            error = `Must be less than ${amountToString(lt, decimals).toString()} ${symbol}`;
           } else if (max !== undefined && amount > max) {
-            return `Cannot be more than ${amountToString(max, decimals).toString()} ${symbol}`;
+            error = `Cannot be more than ${amountToString(max, decimals).toString()} ${symbol}`;
           } else if (min !== undefined && amount < min) {
-            return `Cannot be less than ${amountToString(min, decimals).toString()} ${symbol}`;
-          } else {
-            return;
+            error = `Cannot be less than ${amountToString(min, decimals).toString()} ${symbol}`;
           }
-        } catch (error: unknown) {
-          return errorToString(error);
+        } catch (e: unknown) {
+          error = errorToString(e);
         }
-      } else {
-        return;
       }
+
+      onValidationChange?.(error);
+      return error;
     },
     [decimals, gt, lt, max, min, symbol],
   );
