@@ -1,5 +1,4 @@
 import type { PublicKey } from "@solana/web3.js";
-import type * as React from "react";
 
 import styles from "./display-address.module.css";
 import { TruncateKey } from "./truncate-key.js";
@@ -16,7 +15,7 @@ type Props = {
  * Component that displays an FNS name if available, otherwise shows truncated address.
  * Shows a loading skeleton while fetching the FNS name.
  */
-export const DisplayAddress: React.FC<Props> = ({ address }: Props) => {
+export const DisplayAddress = ({ address }: Props) => {
   const fnsNameState = useFNSReverseRecordName(address);
 
   if (fnsNameState.type === StateType.Loading) {

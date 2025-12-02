@@ -11,7 +11,12 @@ import { findReverseRecordPda } from "../fns/pdas/reverse-record.js";
 
 export { StateType } from "./use-data.js";
 
-// The registry seed for FNS
+/**
+ * The seed used to derive the FNS registry PDA.
+ * This is a protocol-defined constant from the Fogo Name Service.
+ * The registry PDA is derived using this seed and serves as the root
+ * authority for all FNS name records and reverse lookups.
+ */
 const REGISTRY_SEED = 42;
 
 /**
@@ -20,7 +25,7 @@ const REGISTRY_SEED = 42;
  * This hook fetches the reverse record for an address and returns the associated FNS name.
  * It uses SWR for caching and automatic revalidation.
  *
- * @param owner - The public key to resolve the FNS name for. If `undefined`, the hook will not fetch.
+ * @param owner - The public key to resolve the FNS name for.
  *
  * @returns A state object with the following possible types:
  * - `StateType.NotLoaded`: The data has not been loaded yet
@@ -47,22 +52,15 @@ const REGISTRY_SEED = 42;
  * }
  * ```
  */
-export const useFNSReverseRecordName = (owner: PublicKey | undefined) => {
+export const useFNSReverseRecordName = (owner: PublicKey) => {
   const rpc = useRpc();
 
   const key = useMemo(
-    () =>
-      owner === undefined
-        ? undefined
-        : ["fns-reverse-record", owner.toBase58()],
+    () => ["fns-reverse-record", owner.toBase58()],
     [owner],
   );
 
   const fetchName = useCallback(async () => {
-    if (!owner) {
-      return;
-    }
-
     // Convert PublicKey to Address type
     const ownerAddress = address(owner.toBase58());
 

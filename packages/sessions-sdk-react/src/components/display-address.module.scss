@@ -4,7 +4,7 @@
   display: inline-block;
   background: theme.color("skeleton");
   height: 1em;
-  width: 6em;
+  width: theme.spacing(24);
   border-radius: theme.border-radius("md");
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

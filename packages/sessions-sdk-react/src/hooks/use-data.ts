@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback } from "react";
 import type { KeyedMutator } from "swr";
 import useSWR from "swr";
