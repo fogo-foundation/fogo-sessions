@@ -38,7 +38,9 @@ where
     .parse(input)
 }
 
-fn key_value_with_key_type<I, O, E, K, KO>(key: K) -> impl Parser<I, Output = (KO, O), Error = E>
+pub fn key_value_with_key_type<I, O, E, K, KO>(
+    key: K,
+) -> impl Parser<I, Output = (KO, O), Error = E>
 where
     I: Input,
     I: ParseTo<O>,

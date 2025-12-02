@@ -1,5 +1,6 @@
 "use client";
 
+import { Network } from "@fogo/sessions-sdk";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
@@ -168,6 +169,7 @@ const Tokens = ({
   currentScreen: TokenScreen;
   setCurrentScreen: (screen: TokenScreen) => void;
 }) => {
+  const { network } = useSessionContext();
   const showWallet = useCallback(() => {
     setCurrentScreen(TokenScreen.Wallet());
   }, [setCurrentScreen]);
@@ -197,8 +199,7 @@ const Tokens = ({
       return (
         <SelectTokenPage
           onPressBack={showWallet}
-          onPressReceive={showReceive}
-          onPressGetTokens={showGet}
+          onPressTransferIn={showDeposit}
           onPressSend={(token) => {
             showSend({
               prevScreen: TokenScreenType.SelectTokenToSend,
@@ -271,7 +272,7 @@ const Tokens = ({
       return (
         <DepositPage
           sessionState={sessionState}
-          onPressBack={showGet}
+          onPressBack={network === Network.Mainnet ? showWallet : showGet}
           onSendComplete={showWallet}
         />
       );
@@ -284,6 +285,7 @@ const Tokens = ({
           onPressReceive={showReceive}
           onPressSend={showSelectTokenToSend}
           onPressGet={showGet}
+          onPressTransferIn={showDeposit}
           onPressSendForToken={(token) => {
             showSend({
               prevScreen: TokenScreenType.Wallet,

@@ -9,11 +9,12 @@ anchor-lang = {workspace = true}
 anyhow = {workspace = true}
 arc-swap = {workspace = true}
 base64 = {workspace = true}
-bincode = { workspace = true }
+bincode = { workspace = true, features = ["serde"] }
 chain-id = { path = "../../programs/chain-id" }
 clap = {workspace = true}
 dashmap = {workspace = true}
 fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["token-program"] }
+futures = {workspace = true}
 governor = {workspace = true}
 hdrhistogram = "7.5.4"
 rand = { workspace = true }

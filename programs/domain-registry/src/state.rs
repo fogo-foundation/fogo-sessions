@@ -62,9 +62,33 @@ mod resizable_account_array {
             Ok(())
         }
 
+        /// Remove the element at an index efficiently and simply without preserving the order of the elements
+        pub fn swap_remove(&mut self, index: usize) -> Result<()> {
+            // swap the element at index `index` with the last element
+            {
+                let mut data = self.acc_info.try_borrow_mut_data()?;
+                let elements = bytemuck::cast_slice_mut::<_, T>(&mut data);
+                if index < elements.len() {
+                    elements.swap(index, elements.len() - 1);
+                } else {
+                    return Err(ProgramError::AccountDataTooSmall.into());
+                }
+            }
+
+            // remove the last element by reallocating down the account
+            let data_len = self.acc_info.data_len();
+            self.acc_info.realloc(data_len - size_of::<T>(), false)?;
+            self.adjust_rent_if_needed()?;
+            Ok(())
+        }
+
         pub fn contains(&self, value: T) -> Result<bool> {
             let data = self.acc_info.try_borrow_data()?;
             Ok(bytemuck::cast_slice(&data).contains(&value))
+        }
+        pub fn position(&self, predicate: impl Fn(&T) -> bool) -> Result<Option<usize>> {
+            let data = self.acc_info.try_borrow_data()?;
+            Ok(bytemuck::cast_slice(&data).iter().position(predicate))
         }
 
         pub fn to_vec<U>(&self) -> Result<Vec<U>>

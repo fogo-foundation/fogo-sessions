@@ -2,6 +2,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import clsx from "clsx";
 import dynamic from "next/dynamic";
 import { Funnel_Display } from "next/font/google";
+import Link from "next/link";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import type { ReactNode } from "react";
 
@@ -46,6 +47,15 @@ export const Root = ({ children }: Props) => (
               <FogoSessionProvider domain={DOMAIN}>
                 {children}
               </FogoSessionProvider>
+              <footer className={styles.footer}>
+                <Link
+                  className={styles.link}
+                  href="https://api.fogo.io/terms-of-use.pdf"
+                  target="_blank"
+                >
+                  Terms of Use
+                </Link>
+              </footer>
             </FogoNetworkProvider>
           </body>
           {GOOGLE_ANALYTICS_ID && (
