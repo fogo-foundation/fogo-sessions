@@ -257,6 +257,10 @@ pub async fn send_and_confirm_transaction_ftl(
             if let Some(error) = err.get_transaction_error() {
                 if preflight {
                     tracing::Span::current().record("result", "preflight_failure");
+                    tracing::warn!(
+                        "Transaction {} failed preflight: {error}",
+                        transaction.signatures[0]
+                    );
                     return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
                         signature: transaction.signatures[0],
                         error,

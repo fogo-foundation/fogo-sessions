@@ -1,4 +1,3 @@
-use intent_transfer::bridge::processor::bridge_ntt_tokens::H160;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::{hash_map::Entry, HashMap};
 use std::num::NonZeroU8;
@@ -77,12 +76,12 @@ where
 pub struct Config {
     pub domains: Vec<Domain>,
 }
-pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 100_000;
+pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 15_000;
 
 impl Config {
     /// Populate default tx variations for each domain.
     /// Call this after loading from file/DB to ensure required variations exist.
-    pub fn assign_defaults(&mut self, ntt_quoter: H160) -> anyhow::Result<()> {
+    pub fn assign_defaults(&mut self) -> anyhow::Result<()> {
         for domain in &mut self.domains {
             if domain.enable_session_management {
                 insert_variation(
@@ -101,25 +100,7 @@ impl Config {
                     true,
                 )?;
             }
-
-            insert_variation(
-                &mut domain.tx_variations,
-                TransactionVariation::intent_transfer_send_tokens_variation(
-                    DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-                ),
-                true,
-            )?;
-
-            insert_variation(
-                &mut domain.tx_variations,
-                TransactionVariation::intent_transfer_bridge_ntt_variation(
-                    ntt_quoter,
-                    DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-                ),
-                true,
-            )?;
         }
-
         Ok(())
     }
 }

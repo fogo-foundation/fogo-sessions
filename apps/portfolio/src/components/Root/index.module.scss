@@ -10,19 +10,41 @@
   display: grid;
   grid-template-rows: max-content 1fr;
 
-  .header {
+  .header,
+  .footer {
     width: 100%;
-    background-color: theme.color("card");
-    border-bottom: 1px solid theme.color("widget-border");
-    height: theme.spacing(16);
+    border-width: 0;
+    border-style: solid;
+    border-color: theme.color("widget-border");
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    justify-content: space-between;
     padding: theme.spacing(4) theme.spacing(10);
+  }
+
+  .header {
+    border-bottom-width: 1px;
+    height: theme.spacing(16);
+    justify-content: space-between;
 
     .fogoWordmark {
       height: 100%;
+    }
+  }
+
+  .footer {
+    border-top-width: 1px;
+    height: theme.spacing(14);
+
+    .link {
+      @include theme.text("sm");
+
+      color: theme.color("paragraph");
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
     }
   }
 }

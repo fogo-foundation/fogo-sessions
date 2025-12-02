@@ -1,6 +1,6 @@
 import type {
   MessageSignerWalletAdapterProps,
-  BaseWalletAdapter,
+  BaseSignerWalletAdapter,
   WalletReadyState,
   WalletError,
 } from "@solana/wallet-adapter-base";
@@ -31,7 +31,7 @@ export type SolanaWalletEventEmitter = {
 };
 
 export type SolanaWallet = MessageSignerWalletAdapterProps &
-  BaseWalletAdapter &
+  BaseSignerWalletAdapter &
   SolanaWalletEventEmitter;
 
 export type SolanaMobileWallet = SolanaMobileWalletAdapter &

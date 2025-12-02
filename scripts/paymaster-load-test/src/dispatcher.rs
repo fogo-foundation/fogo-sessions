@@ -18,6 +18,7 @@ use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use std::net::SocketAddr;
 use std::num::NonZeroU32;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::{task::JoinSet, time::sleep};
@@ -31,7 +32,8 @@ type DirectRateLimiter = RateLimiter<
 pub struct LoadTestDispatcher {
     config: RuntimeConfig,
     metrics: Arc<LoadTestMetrics>,
-    http_client: Client,
+    http_clients: Vec<Client>,
+    next_http_client_index: AtomicUsize,
     rpc_client: Arc<RpcClient>,
     rate_limiter: Arc<DirectRateLimiter>,
     generator: Arc<TransactionGenerator>,
@@ -56,6 +58,7 @@ enum SponsorAndSendResponse {
 }
 
 pub const BLOCKHASH_UPDATE_INTERVAL_SECONDS: u64 = 10;
+const HTTP_CLIENT_COUNT: usize = 6;
 
 impl LoadTestDispatcher {
     pub async fn new(config: RuntimeConfig, metrics: Arc<LoadTestMetrics>) -> Result<Self> {
@@ -79,6 +82,7 @@ impl LoadTestDispatcher {
                     .build()
                     .context("Failed to create HTTP client")?
             };
+        let http_clients = vec![http_client; HTTP_CLIENT_COUNT];
 
         let rpc_client = Arc::new(RpcClient::new_with_commitment(
             config.external.rpc_url.clone(),
@@ -91,23 +95,28 @@ impl LoadTestDispatcher {
             .await
             .context("Failed to fetch initial blockhash")?;
 
-        tracing::info!("Fetching sponsor pubkey from paymaster...");
-        let sponsor_url = format!(
-            "{}/api/sponsor_pubkey?domain={}",
-            config.external.paymaster_endpoint,
-            urlencoding::encode(&config.external.domain)
-        );
-        let sponsor_str: String = http_client
-            .get(&sponsor_url)
-            .send()
-            .await
-            .context("Failed to fetch sponsor pubkey")?
-            .text()
-            .await
-            .context("Failed to parse sponsor pubkey response")?;
-        let sponsor_pubkey: Pubkey = sponsor_str
-            .parse()
-            .context("Failed to parse sponsor pubkey")?;
+        tracing::info!("Fetching sponsor pubkeys from paymaster...");
+        let sponsor_pubkeys = futures::future::try_join_all((0..config.external.number_of_sponsors.get()).map(async |i| -> Result<Pubkey> {
+            let sponsor_url = format!(
+                "{}/api/sponsor_pubkey?domain={}&index={}",
+                config.external.paymaster_endpoint,
+                urlencoding::encode(&config.external.domain),
+                i
+            );
+            let sponsor_pubkey: Pubkey = http_clients
+                .first()
+                .expect("HTTP client list must contain at least one client")
+                .get(&sponsor_url)
+                .send()
+                .await
+                .context("Failed to fetch sponsor pubkey")?
+                .text()
+                .await
+                .context("Failed to parse sponsor pubkey response")?
+                .parse()
+                .context(format!("Failed to parse sponsor pubkey, make sure the domain \"{}\" supports {} sponsors", config.external.domain, config.external.number_of_sponsors))?;
+            Ok(sponsor_pubkey)
+        })).await?;
 
         let (chain_id_address, _chain_bump) =
             Pubkey::find_program_address(&[b"chain_id"], &CHAIN_ID_PID);
@@ -119,7 +128,7 @@ impl LoadTestDispatcher {
             .context("Failed to deserialize chain ID account")?;
 
         let generator = Arc::new(TransactionGenerator::new(
-            sponsor_pubkey,
+            sponsor_pubkeys,
             chain_id_data.chain_id,
             config.external.domain.clone(),
         ));
@@ -132,7 +141,8 @@ impl LoadTestDispatcher {
         Ok(Self {
             config,
             metrics,
-            http_client,
+            http_clients,
+            next_http_client_index: AtomicUsize::new(0),
             rpc_client,
             rate_limiter,
             generator,
@@ -206,6 +216,11 @@ impl LoadTestDispatcher {
         Ok(())
     }
 
+    fn next_http_client(&self) -> &Client {
+        &self.http_clients
+            [self.next_http_client_index.fetch_add(1, Ordering::Relaxed) % self.http_clients.len()]
+    }
+
     async fn send_sponsor_and_send_request(
         &self,
         transaction: &VersionedTransaction,
@@ -226,9 +241,8 @@ impl LoadTestDispatcher {
         );
 
         let response = self
-            .http_client
+            .next_http_client()
             .post(&url)
-            .header("Origin", &self.config.external.domain)
             .json(&request_body)
             .send()
             .await
