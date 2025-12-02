@@ -1,0 +1,94 @@
+@use "../../theme";
+
+.network {
+  .label {
+    @include theme.text("xs", "medium");
+
+    color: theme.color("paragraph");
+    margin-bottom: theme.spacing(3);
+    display: block;
+  }
+
+  .button {
+    width: 100%;
+    border: 1px solid theme.color("border");
+    background-color: theme.color("background");
+    border-radius: theme.border-radius("lg");
+    height: theme.spacing(9);
+    display: grid;
+    grid-template-columns: 1fr max-content;
+    gap: theme.spacing(2);
+    align-items: center;
+    padding-left: theme.spacing(2.5);
+    padding-right: theme.spacing(2.5);
+    cursor: pointer;
+    outline: 2px solid transparent;
+    outline-offset: theme.spacing(0.5);
+    transition:
+      background-color 50ms linear,
+      outline-color 50ms linear;
+
+    .value,
+    .arrow {
+      color: theme.color("foreground");
+    }
+
+    .value {
+      @include theme.text("sm", "medium");
+
+      text-align: left;
+    }
+
+    .arrow {
+      transition: transform 300ms;
+      transform-origin: center;
+    }
+
+    &[data-hovered] {
+      background-color: theme.color("button-hover");
+    }
+
+    &[data-pressed] {
+      background-color: theme.color("button-pressed");
+
+      .arrow {
+        transform: rotateX(180deg);
+      }
+    }
+
+    &[data-focus-visible] {
+      outline-color: theme.color("accent");
+    }
+  }
+}
+
+.selectPopover {
+  background: theme.color("demo-bg");
+  color: theme.color("foreground");
+  box-shadow: theme.shadow();
+  border: 1px solid theme.color("widget-border");
+  border-radius: theme.border-radius("base");
+  outline: none;
+  padding: theme.spacing(1) 0;
+  min-width: var(--trigger-width);
+
+  .selectItem {
+    @include theme.text("sm", "normal");
+
+    padding: theme.spacing(2) theme.spacing(4);
+    cursor: pointer;
+    outline: 2px solid transparent;
+    outline-offset: -#{theme.spacing(0.5)};
+    transition:
+      background-color 50ms linear,
+      outline-color 50ms linear;
+
+    &[data-focused] {
+      background-color: theme.color("button", "ghost", "background", "hover");
+    }
+
+    &[data-focus-visible] {
+      outline-color: theme.color("accent");
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "@fogo/scripts",
+  "version": "0.0.10",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "initialize-chain-id": "./bin/initialize-chain-id.js",
+    "register-ntt-manager": "./bin/register-ntt-manager.js",
+    "domain-registry": "./bin/domain-registry.js",
+    "register-fee-config": "./bin/register-fee-config.js",
+    "update-metadata": "./bin/update-metadata.js"
+  },
+  "scripts": {
+    "build": "tsc --noEmit false --outDir ./dist",
+    "fix:format": "prettier --write .",
+    "fix:lint": "eslint --fix . --max-warnings 0",
+    "test:format": "prettier --check .",
+    "test:lint": "eslint . --max-warnings 0",
+    "test:types": "tsc"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "catalog:",
+    "@fogo/sessions-idls": "workspace:*",
+    "@fogo/sessions-sdk": "workspace:*",
+    "@ledgerhq/hw-transport": "catalog:",
+    "@ledgerhq/hw-transport-node-hid": "catalog:",
+    "@noble/hashes": "catalog:",
+    "@metaplex-foundation/mpl-token-metadata": "catalog:",
+    "@metaplex-foundation/umi": "catalog:",
+    "@metaplex-foundation/umi-bundle-defaults": "catalog:",
+    "@metaplex-foundation/umi-web3js-adapters": "catalog:",
+    "@solana/wallet-adapter-ledger": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "bn.js": "catalog:",
+    "yargs": "catalog:"
+  },
+  "devDependencies": {
+    "@cprussin/eslint-config": "catalog:",
+    "@cprussin/jest-config": "catalog:",
+    "@cprussin/prettier-config": "catalog:",
+    "@cprussin/tsconfig": "catalog:",
+    "@types/bn.js": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/node": "catalog:",
+    "@types/yargs": "catalog:",
+    "eslint": "catalog:",
+    "jest": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  }
+}

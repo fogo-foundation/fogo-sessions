@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk",
-  "version": "0.0.18",
+  "version": "0.0.24",
   "private": true,
   "description": "A set of utilities for integrating with Fogo sessions",
   "keywords": [
@@ -46,6 +46,7 @@
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
+    "@solana/wallet-adapter-base": "catalog:",
     "@types/bn.js": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
@@ -65,6 +66,11 @@
     "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/web3.js": "catalog:",
+    "@wormhole-foundation/sdk": "catalog:",
+    "@wormhole-foundation/sdk-base": "catalog:",
+    "@wormhole-foundation/sdk-route-ntt": "catalog:",
+    "@wormhole-foundation/sdk-solana-core": "catalog:",
+    "@wormhole-foundation/sdk-solana-ntt": "catalog:",
     "bn.js": "catalog:",
     "bs58": "catalog:",
     "zod": "catalog:"

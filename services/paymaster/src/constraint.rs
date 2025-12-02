@@ -1,10 +1,13 @@
+use anchor_lang::AnchorDeserialize;
 use axum::http::StatusCode;
 use borsh::BorshDeserialize;
-use serde::{Deserialize, Serialize};
+use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_message::VersionedMessage;
+use solana_program::keccak;
 use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
@@ -72,6 +75,7 @@ pub struct VariationOrderedInstructionConstraints {
     pub max_gas_spend: u64,
 }
 
+#[derive(Clone)]
 pub struct ContextualDomainKeys {
     pub domain_registry: Pubkey,
     pub sponsor: Pubkey,
@@ -413,7 +417,7 @@ impl ContextualPubkey {
 #[derive(Serialize, Deserialize)]
 pub struct DataConstraint {
     pub start_byte: u16,
-    pub data_type: PrimitiveDataType,
+    pub data_type: DataType,
     pub constraint: DataConstraintSpecification,
 }
 
@@ -437,11 +441,11 @@ impl DataConstraint {
             ));
         }
 
-        let data_to_analyze = &data[usize::from(self.start_byte)..end_byte];
+        let mut data_to_analyze = &data[usize::from(self.start_byte)..end_byte];
         let data_to_analyze_deserialized = match self.data_type {
-            PrimitiveDataType::Bool => PrimitiveDataValue::Bool(data_to_analyze[0] != 0),
-            PrimitiveDataType::U8 => PrimitiveDataValue::U8(data_to_analyze[0]),
-            PrimitiveDataType::U16 => {
+            DataType::Bool => DataValue::Bool(data_to_analyze[0] != 0),
+            DataType::U8 => DataValue::U8(data_to_analyze[0]),
+            DataType::U16 => {
                 let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
                     (
                         StatusCode::BAD_REQUEST,
@@ -451,10 +455,10 @@ impl DataConstraint {
                         ),
                     )
                 })?);
-                PrimitiveDataValue::U16(data_u16)
+                DataValue::U16(data_u16)
             }
 
-            PrimitiveDataType::U32 => {
+            DataType::U32 => {
                 let data_u32 = u32::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
                     (
                         StatusCode::BAD_REQUEST,
@@ -464,10 +468,10 @@ impl DataConstraint {
                         ),
                     )
                 })?);
-                PrimitiveDataValue::U32(data_u32)
+                DataValue::U32(data_u32)
             }
 
-            PrimitiveDataType::U64 => {
+            DataType::U64 => {
                 let data_u64 = u64::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
                     (
                         StatusCode::BAD_REQUEST,
@@ -477,10 +481,10 @@ impl DataConstraint {
                         ),
                     )
                 })?);
-                PrimitiveDataValue::U64(data_u64)
+                DataValue::U64(data_u64)
             }
 
-            PrimitiveDataType::Pubkey => {
+            DataType::Pubkey => {
                 let data_pubkey = Pubkey::new_from_array(data_to_analyze.try_into().map_err(|_| {
                     (
                         StatusCode::BAD_REQUEST,
@@ -490,10 +494,10 @@ impl DataConstraint {
                         ),
                     )
                 })?);
-                PrimitiveDataValue::Pubkey(data_pubkey)
+                DataValue::Pubkey(data_pubkey)
             }
 
-            PrimitiveDataType::Bytes {
+            DataType::Bytes {
                 length: expected_length,
             } => {
                 if data_to_analyze.len() != expected_length {
@@ -506,7 +510,20 @@ impl DataConstraint {
                     ));
                 }
                 let data_to_analyze_string = hex::encode(data_to_analyze);
-                PrimitiveDataValue::Bytes(data_to_analyze_string)
+                DataValue::Bytes(data_to_analyze_string)
+            }
+
+            DataType::NttSignedQuote => {
+                let signed_quote = SignedQuote::deserialize(&mut data_to_analyze).map_err(|e| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Instruction {instruction_index}: Failed to deserialize NTT SignedQuote: {e}",
+                        ),
+                    )
+                })?;
+                let recovered_quoter = recover_signer_pubkey(signed_quote)?;
+                DataValue::NttSignedQuoter(NttSignedQuoter(recovered_quoter))
             }
         };
 
@@ -525,8 +542,62 @@ impl DataConstraint {
     }
 }
 
+fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode, String)> {
+    let message_body = signed_quote.try_get_message_body().map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Failed to extract message from signed quote: {e}"),
+        )
+    })?;
+
+    let message = libsecp256k1::Message::parse(&keccak::hash(&message_body).0);
+
+    let (signature, recovery_index) = signed_quote.try_get_signature_components().map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Failed to extract signature components from signed quote: {e}"),
+        )
+    })?;
+    let sig = libsecp256k1::Signature::parse_standard_slice(signature)
+        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid signature: {e}")))?;
+    let recovery_id = libsecp256k1::RecoveryId::parse_rpc(recovery_index).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Invalid recovery index in signature: {e}"),
+        )
+    })?;
+
+    let secp_pubkey = libsecp256k1::recover(&message, &sig, &recovery_id).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Failed to recover secp256k1 public key: {e}"),
+        )
+    })?;
+    let secp_pubkey_serialized = secp_pubkey.serialize();
+    let pubkey_hashed = keccak::hash(
+        secp_pubkey_serialized
+            .get(1..)
+            .expect("Serialized key should be 65 bytes"),
+    );
+    let evm_address = pubkey_hashed
+        .0
+        .get(12..)
+        .expect("Hash should be 32 bytes")
+        .try_into()
+        .expect("Slice of 20 bytes should convert to H160");
+
+    if evm_address != signed_quote.header.quoter_address {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Recovered quoter address does not match stated quoter address".into(),
+        ));
+    };
+
+    Ok(evm_address)
+}
+
 #[derive(Serialize, Deserialize)]
-pub enum PrimitiveDataType {
+pub enum DataType {
     U8,
     U16,
     U32,
@@ -537,24 +608,56 @@ pub enum PrimitiveDataType {
     Bytes {
         length: usize,
     },
+    NttSignedQuote,
 }
 
-impl PrimitiveDataType {
+impl DataType {
     pub fn byte_length(&self) -> usize {
         match self {
-            PrimitiveDataType::U8 => 1,
-            PrimitiveDataType::U16 => 2,
-            PrimitiveDataType::U32 => 4,
-            PrimitiveDataType::U64 => 8,
-            PrimitiveDataType::Bool => 1,
-            PrimitiveDataType::Pubkey => 32,
-            PrimitiveDataType::Bytes { length } => *length,
+            DataType::U8 => 1,
+            DataType::U16 => 2,
+            DataType::U32 => 4,
+            DataType::U64 => 8,
+            DataType::Bool => 1,
+            DataType::Pubkey => 32,
+            DataType::Bytes { length } => *length,
+            DataType::NttSignedQuote => 165,
         }
     }
 }
 
+#[derive(PartialEq, Eq)]
+pub struct NttSignedQuoter([u8; 20]);
+
+impl Serialize for NttSignedQuoter {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&format!("0x{}", hex::encode(self.0)))
+    }
+}
+
+impl<'de> Deserialize<'de> for NttSignedQuoter {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = <String as serde::Deserialize>::deserialize(deserializer)?;
+        let hex_part = s.strip_prefix("0x").unwrap_or(&s);
+        let bytes = hex::decode(hex_part)
+            .map_err(|e| serde::de::Error::custom(format!("Invalid hex string {hex_part}: {e}")))?;
+        let arr: [u8; 20] = bytes.try_into().map_err(|_| {
+            serde::de::Error::custom(
+                "Failed to convert bytes to H160 address: invalid byte array length",
+            )
+        })?;
+        Ok(NttSignedQuoter(arr))
+    }
+}
+
 #[derive(Serialize, Deserialize)]
-pub enum PrimitiveDataValue {
+pub enum DataValue {
     U8(u8),
     U16(u16),
     U32(u32),
@@ -563,52 +666,54 @@ pub enum PrimitiveDataValue {
     Pubkey(Pubkey),
     /// Fixed-size byte array specified as hex-encoded string
     Bytes(String),
+    /// NTT quoter
+    NttSignedQuoter(NttSignedQuoter),
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum DataConstraintSpecification {
-    LessThan(PrimitiveDataValue),
-    GreaterThan(PrimitiveDataValue),
-    EqualTo(Vec<PrimitiveDataValue>),
-    Neq(Vec<PrimitiveDataValue>),
+    LessThan(DataValue),
+    GreaterThan(DataValue),
+    EqualTo(Vec<DataValue>),
+    Neq(Vec<DataValue>),
 }
 
 pub fn compare_primitive_data_types(
-    a: PrimitiveDataValue,
+    a: DataValue,
     constraint: &DataConstraintSpecification,
 ) -> Result<(), String> {
     let meets = match constraint {
         DataConstraintSpecification::LessThan(value) => match (a, value) {
-            (PrimitiveDataValue::U8(a), PrimitiveDataValue::U8(b)) => a < *b,
-            (PrimitiveDataValue::U16(a), PrimitiveDataValue::U16(b)) => a < *b,
-            (PrimitiveDataValue::U32(a), PrimitiveDataValue::U32(b)) => a < *b,
-            (PrimitiveDataValue::U64(a), PrimitiveDataValue::U64(b)) => a < *b,
+            (DataValue::U8(a), DataValue::U8(b)) => a < *b,
+            (DataValue::U16(a), DataValue::U16(b)) => a < *b,
+            (DataValue::U32(a), DataValue::U32(b)) => a < *b,
+            (DataValue::U64(a), DataValue::U64(b)) => a < *b,
             // TODO: catch this error when reading config
-            (PrimitiveDataValue::Bool(_), PrimitiveDataValue::Bool(_)) => {
+            (DataValue::Bool(_), DataValue::Bool(_)) => {
                 return Err("LessThan not applicable for bool".into())
             }
-            (PrimitiveDataValue::Pubkey(_), PrimitiveDataValue::Pubkey(_)) => {
+            (DataValue::Pubkey(_), DataValue::Pubkey(_)) => {
                 return Err("LessThan not applicable for pubkey".into())
             }
-            (PrimitiveDataValue::Bytes(_), PrimitiveDataValue::Bytes(_)) => {
+            (DataValue::Bytes(_), DataValue::Bytes(_)) => {
                 return Err("LessThan not applicable for bytes".into())
             }
             _ => return Err("Incompatible primitive data types".into()),
         },
 
         DataConstraintSpecification::GreaterThan(value) => match (a, value) {
-            (PrimitiveDataValue::U8(a), PrimitiveDataValue::U8(b)) => a > *b,
-            (PrimitiveDataValue::U16(a), PrimitiveDataValue::U16(b)) => a > *b,
-            (PrimitiveDataValue::U32(a), PrimitiveDataValue::U32(b)) => a > *b,
-            (PrimitiveDataValue::U64(a), PrimitiveDataValue::U64(b)) => a > *b,
+            (DataValue::U8(a), DataValue::U8(b)) => a > *b,
+            (DataValue::U16(a), DataValue::U16(b)) => a > *b,
+            (DataValue::U32(a), DataValue::U32(b)) => a > *b,
+            (DataValue::U64(a), DataValue::U64(b)) => a > *b,
             // TODO: catch this error when reading config
-            (PrimitiveDataValue::Bool(_), PrimitiveDataValue::Bool(_)) => {
+            (DataValue::Bool(_), DataValue::Bool(_)) => {
                 return Err("GreaterThan not applicable for bool".into())
             }
-            (PrimitiveDataValue::Pubkey(_), PrimitiveDataValue::Pubkey(_)) => {
+            (DataValue::Pubkey(_), DataValue::Pubkey(_)) => {
                 return Err("GreaterThan not applicable for pubkey".into())
             }
-            (PrimitiveDataValue::Bytes(_), PrimitiveDataValue::Bytes(_)) => {
+            (DataValue::Bytes(_), DataValue::Bytes(_)) => {
                 return Err("GreaterThan not applicable for bytes".into())
             }
             _ => return Err("Incompatible primitive data types".into()),
@@ -617,13 +722,14 @@ pub fn compare_primitive_data_types(
         DataConstraintSpecification::EqualTo(values) => {
             for value in values {
                 let is_equal = match (&a, value) {
-                    (PrimitiveDataValue::U8(a), PrimitiveDataValue::U8(b)) => a == b,
-                    (PrimitiveDataValue::U16(a), PrimitiveDataValue::U16(b)) => a == b,
-                    (PrimitiveDataValue::U32(a), PrimitiveDataValue::U32(b)) => a == b,
-                    (PrimitiveDataValue::U64(a), PrimitiveDataValue::U64(b)) => a == b,
-                    (PrimitiveDataValue::Bool(a), PrimitiveDataValue::Bool(b)) => a == b,
-                    (PrimitiveDataValue::Pubkey(a), PrimitiveDataValue::Pubkey(b)) => a == b,
-                    (PrimitiveDataValue::Bytes(a), PrimitiveDataValue::Bytes(b)) => a == b,
+                    (DataValue::U8(a), DataValue::U8(b)) => a == b,
+                    (DataValue::U16(a), DataValue::U16(b)) => a == b,
+                    (DataValue::U32(a), DataValue::U32(b)) => a == b,
+                    (DataValue::U64(a), DataValue::U64(b)) => a == b,
+                    (DataValue::Bool(a), DataValue::Bool(b)) => a == b,
+                    (DataValue::Pubkey(a), DataValue::Pubkey(b)) => a == b,
+                    (DataValue::Bytes(a), DataValue::Bytes(b)) => a == b,
+                    (DataValue::NttSignedQuoter(a), DataValue::NttSignedQuoter(b)) => a == b,
                     _ => return Err("Incompatible primitive data types".into()),
                 };
                 if is_equal {
@@ -636,13 +742,14 @@ pub fn compare_primitive_data_types(
         DataConstraintSpecification::Neq(values) => {
             for value in values {
                 let is_equal = match (&a, value) {
-                    (PrimitiveDataValue::U8(a), PrimitiveDataValue::U8(b)) => a == b,
-                    (PrimitiveDataValue::U16(a), PrimitiveDataValue::U16(b)) => a == b,
-                    (PrimitiveDataValue::U32(a), PrimitiveDataValue::U32(b)) => a == b,
-                    (PrimitiveDataValue::U64(a), PrimitiveDataValue::U64(b)) => a == b,
-                    (PrimitiveDataValue::Bool(a), PrimitiveDataValue::Bool(b)) => a == b,
-                    (PrimitiveDataValue::Pubkey(a), PrimitiveDataValue::Pubkey(b)) => a == b,
-                    (PrimitiveDataValue::Bytes(a), PrimitiveDataValue::Bytes(b)) => a == b,
+                    (DataValue::U8(a), DataValue::U8(b)) => a == b,
+                    (DataValue::U16(a), DataValue::U16(b)) => a == b,
+                    (DataValue::U32(a), DataValue::U32(b)) => a == b,
+                    (DataValue::U64(a), DataValue::U64(b)) => a == b,
+                    (DataValue::Bool(a), DataValue::Bool(b)) => a == b,
+                    (DataValue::Pubkey(a), DataValue::Pubkey(b)) => a == b,
+                    (DataValue::Bytes(a), DataValue::Bytes(b)) => a == b,
+                    (DataValue::NttSignedQuoter(a), DataValue::NttSignedQuoter(b)) => a == b,
                     _ => return Err("Incompatible primitive data types".into()),
                 };
                 if is_equal {

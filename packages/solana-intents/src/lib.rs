@@ -9,7 +9,7 @@ mod key_value;
 mod symbol_or_mint;
 mod version;
 
-pub use key_value::{key_value, tag_key_value};
+pub use key_value::{key_value, key_value_with_key_type, tag_key_value};
 pub use symbol_or_mint::SymbolOrMint;
 pub use version::Version;
 

@@ -24,8 +24,9 @@
           _noAll = true;
 
           start = "${final.lib.getExe final.tilt} up";
-          start-testnet = "NETWORK=testnet pnpm turbo start:dev";
-          start-mainnet = "NETWORK=mainnet pnpm turbo start:dev";
+          start-testnet = "NETWORK=testnet pnpm turbo --filter @fogo/sessions-demo start:dev";
+          start-mainnet = "NETWORK=mainnet pnpm turbo --filter @fogo/sessions-demo start:dev";
+          start-portfolio = "pnpm turbo --filter @fogo/portfolio start:dev";
           clean = "${final.lib.getExe final.git} clean -fdx";
 
           test = {

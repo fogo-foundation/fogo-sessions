@@ -2,7 +2,7 @@ packages:
   - apps/*
   - packages/*
   - packages/*/integration-tests/__fixtures__/*
-  - scripts
+  - scripts/ts
 
 catalog:
   "@axe-core/react": ^4.10.2
@@ -18,11 +18,13 @@ catalog:
   "@metaplex-foundation/mpl-token-metadata": ^3.4.0
   "@metaplex-foundation/umi": ^1.2.0
   "@metaplex-foundation/umi-bundle-defaults": ^1.2.0
+  "@metaplex-foundation/umi-web3js-adapters": ^1.4.1
   "@next/third-parties": ^15.3.4
   "@noble/hashes": ^1.8.0
   "@phosphor-icons/react": ^2.1.10
   "@radix-ui/react-slot": ^1.1.1
   "@react-hookz/web": 25.1.1
+  "@solana-mobile/wallet-adapter-mobile": ^2.2.4
   "@solana-program/token": ^0.5.1
   "@solana/compat": ^4.0.0
   "@solana/kit": ^4.0.0
@@ -34,7 +36,6 @@ catalog:
   "@solana/wallet-standard-wallet-adapter-react": ^1.1.4
   "@solana/web3.js": ^1.92.3
   "@solana/webcrypto-ed25519-polyfill": ^2.3.0
-  "@solana-mobile/wallet-adapter-mobile": ^2.2.4
   "@svgr/webpack": ^8.1.0
   "@swc/cli": ^0.7.7
   "@swc/core": ^1.12.7
@@ -47,6 +48,11 @@ catalog:
   "@types/react": ^19.1.8
   "@types/react-dom": ^19.1.6
   "@types/yargs": ^17.0.33
+  "@wormhole-foundation/sdk": ^3.10.0
+  "@wormhole-foundation/sdk-base": ^3.11.0
+  "@wormhole-foundation/sdk-route-ntt": ^4.0.1
+  "@wormhole-foundation/sdk-solana-core": ^3.10.0
+  "@wormhole-foundation/sdk-solana-ntt": ^4.0.1
   "@yudiel/react-qr-scanner": ^2.3.1
   autoprefixer: ^10.4.20
   bn.js: ^5.1.2
@@ -93,6 +99,7 @@ onlyBuiltDependencies:
   - node-hid
   - protobufjs
   - puppeteer
+  - secp256k1
   - sharp
   - tiny-secp256k1
   - usb

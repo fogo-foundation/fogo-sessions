@@ -1,5 +1,4 @@
 use anyhow::Result;
-use clap::command;
 use clap::Parser;
 use config::File;
 use fogo_paymaster::config_manager::config::Config;
@@ -126,7 +125,7 @@ pub async fn seed_from_config(config: &Config) -> Result<(), anyhow::Error> {
             let user = insert_user(host).await?;
             let app = insert_app(&user, host).await?;
             let domain_config = insert_domain_config(&app, domain).await?;
-            for variation in &domain.tx_variations {
+            for variation in domain.tx_variations.values() {
                 insert_variation(&domain_config, variation).await?;
             }
         }

@@ -5,17 +5,19 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: var(--visual-viewport-height);
+    height: 100dvh;
+    width: 100dvw;
     background: theme.color("modal-overlay");
     backdrop-filter: blur(8px);
     display: grid;
     justify-content: center;
     align-items: start;
-    padding-top: theme.spacing(40);
     z-index: theme.layer("modal-dialog");
+    overflow: auto;
 
     .modal {
+      margin-top: min(10dvh, theme.spacing(40));
+      margin-bottom: min(10dvh, theme.spacing(40));
       outline: none;
       background-color: theme.color("card");
       padding: theme.spacing(6);
@@ -23,7 +25,7 @@
       border: 1px solid theme.color("widget-border");
       box-shadow: theme.shadow();
       width: theme.spacing(94);
-      max-width: 70dvw;
+      max-width: 90dvw;
 
       .dialog {
         outline: none;

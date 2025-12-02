@@ -1,5 +1,23 @@
 # @fogo/sessions-idls
 
+## 0.0.10
+
+### Patch Changes
+
+- 02d8d5c: Rev idl version to account for different arg format for executor quote
+
+## 0.0.9
+
+### Patch Changes
+
+- 79d7449: Add fees to send_tokens and bridge_ntt_tokens
+
+## 0.0.8
+
+### Patch Changes
+
+- c69ea06: Add support for bridging tokens to/from Solana
+
 ## 0.0.7
 
 ### Patch Changes

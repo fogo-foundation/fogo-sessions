@@ -27,7 +27,7 @@ type Props = {
 };
 
 export const SessionButton = ({ requestedLimits, compact }: Props) => {
-  const { onStartSessionInit } = useSessionContext();
+  const { onStartSessionInit, showBridgeIn } = useSessionContext();
   const sessionState = useSession();
   const prevSessionState = useRef(sessionState);
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
@@ -89,13 +89,23 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
       if (
         isEstablished(sessionState) &&
         !isEstablished(prevSessionState.current) &&
-        prevSessionState.current.type !== SessionStateType.CheckingStoredSession
+        prevSessionState.current.type !==
+          SessionStateType.CheckingStoredSession &&
+        !localStorage.getItem("fogo-session-widget-shown")
       ) {
+        // Only show the widget automatically on first connection
         setSessionPanelOpen(true);
+        localStorage.setItem("fogo-session-widget-shown", "true");
       }
       prevSessionState.current = sessionState;
     }
   }, [sessionState]);
+
+  useEffect(() => {
+    if (showBridgeIn) {
+      setSessionPanelOpen(true);
+    }
+  }, [showBridgeIn]);
 
   return (
     <>

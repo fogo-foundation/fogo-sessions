@@ -2,11 +2,11 @@
 @use "../../theme";
 
 :root {
-  background: theme.color("background");
+  background: theme.color("demo-bg");
   scroll-behavior: smooth;
 }
 
 *::selection {
-  color: theme.color("background");
-  background: theme.color("brand");
+  color: theme.pallette-color("black");
+  background: theme.color("accent");
 }
