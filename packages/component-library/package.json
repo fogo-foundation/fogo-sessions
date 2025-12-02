@@ -59,8 +59,9 @@
     "swr": "catalog:"
   },
   "devDependencies": {
-    "@better-builds/ts-duality": "catalog:",
+    "@babel/core": "^7.28.5",
     "@babel/preset-typescript": "catalog:",
+    "@better-builds/ts-duality": "catalog:",
     "@cprussin/eslint-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",

@@ -12,44 +12,70 @@
     "react"
   ],
   "type": "module",
+  "source": "./src/index.tsx",
   "main": "./dist/cjs/index.js",
-  "types": "./dist/cjs/index.d.ts",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
   "engines": {
     "node": ">=22"
   },
   "exports": {
-    "import": {
-      "types": "./dist/esm/index.d.ts",
-      "default": "./dist/esm/index.js"
-    },
-    "require": {
-      "types": "./dist/cjs/index.d.ts",
-      "default": "./dist/cjs/index.js"
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
     }
   },
+  "targets": {
+    "cjs": {
+      "context": "browser",
+      "distDir": "./dist/cjs",
+      "outputFormat": "commonjs",
+      "isLibrary": true,
+      "source": "./src/index.tsx",
+      "includeNodeModules": {
+        "@fogo/component-library": true
+      }
+    },
+    "esm": {
+      "context": "browser",
+      "distDir": "./dist/esm",
+      "outputFormat": "esmodule",
+      "isLibrary": true,
+      "source": "./src/index.tsx",
+      "includeNodeModules": {
+        "@fogo/component-library": true
+      }
+    }
+  },
+  
   "scripts": {
-    "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-    "build:css:cjs": "sass --pkg-importer node --no-source-map src:dist/cjs",
-    "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
-    "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "build": "pnpm clean && pnpm build:bundle",
+    "build:bundle": "parcel build --target cjs --target esm",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
+    "build:types": "tsc --project tsconfig.build.json --emitDeclarationOnly --outDir ./dist/types",
+    "clean": "rm -rf dist",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
-    "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
-    "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
+    "start:dev": "parcel watch --target cjs --target esm",
     "test:format": "run-jest --colors --selectProjects format",
     "test:integration": "run-jest --colors --selectProjects integration",
     "test:lint:eslint": "run-jest --colors --selectProjects lint",
     "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
-    "test:types": "tsc"
+    "test:types": "tsc --project tsconfig.build.json --emitDeclarationOnly --outDir ./dist/types"
   },
   "peerDependencies": {
     "react": "^19"
   },
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
-    "@fogo/component-library": "workspace:^",
     "@fogo/sessions-idls": "workspace:^",
     "@fogo/sessions-sdk": "workspace:^",
     "@fogo/sessions-sdk-web": "workspace:^",
@@ -87,8 +113,10 @@
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
+    "@fogo/component-library": "workspace:^",
     "eslint": "catalog:",
     "jest": "catalog:",
+    "parcel": "catalog:",
     "prettier": "catalog:",
     "puppeteer": "catalog:",
     "react": "catalog:",

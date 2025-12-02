@@ -75,6 +75,7 @@ catalog:
   modern-normalize: ^3.0.1
   motion: ^12.23.16
   next: ^15.1.5
+  parcel: ^2.16.1
   pino: ^9.7.0
   pino-pretty: ^13.0.0
   postcss: ^8.5.1
