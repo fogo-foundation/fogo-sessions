@@ -323,7 +323,7 @@ const WithdrawFormImpl = (
           decimals={USDC.decimals}
           price={props.price}
           className={styles.notionalAmount}
-          validationError={props.amountValidationError}
+          amountValidationError={props.amountValidationError}
         />
       )}
       <Button

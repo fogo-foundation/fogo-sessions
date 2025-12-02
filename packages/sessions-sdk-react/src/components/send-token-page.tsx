@@ -118,7 +118,7 @@ const SendTokenWithFeeConfig = (
           onPressBack={props.onPressBack}
         />
       ) : (
-        <LoadedSendTokenPage {...props} price={props.price} />
+        <LoadedSendTokenPage {...props} />
       );
     }
     case StateType.Loading:
@@ -321,7 +321,6 @@ const SendTokenPageImpl = ({
       }
   )) => {
   const scannerShowing = !props.isLoading && props.scanner !== undefined;
-
   return (
     <div className={styles.sendTokenPage ?? ""}>
       <Button
@@ -443,7 +442,7 @@ const SendTokenPageImpl = ({
             decimals={decimals}
             price={props.price}
             className={styles.notionalAmount}
-            validationError={props.amountValidationError}
+            amountValidationError={props.amountValidationError}
           />
         )}
         <Button

@@ -1,16 +1,15 @@
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
-import * as dnum from "dnum";
 import { motion } from "motion/react";
 import { GridList, GridListItem } from "react-aria-components";
 
 import { amountToString } from "../amount-to-string.js";
-import { calculateNotional } from "../calculate-notional.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
 import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";
+import { NotionalAmount } from "./notional-amount.js";
 import styles from "./token-list.module.css";
 import { TruncateKey } from "./truncate-key.js";
 import { usePrice } from "../hooks/use-price.js";
@@ -111,10 +110,6 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
   const { mint, amountInWallet, decimals, image, name } = token;
   const amountAsString = amountToString(amountInWallet, decimals);
   const price = usePrice(mint.toBase58());
-  const notionalValue =
-    price.type === PriceDataStateType.Loaded
-      ? calculateNotional(amountInWallet, decimals, price.data)
-      : undefined;
 
   const contents = (
     <>
@@ -134,10 +129,13 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
       <div className={styles.amountAndActions}>
         <div className={styles.amountAndDetails}>
           <span className={styles.amount}>{amountAsString}</span>
-          {notionalValue !== undefined && (
-            <span className={styles.notional}>
-              ${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}
-            </span>
+          {price.type === PriceDataStateType.Loaded && (
+            <NotionalAmount
+              amount={amountAsString}
+              decimals={decimals}
+              price={price.data}
+              className={styles.notional}
+            />
           )}
         </div>
         {onPressSend && (

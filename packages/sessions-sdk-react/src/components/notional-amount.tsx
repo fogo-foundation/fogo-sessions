@@ -10,7 +10,7 @@ type Props = {
   decimals: number;
   price: number;
   className?: string | undefined;
-  validationError?: string | undefined;
+  amountValidationError?: string | undefined;
 };
 
 export const NotionalAmount = ({
@@ -18,9 +18,9 @@ export const NotionalAmount = ({
   decimals,
   price,
   className,
-  validationError,
+  amountValidationError,
 }: Props) => {
-  if (validationError) {
+  if (amountValidationError) {
     return (
       <div className={clsx(className, styles.error)}>
         Invalid amount specified
@@ -28,6 +28,8 @@ export const NotionalAmount = ({
     );
   }
 
+  // if amount is empty, don't attempt to parse it
+  // TODO: should we amend stringToAmount to handle empty string better?
   if (amount.length === 0) {
     return;
   }
