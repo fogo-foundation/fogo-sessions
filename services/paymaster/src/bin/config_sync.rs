@@ -5,8 +5,20 @@ use fogo_paymaster::config_manager::config::Config;
 use fogo_paymaster::config_manager::config::Domain;
 use fogo_paymaster::constraint::TransactionVariation;
 use fogo_paymaster::db::pool::pool;
+use serde::{Deserialize, Serialize};
+use sqlx::Type;
 use url::Url;
 use uuid::Uuid;
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Type, Deserialize, Serialize)]
+#[sqlx(type_name = "variation_version")]
+pub enum VariationVersion {
+    #[sqlx(rename = "v0")]
+    V0,
+
+    #[sqlx(rename = "v1")]
+    V1,
+}
 
 #[derive(Debug, Parser)]
 #[command(version, about)]
@@ -81,68 +93,46 @@ async fn insert_app(user_id: &Uuid, name: &str) -> Result<Uuid, sqlx::Error> {
 
     Ok(app.0)
 }
-
 async fn insert_or_update_domain_config(
     app_id: &Uuid,
     domain: &Domain,
 ) -> Result<Uuid, sqlx::Error> {
-    let existing_domain_config = sqlx::query_as::<_, (Uuid,)>(
-        "SELECT id FROM domain_config WHERE app_id = $1 AND domain = $2",
-    )
-    .bind(app_id)
-    .bind(domain.domain.to_string())
-    .fetch_optional(pool())
-    .await?;
-
-    if let Some(domain_config_result) = existing_domain_config {
-        let id = domain_config_result.0;
-        let res = sqlx::query(
-            r#"
-                UPDATE domain_config
-                SET
-                enable_session_management      = $1,
-                enable_preflight_simulation    = $2
-                WHERE id = $3
-                AND (
-                    enable_session_management   IS DISTINCT FROM $1 OR
-                    enable_preflight_simulation IS DISTINCT FROM $2
-                )
-            "#,
+    let res = sqlx::query!(
+        r#"
+        INSERT INTO domain_config (
+          id,
+          app_id,
+          domain,
+          enable_session_management,
+          enable_preflight_simulation
         )
-        .bind(domain.enable_session_management)
-        .bind(domain.enable_preflight_simulation)
-        .bind(id)
-        .execute(pool())
-        .await?;
-
-        if res.rows_affected() > 0 {
-            println!("Updated domain config: {}", domain.domain);
-        }
-
-        return Ok(id);
-    }
-    println!("Inserting new domain config: {}", domain.domain);
-    let domain_config = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO domain_config (id, app_id, domain, enable_session_management, enable_preflight_simulation) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (app_id, domain)
+        DO UPDATE SET
+          enable_session_management   = EXCLUDED.enable_session_management,
+          enable_preflight_simulation = EXCLUDED.enable_preflight_simulation
+        RETURNING id
+        "#,
+        Uuid::new_v4(),
+        app_id,
+        domain.domain, // assuming String
+        domain.enable_session_management,
+        domain.enable_preflight_simulation,
     )
-    .bind(Uuid::new_v4())
-    .bind(app_id)
-    .bind(domain.domain.to_string())
-    .bind(domain.enable_session_management)
-    .bind(domain.enable_preflight_simulation)
     .fetch_one(pool())
     .await?;
 
-    Ok(domain_config.0)
+    Ok(res.id)
 }
 
 async fn insert_or_update_variation(
     domain_config_id: &Uuid,
     variation: &TransactionVariation,
 ) -> Result<Uuid, anyhow::Error> {
+    // 1. Build JSON + metadata
     let transaction_variation_json = match variation {
         TransactionVariation::V0(v) => {
-            // Convert Pubkeys to strings (base58 format) before serializing
+            // Convert Pubkeys to strings (base58)
             let pubkey_strings: Vec<String> = v
                 .whitelisted_programs
                 .iter()
@@ -155,63 +145,47 @@ async fn insert_or_update_variation(
     .map_err(|e| anyhow::anyhow!("Error serializing transaction variation: {e}"))?;
 
     let version = match variation {
-        TransactionVariation::V0(_) => "v0",
-        TransactionVariation::V1(_) => "v1",
+        TransactionVariation::V0(_) => VariationVersion::V0,
+        TransactionVariation::V1(_) => VariationVersion::V1,
     };
+
     let max_gas_spend = match variation {
         TransactionVariation::V0(_) => None,
         TransactionVariation::V1(v) => Some(v.max_gas_spend as i64),
     };
-    let existing_variation = sqlx::query_as::<_, (Uuid,)>(
-        "SELECT id FROM variation WHERE domain_config_id = $1 AND name = $2 ",
+
+    let new_id = Uuid::new_v4();
+
+    // 2. Single upsert by (domain_config_id, name)
+    let row = sqlx::query!(
+        r#"
+    INSERT INTO variation (
+      id,
+      domain_config_id,
+      name,
+      version,
+      max_gas_spend,
+      transaction_variation
     )
-    .bind(domain_config_id)
-    .bind(variation.name())
-    .fetch_optional(pool())
-    .await?;
-
-    if let Some(variation_result) = existing_variation {
-        let id = variation_result.0;
-
-        let res = sqlx::query(
-            r#"
-                UPDATE variation
-                SET
-                max_gas_spend        = $1::bigint,
-                transaction_variation = $2::jsonb
-                WHERE id = $3
-                AND (
-                    max_gas_spend        IS DISTINCT FROM $1::bigint OR
-                    transaction_variation IS DISTINCT FROM $2::jsonb
-                )
-            "#,
-        )
-        .bind(max_gas_spend)
-        .bind(&transaction_variation_json)
-        .bind(id)
-        .execute(pool())
-        .await?;
-
-        if res.rows_affected() > 0 {
-            println!("Updated variation: {}", variation.name());
-        }
-
-        return Ok(id);
-    }
-    println!("Inserting new variation: {}", variation.name());
-    let variation = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO variation (id, domain_config_id, name, version, max_gas_spend, transaction_variation) VALUES ($1, $2, $3, $4::variation_version, $5::bigint, $6::jsonb) RETURNING id",
+    VALUES ($1, $2, $3, $4, $5, $6)
+    ON CONFLICT (domain_config_id, name)
+    DO UPDATE SET
+      version               = EXCLUDED.version,
+      max_gas_spend         = EXCLUDED.max_gas_spend,
+      transaction_variation = EXCLUDED.transaction_variation
+    RETURNING id
+    "#,
+        new_id,
+        domain_config_id,
+        variation.name(),
+        version,                    // VariationVersion
+        max_gas_spend,              // Option<i64>
+        transaction_variation_json, // serde_json::Value
     )
-    .bind(Uuid::new_v4())
-    .bind(domain_config_id)
-    .bind(variation.name())
-    .bind(version)
-    .bind(max_gas_spend)
-    .bind(transaction_variation_json)
     .fetch_one(pool())
     .await?;
 
-    Ok(variation.0)
+    Ok(row.id)
 }
 
 pub async fn sync_from_config(config: &Config) -> Result<(), anyhow::Error> {

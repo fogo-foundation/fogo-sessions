@@ -23,7 +23,9 @@ CREATE TABLE domain_config (
   enable_session_management boolean NOT NULL DEFAULT false,
   enable_preflight_simulation boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT domain_config_app_domain_unique UNIQUE (app_id, domain)
 );
 
 
@@ -35,5 +37,7 @@ CREATE TABLE variation (
   max_gas_spend bigint,
   transaction_variation jsonb NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT variation_domain_name_unique UNIQUE (domain_config_id, name)
 );
