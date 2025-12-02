@@ -16,7 +16,12 @@ export const NotionalAmount = ({
   price,
   className,
 }: Props) => {
-  if (amount.length > 0) {
+  if (amount.length === 0) {
+    return;
+  }
+
+  // use try catch to avoid breaking errors from invalid input
+  try {
     const amountToSend = stringToAmount(amount, decimals);
     const notional = calculateNotional(amountToSend, decimals, price);
     return (
@@ -24,7 +29,7 @@ export const NotionalAmount = ({
         ${dnum.format(notional, { digits: 2, trailingZeros: true })}
       </div>
     );
+  } catch (error) {
+    return null;
   }
-
-  return;
 };
