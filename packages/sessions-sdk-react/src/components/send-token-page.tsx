@@ -16,8 +16,6 @@ import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
-import { calculateNotional } from "../calculate-notional.js";
-import { parseAmountToSend } from "../parse-amount-to-send.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
@@ -33,7 +31,7 @@ import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import { usePrice } from "../hooks/use-price.js";
-import * as dnum from "dnum";
+import { NotionalAmount } from "./notional-amount.js";
 
 type Props = {
   icon?: string | undefined;
@@ -310,12 +308,6 @@ const SendTokenPageImpl = ({
   )) => {
   const scannerShowing = !props.isLoading && props.scanner !== undefined;
 
-  const amountToSend = parseAmountToSend(props, decimals) ?? undefined;
-  const price = props.isLoading ? undefined : props.price;
-  const notionalValue = (price !== undefined && amountToSend !== undefined)
-    ? calculateNotional(amountToSend, decimals, price)
-    : undefined;
-
   return (
     <div className={styles.sendTokenPage ?? ""}>
       <Button
@@ -427,16 +419,17 @@ const SendTokenPageImpl = ({
                 onChange: props.onChangeAmount,
               })}
           {...(!props.isLoading && {
-            value: props.amount,
+            value: props.amount
           })}
         />
-        {!props.isLoading && amountToSend !== undefined && notionalValue && (
-          <div className={styles.notionalAvailable}>
-            {amountToSend > props.maxSendAmount
-              ? "Insufficient balance"
-              : `$${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}`}
-          </div>
-        )}
+        {!props.isLoading && props.price !== undefined &&
+          <NotionalAmount
+            amount={props.amount}
+            decimals={decimals}
+            price={props.price}
+            className={styles.notionalAmount}
+          />
+        }
         <Button
           excludeFromTabOrder={scannerShowing}
           type="submit"

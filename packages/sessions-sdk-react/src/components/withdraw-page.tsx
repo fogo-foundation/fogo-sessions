@@ -9,8 +9,6 @@ import { useState, useCallback } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
-import { calculateNotional } from "../calculate-notional.js";
-import { parseAmountToSend } from "../parse-amount-to-send.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
@@ -20,7 +18,6 @@ import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
 import styles from "./withdraw-page.module.css";
-import * as dnum from "dnum";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
@@ -28,6 +25,7 @@ import { USDC } from "../wormhole-routes.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { StateType, useData } from "../hooks/use-data.js";
 import { usePrice } from "../hooks/use-price.js";
+import { NotionalAmount } from "./notional-amount.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -246,11 +244,6 @@ const WithdrawFormImpl = (
         maxWithdrawAmount: bigint;
       },
 ) => {
-  const amountToSend = parseAmountToSend(props, USDC.decimals);
-  const price = props.isLoading ? undefined : props.price;
-  const notionalValue = (price !== undefined && amountToSend !== undefined)
-    ? calculateNotional(amountToSend, USDC.decimals, price)
-    : undefined;
   return (
     <Form
       className={styles.withdrawForm ?? ""}
@@ -314,13 +307,14 @@ const WithdrawFormImpl = (
           value: props.amount,
         })}
       />
-      {!props.isLoading && amountToSend !== undefined && notionalValue && (
-        <div className={styles.notionalAvailable}>
-          {amountToSend > props.maxWithdrawAmount
-            ? "Insufficient balance"
-            : `$${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}`}
-        </div>
-      )}
+      {!props.isLoading && props.price !== undefined &&
+        <NotionalAmount
+          amount={props.amount}
+          decimals={USDC.decimals}
+          price={props.price}
+          className={styles.notionalAmount}
+        />
+      }
       <Button
         type="submit"
         variant="secondary"

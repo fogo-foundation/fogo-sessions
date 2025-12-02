@@ -56,7 +56,7 @@
       }
     }
 
-    .notionalAvailable {
+    .notionalAmount {
       @include theme.text("xs");
 
       color: theme.color("muted");
