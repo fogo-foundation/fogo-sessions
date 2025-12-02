@@ -23,15 +23,15 @@ import { ExplorerLink } from "./explorer-link.js";
 import { FetchError as FetchErrorImpl } from "./fetch-error.js";
 import { TextField } from "./field.js";
 import { Link } from "./link.js";
+import { NotionalAmount } from "./notional-amount.js";
 import styles from "./send-token-page.module.css";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { TruncateKey } from "./truncate-key.js";
 import { StateType, useData } from "../hooks/use-data.js";
+import { usePrice } from "../hooks/use-price.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
-import { usePrice } from "../hooks/use-price.js";
-import { NotionalAmount } from "./notional-amount.js";
 
 type Props = {
   icon?: string | undefined;

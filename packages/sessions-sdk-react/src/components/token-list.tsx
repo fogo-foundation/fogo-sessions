@@ -1,5 +1,6 @@
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
+import * as dnum from "dnum";
 import { motion } from "motion/react";
 import { GridList, GridListItem } from "react-aria-components";
 
@@ -12,14 +13,13 @@ import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";
 import styles from "./token-list.module.css";
 import { TruncateKey } from "./truncate-key.js";
+import { usePrice } from "../hooks/use-price.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
   StateType as TokenDataStateType,
   StateType as PriceDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
-import * as dnum from "dnum";
-import { usePrice } from "../hooks/use-price.js";
 
 const MotionGridListItem = motion.create(GridListItem<Token>);
 
@@ -165,7 +165,7 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
       textValue={name ?? mint.toBase58()}
       key={mint.toString()}
       className={styles.token ?? ""}
-      data-is-button={onPressToken !== undefined ? "" : undefined}
+      data-is-button={onPressToken === undefined ? undefined : ""}
       {...(onPressToken && {
         onAction: () => {
           onPressToken(token);

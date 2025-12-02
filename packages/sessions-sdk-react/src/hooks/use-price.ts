@@ -1,6 +1,7 @@
 // import { z } from "zod";
-import { useData } from "./use-data.js";
 import { useCallback } from "react";
+
+import { useData } from "./use-data.js";
 
 export const usePrice = (mint: string) => {
   const getPriceData = useCallback(() => getPrice(mint), [mint]);

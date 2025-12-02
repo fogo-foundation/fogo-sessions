@@ -1,6 +1,7 @@
+import * as dnum from "dnum";
+
 import { stringToAmount } from "../amount-to-string.js";
 import { calculateNotional } from "../calculate-notional.js";
-import * as dnum from "dnum";
 
 type Props = {
   amount: string;

@@ -14,6 +14,7 @@ import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
 import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";
+import { NotionalAmount } from "./notional-amount.js";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
@@ -25,7 +26,6 @@ import { USDC } from "../wormhole-routes.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { StateType, useData } from "../hooks/use-data.js";
 import { usePrice } from "../hooks/use-price.js";
-import { NotionalAmount } from "./notional-amount.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
