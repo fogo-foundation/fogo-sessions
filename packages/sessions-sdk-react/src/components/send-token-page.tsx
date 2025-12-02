@@ -165,9 +165,6 @@ const LoadedSendTokenPage = ({
 }) => {
   const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
-  const [amountValidationError, setAmountValidationError] = useState<
-    string | undefined
-  >();
   const [showScanner, setShowScanner] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -250,8 +247,6 @@ const LoadedSendTokenPage = ({
       recipient={recipient}
       amount={amount}
       maxSendAmount={maxSendAmount}
-      amountValidationError={amountValidationError}
-      onAmountValidationChange={setAmountValidationError}
       price={price}
       onChangeRecipient={setRecipient}
       onPressScanner={() => {
@@ -316,8 +311,6 @@ const SendTokenPageImpl = ({
         onChangeAmount: (newAmount: string) => void;
         feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
         maxSendAmount: bigint;
-        amountValidationError: string | undefined;
-        onAmountValidationChange?: (error: string | undefined) => void;
       }
   )) => {
   const scannerShowing = !props.isLoading && props.scanner !== undefined;
@@ -430,7 +423,6 @@ const SendTokenPageImpl = ({
             : {
                 max: props.maxSendAmount,
                 onChange: props.onChangeAmount,
-                onValidationChange: props.onAmountValidationChange,
               })}
           {...(!props.isLoading && {
             value: props.amount,
@@ -442,7 +434,6 @@ const SendTokenPageImpl = ({
             decimals={decimals}
             price={props.price}
             className={styles.notionalAmount}
-            amountValidationError={props.amountValidationError}
           />
         )}
         <Button
