@@ -38,6 +38,7 @@ solana-intents = { version = "0.1.0", path = "packages/solana-intents" }
 rand = "0.9.2"
 reqwest = "0.12.24"
 serde = "1.0.228"
+serde_json = "1.0.145"
 solana-account = "2.2.1"
 solana-address = "1.0.0"
 solana-address-lookup-table-interface = "2.2.1"
