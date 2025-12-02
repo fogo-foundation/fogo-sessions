@@ -32,7 +32,7 @@ const mkLink = (network: Network, chain: Chain, txHash: string) => {
     case Network.Mainnet: {
       return chain === Chain.Solana
         ? `https://solscan.io/tx/${txHash}`
-        : `https://explorer.fogo.io/tx/${txHash}?cluster=mainnet-beta`;
+        : `https://fogoscan.com/tx/${txHash}?cluster=mainnet`;
     }
     case Network.Testnet: {
       return chain === Chain.Solana
