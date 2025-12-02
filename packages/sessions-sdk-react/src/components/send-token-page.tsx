@@ -47,7 +47,8 @@ type Props = {
 
 export const SendTokenPage = (props: Props) => {
   const priceState = usePrice(props.tokenMint.toBase58());
-  const price = priceState.type === StateType.Loaded ? priceState.data : undefined;
+  const price =
+    priceState.type === StateType.Loaded ? priceState.data : undefined;
 
   const feeConfig = useFeeConfig();
   switch (feeConfig.type) {
@@ -62,7 +63,13 @@ export const SendTokenPage = (props: Props) => {
       );
     }
     case StateType.Loaded: {
-      return <SendTokenWithFeeConfig feeConfig={feeConfig.data} {...props} price={price} />;
+      return (
+        <SendTokenWithFeeConfig
+          feeConfig={feeConfig.data}
+          {...props}
+          price={price}
+        />
+      );
     }
     case StateType.Loading:
     case StateType.NotLoaded: {
@@ -419,17 +426,17 @@ const SendTokenPageImpl = ({
                 onChange: props.onChangeAmount,
               })}
           {...(!props.isLoading && {
-            value: props.amount
+            value: props.amount,
           })}
         />
-        {!props.isLoading && props.price !== undefined &&
+        {!props.isLoading && props.price !== undefined && (
           <NotionalAmount
             amount={props.amount}
             decimals={decimals}
             price={props.price}
             className={styles.notionalAmount}
           />
-        }
+        )}
         <Button
           excludeFromTabOrder={scannerShowing}
           type="submit"

@@ -18,7 +18,7 @@ import {
   StateType as PriceDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
-import * as dnum from 'dnum';
+import * as dnum from "dnum";
 import { usePrice } from "../hooks/use-price.js";
 
 const MotionGridListItem = motion.create(GridListItem<Token>);
@@ -79,8 +79,12 @@ export const TokenList = ({
           {(token) => (
             <TokenItem
               token={token}
-              {...("onPressSend" in props && { onPressSend: props.onPressSend })}
-              {...("onPressToken" in props && { onPressToken: props.onPressToken })}
+              {...("onPressSend" in props && {
+                onPressSend: props.onPressSend,
+              })}
+              {...("onPressToken" in props && {
+                onPressToken: props.onPressToken,
+              })}
             />
           )}
         </GridList>
@@ -107,9 +111,10 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
   const { mint, amountInWallet, decimals, image, name } = token;
   const amountAsString = amountToString(amountInWallet, decimals);
   const price = usePrice(mint.toBase58());
-  const notionalValue = price.type === PriceDataStateType.Loaded
-    ? calculateNotional(amountInWallet, decimals, price.data)
-    : undefined;
+  const notionalValue =
+    price.type === PriceDataStateType.Loaded
+      ? calculateNotional(amountInWallet, decimals, price.data)
+      : undefined;
 
   const contents = (
     <>
@@ -120,13 +125,8 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
           <div className={styles.icon} />
         )}
         <div className={styles.nameAndMint}>
-          <span className={styles.name}>
-            {name ?? mint.toBase58()}
-          </span>
-          <CopyButton
-            className={styles.mint ?? ""}
-            text={mint.toBase58()}
-          >
+          <span className={styles.name}>{name ?? mint.toBase58()}</span>
+          <CopyButton className={styles.mint ?? ""} text={mint.toBase58()}>
             <TruncateKey keyValue={mint} />
           </CopyButton>
         </div>

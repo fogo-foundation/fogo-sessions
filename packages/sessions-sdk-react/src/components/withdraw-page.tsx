@@ -36,7 +36,8 @@ type Props = {
 export const WithdrawPage = ({ onPressBack, ...props }: Props) => {
   const { network } = useSessionContext();
   const priceState = usePrice(USDC.chains[network].fogo.mint.toBase58());
-  const price = priceState.type === StateType.Loaded ? priceState.data : undefined;
+  const price =
+    priceState.type === StateType.Loaded ? priceState.data : undefined;
 
   return (
     <div className={styles.withdrawPage}>
@@ -52,7 +53,9 @@ export const WithdrawPage = ({ onPressBack, ...props }: Props) => {
   );
 };
 
-const WithdrawForm = (props: Omit<Props, "onPressBack"> & { price: number | undefined }) => {
+const WithdrawForm = (
+  props: Omit<Props, "onPressBack"> & { price: number | undefined },
+) => {
   const feeConfig = useFeeConfig();
   switch (feeConfig.type) {
     case StateType.Error: {
@@ -211,7 +214,9 @@ const LoadedWithdrawForm = ({
     ],
   );
 
-  const maxWithdrawAmount = feeConfig.mint.equals(USDC.chains[network].fogo.mint)
+  const maxWithdrawAmount = feeConfig.mint.equals(
+    USDC.chains[network].fogo.mint,
+  )
     ? amountAvailable - feeConfig.fee
     : amountAvailable;
 
@@ -286,10 +291,7 @@ const WithdrawFormImpl = (
               : {
                   onPress: () => {
                     props.onChangeAmount(
-                      amountToString(
-                        props.maxWithdrawAmount,
-                        USDC.decimals,
-                      ),
+                      amountToString(props.maxWithdrawAmount, USDC.decimals),
                     );
                   },
                 })}
@@ -307,14 +309,14 @@ const WithdrawFormImpl = (
           value: props.amount,
         })}
       />
-      {!props.isLoading && props.price !== undefined &&
+      {!props.isLoading && props.price !== undefined && (
         <NotionalAmount
           amount={props.amount}
           decimals={USDC.decimals}
           price={props.price}
           className={styles.notionalAmount}
         />
-      }
+      )}
       <Button
         type="submit"
         variant="secondary"
