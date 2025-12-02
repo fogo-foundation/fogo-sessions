@@ -213,6 +213,10 @@ const LoadedWithdrawForm = ({
     ],
   );
 
+  const maxWithdrawAmount = feeConfig.mint.equals(USDC.chains[network].fogo.mint)
+    ? amountAvailable - feeConfig.fee
+    : amountAvailable;
+
   return (
     <WithdrawFormImpl
       isSubmitting={isSubmitting}
@@ -222,6 +226,7 @@ const LoadedWithdrawForm = ({
       onSubmit={onSubmit}
       amount={amount}
       onChangeAmount={setAmount}
+      maxWithdrawAmount={maxWithdrawAmount}
     />
   );
 };
@@ -238,15 +243,9 @@ const WithdrawFormImpl = (
         onSubmit: FormEventHandler;
         amount: string;
         onChangeAmount: (newValue: string) => void;
+        maxWithdrawAmount: bigint;
       },
 ) => {
-  const { network } = useSessionContext();
-  const tokenMint = USDC.chains[network].fogo.mint;
-  const amountAvailable = props.isLoading ? 0n : props.amountAvailable;
-  const maxSendAmount = !props.isLoading && !props.isSubmitting && props.feeConfig.mint.equals(tokenMint)
-    ? amountAvailable - props.feeConfig.fee
-    : amountAvailable;
-
   const amountToSend = parseAmountToSend(props, USDC.decimals);
   const price = props.isLoading ? undefined : props.price;
   const notionalValue = (price !== undefined && amountToSend !== undefined)
@@ -295,9 +294,7 @@ const WithdrawFormImpl = (
                   onPress: () => {
                     props.onChangeAmount(
                       amountToString(
-                        props.feeConfig.mint.equals(tokenMint)
-                          ? props.amountAvailable - props.feeConfig.fee
-                          : props.amountAvailable,
+                        props.maxWithdrawAmount,
                         USDC.decimals,
                       ),
                     );
@@ -310,9 +307,7 @@ const WithdrawFormImpl = (
         {...(props.isLoading || props.isSubmitting
           ? { isPending: true }
           : {
-              max: props.feeConfig.mint.equals(tokenMint)
-                ? props.amountAvailable - props.feeConfig.fee
-                : props.amountAvailable,
+              max: props.maxWithdrawAmount,
               onChange: props.onChangeAmount,
             })}
         {...(!props.isLoading && {
@@ -321,7 +316,7 @@ const WithdrawFormImpl = (
       />
       {!props.isLoading && amountToSend !== undefined && notionalValue && (
         <div className={styles.notionalAvailable}>
-          {amountToSend > maxSendAmount
+          {amountToSend > props.maxWithdrawAmount
             ? "Insufficient balance"
             : `$${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}`}
         </div>

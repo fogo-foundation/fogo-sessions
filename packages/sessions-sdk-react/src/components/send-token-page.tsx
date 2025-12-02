@@ -106,7 +106,7 @@ const SendTokenWithFeeConfig = (
       );
     }
     case StateType.Loaded: {
-      return feeTokenAccountBalance.amount < props.feeConfig.fee ? (
+      return feeTokenAccountBalance.data < props.feeConfig.fee ? (
         <FetchError
           headline={`Not enough ${props.feeConfig.symbolOrMint}`}
           error={`You need at least ${amountToString(props.feeConfig.fee, props.feeConfig.decimals)} ${props.feeConfig.symbolOrMint} to pay network fees to send tokens.`}
@@ -137,7 +137,7 @@ const useFeeTokenAccountBalance = (
     case StateType.Loaded: {
       return {
         ...accountData,
-        amount:
+        data:
           accountData.data.tokensInWallet.find((token) =>
             token.mint.equals(feeConfig.mint),
           )?.amountInWallet ?? 0n,
@@ -225,6 +225,11 @@ const LoadedSendTokenPage = ({
     ],
   );
 
+  // if the token being sent is the same as the fee token, we need to account for the fee when calculating the max amount to send
+  const maxSendAmount = feeConfig.mint.equals(tokenMint)
+    ? props.amountAvailable - feeConfig.fee
+    : props.amountAvailable;
+
   return (
     <SendTokenPageImpl
       {...props}
@@ -236,6 +241,7 @@ const LoadedSendTokenPage = ({
       onSubmit={onSubmit}
       recipient={recipient}
       amount={amount}
+      maxSendAmount={maxSendAmount}
       price={price}
       onChangeRecipient={setRecipient}
       onPressScanner={() => {
@@ -299,12 +305,10 @@ const SendTokenPageImpl = ({
         onPressScanner: () => void;
         onChangeAmount: (newAmount: string) => void;
         feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
+        maxSendAmount: bigint;
       }
   )) => {
   const scannerShowing = !props.isLoading && props.scanner !== undefined;
-  const maxSendAmount = !props.isLoading && !props.isSubmitting && props.feeConfig.mint.equals(tokenMint)
-    ? amountAvailable - props.feeConfig.fee
-    : amountAvailable;
 
   const amountToSend = parseAmountToSend(props, decimals) ?? undefined;
   const price = props.isLoading ? undefined : props.price;
@@ -408,7 +412,7 @@ const SendTokenPageImpl = ({
                 : {
                     onPress: () => {
                       props.onChangeAmount(
-                        amountToString(maxSendAmount, decimals),
+                        amountToString(props.maxSendAmount, decimals),
                       );
                     },
                   })}
@@ -419,7 +423,7 @@ const SendTokenPageImpl = ({
           {...(props.isLoading || props.isSubmitting
             ? { isPending: true }
             : {
-                max: maxSendAmount,
+                max: props.maxSendAmount,
                 onChange: props.onChangeAmount,
               })}
           {...(!props.isLoading && {
@@ -428,7 +432,7 @@ const SendTokenPageImpl = ({
         />
         {!props.isLoading && amountToSend !== undefined && notionalValue && (
           <div className={styles.notionalAvailable}>
-            {amountToSend > maxSendAmount
+            {amountToSend > props.maxSendAmount
               ? "Insufficient balance"
               : `$${dnum.format(notionalValue, { digits: 2, trailingZeros: true })}`}
           </div>

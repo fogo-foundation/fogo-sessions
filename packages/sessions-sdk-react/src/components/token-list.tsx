@@ -165,7 +165,7 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
       textValue={name ?? mint.toBase58()}
       key={mint.toString()}
       className={styles.token ?? ""}
-      data-is-button={onPressToken ? "" : undefined}
+      data-is-button={onPressToken !== undefined ? "" : undefined}
       {...(onPressToken && {
         onAction: () => {
           onPressToken(token);
