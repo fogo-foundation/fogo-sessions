@@ -20,7 +20,6 @@ export const NotionalAmount = ({
   className,
   validationError,
 }: Props) => {
-  console.log("validation Error:", validationError, amount);
   if (validationError) {
     return (
       <div className={clsx(className, styles.error)}>
@@ -44,7 +43,7 @@ export const NotionalAmount = ({
         ${dnum.format(notional, { digits: 2, trailingZeros: true })}
       </div>
     );
-  } catch (error) {
-    return null;
+  } catch {
+    return;
   }
 };

@@ -165,7 +165,9 @@ const LoadedSendTokenPage = ({
 }) => {
   const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
-  const [amountValidationError, setAmountValidationError] = useState<string | undefined>();
+  const [amountValidationError, setAmountValidationError] = useState<
+    string | undefined
+  >();
   const [showScanner, setShowScanner] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

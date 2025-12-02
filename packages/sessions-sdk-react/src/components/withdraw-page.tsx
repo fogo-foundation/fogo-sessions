@@ -151,7 +151,9 @@ const LoadedWithdrawForm = ({
 }) => {
   const { getSessionContext, network } = useSessionContext();
   const [amount, setAmount] = useState("");
-  const [amountValidationError, setAmountValidationError] = useState<string | undefined>();
+  const [amountValidationError, setAmountValidationError] = useState<
+    string | undefined
+  >();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
 

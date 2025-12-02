@@ -17,7 +17,15 @@ export const TokenAmountInput = ({
 }: ComponentProps<typeof TextField> &
   Parameters<typeof useTokenAmountInput>[0]) => (
   <TextField
-    {...useTokenAmountInput({ decimals, symbol, min, max, gt, lt, onValidationChange })}
+    {...useTokenAmountInput({
+      decimals,
+      symbol,
+      min,
+      max,
+      gt,
+      lt,
+      onValidationChange,
+    })}
     {...props}
   />
 );
@@ -55,8 +63,8 @@ const useTokenAmountInput = ({
           } else if (min !== undefined && amount < min) {
             error = `Cannot be less than ${amountToString(min, decimals).toString()} ${symbol}`;
           }
-        } catch (e: unknown) {
-          error = errorToString(e);
+        } catch (error_: unknown) {
+          error = errorToString(error_);
         }
       }
 
