@@ -168,6 +168,9 @@ catalogs:
     clsx:
       specifier: ^2.1.1
       version: 2.1.1
+    dnum:
+      specifier: ^2.15.0
+      version: 2.15.0
     eslint:
       specifier: ^9.28.0
       version: 9.29.0
@@ -607,7 +610,7 @@ importers:
         specifier: 'catalog:'
         version: 2.1.1
       dnum:
-        specifier: ^2.15.0
+        specifier: 'catalog:'
         version: 2.15.0
       idb:
         specifier: 'catalog:'
