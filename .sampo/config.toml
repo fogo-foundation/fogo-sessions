@@ -13,5 +13,5 @@ show_acknowledgments = true
 ignore_unpublished = true
 # Only manage Rust/Cargo packages, ignore all npm/JS packages
 ignore = [
-    "**/package.json",  # Ignore all npm packages
+    "npm/*",  # Ignore all npm packages
 ]
