@@ -1,0 +1,13 @@
+[github]
+repository = "fogo-foundation/fogo-sessions"
+
+[git]
+default_branch = "main"
+release_branches = ["ci/rust-changesets"]
+
+[changelog]
+show_commit_hash = true
+show_acknowledgments = true
+
+[packages]
+ignore_unpublished = true

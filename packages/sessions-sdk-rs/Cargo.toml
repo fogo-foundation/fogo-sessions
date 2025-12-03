@@ -4,6 +4,7 @@ description = "A set of utilities for SVM on-chain programs integrating with Fog
 edition = { workspace = true }
 license = { workspace = true }
 version = "0.7.0"
+publish = true
 
 [lib]
 crate-type = ["rlib"]
