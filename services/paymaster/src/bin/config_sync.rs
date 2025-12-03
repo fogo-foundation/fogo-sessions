@@ -10,7 +10,7 @@ use sqlx::Type;
 use url::Url;
 use uuid::Uuid;
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Type, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Type, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 #[sqlx(type_name = "variation_version")]
 pub enum VariationVersion {
     #[sqlx(rename = "v0")]
@@ -46,53 +46,71 @@ fn registrable_domain(host: &str) -> Result<String, anyhow::Error> {
         Ok(host.to_string())
     }
 }
-/// Insert a user(username, wallet_address) into the database.
+
 async fn insert_user(host: &str) -> Result<Uuid, anyhow::Error> {
     let username = registrable_domain(host)?;
-    let existing_user = sqlx::query_as::<_, (Uuid,)>("SELECT id FROM \"user\" WHERE username = $1")
-        .bind(&username)
-        .fetch_optional(pool())
-        .await?;
 
-    if let Some(user_result) = existing_user {
-        return Ok(user_result.0);
-    }
-
-    let new_user = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO \"user\" (id, username, wallet_address) VALUES ($1, $2, $3) RETURNING id",
+    let inserted = sqlx::query!(
+        r#"
+        INSERT INTO "user" (id, username, wallet_address)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (username)
+        DO NOTHING
+        RETURNING id, username
+        "#,
+        Uuid::new_v4(),
+        username,
+        format!("wallet-address-{username}")
     )
-    .bind(Uuid::new_v4())
-    .bind(&username)
-    .bind(format!("wallet-address-{username}"))
-    .fetch_one(pool())
+    .fetch_optional(pool())
     .await?;
 
-    Ok(new_user.0)
+    if let Some(row) = inserted {
+        println!("Inserted user: {:?}", row.username);
+        return Ok(row.id);
+    }
+
+    let existing = sqlx::query!(r#"SELECT id FROM "user" WHERE username = $1"#, username)
+        .fetch_one(pool())
+        .await?;
+
+    Ok(existing.id)
 }
 
 async fn insert_app(user_id: &Uuid, name: &str) -> Result<Uuid, sqlx::Error> {
-    let existing_app =
-        sqlx::query_as::<_, (Uuid,)>("SELECT id FROM app WHERE user_id = $1 AND name = $2")
-            .bind(user_id)
-            .bind(name)
-            .fetch_optional(pool())
-            .await?;
+    let new_id = Uuid::new_v4();
 
-    if let Some(app_result) = existing_app {
-        return Ok(app_result.0);
-    }
-    println!("Inserting new app: {name}");
-    let app = sqlx::query_as::<_, (Uuid,)>(
-        "INSERT INTO app (id, name, user_id) VALUES ($1, $2, $3) RETURNING id",
+    let inserted = sqlx::query!(
+        r#"
+        INSERT INTO app (id, user_id, name)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id, name)
+        DO NOTHING
+        RETURNING id, name
+        "#,
+        new_id,
+        user_id,
+        name,
     )
-    .bind(Uuid::new_v4())
-    .bind(name)
-    .bind(user_id)
+    .fetch_optional(pool())
+    .await?;
+
+    if let Some(row) = inserted {
+        println!("Inserted app: {:?}", row.name);
+        return Ok(row.id);
+    }
+
+    let existing = sqlx::query!(
+        r#"SELECT id FROM app WHERE user_id = $1 AND name = $2"#,
+        user_id,
+        name
+    )
     .fetch_one(pool())
     .await?;
 
-    Ok(app.0)
+    Ok(existing.id)
 }
+
 async fn insert_or_update_domain_config(
     app_id: &Uuid,
     domain: &Domain,
@@ -111,7 +129,7 @@ async fn insert_or_update_domain_config(
         DO UPDATE SET
           enable_session_management   = EXCLUDED.enable_session_management,
           enable_preflight_simulation = EXCLUDED.enable_preflight_simulation
-        RETURNING id
+        RETURNING id, domain
         "#,
         Uuid::new_v4(),
         app_id,
@@ -121,7 +139,7 @@ async fn insert_or_update_domain_config(
     )
     .fetch_one(pool())
     .await?;
-
+    println!("Checking domain config: {:?}", res.domain);
     Ok(res.id)
 }
 
@@ -138,9 +156,9 @@ async fn insert_or_update_variation(
                 .iter()
                 .map(|k| k.to_string())
                 .collect();
-            serde_json::to_string(&pubkey_strings)
+            serde_json::to_value(&pubkey_strings)
         }
-        TransactionVariation::V1(v) => serde_json::to_string(&v.instructions),
+        TransactionVariation::V1(v) => serde_json::to_value(&v.instructions),
     }
     .map_err(|e| anyhow::anyhow!("Error serializing transaction variation: {e}"))?;
 
@@ -153,8 +171,6 @@ async fn insert_or_update_variation(
         TransactionVariation::V0(_) => None,
         TransactionVariation::V1(v) => Some(v.max_gas_spend as i64),
     };
-
-    let new_id = Uuid::new_v4();
 
     // 2. Single upsert by (domain_config_id, name)
     let row = sqlx::query!(
@@ -175,12 +191,12 @@ async fn insert_or_update_variation(
       transaction_variation = EXCLUDED.transaction_variation
     RETURNING id
     "#,
-        new_id,
+        Uuid::new_v4(),
         domain_config_id,
         variation.name(),
-        version,                    // VariationVersion
-        max_gas_spend,              // Option<i64>
-        transaction_variation_json, // serde_json::Value
+        version as _,
+        max_gas_spend,
+        transaction_variation_json,
     )
     .fetch_one(pool())
     .await?;

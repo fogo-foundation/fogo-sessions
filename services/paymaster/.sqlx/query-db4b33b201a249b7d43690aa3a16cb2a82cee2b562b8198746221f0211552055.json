@@ -1,0 +1,37 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n    INSERT INTO variation (\n      id,\n      domain_config_id,\n      name,\n      version,\n      max_gas_spend,\n      transaction_variation\n    )\n    VALUES ($1, $2, $3, $4, $5, $6)\n    ON CONFLICT (domain_config_id, name)\n    DO UPDATE SET\n      version               = EXCLUDED.version,\n      max_gas_spend         = EXCLUDED.max_gas_spend,\n      transaction_variation = EXCLUDED.transaction_variation\n    RETURNING id\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        {
+          "Custom": {
+            "name": "variation_version",
+            "kind": {
+              "Enum": [
+                "v0",
+                "v1"
+              ]
+            }
+          }
+        },
+        "Int8",
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "db4b33b201a249b7d43690aa3a16cb2a82cee2b562b8198746221f0211552055"
+}

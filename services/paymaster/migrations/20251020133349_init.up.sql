@@ -13,11 +13,13 @@ CREATE TABLE app (
   name text NOT NULL UNIQUE,
   user_id uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT app_user_name_unique UNIQUE (user_id, name)
 );
 
 CREATE TABLE domain_config (
-  id uuid PRIMARY KEY,                           
+  id uuid PRIMARY KEY,
   app_id uuid NOT NULL REFERENCES app(id) ON DELETE CASCADE,
   domain text NOT NULL UNIQUE,
   enable_session_management boolean NOT NULL DEFAULT false,
