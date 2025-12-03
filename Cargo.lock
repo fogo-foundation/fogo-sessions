@@ -3784,6 +3784,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "paymaster-rent-reclaim"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anyhow",
+ "arc-swap",
+ "base64 0.22.1",
+ "bincode 2.0.1",
+ "chain-id",
+ "clap",
+ "dashmap 6.1.0",
+ "fogo-sessions-sdk",
+ "futures",
+ "governor",
+ "hdrhistogram",
+ "rand 0.9.2",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "solana-account-decoder-client-types",
+ "solana-client",
+ "solana-commitment-config",
+ "solana-compute-budget-interface",
+ "solana-hash",
+ "solana-keypair",
+ "solana-message",
+ "solana-program",
+ "solana-pubkey",
+ "solana-signature",
+ "solana-signer",
+ "solana-transaction",
+ "spl-memo",
+ "spl-token",
+ "time",
+ "tokio",
+ "toml 0.9.8",
+ "tracing",
+ "tracing-subscriber",
+ "urlencoding",
+]
+
+[[package]]
 name = "pbkdf2"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
