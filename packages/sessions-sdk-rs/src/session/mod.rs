@@ -40,6 +40,7 @@ pub fn is_session(info: &AccountInfo) -> bool {
 
 /// The on-chain representation of a session. Sessions are represented on-chain as accounts owned by the session manager program, containing a `Session` structure.
 #[cfg_attr(feature = "anchor", account)]
+#[cfg_attr(feature = "anchor", derive(Debug))]
 #[cfg_attr(
     not(feature = "anchor"),
     derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)
@@ -286,7 +287,7 @@ impl Session {
         }
     }
 
-    fn expiration(&self) -> Result<UnixTimestamp, SessionError> {
+    pub fn expiration(&self) -> Result<UnixTimestamp, SessionError> {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(session.expiration),
             SessionInfo::V2(session) => match session {
