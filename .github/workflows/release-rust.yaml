@@ -25,7 +25,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: nightly
 
       - name: Release with Sampo
         uses: bruits/sampo/crates/sampo-github-action@main
