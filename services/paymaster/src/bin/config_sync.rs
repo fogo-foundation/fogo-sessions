@@ -133,7 +133,7 @@ async fn insert_or_update_domain_config(
         "#,
         Uuid::new_v4(),
         app_id,
-        domain.domain, // assuming String
+        domain.domain,
         domain.enable_session_management,
         domain.enable_preflight_simulation,
     )
@@ -147,10 +147,8 @@ async fn insert_or_update_variation(
     domain_config_id: &Uuid,
     variation: &TransactionVariation,
 ) -> Result<Uuid, anyhow::Error> {
-    // 1. Build JSON + metadata
     let transaction_variation_json = match variation {
         TransactionVariation::V0(v) => {
-            // Convert Pubkeys to strings (base58)
             let pubkey_strings: Vec<String> = v
                 .whitelisted_programs
                 .iter()
@@ -172,7 +170,6 @@ async fn insert_or_update_variation(
         TransactionVariation::V1(v) => Some(v.max_gas_spend as i64),
     };
 
-    // 2. Single upsert by (domain_config_id, name)
     let row = sqlx::query!(
         r#"
     INSERT INTO variation (
