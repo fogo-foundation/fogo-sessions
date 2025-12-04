@@ -13,11 +13,10 @@ name = "fogo_sessions_sdk"
 token-program = []
 anchor = ["anchor-lang"]
 anchor-idl = ["anchor-lang/idl-build"]
-system-program = ["solana-program-runtime"]
+system-program = []
 
 [dependencies]
 borsh = { version = ">=0.10.0, <1.0.0"}
 solana-program = { version = ">=1.16, <3.0.0"}
 thiserror = {version = ">=1.0, <2.0"}
 anchor-lang = { workspace = true, optional = true }
-solana-program-runtime = { workspace = true , optional = true}
