@@ -1,3 +1,4 @@
+import { Button } from "@fogo/component-library/Button";
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { PublicKey } from "@solana/web3.js";
@@ -19,7 +20,6 @@ import {
 
 import { stringToAmount, amountToString } from "../amount-to-string.js";
 import type { WalletConnectedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
 import { TextField } from "./field.js";
 import styles from "./session-limits.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";

@@ -1,3 +1,5 @@
+import { Button } from "@fogo/component-library/Button";
+import { Link } from "@fogo/component-library/Link";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { motion } from "motion/react";
@@ -5,10 +7,8 @@ import { GridList, GridListItem } from "react-aria-components";
 
 import { amountToString } from "../amount-to-string.js";
 import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
 import { FetchError } from "./fetch-error.js";
-import { Link } from "./link.js";
 import styles from "./token-list.module.css";
 import { TruncateKey } from "./truncate-key.js";
 import type { Token } from "../hooks/use-token-account-data.js";

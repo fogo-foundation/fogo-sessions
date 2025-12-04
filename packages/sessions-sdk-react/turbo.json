@@ -4,21 +4,25 @@
   "tasks": {
     "build": {
       "dependsOn": [
+        "//#install:modules",
         "^build",
-        "build:cjs",
-        "build:css:cjs",
-        "build:css:esm",
-        "build:esm",
+        "build:bundle",
+        "build:types",
         "build:package-json"
-      ]
+      ],
+      "outputs": ["dist/**"]
     },
-    "build:css:cjs": {
-      "dependsOn": ["//#install:modules"],
-      "cache": false
+    "build:bundle": {
+      "dependsOn": ["//#install:modules", "^build"],
+      "outputs": ["dist/cjs/**", "dist/esm/**"]
     },
-    "build:css:esm": {
+    "build:package-json": {
       "dependsOn": ["//#install:modules"],
-      "cache": false
+      "outputs": ["dist/package.json"]
+    },
+    "build:types": {
+      "dependsOn": ["//#install:modules", "^build"],
+      "outputs": ["dist/types/**"]
     },
     "fix:lint": {
       "dependsOn": ["fix:lint:eslint", "fix:lint:stylelint"],
@@ -33,16 +37,7 @@
       "cache": false
     },
     "start:dev": {
-      "with": ["start:dev:tsc", "start:dev:sass"],
-      "persistent": false
-    },
-    "start:dev:tsc": {
       "dependsOn": ["//#install:modules", "^build"],
-      "persistent": true,
-      "cache": false
-    },
-    "start:dev:sass": {
-      "dependsOn": ["//#install:modules"],
       "persistent": true,
       "cache": false
     },
