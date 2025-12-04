@@ -18,13 +18,19 @@ type Props = {
 export const DisplayAddress = ({ address }: Props) => {
   const fnsNameState = useFNSReverseRecordName(address);
 
-  if (fnsNameState.type === StateType.Loading) {
-    return <span className={styles.skeleton} aria-label="Loading name" />;
+  switch (fnsNameState.type) {
+    case StateType.Loading: {
+      return <span className={styles.skeleton} aria-label="Loading name" />;
+    }
+    case StateType.Loaded: {
+      if (fnsNameState.data) {
+        return <>{fnsNameState.data}.fogo</>;
+      }
+      return <TruncateKey keyValue={address} />;
+    }
+    case StateType.NotLoaded:
+    case StateType.Error: {
+      return <TruncateKey keyValue={address} />;
+    }
   }
-
-  if (fnsNameState.type === StateType.Loaded && fnsNameState.data) {
-    return <>{fnsNameState.data}.fogo</>;
-  }
-
-  return <TruncateKey keyValue={address} />;
 };

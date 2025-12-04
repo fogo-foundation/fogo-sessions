@@ -76,31 +76,27 @@ export const useFNSReverseRecordName = (owner: PublicKey) => {
     // Fetch the reverse record
     const reverseRecord = await fetchMaybeReverseRecord(rpc, reverseRecordPda);
 
-    if (!reverseRecord.exists) {
-      return;
+    if (reverseRecord.exists) {
+      // Fetch the name record
+      const nameRecord = await fetchMaybeNameRecord(
+        rpc,
+        reverseRecord.data.nameRecord,
+      );
+
+      if (nameRecord.exists) {
+        // Decode the name from the byte array
+        // The name is stored as UTF-8 bytes, find the undefined terminator
+        const nameBytes = nameRecord.data.name;
+        const nullIndex = nameBytes.indexOf(0);
+        const validNameBytes =
+          nullIndex === -1 ? nameBytes : nameBytes.slice(0, nullIndex);
+
+        // Convert to string
+        return new TextDecoder().decode(new Uint8Array(validNameBytes));
+      }
     }
 
-    // Fetch the name record
-    const nameRecord = await fetchMaybeNameRecord(
-      rpc,
-      reverseRecord.data.nameRecord,
-    );
-
-    if (!nameRecord.exists) {
-      return;
-    }
-
-    // Decode the name from the byte array
-    // The name is stored as UTF-8 bytes, find the undefined terminator
-    const nameBytes = nameRecord.data.name;
-    const nullIndex = nameBytes.indexOf(0);
-    const validNameBytes =
-      nullIndex === -1 ? nameBytes : nameBytes.slice(0, nullIndex);
-
-    // Convert to string
-    const nameString = new TextDecoder().decode(new Uint8Array(validNameBytes));
-
-    return nameString;
+    return;
   }, [owner, rpc]);
 
   return useData<string | undefined>(key, fetchName, {
