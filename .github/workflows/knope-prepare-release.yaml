@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.FOGO_SESSIONS_KNOPE_RELEASE_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure Git
         run: |
           git config --global user.name GitHub Actions
@@ -23,4 +23,4 @@ jobs:
           version: 0.21.6
       - run: knope prepare-release --verbose
         env:
-          GITHUB_TOKEN: ${{ secrets.FOGO_SESSIONS_KNOPE_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
