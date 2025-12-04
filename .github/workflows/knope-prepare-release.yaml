@@ -21,4 +21,3 @@ jobs:
       - run: knope prepare-release --verbose
         env:
           GITHUB_TOKEN: ${{ secrets.FOGO_SESSIONS_KNOPE_RELEASE_TOKEN }}
-        continue-on-error: true
