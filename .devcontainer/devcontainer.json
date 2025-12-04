@@ -2,7 +2,10 @@
   "$schema": "https://raw.githubusercontent.com/devcontainers/spec/refs/heads/main/schemas/devContainer.schema.json",
   "name": "Fogo Sessions - Dev Container",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "options": [
+      "--platform=linux/amd64"
+    ]
   },
   // if you need more ports exposed so you can access them for local development,
   // add them here
@@ -11,12 +14,23 @@
     3001,
     3002
   ],
-  "postCreateCommand": "CI=true mise install && pnpm install --force && pnpm turbo run build",
+  "postCreateCommand": "./.devcontainer/post-create.sh",
   "features": {
     "ghcr.io/devcontainers-extra/features/mise:1": {
       "version": "latest"
     }
   },
+  "mounts": [
+    // maps your git config into the devcontainer so your git identities remain the same
+    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached"
+  ],
+  "remoteEnv": {
+    // see comment, above, about the preventing ssh gymnastics
+    "SSH_AUTH_SOCK": "/tmp/ssh-agent.sock"
+  },
+  "runArgs": [
+    "--platform=linux/amd64"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [

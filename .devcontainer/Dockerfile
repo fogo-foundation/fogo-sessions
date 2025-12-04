@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/base:ubuntu
+FROM --platform=linux/amd64 mcr.microsoft.com/devcontainers/base:ubuntu
 
 # ensure core deps are up-to-date
 RUN apt-get update && apt-get install -y \
@@ -23,3 +23,6 @@ RUN brew install git
 
 # ensure mise installed tools are available globally
 ENV PATH="/home/vscode/.local/share/mise/shims:${PATH}"
+
+# ensure anchor, once it gets installed, is in the PATH
+ENV PATH="/home/vscode/.cargo/bin:${PATH}"
