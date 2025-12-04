@@ -1,0 +1,98 @@
+# Knope configuration for fogo-sessions monorepo
+# Manages both TypeScript (npm) and Rust (Cargo) packages
+
+[github]
+owner = "fogo-foundation"
+repo = "fogo-sessions"
+
+# ============================================================================
+# Rust/Cargo Packages
+# ============================================================================
+
+[packages.chain-id]
+versioned_files = ["programs/chain-id/Cargo.toml"]
+changelog = "programs/chain-id/CHANGELOG.md"
+
+[packages.intent-transfer]
+versioned_files = ["programs/intent-transfer/Cargo.toml"]
+changelog = "programs/intent-transfer/CHANGELOG.md"
+
+[packages.fogo-sessions-sdk]
+versioned_files = ["packages/sessions-sdk-rs/Cargo.toml"]
+changelog = "packages/sessions-sdk-rs/CHANGELOG.md"
+
+[packages.solana-intents]
+versioned_files = ["packages/solana-intents/Cargo.toml"]
+changelog = "packages/solana-intents/CHANGELOG.md"
+
+[packages.fogo-paymaster]
+versioned_files = ["services/paymaster/Cargo.toml"]
+changelog = "services/paymaster/CHANGELOG.md"
+
+# ============================================================================
+# TypeScript/npm Packages
+# ============================================================================
+
+[packages."@fogo/sessions-sdk"]
+versioned_files = ["packages/sessions-sdk-ts/package.json"]
+changelog = "packages/sessions-sdk-ts/CHANGELOG.md"
+
+[packages."@fogo/sessions-idls"]
+versioned_files = ["packages/sessions-idls/package.json"]
+changelog = "packages/sessions-idls/CHANGELOG.md"
+
+[packages."@fogo/sessions-sdk-react"]
+versioned_files = ["packages/sessions-sdk-react/package.json"]
+changelog = "packages/sessions-sdk-react/CHANGELOG.md"
+
+[packages."@fogo/sessions-sdk-web"]
+versioned_files = ["packages/sessions-sdk-web/package.json"]
+changelog = "packages/sessions-sdk-web/CHANGELOG.md"
+
+# ============================================================================
+# Workflows
+# ============================================================================
+
+### DocumentChange
+[[workflows]]
+name = "document-change"
+
+[[workflows.steps]]
+type = "CreateChangeFile"
+
+### PrepareRelease
+[[workflows]]
+name = "prepare-release"
+
+[[workflows.steps]]
+type = "Command"
+command = "git switch -c release"
+
+[[workflows.steps]]
+type = "PrepareRelease"
+
+[[workflows.steps]]
+type = "Command"
+command = "git commit -m \"chore: prepare release $version\" && git push --force --set-upstream origin release"
+
+[workflows.steps.variables]
+"$version" = "Version"
+
+[[workflows.steps]]
+type = "CreatePullRequest"
+base = "main"
+
+[workflows.steps.title]
+template = "chore: prepare release $version"
+variables = { "$version" = "Version" }
+
+[workflows.steps.body]
+template = "This PR was created by Knope. Merging it will create a new release\n\n$changelog"
+variables = { "$changelog" = "ChangelogEntry" }
+
+### Release
+[[workflows]]
+name = "release"
+
+[[workflows.steps]]
+type = "Release"

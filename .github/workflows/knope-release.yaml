@@ -1,0 +1,93 @@
+name: Release (Knope)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  build-artifacts:
+    if: github.head_ref == 'release' && github.event.pull_request.merged == true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.target }}
+
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+      - uses: Swatinem/rust-cache@v2
+      - name: Install host target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Install musl-tools
+        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
+        run: sudo apt-get install -y musl-tools
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Set Archive Name (Non-Windows)
+        id: archive
+        run: echo "archive_name=knope-${{ matrix.target }}" >> $GITHUB_ENV
+
+      - name: Set Archive Name (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: echo "archive_name=knope-${{ matrix.target }}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Create Archive Folder
+        run: mkdir ${{ env.archive_name }}
+
+      - name: Copy Unix Artifact
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: cp target/${{ matrix.target }}/release/knope ${{ env.archive_name }}
+
+      - name: Copy Windows Artifact
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: cp target/${{ matrix.target }}/release/knope.exe ${{ env.archive_name }}
+
+      - name: Create Tar Archive
+        run: tar -czf ${{ env.archive_name }}.tgz ${{ env.archive_name }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ env.archive_name }}.tgz
+          if-no-files-found: error
+
+  release:
+    needs: [build-artifacts]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v3
+      - uses: knope-dev/action@v2.0.0
+        with:
+          version: 0.11.0
+      - run: knope release
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+
+      - run: gh workflow run "Deploy Book to GitHub Pages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+
+  publish-crate:
+    needs: [release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4
+      - uses: Swatinem/rust-cache@v2
+      - uses: katyo/publish-crates@v2
+        with:
+          registry-token: ${{ secrets.CARGO_TOKEN }}
