@@ -22,6 +22,9 @@ use crate::error::SessionError;
 #[cfg(feature = "token-program")]
 pub mod token_program;
 
+#[cfg(feature = "system-program")]
+pub mod system_program;
+
 /// The program ID of the session manager program
 pub const SESSION_MANAGER_ID: Pubkey =
     solana_program::pubkey!("SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC");

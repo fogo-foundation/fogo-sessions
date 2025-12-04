@@ -1998,6 +1998,7 @@ dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
  "solana-program",
+ "solana-program-runtime",
  "thiserror 1.0.69",
 ]
 
