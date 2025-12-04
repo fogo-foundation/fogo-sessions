@@ -55,10 +55,7 @@ const REGISTRY_SEED = 42;
 export const useFNSReverseRecordName = (owner: PublicKey) => {
   const rpc = useRpc();
 
-  const key = useMemo(
-    () => ["fns-reverse-record", owner.toBase58()],
-    [owner],
-  );
+  const key = useMemo(() => ["fns-reverse-record", owner.toBase58()], [owner]);
 
   const fetchName = useCallback(async () => {
     // Convert PublicKey to Address type

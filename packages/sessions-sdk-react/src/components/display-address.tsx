@@ -23,10 +23,11 @@ export const DisplayAddress = ({ address }: Props) => {
       return <span className={styles.skeleton} aria-label="Loading name" />;
     }
     case StateType.Loaded: {
-      if (fnsNameState.data) {
-        return <>{fnsNameState.data}.fogo</>;
-      }
-      return <TruncateKey keyValue={address} />;
+      return fnsNameState.data ? (
+        `${fnsNameState.data}.fogo`
+      ) : (
+        <TruncateKey keyValue={address} />
+      );
     }
     case StateType.NotLoaded:
     case StateType.Error: {
