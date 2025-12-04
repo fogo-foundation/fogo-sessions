@@ -1,3 +1,5 @@
+import '@fogo/sessions-sdk-react/theme';
+
 import { FogoSessionProvider, SessionButton } from "@fogo/sessions-sdk-react";
 import { NATIVE_MINT } from "@solana/spl-token";
 import type { ReactNode } from "react";

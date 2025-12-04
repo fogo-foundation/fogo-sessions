@@ -26,8 +26,8 @@
     "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
-    "eslint": "catalog:",
     "@fogo/scripts": "workspace:*",
+    "eslint": "catalog:",
     "jest": "catalog:",
     "prettier": "catalog:",
     "turbo": "catalog:"
