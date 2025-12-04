@@ -1,5 +1,11 @@
 # @fogo/sessions-idls
 
+## 0.0.11
+
+### Patch Changes
+
+- f28e02a: Mark sponsor as mutable when revoking or closing sessions to make sure it can receive rent
+
 ## 0.0.10
 
 ### Patch Changes
