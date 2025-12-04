@@ -23,7 +23,7 @@ import type { EstablishedSessionState } from "../session-state.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { FetchError as FetchErrorImpl } from "./fetch-error.js";
 import { TextField } from "./field.js";
-import styles from "./send-token-page.module.css";
+import styles from "./send-token-page.module.scss";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { TruncateKey } from "./truncate-key.js";

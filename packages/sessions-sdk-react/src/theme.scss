@@ -541,7 +541,9 @@ $shadow: (
     all: revert;
   }
 
-  @include meta.load-css("pkg:modern-normalize");
+  & {
+    @import "modern-normalize/modern-normalize.css";
+  }
 
   &#{&} {
     font-family: "Funnel Display", sans-serif;

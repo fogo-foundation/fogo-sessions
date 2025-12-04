@@ -8,7 +8,7 @@ import { Button as UnstyledButton, Toolbar } from "react-aria-components";
 
 import type { EstablishedSessionState } from "../session-state.js";
 import { TokenList } from "./token-list.js";
-import styles from "./wallet-page.module.css";
+import styles from "./wallet-page.module.scss";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {

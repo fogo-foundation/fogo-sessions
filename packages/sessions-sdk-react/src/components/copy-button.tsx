@@ -5,7 +5,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { useState, useCallback } from "react";
 import { Button } from "react-aria-components";
 
-import styles from "./copy-button.module.css";
+import styles from "./copy-button.module.scss";
 
 type Variant = "inline" | "expanded";
 

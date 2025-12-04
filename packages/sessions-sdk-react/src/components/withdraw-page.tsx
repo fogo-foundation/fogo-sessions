@@ -18,7 +18,7 @@ import { FetchError } from "./fetch-error.js";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
-import styles from "./withdraw-page.module.css";
+import styles from "./withdraw-page.module.scss";
 import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";

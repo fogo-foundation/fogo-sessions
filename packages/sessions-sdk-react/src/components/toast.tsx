@@ -10,7 +10,7 @@ import {
   UNSTABLE_ToastQueue as ToastQueue,
 } from "react-aria-components";
 
-import styles from "./toast.module.css";
+import styles from "./toast.module.scss";
 
 const ONE_SECOND_IN_MS = 1000;
 const DEFAULT_TOAST_TIMEOUT = 5 * ONE_SECOND_IN_MS;

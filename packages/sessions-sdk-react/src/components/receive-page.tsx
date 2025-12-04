@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 
 import type { EstablishedSessionState } from "../session-state.js";
 import { CopyButton } from "./copy-button.js";
-import styles from "./receive-page.module.css";
+import styles from "./receive-page.module.scss";
 
 type Props = {
   onPressDone: () => void;

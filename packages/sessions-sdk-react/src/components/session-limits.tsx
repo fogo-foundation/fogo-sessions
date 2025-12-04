@@ -21,7 +21,7 @@ import {
 import { stringToAmount, amountToString } from "../amount-to-string.js";
 import type { WalletConnectedSessionState } from "../session-state.js";
 import { TextField } from "./field.js";
-import styles from "./session-limits.module.css";
+import styles from "./session-limits.module.scss";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { TokenAccountData } from "../hooks/use-token-account-data.js";

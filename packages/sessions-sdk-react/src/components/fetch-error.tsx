@@ -4,7 +4,7 @@ import clsx from "clsx";
 import type { ComponentProps, ReactNode } from "react";
 
 import { errorToString } from "../error-to-string.js";
-import styles from "./fetch-error.module.css";
+import styles from "./fetch-error.module.scss";
 
 type Props = {
   headline: ReactNode;

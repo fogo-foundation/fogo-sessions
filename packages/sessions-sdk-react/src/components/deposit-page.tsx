@@ -13,7 +13,7 @@ import type { KeyedMutator } from "swr";
 import { stringToAmount } from "../amount-to-string.js";
 import { errorToString } from "../error-to-string.js";
 import type { EstablishedSessionState } from "../session-state.js";
-import styles from "./deposit-page.module.css";
+import styles from "./deposit-page.module.scss";
 import { ExplorerLink, Chain } from "./explorer-link.js";
 import { FetchError } from "./fetch-error.js";
 import { useToast } from "./toast.js";

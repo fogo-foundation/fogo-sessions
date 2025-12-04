@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { ComponentProps } from "react";
 
-import styles from "./disclaimer.module.css";
+import styles from "./disclaimer.module.scss";
 
 export const Disclaimer = ({ className, ...props }: ComponentProps<"div">) => (
   <div className={clsx(className, styles.disclaimer)} {...props}>

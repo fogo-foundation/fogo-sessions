@@ -8,34 +8,19 @@
   },
   "exports": {
     "./Button": {
-      "require": {
-        "types": "./dist/cjs/Button/index.d.ts",
-        "default": "./dist/cjs/Button/index.cjs"
-      },
-      "import": {
-        "types": "./dist/esm/Button/index.d.ts",
-        "default": "./dist/esm/Button/index.mjs"
-      }
+      "types": "./dist/Button/index.d.ts",
+      "default": "./dist/Button/index.mjs"
     },
     "./Link": {
-      "require": {
-        "types": "./dist/cjs/Link/index.d.ts",
-        "default": "./dist/cjs/Link/index.cjs"
-      },
-      "import": {
-        "types": "./dist/esm/Link/index.d.ts",
-        "default": "./dist/esm/Link/index.mjs"
-      }
+      "types": "./dist/Link/index.d.ts",
+      "default": "./dist/Link/index.mjs"
     },
     "./package.json": "./package.json",
     "./theme": "./dist/theme.scss"
   },
   "scripts": {
-    "build": "ts-duality",
-    "build:scss": "copyfiles -u 1 \"src/**/*.scss\" ./dist",
+    "build": "ts-duality --clean --copyOtherFiles --noCjs",
     "build:storybook": "storybook build",
-    "build:svg": "copyfiles -u 1 \"src/**/*.svg\" ./dist",
-    "clean": "rm -rf ./dist",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
@@ -88,7 +73,8 @@
     "storybook": "catalog:",
     "style-loader": "catalog:",
     "stylelint": "catalog:",
-    "stylelint-config-standard-scss": "catalog:"
+    "stylelint-config-standard-scss": "catalog:",
+    "typescript": "catalog:"
   },
   "ts-duality": {
     "extraExports": {

@@ -15,7 +15,7 @@ import type { SolanaWallet } from "../solana-wallet.js";
 import { Disclaimer } from "./disclaimer.js";
 import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
-import styles from "./sign-in-modal.module.css";
+import styles from "./sign-in-modal.module.scss";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
 import { isCancelable, StateType } from "../session-state.js";
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@fogo/component-library/Button";
+import { Link } from "@fogo/component-library/Link";
 import { Network } from "@fogo/sessions-sdk";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { PublicKey } from "@solana/web3.js";
@@ -18,12 +19,11 @@ import { CopyButton } from "./copy-button.js";
 import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import { GetTokensPage } from "./get-tokens-page.js";
-import { Link } from "./link.js";
 import { ReceivePage } from "./receive-page.js";
 import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
 import { SessionLimitsTab } from "./session-limits-tab.js";
-import styles from "./session-panel.module.css";
+import styles from "./session-panel.module.scss";
 import { useSessionContext } from "../hooks/use-session.js";
 import { isEstablished } from "../session-state.js";
 import { TruncateKey } from "./truncate-key.js";
