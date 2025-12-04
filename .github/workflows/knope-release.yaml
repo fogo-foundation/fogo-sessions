@@ -54,7 +54,7 @@ jobs:
       - name: Create GitHub Releases
         run: knope release
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          GITHUB_TOKEN: ${{ secrets.FOGO_SESSIONS_KNOPE_RELEASE_TOKEN }}
 
       - name: Publish npm packages
         run: pnpm turbo publish
