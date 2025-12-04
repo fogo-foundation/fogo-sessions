@@ -47,7 +47,7 @@ fn registrable_domain(host: &str) -> Result<String, anyhow::Error> {
     }
 }
 
-async fn insert_user(host: &str) -> Result<Uuid, anyhow::Error> {
+async fn insert_or_return_user(host: &str) -> Result<Uuid, anyhow::Error> {
     let username = registrable_domain(host)?;
 
     let inserted = sqlx::query!(
@@ -77,14 +77,14 @@ async fn insert_user(host: &str) -> Result<Uuid, anyhow::Error> {
     Ok(existing.id)
 }
 
-async fn insert_app(user_id: &Uuid, name: &str) -> Result<Uuid, sqlx::Error> {
+async fn insert_or_return_app(user_id: &Uuid, name: &str) -> Result<Uuid, sqlx::Error> {
     let new_id = Uuid::new_v4();
 
     let inserted = sqlx::query!(
         r#"
         INSERT INTO app (id, user_id, name)
         VALUES ($1, $2, $3)
-        ON CONFLICT (user_id, name)
+        ON CONFLICT (name)
         DO NOTHING
         RETURNING id, name
         "#,
@@ -125,7 +125,7 @@ async fn insert_or_update_domain_config(
           enable_preflight_simulation
         )
         VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (app_id, domain)
+        ON CONFLICT (domain)
         DO UPDATE SET
           enable_session_management   = EXCLUDED.enable_session_management,
           enable_preflight_simulation = EXCLUDED.enable_preflight_simulation
@@ -139,7 +139,6 @@ async fn insert_or_update_domain_config(
     )
     .fetch_one(pool())
     .await?;
-    println!("Checking domain config: {:?}", res.domain);
     Ok(res.id)
 }
 
@@ -213,13 +212,14 @@ pub async fn sync_from_config(config: &Config) -> Result<(), anyhow::Error> {
             Err(_) => domain.domain.clone(),
         };
 
-        let user = insert_user(&host).await?;
-        let app = insert_app(&user, &host).await?;
+        let user = insert_or_return_user(&host).await?;
+        let app = insert_or_return_app(&user, &host).await?;
         let domain_config = insert_or_update_domain_config(&app, domain).await?;
         for variation in domain.tx_variations.values() {
             insert_or_update_variation(&domain_config, variation).await?;
         }
     }
+    println!("Done.");
 
     Ok(())
 }
@@ -232,7 +232,7 @@ pub fn load_file_config(config_path: &str) -> Result<Config> {
     Ok(config)
 }
 
-async fn run_seed(db_url: &str, config_path: &str) -> anyhow::Result<()> {
+async fn run_sync_config(db_url: &str, config_path: &str) -> anyhow::Result<()> {
     fogo_paymaster::db::pool::init_db_connection(db_url).await?;
     let config = load_file_config(config_path)?;
     sync_from_config(&config).await?;
@@ -244,6 +244,6 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv()?;
     let opts = Cli::parse();
 
-    run_seed(&opts.db_url, &opts.config).await?;
+    run_sync_config(&opts.db_url, &opts.config).await?;
     Ok(())
 }

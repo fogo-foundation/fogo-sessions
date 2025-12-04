@@ -13,9 +13,7 @@ CREATE TABLE app (
   name text NOT NULL UNIQUE,
   user_id uuid NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-
-  CONSTRAINT app_user_name_unique UNIQUE (user_id, name)
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE domain_config (
@@ -25,9 +23,7 @@ CREATE TABLE domain_config (
   enable_session_management boolean NOT NULL DEFAULT false,
   enable_preflight_simulation boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-
-  CONSTRAINT domain_config_app_domain_unique UNIQUE (app_id, domain)
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 
