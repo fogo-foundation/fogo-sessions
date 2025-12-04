@@ -56,6 +56,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Fetch tags created by Knope
+        run: git fetch --tags
+
       - name: Publish npm packages
         run: pnpm turbo publish
         env:
