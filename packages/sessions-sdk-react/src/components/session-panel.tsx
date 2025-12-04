@@ -52,7 +52,7 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
     <div className={clsx(styles.sessionPanel, className)} {...props}>
       <div className={styles.header}>
         <Heading slot="title" className={styles.title}>
-          Your Wallet
+          Your <FogoWordmark /> Wallet
         </Heading>
         {isEstablished(sessionState) && (
           <CopyButton text={sessionState.walletPublicKey.toBase58()}>
