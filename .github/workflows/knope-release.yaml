@@ -3,7 +3,7 @@ name: Release Packages (Knope)
 on:
   pull_request:
     types: [closed]
-    branches: [main, ci/unified-changesets]  # Added test branch
+    branches: [main]
 
 permissions:
   contents: write
@@ -13,7 +13,7 @@ jobs:
   publish:
     name: Publish Packages
     # Only run if PR was merged and came from release branch
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'release'
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'release-knope'
     runs-on: ubuntu-latest
     steps:
       - name: Check out codebase

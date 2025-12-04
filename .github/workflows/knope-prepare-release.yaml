@@ -1,6 +1,6 @@
 on:
   push:
-    branches: [main, ci/unified-changesets]  # Added test branch
+    branches: [main]
 name: Create Release PR (Knope)
 jobs:
   prepare-release:
