@@ -5,6 +5,7 @@ description = "Fogo Sessions chain-id program"
 license = { workspace = true }
 repository = "https://github.com/fogo-foundation/fogo-sessions"
 edition = { workspace = true }
+publish = true
 
 [lib]
 crate-type = ["cdylib", "lib"]

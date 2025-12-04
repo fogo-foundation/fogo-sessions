@@ -1,5 +1,6 @@
 {
   "name": "sessions-sdk-test-package",
+  "private": true,
   "type": "module",
   "dependencies": {
     "@fogo/sessions-sdk": "workspace:*"

@@ -5,6 +5,7 @@ edition = { workspace = true }
 license = { workspace = true }
 repository = "https://github.com/fogo-foundation/fogo-sessions"
 version = "0.1.0"
+publish = true
 
 [lib]
 crate-type = ["rlib"]

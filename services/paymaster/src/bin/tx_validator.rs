@@ -358,7 +358,7 @@ async fn fetch_transaction_from_rpc(
     let transaction = rpc_client
         .get_transaction_with_config(&tx_hash, config)
         .await
-        .with_context(|| format!("Failed to fetch transaction from RPC: {tx_hash}"))?;
+        .with_context(|| format!("Failed to fetch transaction {tx_hash} from RPC"))?;
 
     let versioned_transaction = transaction
         .transaction
