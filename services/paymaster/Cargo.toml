@@ -1,6 +1,6 @@
 [package]
 name = "fogo-paymaster"
-version = "0.5.3"
+version = "0.5.2"
 edition = { workspace = true }
 license = { workspace = true }
 description = "Fogo paymaster service and transaction validator CLI"
