@@ -88,7 +88,7 @@ base = "main"
 template = "chore: prepare release"
 
 [workflows.steps.body]
-template = "This PR was created by Knope. Merging it will create a new release\n\n$changelog"
+template = "This PR was created by Knope. Merging it will create a new release\n\n"
 
 ### Release
 [[workflows]]
