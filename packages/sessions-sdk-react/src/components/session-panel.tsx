@@ -24,9 +24,9 @@ import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
 import { SessionLimitsTab } from "./session-limits-tab.js";
 import styles from "./session-panel.module.css";
+import { TruncateKey } from "./truncate-key.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { isEstablished } from "../session-state.js";
-import { TruncateKey } from "./truncate-key.js";
 import { WalletPage } from "./wallet-page.js";
 import { WithdrawPage } from "./withdraw-page.js";
 
