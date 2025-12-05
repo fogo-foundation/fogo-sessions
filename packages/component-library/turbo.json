@@ -6,7 +6,6 @@
       "dependsOn": [
         "//#install:modules",
         "clean",
-        "^build",
         "build:declarations",
         "build:scss",
         "build:svg"
