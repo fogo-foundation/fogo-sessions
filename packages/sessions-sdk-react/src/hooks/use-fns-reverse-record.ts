@@ -3,7 +3,7 @@ import type { PublicKey } from "@solana/web3.js";
 import { useCallback, useMemo } from "react";
 
 import { useData } from "./use-data.js";
-import { useRpc } from "./use-session.js";
+import { useRpc, useSessionContext } from "./use-session.js";
 import { fetchMaybeNameRecord } from "../fns/accounts/name-record.js";
 import { fetchMaybeReverseRecord } from "../fns/accounts/reverse-record.js";
 import { findRegistryPda } from "../fns/pdas/registry.js";
@@ -53,9 +53,13 @@ const REGISTRY_SEED = 42;
  * ```
  */
 export const useFNSReverseRecordName = (owner: PublicKey) => {
+  const { network } = useSessionContext();
   const rpc = useRpc();
 
-  const key = useMemo(() => ["fns-reverse-record", owner.toBase58()], [owner]);
+  const key = useMemo(
+    () => ["fns-reverse-record", network, owner.toBase58()],
+    [owner],
+  );
 
   const fetchName = useCallback(async () => {
     // Convert PublicKey to Address type
