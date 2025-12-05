@@ -39,7 +39,7 @@
       "dependsOn": ["//#build:replace-packages-with-built-packages"],
       "cache": false
     },
-    "//#run:add-program-id-to-domain-registry": {
+    "//#run:domain-registry": {
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },
