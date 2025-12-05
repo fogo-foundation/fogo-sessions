@@ -14,6 +14,7 @@ import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
 import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";
+import { NotionalAmount } from "./notional-amount.js";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
@@ -24,6 +25,7 @@ import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import { USDC } from "../wormhole-routes.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { StateType, useData } from "../hooks/use-data.js";
+import { usePrice } from "../hooks/use-price.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -31,20 +33,29 @@ type Props = {
   onSendComplete: () => void;
 };
 
-export const WithdrawPage = ({ onPressBack, ...props }: Props) => (
-  <div className={styles.withdrawPage}>
-    <Button
-      onPress={onPressBack}
-      variant="outline"
-      className={styles.backButton ?? ""}
-    >
-      Back
-    </Button>
-    <WithdrawForm {...props} />
-  </div>
-);
+export const WithdrawPage = ({ onPressBack, ...props }: Props) => {
+  const { network } = useSessionContext();
+  const priceState = usePrice(USDC.chains[network].fogo.mint.toBase58());
+  const price =
+    priceState.type === StateType.Loaded ? priceState.data : undefined;
 
-const WithdrawForm = (props: Omit<Props, "onPressBack">) => {
+  return (
+    <div className={styles.withdrawPage}>
+      <Button
+        onPress={onPressBack}
+        variant="outline"
+        className={styles.backButton ?? ""}
+      >
+        Back
+      </Button>
+      <WithdrawForm {...props} price={price} />
+    </div>
+  );
+};
+
+const WithdrawForm = (
+  props: Omit<Props, "onPressBack"> & { price: number | undefined },
+) => {
   const feeConfig = useFeeConfig();
   switch (feeConfig.type) {
     case StateType.Error: {
@@ -81,6 +92,7 @@ const useFeeConfig = () => {
 const WithdrawFormWithFeeConfig = (
   props: Omit<Props, "onPressBack"> & {
     feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
+    price: number | undefined;
   },
 ) => {
   const { network } = useSessionContext();
@@ -131,8 +143,10 @@ const LoadedWithdrawForm = ({
   sessionState,
   feeConfig,
   amountAvailable,
+  price,
 }: Omit<Props, "onPressBack"> & {
   amountAvailable: bigint;
+  price: number | undefined;
   feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
 }) => {
   const { getSessionContext, network } = useSessionContext();
@@ -200,14 +214,22 @@ const LoadedWithdrawForm = ({
     ],
   );
 
+  const maxWithdrawAmount = feeConfig.mint.equals(
+    USDC.chains[network].fogo.mint,
+  )
+    ? amountAvailable - feeConfig.fee
+    : amountAvailable;
+
   return (
     <WithdrawFormImpl
       isSubmitting={isSubmitting}
       amountAvailable={amountAvailable}
+      price={price}
       feeConfig={feeConfig}
       onSubmit={onSubmit}
       amount={amount}
       onChangeAmount={setAmount}
+      maxWithdrawAmount={maxWithdrawAmount}
     />
   );
 };
@@ -216,17 +238,17 @@ const WithdrawFormImpl = (
   props:
     | { isLoading: true }
     | {
-        isLoading?: false | undefined;
+        isLoading?: false;
         isSubmitting: boolean;
         amountAvailable: bigint;
+        price: number | undefined;
         feeConfig: Awaited<ReturnType<typeof getBridgeOutFee>>;
         onSubmit: FormEventHandler;
         amount: string;
         onChangeAmount: (newValue: string) => void;
+        maxWithdrawAmount: bigint;
       },
 ) => {
-  const { network } = useSessionContext();
-  const tokenMint = USDC.chains[network].fogo.mint;
   return (
     <Form
       className={styles.withdrawForm ?? ""}
@@ -269,12 +291,7 @@ const WithdrawFormImpl = (
               : {
                   onPress: () => {
                     props.onChangeAmount(
-                      amountToString(
-                        props.feeConfig.mint.equals(tokenMint)
-                          ? props.amountAvailable - props.feeConfig.fee
-                          : props.amountAvailable,
-                        USDC.decimals,
-                      ),
+                      amountToString(props.maxWithdrawAmount, USDC.decimals),
                     );
                   },
                 })}
@@ -285,15 +302,21 @@ const WithdrawFormImpl = (
         {...(props.isLoading || props.isSubmitting
           ? { isPending: true }
           : {
-              max: props.feeConfig.mint.equals(tokenMint)
-                ? props.amountAvailable - props.feeConfig.fee
-                : props.amountAvailable,
+              max: props.maxWithdrawAmount,
               onChange: props.onChangeAmount,
             })}
         {...(!props.isLoading && {
           value: props.amount,
         })}
       />
+      {!props.isLoading && props.price !== undefined && (
+        <NotionalAmount
+          amount={props.amount}
+          decimals={USDC.decimals}
+          price={props.price}
+          className={styles.notionalAmount}
+        />
+      )}
       <Button
         type="submit"
         variant="secondary"
