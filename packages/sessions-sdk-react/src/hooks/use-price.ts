@@ -16,7 +16,7 @@ export const getPrice = async (mint: string) => {
   const response = await fetch(priceUrl);
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch price: ${response.status} ${response.statusText}`,
+      `Failed to fetch price: ${response.status.toString()} ${response.statusText}`,
     );
   }
 
