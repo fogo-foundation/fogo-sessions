@@ -9,12 +9,18 @@ export const usePrice = (mint: string) => {
   return useData(["price", mint], getPriceData, { refreshInterval: 2000 });
 };
 
-// TODO: uncomment when endpoint is live
-export const getPrice = async (_mint: string) => {
+export const getPrice = async (mint: string) => {
   const priceUrl = new URL("https://api.fogo.io/api/token-price");
+  priceUrl.searchParams.append("mint", mint);
+  
   const response = await fetch(priceUrl);
-  const priceMap = priceSchema.parse(await response.json());
-  return priceMap[_mint];
+  if (!response.ok) {
+    throw new Error(`Failed to fetch price: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const price = priceSchema.parse(data);
+  return price;
 };
 
-const priceSchema = z.record(z.string(), z.bigint());
+const priceSchema = z.number();
