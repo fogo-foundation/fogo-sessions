@@ -7,7 +7,6 @@
         "//#install:modules",
         "clean",
         "build:scss",
-        "^build",
         "build:declarations",
         "build:svg"
       ]

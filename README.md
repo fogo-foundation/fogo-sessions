@@ -67,12 +67,11 @@ Please refer to the documentation, below 👇
 1. Ensure Docker desktop is running
 2. Open this workspace in VSCode. It should automatically detect the `devcontainer` configuration and prompt you to re-open the repo as a `devcontainer`. If it does not, open the VSCode command palette and type `dev containers: rebuild and reopen` and select the first option.
 3. Wait until your `devcontainer` is setup (you will see a terminal at the bottom of the VSCode window say **press any key to close the terminal**, see image below)
-    - ![press any key](./docs/press-any-key-to-close-the-terminal.png)
+   - ![press any key](./docs/press-any-key-to-close-the-terminal.png)
 4. All of the correct toolchain versions needed to build and run things in this repo are installed and you are ready to go! Any edits you make while in the `devcontainer` will also be written to disk outside of the `devcontainer`, allowing you to continue using `git` for operations outside of the container.
 5. (Optional) If you prefer to run CLI commands in a terminal outside of the VSCode IDE, you can do so by grabbing the container ID from docker via `docker ps`, then running the following:
-    - `docker exec -it <CONTAINER_ID> bash`
-    - `cd /workspaces/fogo-sessions` to enter the folder where the project is hosted in the `devcontainer`
-
+   - `docker exec -it <CONTAINER_ID> bash`
+   - `cd /workspaces/fogo-sessions` to enter the folder where the project is hosted in the `devcontainer`
 
 ### Demo App
 

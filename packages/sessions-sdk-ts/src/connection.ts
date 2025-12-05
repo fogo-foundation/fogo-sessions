@@ -49,8 +49,8 @@ const DEFAULT_RPC = {
 };
 
 const DEFAULT_PAYMASTER = {
-  [Network.Testnet]: "https://paymaster.fogo.io",
-  [Network.Mainnet]: "https://paymaster.dourolabs.app",
+  [Network.Testnet]: "https://testnet.fogo-paymaster.xyz",
+  [Network.Mainnet]: "https://mainnet.fogo-paymaster.xyz",
 };
 
 export enum TransactionResultType {
