@@ -20,8 +20,7 @@ export const getPrice = async (mint: string) => {
     );
   }
 
-  const data = await response.json();
-  const price = priceSchema.parse(data);
+  const price = priceSchema.parse(await response.json());
   return price;
 };
 
