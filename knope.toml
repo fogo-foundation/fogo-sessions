@@ -10,23 +10,23 @@ repo = "fogo-sessions"
 # ============================================================================
 
 [packages.chain-id]
-versioned_files = ["programs/chain-id/Cargo.toml"]
+versioned_files = ["programs/chain-id/Cargo.toml", "Cargo.lock"]
 changelog = "programs/chain-id/CHANGELOG.md"
 
 [packages.intent-transfer]
-versioned_files = ["programs/intent-transfer/Cargo.toml"]
+versioned_files = ["programs/intent-transfer/Cargo.toml", "Cargo.lock"]
 changelog = "programs/intent-transfer/CHANGELOG.md"
 
 [packages.fogo-sessions-sdk]
-versioned_files = ["packages/sessions-sdk-rs/Cargo.toml"]
+versioned_files = ["packages/sessions-sdk-rs/Cargo.toml", "Cargo.lock"]
 changelog = "packages/sessions-sdk-rs/CHANGELOG.md"
 
 [packages.solana-intents]
-versioned_files = ["packages/solana-intents/Cargo.toml"]
+versioned_files = ["packages/solana-intents/Cargo.toml", "Cargo.lock"]
 changelog = "packages/solana-intents/CHANGELOG.md"
 
 [packages.fogo-paymaster]
-versioned_files = ["services/paymaster/Cargo.toml"]
+versioned_files = ["services/paymaster/Cargo.toml", "Cargo.lock"]
 changelog = "services/paymaster/CHANGELOG.md"
 
 # ============================================================================
