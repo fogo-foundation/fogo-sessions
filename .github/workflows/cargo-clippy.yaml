@@ -16,4 +16,6 @@ jobs:
           toolchain: nightly-2025-06-12
           components: clippy
       - name: Clippy
+        env:
+          SQLX_OFFLINE: true
         run: cargo +nightly-2025-06-12 clippy --tests -- -D warnings

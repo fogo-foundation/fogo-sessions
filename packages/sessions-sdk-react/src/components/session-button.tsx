@@ -12,7 +12,7 @@ import {
 
 import { deserializePublicKeyMap } from "../deserialize-public-key.js";
 import { FogoLogo } from "./fogo-logo.js";
-import styles from "./session-button.module.css";
+import styles from "./session-button.module.scss";
 import { SessionPanel } from "./session-panel.js";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
 import {

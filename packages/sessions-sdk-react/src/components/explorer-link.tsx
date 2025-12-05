@@ -1,8 +1,7 @@
+import { Link } from "@fogo/component-library/Link";
 import { Network } from "@fogo/sessions-sdk";
 import type { ComponentProps } from "react";
 import type { Link as UnstyledLink } from "react-aria-components";
-
-import { Link } from "./link.js";
 
 type Props = ComponentProps<typeof UnstyledLink> & {
   network: Network;
@@ -32,7 +31,7 @@ const mkLink = (network: Network, chain: Chain, txHash: string) => {
     case Network.Mainnet: {
       return chain === Chain.Solana
         ? `https://solscan.io/tx/${txHash}`
-        : `https://explorer.fogo.io/tx/${txHash}?cluster=mainnet-beta`;
+        : `https://fogoscan.com/tx/${txHash}?cluster=mainnet`;
     }
     case Network.Testnet: {
       return chain === Chain.Solana

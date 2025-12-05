@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@fogo/component-library/Button";
+import { Link } from "@fogo/component-library/Link";
 import { Network } from "@fogo/sessions-sdk";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { PublicKey } from "@solana/web3.js";
@@ -13,7 +15,6 @@ import type {
   EstablishedSessionState,
   SessionState,
 } from "../session-state.js";
-import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
 import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
@@ -22,7 +23,7 @@ import { ReceivePage } from "./receive-page.js";
 import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
 import { SessionLimitsTab } from "./session-limits-tab.js";
-import styles from "./session-panel.module.css";
+import styles from "./session-panel.module.scss";
 import { useSessionContext } from "../hooks/use-session.js";
 import { isEstablished } from "../session-state.js";
 import { TruncateKey } from "./truncate-key.js";
@@ -64,8 +65,41 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
           </Button>
         )}
       </div>
-      {whitelistedTokens.length === 0 ? (
-        <div className={styles.tabPanel}>
+      <Tabs className={styles.tabs ?? ""}>
+        <TabList
+          aria-label="Wallet"
+          className={styles.tabList ?? ""}
+          items={[
+            { id: "tokens", name: "Tokens" },
+            { id: "activity", name: "Activity" },
+            ...(whitelistedTokens.length === 0
+              ? []
+              : [{ id: "session-limits", name: "Session" }]),
+          ]}
+        >
+          {({ id, name }) => (
+            <Tab className={styles.tab ?? ""} id={id}>
+              {({ isSelected }) => (
+                <>
+                  <span>{name}</span>
+                  {isSelected && (
+                    <motion.span
+                      layoutId="underline"
+                      className={styles.underline}
+                      transition={{
+                        type: "spring",
+                        bounce: 0.6,
+                        duration: 0.6,
+                      }}
+                      style={{ originY: "top" }}
+                    />
+                  )}
+                </>
+              )}
+            </Tab>
+          )}
+        </TabList>
+        <TabPanel className={styles.tabPanel ?? ""} id="tokens">
           {isEstablished(sessionState) && (
             <Tokens
               sessionState={sessionState}
@@ -73,48 +107,13 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
               setCurrentScreen={setCurrentScreen}
             />
           )}
-        </div>
-      ) : (
-        <Tabs className={styles.tabs ?? ""}>
-          <TabList
-            aria-label="Wallet"
-            className={styles.tabList ?? ""}
-            items={[
-              { id: "tokens", name: "Tokens" },
-              { id: "session-limits", name: "Session" },
-            ]}
-          >
-            {({ id, name }) => (
-              <Tab className={styles.tab ?? ""} id={id}>
-                {({ isSelected }) => (
-                  <>
-                    <span>{name}</span>
-                    {isSelected && (
-                      <motion.span
-                        layoutId="underline"
-                        className={styles.underline}
-                        transition={{
-                          type: "spring",
-                          bounce: 0.6,
-                          duration: 0.6,
-                        }}
-                        style={{ originY: "top" }}
-                      />
-                    )}
-                  </>
-                )}
-              </Tab>
-            )}
-          </TabList>
-          <TabPanel className={styles.tabPanel ?? ""} id="tokens">
-            {isEstablished(sessionState) && (
-              <Tokens
-                sessionState={sessionState}
-                currentScreen={currentScreen}
-                setCurrentScreen={setCurrentScreen}
-              />
-            )}
-          </TabPanel>
+        </TabPanel>
+        <TabPanel className={styles.tabPanel ?? ""} id="activity">
+          {isEstablished(sessionState) && (
+            <Activity sessionState={sessionState} />
+          )}
+        </TabPanel>
+        {whitelistedTokens.length > 0 && (
           <TabPanel
             className={styles.tabPanel ?? ""}
             id="session-limits"
@@ -124,8 +123,8 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
               <SessionLimitsTab sessionState={sessionState} />
             )}
           </TabPanel>
-        </Tabs>
-      )}
+        )}
+      </Tabs>
       <div className={styles.footer}>
         <FogoWordmark className={styles.fogoWordmark} />
         <LogoutButton sessionState={sessionState} onLogout={onClose} />
@@ -133,6 +132,28 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
     </div>
   );
 };
+
+const Activity = ({
+  sessionState,
+}: {
+  sessionState: EstablishedSessionState;
+}) => (
+  <div className={styles.activity}>
+    <p className={styles.activityMessage}>
+      Transaction history is coming to Fogo Sessions.
+    </p>
+    <p className={styles.activityMessage}>
+      In the meantime, you can see your transaction history on{" "}
+      <Link
+        target="_blank"
+        href={`https://fogoscan.com/account/${sessionState.walletPublicKey.toBase58()}#transfers`}
+      >
+        the Fogo explorer
+      </Link>
+      .
+    </p>
+  </div>
+);
 
 const LogoutButton = ({
   sessionState,

@@ -1,6 +1,9 @@
 [package]
 name = "intent-transfer"
 version = "0.1.0"
+description = "Fogo Sessions intent-transfer program"
+license = { workspace = true }
+repository = "https://github.com/fogo-foundation/fogo-sessions"
 edition = { workspace = true }
 
 [lib]
@@ -18,11 +21,11 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 [dependencies]
 anchor-lang = { workspace = true, features = ["init-if-needed"] }
 anchor-spl = { workspace = true }
-chain-id = { path = "../chain-id", features = ["no-entrypoint"] }
+chain-id = { workspace = true, features = ["no-entrypoint"] }
 hex = {workspace = true}
 mpl-token-metadata = { workspace = true }
 nom = { workspace = true }
-solana-intents = { path = "../../packages/solana-intents" }
+solana-intents = { workspace = true }
 
 [dev-dependencies]
 indoc = "2.0.6"

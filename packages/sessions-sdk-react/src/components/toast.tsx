@@ -1,3 +1,4 @@
+import { Button } from "@fogo/component-library/Button";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import type { ReactNode } from "react";
 import { createContext, use, useCallback, useMemo } from "react";
@@ -9,8 +10,7 @@ import {
   UNSTABLE_ToastQueue as ToastQueue,
 } from "react-aria-components";
 
-import { Button } from "./button.js";
-import styles from "./toast.module.css";
+import styles from "./toast.module.scss";
 
 const ONE_SECOND_IN_MS = 1000;
 const DEFAULT_TOAST_TIMEOUT = 5 * ONE_SECOND_IN_MS;

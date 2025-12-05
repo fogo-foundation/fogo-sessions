@@ -7,18 +7,20 @@
     "node": ">=22.14.0"
   },
   "exports": {
+    "./Button": {
+      "types": "./dist/Button/index.d.ts",
+      "default": "./dist/Button/index.mjs"
+    },
     "./Link": {
+      "types": "./dist/Link/index.d.ts",
       "default": "./dist/Link/index.mjs"
     },
     "./package.json": "./package.json",
     "./theme": "./dist/theme.scss"
   },
   "scripts": {
-    "build": "ts-duality --noCjs",
-    "build:scss": "copyfiles -u 1 \"src/**/*.scss\" ./dist",
+    "build": "ts-duality --clean --copyOtherFiles --noCjs",
     "build:storybook": "storybook build",
-    "build:svg": "copyfiles -u 1 \"src/**/*.svg\" ./dist",
-    "clean": "rm -rf ./dist",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
@@ -42,8 +44,9 @@
     "swr": "catalog:"
   },
   "devDependencies": {
-    "@better-builds/ts-duality": "catalog:",
+    "@babel/core": "^7.28.5",
     "@babel/preset-typescript": "catalog:",
+    "@better-builds/ts-duality": "catalog:",
     "@cprussin/eslint-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
@@ -70,7 +73,8 @@
     "storybook": "catalog:",
     "style-loader": "catalog:",
     "stylelint": "catalog:",
-    "stylelint-config-standard-scss": "catalog:"
+    "stylelint-config-standard-scss": "catalog:",
+    "typescript": "catalog:"
   },
   "ts-duality": {
     "extraExports": {

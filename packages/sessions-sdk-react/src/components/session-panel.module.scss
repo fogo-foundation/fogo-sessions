@@ -92,6 +92,27 @@
 
     .tabPanel {
       overflow: hidden;
+
+      .activity {
+        padding: theme.spacing(14) theme.spacing(8);
+        text-align: center;
+        display: flex;
+        flex-flow: column nowrap;
+        gap: theme.spacing(4);
+
+        .activityHeader {
+          @include theme.text("xl", "medium");
+
+          color: theme.color("heading");
+          margin-bottom: theme.spacing(8);
+        }
+
+        .activityMessage {
+          @include theme.text("base");
+
+          color: theme.color("paragraph");
+        }
+      }
     }
 
     .footer {

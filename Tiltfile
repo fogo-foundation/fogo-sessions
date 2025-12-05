@@ -21,7 +21,6 @@ local_resource(
         $(solana-keygen pubkey ./keypairs/faucet.json) \
         --mint $(solana-keygen pubkey ./keypairs/faucet.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
-        --bpf-program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL ./programs/spl_associated_token_account.so \
         --account-dir ./accounts \
         --reset",
     serve_dir="./tilt",
@@ -78,7 +77,7 @@ local_resource(
     "initialize-programs",
     """
     pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json localnet &&
-    pnpm turbo run:add-program-id-to-domain-registry -- http://localhost:3000 Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 -u l -k ./tilt/keypairs/faucet.json &&
+    pnpm turbo run:domain-registry -- add http://localhost:3000 Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 -u l -k ./tilt/keypairs/faucet.json &&
     pnpm turbo run:register-fee-config -- %s 100000 100000 -u l -k ./tilt/keypairs/faucet.json
     """ % USDC_MINT,
     resource_deps=["svm-localnet", "check-fee-mint-authority"],
@@ -97,7 +96,7 @@ local_resource(
 
 local_resource(
     "paymaster",
-    serve_cmd="cargo run --bin fogo-paymaster migrate --db-url postgres://paymaster:paymaster@localhost:5432/paymaster && cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster --ntt-quoter 0x5241c9276698439fef2780dbab76fec90b633fbd --config-file ./tilt/configs/paymaster.toml --rpc-url-http http://localhost:8899 --rpc-url-ws ws://localhost:8900",
+    serve_cmd="cargo run --bin fogo-paymaster migrate --db-url postgres://paymaster:paymaster@localhost:5432/paymaster && cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster --config-file ./tilt/configs/paymaster.toml --rpc-url-http http://localhost:8899 --rpc-url-ws ws://localhost:8900",
     resource_deps=["svm-localnet"],
 )
 

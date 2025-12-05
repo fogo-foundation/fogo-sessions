@@ -12,8 +12,8 @@
   & > * {
     position: absolute;
     top: 0;
-    width: 100%;
-    flex-shrink: 0;
+    right: 0;
+    left: 0;
     padding: theme.spacing(6);
     display: grid;
     gap: theme.spacing(6);

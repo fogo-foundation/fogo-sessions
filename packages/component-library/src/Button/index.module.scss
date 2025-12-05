@@ -1,0 +1,125 @@
+@use "../theme";
+
+.button {
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: theme.spacing(0.5);
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color 50ms linear,
+    outline-color 50ms linear;
+
+  &[data-size="sm"] {
+    @include theme.text("xs", "medium");
+
+    border-radius: theme.border-radius();
+    height: theme.spacing(6);
+    padding-left: theme.spacing(2);
+    padding-right: theme.spacing(2);
+    gap: theme.spacing(1);
+  }
+
+  &[data-size="md"] {
+    @include theme.text("sm", "semibold");
+
+    border-radius: theme.border-radius("md");
+    height: theme.spacing(8);
+    padding-left: theme.spacing(3);
+    padding-right: theme.spacing(3);
+    gap: theme.spacing(1);
+  }
+
+  &[data-size="lg"] {
+    @include theme.text("base", "semibold");
+
+    border-radius: theme.border-radius("lg");
+    height: theme.spacing(10);
+    padding-left: theme.spacing(4);
+    padding-right: theme.spacing(4);
+    gap: theme.spacing(2);
+  }
+
+  @each $variant in ("primary", "secondary", "solid", "ghost", "outline") {
+    &[data-variant="#{$variant}"] {
+      background-color: theme.color("button", $variant, "background", "normal");
+      color: theme.color("button", $variant, "foreground");
+
+      &[data-hovered] {
+        background-color: theme.color(
+          "button",
+          $variant,
+          "background",
+          "hover"
+        );
+      }
+
+      &[data-pressed] {
+        background-color: theme.color(
+          "button",
+          $variant,
+          "background",
+          "pressed"
+        );
+      }
+    }
+  }
+
+  &[data-variant="outline"] {
+    border: 1px solid theme.color("border");
+  }
+
+  &[data-focus-visible] {
+    outline-color: theme.color("accent");
+  }
+
+  &[data-pending],
+  &[data-disabled] {
+    border: none;
+    background-color: theme.color("button", "disabled", "background");
+    color: theme.color("button", "disabled", "foreground");
+  }
+
+  &[data-disabled] {
+    cursor: not-allowed;
+  }
+
+  &[data-pending] {
+    cursor: wait;
+
+    &::after {
+      content: "";
+      display: block;
+      width: theme.spacing(4);
+      height: theme.spacing(4);
+      border: 1px solid theme.color("spinner");
+      border-top-color: transparent;
+      border-radius: theme.border-radius("full");
+      animation: spin 1s linear infinite;
+      transition: opacity linear 100ms;
+      margin-left: theme.spacing(1);
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        20% {
+          transform: rotate(40deg);
+        }
+
+        80% {
+          transform: rotate(320deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    }
+  }
+}

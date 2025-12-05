@@ -9,7 +9,7 @@ import {
   Group,
 } from "react-aria-components";
 
-import styles from "./field.module.css";
+import styles from "./field.module.scss";
 
 export const TextField = ({
   label,

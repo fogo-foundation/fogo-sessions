@@ -12,7 +12,7 @@
     "fix:lint": "eslint --fix .",
     "install:modules": "[ $CI ] && true || pnpm install",
     "publish": "changeset publish",
-    "run:add-program-id-to-domain-registry": "add-program-id-to-domain-registry",
+    "run:domain-registry": "domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
     "run:register-ntt-manager": "register-ntt-manager",
     "run:register-fee-config": "register-fee-config",
@@ -26,8 +26,8 @@
     "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
-    "eslint": "catalog:",
     "@fogo/scripts": "workspace:*",
+    "eslint": "catalog:",
     "jest": "catalog:",
     "prettier": "catalog:",
     "turbo": "catalog:"

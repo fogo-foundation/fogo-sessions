@@ -101,10 +101,6 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     svm.add_program_from_file(spl_token::ID, spl_token_path)
         .expect("Failed to load custom SPL token program");
 
-    let spl_associated_token_path = "../../tilt/programs/spl_associated_token_account.so";
-    svm.add_program_from_file(spl_associated_token_account::ID, spl_associated_token_path)
-        .expect("Failed to load custom SPL associated token program");
-
     let program_path = "../../target/deploy/intent_transfer.so";
     svm.add_program_from_file(intent_transfer::ID, program_path)
         .expect("Failed to load intent_transfer program");
