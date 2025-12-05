@@ -12,10 +12,12 @@ export const usePrice = (mint: string) => {
 export const getPrice = async (mint: string) => {
   const priceUrl = new URL("https://api.fogo.io/api/token-price");
   priceUrl.searchParams.append("mint", mint);
-  
+
   const response = await fetch(priceUrl);
   if (!response.ok) {
-    throw new Error(`Failed to fetch price: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Failed to fetch price: ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();
