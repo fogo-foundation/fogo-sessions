@@ -11,7 +11,7 @@ export const usePrice = (mint: string) => {
 
 export const getPrice = async (mint: string) => {
   const priceUrl = new URL("https://api.fogo.io/api/token-price");
-  priceUrl.searchParams.append("mint", mint);
+  priceUrl.searchParams.set("mint", mint);
 
   const response = await fetch(priceUrl);
   if (!response.ok) {
@@ -20,8 +20,7 @@ export const getPrice = async (mint: string) => {
     );
   }
 
-  const price = priceSchema.parse(await response.json());
-  return price;
+  return priceSchema.parse(await response.json());
 };
 
 const priceSchema = z.number();
