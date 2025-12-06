@@ -10,14 +10,12 @@
     "./Link": {
       "default": "./dist/Link/index.mjs"
     },
-    "./package.json": "./package.json",
     "./theme": "./dist/theme.scss"
   },
   "scripts": {
     "build": "ts-duality --noCjs",
     "build:scss": "copyfiles -u 1 \"src/**/*.scss\" ./dist",
     "build:storybook": "storybook build",
-    "build:svg": "copyfiles -u 1 \"src/**/*.svg\" ./dist",
     "clean": "rm -rf ./dist",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",

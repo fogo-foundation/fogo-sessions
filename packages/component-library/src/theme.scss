@@ -532,34 +532,6 @@ $shadow: (
   @return map-get-strict($shadow, $size);
 }
 
-@mixin reset {
-  &,
-  &::before,
-  &::after,
-  & * & *::before,
-  & *::after {
-    all: revert;
-  }
-
-  @include meta.load-css("pkg:modern-normalize");
-
-  &#{&} {
-    font-family: "Funnel Display", sans-serif;
-    font-optical-sizing: auto;
-    font-style: normal;
-    color-scheme: dark;
-    color: purple;
-    text-align: left;
-
-    *::selection {
-      color: pallette-color("black");
-      background: color("accent");
-    }
-
-    @content;
-  }
-}
-
 @mixin sr-only {
   position: absolute;
   width: 1px;
