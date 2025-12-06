@@ -131,7 +131,7 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
           <span className={styles.amount}>{amountAsString}</span>
           {price.type === PriceDataStateType.Loaded && (
             <NotionalAmount
-              amount={amountAsString}
+              amount={amountInWallet}
               decimals={decimals}
               price={price.data}
               className={styles.notional}

@@ -12,7 +12,6 @@ export const TokenAmountInput = ({
   max,
   gt,
   lt,
-  onValidationChange,
   ...props
 }: ComponentProps<typeof TextField> &
   Parameters<typeof useTokenAmountInput>[0]) => (
@@ -24,7 +23,6 @@ export const TokenAmountInput = ({
       max,
       gt,
       lt,
-      onValidationChange,
     })}
     {...props}
   />
@@ -37,7 +35,6 @@ const useTokenAmountInput = ({
   max,
   gt,
   lt,
-  onValidationChange,
 }: {
   decimals: number;
   symbol?: string | undefined;
@@ -45,7 +42,6 @@ const useTokenAmountInput = ({
   max?: bigint | undefined;
   gt?: bigint | undefined;
   lt?: bigint | undefined;
-  onValidationChange?: ((error: string | undefined) => void) | undefined;
 }) => {
   const validate = useCallback(
     (value: string) => {
@@ -68,7 +64,6 @@ const useTokenAmountInput = ({
         }
       }
 
-      onValidationChange?.(error);
       return error;
     },
     [decimals, gt, lt, max, min, symbol],

@@ -428,9 +428,9 @@ const SendTokenPageImpl = ({
             value: props.amount,
           })}
         />
-        {!props.isLoading && props.price !== undefined && (
+        {!props.isLoading && props.price !== undefined && props.amount.length > 0 && (
           <NotionalAmount
-            amount={props.amount}
+            amount={stringToAmount(props.amount, decimals)}
             decimals={decimals}
             price={props.price}
             className={styles.notionalAmount}

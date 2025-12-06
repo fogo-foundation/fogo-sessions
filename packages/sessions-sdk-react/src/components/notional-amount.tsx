@@ -1,10 +1,10 @@
+import { useMemo } from "react";
 import * as dnum from "dnum";
 
-import { stringToAmount } from "../amount-to-string.js";
 import { calculateNotional } from "../calculate-notional.js";
 
 type Props = {
-  amount: string;
+  amount: bigint;
   decimals: number;
   price: number;
   className?: string | undefined;
@@ -16,22 +16,14 @@ export const NotionalAmount = ({
   price,
   className,
 }: Props) => {
-  // if amount is empty, don't attempt to parse it
-  // TODO: should we amend stringToAmount to handle empty string better?
-  if (amount.length === 0) {
-    return;
-  }
+  const notional = useMemo(
+    () => calculateNotional(amount, decimals, price),
+    [amount, decimals, price],
+  );
 
-  // use try catch to avoid breaking errors from invalid input
-  try {
-    const amountToSend = stringToAmount(amount, decimals);
-    const notional = calculateNotional(amountToSend, decimals, price);
-    return (
-      <div className={className}>
-        ${dnum.format(notional, { digits: 2, trailingZeros: true })}
-      </div>
-    );
-  } catch {
-    return;
-  }
+  return (
+    <div className={className}>
+      ${dnum.format(notional, { digits: 2, trailingZeros: true })}
+    </div>
+  );
 };

@@ -13,6 +13,6 @@ export const calculateNotional = (
   price: number,
 ): dnum.Dnum => {
   const priceDnum = dnum.from(price);
-  const amountDnum = [amount, decimals] as dnum.Dnum;
+  const amountDnum = dnum.from([amount, decimals]);
   return dnum.multiply(amountDnum, priceDnum);
 };
