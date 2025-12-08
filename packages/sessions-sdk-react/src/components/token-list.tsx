@@ -20,6 +20,8 @@ import {
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
 
+const FOGO_DECIMALS = 9;
+
 const MotionGridListItem = motion.create(GridListItem<Token>);
 
 type Props = {
@@ -61,31 +63,80 @@ export const TokenList = ({
           className={styles.tokenList ?? ""}
           selectionMode="none"
           aria-label="Tokens"
-          items={state.data.tokensInWallet
-            .map((token) => ({ ...token, id: token.mint.toBase58() }))
-            .sort((a, b) => {
-              if (a.name === undefined) {
-                return b.name === undefined
-                  ? a.mint.toString().localeCompare(b.mint.toString())
-                  : 1;
-              } else if (b.name === undefined) {
-                return -1;
-              } else {
-                return a.name.toString().localeCompare(b.name.toString());
-              }
-            })}
+          items={[
+            ...(state.data.nativeBalance > 0 && "onPressSend" in props
+              ? [
+                  {
+                    id: "native-token-balance",
+                    isNative: true as const,
+                    amountInWallet: state.data.nativeBalance,
+                  },
+                ]
+              : []),
+            ...state.data.tokensInWallet
+              .map((token) => ({
+                isNative: false as const,
+                ...token,
+                id: token.mint.toBase58(),
+              }))
+              .sort((a, b) => {
+                if (a.name === undefined) {
+                  return b.name === undefined
+                    ? a.mint.toString().localeCompare(b.mint.toString())
+                    : 1;
+                } else if (b.name === undefined) {
+                  return -1;
+                } else {
+                  return a.name.toString().localeCompare(b.name.toString());
+                }
+              }),
+          ]}
         >
-          {(token) => (
-            <TokenItem
-              token={token}
-              {...("onPressSend" in props && {
-                onPressSend: props.onPressSend,
-              })}
-              {...("onPressToken" in props && {
-                onPressToken: props.onPressToken,
-              })}
-            />
-          )}
+          {(token) => {
+            if (token.isNative) {
+              return (
+                <MotionGridListItem
+                  layoutId="native-token-balance"
+                  layoutScroll
+                  textValue="Fogo"
+                  key="native-token-balance"
+                  data-is-native
+                  className={styles.token ?? ""}
+                >
+                  <div className={styles.nameAndIcon}>
+                    <img
+                      alt=""
+                      src="https://api.fogo.io/tokens/fogo.svg"
+                      className={styles.icon}
+                    />
+                    <div className={styles.nameAndMint}>
+                      <span className={styles.name}>Fogo</span>
+                      <div className={styles.mint}>NATIVE</div>
+                    </div>
+                  </div>
+                  <div className={styles.amountAndActions}>
+                    <div className={styles.amountAndDetails}>
+                      <span className={styles.amount}>
+                        {amountToString(token.amountInWallet, FOGO_DECIMALS)}
+                      </span>
+                    </div>
+                  </div>
+                </MotionGridListItem>
+              );
+            } else {
+              return (
+                <TokenItem
+                  token={token}
+                  {...("onPressSend" in props && {
+                    onPressSend: props.onPressSend,
+                  })}
+                  {...("onPressToken" in props && {
+                    onPressToken: props.onPressToken,
+                  })}
+                />
+              );
+            }
+          }}
         </GridList>
       );
     }
