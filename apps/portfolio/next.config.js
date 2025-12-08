@@ -1,4 +1,3 @@
-
 const config = {
   reactStrictMode: true,
 
@@ -9,11 +8,11 @@ const config = {
   },
 
   /**
-  * pino, pino-pretty and thread-stream have an issue here:
-  * https://github.com/vercel/next.js/issues/86099#issuecomment-3610573089
-  *
-  * when this problem fixed, we can remove these packages from the serverExternalPackages and from package.json
-  */
+   * pino, pino-pretty and thread-stream have an issue here:
+   * https://github.com/vercel/next.js/issues/86099#issuecomment-3610573089
+   *
+   * when this problem fixed, we can remove these packages from the serverExternalPackages and from package.json
+   */
   serverExternalPackages: ["pino", "pino-pretty", "thread-stream"],
 
   turbopack: {
