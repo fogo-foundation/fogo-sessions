@@ -317,12 +317,12 @@ const SendTokenPageImpl = ({
 
   const notionalAmount = useMemo(() => {
     if (props.isLoading || !props.amount) {
-      return undefined;
+      return;
     }
     try {
       return stringToAmount(props.amount, decimals);
     } catch {
-      return undefined;
+      return;
     }
   }, [props.isLoading, props.isLoading ? undefined : props.amount, decimals]);
 
@@ -440,14 +440,16 @@ const SendTokenPageImpl = ({
             value: props.amount,
           })}
         />
-        {!props.isLoading && props.price !== undefined && notionalAmount !== undefined && (
-          <NotionalAmount
-            amount={notionalAmount}
-            decimals={decimals}
-            price={props.price}
-            className={styles.notionalAmount}
-          />
-        )}
+        {!props.isLoading &&
+          props.price !== undefined &&
+          notionalAmount !== undefined && (
+            <NotionalAmount
+              amount={notionalAmount}
+              decimals={decimals}
+              price={props.price}
+              className={styles.notionalAmount}
+            />
+          )}
         <Button
           excludeFromTabOrder={scannerShowing}
           type="submit"

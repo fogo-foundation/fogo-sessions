@@ -251,14 +251,18 @@ const WithdrawFormImpl = (
 ) => {
   const notionalAmount = useMemo(() => {
     if (props.isLoading || !props.amount) {
-      return undefined;
+      return;
     }
     try {
       return stringToAmount(props.amount, USDC.decimals);
     } catch {
-      return undefined;
+      return;
     }
-  }, [props.isLoading, props.isLoading ? undefined : props.amount, USDC.decimals]);
+  }, [
+    props.isLoading,
+    props.isLoading ? undefined : props.amount,
+    USDC.decimals,
+  ]);
 
   return (
     <Form
@@ -320,14 +324,16 @@ const WithdrawFormImpl = (
           value: props.amount,
         })}
       />
-      {!props.isLoading && props.price !== undefined && notionalAmount !== undefined && (
-        <NotionalAmount
-          amount={notionalAmount}
-          decimals={USDC.decimals}
-          price={props.price}
-          className={styles.notionalAmount}
-        />
-      )}
+      {!props.isLoading &&
+        props.price !== undefined &&
+        notionalAmount !== undefined && (
+          <NotionalAmount
+            amount={notionalAmount}
+            decimals={USDC.decimals}
+            price={props.price}
+            className={styles.notionalAmount}
+          />
+        )}
       <Button
         type="submit"
         variant="secondary"

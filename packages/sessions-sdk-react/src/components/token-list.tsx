@@ -93,49 +93,45 @@ export const TokenList = ({
           ]}
         >
           {(token) => {
-            if (token.isNative) {
-              return (
-                <MotionGridListItem
-                  layoutId="native-token-balance"
-                  layoutScroll
-                  textValue="Fogo"
-                  key="native-token-balance"
-                  data-is-native
-                  className={styles.token ?? ""}
-                >
-                  <div className={styles.nameAndIcon}>
-                    <img
-                      alt=""
-                      src="https://api.fogo.io/tokens/fogo.svg"
-                      className={styles.icon}
-                    />
-                    <div className={styles.nameAndMint}>
-                      <span className={styles.name}>Fogo</span>
-                      <div className={styles.mint}>NATIVE</div>
-                    </div>
+            return token.isNative ? (
+              <MotionGridListItem
+                layoutId="native-token-balance"
+                layoutScroll
+                textValue="Fogo"
+                key="native-token-balance"
+                data-is-native
+                className={styles.token ?? ""}
+              >
+                <div className={styles.nameAndIcon}>
+                  <img
+                    alt=""
+                    src="https://api.fogo.io/tokens/fogo.svg"
+                    className={styles.icon}
+                  />
+                  <div className={styles.nameAndMint}>
+                    <span className={styles.name}>Fogo</span>
+                    <div className={styles.mint}>NATIVE</div>
                   </div>
-                  <div className={styles.amountAndActions}>
-                    <div className={styles.amountAndDetails}>
-                      <span className={styles.amount}>
-                        {amountToString(token.amountInWallet, FOGO_DECIMALS)}
-                      </span>
-                    </div>
+                </div>
+                <div className={styles.amountAndActions}>
+                  <div className={styles.amountAndDetails}>
+                    <span className={styles.amount}>
+                      {amountToString(token.amountInWallet, FOGO_DECIMALS)}
+                    </span>
                   </div>
-                </MotionGridListItem>
-              );
-            } else {
-              return (
-                <TokenItem
-                  token={token}
-                  {...("onPressSend" in props && {
-                    onPressSend: props.onPressSend,
-                  })}
-                  {...("onPressToken" in props && {
-                    onPressToken: props.onPressToken,
-                  })}
-                />
-              );
-            }
+                </div>
+              </MotionGridListItem>
+            ) : (
+              <TokenItem
+                token={token}
+                {...("onPressSend" in props && {
+                  onPressSend: props.onPressSend,
+                })}
+                {...("onPressToken" in props && {
+                  onPressToken: props.onPressToken,
+                })}
+              />
+            );
           }}
         </GridList>
       );
