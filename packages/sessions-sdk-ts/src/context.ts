@@ -39,13 +39,13 @@ export const createSessionContext = async (options: {
       sendTxOptions: SendTransactionOptions,
     ) =>
       options.connection.sendToPaymaster(
-        sendTxOptions?.paymasterDomain ?? domain,
+        sendTxOptions.paymasterDomain ?? domain,
         sessionKey,
         instructions,
         {
           ...sendTxOptions,
           addressLookupTable:
-            sendTxOptions?.addressLookupTable ??
+            sendTxOptions.addressLookupTable ??
             options.defaultAddressLookupTableAddress,
         },
       ),
