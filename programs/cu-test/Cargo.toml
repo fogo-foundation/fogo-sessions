@@ -13,3 +13,5 @@ name = "cu_test"
 [dependencies]
 solana-program = { workspace = true }
 fogo-sessions-sdk = { workspace = true, features = ["system-program"] }
+spl-associated-token-account = { workspace = true }
+spl-token = { workspace = true }

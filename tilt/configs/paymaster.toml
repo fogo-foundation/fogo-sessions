@@ -5,48 +5,11 @@ enable_preflight_simulation = false
 
 ## Tx Variation 0
 [[domains.tx_variations]]
-version = "v1"
+version = "v0"
 name = "Sample v1 Variation"
-max_gas_spend = 1000000
-
-# Instruction 0
-[[domains.tx_variations.instructions]]
-program = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-required = true
-
-[[domains.tx_variations.instructions.accounts]]
-index = 2
-include = [ { NonFeePayerSigner = {} } ]
-exclude = []
-
-[[domains.tx_variations.instructions.accounts]]
-index = 1
-include = []
-exclude = [
-    { Explicit = { pubkey = "So11111111111111111111111111111111111111111" } },
-    { NonFeePayerSigner = {} }
+whitelisted_programs = [
+    "4C6oWAqFgu2TSjVA7Z4u4SK3uqMmnJjgoNCHwuU3BJVX",
 ]
-
-[[domains.tx_variations.instructions.data]]
-start_byte = 0
-data_type = "U64"
-constraint = { LessThan = { U64 = 1000 } }
-
-
-# Instruction 1
-[[domains.tx_variations.instructions]]
-program = "ambi3LHRUzmU187u4rP46rX6wrYrLtU1Bmi5U2yCTGE"
-required = true
-
-[[domains.tx_variations.instructions.accounts]]
-index = 0
-include = [ { NonFeePayerSigner = {} } ]
-exclude = []
-
-[[domains.tx_variations.instructions.data]]
-start_byte = 0
-data_type = "U8"
-constraint = { EqualTo = [ {U8 = 4}, {U8 = 5} ] }
 
 
 

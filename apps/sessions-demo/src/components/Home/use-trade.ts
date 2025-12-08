@@ -8,7 +8,7 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { useCallback } from "react";
 
 import type { Transaction } from "./use-transaction-log";
@@ -29,24 +29,29 @@ export const useTrade = (
     );
     const { decimals } = await getMint(connection, mint);
 
+    const instruction : TransactionInstruction = 
+    new TransactionInstruction({
+      programId: new PublicKey("4C6oWAqFgu2TSjVA7Z4u4SK3uqMmnJjgoNCHwuU3BJVX"),
+      keys: [
+        {
+          pubkey: sessionState.sessionPublicKey,
+          isSigner: true,
+          isWritable: false,
+        },
+        {          pubkey: sessionState.walletPublicKey,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: userTokenAccount,
+          isSigner: false,
+          isWritable: true,
+        },
+      ],
+      data: Buffer.from([]),
+    });
     const result = await sessionState.sendTransaction([
-      createAssociatedTokenAccountIdempotentInstruction(
-        sessionState.payer,
-        sinkAta,
-        sessionState.payer,
-        mint,
-      ),
-      await new ExampleProgram(
-        new AnchorProvider(connection, {} as Wallet, {}),
-      ).methods
-        .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
-        .accountsPartial({
-          signerOrSession: sessionState.sessionPublicKey,
-          sink: sinkAta,
-          userTokenAccount,
-          mint,
-        })
-        .instruction(),
+      instruction
     ]);
 
     appendTransaction({

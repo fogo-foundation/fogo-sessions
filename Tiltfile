@@ -16,6 +16,9 @@ local_resource(
         ../target/deploy/chain_id.so \
         --bpf-program DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog \
         ../target/deploy/domain_registry.so \
+        --upgradeable-program 4C6oWAqFgu2TSjVA7Z4u4SK3uqMmnJjgoNCHwuU3BJVX \
+        ../target/deploy/cu_test.so \
+        $(solana-keygen pubkey ./keypairs/faucet.json) \
         --upgradeable-program Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD \
         ../target/deploy/intent_transfer.so \
         $(solana-keygen pubkey ./keypairs/faucet.json) \
@@ -96,7 +99,7 @@ local_resource(
 
 local_resource(
     "paymaster",
-    serve_cmd="cargo run --bin fogo-paymaster migrate --db-url postgres://paymaster:paymaster@localhost:5432/paymaster && cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster --config-file ./tilt/configs/paymaster.toml --rpc-url-http http://localhost:8899 --rpc-url-ws ws://localhost:8900",
+    serve_cmd="cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster --config-file ./tilt/configs/paymaster.toml --rpc-url-http http://localhost:8899 --rpc-url-ws ws://localhost:8900",
     resource_deps=["svm-localnet"],
 )
 
