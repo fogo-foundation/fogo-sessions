@@ -34,12 +34,12 @@ Fogo Sessions is a monorepo containing web applications and core tooling for the
 **Programs** (`programs/`):
 Anchor/Solana Rust programs:
 
-- `programs/chain-id`: minimal program storing a single ChainId
-- `programs/domain-registry`: registry mapping a domain string to allowed program
-- `programs/example`: demo of token transfer
-- `programs/intent-transfer`: intent-based token bridge
+- `programs/chain-id`: minimal program storing the global chain identifier of an SVM blockchain
+- `programs/domain-registry`: registry mapping a domain string to a whitelist of programs that a session for the domain is allowed to interact with
+- `programs/example`: demo of a sessions powered token transfer
+- `programs/intent-transfer`: intent-based intra and interchain transfers
 - `programs/session-manager`: core session manager
-- `programs/tollbooth:` charges a toll from a session associated token account
+- `programs/tollbooth:` allows paymasters to charge a toll in exchange for gas sponsoring
 
 ## Development of Typescript based apps
 
@@ -176,8 +176,8 @@ Programs in `programs/` use Anchor for building and deploying Solana programs.
 To build or test Anchor programs:
 
 ```bash
-anchor build
-anchor test
+anchor build --no-idl
+cargo test
 ```
 
 ### Working Agreements for Rust
