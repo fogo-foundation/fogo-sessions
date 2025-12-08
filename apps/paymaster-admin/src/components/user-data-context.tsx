@@ -14,19 +14,17 @@ import {
   useEffect,
   useMemo,
 } from "react";
-import { z } from "zod";
 
+import { fetchUserData } from "../client/paymaster";
 import { UserNotFound } from "../components/UserNotFound";
-import { UserSchema } from "../db-schema";
-
-type User = z.infer<typeof UserSchema>;
+import type { User } from "../db-schema";
 
 type UserDataContextValue = {
   userData: User | undefined;
   isLoading: boolean;
   error: Error | undefined;
   isUserNotFound: boolean;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 };
 
 const UserDataContext = createContext<UserDataContextValue | undefined>(
@@ -41,29 +39,7 @@ export const useUserData = () => {
   return context;
 };
 
-const fetchUserData = async (sessionToken: string): Promise<User> => {
-  const response = await fetch(
-    `/api/user-data?sessionToken=${encodeURIComponent(sessionToken)}`,
-  );
-
-  if (response.status === 404) {
-    const error = new Error("User not found");
-    (error as Error & { status: number }).status = 404;
-    throw error;
-  }
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch user data");
-  }
-
-  return UserSchema.parse(await response.json());
-};
-
-type Props = {
-  children: ReactNode;
-};
-
-export const UserDataProvider = ({ children }: Props) => {
+export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const sessionState = useSession();
   const established = isEstablished(sessionState);
 
@@ -75,11 +51,9 @@ export const UserDataProvider = ({ children }: Props) => {
     return fetchUserData(token);
   });
 
-  const refetch = useCallback(() => {
+  const refetch = useCallback(async () => {
     if (established) {
-      asyncActions.execute().catch(() => {
-        // Error is captured in asyncState.error
-      });
+      await asyncActions.execute();
     }
   }, [established, asyncActions]);
 

@@ -13,7 +13,7 @@ export const Home = () => {
       {isLoading && <div>Loading...</div>}
       {error && <div>Error: {error.message}</div>}
       {isUserNotFound && <div>User not found</div>}
-      <button onClick={refetch}>Refetch</button>
+      {userData && <button onClick={() => void refetch()}>Refetch</button>}
     </div>
   );
 };

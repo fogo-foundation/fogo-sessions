@@ -128,3 +128,5 @@ export const UserSchema = z.object({
   updated_at: TimeStr,
   apps: z.array(AppWithDomainConfigsSchema),
 });
+
+export type User = z.infer<typeof UserSchema>;

@@ -1,6 +1,5 @@
 const config = {
   reactStrictMode: true,
-
   logging: {
     fetches: {
       fullUrl: true,
