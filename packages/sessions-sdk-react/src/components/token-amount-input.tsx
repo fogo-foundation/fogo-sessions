@@ -45,26 +45,26 @@ const useTokenAmountInput = ({
 }) => {
   const validate = useCallback(
     (value: string) => {
-      let error: string | undefined;
-
       if (value) {
         try {
           const amount = stringToAmount(value, decimals);
           if (gt !== undefined && amount <= gt) {
-            error = `Must be greater than ${amountToString(gt, decimals).toString()} ${symbol}`;
+            return `Must be greater than ${amountToString(gt, decimals).toString()} ${symbol}`;
           } else if (lt !== undefined && amount >= lt) {
-            error = `Must be less than ${amountToString(lt, decimals).toString()} ${symbol}`;
+            return `Must be less than ${amountToString(lt, decimals).toString()} ${symbol}`;
           } else if (max !== undefined && amount > max) {
-            error = `Cannot be more than ${amountToString(max, decimals).toString()} ${symbol}`;
+            return `Cannot be more than ${amountToString(max, decimals).toString()} ${symbol}`;
           } else if (min !== undefined && amount < min) {
-            error = `Cannot be less than ${amountToString(min, decimals).toString()} ${symbol}`;
+            return `Cannot be less than ${amountToString(min, decimals).toString()} ${symbol}`;
+          } else {
+            return;
           }
-        } catch (error_: unknown) {
-          error = errorToString(error_);
+        } catch (error: unknown) {
+          return errorToString(error);
         }
+      } else {
+        return;
       }
-
-      return error;
     },
     [decimals, gt, lt, max, min, symbol],
   );
