@@ -9,11 +9,14 @@ import { Button } from "./button.js";
 import { CopyButton } from "./copy-button.js";
 import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";
+import { NotionalAmount } from "./notional-amount.js";
 import styles from "./token-list.module.css";
 import { TruncateKey } from "./truncate-key.js";
+import { usePrice } from "../hooks/use-price.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
   StateType as TokenDataStateType,
+  StateType as PriceDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
 
@@ -90,103 +93,45 @@ export const TokenList = ({
           ]}
         >
           {(token) => {
-            if (token.isNative) {
-              return (
-                <MotionGridListItem
-                  layoutId="native-token-balance"
-                  layoutScroll
-                  textValue="Fogo"
-                  key="native-token-balance"
-                  data-is-native
-                  className={styles.token ?? ""}
-                >
-                  <div className={styles.nameAndIcon}>
-                    <img
-                      alt=""
-                      src="https://api.fogo.io/tokens/fogo.svg"
-                      className={styles.icon}
-                    />
-                    <div className={styles.nameAndMint}>
-                      <span className={styles.name}>Fogo</span>
-                      <div className={styles.mint}>NATIVE</div>
-                    </div>
+            return token.isNative ? (
+              <MotionGridListItem
+                layoutId="native-token-balance"
+                layoutScroll
+                textValue="Fogo"
+                key="native-token-balance"
+                data-is-native
+                className={styles.token ?? ""}
+              >
+                <div className={styles.nameAndIcon}>
+                  <img
+                    alt=""
+                    src="https://api.fogo.io/tokens/fogo.svg"
+                    className={styles.icon}
+                  />
+                  <div className={styles.nameAndMint}>
+                    <span className={styles.name}>Fogo</span>
+                    <div className={styles.mint}>NATIVE</div>
                   </div>
-                  <div className={styles.amountAndActions}>
-                    <div className={styles.amountAndSymbol}>
-                      <span className={styles.amount}>
-                        {amountToString(token.amountInWallet, FOGO_DECIMALS)}
-                      </span>
-                      <span className={styles.symbol}>FOGO</span>
-                    </div>
+                </div>
+                <div className={styles.amountAndActions}>
+                  <div className={styles.amountAndDetails}>
+                    <span className={styles.amount}>
+                      {amountToString(token.amountInWallet, FOGO_DECIMALS)}
+                    </span>
                   </div>
-                </MotionGridListItem>
-              );
-            } else {
-              const { mint, amountInWallet, decimals, image, name, symbol } =
-                token;
-              const amountAsString = amountToString(amountInWallet, decimals);
-              const contents = (
-                <>
-                  <div className={styles.nameAndIcon}>
-                    {image ? (
-                      <img alt="" src={image} className={styles.icon} />
-                    ) : (
-                      <div className={styles.icon} />
-                    )}
-                    <div className={styles.nameAndMint}>
-                      <span className={styles.name}>
-                        {name ?? mint.toBase58()}
-                      </span>
-                      <CopyButton
-                        className={styles.mint ?? ""}
-                        text={mint.toBase58()}
-                      >
-                        <TruncateKey keyValue={mint} />
-                      </CopyButton>
-                    </div>
-                  </div>
-                  <div className={styles.amountAndActions}>
-                    <div className={styles.amountAndSymbol}>
-                      <span className={styles.amount}>{amountAsString}</span>
-                      {symbol && (
-                        <span className={styles.symbol}>{symbol}</span>
-                      )}
-                    </div>
-                    {"onPressSend" in props && (
-                      <div className={styles.actions}>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className={styles.sendButton ?? ""}
-                          onPress={() => {
-                            props.onPressSend(token);
-                          }}
-                        >
-                          <PaperPlaneTiltIcon />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </>
-              );
-              return (
-                <MotionGridListItem
-                  layoutId={mint.toBase58()}
-                  layoutScroll
-                  textValue={name ?? mint.toBase58()}
-                  key={mint.toString()}
-                  className={styles.token ?? ""}
-                  data-is-button={"onPressToken" in props ? "" : undefined}
-                  {...("onPressToken" in props && {
-                    onAction: () => {
-                      props.onPressToken(token);
-                    },
-                  })}
-                >
-                  {contents}
-                </MotionGridListItem>
-              );
-            }
+                </div>
+              </MotionGridListItem>
+            ) : (
+              <TokenItem
+                token={token}
+                {...("onPressSend" in props && {
+                  onPressSend: props.onPressSend,
+                })}
+                {...("onPressToken" in props && {
+                  onPressToken: props.onPressToken,
+                })}
+              />
+            );
           }}
         </GridList>
       );
@@ -202,6 +147,81 @@ export const TokenList = ({
   }
 };
 
+type TokenItemProps = {
+  token: Token;
+  onPressSend?: (token: Token) => void;
+  onPressToken?: (token: Token) => void;
+};
+
+const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
+  const { mint, amountInWallet, decimals, image, name } = token;
+  const amountAsString = amountToString(amountInWallet, decimals);
+  const price = usePrice(mint.toBase58());
+
+  const contents = (
+    <>
+      <div className={styles.nameAndIcon}>
+        {image ? (
+          <img alt="" src={image} className={styles.icon} />
+        ) : (
+          <div className={styles.icon} />
+        )}
+        <div className={styles.nameAndMint}>
+          <span className={styles.name}>{name ?? mint.toBase58()}</span>
+          <CopyButton className={styles.mint ?? ""} text={mint.toBase58()}>
+            <TruncateKey keyValue={mint} />
+          </CopyButton>
+        </div>
+      </div>
+      <div className={styles.amountAndActions}>
+        <div className={styles.amountAndDetails}>
+          <span className={styles.amount}>{amountAsString}</span>
+          {price.type === PriceDataStateType.Loaded && (
+            <NotionalAmount
+              amount={amountInWallet}
+              decimals={decimals}
+              price={price.data}
+              className={styles.notional}
+            />
+          )}
+        </div>
+        {onPressSend && (
+          <div className={styles.actions}>
+            <Button
+              variant="secondary"
+              size="sm"
+              className={styles.sendButton ?? ""}
+              onPress={() => {
+                onPressSend(token);
+              }}
+            >
+              <PaperPlaneTiltIcon />
+            </Button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  return (
+    <MotionGridListItem
+      layoutId={mint.toBase58()}
+      layoutScroll
+      textValue={name ?? mint.toBase58()}
+      key={mint.toString()}
+      className={styles.token ?? ""}
+      data-is-button={onPressToken === undefined ? undefined : ""}
+      {...(onPressToken && {
+        onAction: () => {
+          onPressToken(token);
+        },
+      })}
+    >
+      {contents}
+    </MotionGridListItem>
+  );
+};
+
 const LoadingToken = () => (
   <div data-is-loading="" className={styles.token}>
     <div className={styles.nameAndIcon}>
@@ -212,9 +232,9 @@ const LoadingToken = () => (
       </div>
     </div>
     <div className={styles.amountAndActions}>
-      <div className={styles.amountAndSymbol}>
+      <div className={styles.amountAndDetails}>
         <span className={styles.amount} />
-        <span className={styles.symbol} />
+        <span className={styles.notional} />
       </div>
     </div>
   </div>

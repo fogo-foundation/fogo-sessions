@@ -75,7 +75,7 @@
     .amountAndActions {
       overflow: hidden;
 
-      .amountAndSymbol {
+      .amountAndDetails {
         display: flex;
         flex-flow: column nowrap;
         gap: theme.spacing(2);
@@ -92,7 +92,7 @@
           text-overflow: ellipsis;
         }
 
-        .symbol {
+        .notional {
           @include theme.text("xs");
 
           color: theme.color("muted");
@@ -120,8 +120,8 @@
       .nameAndIcon .icon,
       .nameAndIcon .nameAndMint .name,
       .nameAndIcon .nameAndMint .mint,
-      .amountAndSymbol .amount,
-      .amountAndSymbol .symbol {
+      .amountAndDetails .amount,
+      .amountAndDetails .notional {
         display: inline-block;
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
       }
@@ -134,8 +134,8 @@
 
       .nameAndIcon .nameAndMint .name,
       .nameAndIcon .nameAndMint .mint,
-      .amountAndSymbol .amount,
-      .amountAndSymbol .symbol {
+      .amountAndDetails .amount,
+      .amountAndDetails .notional {
         background: theme.color("skeleton");
         height: 0.8em;
         border-radius: theme.border-radius("md");
@@ -145,7 +145,7 @@
         margin-top: 0;
       }
 
-      .amountAndSymbol {
+      .amountAndDetails {
         align-items: flex-end;
       }
 
@@ -165,8 +165,8 @@
         width: theme.spacing(30);
       }
 
-      .amountAndActions .symbol {
-        width: theme.spacing(14);
+      .amountAndActions .notional {
+        width: theme.spacing(16);
       }
     }
 
