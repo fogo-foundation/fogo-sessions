@@ -1432,6 +1432,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cu-test"
+version = "0.1.0"
+dependencies = [
+ "fogo-sessions-sdk",
+ "solana-program",
+]
+
+[[package]]
 name = "curve25519-dalek"
 version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

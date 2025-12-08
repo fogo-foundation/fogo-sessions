@@ -1,0 +1,15 @@
+[package]
+name = "cu-test"
+version = "0.1.0"
+description = "Fogo Sessions chain-id program"
+license = { workspace = true }
+repository = "https://github.com/fogo-foundation/fogo-sessions"
+edition = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "cu_test"
+
+[dependencies]
+solana-program = { workspace = true }
+fogo-sessions-sdk = { workspace = true, features = ["system-program"] }
