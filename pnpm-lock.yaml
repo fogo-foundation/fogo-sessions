@@ -270,6 +270,9 @@ catalogs:
     swr:
       specifier: ^2.3.3
       version: 2.3.3
+    thread-stream:
+      specifier: ^3.1.0
+      version: 3.1.0
     turbo:
       specifier: ^2.5.4
       version: 2.5.4
@@ -390,6 +393,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
+      thread-stream:
+        specifier: 'catalog:'
+        version: 3.1.0
     devDependencies:
       '@axe-core/react':
         specifier: 'catalog:'

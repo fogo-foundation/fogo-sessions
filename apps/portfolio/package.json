@@ -29,7 +29,8 @@
     "react": "catalog:",
     "react-aria": "catalog:",
     "react-aria-components": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "thread-stream": "catalog:"
   },
   "devDependencies": {
     "@axe-core/react": "catalog:",

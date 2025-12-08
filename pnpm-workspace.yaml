@@ -93,6 +93,7 @@ catalog:
   style-loader: ^4.0.0
   stylelint-config-standard-scss: ^15.0.1
   swr: ^2.3.3
+  thread-stream: ^3.1.0
   turbo: ^2.5.4
   typescript: ^5.8.3
   yargs: ^18.0.0

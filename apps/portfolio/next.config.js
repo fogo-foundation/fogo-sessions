@@ -1,4 +1,3 @@
-import { fileURLToPath } from "node:url";
 
 const config = {
   reactStrictMode: true,
@@ -9,23 +8,16 @@ const config = {
     },
   },
 
-  // turbopack: {
-  //   rules: {
-  //     "*.svg": {
-  //       loaders: ["@svgr/webpack"],
-  //       as: "*.js",
-  //     },
-  //   },
-  // },
+  serverExternalPackages: ["pino", "pino-pretty", "thread-stream"],
 
-  // webpack(config) {
-  //   config.module.rules.push({
-  //     test: /\.svg$/i,
-  //     exclude: fileURLToPath(import.meta.resolve("./src/app/icon1.svg")),
-  //     use: ["@svgr/webpack"],
-  //   });
-  //   return config;
-  // },
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
+      },
+    },
+  },
 
   headers: async () => [
     {
