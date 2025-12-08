@@ -12,7 +12,7 @@ import type {
   FormEventHandler,
   ReactNode,
 } from "react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
@@ -314,6 +314,18 @@ const SendTokenPageImpl = ({
       }
   )) => {
   const scannerShowing = !props.isLoading && props.scanner !== undefined;
+
+  const notionalAmount = useMemo(() => {
+    if (props.isLoading || !props.amount) {
+      return undefined;
+    }
+    try {
+      return stringToAmount(props.amount, decimals);
+    } catch {
+      return undefined;
+    }
+  }, [props.isLoading, props.isLoading ? undefined : props.amount, decimals]);
+
   return (
     <div className={styles.sendTokenPage ?? ""}>
       <Button
@@ -428,9 +440,9 @@ const SendTokenPageImpl = ({
             value: props.amount,
           })}
         />
-        {!props.isLoading && props.price !== undefined && props.amount.length > 0 && (
+        {!props.isLoading && props.price !== undefined && notionalAmount !== undefined && (
           <NotionalAmount
-            amount={stringToAmount(props.amount, decimals)}
+            amount={notionalAmount}
             decimals={decimals}
             price={props.price}
             className={styles.notionalAmount}

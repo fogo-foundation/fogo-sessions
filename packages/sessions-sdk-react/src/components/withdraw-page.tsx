@@ -5,7 +5,7 @@ import {
   getBridgeOutFee,
 } from "@fogo/sessions-sdk";
 import type { FormEvent, FormEventHandler } from "react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
@@ -249,6 +249,17 @@ const WithdrawFormImpl = (
         maxWithdrawAmount: bigint;
       },
 ) => {
+  const notionalAmount = useMemo(() => {
+    if (props.isLoading || !props.amount) {
+      return undefined;
+    }
+    try {
+      return stringToAmount(props.amount, USDC.decimals);
+    } catch {
+      return undefined;
+    }
+  }, [props.isLoading, props.isLoading ? undefined : props.amount, USDC.decimals]);
+
   return (
     <Form
       className={styles.withdrawForm ?? ""}
@@ -309,9 +320,9 @@ const WithdrawFormImpl = (
           value: props.amount,
         })}
       />
-      {!props.isLoading && props.price !== undefined && props.amount.length > 0 && (
+      {!props.isLoading && props.price !== undefined && notionalAmount !== undefined && (
         <NotionalAmount
-          amount={stringToAmount(props.amount, USDC.decimals)}
+          amount={notionalAmount}
           decimals={USDC.decimals}
           price={props.price}
           className={styles.notionalAmount}
