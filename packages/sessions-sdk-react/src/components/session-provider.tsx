@@ -343,7 +343,7 @@ const useSessionState = ({
       session: Session,
       establishedOptions: EstablishedOptions,
       instructions: TransactionOrInstructions,
-      options?: SendTransactionOptions,
+      options: SendTransactionOptions,
     ) => {
       const result = await session.sendTransaction(instructions, options);
       if (result.type === TransactionResultType.Failed) {

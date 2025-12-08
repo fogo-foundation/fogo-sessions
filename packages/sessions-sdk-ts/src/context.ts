@@ -36,7 +36,7 @@ export const createSessionContext = async (options: {
     sendTransaction: (
       sessionKey: CryptoKeyPair | undefined,
       instructions: TransactionOrInstructions,
-      sendTxOptions?: SendTransactionOptions,
+      sendTxOptions: SendTransactionOptions,
     ) =>
       options.connection.sendToPaymaster(
         sendTxOptions?.paymasterDomain ?? domain,
