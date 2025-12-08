@@ -10,7 +10,6 @@
     "./Link": {
       "default": "./dist/Link/index.mjs"
     },
-    "./package.json": "./package.json",
     "./theme": "./dist/theme.scss"
   },
   "scripts": {
