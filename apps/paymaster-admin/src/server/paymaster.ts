@@ -1,4 +1,3 @@
-
 import pool from "../config/pg";
 import { UserSchema } from "../db-schema";
 

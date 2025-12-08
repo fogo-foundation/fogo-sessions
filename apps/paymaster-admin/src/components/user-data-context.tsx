@@ -1,35 +1,37 @@
 "use client";
 
-import { useAsync } from "@react-hookz/web";
 import {
   isEstablished,
   SessionStateType,
   useSession,
 } from "@fogo/sessions-sdk-react";
+import { useAsync } from "@react-hookz/web";
+import type { ReactNode } from "react";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  type ReactNode,
 } from "react";
 import { z } from "zod";
 
-import { UserSchema } from "../db-schema";
 import { UserNotFound } from "../components/UserNotFound";
+import { UserSchema } from "../db-schema";
 
 type User = z.infer<typeof UserSchema>;
 
 type UserDataContextValue = {
-  userData: User | null;
+  userData: User | undefined;
   isLoading: boolean;
-  error: Error | null;
+  error: Error | undefined;
   isUserNotFound: boolean;
   refetch: () => void;
 };
 
-const UserDataContext = createContext<UserDataContextValue | null>(null);
+const UserDataContext = createContext<UserDataContextValue | undefined>(
+  undefined,
+);
 
 export const useUserData = () => {
   const context = useContext(UserDataContext);
@@ -67,7 +69,7 @@ export const UserDataProvider = ({ children }: Props) => {
 
   const [asyncState, asyncActions] = useAsync(async () => {
     if (!established) {
-      return null;
+      return;
     }
     const token = await sessionState.createLogInToken();
     return fetchUserData(token);
@@ -105,9 +107,9 @@ export const UserDataProvider = ({ children }: Props) => {
 
   const contextValue = useMemo<UserDataContextValue>(
     () => ({
-      userData: asyncState.result ?? null,
+      userData: asyncState.result ?? undefined,
       isLoading: isSessionLoading || asyncState.status === "loading",
-      error: isUserNotFound ? null : (asyncState.error ?? null),
+      error: isUserNotFound ? undefined : (asyncState.error ?? undefined),
       isUserNotFound,
       refetch,
     }),

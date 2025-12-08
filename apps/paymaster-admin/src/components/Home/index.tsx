@@ -1,5 +1,6 @@
 "use client";
 import { SessionButton } from "@fogo/sessions-sdk-react";
+
 import { useUserData } from "../user-data-context";
 
 export const Home = () => {

@@ -45,6 +45,7 @@ catalog:
   "@types/bn.js": ^4.11.6
   "@types/jest": ^29.5.14
   "@types/node": ^24.0.1
+  "@types/pg": ^8.15.6
   "@types/react": ^19.1.8
   "@types/react-dom": ^19.1.6
   "@types/yargs": ^17.0.33
@@ -65,9 +66,8 @@ catalog:
   lucide-react: ^0.473.0
   modern-normalize: ^3.0.1
   motion: ^12.23.16
-  pg: ^8.16.3
-  "@types/pg": ^8.15.6
   next: ^15.5.7
+  pg: ^8.16.3
   pino: ^9.7.0
   pino-pretty: ^13.0.0
   postcss: ^8.5.1
@@ -85,7 +85,7 @@ catalog:
   turbo: ^2.5.4
   typescript: ^5.8.3
   yargs: ^18.0.0
-  zod: ^3.25.62
+  zod: 3.25.67
 
 engineStrict: true
 
