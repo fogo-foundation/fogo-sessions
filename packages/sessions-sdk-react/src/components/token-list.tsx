@@ -17,6 +17,8 @@ import {
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
 
+const FOGO_DECIMALS = 9;
+
 const MotionGridListItem = motion.create(GridListItem<Token>);
 
 type Props = {
@@ -58,83 +60,133 @@ export const TokenList = ({
           className={styles.tokenList ?? ""}
           selectionMode="none"
           aria-label="Tokens"
-          items={state.data.tokensInWallet
-            .map((token) => ({ ...token, id: token.mint.toBase58() }))
-            .sort((a, b) => {
-              if (a.name === undefined) {
-                return b.name === undefined
-                  ? a.mint.toString().localeCompare(b.mint.toString())
-                  : 1;
-              } else if (b.name === undefined) {
-                return -1;
-              } else {
-                return a.name.toString().localeCompare(b.name.toString());
-              }
-            })}
+          items={[
+            ...(state.data.nativeBalance > 0 && "onPressSend" in props
+              ? [
+                  {
+                    id: "native-token-balance",
+                    isNative: true as const,
+                    amountInWallet: state.data.nativeBalance,
+                  },
+                ]
+              : []),
+            ...state.data.tokensInWallet
+              .map((token) => ({
+                isNative: false as const,
+                ...token,
+                id: token.mint.toBase58(),
+              }))
+              .sort((a, b) => {
+                if (a.name === undefined) {
+                  return b.name === undefined
+                    ? a.mint.toString().localeCompare(b.mint.toString())
+                    : 1;
+                } else if (b.name === undefined) {
+                  return -1;
+                } else {
+                  return a.name.toString().localeCompare(b.name.toString());
+                }
+              }),
+          ]}
         >
           {(token) => {
-            const { mint, amountInWallet, decimals, image, name, symbol } =
-              token;
-            const amountAsString = amountToString(amountInWallet, decimals);
-            const contents = (
-              <>
-                <div className={styles.nameAndIcon}>
-                  {image ? (
-                    <img alt="" src={image} className={styles.icon} />
-                  ) : (
-                    <div className={styles.icon} />
-                  )}
-                  <div className={styles.nameAndMint}>
-                    <span className={styles.name}>
-                      {name ?? mint.toBase58()}
-                    </span>
-                    <CopyButton
-                      className={styles.mint ?? ""}
-                      text={mint.toBase58()}
-                    >
-                      <TruncateKey keyValue={mint} />
-                    </CopyButton>
-                  </div>
-                </div>
-                <div className={styles.amountAndActions}>
-                  <div className={styles.amountAndSymbol}>
-                    <span className={styles.amount}>{amountAsString}</span>
-                    {symbol && <span className={styles.symbol}>{symbol}</span>}
-                  </div>
-                  {"onPressSend" in props && (
-                    <div className={styles.actions}>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className={styles.sendButton ?? ""}
-                        onPress={() => {
-                          props.onPressSend(token);
-                        }}
-                      >
-                        <PaperPlaneTiltIcon />
-                      </Button>
+            if (token.isNative) {
+              return (
+                <MotionGridListItem
+                  layoutId="native-token-balance"
+                  layoutScroll
+                  textValue="Fogo"
+                  key="native-token-balance"
+                  data-is-native
+                  className={styles.token ?? ""}
+                >
+                  <div className={styles.nameAndIcon}>
+                    <img
+                      alt=""
+                      src="https://api.fogo.io/tokens/fogo.svg"
+                      className={styles.icon}
+                    />
+                    <div className={styles.nameAndMint}>
+                      <span className={styles.name}>Fogo</span>
+                      <div className={styles.mint}>NATIVE</div>
                     </div>
-                  )}
-                </div>
-              </>
-            );
-            return (
-              <MotionGridListItem
-                layoutId={mint.toBase58()}
-                layoutScroll
-                textValue={name ?? mint.toBase58()}
-                key={mint.toString()}
-                className={styles.token ?? ""}
-                data-is-button={"onPressToken" in props ? "" : undefined}
-                {...("onPressToken" in props && {
-                  onAction: () => {
-                    props.onPressToken(token);
-                  },
-                })}
-              >
-                {contents}
-              </MotionGridListItem>
-            );
+                  </div>
+                  <div className={styles.amountAndActions}>
+                    <div className={styles.amountAndSymbol}>
+                      <span className={styles.amount}>
+                        {amountToString(token.amountInWallet, FOGO_DECIMALS)}
+                      </span>
+                      <span className={styles.symbol}>FOGO</span>
+                    </div>
+                  </div>
+                </MotionGridListItem>
+              );
+            } else {
+              const { mint, amountInWallet, decimals, image, name, symbol } =
+                token;
+              const amountAsString = amountToString(amountInWallet, decimals);
+              const contents = (
+                <>
+                  <div className={styles.nameAndIcon}>
+                    {image ? (
+                      <img alt="" src={image} className={styles.icon} />
+                    ) : (
+                      <div className={styles.icon} />
+                    )}
+                    <div className={styles.nameAndMint}>
+                      <span className={styles.name}>
+                        {name ?? mint.toBase58()}
+                      </span>
+                      <CopyButton
+                        className={styles.mint ?? ""}
+                        text={mint.toBase58()}
+                      >
+                        <TruncateKey keyValue={mint} />
+                      </CopyButton>
+                    </div>
+                  </div>
+                  <div className={styles.amountAndActions}>
+                    <div className={styles.amountAndSymbol}>
+                      <span className={styles.amount}>{amountAsString}</span>
+                      {symbol && (
+                        <span className={styles.symbol}>{symbol}</span>
+                      )}
+                    </div>
+                    {"onPressSend" in props && (
+                      <div className={styles.actions}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className={styles.sendButton ?? ""}
+                          onPress={() => {
+                            props.onPressSend(token);
+                          }}
+                        >
+                          <PaperPlaneTiltIcon />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+              return (
+                <MotionGridListItem
+                  layoutId={mint.toBase58()}
+                  layoutScroll
+                  textValue={name ?? mint.toBase58()}
+                  key={mint.toString()}
+                  className={styles.token ?? ""}
+                  data-is-button={"onPressToken" in props ? "" : undefined}
+                  {...("onPressToken" in props && {
+                    onAction: () => {
+                      props.onPressToken(token);
+                    },
+                  })}
+                >
+                  {contents}
+                </MotionGridListItem>
+              );
+            }
           }}
         </GridList>
       );

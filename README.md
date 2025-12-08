@@ -39,6 +39,19 @@ To jump straight to examples, go to [here](https://github.com/fogo-foundation/fo
 
 ## Development
 
+### Toolchain requirements
+
+The Fogo Sessions repository requires the following toolchain versions:
+
+- `nodejs@22.21.1`
+- `pnpm@10.13.1`
+- `rust@1.88.0`
+- `python@3.14.0`
+
+For convenience, there is a `.tool-versions` file that contains a mapping of these tools to the correct versions.
+This file works great with [mise](https://mise.jdx.dev/).
+If you already have `mise` installed, simply do `mise x -- pnpm i` to get started.
+
 ### Demo App
 
 ```

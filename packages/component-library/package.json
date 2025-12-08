@@ -1,0 +1,78 @@
+{
+  "name": "@fogo/component-library",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22"
+  },
+  "exports": {
+    "./Link": {
+      "default": "./dist/Link/index.mjs"
+    },
+    "./theme": "./dist/theme.scss"
+  },
+  "scripts": {
+    "build": "ts-duality --noCjs",
+    "build:scss": "copyfiles -u 1 \"src/**/*.scss\" ./dist",
+    "build:storybook": "storybook build",
+    "clean": "rm -rf ./dist",
+    "fix:format": "prettier --write .",
+    "fix:lint:eslint": "eslint --fix .",
+    "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
+    "start:dev": "storybook dev --port 4000 --no-open",
+    "test:format": "prettier --check .",
+    "test:lint:eslint": "eslint . --max-warnings 0",
+    "test:lint:stylelint": "stylelint 'src/**/*.scss' --max-warnings 0",
+    "test:types": "tsc"
+  },
+  "peerDependencies": {
+    "next": "catalog:",
+    "react": "catalog:"
+  },
+  "dependencies": {
+    "clsx": "catalog:",
+    "modern-normalize": "catalog:",
+    "motion": "catalog:",
+    "react-aria": "catalog:",
+    "react-aria-components": "catalog:",
+    "react-dom": "catalog:",
+    "swr": "catalog:"
+  },
+  "devDependencies": {
+    "@better-builds/ts-duality": "catalog:",
+    "@babel/preset-typescript": "catalog:",
+    "@cprussin/eslint-config": "catalog:",
+    "@cprussin/prettier-config": "catalog:",
+    "@cprussin/tsconfig": "catalog:",
+    "@phosphor-icons/react": "catalog:",
+    "@storybook/addon-styling-webpack": "catalog:",
+    "@storybook/addon-themes": "catalog:",
+    "@storybook/nextjs": "catalog:",
+    "@storybook/react": "catalog:",
+    "@svgr/webpack": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "autoprefixer": "catalog:",
+    "babel-plugin-react-compiler": "catalog:",
+    "copyfiles": "catalog:",
+    "css-loader": "catalog:",
+    "eslint": "catalog:",
+    "postcss": "catalog:",
+    "postcss-loader": "catalog:",
+    "prettier": "catalog:",
+    "react": "catalog:",
+    "sass": "catalog:",
+    "sass-loader": "catalog:",
+    "storybook": "catalog:",
+    "style-loader": "catalog:",
+    "stylelint": "catalog:",
+    "stylelint-config-standard-scss": "catalog:"
+  },
+  "ts-duality": {
+    "extraExports": {
+      "./theme": "./dist/theme.scss"
+    }
+  }
+}

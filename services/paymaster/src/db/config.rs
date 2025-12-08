@@ -134,7 +134,7 @@ pub async fn load_config() -> Result<Config, anyhow::Error> {
     } in variation_rows
     {
         if let Some(domain_ref) = domain_map.get_mut(&domain_config_id) {
-            let transaction_variation_fin: TransactionVariation = match version.as_str() {
+            let transaction_variation_fin = match version.as_str() {
                 "v0" => handle_transaction_variation_v0(transaction_variation, name)?,
                 "v1" => {
                     // v1 *requires* max_gas_spend

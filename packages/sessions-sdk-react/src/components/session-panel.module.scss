@@ -29,6 +29,15 @@
 
         color: theme.color("heading");
         flex-grow: 1;
+
+        svg {
+          display: inline-block;
+          height: 1.4em;
+          margin-left: 0.25em;
+          margin-right: 0.25em;
+          position: relative;
+          top: 0.4em;
+        }
       }
     }
 
