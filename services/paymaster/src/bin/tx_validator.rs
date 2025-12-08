@@ -86,8 +86,8 @@ enum Network {
 impl Network {
     fn paymaster_base_url(self) -> &'static str {
         match self {
-            Network::Mainnet => "https://mainnet.fogo-paymaster.xyz",
-            Network::Testnet => "https://testnet.fogo-paymaster.xyz",
+            Network::Mainnet => "https://fogo-mainnet.dourolabs-paymaster.xyz",
+            Network::Testnet => "https://fogo-testnet.dourolabs-paymaster.xyz",
         }
     }
 
