@@ -16,7 +16,14 @@ export const TokenAmountInput = ({
 }: ComponentProps<typeof TextField> &
   Parameters<typeof useTokenAmountInput>[0]) => (
   <TextField
-    {...useTokenAmountInput({ decimals, symbol, min, max, gt, lt })}
+    {...useTokenAmountInput({
+      decimals,
+      symbol,
+      min,
+      max,
+      gt,
+      lt,
+    })}
     {...props}
   />
 );
