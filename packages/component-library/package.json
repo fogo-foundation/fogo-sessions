@@ -3,19 +3,23 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": "22"
-  },
   "exports": {
+    "./Button": {
+      "types": "./dist/Button/index.d.ts",
+      "default": "./dist/Button/index.mjs"
+    },
     "./Link": {
+      "types": "./dist/Link/index.d.ts",
       "default": "./dist/Link/index.mjs"
     },
+    "./package.json": "./package.json",
     "./theme": "./dist/theme.scss"
   },
   "scripts": {
     "build": "ts-duality --noCjs",
-    "build:scss": "copyfiles -u 1 \"src/**/*.scss\" ./dist",
+    "build:watch": "nodemon --verbose --watch ./src --ext ts,tsx,scss --exec \"rm -rf ./dist && pnpm turbo --filter @fogo/component-library build\"",
     "build:storybook": "storybook build",
+    "build:scss": "copyfiles -u 1 \"src/**/*.scss\" ./dist",
     "clean": "rm -rf ./dist",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
@@ -40,8 +44,9 @@
     "swr": "catalog:"
   },
   "devDependencies": {
-    "@better-builds/ts-duality": "catalog:",
+    "@babel/core": "^7.28.5",
     "@babel/preset-typescript": "catalog:",
+    "@better-builds/ts-duality": "catalog:",
     "@cprussin/eslint-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
@@ -59,6 +64,7 @@
     "copyfiles": "catalog:",
     "css-loader": "catalog:",
     "eslint": "catalog:",
+    "nodemon": "catalog:",
     "postcss": "catalog:",
     "postcss-loader": "catalog:",
     "prettier": "catalog:",

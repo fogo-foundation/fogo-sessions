@@ -13,36 +13,49 @@
   ],
   "type": "module",
   "main": "./dist/cjs/index.js",
-  "types": "./dist/cjs/index.d.ts",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
   "engines": {
     "node": ">=22"
   },
   "exports": {
-    "import": {
-      "types": "./dist/esm/index.d.ts",
-      "default": "./dist/esm/index.js"
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      }
     },
-    "require": {
-      "types": "./dist/cjs/index.d.ts",
-      "default": "./dist/cjs/index.js"
-    }
+    "./theme": {
+      "import": {
+        "default": "./dist/esm/index.css"
+      },
+      "require": {
+        "default": "./dist/cjs/index.css"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
-    "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-    "build:css:cjs": "sass --pkg-importer node --no-source-map src:dist/cjs",
-    "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
-    "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "build": "pnpm clean && pnpm build:bundle",
+    "build:bundle": "pnpm build:bundle:cjs && pnpm build:bundle:esm",
+    "build:bundle:cjs": "MODULE_FORMAT=cjs tsup ./src/index.tsx && echo '{\"type\": \"commonjs\"}' &> ./dist/cjs/package.json",
+    "build:bundle:esm": "MODULE_FORMAT=esm tsup ./src/index.tsx && echo '{\"type\": \"module\"}' &> ./dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
+    "build:types": "tsc --project tsconfig.build.json --emitDeclarationOnly --outDir ./dist/types",
+    "build:watch": "nodemon --verbose --watch ./src --watch ../component-library/src --ext ts,tsx,scss --ignore node_modules --ignore dist --exec \"pnpm turbo --filter @fogo/sessions-sdk-react build:bundle\"",
+    "clean": "rm -rf dist",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
-    "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
-    "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
     "test:format": "run-jest --colors --selectProjects format",
     "test:integration": "run-jest --colors --selectProjects integration",
     "test:lint:eslint": "run-jest --colors --selectProjects lint",
     "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
-    "test:types": "tsc"
+    "test:types": "tsc --project tsconfig.build.json --emitDeclarationOnly --outDir ./dist/types"
   },
   "peerDependencies": {
     "react": "^19"
@@ -87,14 +100,21 @@
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
+    "@fogo/component-library": "workspace:^",
+    "esbuild-sass-plugin": "catalog:",
+    "esbuild-plugin-preserve-directives": "catalog:",
     "eslint": "catalog:",
     "jest": "catalog:",
+    "nodemon": "catalog:",
+    "postcss": "catalog:",
+    "postcss-modules": "catalog:",
     "prettier": "catalog:",
     "puppeteer": "catalog:",
     "react": "catalog:",
     "sass": "catalog:",
     "stylelint": "catalog:",
     "stylelint-config-standard-scss": "catalog:",
+    "tsup": "catalog:",
     "typescript": "catalog:"
   }
 }
