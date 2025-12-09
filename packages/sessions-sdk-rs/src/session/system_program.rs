@@ -1,12 +1,10 @@
 use crate::session::IsAuthorizedTokens;
 use crate::session::Session;
 use crate::session::SessionError;
-use solana_program::sysvar::clock::Clock;
-use solana_program::pubkey::Pubkey;
 use crate::session::UnixTimestamp;
-use borsh::{BorshDeserialize, BorshSerialize, BorshSchema};
-
-
+use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
+use solana_program::pubkey::Pubkey;
+use solana_program::sysvar::clock::Clock;
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
@@ -44,6 +42,4 @@ impl Session {
     fn is_live_with_clock(&self, clock: &Clock) -> Result<bool, SessionError> {
         Ok(clock.unix_timestamp <= self.expiration()?)
     }
-
-
 }

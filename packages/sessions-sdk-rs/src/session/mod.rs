@@ -154,7 +154,6 @@ pub use system_program::ActiveSessionInfo;
 //     pub phantom_data: std::marker::PhantomData<T>,
 // }
 
-
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct ActiveSessionInfoWithDomainHash {
     /// The sha256 hash of the domain name for this session
