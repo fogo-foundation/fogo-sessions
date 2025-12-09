@@ -1,6 +1,6 @@
 [package]
 name = "fogo-paymaster"
-version = "0.5.0"
+version = "0.5.6"
 edition = { workspace = true }
 license = { workspace = true }
 description = "Fogo paymaster service and transaction validator CLI"
@@ -71,12 +71,12 @@ tracing-subscriber = {workspace = true}
 utoipa = "5.4.0"
 utoipa-axum = "0.2.0"
 url = "2.5.7"
-uuid = {version = "1.18.1", features = ["v7"]}
+uuid = {version = "1.18.1", features = ["v4"]}
 
 [[bin]]
 name = "paymaster-tx-validator"
 path = "src/bin/tx_validator.rs"
 
 [[bin]]
-name = "paymaster-seed"
-path = "src/bin/seed.rs"
+name = "paymaster-config-sync"
+path = "src/bin/config_sync.rs"
