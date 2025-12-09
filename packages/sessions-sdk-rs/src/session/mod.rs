@@ -143,17 +143,6 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
 #[cfg(feature = "system-program")]
 pub use system_program::ActiveSessionInfo;
 
-// #[cfg(feature = "system-program")]
-// #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
-
-// pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
-//     /// The user who started this session
-//     pub user: Pubkey,
-//     /// The expiration time of the session
-//     pub expiration: UnixTimestamp,
-//     pub phantom_data: std::marker::PhantomData<T>,
-// }
-
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct ActiveSessionInfoWithDomainHash {
     /// The sha256 hash of the domain name for this session
