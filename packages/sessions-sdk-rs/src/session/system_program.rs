@@ -1,7 +1,20 @@
+use crate::session::IsAuthorizedTokens;
 use crate::session::Session;
 use crate::session::SessionError;
 use solana_program::sysvar::clock::Clock;
 use solana_program::pubkey::Pubkey;
+use crate::session::UnixTimestamp;
+use borsh::{BorshDeserialize, BorshSerialize, BorshSchema};
+
+
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
+    pub user: Pubkey,
+    pub expiration: UnixTimestamp,
+    #[borsh_skip]
+    _phantom_data: std::marker::PhantomData<T>,
+}
 
 impl Session {
     /// This function is meant to replace `Session::get_user_checked` in the context of the system program.

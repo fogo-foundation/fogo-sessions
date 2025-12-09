@@ -125,6 +125,7 @@ pub struct RevokedSessionInfo {
     pub authorized_tokens_with_mints: AuthorizedTokensWithMints,
 }
 
+#[cfg(not(feature = "system-program"))]
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
     /// The user who started this session
@@ -138,6 +139,21 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
     /// Extra (key, value)'s provided by the user, they can be used to store extra arbitrary information about the session
     pub extra: Extra,
 }
+
+#[cfg(feature = "system-program")]
+pub use system_program::ActiveSessionInfo;
+
+// #[cfg(feature = "system-program")]
+// #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
+
+// pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
+//     /// The user who started this session
+//     pub user: Pubkey,
+//     /// The expiration time of the session
+//     pub expiration: UnixTimestamp,
+//     pub phantom_data: std::marker::PhantomData<T>,
+// }
+
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, BorshSchema)]
 pub struct ActiveSessionInfoWithDomainHash {
@@ -243,6 +259,7 @@ impl From<HashMap<String, String>> for Extra {
 
 impl Session {
     /// Extracts the user public key from a signer or a session account. If the account is a session, it extracts the user from the session data and also checks that the session is live and the session is allowed to interact with `program_id` on behalf of the user. Otherwise, it just returns the public key of the signer.
+    #[cfg(not(feature = "system-program"))]
     pub fn extract_user_from_signer_or_session(
         info: &AccountInfo,
         program_id: &Pubkey,
@@ -308,6 +325,7 @@ impl Session {
         }
     }
 
+    #[cfg(not(feature = "system-program"))]
     fn authorized_programs(&self) -> Result<&AuthorizedPrograms, SessionError> {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.authorized_programs),
@@ -345,6 +363,8 @@ impl Session {
             SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
         }
     }
+
+    #[cfg(not(feature = "system-program"))]
     fn extra(&self) -> Result<&Extra, SessionError> {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.extra),
@@ -372,6 +392,7 @@ impl Session {
         }
     }
 
+    #[cfg(not(feature = "system-program"))]
     fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), SessionError> {
         match self.authorized_programs()? {
             AuthorizedPrograms::Specific(ref programs) => {
@@ -429,6 +450,7 @@ impl Session {
     }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
+    #[cfg(not(feature = "system-program"))]
     pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
         self.check_is_live_and_unrevoked()?;
         self.check_authorized_program(program_id)?;
@@ -436,6 +458,7 @@ impl Session {
     }
 
     /// Returns the value of one of the session's extra fields with the given key, if it exists
+    #[cfg(not(feature = "system-program"))]
     pub fn get_extra(&self, key: &str) -> Result<Option<&str>, SessionError> {
         self.check_is_live_and_unrevoked()?;
         Ok(self.extra()?.get(key))
