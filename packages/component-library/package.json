@@ -3,9 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22.14.0"
-  },
   "exports": {
     "./Button": {
       "types": "./dist/Button/index.d.ts",
@@ -21,6 +18,8 @@
   "scripts": {
     "build": "ts-duality --clean --copyOtherFiles --noCjs",
     "build:storybook": "storybook build",
+    "build:scss": "copyfiles -u 1 \"src/**/*.scss\" ./dist",
+    "clean": "rm -rf ./dist",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
