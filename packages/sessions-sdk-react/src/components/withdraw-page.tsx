@@ -21,11 +21,11 @@ import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
 import styles from "./withdraw-page.module.scss";
 import { StateType, useData } from "../hooks/use-data.js";
+import { usePrice } from "../hooks/use-price.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import { USDC } from "../wormhole-routes.js";
-import { usePrice } from "../hooks/use-price.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
