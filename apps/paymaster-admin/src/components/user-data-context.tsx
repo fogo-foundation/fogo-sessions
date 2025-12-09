@@ -1,5 +1,4 @@
 "use client";
-
 import {
   isEstablished,
   SessionStateType,
@@ -15,7 +14,7 @@ import {
   useMemo,
 } from "react";
 
-import { fetchUserData } from "../client/paymaster";
+import { fetchUserData, UserNotFoundError } from "../client/paymaster";
 import { UserNotFound } from "../components/UserNotFound";
 import type { User } from "../db-schema";
 
@@ -41,32 +40,31 @@ export const useUserData = () => {
 
 export const UserDataProvider = ({ children }: { children: ReactNode }) => {
   const sessionState = useSession();
-  const established = isEstablished(sessionState);
+  const sessionStateEstablished = isEstablished(sessionState);
 
-  const [asyncState, asyncActions] = useAsync(async () => {
-    if (!established) {
+  const [userDataState, userDataActions] = useAsync(async () => {
+    if (!sessionStateEstablished) {
       return;
     }
-    const token = await sessionState.createLogInToken();
-    return fetchUserData(token);
+    return fetchUserData(await sessionState.createLogInToken());
   });
 
   const refetch = useCallback(async () => {
-    if (established) {
-      await asyncActions.execute();
+    if (sessionStateEstablished) {
+      await userDataActions.execute();
     }
-  }, [established, asyncActions]);
+  }, [sessionStateEstablished, userDataActions]);
 
-  // Fetch user data when session becomes established
   useEffect(() => {
-    if (established) {
-      asyncActions.execute().catch(() => {
-        // Error is captured in asyncState.error
+    if (sessionStateEstablished) {
+      userDataActions.execute().catch((error: unknown) => {
+        // eslint-disable-next-line no-console
+        console.error("Failed to fetch user data", error);
       });
     } else {
-      asyncActions.reset();
+      userDataActions.reset();
     }
-  }, [established, asyncActions]);
+  }, [sessionStateEstablished, userDataActions]);
 
   const isSessionLoading = [
     SessionStateType.Initializing,
@@ -74,20 +72,19 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     SessionStateType.WalletConnecting,
     SessionStateType.SettingLimits,
   ].includes(sessionState.type);
+  const isUserNotFound = userDataState.error instanceof UserNotFoundError;
 
-  const isUserNotFound =
-    asyncState.error !== undefined &&
-    (asyncState.error as Error & { status?: number }).status === 404;
+  const isLoading = isSessionLoading || userDataState.status === "loading";
 
   const contextValue = useMemo<UserDataContextValue>(
     () => ({
-      userData: asyncState.result ?? undefined,
-      isLoading: isSessionLoading || asyncState.status === "loading",
-      error: isUserNotFound ? undefined : (asyncState.error ?? undefined),
+      userData: userDataState.result,
+      isLoading,
+      error: userDataState.error,
       isUserNotFound,
       refetch,
     }),
-    [asyncState, isSessionLoading, isUserNotFound, refetch],
+    [userDataState, isLoading, isUserNotFound, refetch],
   );
 
   if (isUserNotFound) {

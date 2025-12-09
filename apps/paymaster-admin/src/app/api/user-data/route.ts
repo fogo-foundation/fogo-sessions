@@ -1,8 +1,5 @@
 import { verifyLogInToken } from "@fogo/sessions-sdk";
-import {
-  unstable_cacheTag as cacheTag,
-  unstable_cacheLife as cacheLife,
-} from "next/cache";
+import { cacheTag, cacheLife } from "next/cache";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 

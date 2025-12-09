@@ -7,7 +7,7 @@ export const fetchUserData = async (sessionToken: string) => {
   );
 
   if (response.status === 404) {
-    return;
+    throw new UserNotFoundError();
   }
 
   if (!response.ok) {
@@ -16,3 +16,10 @@ export const fetchUserData = async (sessionToken: string) => {
 
   return UserSchema.parse(await response.json());
 };
+
+export class UserNotFoundError extends Error {
+  constructor() {
+    super("User not found");
+    this.name = "UserNotFoundError";
+  }
+}
