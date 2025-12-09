@@ -16,9 +16,9 @@ import { useState, useCallback, useMemo } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
+import { errorToString } from "../error-to-string.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./component-library/button.js";
-import { errorToString } from "../error-to-string.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { FetchError as FetchErrorImpl } from "./fetch-error.js";
 import { TextField } from "./field.js";
