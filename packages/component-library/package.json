@@ -16,7 +16,8 @@
     "./theme": "./dist/theme.scss"
   },
   "scripts": {
-    "build": "ts-duality --clean --copyOtherFiles --noCjs",
+    "build": "ts-duality --noCjs",
+    "build:watch": "nodemon --verbose --watch ./src --ext ts,tsx,scss --exec \"rm -rf ./dist && pnpm turbo --filter @fogo/component-library build\"",
     "build:storybook": "storybook build",
     "build:scss": "copyfiles -u 1 \"src/**/*.scss\" ./dist",
     "clean": "rm -rf ./dist",
@@ -63,6 +64,7 @@
     "copyfiles": "catalog:",
     "css-loader": "catalog:",
     "eslint": "catalog:",
+    "nodemon": "catalog:",
     "postcss": "catalog:",
     "postcss-loader": "catalog:",
     "prettier": "catalog:",

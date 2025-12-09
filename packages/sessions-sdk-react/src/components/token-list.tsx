@@ -10,7 +10,7 @@ import type { EstablishedSessionState } from "../session-state.js";
 import { CopyButton } from "./copy-button.js";
 import { FetchError } from "./fetch-error.js";
 import { NotionalAmount } from "./notional-amount.js";
-import styles from "./token-list.module.css";
+import styles from "./token-list.module.scss";
 import { TruncateKey } from "./truncate-key.js";
 import { usePrice } from "../hooks/use-price.js";
 import type { Token } from "../hooks/use-token-account-data.js";

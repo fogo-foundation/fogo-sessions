@@ -16,6 +16,10 @@
       "dependsOn": ["//#install:modules", "^build"],
       "outputs": ["dist/cjs/**", "dist/esm/**"]
     },
+     "build:watch": {
+      "dependsOn": ["//#install:modules", "^build"],
+      "outputs": ["dist/package.json"]
+    },
     "build:package-json": {
       "dependsOn": ["//#install:modules"],
       "outputs": ["dist/package.json"]

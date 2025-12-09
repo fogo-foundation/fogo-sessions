@@ -7,14 +7,12 @@
         "//#install:modules",
         "clean",
         "build:scss",
-        "build:declarations",
-        "build:svg"
+        "^build"
       ]
     },
-    "build:declarations": {
+    "build:watch": {
       "dependsOn": ["//#install:modules", "^build"],
-      "inputs": ["src/**/*.ts", "src/**/*.tsx"],
-      "outputs": ["dist/**/*.d.ts"]
+      "outputs": ["dist/**"]
     },
     "build:scss": {
       "dependsOn": ["//#install:modules"],
@@ -23,11 +21,6 @@
     },
     "build:storybook": {
       "outputs": ["storybook-static/**"]
-    },
-    "build:svg": {
-      "dependsOn": ["//#install:modules"],
-      "inputs": ["src/**/*.svg"],
-      "outputs": ["dist/**/*.svg"]
     },
     "clean": {
       "cache": false,
