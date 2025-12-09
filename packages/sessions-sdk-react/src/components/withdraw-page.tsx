@@ -10,7 +10,7 @@ import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
 import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
+import { Button } from "./component-library/button.js";
 import { errorToString } from "../error-to-string.js";
 import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";

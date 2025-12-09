@@ -10,7 +10,7 @@ import type { KeyedMutator } from "swr";
 
 import { stringToAmount } from "../amount-to-string.js";
 import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
+import { Button } from "./component-library/button.js";
 import { errorToString } from "../error-to-string.js";
 import styles from "./deposit-page.module.css";
 import { Link } from "./link.js";

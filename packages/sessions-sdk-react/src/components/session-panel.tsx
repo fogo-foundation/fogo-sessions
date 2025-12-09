@@ -13,7 +13,7 @@ import type {
   EstablishedSessionState,
   SessionState,
 } from "../session-state.js";
-import { Button } from "./button.js";
+import { Button } from "./component-library/button.js";
 import { CopyButton } from "./copy-button.js";
 import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";

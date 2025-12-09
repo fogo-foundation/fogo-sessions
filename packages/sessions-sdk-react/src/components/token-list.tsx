@@ -5,7 +5,7 @@ import { GridList, GridListItem } from "react-aria-components";
 
 import { amountToString } from "../amount-to-string.js";
 import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
+import { Button } from "./component-library/button.js";
 import { CopyButton } from "./copy-button.js";
 import { FetchError } from "./fetch-error.js";
 import { Link } from "./link.js";
