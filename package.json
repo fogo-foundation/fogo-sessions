@@ -11,7 +11,7 @@
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix .",
     "install:modules": "[ $CI ] && true || pnpm install",
-    "publish": "echo ========================; echo $NPM_CONFIG_USERCONFIG; cat $NPM_CONFIG_USERCONFIG; echo ========================; echo /home/runner/work/_temp/.npmrc; cat /home/runner/work/_temp/.npmrc; echo ========================; pnpm publish --no-git-checks -r",
+    "publish": "echo ========================; env; echo ========================; echo $NPM_CONFIG_USERCONFIG; cat $NPM_CONFIG_USERCONFIG; echo ========================; echo /home/runner/work/_temp/.npmrc; cat /home/runner/work/_temp/.npmrc; echo ========================; pnpm publish --no-git-checks -r",
     "run:domain-registry": "domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
     "run:register-ntt-manager": "register-ntt-manager",
