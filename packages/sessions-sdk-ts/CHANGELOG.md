@@ -1,5 +1,28 @@
 # @fogo/sessions-sdk
 
+## 0.0.25
+
+### Patch Changes
+
+- a4306fc: Update the paymaster URLs
+- cf63fff: Update mainnet USDC bridge out ALT
+- Updated dependencies [f28e02a]
+  - @fogo/sessions-idls@0.0.11
+
+## 0.0.24
+
+### Patch Changes
+
+- Updated dependencies [02d8d5c]
+  - @fogo/sessions-idls@0.0.10
+
+## 0.0.23
+
+### Patch Changes
+
+- 5086061: Bump bridge-out compute units limit to 240,000
+- d23c949: Silence Phantom warnings
+
 ## 0.0.22
 
 ### Patch Changes

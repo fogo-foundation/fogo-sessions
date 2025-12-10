@@ -41,8 +41,7 @@ export const GOOGLE_ANALYTICS_ID = defaultInProduction(
 
 export const RPC = getEnvOrDefault("RPC", "https://testnet.fogo.io");
 
-// TODO Replace this domain with https://paymaster-admin.fogo.io after setting up a
-// new paymaster for it
+// TODO Replace this domain with https://paymaster-admin.fogo.io or something after setting up the domain in the paymaster
 export const DOMAIN = getEnvOrDefault(
   "DOMAIN",
   "https://sessions-example.fogo.io",

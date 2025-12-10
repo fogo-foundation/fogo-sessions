@@ -1,45 +1,43 @@
-import { Network as FogoNetwork } from "@fogo/sessions-sdk";
+import { Network } from "@fogo/sessions-sdk";
 import type { ComponentProps } from "react";
 import type { Link as UnstyledLink } from "react-aria-components";
 
 import { Link } from "./link.js";
 
 type Props = ComponentProps<typeof UnstyledLink> & {
-  network: FogoNetwork | SolanaNetwork;
+  network: Network;
+  chain?: Chain;
   txHash: string;
 };
 
 export const ExplorerLink = ({
   children,
   network,
+  chain = Chain.Fogo,
   txHash,
   ...props
 }: Props) => (
-  <Link href={mkLink(network, txHash)} target="_blank" {...props}>
+  <Link href={mkLink(network, chain, txHash)} target="_blank" {...props}>
     {children ?? "Open Explorer"}
   </Link>
 );
 
-export enum SolanaNetwork {
-  Mainnet,
-  Devnet,
+export enum Chain {
+  Solana,
+  Fogo,
 }
 
-const mkLink = (network: FogoNetwork | SolanaNetwork, txHash: string) => {
+const mkLink = (network: Network, chain: Chain, txHash: string) => {
   switch (network) {
-    case FogoNetwork.Mainnet: {
-      return `https://explorer.fogo.io/tx/${txHash}?cluster=mainnet-beta`;
+    case Network.Mainnet: {
+      return chain === Chain.Solana
+        ? `https://solscan.io/tx/${txHash}`
+        : `https://fogoscan.com/tx/${txHash}?cluster=mainnet`;
     }
-
-    case FogoNetwork.Testnet: {
-      return `https://fogoscan.com/tx/${txHash}?cluster=testnet`;
-    }
-
-    case SolanaNetwork.Mainnet: {
-      return `https://solscan.io/tx/${txHash}`;
-    }
-    case SolanaNetwork.Devnet: {
-      return `https://solscan.io/tx/${txHash}?cluster=devnet`;
+    case Network.Testnet: {
+      return chain === Chain.Solana
+        ? `https://solscan.io/tx/${txHash}?cluster=devnet`
+        : `https://fogoscan.com/tx/${txHash}?cluster=testnet`;
     }
   }
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { Network } from "@fogo/sessions-sdk";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
@@ -17,6 +18,7 @@ import { CopyButton } from "./copy-button.js";
 import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import { GetTokensPage } from "./get-tokens-page.js";
+import { Link } from "./link.js";
 import { ReceivePage } from "./receive-page.js";
 import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
@@ -50,7 +52,7 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
     <div className={clsx(styles.sessionPanel, className)} {...props}>
       <div className={styles.header}>
         <Heading slot="title" className={styles.title}>
-          Your Wallet
+          Your <FogoWordmark /> Wallet
         </Heading>
         {isEstablished(sessionState) && (
           <CopyButton text={sessionState.walletPublicKey.toBase58()}>
@@ -63,8 +65,41 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
           </Button>
         )}
       </div>
-      {whitelistedTokens.length === 0 ? (
-        <div className={styles.tabPanel}>
+      <Tabs className={styles.tabs ?? ""}>
+        <TabList
+          aria-label="Wallet"
+          className={styles.tabList ?? ""}
+          items={[
+            { id: "tokens", name: "Tokens" },
+            { id: "activity", name: "Activity" },
+            ...(whitelistedTokens.length === 0
+              ? []
+              : [{ id: "session-limits", name: "Session" }]),
+          ]}
+        >
+          {({ id, name }) => (
+            <Tab className={styles.tab ?? ""} id={id}>
+              {({ isSelected }) => (
+                <>
+                  <span>{name}</span>
+                  {isSelected && (
+                    <motion.span
+                      layoutId="underline"
+                      className={styles.underline}
+                      transition={{
+                        type: "spring",
+                        bounce: 0.6,
+                        duration: 0.6,
+                      }}
+                      style={{ originY: "top" }}
+                    />
+                  )}
+                </>
+              )}
+            </Tab>
+          )}
+        </TabList>
+        <TabPanel className={styles.tabPanel ?? ""} id="tokens">
           {isEstablished(sessionState) && (
             <Tokens
               sessionState={sessionState}
@@ -72,48 +107,13 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
               setCurrentScreen={setCurrentScreen}
             />
           )}
-        </div>
-      ) : (
-        <Tabs className={styles.tabs ?? ""}>
-          <TabList
-            aria-label="Wallet"
-            className={styles.tabList ?? ""}
-            items={[
-              { id: "tokens", name: "Tokens" },
-              { id: "session-limits", name: "Session" },
-            ]}
-          >
-            {({ id, name }) => (
-              <Tab className={styles.tab ?? ""} id={id}>
-                {({ isSelected }) => (
-                  <>
-                    <span>{name}</span>
-                    {isSelected && (
-                      <motion.span
-                        layoutId="underline"
-                        className={styles.underline}
-                        transition={{
-                          type: "spring",
-                          bounce: 0.6,
-                          duration: 0.6,
-                        }}
-                        style={{ originY: "top" }}
-                      />
-                    )}
-                  </>
-                )}
-              </Tab>
-            )}
-          </TabList>
-          <TabPanel className={styles.tabPanel ?? ""} id="tokens">
-            {isEstablished(sessionState) && (
-              <Tokens
-                sessionState={sessionState}
-                currentScreen={currentScreen}
-                setCurrentScreen={setCurrentScreen}
-              />
-            )}
-          </TabPanel>
+        </TabPanel>
+        <TabPanel className={styles.tabPanel ?? ""} id="activity">
+          {isEstablished(sessionState) && (
+            <Activity sessionState={sessionState} />
+          )}
+        </TabPanel>
+        {whitelistedTokens.length > 0 && (
           <TabPanel
             className={styles.tabPanel ?? ""}
             id="session-limits"
@@ -123,8 +123,8 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
               <SessionLimitsTab sessionState={sessionState} />
             )}
           </TabPanel>
-        </Tabs>
-      )}
+        )}
+      </Tabs>
       <div className={styles.footer}>
         <FogoWordmark className={styles.fogoWordmark} />
         <LogoutButton sessionState={sessionState} onLogout={onClose} />
@@ -132,6 +132,28 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
     </div>
   );
 };
+
+const Activity = ({
+  sessionState,
+}: {
+  sessionState: EstablishedSessionState;
+}) => (
+  <div className={styles.activity}>
+    <p className={styles.activityMessage}>
+      Transaction history is coming to Fogo Sessions.
+    </p>
+    <p className={styles.activityMessage}>
+      In the meantime, you can see your transaction history on{" "}
+      <Link
+        target="_blank"
+        href={`https://fogoscan.com/account/${sessionState.walletPublicKey.toBase58()}#transfers`}
+      >
+        the Fogo explorer
+      </Link>
+      .
+    </p>
+  </div>
+);
 
 const LogoutButton = ({
   sessionState,
@@ -168,6 +190,7 @@ const Tokens = ({
   currentScreen: TokenScreen;
   setCurrentScreen: (screen: TokenScreen) => void;
 }) => {
+  const { network } = useSessionContext();
   const showWallet = useCallback(() => {
     setCurrentScreen(TokenScreen.Wallet());
   }, [setCurrentScreen]);
@@ -197,8 +220,7 @@ const Tokens = ({
       return (
         <SelectTokenPage
           onPressBack={showWallet}
-          onPressReceive={showReceive}
-          onPressGetTokens={showGet}
+          onPressTransferIn={showDeposit}
           onPressSend={(token) => {
             showSend({
               prevScreen: TokenScreenType.SelectTokenToSend,
@@ -271,7 +293,7 @@ const Tokens = ({
       return (
         <DepositPage
           sessionState={sessionState}
-          onPressBack={showGet}
+          onPressBack={network === Network.Mainnet ? showWallet : showGet}
           onSendComplete={showWallet}
         />
       );
@@ -284,6 +306,7 @@ const Tokens = ({
           onPressReceive={showReceive}
           onPressSend={showSelectTokenToSend}
           onPressGet={showGet}
+          onPressTransferIn={showDeposit}
           onPressSendForToken={(token) => {
             showSend({
               prevScreen: TokenScreenType.Wallet,

@@ -16,7 +16,6 @@ use governor::{
     state::{InMemoryState, NotKeyed},
     Quota, RateLimiter,
 };
-use intent_transfer::bridge::processor::bridge_ntt_tokens::H160;
 use solana_client::{
     nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config,
     rpc_config::RpcTransactionConfig,
@@ -87,8 +86,8 @@ enum Network {
 impl Network {
     fn paymaster_base_url(self) -> &'static str {
         match self {
-            Network::Mainnet => "https://paymaster.dourolabs.app",
-            Network::Testnet => "https://paymaster.fogo.io",
+            Network::Mainnet => "https://fogo-mainnet.dourolabs-paymaster.xyz",
+            Network::Testnet => "https://fogo-testnet.dourolabs-paymaster.xyz",
         }
     }
 
@@ -98,27 +97,14 @@ impl Network {
             Network::Testnet => "https://testnet.fogo.io",
         }
     }
-
-    fn default_ntt_quoter_address(self) -> H160 {
-        match self {
-            Network::Mainnet => [
-                82, 65, 201, 39, 102, 152, 67, 159, 239, 39, 128, 219, 171, 118, 254, 201, 11, 99,
-                63, 189,
-            ],
-            Network::Testnet => [
-                165, 64, 8, 1, 121, 65, 236, 233, 104, 98, 58, 13, 216, 238, 144, 126, 43, 19, 53,
-                150,
-            ],
-        }
-    }
 }
 
-pub fn load_file_config(config_path: &str, ntt_quoter: H160) -> Result<Config> {
+pub fn load_file_config(config_path: &str) -> Result<Config> {
     let mut config: Config = config::Config::builder()
         .add_source(File::with_name(config_path))
         .build()?
         .try_deserialize()?;
-    config.assign_defaults(ntt_quoter)?;
+    config.assign_defaults()?;
     Ok(config)
 }
 #[tokio::main]
@@ -137,8 +123,7 @@ async fn main() -> Result<()> {
             rpc_quota_per_second,
             rpc_url_http,
         } => {
-            let ntt_quoter = network.default_ntt_quoter_address();
-            let config = load_file_config(&config, ntt_quoter)?;
+            let config = load_file_config(&config)?;
             let domains = get_domains_for_validation(&config, &domain);
             let rpc_url_http =
                 rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());

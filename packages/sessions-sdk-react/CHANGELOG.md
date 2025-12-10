@@ -1,5 +1,42 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.5
+
+### Patch Changes
+
+- 90c908d: Fix text wrapping issues
+- e5e73c3: Fix Solana explorer link
+- 08a2abf: Add activity tab with a link to fogo explorer for now
+- afae341: Gracefully handle when user attempts to transfer in without having SOL in their Solana wallet
+- Updated dependencies [a4306fc]
+- Updated dependencies [cf63fff]
+- Updated dependencies [f28e02a]
+  - @fogo/sessions-sdk@0.0.25
+  - @fogo/sessions-idls@0.0.11
+  - @fogo/sessions-sdk-web@0.0.19
+
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [02d8d5c]
+  - @fogo/sessions-idls@0.0.10
+  - @fogo/sessions-sdk@0.0.24
+  - @fogo/sessions-sdk-web@0.0.18
+
+## 0.1.3
+
+### Patch Changes
+
+- 4543a2a: Simplify empty wallet UX & omit Get Tokens page in mainnet
+- d23c949: Silence Phantom warnings
+- fffd28a: Gracefully handle when Solana USDC ATA does not exist
+- d86d984: Fix bug that allowed creating unlimited sessions when enableUnlimited is false or undefined. Ensure the Session Limits modal pops up before creating unlimited sessions
+- Updated dependencies [5086061]
+- Updated dependencies [d23c949]
+  - @fogo/sessions-sdk@0.0.23
+  - @fogo/sessions-sdk-web@0.0.17
+
 ## 0.1.2
 
 ### Patch Changes

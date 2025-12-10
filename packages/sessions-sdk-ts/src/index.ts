@@ -24,10 +24,14 @@ import {
 } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type {
-  BaseWalletAdapter,
+  BaseSignerWalletAdapter,
   MessageSignerWalletAdapterProps,
 } from "@solana/wallet-adapter-base";
-import type { TransactionError, TransactionInstruction } from "@solana/web3.js";
+import type {
+  TransactionError,
+  TransactionInstruction,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import {
   ComputeBudgetProgram,
   Connection,
@@ -671,7 +675,7 @@ const BRIDGING_ADDRESS_LOOKUP_TABLE: Record<
   [Network.Mainnet]: {
     // USDC
     uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG:
-      "84k3mfNjmyinpZwyev7F15ChEW3Kqa3NoUkCJXXs4qkw",
+      "7hmMz3nZDnPJfksLuPotKmUBAFDneM2D9wWg3R1VcKSv",
   },
 };
 
@@ -912,7 +916,7 @@ const buildTransferIntentInstruction = async (
 const BRIDGE_OUT_MESSAGE_HEADER = `Fogo Bridge Transfer:
 Signing this intent will bridge out the tokens as described below.
 `;
-const BRIDGE_OUT_CUS = 220_000;
+const BRIDGE_OUT_CUS = 240_000;
 
 type SendBridgeOutOptions = {
   context: SessionContext;
@@ -1146,7 +1150,7 @@ const buildBridgeOutIntent = async (
 type SendBridgeInOptions = {
   context: SessionContext;
   walletPublicKey: PublicKey;
-  solanaWallet: BaseWalletAdapter;
+  solanaWallet: BaseSignerWalletAdapter;
   amount: bigint;
   fromToken: WormholeToken & { chain: "Solana" };
   toToken: WormholeToken & { chain: "Fogo" };
@@ -1167,18 +1171,21 @@ export const bridgeIn = async (options: SendBridgeInOptions) => {
         {
           address: () => options.walletPublicKey.toBase58(),
           chain: () => "Solana",
-          signAndSend: (transactions) =>
+          sign: (transactions) =>
             Promise.all(
-              transactions.map(({ transaction }) =>
-                options.solanaWallet.sendTransaction(
-                  // Hooray for Wormhole's incomplete typing eh?
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-                  transaction.transaction,
-                  solanaConnection,
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-                  { signers: transaction.signers },
-                ),
-              ),
+              transactions.map(async ({ transaction }) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                const signedTx: VersionedTransaction =
+                  await options.solanaWallet.signTransaction(
+                    // Hooray for Wormhole's incomplete typing eh?
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    transaction.transaction,
+                  );
+                // Hooray for Wormhole's incomplete typing eh?
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                signedTx.sign(transaction.signers);
+                return signedTx.serialize();
+              }),
             ),
         },
         quote,

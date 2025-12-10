@@ -15,11 +15,16 @@ use solana_program::{
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
-use std::time::Duration;
+use std::{
+    sync::atomic::{AtomicUsize, Ordering},
+    time::Duration,
+};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub struct TransactionGenerator {
-    sponsor_pubkey: Pubkey,
+    sponsor_pubkeys: Vec<Pubkey>,
+
+    next_sponsor_index: AtomicUsize,
 
     // wallet keypair of user (used to sign intents)
     user_signer: Keypair,
@@ -31,12 +36,13 @@ pub struct TransactionGenerator {
 
 impl TransactionGenerator {
     pub fn new(
-        sponsor_pubkey: Pubkey,
+        sponsor_pubkeys: Vec<Pubkey>,
         chain_id: impl Into<String>,
         domain: impl Into<String>,
     ) -> Self {
         Self {
-            sponsor_pubkey,
+            sponsor_pubkeys,
+            next_sponsor_index: AtomicUsize::new(0),
             user_signer: Keypair::new(),
             chain_id: chain_id.into(),
             domain: domain.into(),
@@ -59,12 +65,18 @@ impl TransactionGenerator {
         }
     }
 
+    fn next_sponsor_pubkey(&self) -> Pubkey {
+        self.sponsor_pubkeys
+            [self.next_sponsor_index.fetch_add(1, Ordering::Relaxed) % self.sponsor_pubkeys.len()]
+    }
+
     /// Generate a valid session creation transaction
     fn generate_valid_session_creation(&self, blockhash: Hash) -> Result<VersionedTransaction> {
-        let (instructions, session_keypair) = self.build_session_establishment_instructions()?;
+        let sponsor_pubkey = self.next_sponsor_pubkey();
+        let (instructions, session_keypair) =
+            self.build_session_establishment_instructions(sponsor_pubkey)?;
 
-        let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+        let message = v0::Message::try_compile(&sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -85,7 +97,7 @@ impl TransactionGenerator {
         ];
 
         let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.next_sponsor_pubkey(), &instructions, &[], blockhash)?;
 
         // we don't need to sign this transaction, the single signature will be added by the paymaster
         Ok(VersionedTransaction {
@@ -96,10 +108,11 @@ impl TransactionGenerator {
 
     /// Generate transaction with invalid signature (wrong keypair)
     fn generate_invalid_signature(&self, blockhash: Hash) -> Result<VersionedTransaction> {
-        let (instructions, _session_keypair) = self.build_session_establishment_instructions()?;
+        let sponsor_pubkey = self.next_sponsor_pubkey();
+        let (instructions, _session_keypair) =
+            self.build_session_establishment_instructions(sponsor_pubkey)?;
 
-        let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+        let message = v0::Message::try_compile(&sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -126,7 +139,7 @@ impl TransactionGenerator {
         let instructions = vec![invalid_instruction];
 
         let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+            v0::Message::try_compile(&self.next_sponsor_pubkey(), &instructions, &[], blockhash)?;
 
         let tx = VersionedTransaction {
             signatures: vec![Default::default(); 1], // only sponsor (fee payer)
@@ -138,7 +151,8 @@ impl TransactionGenerator {
 
     /// Generate transaction with wrong fee payer
     fn generate_invalid_fee_payer(&self, blockhash: Hash) -> Result<VersionedTransaction> {
-        let (instructions, session_keypair) = self.build_session_establishment_instructions()?;
+        let (instructions, session_keypair) =
+            self.build_session_establishment_instructions(self.next_sponsor_pubkey())?;
 
         // use user as fee payer instead of sponsor (this should be rejected by paymaster)
         let message =
@@ -163,12 +177,12 @@ impl TransactionGenerator {
             ComputeBudgetInstruction::set_compute_unit_limit(200_000),
         ];
 
+        let sponsor_pubkey = self.next_sponsor_pubkey();
         let (session_instructions, session_keypair) =
-            self.build_session_establishment_instructions()?;
+            self.build_session_establishment_instructions(sponsor_pubkey)?;
         instructions.extend(session_instructions);
 
-        let message =
-            v0::Message::try_compile(&self.sponsor_pubkey, &instructions, &[], blockhash)?;
+        let message = v0::Message::try_compile(&sponsor_pubkey, &instructions, &[], blockhash)?;
 
         let mut tx = VersionedTransaction {
             signatures: vec![Default::default(); 2],
@@ -182,7 +196,10 @@ impl TransactionGenerator {
 
     /// Builds the instruction set for establishing a session with no limits
     /// Uses a randomly generated keypair as the new session key for the existing user signer
-    fn build_session_establishment_instructions(&self) -> Result<(Vec<Instruction>, Keypair)> {
+    fn build_session_establishment_instructions(
+        &self,
+        sponsor_pubkey: Pubkey,
+    ) -> Result<(Vec<Instruction>, Keypair)> {
         let session_keypair = Keypair::new();
         let session_pubkey = session_keypair.pubkey();
 
@@ -196,7 +213,7 @@ impl TransactionGenerator {
         let domain_record_pda = get_domain_record_address(&self.domain);
 
         let accounts =
-            gather_start_session_accounts(self.sponsor_pubkey, session_pubkey, domain_record_pda);
+            gather_start_session_accounts(sponsor_pubkey, session_pubkey, domain_record_pda);
         let start_session_ix = Instruction {
             program_id: SESSION_MANAGER_ID,
             accounts,

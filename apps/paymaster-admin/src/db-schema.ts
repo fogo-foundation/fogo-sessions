@@ -12,10 +12,9 @@ const u64 = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const TimeStr = z.preprocess((val) => {
   if (val instanceof Date) return val;
   if (typeof val === "string" || typeof val === "number") {
-    const d = new Date(val);
-    return Number.isNaN(d.getTime()) ? undefined : d;
+    return new Date(val);
   }
-  return val; // will fail against z.date() below
+  return val; // will prob fail against z.date() below
 }, z.date());
 
 export const PrimitiveDataValueSchema = z.union([
@@ -125,7 +124,9 @@ export const UserSchema = z.object({
   id: UUID,
   username: z.string(),
   wallet_address: z.string(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  created_at: TimeStr,
+  updated_at: TimeStr,
   apps: z.array(AppWithDomainConfigsSchema),
 });
+
+export type User = z.infer<typeof UserSchema>;

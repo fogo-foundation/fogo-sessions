@@ -35,14 +35,16 @@
         @include theme.text("lg", "medium");
 
         color: theme.color("heading");
-        word-break: break-all;
       }
 
       .amountInWallet {
         @include theme.text("sm");
 
         color: theme.color("paragraph");
-        word-break: break-all;
+
+        .amount {
+          word-break: break-all;
+        }
       }
     }
 
@@ -52,6 +54,14 @@
       .action {
         white-space: nowrap;
       }
+    }
+
+    .notionalAmount {
+      @include theme.text("xs");
+
+      color: theme.color("muted");
+      margin-top: -#{theme.spacing(3)};
+      align-self: flex-start;
     }
 
     .fee {

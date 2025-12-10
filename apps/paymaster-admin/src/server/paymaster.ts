@@ -1,21 +1,7 @@
-import { verifyLogInToken } from "@fogo/sessions-sdk";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import pool from "../config/pg";
 import { UserSchema, VariationSchema } from "../db-schema";
-import { connection } from "../fogo-connection";
-import pool from "./pg";
-
-export const getUserPaymasterData = async () => {
-  const cookieStore = await cookies();
-  const sessionToken = cookieStore.get("sessionToken")?.value ?? "";
-  const acc = await verifyLogInToken(sessionToken, connection);
-  if (!acc) {
-    return redirect(`/`);
-  }
-  return fetchUserPaymasterData(acc.user.toString());
-};
 
 export const updateVariation = async (
   variationId: string,
@@ -28,8 +14,8 @@ export const updateVariation = async (
   return VariationSchema.parse(res.rows[0]);
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const fetchUserPaymasterData = async (_walletAddress: string) => {
+
+export const fetchUserPaymasterData = async (walletAddress: string) => {
   const { rows } = await pool.query(
     `SELECT
       (
@@ -83,10 +69,9 @@ export const fetchUserPaymasterData = async (_walletAddress: string) => {
       u.created_at,
       u.updated_at
     FROM "user" u
+    WHERE u.wallet_address = $1
     `,
-    // TODO: add back this wallet_address filter to restrict to only the logged in user
-    // WHERE u.wallet_address = $1
-    // [walletAddress],
+    [walletAddress],
   );
 
   // If user doesn't exist in database, return undefined
@@ -94,6 +79,5 @@ export const fetchUserPaymasterData = async (_walletAddress: string) => {
     return;
   }
 
-  const userPaymasterData = UserSchema.parse(rows[0]);
-  return userPaymasterData;
+  return UserSchema.parse(rows[0]);
 };
