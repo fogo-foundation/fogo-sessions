@@ -246,24 +246,6 @@ impl From<HashMap<String, String>> for Extra {
 }
 
 impl Session {
-    /// Extracts the user public key from a signer or a session account. If the account is a session, it extracts the user from the session data and also checks that the session is live and the session is allowed to interact with `program_id` on behalf of the user. Otherwise, it just returns the public key of the signer.
-    #[cfg(not(feature = "system-program"))]
-    pub fn extract_user_from_signer_or_session(
-        info: &AccountInfo,
-        program_id: &Pubkey,
-    ) -> Result<Pubkey, SessionError> {
-        if !info.is_signer {
-            return Err(SessionError::MissingRequiredSignature);
-        }
-
-        if info.owner == &SESSION_MANAGER_ID {
-            let session = Self::try_deserialize(&mut info.data.borrow_mut().as_ref())?;
-            session.get_user_checked(program_id)
-        } else {
-            Ok(*info.key)
-        }
-    }
-
     #[cfg(feature = "anchor")]
     /// Tries to deserialize a session account. This should only be used after checking that the account is owned by the session manager program.
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
@@ -313,26 +295,6 @@ impl Session {
         }
     }
 
-    #[cfg(not(feature = "system-program"))]
-    fn authorized_programs(&self) -> Result<&AuthorizedPrograms, SessionError> {
-        match &self.session_info {
-            SessionInfo::V1(session) => Ok(&session.authorized_programs),
-            SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::Revoked),
-                V2::Active(session) => Ok(&session.authorized_programs),
-            },
-            SessionInfo::V3(session) => match session {
-                V3::Revoked(_) => Err(SessionError::Revoked),
-                V3::Active(session) => Ok(&session.authorized_programs),
-            },
-            SessionInfo::V4(session) => match session {
-                V4::Revoked(_) => Err(SessionError::Revoked),
-                V4::Active(session) => Ok(&session.as_ref().authorized_programs),
-            },
-            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
-        }
-    }
-
     fn user(&self) -> Result<&Pubkey, SessionError> {
         match &self.session_info {
             SessionInfo::V1(session) => Ok(&session.user),
@@ -352,46 +314,12 @@ impl Session {
         }
     }
 
-    #[cfg(not(feature = "system-program"))]
-    fn extra(&self) -> Result<&Extra, SessionError> {
-        match &self.session_info {
-            SessionInfo::V1(session) => Ok(&session.extra),
-            SessionInfo::V2(session) => match session {
-                V2::Revoked(_) => Err(SessionError::Revoked),
-                V2::Active(session) => Ok(&session.extra),
-            },
-            SessionInfo::V3(session) => match session {
-                V3::Revoked(_) => Err(SessionError::Revoked),
-                V3::Active(session) => Ok(&session.extra),
-            },
-            SessionInfo::V4(session) => match session {
-                V4::Revoked(_) => Err(SessionError::Revoked),
-                V4::Active(session) => Ok(&session.as_ref().extra),
-            },
-            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
-        }
-    }
-
     fn check_is_live(&self) -> Result<(), SessionError> {
         if self.is_live()? {
             Ok(())
         } else {
             Err(SessionError::Expired)
         }
-    }
-
-    #[cfg(not(feature = "system-program"))]
-    fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), SessionError> {
-        match self.authorized_programs()? {
-            AuthorizedPrograms::Specific(ref programs) => {
-                programs
-                    .iter()
-                    .find(|authorized_program| authorized_program.program_id == *program_id)
-                    .ok_or(SessionError::UnauthorizedProgram)?;
-            }
-            AuthorizedPrograms::All => {}
-        }
-        Ok(())
     }
 
     /// For 0.x versions, every new minor version will be a breaking change.
@@ -436,9 +364,79 @@ impl Session {
         self.check_is_live_and_unrevoked()?;
         self.domain_hash()
     }
+}
+
+#[cfg(not(feature = "system-program"))]
+impl Session {
+    /// Extracts the user public key from a signer or a session account. If the account is a session, it extracts the user from the session data and also checks that the session is live and the session is allowed to interact with `program_id` on behalf of the user. Otherwise, it just returns the public key of the signer.
+    pub fn extract_user_from_signer_or_session(
+        info: &AccountInfo,
+        program_id: &Pubkey,
+    ) -> Result<Pubkey, SessionError> {
+        if !info.is_signer {
+            return Err(SessionError::MissingRequiredSignature);
+        }
+
+        if info.owner == &SESSION_MANAGER_ID {
+            let session = Self::try_deserialize(&mut info.data.borrow_mut().as_ref())?;
+            session.get_user_checked(program_id)
+        } else {
+            Ok(*info.key)
+        }
+    }
+
+    fn authorized_programs(&self) -> Result<&AuthorizedPrograms, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(&session.authorized_programs),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Active(session) => Ok(&session.authorized_programs),
+            },
+            SessionInfo::V3(session) => match session {
+                V3::Revoked(_) => Err(SessionError::Revoked),
+                V3::Active(session) => Ok(&session.authorized_programs),
+            },
+            SessionInfo::V4(session) => match session {
+                V4::Revoked(_) => Err(SessionError::Revoked),
+                V4::Active(session) => Ok(&session.as_ref().authorized_programs),
+            },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
+        }
+    }
+
+    fn extra(&self) -> Result<&Extra, SessionError> {
+        match &self.session_info {
+            SessionInfo::V1(session) => Ok(&session.extra),
+            SessionInfo::V2(session) => match session {
+                V2::Revoked(_) => Err(SessionError::Revoked),
+                V2::Active(session) => Ok(&session.extra),
+            },
+            SessionInfo::V3(session) => match session {
+                V3::Revoked(_) => Err(SessionError::Revoked),
+                V3::Active(session) => Ok(&session.extra),
+            },
+            SessionInfo::V4(session) => match session {
+                V4::Revoked(_) => Err(SessionError::Revoked),
+                V4::Active(session) => Ok(&session.as_ref().extra),
+            },
+            SessionInfo::Invalid => Err(SessionError::InvalidAccountVersion),
+        }
+    }
+
+    fn check_authorized_program(&self, program_id: &Pubkey) -> Result<(), SessionError> {
+        match self.authorized_programs()? {
+            AuthorizedPrograms::Specific(ref programs) => {
+                programs
+                    .iter()
+                    .find(|authorized_program| authorized_program.program_id == *program_id)
+                    .ok_or(SessionError::UnauthorizedProgram)?;
+            }
+            AuthorizedPrograms::All => {}
+        }
+        Ok(())
+    }
 
     /// This function checks that a session is live and authorized to interact with program `program_id` and returns the public key of the user who started the session
-    #[cfg(not(feature = "system-program"))]
     pub fn get_user_checked(&self, program_id: &Pubkey) -> Result<Pubkey, SessionError> {
         self.check_is_live_and_unrevoked()?;
         self.check_authorized_program(program_id)?;
@@ -446,7 +444,6 @@ impl Session {
     }
 
     /// Returns the value of one of the session's extra fields with the given key, if it exists
-    #[cfg(not(feature = "system-program"))]
     pub fn get_extra(&self, key: &str) -> Result<Option<&str>, SessionError> {
         self.check_is_live_and_unrevoked()?;
         Ok(self.extra()?.get(key))
