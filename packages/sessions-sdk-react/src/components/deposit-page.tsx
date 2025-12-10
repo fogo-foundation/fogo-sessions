@@ -4,24 +4,24 @@ import type { Connection, PublicKey, TokenAmount } from "@solana/web3.js";
 import { SolanaJSONRPCError } from "@solana/web3.js";
 import { TransferState } from "@wormhole-foundation/sdk";
 import type { FormEvent } from "react";
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Form } from "react-aria-components";
 import type { KeyedMutator } from "swr";
 
 import { stringToAmount } from "../amount-to-string.js";
+import { Button } from "../component-library/esm/Button/index.js";
+import { Link } from "../component-library/esm/Link/index.js";
+import { StateType, useData } from "../hooks/use-data.js";
+import { useSessionContext } from "../hooks/use-session.js";
 import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
-import { errorToString } from "../error-to-string.js";
+import { USDC } from "../wormhole-routes.js";
 import styles from "./deposit-page.module.css";
-import { Link } from "./link.js";
+import { Chain, ExplorerLink } from "./explorer-link.js";
+import { FetchError } from "./fetch-error.js";
 import { useToast } from "./toast.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
-import { StateType, useData } from "../hooks/use-data.js";
-import { useSessionContext } from "../hooks/use-session.js";
-import { USDC } from "../wormhole-routes.js";
-import { ExplorerLink, Chain } from "./explorer-link.js";
-import { FetchError } from "./fetch-error.js";
+import { errorToString } from "../error-to-string.js";
 
 type Props = {
   sessionState: EstablishedSessionState;

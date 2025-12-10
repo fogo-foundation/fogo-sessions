@@ -1,0 +1,63 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "build:cjs",
+        "build:css:cjs",
+        "build:css:esm",
+        "build:esm",
+        "build:package-json"
+      ]
+    },
+    "build:css:cjs": {
+      "dependsOn": ["//#install:modules"],
+      "cache": false
+    },
+    "build:css:esm": {
+      "dependsOn": ["//#install:modules"],
+      "cache": false
+    },
+    "fix:lint": {
+      "dependsOn": ["fix:lint:eslint", "fix:lint:stylelint"],
+      "cache": false
+    },
+    "fix:lint:eslint": {
+      "dependsOn": ["//#install:modules", "build"],
+      "cache": false
+    },
+    "fix:lint:stylelint": {
+      "dependsOn": ["//#install:modules"],
+      "cache": false
+    },
+    "start:dev": {
+      "with": ["start:dev:tsc", "start:dev:sass"],
+      "persistent": false
+    },
+    "start:dev:tsc": {
+      "dependsOn": ["//#install:modules", "build"],
+      "persistent": true,
+      "cache": false
+    },
+    "start:dev:sass": {
+      "dependsOn": ["//#install:modules"],
+      "persistent": true,
+      "cache": false
+    },
+    "test:lint": {
+      "dependsOn": [
+        "//#install:modules",
+        "build",
+        "test:lint:eslint",
+        "test:lint:stylelint"
+      ]
+    },
+    "test:lint:eslint": {
+      "dependsOn": ["//#install:modules", "build"]
+    },
+    "test:lint:stylelint": {
+      "dependsOn": ["//#install:modules"]
+    }
+  }
+}

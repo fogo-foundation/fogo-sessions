@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { Link as LinkComponent } from "./index.jsx";
+import { Link as LinkComponent } from "./index.js";
 
 const meta = {
   component: LinkComponent,
