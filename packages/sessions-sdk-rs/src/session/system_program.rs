@@ -23,7 +23,7 @@ impl Session {
     /// It doesn't check if the session is authorized to interact with the system program, this is because a session is always authorized to interact with the system program,
     /// since all sessions can do via the system program is wrap tokens for the user.
     /// We need pass the clock as an argument here because 'Clock::get' can't be called in a native program.
-    /// DO NOT USE THIS FUNCTION IN SBF PROGRAMS and use `Session::extract_user_from_signer_or_session` or `Session::get_user_checked` instead.
+    /// THIS FUNCTION SHOULD ONLY BE CALLED IN THE SYSTEM PROGRAM, DO NOT USE THIS FUNCTION IN SBF PROGRAMS and use `Session::extract_user_from_signer_or_session` or `Session::get_user_checked` instead.
     pub fn get_user_checked_system_program(&self, clock: &Clock) -> Result<Pubkey, SessionError> {
         self.check_is_live_and_unrevoked_with_clock(clock)?;
         Ok(*self.user()?)
@@ -37,14 +37,10 @@ impl Session {
     }
 
     fn check_is_live_with_clock(&self, clock: &Clock) -> Result<(), SessionError> {
-        if self.is_live_with_clock(clock)? {
+        if clock.unix_timestamp <= self.expiration()? {
             Ok(())
         } else {
             Err(SessionError::Expired)
         }
-    }
-
-    fn is_live_with_clock(&self, clock: &Clock) -> Result<bool, SessionError> {
-        Ok(clock.unix_timestamp <= self.expiration()?)
     }
 }
