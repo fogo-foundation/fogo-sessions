@@ -13,7 +13,7 @@ bincode = { workspace = true, features = ["serde"] }
 chain-id = { path = "../../programs/chain-id" }
 clap = {workspace = true}
 dashmap = {workspace = true}
-fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["token-program"] }
+fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs" }
 futures = {workspace = true}
 governor = {workspace = true}
 hdrhistogram = "7.5.4"

@@ -13,6 +13,7 @@ name = "fogo_sessions_sdk"
 token-program = []
 anchor = ["anchor-lang"]
 anchor-idl = ["anchor-lang/idl-build"]
+system-program = []
 
 [dependencies]
 borsh = { version = ">=0.10.0, <1.0.0"}
