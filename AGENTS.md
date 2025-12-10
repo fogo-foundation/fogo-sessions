@@ -153,8 +153,8 @@ cargo build -p tollbooth
 #### Testing
 
 ```bash
-# Run all tests
-cargo test
+# Run all tests (note you need to run "anchor build --no-idl" before running cargo test)
+anchor build --no-idl && cargo test
 
 # Run tests for a specific crate
 cargo test -p fogo-paymaster
@@ -182,13 +182,13 @@ cargo test
 
 ### Working Agreements for Rust
 
-- small functions, clear ownership semantics, avoid unnecessary clones.
+- small functions, clear ownership semantics, avoid unnecessary clones, avoid unsafe code/operations, anything that might panic
 - Unless explicitly asked, do not modify any Solana program logic, instructions or paymaster Database or validation logic
 - After modifying Rust code, always run cargo fmt and then cargo test (or cargo test -p <crate>)
 
 ## PR checklist
 
-- title: `feat(scope): short description`
+- use conventional commits style
 - lint, type check, unit tests - all green before commit
 - diff is small and focused. include a brief summary of what changed and why
 - remove any excessive logs or comments before sending a PR
@@ -227,7 +227,6 @@ The NextJS projects are in the `/apps` folder. Here's the structure and importan
 │   ├── config/
 │   │   └── server.ts            # Server-side env vars, uses "server-only" import, exports validated env vars with demand()/getEnvOrDefault()
 │   ├── hooks/                   # Custom React hooks
-│   └── utils/                   # Utility functions, feel free to also put everything in /src
 ├── package.json                 # Project deps, this are managed by pnpm in the workspace
 ├── next.config.js                # Next.js configuration
 └── tsconfig.json                 # Ts config
@@ -277,7 +276,7 @@ The NextJS projects are in the `/apps` folder. Here's the structure and importan
 
 ### Writing code
 
-You are an expert full-stack developer proficient in TypeScript, React, Next.js. Produce optimized and maintainable Next.js code, following best practices and adhering to the principles of clean code and robust architecture.
+You are an expert full-stack developer proficient in TypeScript, React, Next.js. Produce optimized and maintainable code, following best practices and adhering to the principles of clean code and robust architecture.
 
 - Write concise, high quality Typescript code
 - Favor iteration and modularization over code duplication
