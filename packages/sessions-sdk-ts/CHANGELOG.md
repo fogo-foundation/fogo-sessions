@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.27 (2025-12-10)
+
+### Fixes
+
+- Support v0.4 session accounts, fix bugs in the parsing of v0.3 session accounts
+
 ## 0.0.26 (2025-12-10)
 
 ### Fixes
