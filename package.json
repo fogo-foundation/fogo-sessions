@@ -11,7 +11,7 @@
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix .",
     "install:modules": "[ $CI ] && true || pnpm install",
-    "publish": "pnpm publish -r",
+    "publish": "pnpm publish --no-git-checks -r",
     "run:domain-registry": "domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
     "run:register-ntt-manager": "register-ntt-manager",
