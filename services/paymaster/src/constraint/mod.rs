@@ -1,10 +1,10 @@
 use anchor_lang::AnchorDeserialize;
 use axum::http::StatusCode;
-use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DisplayFromStr};
 use borsh::BorshDeserialize;
 use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
+use serde::{Deserialize, Serialize};
 use serde::{Deserializer, Serializer};
+use serde_with::{serde_as, DisplayFromStr};
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_message::VersionedMessage;
@@ -14,7 +14,7 @@ use solana_transaction::versioned::VersionedTransaction;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
-use transaction::{InstructionWithIndex, TransactionToValidate, Unvalidated};
+use transaction::{InstructionWithIndex, TransactionToValidate};
 
 mod gas;
 mod templates;
@@ -89,19 +89,95 @@ pub struct ContextualDomainKeys {
 impl VariationOrderedInstructionConstraints {
     pub async fn validate_transaction(
         &self,
-        transaction: &TransactionToValidate<'_, Unvalidated>,
+        transaction: &TransactionToValidate<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        TransactionToValidate::new(transaction)?
-            .validate_compute_units(self.max_gas_spend)?
-            .validate_instruction_constraints(
-                self.instructions.as_slice(),
-                contextual_domain_keys,
-                &self.name,
-                chain_index,
-            )
+        self.validate_compute_units(transaction)?;
+        self.validate_instruction_constraints(transaction, contextual_domain_keys, chain_index)
             .await
+    }
+
+    fn validate_compute_units(
+        &self,
+        transaction: &TransactionToValidate<'_>,
+    ) -> Result<(), (StatusCode, String)> {
+        if transaction.gas_spent > self.max_gas_spend {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction gas spend {} exceeds maximum allowed {}",
+                    transaction.gas_spent, self.max_gas_spend
+                ),
+            ));
+        }
+        Ok(())
+    }
+
+    pub async fn validate_instruction_constraints(
+        &self,
+        transaction: &TransactionToValidate<'_>,
+        contextual_domain_keys: &ContextualDomainKeys,
+        chain_index: &ChainIndex,
+    ) -> Result<(), (StatusCode, String)> {
+        let mut substantive_instructions = transaction.substantive_instructions.clone();
+        let mut instruction = substantive_instructions.pop_front();
+
+        // Note: this validation algorithm is technically incorrect, because of optional constraints.
+        // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
+        // is optional, it might be possible that matching against j leads to failure due to later
+        // constraints failing while matching against j+1 would result in a valid transaction match.
+        // Technically, the correct way to validate this is via branching (efficiently via DP), but given
+        // the expected variation space and a desire to avoid complexity, we use this greedy approach.
+        for (constraint_index, constraint) in self.instructions.iter().enumerate() {
+            let constraint_validation_result: Result<_, (StatusCode, String)> = {
+                if let Some(instruction_with_index) = &instruction {
+                    constraint
+                        .validate_instruction(
+                            &transaction,
+                            instruction_with_index,
+                            contextual_domain_keys,
+                            &self.name,
+                            chain_index,
+                        )
+                        .await
+                } else {
+                    Err((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Ran out of instructions while validating constraint {constraint_index} for variation {}",
+                        self.name
+                    ),
+                ))
+                }
+            };
+
+            match constraint_validation_result {
+                Ok(_) => {
+                    instruction = substantive_instructions.pop_front();
+                }
+                Err(e) if constraint.required => {
+                    return Err(e);
+                }
+                Err(_) => {}
+            }
+        }
+
+        if let Some(InstructionWithIndex {
+            index,
+            instruction: _,
+        }) = instruction
+        {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Ran out of constraints while validating instruction {index} for variation {}",
+                    self.name
+                ),
+            ));
+        }
+
+        Ok(())
     }
 }
 

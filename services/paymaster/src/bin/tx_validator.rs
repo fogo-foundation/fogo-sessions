@@ -454,7 +454,7 @@ async fn get_matching_variations<'a>(
                 v0_variation.validate_transaction(transaction).is_ok()
             }
             TransactionVariation::V1(v1_variation) => {
-                match TransactionToValidate::new(transaction) {
+                match TransactionToValidate::parse(transaction) {
                     Ok(paymaster_transaction) => v1_variation
                         .validate_transaction(&paymaster_transaction, &contextual_keys, chain_index)
                         .await
