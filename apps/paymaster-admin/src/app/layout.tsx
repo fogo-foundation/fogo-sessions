@@ -1,1 +1,1 @@
-export { Root as default } from "./components/Root";
+export { Root as default } from "../components/Root";
