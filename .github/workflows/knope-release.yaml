@@ -65,8 +65,19 @@ jobs:
       - name: Fetch tags created by Knope
         run: git fetch --tags
 
-      - name: Publish npm packages
-        run: pnpm turbo publish
+      - name: Build Node packages
+        run: |
+          pnpm turbo build
+          for package in packages/*/package.json; do
+            packagePath=${package///package.json}
+            mv "${packagePath}" "${packagePath}-old"
+            mv "${packagePath}-old/dist" "${packagePath}"
+            rm -rf "${packagePath}-old"
+          done
+          pnpm i --no-frozen-lockfile
+
+      - name: Publish Node packages to npm
+        run: pnpm publish --no-git-checks -r
 
       - name: Publish Cargo packages
         run: |
