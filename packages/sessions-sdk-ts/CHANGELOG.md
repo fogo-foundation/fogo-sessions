@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.26 (2025-12-10)
+
+### Fixes
+
+- Update paymaster URLs to the latest version
+
 ## 0.0.25
 
 ### Patch Changes
