@@ -13,14 +13,14 @@ bincode = { workspace = true, features = ["serde"] }
 chain-id = { path = "../../programs/chain-id" }
 clap = {workspace = true}
 dashmap = {workspace = true}
-fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["token-program"] }
+fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs" }
 futures = {workspace = true}
 governor = {workspace = true}
 hdrhistogram = "7.5.4"
 rand = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
-serde_json = "1.0.145"
+serde_json = { workspace = true }
 solana-client = { workspace = true }
 solana-commitment-config = { workspace = true }
 solana-compute-budget-interface = { workspace = true }

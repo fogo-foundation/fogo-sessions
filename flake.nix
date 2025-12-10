@@ -72,17 +72,57 @@
 
             cargoHash = "sha256-W6nioqctxSBsujax1sILHqu/d3I0qEPRQc+hl2gep24=";
 
-            nativeBuildInputs = [
-              final.pkg-config
-              final.perl
-              final.protobuf
-            ];
-            buildInputs = [
-              final.openssl
-              final.udev
-            ];
-            doCheck = false;
-          });
+          nativeBuildInputs = [final.pkg-config final.perl final.protobuf];
+          buildInputs = [final.openssl final.udev];
+          doCheck = false;
+        });
+
+        knope = final.rustPlatform.buildRustPackage (finalAttrs: {
+          pname = "knope";
+          version = "0.21.7";
+
+          src = final.fetchCrate {
+            inherit (finalAttrs) pname version;
+            hash = "sha256-ap4xip2QhsX1pqb2WZc60NfuSGMJxggD1XjMfC4C5ng=";
+          };
+
+          cargoHash = "sha256-zQqSggmcuaQVJSgf6UAZZD7pT0QboWaGACu63RQ7QXI=";
+          doCheck = false;
+        });
+      in {
+        project-shell = final.mkShell {
+          FORCE_COLOR = 1;
+          PUPPETEER_SKIP_DOWNLOAD = 1;
+          PUPPETEER_EXECUTABLE_PATH = final.lib.getExe final.chromium;
+          name = "project-shell";
+          buildInputs = [
+            final.cli
+            final.git
+            final.libusb1
+            final.nodejs
+            final.pnpm
+            final.python3
+            final.tilt
+            final.openssl
+            final.pkg-config
+            (final.rust-bin.nightly.latest.default.override {extensions = ["rust-analyzer"];})
+            solana-nix.packages."${system}".solana-cli
+            solana-nix.packages."${system}".anchor-cli
+            solana-nix.packages."${system}".solana-rust
+            spl-token-cli
+            knope
+          ];
+        };
+      });
+  in
+    (flake-utils.lib.eachDefaultSystem
+      (
+        system: let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [cli-overlay (project-shell-overlay system)];
+            config = {};
+          };
         in {
           project-shell = final.mkShell {
             FORCE_COLOR = 1;
