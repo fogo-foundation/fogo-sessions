@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.28 (2025-12-10)
+
+### Fixes
+
+- Add repository to package.json
+
 ## 0.0.27 (2025-12-10)
 
 ### Fixes

@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.8 (2025-12-10)
+
+### Fixes
+
+- Add repository to package.json
+
 ## 0.1.7 (2025-12-10)
 
 ### Fixes
