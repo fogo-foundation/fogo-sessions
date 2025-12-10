@@ -126,7 +126,7 @@ impl VariationOrderedInstructionConstraints {
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         for (constraint_index, constraint) in self.instructions.iter().enumerate() {
-            let constraint_validation_result: Result<_, (StatusCode, String)> = {
+            let constraint_validation_result = {
                 if let Some(instruction_with_index) = &instruction {
                     constraint
                         .validate_instruction(
