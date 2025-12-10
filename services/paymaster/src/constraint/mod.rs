@@ -5,9 +5,6 @@ use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
 use serde::{Deserialize, Serialize};
 use serde::{Deserializer, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
-use solana_compute_budget_interface::ComputeBudgetInstruction;
-use solana_message::compiled_instruction::CompiledInstruction;
-use solana_message::VersionedMessage;
 use solana_program::keccak;
 use solana_pubkey::Pubkey;
 use solana_transaction::versioned::VersionedTransaction;
@@ -134,7 +131,7 @@ impl VariationOrderedInstructionConstraints {
                 if let Some(instruction_with_index) = &instruction {
                     constraint
                         .validate_instruction(
-                            &transaction,
+                            transaction,
                             instruction_with_index,
                             contextual_domain_keys,
                             &self.name,

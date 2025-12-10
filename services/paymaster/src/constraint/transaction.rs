@@ -1,7 +1,4 @@
 use crate::constraint::gas::compute_gas_spent;
-use crate::constraint::ContextualDomainKeys;
-use crate::constraint::InstructionConstraint;
-use crate::rpc::ChainIndex;
 use reqwest::StatusCode;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_transaction::versioned::VersionedTransaction;
