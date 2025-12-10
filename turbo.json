@@ -36,6 +36,10 @@
       "outputs": ["pnpm-lock.yaml"]
     },
     "//#publish": {
+      "env": [
+        "NPM_CONFIG_USERCONFIG",
+        "NODE_AUTH_TOKEN"
+      ],
       "dependsOn": ["//#build:replace-packages-with-built-packages"],
       "cache": false
     },
