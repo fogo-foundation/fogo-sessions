@@ -1,6 +1,5 @@
 use anchor_lang::AnchorDeserialize;
 use axum::http::StatusCode;
-use borsh::BorshDeserialize;
 use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
