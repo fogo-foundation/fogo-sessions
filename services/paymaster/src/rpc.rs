@@ -83,7 +83,7 @@ fn to_error_response(err: Error) -> ErrorResponse {
 }
 
 impl ChainIndex {
-    /// Find the pubkey for the account at index `account_index_within_instruction` within the `instruction` at `instruction_index` in the given `transaction`.
+    /// Find the pubkey for the account at index `account_index_within_instruction` within the `instruction_with_index` in the given `transaction`.
     pub async fn resolve_instruction_account_pubkey(
         &self,
         transaction: &VersionedTransaction,
@@ -101,7 +101,7 @@ impl ChainIndex {
                 (
                     StatusCode::BAD_REQUEST,
                     format!(
-                        "Transaction instruction {instruction_index} missing account at index {account_index_within_instruction}",
+                        "Account index {account_index_within_instruction} out of bounds for instruction {instruction_index}",
                     ),
                 )
             })?);
@@ -136,7 +136,7 @@ impl ChainIndex {
             Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Transaction instruction {instruction_index} account index {account_index_within_instruction} out of bounds",
+                    "Account index {account_index_within_instruction} for instruction {instruction_index} expected to be in the address table lookup but the transaction does not reference any address table lookups",
                 ),
             ))
         }
