@@ -1,33 +1,41 @@
+import type { Network } from "@fogo/sessions-sdk";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { z } from "zod";
 
 import { getMetadata } from "../get-metadata.js";
-import type { EstablishedSessionState } from "../session-state.js";
+import type { WalletConnectedSessionState } from "../session-state.js";
+import { isEstablished } from "../session-state.js";
 import { useData } from "./use-data.js";
-import { useConnection } from "./use-session.js";
+import { useConnection, useSessionContext } from "./use-session.js";
 
 export { StateType } from "./use-data.js";
 
-export const useTokenAccountData = (sessionState: EstablishedSessionState) => {
+export const useTokenAccountData = (
+  sessionState: WalletConnectedSessionState,
+) => {
   const connection = useConnection();
+  const { network } = useSessionContext();
   const getTokenAccountData = useCallback(
-    () => getTokenAccounts(connection, sessionState),
-    [connection, sessionState],
+    () => getTokenAccounts(connection, sessionState, network),
+    [connection, sessionState, network],
   );
 
   return useData(
-    getCacheKey(sessionState.walletPublicKey),
+    getCacheKey(network, sessionState.walletPublicKey),
     getTokenAccountData,
     {},
   );
 };
 
-export const getCacheKey = (walletPublicKey: PublicKey) => [
+export const getCacheKey = (network: Network, walletPublicKey: PublicKey) => [
   "tokenAccountData",
+  network,
   walletPublicKey.toBase58(),
 ];
+
+export type TokenAccountData = Awaited<ReturnType<typeof getTokenAccounts>>;
 
 export type Token = Awaited<
   ReturnType<typeof getTokenAccounts>
@@ -35,28 +43,26 @@ export type Token = Awaited<
 
 const getTokenAccounts = async (
   connection: Connection,
-  sessionState: EstablishedSessionState,
+  sessionState: WalletConnectedSessionState,
+  network: Network,
 ) => {
-  const accounts = accountsSchema.parse(
-    await connection.getParsedProgramAccounts(TOKEN_PROGRAM_ID, {
-      filters: [
-        {
-          dataSize: 165,
-        },
-        {
-          memcmp: {
-            offset: 32,
-            bytes: sessionState.walletPublicKey.toBase58(),
-          },
-        },
-      ],
+  const [nativeBalance, unparsedSplAccounts] = await Promise.all([
+    connection.getBalance(sessionState.walletPublicKey),
+    connection.getParsedTokenAccountsByOwner(sessionState.walletPublicKey, {
+      programId: TOKEN_PROGRAM_ID,
     }),
+  ]);
+
+  const splAccounts = accountsSchema.parse(unparsedSplAccounts.value);
+
+  const metadata = await getMetadata(
+    splAccounts.map((account) => account.mint),
+    network,
   );
 
-  const metadata = await getMetadata(accounts.map((account) => account.mint));
-
   return {
-    tokensInWallet: accounts
+    nativeBalance: BigInt(nativeBalance),
+    tokensInWallet: splAccounts
       .filter(({ amountInWallet }) => amountInWallet !== 0n)
       .map(({ mint, amountInWallet, decimals }) => ({
         mint: new PublicKey(mint),
@@ -64,23 +70,25 @@ const getTokenAccounts = async (
         decimals,
         ...metadata[mint],
       })),
-    sessionLimits: accounts
-      .filter(
-        ({ delegate, delegateAmount }) =>
-          delegate === sessionState.sessionPublicKey.toBase58() &&
-          delegateAmount !== 0n,
-      )
-      .map(({ mint, delegateAmount, decimals }) =>
-        delegateAmount === undefined
-          ? undefined
-          : {
-              mint: new PublicKey(mint),
-              sessionLimit: delegateAmount,
-              decimals,
-              ...metadata[mint],
-            },
-      )
-      .filter((account) => account !== undefined),
+    sessionLimits: isEstablished(sessionState)
+      ? splAccounts
+          .filter(
+            ({ delegate, delegateAmount }) =>
+              delegate === sessionState.sessionPublicKey.toBase58() &&
+              delegateAmount !== 0n,
+          )
+          .map(({ mint, delegateAmount, decimals }) =>
+            delegateAmount === undefined
+              ? undefined
+              : {
+                  mint: new PublicKey(mint),
+                  sessionLimit: delegateAmount,
+                  decimals,
+                  ...metadata[mint],
+                },
+          )
+          .filter((account) => account !== undefined)
+      : [],
   };
 };
 

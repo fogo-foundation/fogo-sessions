@@ -1,6 +1,8 @@
 use axum::{http::StatusCode, response::ErrorResponse};
+use base64::prelude::*;
 use dashmap::DashMap;
 use futures::stream::StreamExt;
+use serde_json::json;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::{
     nonblocking::rpc_client::RpcClient,
@@ -8,7 +10,8 @@ use solana_client::{
 };
 use solana_commitment_config::CommitmentConfig;
 use solana_pubkey::Pubkey;
-use solana_rpc_client_api::client_error::Error;
+use solana_rpc_client_api::client_error::{Error, ErrorKind};
+use solana_rpc_client_api::request::RpcRequest;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
@@ -252,6 +255,106 @@ pub async fn send_and_confirm_transaction(
     };
 
     confirm_transaction(pubsub, signature, Some(rpc.commitment())).await
+}
+
+/// Sends a transaction using the FTL service which handles both sending and confirmation.
+/// The FTL service requires a "confirm" parameter set to true in the RPC config.
+#[tracing::instrument(
+    skip_all,
+    fields(
+        tx_hash = %transaction.signatures[0],
+        result
+    )
+)]
+pub async fn send_and_confirm_transaction_ftl(
+    ftl_rpc: &RpcClient,
+    transaction: &VersionedTransaction,
+    config: RpcSendTransactionConfig,
+) -> Result<ConfirmationResultInternal, ErrorResponse> {
+    let tx_bytes = bincode::serde::encode_to_vec(transaction, bincode::config::standard())
+        .map_err(|e| {
+            tracing::error!("Failed to serialize transaction: {e}");
+            ErrorResponse::from((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to serialize transaction",
+            ))
+        })?;
+    let tx_base64 = BASE64_STANDARD.encode(&tx_bytes);
+
+    let mut config_value = serde_json::to_value(RpcSendTransactionConfig {
+        encoding: Some(config.encoding.unwrap_or(UiTransactionEncoding::Base64)),
+        preflight_commitment: Some(config.preflight_commitment.unwrap_or_default()),
+        ..config
+    })
+    .map_err(|e| {
+        tracing::error!("Failed to serialize config: {e}");
+        ErrorResponse::from((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to serialize config",
+        ))
+    })?;
+
+    // Add the "confirm" parameter to the config
+    if let Some(obj) = config_value.as_object_mut() {
+        obj.insert("confirm".to_string(), json!(true));
+    }
+
+    // Use the RPC client's send method to make the request
+    let signature: String = match ftl_rpc
+        .send(
+            RpcRequest::SendTransaction,
+            json!([tx_base64, config_value]),
+        )
+        .await
+    {
+        Ok(sig) => {
+            tracing::Span::current().record("result", "sent");
+            sig
+        }
+        Err(err) => {
+            let preflight = matches!(&err.kind, &ErrorKind::RpcError(_));
+            if let Some(error) = err.get_transaction_error() {
+                if preflight {
+                    tracing::Span::current().record("result", "preflight_failure");
+                    tracing::warn!(
+                        "Transaction {} failed preflight: {error}",
+                        transaction.signatures[0]
+                    );
+                    return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
+                        signature: transaction.signatures[0],
+                        error,
+                    });
+                } else {
+                    // confirmed failed
+                    tracing::Span::current().record("result", "failed");
+                    return Ok(ConfirmationResultInternal::Failed {
+                        signature: transaction.signatures[0],
+                        error,
+                    });
+                }
+            }
+
+            tracing::Span::current().record("result", "send_failed");
+            tracing::error!(
+                "Failed to send transaction {}: {err}",
+                transaction.signatures[0]
+            );
+            return Err(to_error_response(err));
+        }
+    };
+
+    let signature = signature.parse::<Signature>().map_err(|e| {
+        tracing::Span::current().record("result", "send_failed");
+        tracing::error!("Failed to parse signature from FTL response: {e}");
+        ErrorResponse::from((
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to parse signature: {e}"),
+        ))
+    })?;
+
+    tracing::Span::current().record("result", "success");
+    // Since FTL handles confirmation, we return success immediately
+    Ok(ConfirmationResultInternal::Success { signature })
 }
 
 pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);

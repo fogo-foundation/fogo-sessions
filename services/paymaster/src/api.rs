@@ -2,15 +2,17 @@ use crate::config_manager::config::Domain;
 use crate::constraint::transaction::{TransactionToValidate, Unvalidated};
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
+use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
-    fetch_transaction_cost_details, send_and_confirm_transaction, ChainIndex,
-    ConfirmationResultInternal, RetryConfig,
+    fetch_transaction_cost_details, send_and_confirm_transaction, send_and_confirm_transaction_ftl,
+    ChainIndex, ConfirmationResultInternal, RetryConfig,
 };
 use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
 use axum::Json;
+use nonempty::NonEmpty;
 use solana_derivation_path::DerivationPath;
 
 use axum::{
@@ -32,22 +34,26 @@ use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
+use solana_rpc_client::rpc_client::RpcClientConfig;
 use solana_seed_derivable::SeedDerivable;
 use solana_signature::Signature;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
 use utoipa_axum::{router::OpenApiRouter, routes};
+
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
-    pub sponsor: Keypair,
+    pub sponsors: NonEmpty<Keypair>,
+    pub next_autoassigned_sponsor_index: Arc<AtomicUsize>,
     pub enable_preflight_simulation: bool,
-    pub tx_variations: Vec<TransactionVariation>,
+    pub tx_variations: HashMap<String, TransactionVariation>,
 }
 
 pub struct PubsubClientWithReconnect {
@@ -99,6 +105,7 @@ pub struct ServerState {
     pub domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
+    pub ftl_rpc: Option<RpcClient>,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -110,23 +117,14 @@ impl DomainState {
     /// Checks that the transaction meets at least one of the specified variations for this domain.
     /// If so, returns the variation this transaction matched against.
     /// Otherwise, returns an error with a message indicating why the transaction is invalid.
-    #[tracing::instrument(skip_all, fields(variation))]
+    #[tracing::instrument(skip_all, fields(specified_variation = variation_name.as_deref(), matched_variation))]
     pub async fn validate_transaction(
         &self,
         transaction: &TransactionToValidate<'_, Unvalidated>,
         chain_index: &ChainIndex,
+        sponsor: &Pubkey,
+        variation_name: Option<String>,
     ) -> Result<&TransactionVariation, (StatusCode, String)> {
-        if transaction.message.static_account_keys()[0] != self.sponsor.pubkey() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Transaction fee payer must be the sponsor: expected {}, got {}",
-                    self.sponsor.pubkey(),
-                    transaction.message.static_account_keys()[0],
-                ),
-            ));
-        }
-
         let message_bytes = transaction.message.serialize();
         transaction
             .signatures
@@ -149,24 +147,58 @@ impl DomainState {
         let validation_futures: Vec<_> = self
             .tx_variations
             .iter()
-            .map(|variation| {
-                Box::pin(async move {
-                    self.validate_transaction_against_variation(transaction, variation, chain_index)
-                        .await
-                        .map(|_| variation)
-                })
+            .filter_map(|(name, variation)| {
+                if let Some(ref expected_name) = variation_name {
+                    if name != expected_name {
+                        return None;
+                    }
+                }
+
+                Some(Box::pin(async move {
+                    self.validate_transaction_against_variation(
+                        transaction,
+                        variation,
+                        chain_index,
+                        sponsor,
+                    )
+                    .await
+                    .map(|_| variation)
+                }))
             })
             .collect();
 
-        match futures::future::select_ok(validation_futures).await {
-            Ok((variation, _remaining)) => {
-                tracing::Span::current().record("variation", variation.name().to_string());
-                Ok(variation)
-            }
-            Err(_) => Err((
+        // If no variations were validated and the variation_name was specified, return an error indicating no such variation.
+        // If no variation_name was specified, return an error indicating no variations are configured for this domain.
+        if validation_futures.is_empty() {
+            return Err((
                 StatusCode::BAD_REQUEST,
-                "Transaction does not match any allowed variations".to_string(),
-            )),
+                if let Some(name) = variation_name {
+                    format!("No transaction variation named '{name}' for domain")
+                } else {
+                    "No transaction variations configured for domain".to_string()
+                },
+            ));
+        } else if variation_name.is_some() {
+            // If variation_name was specified, only one future will be present, and we can propagate its specific error.
+            let future = validation_futures
+                .into_iter()
+                .next()
+                .expect("validation_futures is not empty, so this must exist");
+            let variation = future.await?;
+            tracing::Span::current().record("matched_variation", variation.name().to_string());
+            Ok(variation)
+        } else {
+            match futures::future::select_ok(validation_futures).await {
+                Ok((variation, _remaining)) => {
+                    tracing::Span::current()
+                        .record("matched_variation", variation.name().to_string());
+                    Ok(variation)
+                }
+                Err(_) => Err((
+                    StatusCode::BAD_REQUEST,
+                    "Transaction does not match any allowed variations".to_string(),
+                )),
+            }
         }
     }
 
@@ -175,6 +207,7 @@ impl DomainState {
         transaction: &TransactionToValidate<'_, Unvalidated>,
         tx_variation: &TransactionVariation,
         chain_index: &ChainIndex,
+        sponsor: &Pubkey,
     ) -> Result<(), (StatusCode, String)> {
         match tx_variation {
             TransactionVariation::V0(variation) => variation.validate_transaction(transaction),
@@ -184,7 +217,7 @@ impl DomainState {
                         transaction,
                         &ContextualDomainKeys {
                             domain_registry: self.domain_registry_key,
-                            sponsor: self.sponsor.pubkey(),
+                            sponsor: *sponsor,
                         },
                         chain_index,
                     )
@@ -202,9 +235,14 @@ struct SponsorAndSendQuery {
     #[deprecated]
     /// Whether to confirm the transaction
     _confirm: bool,
+
     #[serde(default)]
     /// Domain to request the sponsor pubkey for
     domain: Option<String>,
+
+    #[serde(default)]
+    /// Variation name to validate against. If not provided, all variations for the domain will be tried.
+    variation: Option<String>,
 }
 
 fn get_domain_name(
@@ -274,12 +312,14 @@ pub enum ConfirmationResult {
 #[tracing::instrument(
     skip_all,
     name = "sponsor_and_send",
-    fields(domain, variation, tx_hash)
+    fields(domain, specified_variation = variation.as_deref(), matched_variation, tx_hash)
 )]
 async fn sponsor_and_send_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(SponsorAndSendQuery { domain, .. }): Query<SponsorAndSendQuery>,
+    Query(SponsorAndSendQuery {
+        domain, variation, ..
+    }): Query<SponsorAndSendQuery>,
     Json(payload): Json<SponsorAndSendPayload>,
 ) -> Result<Json<ConfirmationResult>, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
@@ -301,47 +341,81 @@ async fn sponsor_and_send_handler(
         ))?;
     }
 
-    let mut transaction: VersionedTransaction = bincode::deserialize(&transaction_bytes)
-        .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
+    let (mut transaction, _): (VersionedTransaction, _) =
+        bincode::serde::decode_from_slice(&transaction_bytes, bincode::config::standard())
+            .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
+
+    let transaction_sponsor: &Keypair = domain_state
+        .sponsors
+        .iter()
+        .find(|sponsor| sponsor.pubkey() == transaction.message.static_account_keys()[0])
+        .ok_or_else(|| -> (StatusCode, String) {
+            let status_code = StatusCode::BAD_REQUEST;
+            obs_validation(domain.clone(), None, status_code.to_string());
+            (
+                status_code,
+                format!(
+                    "Transaction fee payer must be one of the sponsors: expected one of {}, got {}",
+                    domain_state
+                        .sponsors
+                        .iter()
+                        .map(|sponsor| sponsor.pubkey().to_string())
+                        .collect::<Vec<_>>()
+                        .join(","),
+                    transaction.message.static_account_keys()[0],
+                ),
+            )
+        })?;
 
     let transaction_to_validate = TransactionToValidate::new(&transaction)?;
     let matched_variation_name = match domain_state
-        .validate_transaction(&transaction_to_validate, &state.chain_index)
+        .validate_transaction(
+            &transaction_to_validate,
+            &state.chain_index,
+            &transaction_sponsor.pubkey(),
+            variation,
+        )
         .await
     {
         Ok(variation) => {
-            tracing::Span::current().record("variation", variation.name());
+            tracing::Span::current().record("matched_variation", variation.name());
             obs_validation(
                 domain.clone(),
-                variation.name().to_owned(),
+                Some(variation.name().to_owned()),
                 "success".to_string(),
             );
             variation.name()
         }
         Err(e) => {
-            obs_validation(domain.clone(), "None".to_string(), e.0.to_string());
+            obs_validation(domain.clone(), None, e.0.to_string());
             return Err(e.into());
         }
     }
     .to_owned();
     let gas_spent = transaction_to_validate.gas_spent;
 
-    transaction.signatures[0] = domain_state
-        .sponsor
-        .sign_message(&transaction.message.serialize());
+    transaction.signatures[0] = transaction_sponsor.sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
 
-    let confirmation_result = send_and_confirm_transaction(
-        &state.chain_index.rpc,
-        &state.rpc_sub,
-        &transaction,
-        RpcSendTransactionConfig {
-            skip_preflight: !domain_state.enable_preflight_simulation,
-            preflight_commitment: Some(CommitmentLevel::Processed),
-            ..RpcSendTransactionConfig::default()
-        },
-    )
-    .await?;
+    let rpc_config = RpcSendTransactionConfig {
+        skip_preflight: !domain_state.enable_preflight_simulation,
+        preflight_commitment: Some(CommitmentLevel::Processed),
+        ..RpcSendTransactionConfig::default()
+    };
+
+    let confirmation_result = if let Some(ref ftl_rpc) = state.ftl_rpc {
+        // Use FTL service for sending and confirmation
+        send_and_confirm_transaction_ftl(ftl_rpc, &transaction, rpc_config).await?
+    } else {
+        // Use standard RPC method
+        send_and_confirm_transaction(
+            &state.chain_index.rpc,
+            &state.rpc_sub,
+            &transaction,
+            rpc_config,
+        )
+        .await?
+    };
 
     let confirmation_status = confirmation_result.status_string();
 
@@ -407,24 +481,76 @@ struct SponsorPubkeyQuery {
     #[serde(default)]
     /// Domain to request the sponsor pubkey for
     domain: Option<String>,
+    #[serde(default)]
+    #[param(value_type = String)]
+    /// Index of the sponsor to select. Can be a number or the string "autoassign" which may give you a different sponsor every time
+    index: Option<IndexSelector>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(try_from = "String")]
+enum IndexSelector {
+    Autoassign,
+    Index(u8),
+}
+
+impl TryFrom<String> for IndexSelector {
+    type Error = String;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if value == "autoassign" {
+            Ok(IndexSelector::Autoassign)
+        } else {
+            let i: u8 = value.parse().map_err(|_| {
+                format!(
+                    "Invalid index value: {value}. Use a number between 0 and 255 or 'autoassign'"
+                )
+            })?;
+            Ok(IndexSelector::Index(i))
+        }
+    }
 }
 
 #[utoipa::path(get, path = "/sponsor_pubkey", params(SponsorPubkeyQuery))]
 async fn sponsor_pubkey_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
-    Query(SponsorPubkeyQuery { domain }): Query<SponsorPubkeyQuery>,
+    Query(SponsorPubkeyQuery { domain, index }): Query<SponsorPubkeyQuery>,
 ) -> Result<String, ErrorResponse> {
     let domain = get_domain_name(domain, origin)?;
     let domains_guard = state.domains.load();
     let domain_state = get_domain_state(&domains_guard, &domain)?;
     let DomainState {
         domain_registry_key: _,
-        sponsor,
+        sponsors,
         enable_preflight_simulation: _,
         tx_variations: _,
+        next_autoassigned_sponsor_index,
     } = domain_state;
-    Ok(sponsor.pubkey().to_string())
+
+    let sponsor_index = if let Some(selector) = index {
+        match selector {
+            IndexSelector::Autoassign => {
+                next_autoassigned_sponsor_index.fetch_add(1, Ordering::Relaxed) % sponsors.len()
+            }
+            IndexSelector::Index(i) => {
+                let index = usize::from(i);
+                if index >= sponsors.len() {
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        format!(
+                            "Sponsor index {index} is out of bounds for domain {domain} with {} sponsors",
+                            sponsors.len()
+                        ),
+                    )
+                        .into());
+                }
+                index
+            }
+        }
+    } else {
+        0usize
+    };
+    Ok(sponsors[sponsor_index].pubkey().to_string())
 }
 
 pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<String, DomainState> {
@@ -435,46 +561,67 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                  domain,
                  enable_preflight_simulation,
                  tx_variations,
+                 number_of_signers,
                  ..
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
-                let sponsor = Keypair::from_seed_and_derivation_path(
-                    &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
-                        mnemonic, &domain,
-                    ),
-                    Some(DerivationPath::new_bip44(Some(0), Some(0))),
-                )
-                .expect("Failed to derive keypair from mnemonic_file");
+                let sponsors = NonEmpty::collect((0u8..number_of_signers.into()).map(|i| {
+                    Keypair::from_seed_and_derivation_path(
+                        &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
+                            mnemonic, &domain,
+                        ),
+                        Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
+                    )
+                    .expect("Failed to derive keypair from mnemonic_file")
+                }))
+                .expect("number_of_signers in NonZero so this should never be empty");
 
                 (
                     domain,
                     DomainState {
                         domain_registry_key,
-                        sponsor,
+                        sponsors,
                         enable_preflight_simulation,
                         tx_variations,
+                        next_autoassigned_sponsor_index: Arc::new(AtomicUsize::new(0)),
                     },
                 )
             },
         )
         .collect::<HashMap<_, _>>()
 }
+
+/// How many RPC clients to create for both FTL and the regular RPC client for read operations
+const RPC_POOL_SIZE: usize = 6;
+
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
+    ftl_url: Option<String>,
     listen_address: String,
     domains_states: Arc<ArcSwap<HashMap<String, DomainState>>>,
 ) {
-    let rpc = RpcClient::new_with_commitment(
-        rpc_url_http,
-        CommitmentConfig {
-            commitment: CommitmentLevel::Processed,
-        },
+    let rpc_http_sender = PooledHttpSender::new(rpc_url_http, RPC_POOL_SIZE);
+
+    let rpc = RpcClient::new_sender(
+        rpc_http_sender,
+        RpcClientConfig::with_commitment(CommitmentConfig::processed()),
     );
+
     let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
         .await
         .expect("Failed to create pubsub client");
     let rpc_sub = PubsubClientWithReconnect::new(rpc_url_ws, rpc_sub_client);
+
+    // Create FTL RPC client with HTTP/2 prior knowledge if FTL URL is provided
+    let ftl_rpc = ftl_url.map(|url| {
+        let http_sender = PooledHttpSender::new(url, RPC_POOL_SIZE);
+
+        RpcClient::new_sender(
+            http_sender,
+            RpcClientConfig::with_commitment(CommitmentConfig::processed()),
+        )
+    });
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
@@ -524,6 +671,7 @@ pub async fn run_server(
                 lookup_table_cache: DashMap::new(),
             },
             rpc_sub,
+            ftl_rpc,
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     tracing::info!("Starting paymaster service...");

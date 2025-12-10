@@ -1,0 +1,110 @@
+@use "../theme";
+
+.withdrawPage {
+  height: 100%;
+  position: relative;
+
+  .backButton {
+    position: absolute;
+    top: theme.spacing(4);
+    left: theme.spacing(4);
+  }
+
+  .withdrawForm {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: theme.spacing(8);
+    padding: theme.spacing(16) theme.spacing(8);
+    align-items: center;
+
+    .header {
+      display: flex;
+      flex-flow: column nowrap;
+      gap: theme.spacing(4);
+      text-align: center;
+      align-items: center;
+
+      .tokenIcon {
+        width: theme.spacing(12);
+        height: theme.spacing(12);
+        border-radius: theme.border-radius("full");
+      }
+
+      .tokenName {
+        @include theme.text("lg", "medium");
+
+        color: theme.color("heading");
+      }
+
+      .amountInWallet {
+        @include theme.text("sm");
+
+        color: theme.color("paragraph");
+        height: 1em;
+
+        .amount {
+          word-break: break-all;
+        }
+
+        &[data-is-loading] {
+          display: inline-block;
+          background: theme.color("skeleton");
+          width: theme.spacing(30);
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          border-radius: theme.border-radius("md");
+
+          @keyframes pulse {
+            50% {
+              opacity: 0.5;
+            }
+          }
+        }
+      }
+    }
+
+    .field {
+      width: 100%;
+
+      .action {
+        white-space: nowrap;
+      }
+    }
+
+    .notionalAmount {
+      @include theme.text("xs");
+
+      color: theme.color("muted");
+      margin-top: -#{theme.spacing(3)};
+      align-self: flex-start;
+    }
+
+    .fee {
+      @include theme.text("xs");
+
+      color: theme.color("muted");
+      font-style: italic;
+      margin-top: -#{theme.spacing(3)};
+
+      &[data-is-loading] {
+        display: inline-block;
+        background: theme.color("skeleton");
+        height: 1em;
+        width: theme.spacing(25);
+        border-radius: theme.border-radius("md");
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+        @keyframes pulse {
+          50% {
+            opacity: 0.5;
+          }
+        }
+      }
+    }
+  }
+
+  .fetchError {
+    height: 100%;
+    padding-left: theme.spacing(8);
+    padding-right: theme.spacing(8);
+  }
+}

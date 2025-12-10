@@ -1,8 +1,7 @@
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
-import { useResizeObserver } from "@react-hookz/web";
-import type { MessageSignerWalletAdapterProps } from "@solana/wallet-adapter-base";
+import { useLocalStorageValue, useResizeObserver } from "@react-hookz/web";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
@@ -10,11 +9,13 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import { Heading } from "react-aria-components";
 
 import type { SessionStates } from "../session-state.js";
+import type { SolanaWallet } from "../solana-wallet.js";
 import { Button } from "./button.js";
+import { Disclaimer } from "./disclaimer.js";
 import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
 import styles from "./sign-in-modal.module.css";
-import { useSessionContext } from "../hooks/use-session.js";
+import { useSession, useSessionContext } from "../hooks/use-session.js";
 import { isCancelable, StateType } from "../session-state.js";
 import { Link } from "./link.js";
 
@@ -22,7 +23,7 @@ type Props = Omit<
   ComponentProps<typeof ModalDialog>,
   "isOpen" | "onOpenChange" | "children"
 > & {
-  wallets: MessageSignerWalletAdapterProps[];
+  wallets: SolanaWallet[];
   termsOfServiceUrl?: string | undefined;
   privacyPolicyUrl?: string | undefined;
 };
@@ -33,23 +34,13 @@ export const SignInModal = ({
   privacyPolicyUrl,
   ...props
 }: Props) => {
-  const { sessionState, whitelistedTokens } = useSessionContext();
+  const sessionState = useSession();
   const [height, setHeight] = useState(0);
-  const step1 = useRef<HTMLDivElement | null>(null);
-  const step2 = useRef<HTMLDivElement | null>(null);
-
-  useResizeObserver(step1, (elem) => {
-    if (step2.current === null) {
-      setHeight(elem.target.scrollHeight);
-    }
-  });
-  useResizeObserver(step2, (elem) => {
-    setHeight(elem.target.scrollHeight);
-  });
 
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
       if (!isOpen && isCancelable(sessionState)) {
+        setHeight(0);
         sessionState.cancel();
       }
     },
@@ -67,58 +58,170 @@ export const SignInModal = ({
       {isOpen && (
         <motion.div
           className={styles.selectWalletAnimationContainer}
-          initial={false}
-          {...(height !== 0 && { animate: { height } })}
+          animate={{ height }}
         >
-          <AnimatePresence>
-            {sessionState.type === StateType.SelectingWallet ||
-            sessionState.type === StateType.WalletConnecting ||
-            (sessionState.type === StateType.SettingLimits &&
-              whitelistedTokens.length === 0) ? (
-              <motion.div
-                key="wallets"
-                exit={{ x: "-100%" }}
-                ref={(elem) => {
-                  step1.current = elem;
-                  if (elem) {
-                    if (elem.parentElement !== null) {
-                      elem.parentElement.style.height = `${elem.offsetHeight.toString()}px`;
-                    }
-                    setHeight(elem.offsetHeight);
-                  }
-                }}
-              >
-                <WalletsPage
-                  wallets={wallets}
-                  selectWallet={
-                    sessionState.type === StateType.SelectingWallet
-                      ? sessionState.selectWallet
-                      : undefined
-                  }
-                  cancel={sessionState.cancel}
-                  privacyPolicyUrl={privacyPolicyUrl}
-                  termsOfServiceUrl={termsOfServiceUrl}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="limits"
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                ref={(elem) => {
-                  step2.current = elem;
-                  setHeight(elem?.offsetHeight ?? 0);
-                }}
-              >
-                <LimitsPage sessionState={sessionState} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <SignInModalContents
+            sessionState={sessionState}
+            wallets={wallets}
+            privacyPolicyUrl={privacyPolicyUrl}
+            termsOfServiceUrl={termsOfServiceUrl}
+            setHeight={setHeight}
+            onClose={() => {
+              onOpenChange(false);
+            }}
+          />
         </motion.div>
       )}
     </ModalDialog>
   );
 };
+
+const SignInModalContents = ({
+  sessionState,
+  setHeight,
+  wallets,
+  termsOfServiceUrl,
+  privacyPolicyUrl,
+  onClose,
+}: {
+  sessionState:
+    | SessionStates["SelectingWallet"]
+    | SessionStates["WalletConnecting"]
+    | SessionStates["RequestingLimits"]
+    | SessionStates["SettingLimits"];
+  setHeight: (newHeight: number) => void;
+  wallets: SolanaWallet[];
+  termsOfServiceUrl?: string | undefined;
+  privacyPolicyUrl?: string | undefined;
+  onClose: () => void;
+}) => {
+  const { whitelistedTokens } = useSessionContext();
+  const didAcceptDisclaimer = useLocalStorageValue<boolean>(
+    "fogo-sessions-disclaimer-accepted",
+    { defaultValue: false },
+  );
+  const initialDidAcceptDisclaimer = useRef(didAcceptDisclaimer.value);
+  const step1 = useRef<HTMLDivElement | null>(null);
+  const step2 = useRef<HTMLDivElement | null>(null);
+  const step3 = useRef<HTMLDivElement | null>(null);
+
+  useResizeObserver(step1, (elem) => {
+    if (step2.current === null && step3.current === null) {
+      setHeight(elem.target.scrollHeight);
+    }
+  });
+  useResizeObserver(step2, (elem) => {
+    if (step1.current === null && step3.current === null) {
+      setHeight(elem.target.scrollHeight);
+    }
+  });
+  useResizeObserver(step3, (elem) => {
+    if (step1.current === null && step2.current === null) {
+      setHeight(elem.target.scrollHeight);
+    }
+  });
+
+  const handleDidAcceptDisclaimer = useCallback(() => {
+    didAcceptDisclaimer.set(true);
+  }, [didAcceptDisclaimer]);
+
+  return (
+    <AnimatePresence>
+      {sessionState.type === StateType.SelectingWallet ||
+      sessionState.type === StateType.WalletConnecting ||
+      (sessionState.type === StateType.SettingLimits &&
+        whitelistedTokens.length === 0) ? (
+        didAcceptDisclaimer.value ? (
+          <motion.div
+            key="wallets"
+            initial={initialDidAcceptDisclaimer.current ? false : { x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            ref={(elem) => {
+              step2.current = elem;
+              if (elem) {
+                if (elem.parentElement !== null) {
+                  elem.parentElement.style.height = `${elem.offsetHeight.toString()}px`;
+                }
+                setHeight(elem.offsetHeight);
+              }
+            }}
+          >
+            <WalletsPage
+              wallets={wallets}
+              selectWallet={
+                sessionState.type === StateType.SelectingWallet
+                  ? sessionState.selectWallet
+                  : undefined
+              }
+              cancel={onClose}
+              privacyPolicyUrl={privacyPolicyUrl}
+              termsOfServiceUrl={termsOfServiceUrl}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="disclaimer"
+            exit={{ x: "-100%" }}
+            ref={(elem) => {
+              step1.current = elem;
+              if (elem) {
+                if (elem.parentElement !== null) {
+                  elem.parentElement.style.height = `${elem.offsetHeight.toString()}px`;
+                }
+                setHeight(elem.offsetHeight);
+              }
+            }}
+          >
+            <DisclaimerPage
+              onCancel={onClose}
+              onAccept={handleDidAcceptDisclaimer}
+            />
+          </motion.div>
+        )
+      ) : (
+        <motion.div
+          key="limits"
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          ref={(elem) => {
+            step3.current = elem;
+            setHeight(elem?.offsetHeight ?? 0);
+          }}
+        >
+          <LimitsPage sessionState={sessionState} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const DisclaimerPage = (props: {
+  onCancel: () => void;
+  onAccept: () => void;
+}) => (
+  <Page
+    heading="Welcome to Fogo Sessions!"
+    message="By continuing you agree to the Fogo Sessions disclaimer."
+  >
+    <Disclaimer className={styles.disclaimer} />
+    <div className={styles.buttons}>
+      <Button onPress={props.onCancel} variant="outline">
+        Close
+      </Button>
+      <Button onPress={props.onAccept} variant="secondary">
+        Accept
+      </Button>
+    </div>
+  </Page>
+);
+
+/**
+ * Solflare wallet is always present in the available wallets even if it's not installed, but with the ready state of Loadable.
+ * This is used to filter it out to avoid showing it in the list of installed wallets.
+ */
+const isLoadableSolflareWallet = (wallet: SolanaWallet) =>
+  wallet.name === "Solflare" && wallet.readyState === WalletReadyState.Loadable;
 
 const WalletsPage = ({
   wallets,
@@ -127,10 +230,8 @@ const WalletsPage = ({
   termsOfServiceUrl,
   privacyPolicyUrl,
 }: {
-  wallets: MessageSignerWalletAdapterProps[];
-  selectWallet?:
-    | ((wallet: MessageSignerWalletAdapterProps) => void)
-    | undefined;
+  wallets: SolanaWallet[];
+  selectWallet?: ((wallet: SolanaWallet) => void) | undefined;
   cancel: () => void;
   termsOfServiceUrl?: string | undefined;
   privacyPolicyUrl?: string | undefined;
@@ -138,18 +239,19 @@ const WalletsPage = ({
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
 
   const { otherWallets, installedWallets } = useMemo(() => {
-    const { otherWallets, installedWallets } = groupBy(wallets, (wallet) =>
-      wallet.readyState === WalletReadyState.Installed ||
-      wallet.readyState === WalletReadyState.Loadable
+    const { otherWallets, installedWallets } = groupBy(wallets, (wallet) => {
+      const isSolflareWalletInstalled = !isLoadableSolflareWallet(wallet);
+      return (wallet.readyState === WalletReadyState.Installed ||
+        wallet.readyState === WalletReadyState.Loadable) &&
+        isSolflareWalletInstalled
         ? "installedWallets"
-        : "otherWallets",
-    );
+        : "otherWallets";
+    });
     return {
       otherWallets: otherWallets ?? [],
       installedWallets: installedWallets ?? [],
     };
   }, [wallets]);
-
   return (
     <Page heading="Select a wallet" message="Select a Solana wallet to connect">
       <Button
@@ -265,36 +367,20 @@ const LimitsPage = ({
   sessionState:
     | SessionStates["RequestingLimits"]
     | SessionStates["SettingLimits"];
-}) => {
-  const { whitelistedTokens, enableUnlimited, defaultRequestedLimits } =
-    useSessionContext();
-
-  return (
-    <Page
-      heading="Session Limits"
-      message="Limit how many tokens this app is allowed to interact with"
-    >
-      <SessionLimits
-        enableUnlimited={enableUnlimited}
-        tokens={whitelistedTokens}
-        onSubmit={
-          sessionState.type === StateType.RequestingLimits
-            ? sessionState.submitLimits
-            : undefined
-        }
-        initialLimits={
-          (sessionState.type === StateType.RequestingLimits
-            ? sessionState.requestedLimits
-            : undefined) ??
-          defaultRequestedLimits ??
-          new Map()
-        }
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus
-      />
-    </Page>
-  );
-};
+}) => (
+  <Page
+    heading="Session Limits"
+    message="Limit how many tokens this app is allowed to interact with"
+  >
+    <SessionLimits
+      className={styles.sessionLimits}
+      sessionState={sessionState}
+      buttonText="Log in"
+      // eslint-disable-next-line jsx-a11y/no-autofocus
+      autoFocus
+    />
+  </Page>
+);
 
 const Page = ({
   heading,

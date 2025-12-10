@@ -39,11 +39,23 @@
       "dependsOn": ["//#build:replace-packages-with-built-packages"],
       "cache": false
     },
-    "//#run:add-program-id-to-domain-registry": {
+    "//#run:domain-registry": {
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },
     "//#run:initialize-chain-id": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
+    "//#run:register-ntt-manager": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
+    "//#run:register-fee-config": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
+    "//#run:update-metadata": {
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },

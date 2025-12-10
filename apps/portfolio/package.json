@@ -24,11 +24,13 @@
     "@phosphor-icons/react": "catalog:",
     "clsx": "catalog:",
     "next": "catalog:",
+    "nuqs": "^2.8.0",
     "pino": "catalog:",
     "react": "catalog:",
     "react-aria": "catalog:",
     "react-aria-components": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "thread-stream": "catalog:"
   },
   "devDependencies": {
     "@axe-core/react": "catalog:",

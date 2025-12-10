@@ -3,39 +3,57 @@ import { AnchorProvider } from "@coral-xyz/anchor";
 import { ChainIdProgram } from "@fogo/sessions-idls";
 import { Connection as Web3Connection, Keypair } from "@solana/web3.js";
 
-import type { Connection } from "./connection.js";
+import type {
+  Connection,
+  SendTransactionOptions as SendTransactionBaseOptions,
+  TransactionOrInstructions,
+} from "./connection.js";
 
 // eslint-disable-next-line unicorn/no-typeof-undefined
 const IS_BROWSER = typeof globalThis.window !== "undefined";
 
+export const SESSIONS_INTERNAL_PAYMASTER_DOMAIN = "sessions";
+
 export const createSessionContext = async (options: {
   connection: Connection;
-  addressLookupTableAddress?: string | undefined;
+  defaultAddressLookupTableAddress?: string | undefined;
   domain?: string | undefined;
 }) => {
-  const addressLookupTables = await options.connection.getAddressLookupTables(
-    options.addressLookupTableAddress,
-  );
   const domain = getDomain(options.domain);
-  const sponsor = await options.connection.getSponsor(domain);
+  const [sponsor, internalSponsor] = await Promise.all([
+    options.connection.getSponsor(domain),
+    options.connection.getSponsor(SESSIONS_INTERNAL_PAYMASTER_DOMAIN),
+  ]);
   return {
     chainId: await fetchChainId(options.connection.connection),
     domain: getDomain(options.domain),
     payer: sponsor,
+    internalPayer: internalSponsor,
+    getSolanaConnection: options.connection.getSolanaConnection,
     connection: options.connection.connection,
     rpc: options.connection.rpc,
+    network: options.connection.network,
     sendTransaction: (
       sessionKey: CryptoKeyPair | undefined,
-      instructions: Parameters<typeof options.connection.sendToPaymaster>[4],
+      instructions: TransactionOrInstructions,
+      sendTxOptions?: SendTransactionOptions,
     ) =>
       options.connection.sendToPaymaster(
-        domain,
-        sponsor,
-        addressLookupTables,
+        sendTxOptions?.paymasterDomain ?? domain,
         sessionKey,
         instructions,
+        {
+          ...sendTxOptions,
+          addressLookupTable:
+            sendTxOptions?.addressLookupTable ??
+            options.defaultAddressLookupTableAddress,
+        },
       ),
   };
+};
+
+export type SendTransactionOptions = SendTransactionBaseOptions & {
+  paymasterDomain?: string | undefined;
 };
 
 export type SessionContext = Awaited<ReturnType<typeof createSessionContext>>;

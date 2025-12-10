@@ -6,6 +6,9 @@ export const stringToAmount = (str: string, decimals: number): bigint => {
     throw new Error("Invalid amount string");
   } else {
     const integerPart = BigInt(integerStr) * 10n ** BigInt(decimals);
+    if (integerPart < 0) {
+      throw new Error("Amount cannot be negative");
+    }
     if (fractionalStr === undefined) {
       return integerPart;
     } else {

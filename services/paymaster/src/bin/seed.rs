@@ -126,7 +126,7 @@ pub async fn seed_from_config(config: &Config) -> Result<(), anyhow::Error> {
             let app = insert_app(&user, host).await?;
             let domain_config = insert_domain_config(&app, domain).await?;
             for variation in &domain.tx_variations {
-                insert_variation(&domain_config, variation).await?;
+                insert_variation(&domain_config, &(variation.1)).await?;
             }
         }
     } else {
