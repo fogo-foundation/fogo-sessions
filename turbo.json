@@ -38,7 +38,11 @@
     "//#publish": {
       "env": [
         "NPM_CONFIG_USERCONFIG",
-        "NODE_AUTH_TOKEN"
+        "NODE_AUTH_TOKEN",
+        "GITHUB_ACTIONS",
+        "NPM_ID_TOKEN",
+        "ACTIONS_ID_TOKEN_REQUEST_URL",
+        "ACTIONS_ID_TOKEN_REQUEST_TOKEN"
       ],
       "dependsOn": ["//#build:replace-packages-with-built-packages"],
       "cache": false
