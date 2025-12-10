@@ -47,6 +47,11 @@ jobs:
         with:
           run_install: true
 
+      # Ensure npm 11.5.1 or later is installed -- mandatory for Trusted
+      # Publishing, see https://docs.npmjs.com/trusted-publishers
+      - name: Update npm
+        run: npm install -g npm@latest
+
       - name: Install Knope
         uses: knope-dev/action@v2.1.0
         with:
