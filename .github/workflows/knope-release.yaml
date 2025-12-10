@@ -42,6 +42,21 @@ jobs:
           node-version-file: "package.json"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Debug logging
+        run: |
+          npm --version
+          ls -l
+          echo ========================
+          echo /home/runner/work/_temp/.npmrc
+          cat /home/runner/work/_temp/.npmrc
+          echo ========================
+          echo $NPM_CONFIG_USERCONFIG
+          cat $NPM_CONFIG_USERCONFIG
+          echo ========================
+          echo .npmrc
+          cat .npmrc
+          echo ========================
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -67,6 +82,8 @@ jobs:
 
       - name: Publish npm packages
         run: pnpm turbo publish
+        env:
+          NODE_AUTH_TOKEN: "XXXXX-XXXXX-XXXXX-XXXXX"
 
       - name: Publish Cargo packages
         run: |
