@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk-web
 
+## 0.0.20 (2025-12-10)
+
+### Fixes
+
+- Add repository to package.json
+
 ## 0.0.19
 
 ### Patch Changes
