@@ -298,6 +298,13 @@ const DepositForm = ({
       >
         Transfer
       </Button>
+      <Link
+        className={styles.mayanLink ?? ""}
+        href="https://swap.mayan.finance/"
+        target="_blank"
+      >
+        Transfer from other chains to Fogo
+      </Link>
     </Form>
   );
 };
