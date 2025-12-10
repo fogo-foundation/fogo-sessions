@@ -65,6 +65,18 @@ jobs:
       - name: Fetch tags created by Knope
         run: git fetch --tags
 
+      - name: Debug logging
+        run: |
+          npm --version
+          ls -l
+          echo ========================
+          echo /home/runner/work/_temp/.npmrc
+          cat /home/runner/work/_temp/.npmrc
+          echo ========================
+          echo $NPM_CONFIG_USERCONFIG
+          cat $NPM_CONFIG_USERCONFIG
+          echo ========================
+
       - name: Publish npm packages
         run: pnpm turbo publish
 
