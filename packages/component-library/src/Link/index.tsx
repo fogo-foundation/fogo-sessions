@@ -1,8 +1,10 @@
+"use client";
+
 import clsx from "clsx";
 import type { ComponentProps } from "react";
 import { Button, Link as UnstyledLink } from "react-aria-components";
 
-import styles from "./link.module.css";
+import styles from "./index.module.css";
 
 export const Link = (
   props: ComponentProps<typeof Button> | ComponentProps<typeof UnstyledLink>,

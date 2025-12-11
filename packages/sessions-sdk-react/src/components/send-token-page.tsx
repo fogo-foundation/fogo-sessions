@@ -16,13 +16,13 @@ import { useState, useCallback, useMemo } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
-import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
+import type { EstablishedSessionState } from "../session-state.js";
+import { Button } from "./component-library/Button/index.js";
+import { Link } from "./component-library/Link/index.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { FetchError as FetchErrorImpl } from "./fetch-error.js";
 import { TextField } from "./field.js";
-import { Link } from "./link.js";
 import { NotionalAmount } from "./notional-amount.js";
 import styles from "./send-token-page.module.css";
 import { useToast } from "./toast.js";

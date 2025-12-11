@@ -8,8 +8,8 @@
         "build:cjs",
         "build:css:cjs",
         "build:css:esm",
-        "build:esm",
-        "build:package-json"
+        "build:theme.scss",
+        "build:esm"
       ]
     },
     "build:css:cjs": {
@@ -21,6 +21,11 @@
       "dependsOn": ["//#install:modules"],
       "inputs": ["src/**/*.scss"],
       "outputs": ["dist/esm/**/*.css"]
+    },
+    "build:theme.scss": {
+      "dependsOn": ["//#install:modules"],
+      "inputs": ["src/theme.scss"],
+      "outputs": ["dist/theme.scss"]
     },
     "fix:lint": {
       "dependsOn": ["fix:lint:eslint", "fix:lint:stylelint"],
@@ -35,22 +40,21 @@
       "cache": false
     },
     "start:dev": {
-      "with": [
-        "start:dev:tsc",
-        "start:dev:sass",
-        "@fogo/sessions-sdk#start:dev",
-        "@fogo/sessions-sdk-web#start:dev",
-        "@fogo/component-library#start:dev"
-      ],
+      "with": ["start:dev:sass", "start:dev:theme.scss", "start:dev:tsc"],
       "persistent": false
     },
-    "start:dev:tsc": {
+    "start:dev:sass": {
+      "dependsOn": ["//#install:modules"],
+      "persistent": true,
+      "cache": false
+    },
+    "start:dev:theme.scss": {
       "dependsOn": ["//#install:modules", "^build"],
       "persistent": true,
       "cache": false
     },
-    "start:dev:sass": {
-      "dependsOn": ["//#install:modules"],
+    "start:dev:tsc": {
+      "dependsOn": ["//#install:modules", "^build"],
       "persistent": true,
       "cache": false
     },

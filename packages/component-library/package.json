@@ -1,12 +1,12 @@
 {
-  "name": "@fogo/sessions-sdk-react",
-  "version": "0.1.8",
+  "name": "@fogo/component-library",
+  "version": "0.0.0",
   "private": true,
-  "description": "React components and hooks for integrating with Fogo sessions",
+  "description": "React components and hooks for use in various Sessions related projects",
   "repository": {
     "type": "git",
     "url": "https://github.com/fogo-foundation/fogo-sessions",
-    "directory": "packages/sessions-sdk-react"
+    "directory": "packages/component-library"
   },
   "keywords": [
     "fogo",
@@ -17,34 +17,35 @@
     "react"
   ],
   "type": "module",
-  "main": "./dist/cjs/index.js",
-  "types": "./dist/cjs/index.d.ts",
   "engines": {
     "node": ">=22"
   },
   "exports": {
-    "import": {
-      "types": "./dist/esm/index.d.ts",
-      "default": "./dist/esm/index.js"
+    "./*": {
+      "import": {
+        "types": "./dist/esm/*/index.d.ts",
+        "default": "./dist/esm/*/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/*/index.d.ts",
+        "default": "./dist/cjs/*/index.js"
+      }
     },
-    "require": {
-      "types": "./dist/cjs/index.d.ts",
-      "default": "./dist/cjs/index.js"
-    }
+    "./theme": "./dist/theme.scss"
   },
   "scripts": {
     "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "build:css:cjs": "sass --pkg-importer node --no-source-map src:dist/cjs",
     "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
+    "build:theme.scss": "mkdir -p dist && cp src/theme.scss dist/theme.scss",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
-    "build:package-json": "transform-package-json ./package.json dist/package.json",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
-    "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
+    "start:dev:theme.scss": "copy-and-watch --watch src/theme.scss dist",
+    "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "test:format": "run-jest --colors --selectProjects format",
-    "test:integration": "run-jest --colors --selectProjects integration",
     "test:lint:eslint": "run-jest --colors --selectProjects lint",
     "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
     "test:types": "tsc"
@@ -53,38 +54,18 @@
     "react": "^19"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "catalog:",
-    "@fogo/sessions-idls": "workspace:^",
-    "@fogo/sessions-sdk": "workspace:^",
-    "@fogo/sessions-sdk-web": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
-    "@solana-mobile/wallet-adapter-mobile": "catalog:",
-    "@solana/kit": "catalog:",
-    "@solana/spl-token": "catalog:",
-    "@solana/wallet-adapter-backpack": "catalog:",
-    "@solana/wallet-adapter-base": "catalog:",
-    "@solana/wallet-adapter-wallets": "catalog:",
-    "@solana/wallet-standard-wallet-adapter-react": "catalog:",
-    "@solana/web3.js": "catalog:",
-    "@wormhole-foundation/sdk": "catalog:",
-    "@yudiel/react-qr-scanner": "catalog:",
-    "bs58": "catalog:",
     "clsx": "catalog:",
-    "dnum": "catalog:",
-    "idb": "catalog:",
+    "copy-and-watch": "catalog:",
     "modern-normalize": "catalog:",
     "motion": "catalog:",
-    "qrcode.react": "catalog:",
-    "react-aria-components": "catalog:",
-    "swr": "catalog:",
-    "zod": "catalog:"
+    "react-aria-components": "catalog:"
   },
   "devDependencies": {
     "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
-    "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
@@ -95,7 +76,6 @@
     "eslint": "catalog:",
     "jest": "catalog:",
     "prettier": "catalog:",
-    "puppeteer": "catalog:",
     "react": "catalog:",
     "sass": "catalog:",
     "stylelint": "catalog:",

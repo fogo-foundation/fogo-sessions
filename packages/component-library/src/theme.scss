@@ -523,44 +523,11 @@ $shadow: (
   border-width: 0;
 }
 
-@mixin max-width-set-breakpoints {
-  --max-width: 100vw;
-
-  @include breakpoint("lg") {
-    --max-width: #{spacing(155)};
-  }
-
-  @include breakpoint("xl") {
-    --max-width: #{spacing(200)};
-  }
-
-  @include breakpoint("2xl") {
-    --max-width: #{spacing(246)};
-  }
-}
-
-@mixin max-width {
-  max-width: $max-width;
-  padding-left: spacing(3);
-  padding-right: spacing(3);
-
-  @include breakpoint("sm") {
-    padding-left: spacing(6);
-    padding-right: spacing(6);
-  }
-
-  @include breakpoint("lg") {
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
-
 @mixin text($size: "base", $weight: "normal") {
   font-size: font-size($size);
   font-weight: font-weight($weight);
   margin: 0;
   font-style: normal;
+  text-box-trim: trim-both;
+  text-box-edge: cap alphabetic;
 }
-
-$header-height: spacing(16);
-$max-width: var(--max-width);

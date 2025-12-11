@@ -64,6 +64,7 @@ catalog:
   babel-plugin-react-compiler: 19.1.0-rc.1
   bn.js: ^5.1.2
   bs58: ^6.0.0
+  copy-and-watch: ^0.1.8
   copyfiles: ^2.4.1
   class-variance-authority: ^0.7.1
   clsx: ^2.1.1

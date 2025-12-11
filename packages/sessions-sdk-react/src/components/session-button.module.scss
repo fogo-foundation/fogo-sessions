@@ -1,7 +1,9 @@
-@use "../theme";
+@use "./component-library/theme";
+@use "../reset";
+@use "../layer";
 
 .sessionButton {
-  @include theme.reset {
+  @include reset.reset {
     width: theme.spacing(48);
     height: theme.spacing(10);
     padding: theme.spacing(1);
@@ -154,11 +156,11 @@
 }
 
 .sessionPanelPopover {
-  @include theme.reset {
+  @include reset.reset {
     transition:
       transform 400ms ease-in-out,
       opacity 200ms;
-    z-index: theme.layer("session-panel") !important;
+    z-index: layer.layer("session-panel") !important;
 
     @media (max-width: theme.map-get-strict(theme.$breakpoints, "sm")) {
       position: fixed !important;
