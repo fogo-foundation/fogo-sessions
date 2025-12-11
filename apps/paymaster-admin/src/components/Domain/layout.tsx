@@ -1,21 +1,21 @@
-import { getUserPaymasterData } from "../../server/paymaster";
-import { UserNotFound } from "../UserNotFound";
+"use client";
+import { useParams } from "next/navigation";
 
-export const DomainLayout = async ({
-  children,
-  params,
-}: {
-  params: Promise<{ appId: string; domainId: string }>;
-  children: React.ReactNode;
-}) => {
-  const { appId, domainId } = await params;
-  const data = await getUserPaymasterData();
+import { useUserData } from "../user-data-context";
 
-  if (!data) {
-    return <UserNotFound />;
+export const DomainLayout = ({ children }: { children: React.ReactNode }) => {
+  const { appId, domainId } = useParams<{ appId: string; domainId: string }>();
+  const { userData, isLoading } = useUserData();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  const domainConfig = data.apps
+  if (!userData) {
+    return;
+  }
+
+  const domainConfig = userData.apps
     .find((app) => app.id === appId)
     ?.domain_configs.find((domainConfig) => domainConfig.id === domainId);
   if (!domainConfig) {

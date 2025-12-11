@@ -2,6 +2,7 @@
 import { SessionButton } from "@fogo/sessions-sdk-react";
 
 import { useUserData } from "../user-data-context";
+import Link from "next/dist/client/link";
 
 export const Home = () => {
   const { userData, isLoading, error, isUserNotFound, refetch } = useUserData();
@@ -9,7 +10,12 @@ export const Home = () => {
     <div>
       <h1>Home</h1>
       <SessionButton />
-      {userData && <pre>{JSON.stringify(userData, undefined, 2)}</pre>}
+      Apps:
+      {userData?.apps.map((app) => (
+          <li key={app.id}>
+            <Link href={`/${app.id}`}>{app.name}</Link>
+          </li>
+        ))}
       {isLoading && <div>Loading...</div>}
       {error && <div>Error: {error.message}</div>}
       {isUserNotFound && <div>User not found</div>}

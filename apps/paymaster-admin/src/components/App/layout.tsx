@@ -1,21 +1,22 @@
-import { getUserPaymasterData } from "../../server/paymaster";
-import { UserNotFound } from "../UserNotFound";
+"use client";
+import { useParams } from "next/navigation";
+import { Suspense } from "react";
 
-export const AppLayout = async ({
-  children,
-  params,
-}: {
-  params: Promise<{ appId: string }>;
-  children: React.ReactNode;
-}) => {
-  const { appId } = await params;
-  const data = await getUserPaymasterData();
+import { useUserData } from "../user-data-context";
 
-  if (!data) {
-    return <UserNotFound />;
+const AppLayoutContent = ({ children }: { children: React.ReactNode }) => {
+  const { appId } = useParams<{ appId: string }>();
+  const { userData, isLoading } = useUserData();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  const app = data.apps.find((app) => app.id === appId);
+  if (!userData) {
+    return;
+  }
+
+  const app = userData.apps.find((app) => app.id === appId);
   if (!app) {
     return (
       <div>
@@ -29,5 +30,13 @@ export const AppLayout = async ({
       <h1>App: {app.name}</h1>
       {children}
     </div>
+  );
+};
+
+export const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AppLayoutContent>{children}</AppLayoutContent>
+    </Suspense>
   );
 };

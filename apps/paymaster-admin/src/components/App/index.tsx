@@ -1,21 +1,17 @@
+"use client";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
-import { getUserPaymasterData } from "../../server/paymaster";
-import { UserNotFound } from "../UserNotFound";
+import { useUserData } from "../user-data-context";
 
-export const App = async ({
-  params,
-}: {
-  params: Promise<{ appId: string }>;
-}) => {
-  const { appId } = await params;
-  const data = await getUserPaymasterData();
+export const App = () => {
+  const { appId } = useParams<{ appId: string }>();
+  const { userData, isLoading } = useUserData();
 
-  if (!data) {
-    return <UserNotFound />;
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
-
-  const app = data.apps.find((app) => app.id === appId);
+  const app = userData?.apps.find((app) => app.id === appId);
   if (!app) {
     return (
       <div>
@@ -30,7 +26,7 @@ export const App = async ({
       <ul>
         {app.domain_configs.map((domainConfig) => (
           <li key={domainConfig.id}>
-            <Link href={`/dashboard/${appId}/${domainConfig.id}`}>
+            <Link href={`/${appId}/${domainConfig.id}`}>
               {domainConfig.domain}
             </Link>
           </li>

@@ -1,19 +1,26 @@
-import { getUserPaymasterData } from "../../server/paymaster";
-import { UserNotFound } from "../UserNotFound";
+"use client";
+import { useParams } from "next/navigation";
+import { Suspense } from "react";
 
-export const Variation = async ({
-  params,
-}: {
-  params: Promise<{ appId: string; domainId: string; variationId: string }>;
-}) => {
-  const { appId, domainId, variationId } = await params;
-  const data = await getUserPaymasterData();
+import { useUserData } from "../user-data-context";
 
-  if (!data) {
-    return <UserNotFound />;
+const VariationContent = () => {
+  const { appId, domainId, variationId } = useParams<{
+    appId: string;
+    domainId: string;
+    variationId: string;
+  }>();
+  const { userData, isLoading } = useUserData();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  const variation = data.apps
+  if (!userData) {
+    return;
+  }
+
+  const variation = userData.apps
     .find((app) => app.id === appId)
     ?.domain_configs.find((domainConfig) => domainConfig.id === domainId)
     ?.variations.find((variation) => variation.id === variationId);
@@ -45,5 +52,13 @@ export const Variation = async ({
         )}
       </ul>
     </div>
+  );
+};
+
+export const Variation = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VariationContent />
+    </Suspense>
   );
 };

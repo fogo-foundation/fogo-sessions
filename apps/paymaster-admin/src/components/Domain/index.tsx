@@ -1,21 +1,23 @@
+"use client";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Suspense } from "react";
 
-import { getUserPaymasterData } from "../../server/paymaster";
-import { UserNotFound } from "../UserNotFound";
+import { useUserData } from "../user-data-context";
 
-export const Domain = async ({
-  params,
-}: {
-  params: Promise<{ appId: string; domainId: string }>;
-}) => {
-  const { appId, domainId } = await params;
-  const data = await getUserPaymasterData();
+const DomainContent = () => {
+  const { appId, domainId } = useParams<{ appId: string; domainId: string }>();
+  const { userData, isLoading } = useUserData();
 
-  if (!data) {
-    return <UserNotFound />;
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  const domainConfig = data.apps
+  if (!userData) {
+    return;
+  }
+
+  const domainConfig = userData.apps
     .find((app) => app.id === appId)
     ?.domain_configs.find((domainConfig) => domainConfig.id === domainId);
   if (!domainConfig) {
@@ -54,12 +56,20 @@ export const Domain = async ({
       <ul>
         {domainConfig.variations.map((variation) => (
           <li key={variation.id}>
-            <Link href={`/dashboard/${appId}/${domainId}/${variation.id}`}>
+            <Link href={`/${appId}/${domainId}/${variation.id}`}>
               {variation.name}
             </Link>
           </li>
         ))}
       </ul>
     </div>
+  );
+};
+
+export const Domain = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DomainContent />
+    </Suspense>
   );
 };
