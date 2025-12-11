@@ -49,8 +49,6 @@ The Fogo Sessions repository requires the following toolchain versions:
 - `python@3.14.0`
 
 For convenience, there is a `.tool-versions` file that contains a mapping of these tools to the correct versions.
-This file works great with [mise](https://mise.jdx.dev/).
-If you already have `mise` installed, simply do `mise x -- pnpm i` to get started.
 
 ### Demo App
 
