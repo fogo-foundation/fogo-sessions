@@ -1,0 +1,110 @@
+name: Release Packages (Knope)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish Packages
+    # Only run if PR was merged and came from release branch
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'release-knope'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          default: true
+          override: true
+
+      - name: Install anchor cli
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v0.31.1 --locked avm
+          avm install 0.31.1
+          avm use 0.31.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: "package.json"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: true
+
+      # Ensure npm 11.5.1 or later is installed -- mandatory for Trusted
+      # Publishing, see https://docs.npmjs.com/trusted-publishers
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - name: Install Knope
+        uses: knope-dev/action@v2.1.0
+        with:
+          version: 0.21.6
+
+      - name: Create GitHub Releases
+        run: knope release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch tags created by Knope
+        run: git fetch --tags
+
+      - name: Build Node packages
+        run: |
+          pnpm turbo build
+          for package in packages/*/package.json; do
+            packagePath=${package///package.json}
+            mv "${packagePath}" "${packagePath}-old"
+            mv "${packagePath}-old/dist" "${packagePath}"
+            rm -rf "${packagePath}-old"
+          done
+          pnpm i --no-frozen-lockfile
+
+      - name: Publish Node packages to npm
+        run: pnpm publish --no-git-checks -r
+
+      - name: Publish Cargo packages
+        run: |
+          # Publish packages based on tags created by knope
+          for tag in $(git tag --points-at HEAD); do
+            case $tag in
+              fogo-sessions-sdk@*|fogo-sessions-sdk/v*)
+                echo "Publishing fogo-sessions-sdk..."
+                cargo publish -p fogo-sessions-sdk --token $CARGO_REGISTRY_TOKEN || true
+                ;;
+              solana-intents@*|solana-intents/v*)
+                echo "Publishing solana-intents..."
+                cargo publish -p solana-intents --token $CARGO_REGISTRY_TOKEN || true
+                ;;
+              chain-id@*|chain-id/v*)
+                echo "Publishing chain-id..."
+                cargo publish -p chain-id --token $CARGO_REGISTRY_TOKEN || true
+                ;;
+              intent-transfer@*|intent-transfer/v*)
+                echo "Publishing intent-transfer..."
+                cargo publish -p intent-transfer --token $CARGO_REGISTRY_TOKEN || true
+                ;;
+              fogo-paymaster@*|fogo-paymaster/v*)
+                echo "Publishing fogo-paymaster..."
+                cargo publish -p fogo-paymaster --token $CARGO_REGISTRY_TOKEN || true
+                ;;
+            esac
+          done
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.FOGO_SESSIONS_CARGO_REGISTRY_TOKEN }}

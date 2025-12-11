@@ -73,6 +73,19 @@
           buildInputs = [final.openssl final.udev];
           doCheck = false;
         });
+
+        knope = final.rustPlatform.buildRustPackage (finalAttrs: {
+          pname = "knope";
+          version = "0.21.7";
+
+          src = final.fetchCrate {
+            inherit (finalAttrs) pname version;
+            hash = "sha256-ap4xip2QhsX1pqb2WZc60NfuSGMJxggD1XjMfC4C5ng=";
+          };
+
+          cargoHash = "sha256-zQqSggmcuaQVJSgf6UAZZD7pT0QboWaGACu63RQ7QXI=";
+          doCheck = false;
+        });
       in {
         project-shell = final.mkShell {
           FORCE_COLOR = 1;
@@ -94,6 +107,7 @@
             solana-nix.packages."${system}".anchor-cli
             solana-nix.packages."${system}".solana-rust
             spl-token-cli
+            knope
           ];
         };
       });

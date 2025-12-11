@@ -1,5 +1,32 @@
 # @fogo/sessions-sdk
 
+## 0.0.28 (2025-12-10)
+
+### Fixes
+
+- Add repository to package.json
+
+## 0.0.27 (2025-12-10)
+
+### Fixes
+
+- Support v0.4 session accounts, fix bugs in the parsing of v0.3 session accounts
+
+## 0.0.26 (2025-12-10)
+
+### Fixes
+
+- Update paymaster URLs to the latest version
+
+## 0.0.25
+
+### Patch Changes
+
+- a4306fc: Update the paymaster URLs
+- cf63fff: Update mainnet USDC bridge out ALT
+- Updated dependencies [f28e02a]
+  - @fogo/sessions-idls@0.0.11
+
 ## 0.0.24
 
 ### Patch Changes

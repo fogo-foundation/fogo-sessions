@@ -1,8 +1,13 @@
 {
   "name": "@fogo/sessions-sdk-react",
-  "version": "0.1.4",
+  "version": "0.1.8",
   "private": true,
   "description": "React components and hooks for integrating with Fogo sessions",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fogo-foundation/fogo-sessions",
+    "directory": "packages/sessions-sdk-react"
+  },
   "keywords": [
     "fogo",
     "sessions",
@@ -66,6 +71,7 @@
     "@yudiel/react-qr-scanner": "catalog:",
     "bs58": "catalog:",
     "clsx": "catalog:",
+    "dnum": "catalog:",
     "idb": "catalog:",
     "modern-normalize": "catalog:",
     "motion": "catalog:",

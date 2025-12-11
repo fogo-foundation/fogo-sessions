@@ -1,5 +1,38 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.8 (2025-12-10)
+
+### Fixes
+
+- Add repository to package.json
+
+## 0.1.7 (2025-12-10)
+
+### Fixes
+
+- Add link to Mayan from bridge in page
+
+## 0.1.6 (2025-12-10)
+
+### Fixes
+
+- Add native tokens and change "Your Wallet" to "Your Fogo Wallet"
+
+## 0.1.5
+
+### Patch Changes
+
+- 90c908d: Fix text wrapping issues
+- e5e73c3: Fix Solana explorer link
+- 08a2abf: Add activity tab with a link to fogo explorer for now
+- afae341: Gracefully handle when user attempts to transfer in without having SOL in their Solana wallet
+- Updated dependencies [a4306fc]
+- Updated dependencies [cf63fff]
+- Updated dependencies [f28e02a]
+  - @fogo/sessions-sdk@0.0.25
+  - @fogo/sessions-idls@0.0.11
+  - @fogo/sessions-sdk-web@0.0.19
+
 ## 0.1.4
 
 ### Patch Changes

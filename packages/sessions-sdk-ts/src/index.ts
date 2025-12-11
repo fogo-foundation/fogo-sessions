@@ -279,6 +279,52 @@ const createSession = async (
       };
 };
 
+const authorizedTokensSchema = z.union([
+  z.object({
+    Specific: z.object({
+      "0": z.array(z.instanceof(PublicKey)),
+    }),
+  }),
+  z.object({ All: z.object({}) }),
+]);
+
+const revokedSessionInfoSchema = z.object({
+  user: z.instanceof(PublicKey),
+  expiration: z.instanceof(BN),
+  authorized_tokens_with_mints: authorizedTokensSchema,
+});
+
+const activeSessionInfoSchema = z.object({
+  authorized_programs: z.union([
+    z.object({
+      Specific: z.object({
+        0: z.array(
+          z.object({
+            program_id: z.instanceof(PublicKey),
+            signer_pda: z.instanceof(PublicKey),
+          }),
+        ),
+      }),
+    }),
+    z.object({
+      All: z.object({}),
+    }),
+  ]),
+  authorized_tokens: z.union([
+    z.object({
+      Specific: z.object({
+        "0": z.array(z.instanceof(PublicKey)),
+      }),
+    }),
+    z.object({ All: z.object({}) }),
+  ]),
+  expiration: z.instanceof(BN),
+  extra: z.object({
+    0: z.unknown(),
+  }),
+  user: z.instanceof(PublicKey),
+});
+
 const sessionInfoSchema = z
   .object({
     session_info: z.union([
@@ -355,39 +401,31 @@ const sessionInfoSchema = z
         V3: z.object({
           "0": z.union([
             z.object({
-              Revoked: z.instanceof(BN),
+              Revoked: z.object({
+                "0": revokedSessionInfoSchema,
+              }),
+            }),
+            z.object({
+              Active: z.object({
+                "0": activeSessionInfoSchema,
+              }),
+            }),
+          ]),
+        }),
+      }),
+      z.object({
+        V4: z.object({
+          "0": z.union([
+            z.object({
+              Revoked: z.object({
+                "0": revokedSessionInfoSchema,
+              }),
             }),
             z.object({
               Active: z.object({
                 "0": z.object({
-                  authorized_programs: z.union([
-                    z.object({
-                      Specific: z.object({
-                        0: z.array(
-                          z.object({
-                            program_id: z.instanceof(PublicKey),
-                            signer_pda: z.instanceof(PublicKey),
-                          }),
-                        ),
-                      }),
-                    }),
-                    z.object({
-                      All: z.object({}),
-                    }),
-                  ]),
-                  authorized_tokens: z.union([
-                    z.object({
-                      Specific: z.object({
-                        "0": z.array(z.instanceof(PublicKey)),
-                      }),
-                    }),
-                    z.object({ All: z.object({}) }),
-                  ]),
-                  expiration: z.instanceof(BN),
-                  extra: z.object({
-                    0: z.unknown(),
-                  }),
-                  user: z.instanceof(PublicKey),
+                  domain_hash: z.array(z.number()).length(32),
+                  active_session_info: activeSessionInfoSchema,
                 }),
               }),
             }),
@@ -400,7 +438,7 @@ const sessionInfoSchema = z
   })
   .transform(({ session_info, major, sponsor }) => {
     let activeSessionInfo;
-    let minor: 1 | 2 | 3;
+    let minor: 1 | 2 | 3 | 4;
 
     if ("V1" in session_info) {
       activeSessionInfo = session_info.V1["0"];
@@ -411,6 +449,9 @@ const sessionInfoSchema = z
     } else if ("V3" in session_info && "Active" in session_info.V3["0"]) {
       activeSessionInfo = session_info.V3["0"].Active["0"];
       minor = 3;
+    } else if ("V4" in session_info && "Active" in session_info.V4["0"]) {
+      activeSessionInfo = session_info.V4["0"].Active["0"].active_session_info;
+      minor = 4;
     } else {
       return;
     }
