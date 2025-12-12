@@ -796,7 +796,7 @@ export type Session = {
   payer: PublicKey;
   sendTransaction: (
     instructions: TransactionOrInstructions,
-    extraConfig?: SendTransactionOptions,
+    extraConfig: SendTransactionOptions,
   ) => Promise<TransactionResult>;
   sessionInfo: NonNullable<z.infer<typeof sessionInfoSchema>>;
 };

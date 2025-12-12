@@ -29,25 +29,28 @@ export const useTrade = (
     );
     const { decimals } = await getMint(connection, mint);
 
-    const result = await sessionState.sendTransaction([
-      createAssociatedTokenAccountIdempotentInstruction(
-        sessionState.payer,
-        sinkAta,
-        sessionState.payer,
-        mint,
-      ),
-      await new ExampleProgram(
-        new AnchorProvider(connection, {} as Wallet, {}),
-      ).methods
-        .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
-        .accountsPartial({
-          signerOrSession: sessionState.sessionPublicKey,
-          sink: sinkAta,
-          userTokenAccount,
+    const result = await sessionState.sendTransaction(
+      [
+        createAssociatedTokenAccountIdempotentInstruction(
+          sessionState.payer,
+          sinkAta,
+          sessionState.payer,
           mint,
-        })
-        .instruction(),
-    ]);
+        ),
+        await new ExampleProgram(
+          new AnchorProvider(connection, {} as Wallet, {}),
+        ).methods
+          .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
+          .accountsPartial({
+            signerOrSession: sessionState.sessionPublicKey,
+            sink: sinkAta,
+            userTokenAccount,
+            mint,
+          })
+          .instruction(),
+      ],
+      { variation: "Example v1 Variation" },
+    );
 
     appendTransaction({
       description: "Trade",

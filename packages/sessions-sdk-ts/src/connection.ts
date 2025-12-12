@@ -108,7 +108,7 @@ export const createSessionConnection = (
       domain: string,
       sessionKey: CryptoKeyPair | undefined,
       instructions: TransactionOrInstructions,
-      extraConfig?: SendTransactionOptions,
+      extraConfig: SendTransactionOptions,
     ) =>
       sendToPaymaster(
         { ...options, rpc, connection, addressLookupTableCache, sponsorCache },
@@ -127,7 +127,7 @@ export type TransactionOrInstructions =
   | (Transaction & TransactionWithLifetime);
 
 export type SendTransactionOptions = {
-  variation?: string | undefined;
+  variation: string;
   addressLookupTable?: string | undefined;
   extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
 };
@@ -170,9 +170,9 @@ const sendToPaymaster = async (
   domain: string,
   sessionKey: CryptoKeyPair | undefined,
   instructions: TransactionOrInstructions,
-  extraConfig?: SendTransactionOptions,
+  extraConfig: SendTransactionOptions,
 ): Promise<TransactionResult> => {
-  const signerKeys = await getSignerKeys(sessionKey, extraConfig?.extraSigners);
+  const signerKeys = await getSignerKeys(sessionKey, extraConfig.extraSigners);
 
   const transaction = Array.isArray(instructions)
     ? await buildTransaction(
@@ -190,9 +190,7 @@ const sendToPaymaster = async (
       connection.paymaster ?? DEFAULT_PAYMASTER[connection.network],
     );
     url.searchParams.set("domain", domain);
-    if (extraConfig?.variation !== undefined) {
-      url.searchParams.set("variation", extraConfig.variation);
-    }
+    url.searchParams.set("variation", extraConfig.variation);
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -226,7 +224,7 @@ const buildTransaction = async (
   domain: string,
   signerKeys: CryptoKeyPair[],
   instructions: (TransactionInstruction | Instruction)[],
-  extraConfig?: {
+  extraConfig: {
     addressLookupTable?: string | undefined;
     extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
   },
@@ -237,7 +235,7 @@ const buildTransaction = async (
       connection.sponsor === undefined
         ? getSponsor(connection, connection.sponsorCache, domain)
         : Promise.resolve(connection.sponsor),
-      extraConfig?.addressLookupTable === undefined
+      extraConfig.addressLookupTable === undefined
         ? Promise.resolve(undefined)
         : getAddressLookupTable(
             connection.connection,
