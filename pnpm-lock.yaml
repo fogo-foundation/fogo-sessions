@@ -189,15 +189,15 @@ catalogs:
     clsx:
       specifier: ^2.1.1
       version: 2.1.1
-    dnum:
-      specifier: ^2.15.0
-      version: 2.15.0
     copyfiles:
       specifier: ^2.4.1
       version: 2.4.1
     css-loader:
       specifier: ^7.1.2
       version: 7.1.2
+    dnum:
+      specifier: ^2.15.0
+      version: 2.15.0
     eslint:
       specifier: ^9.28.0
       version: 9.29.0
@@ -217,8 +217,8 @@ catalogs:
       specifier: ^12.23.16
       version: 12.23.16
     next:
-      specifier: ^16.0.7
-      version: 16.0.7
+      specifier: ^16.0.10
+      version: 16.0.10
     pino:
       specifier: ^9.7.0
       version: 9.7.0
@@ -241,7 +241,7 @@ catalogs:
       specifier: ^4.2.0
       version: 4.2.0
     react:
-      specifier: ^19.1.2
+      specifier: ^19.1.4
       version: 19.2.1
     react-aria:
       specifier: ^3.41.1
@@ -250,7 +250,7 @@ catalogs:
       specifier: ^1.10.1
       version: 1.10.1
     react-dom:
-      specifier: ^19.1.2
+      specifier: ^19.1.4
       version: 19.2.1
     sass:
       specifier: ^1.89.2
@@ -328,7 +328,7 @@ importers:
         version: 2.1.1
       next:
         specifier: 'catalog:'
-        version: 16.0.7(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+        version: 16.0.10(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -341,7 +341,7 @@ importers:
         version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(jest@29.7.0(@types/node@24.0.3))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
-        version: 3.1.2(@babel/core@7.28.5)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.28.5))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.7(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 3.1.2(@babel/core@7.28.5)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.28.5))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@cprussin/prettier-config':
         specifier: 'catalog:'
         version: 3.0.0(prettier@3.5.3)
@@ -368,7 +368,7 @@ importers:
         version: link:../../packages/sessions-sdk-react
       '@next/third-parties':
         specifier: 'catalog:'
-        version: 16.0.7(next@16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)
+        version: 16.0.7(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)
       '@phosphor-icons/react':
         specifier: 'catalog:'
         version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -377,10 +377,10 @@ importers:
         version: 2.1.1
       next:
         specifier: 'catalog:'
-        version: 16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+        version: 16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
       nuqs:
         specifier: ^2.8.0
-        version: 2.8.0(next@16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)
+        version: 2.8.0(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)
       pino:
         specifier: 'catalog:'
         version: 9.7.0
@@ -408,7 +408,7 @@ importers:
         version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(jest@29.7.0(@types/node@24.0.3))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
-        version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@cprussin/prettier-config':
         specifier: 'catalog:'
         version: 3.0.0(prettier@3.5.3)
@@ -477,10 +477,10 @@ importers:
         version: 25.1.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@solana-program/token':
         specifier: 'catalog:'
-        version: 0.5.1(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
+        version: 0.5.1(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))
       '@solana/kit':
         specifier: 'catalog:'
-        version: 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        version: 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@solana/spl-token':
         specifier: 'catalog:'
         version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -504,7 +504,7 @@ importers:
         version: 0.473.0(react@19.2.1)
       next:
         specifier: 'catalog:'
-        version: 16.0.7(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+        version: 16.0.10(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -529,7 +529,7 @@ importers:
         version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(jest@29.7.0(@types/node@24.0.3))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/jest-config':
         specifier: 'catalog:'
-        version: 3.1.2(@babel/core@7.28.5)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.28.5))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.7(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 3.1.2(@babel/core@7.28.5)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.28.5))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@cprussin/prettier-config':
         specifier: 'catalog:'
         version: 3.0.0(prettier@3.5.3)
@@ -562,22 +562,22 @@ importers:
         version: 3.0.1
       motion:
         specifier: 'catalog:'
-        version: 12.23.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 12.23.16(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       next:
         specifier: 'catalog:'
-        version: 16.0.7(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.89.2)
+        version: 16.0.10(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
       react-aria:
         specifier: 'catalog:'
-        version: 3.41.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 3.41.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-aria-components:
         specifier: 'catalog:'
-        version: 1.10.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 1.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-dom:
         specifier: 'catalog:'
-        version: 19.1.1(react@19.1.1)
+        version: 19.2.1(react@19.2.1)
       swr:
         specifier: 'catalog:'
-        version: 2.3.3(react@19.1.1)
+        version: 2.3.3(react@19.2.1)
     devDependencies:
       '@babel/preset-typescript':
         specifier: 'catalog:'
@@ -587,7 +587,7 @@ importers:
         version: 0.1.2(@swc/helpers@0.5.17)(typescript@5.8.3)
       '@cprussin/eslint-config':
         specifier: 'catalog:'
-        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(jest@29.7.0(@types/node@24.0.3))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
+        version: 5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(jest@29.7.0(@types/node@24.0.3))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)
       '@cprussin/prettier-config':
         specifier: 'catalog:'
         version: 3.0.0(prettier@3.5.3)
@@ -596,19 +596,19 @@ importers:
         version: 4.0.1(typescript@5.8.3)
       '@phosphor-icons/react':
         specifier: 'catalog:'
-        version: 2.1.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@storybook/addon-styling-webpack':
         specifier: 'catalog:'
-        version: 3.0.0(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(webpack@5.101.3)
+        version: 3.0.0(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(webpack@5.101.3)
       '@storybook/addon-themes':
         specifier: 'catalog:'
-        version: 10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))
+        version: 10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))
       '@storybook/nextjs':
         specifier: 'catalog:'
-        version: 10.1.2(next@16.0.7(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.89.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.89.2)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(type-fest@4.41.0)(typescript@5.8.3)(webpack-hot-middleware@2.26.1)(webpack@5.101.3)
+        version: 10.1.2(next@16.0.10(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(type-fest@4.41.0)(typescript@5.8.3)(webpack-hot-middleware@2.26.1)(webpack@5.101.3)
       '@storybook/react':
         specifier: 'catalog:'
-        version: 10.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(typescript@5.8.3)
+        version: 10.1.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(typescript@5.8.3)
       '@svgr/webpack':
         specifier: 'catalog:'
         version: 8.1.0(typescript@5.8.3)
@@ -647,7 +647,7 @@ importers:
         version: 3.5.3
       react:
         specifier: 'catalog:'
-        version: 19.1.1
+        version: 19.2.1
       sass:
         specifier: 'catalog:'
         version: 1.89.2
@@ -656,7 +656,7 @@ importers:
         version: 16.0.6(sass@1.89.2)(webpack@5.101.3)
       storybook:
         specifier: 'catalog:'
-        version: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
+        version: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
       style-loader:
         specifier: 'catalog:'
         version: 4.0.0(webpack@5.101.3)
@@ -3187,8 +3187,8 @@ packages:
   '@next/env@15.5.7':
     resolution: {integrity: sha512-4h6Y2NyEkIEN7Z8YxkA27pq6zTkS09bUSYC0xjd0NpwFxjnIKeZEeH591o5WECSmjpUhLn3H2QLJcDye3Uzcvg==}
 
-  '@next/env@16.0.7':
-    resolution: {integrity: sha512-gpaNgUh5nftFKRkRQGnVi5dpcYSKGcZZkQffZ172OrG/XkrnS7UBTQ648YY+8ME92cC4IojpI2LqTC8sTDhAaw==}
+  '@next/env@16.0.10':
+    resolution: {integrity: sha512-8tuaQkyDVgeONQ1MeT9Mkk8pQmZapMKFh5B+OrFUlG3rVmYTXcXlBetBgTurKXGaIZvkoqRT9JL5K3phXcgang==}
 
   '@next/eslint-plugin-next@15.3.3':
     resolution: {integrity: sha512-VKZJEiEdpKkfBmcokGjHu0vGDG+8CehGs90tBEy/IDoDDKGngeyIStt2MmE5FYNyU9BhgR7tybNWTAJY/30u+Q==}
@@ -3205,8 +3205,8 @@ packages:
     cpu: [arm64]
     os: [darwin]
 
-  '@next/swc-darwin-arm64@16.0.7':
-    resolution: {integrity: sha512-LlDtCYOEj/rfSnEn/Idi+j1QKHxY9BJFmxx7108A6D8K0SB+bNgfYQATPk/4LqOl4C0Wo3LACg2ie6s7xqMpJg==}
+  '@next/swc-darwin-arm64@16.0.10':
+    resolution: {integrity: sha512-4XgdKtdVsaflErz+B5XeG0T5PeXKDdruDf3CRpnhN+8UebNa5N2H58+3GDgpn/9GBurrQ1uWW768FfscwYkJRg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
@@ -3223,8 +3223,8 @@ packages:
     cpu: [x64]
     os: [darwin]
 
-  '@next/swc-darwin-x64@16.0.7':
-    resolution: {integrity: sha512-rtZ7BhnVvO1ICf3QzfW9H3aPz7GhBrnSIMZyr4Qy6boXF0b5E3QLs+cvJmg3PsTCG2M1PBoC+DANUi4wCOKXpA==}
+  '@next/swc-darwin-x64@16.0.10':
+    resolution: {integrity: sha512-spbEObMvRKkQ3CkYVOME+ocPDFo5UqHb8EMTS78/0mQ+O1nqE8toHJVioZo4TvebATxgA8XMTHHrScPrn68OGw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
@@ -3241,8 +3241,8 @@ packages:
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-arm64-gnu@16.0.7':
-    resolution: {integrity: sha512-mloD5WcPIeIeeZqAIP5c2kdaTa6StwP4/2EGy1mUw8HiexSHGK/jcM7lFuS3u3i2zn+xH9+wXJs6njO7VrAqww==}
+  '@next/swc-linux-arm64-gnu@16.0.10':
+    resolution: {integrity: sha512-uQtWE3X0iGB8apTIskOMi2w/MKONrPOUCi5yLO+v3O8Mb5c7K4Q5KD1jvTpTF5gJKa3VH/ijKjKUq9O9UhwOYw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
@@ -3259,8 +3259,8 @@ packages:
     cpu: [arm64]
     os: [linux]
 
-  '@next/swc-linux-arm64-musl@16.0.7':
-    resolution: {integrity: sha512-+ksWNrZrthisXuo9gd1XnjHRowCbMtl/YgMpbRvFeDEqEBd523YHPWpBuDjomod88U8Xliw5DHhekBC3EOOd9g==}
+  '@next/swc-linux-arm64-musl@16.0.10':
+    resolution: {integrity: sha512-llA+hiDTrYvyWI21Z0L1GiXwjQaanPVQQwru5peOgtooeJ8qx3tlqRV2P7uH2pKQaUfHxI/WVarvI5oYgGxaTw==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
@@ -3277,8 +3277,8 @@ packages:
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-linux-x64-gnu@16.0.7':
-    resolution: {integrity: sha512-4WtJU5cRDxpEE44Ana2Xro1284hnyVpBb62lIpU5k85D8xXxatT+rXxBgPkc7C1XwkZMWpK5rXLXTh9PFipWsA==}
+  '@next/swc-linux-x64-gnu@16.0.10':
+    resolution: {integrity: sha512-AK2q5H0+a9nsXbeZ3FZdMtbtu9jxW4R/NgzZ6+lrTm3d6Zb7jYrWcgjcpM1k8uuqlSy4xIyPR2YiuUr+wXsavA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
@@ -3295,8 +3295,8 @@ packages:
     cpu: [x64]
     os: [linux]
 
-  '@next/swc-linux-x64-musl@16.0.7':
-    resolution: {integrity: sha512-HYlhqIP6kBPXalW2dbMTSuB4+8fe+j9juyxwfMwCe9kQPPeiyFn7NMjNfoFOfJ2eXkeQsoUGXg+O2SE3m4Qg2w==}
+  '@next/swc-linux-x64-musl@16.0.10':
+    resolution: {integrity: sha512-1TDG9PDKivNw5550S111gsO4RGennLVl9cipPhtkXIFVwo31YZ73nEbLjNC8qG3SgTz/QZyYyaFYMeY4BKZR/g==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
@@ -3313,8 +3313,8 @@ packages:
     cpu: [arm64]
     os: [win32]
 
-  '@next/swc-win32-arm64-msvc@16.0.7':
-    resolution: {integrity: sha512-EviG+43iOoBRZg9deGauXExjRphhuYmIOJ12b9sAPy0eQ6iwcPxfED2asb/s2/yiLYOdm37kPaiZu8uXSYPs0Q==}
+  '@next/swc-win32-arm64-msvc@16.0.10':
+    resolution: {integrity: sha512-aEZIS4Hh32xdJQbHz121pyuVZniSNoqDVx1yIr2hy+ZwJGipeqnMZBJHyMxv2tiuAXGx6/xpTcQJ6btIiBjgmg==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
@@ -3331,8 +3331,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@next/swc-win32-x64-msvc@16.0.7':
-    resolution: {integrity: sha512-gniPjy55zp5Eg0896qSrf3yB1dw4F/3s8VK1ephdsZZ129j2n6e1WqCbE2YgcKhW9hPB9TVZENugquWJD5x0ug==}
+  '@next/swc-win32-x64-msvc@16.0.10':
+    resolution: {integrity: sha512-E+njfCoFLb01RAFEnGZn6ERoOqhK1Gl3Lfz1Kjnj0Ulfu7oJbuMyvBKNj/bw8XZnenHDASlygTjZICQW+rYW1Q==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -9901,6 +9901,7 @@ packages:
   next@15.5.7:
     resolution: {integrity: sha512-+t2/0jIJ48kUpGKkdlhgkv+zPTEOoXyr60qXe68eB/pl3CMJaLeIGjzp5D6Oqt25hCBiBTt8wEeeAzfJvUKnPQ==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
+    deprecated: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
@@ -9919,8 +9920,8 @@ packages:
       sass:
         optional: true
 
-  next@16.0.7:
-    resolution: {integrity: sha512-3mBRJyPxT4LOxAJI6IsXeFtKfiJUbjCLgvXO02fV8Wy/lIhPvP94Fe7dGhUgHXcQy4sSuYwQNcOLhIfOm0rL0A==}
+  next@16.0.10:
+    resolution: {integrity: sha512-RtWh5PUgI+vxlV3HdR+IfWA1UUHu0+Ram/JBO4vWB54cVPentCD0e+lxyAYEsDTqGGMg7qpjhKh6dc6aW7W/sA==}
     engines: {node: '>=20.9.0'}
     hasBin: true
     peerDependencies:
@@ -14076,44 +14077,6 @@ snapshots:
 
   '@cosmjs/utils@0.33.1': {}
 
-  '@cprussin/eslint-config@5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(jest@29.7.0(@types/node@24.0.3))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)':
-    dependencies:
-      '@eslint/eslintrc': 3.3.1
-      '@eslint/js': 9.29.0
-      '@next/eslint-plugin-next': 15.3.3
-      eslint: 9.29.0(jiti@2.6.1)
-      eslint-config-prettier: 10.1.5(eslint@9.29.0(jiti@2.6.1))
-      eslint-config-turbo: 2.5.4(eslint@9.29.0(jiti@2.6.1))(turbo@2.5.4)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))
-      eslint-plugin-jest: 28.14.0(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(jest@29.7.0(@types/node@24.0.3))(typescript@5.8.3)
-      eslint-plugin-jest-dom: 5.5.0(@testing-library/dom@10.4.0)(eslint@9.29.0(jiti@2.6.1))
-      eslint-plugin-jsonc: 2.20.1(eslint@9.29.0(jiti@2.6.1))
-      eslint-plugin-jsx-a11y: 6.10.2(eslint@9.29.0(jiti@2.6.1))
-      eslint-plugin-n: 17.20.0(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3)
-      eslint-plugin-react: 7.37.5(eslint@9.29.0(jiti@2.6.1))
-      eslint-plugin-react-hooks: 5.2.0(eslint@9.29.0(jiti@2.6.1))
-      eslint-plugin-storybook: 9.0.11(eslint@9.29.0(jiti@2.6.1))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(typescript@5.8.3)
-      eslint-plugin-tailwindcss: 3.18.0(tailwindcss@3.4.17)
-      eslint-plugin-testing-library: 7.5.3(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3)
-      eslint-plugin-tsdoc: 0.4.0
-      eslint-plugin-unicorn: 59.0.1(eslint@9.29.0(jiti@2.6.1))
-      globals: 16.2.0
-      tailwindcss: 3.4.17
-      typescript-eslint: 8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3)
-    transitivePeerDependencies:
-      - '@eslint/json'
-      - '@testing-library/dom'
-      - '@typescript-eslint/eslint-plugin'
-      - '@typescript-eslint/parser'
-      - eslint-import-resolver-typescript
-      - eslint-import-resolver-webpack
-      - jest
-      - storybook
-      - supports-color
-      - ts-node
-      - turbo
-      - typescript
-
   '@cprussin/eslint-config@5.0.0(@testing-library/dom@10.4.0)(@typescript-eslint/eslint-plugin@8.34.1(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(@typescript-eslint/parser@8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3))(eslint@9.29.0(jiti@2.6.1))(jest@29.7.0(@types/node@24.0.3))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(turbo@2.5.4)(typescript@5.8.3)':
     dependencies:
       '@eslint/eslintrc': 3.3.1
@@ -14179,7 +14142,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@cprussin/jest-config@3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)':
+  '@cprussin/jest-config@3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@cprussin/jest-runner-eslint': 0.0.4(@jest/test-result@29.7.0)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest@29.7.0(@types/node@24.0.3))
       '@cprussin/jest-runner-prettier': 1.0.0(jest@29.7.0(@types/node@24.0.3))(prettier@3.5.3)
@@ -14190,7 +14153,7 @@ snapshots:
       ts-jest: 29.4.0(@babel/core@7.27.4)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(typescript@5.8.3)
       typescript: 5.8.3
     optionalDependencies:
-      next: 16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+      next: 16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
     transitivePeerDependencies:
       - '@babel/core'
       - '@jest/test-result'
@@ -14233,7 +14196,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@cprussin/jest-config@3.1.2(@babel/core@7.28.5)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.28.5))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.7(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)':
+  '@cprussin/jest-config@3.1.2(@babel/core@7.28.5)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.28.5))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(next@16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@cprussin/jest-runner-eslint': 0.0.4(@jest/test-result@29.7.0)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest@29.7.0(@types/node@24.0.3))
       '@cprussin/jest-runner-prettier': 1.0.0(jest@29.7.0(@types/node@24.0.3))(prettier@3.5.3)
@@ -14244,7 +14207,7 @@ snapshots:
       ts-jest: 29.4.0(@babel/core@7.28.5)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.28.5))(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3))(typescript@5.8.3)
       typescript: 5.8.3
     optionalDependencies:
-      next: 16.0.7(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+      next: 16.0.10(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
     transitivePeerDependencies:
       - '@babel/core'
       - '@jest/test-result'
@@ -15526,7 +15489,7 @@ snapshots:
   '@next/env@15.5.7':
     optional: true
 
-  '@next/env@16.0.7': {}
+  '@next/env@16.0.10': {}
 
   '@next/eslint-plugin-next@15.3.3':
     dependencies:
@@ -15538,7 +15501,7 @@ snapshots:
   '@next/swc-darwin-arm64@15.5.7':
     optional: true
 
-  '@next/swc-darwin-arm64@16.0.7':
+  '@next/swc-darwin-arm64@16.0.10':
     optional: true
 
   '@next/swc-darwin-x64@15.5.2':
@@ -15547,7 +15510,7 @@ snapshots:
   '@next/swc-darwin-x64@15.5.7':
     optional: true
 
-  '@next/swc-darwin-x64@16.0.7':
+  '@next/swc-darwin-x64@16.0.10':
     optional: true
 
   '@next/swc-linux-arm64-gnu@15.5.2':
@@ -15556,7 +15519,7 @@ snapshots:
   '@next/swc-linux-arm64-gnu@15.5.7':
     optional: true
 
-  '@next/swc-linux-arm64-gnu@16.0.7':
+  '@next/swc-linux-arm64-gnu@16.0.10':
     optional: true
 
   '@next/swc-linux-arm64-musl@15.5.2':
@@ -15565,7 +15528,7 @@ snapshots:
   '@next/swc-linux-arm64-musl@15.5.7':
     optional: true
 
-  '@next/swc-linux-arm64-musl@16.0.7':
+  '@next/swc-linux-arm64-musl@16.0.10':
     optional: true
 
   '@next/swc-linux-x64-gnu@15.5.2':
@@ -15574,7 +15537,7 @@ snapshots:
   '@next/swc-linux-x64-gnu@15.5.7':
     optional: true
 
-  '@next/swc-linux-x64-gnu@16.0.7':
+  '@next/swc-linux-x64-gnu@16.0.10':
     optional: true
 
   '@next/swc-linux-x64-musl@15.5.2':
@@ -15583,7 +15546,7 @@ snapshots:
   '@next/swc-linux-x64-musl@15.5.7':
     optional: true
 
-  '@next/swc-linux-x64-musl@16.0.7':
+  '@next/swc-linux-x64-musl@16.0.10':
     optional: true
 
   '@next/swc-win32-arm64-msvc@15.5.2':
@@ -15592,7 +15555,7 @@ snapshots:
   '@next/swc-win32-arm64-msvc@15.5.7':
     optional: true
 
-  '@next/swc-win32-arm64-msvc@16.0.7':
+  '@next/swc-win32-arm64-msvc@16.0.10':
     optional: true
 
   '@next/swc-win32-x64-msvc@15.5.2':
@@ -15601,12 +15564,12 @@ snapshots:
   '@next/swc-win32-x64-msvc@15.5.7':
     optional: true
 
-  '@next/swc-win32-x64-msvc@16.0.7':
+  '@next/swc-win32-x64-msvc@16.0.10':
     optional: true
 
-  '@next/third-parties@16.0.7(next@16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)':
+  '@next/third-parties@16.0.7(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)':
     dependencies:
-      next: 16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+      next: 16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
       react: 19.2.1
       third-party-capital: 1.0.20
 
@@ -15767,11 +15730,6 @@ snapshots:
       '@solana/web3.js': 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
       bs58: 6.0.0
 
-  '@phosphor-icons/react@2.1.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@phosphor-icons/react@2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       react: 19.2.1
@@ -15863,25 +15821,6 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.8
 
-  '@react-aria/autocomplete@3.0.0-beta.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/combobox': 3.12.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/listbox': 3.14.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/searchfield': 3.8.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/textfield': 3.17.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/autocomplete': 3.0.0-beta.2(react@19.1.1)
-      '@react-stately/combobox': 3.10.6(react@19.1.1)
-      '@react-types/autocomplete': 3.0.0-alpha.32(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/autocomplete@3.0.0-beta.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/combobox': 3.12.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -15901,17 +15840,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/breadcrumbs@3.5.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/link': 3.8.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/breadcrumbs': 3.7.14(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/breadcrumbs@3.5.26(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/i18n': 3.12.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -15922,18 +15850,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/button@3.13.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/toolbar': 3.0.0-beta.18(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/toggle': 3.8.5(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/button@3.13.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -15946,21 +15862,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/calendar@3.8.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@internationalized/date': 3.8.2
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/live-announcer': 3.4.3
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/calendar': 3.8.2(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/calendar': 3.7.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/calendar@3.8.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -15976,22 +15877,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/checkbox@3.15.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/form': 3.0.18(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/toggle': 3.11.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/checkbox': 3.6.15(react@19.1.1)
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/toggle': 3.8.5(react@19.1.1)
-      '@react-types/checkbox': 3.9.5(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/checkbox@3.15.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16009,17 +15894,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/collections@3.0.0-rc.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/ssr': 3.9.9(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      use-sync-external-store: 1.5.0(react@19.1.1)
-
   '@react-aria/collections@3.0.0-rc.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/interactions': 3.25.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16030,24 +15904,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
       use-sync-external-store: 1.5.0(react@19.2.1)
-
-  '@react-aria/color@3.0.9(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/numberfield': 3.11.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/slider': 3.7.21(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/spinbutton': 3.6.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/textfield': 3.17.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/visually-hidden': 3.8.25(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/color': 3.8.6(react@19.1.1)
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-types/color': 3.0.6(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/color@3.0.9(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16066,27 +15922,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/combobox@3.12.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/listbox': 3.14.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/live-announcer': 3.4.3
-      '@react-aria/menu': 3.18.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/overlays': 3.27.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/textfield': 3.17.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/combobox': 3.10.6(react@19.1.1)
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/combobox': 3.13.6(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/combobox@3.12.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16108,29 +15943,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/datepicker@3.14.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@internationalized/date': 3.8.2
-      '@internationalized/number': 3.6.3
-      '@internationalized/string': 3.2.7
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/form': 3.0.18(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/spinbutton': 3.6.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/datepicker': 3.14.2(react@19.1.1)
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/calendar': 3.7.2(react@19.1.1)
-      '@react-types/datepicker': 3.12.2(react@19.1.1)
-      '@react-types/dialog': 3.5.19(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/datepicker@3.14.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16155,17 +15967,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/dialog@3.5.27(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/overlays': 3.27.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/dialog': 3.5.19(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/dialog@3.5.27(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/interactions': 3.25.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16177,16 +15978,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/disclosure@3.0.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/ssr': 3.9.9(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/disclosure': 3.0.5(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/disclosure@3.0.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/ssr': 3.9.9(react@19.2.1)
@@ -16196,22 +15987,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/dnd@3.10.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@internationalized/string': 3.2.7
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/live-announcer': 3.4.3
-      '@react-aria/overlays': 3.27.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/dnd': 3.6.0(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/dnd@3.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16229,16 +16004,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/focus@3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      clsx: 2.1.1
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/focus@3.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/interactions': 3.25.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16249,16 +16014,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/form@3.0.18(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/form@3.0.18(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/interactions': 3.25.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16268,24 +16023,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/grid@3.14.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/live-announcer': 3.4.3
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/grid': 3.11.3(react@19.1.1)
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-types/checkbox': 3.9.5(react@19.1.1)
-      '@react-types/grid': 3.3.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/grid@3.14.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16305,22 +16042,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/gridlist@3.13.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/grid': 3.14.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/list': 3.12.3(react@19.1.1)
-      '@react-stately/tree': 3.9.0(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/gridlist@3.13.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/focus': 3.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16337,19 +16058,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/i18n@3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@internationalized/date': 3.8.2
-      '@internationalized/message': 3.1.8
-      '@internationalized/number': 3.6.3
-      '@internationalized/string': 3.2.7
-      '@react-aria/ssr': 3.9.9(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/i18n@3.12.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@internationalized/date': 3.8.2
@@ -16363,16 +16071,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/interactions@3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/ssr': 3.9.9(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/flags': 3.1.2
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/interactions@3.25.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/ssr': 3.9.9(react@19.2.1)
@@ -16383,14 +16081,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/label@3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/label@3.7.19(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/utils': 3.29.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16398,15 +16088,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/landmark@3.0.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      use-sync-external-store: 1.5.0(react@19.1.1)
 
   '@react-aria/landmark@3.0.4(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16417,16 +16098,6 @@ snapshots:
       react-dom: 19.2.1(react@19.2.1)
       use-sync-external-store: 1.5.0(react@19.2.1)
 
-  '@react-aria/link@3.8.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/link': 3.6.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/link@3.8.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/interactions': 3.25.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16436,20 +16107,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/listbox@3.14.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/list': 3.12.3(react@19.1.1)
-      '@react-types/listbox': 3.7.1(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/listbox@3.14.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16468,25 +16125,6 @@ snapshots:
   '@react-aria/live-announcer@3.4.3':
     dependencies:
       '@swc/helpers': 0.5.17
-
-  '@react-aria/menu@3.18.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/overlays': 3.27.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/menu': 3.9.5(react@19.1.1)
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-stately/tree': 3.9.0(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/menu': 3.10.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/menu@3.18.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16507,15 +16145,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/meter@3.4.24(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/progress': 3.4.24(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/meter': 3.4.10(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/meter@3.4.24(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/progress': 3.4.24(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16524,22 +16153,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/numberfield@3.11.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/spinbutton': 3.6.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/textfield': 3.17.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/numberfield': 3.9.13(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/numberfield': 3.8.12(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/numberfield@3.11.16(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16557,22 +16170,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/overlays@3.27.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/ssr': 3.9.9(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/visually-hidden': 3.8.25(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/overlays': 3.6.17(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/overlays': 3.8.16(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/overlays@3.27.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/focus': 3.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16589,17 +16186,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/progress@3.4.24(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/progress': 3.5.13(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/progress@3.4.24(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/i18n': 3.12.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16610,21 +16196,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/radio@3.11.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/form': 3.0.18(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/radio': 3.10.14(react@19.1.1)
-      '@react-types/radio': 3.8.10(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/radio@3.11.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16641,19 +16212,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/searchfield@3.8.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/textfield': 3.17.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/searchfield': 3.5.13(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/searchfield': 3.6.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/searchfield@3.8.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/i18n': 3.12.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16666,25 +16224,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/select@3.15.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/form': 3.0.18(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/listbox': 3.14.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/menu': 3.18.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/visually-hidden': 3.8.25(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/select': 3.6.14(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/select': 3.9.13(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/select@3.15.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16705,18 +16244,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/selection@3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/selection@3.24.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/focus': 3.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16729,14 +16256,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/separator@3.4.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/separator@3.4.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/utils': 3.29.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16744,19 +16263,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/slider@3.7.21(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/slider': 3.6.5(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/slider': 3.7.12(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/slider@3.7.21(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16771,17 +16277,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/spinbutton@3.6.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/live-announcer': 3.4.3
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/spinbutton@3.6.16(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/i18n': 3.12.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16793,25 +16288,10 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/ssr@3.9.9(react@19.1.1)':
-    dependencies:
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-aria/ssr@3.9.9(react@19.2.1)':
     dependencies:
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-aria/switch@3.7.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/toggle': 3.11.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/toggle': 3.8.5(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/switch': 3.5.12(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/switch@3.7.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16822,26 +16302,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/table@3.17.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/grid': 3.14.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/live-announcer': 3.4.3
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/visually-hidden': 3.8.25(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/flags': 3.1.2
-      '@react-stately/table': 3.14.3(react@19.1.1)
-      '@react-types/checkbox': 3.9.5(react@19.1.1)
-      '@react-types/grid': 3.3.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/table': 3.13.1(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/table@3.17.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16863,19 +16323,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/tabs@3.10.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/tabs': 3.8.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/tabs': 3.3.16(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/tabs@3.10.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/focus': 3.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16888,21 +16335,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/tag@3.6.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/gridlist': 3.13.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/list': 3.12.3(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/tag@3.6.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -16919,20 +16351,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/textfield@3.17.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/form': 3.0.18(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/textfield': 3.12.3(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/textfield@3.17.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/form': 3.0.18(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16947,19 +16365,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/toast@3.0.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/landmark': 3.0.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/toast': 3.1.1(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/toast@3.0.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/i18n': 3.12.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16973,17 +16378,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/toggle@3.11.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/toggle': 3.8.5(react@19.1.1)
-      '@react-types/checkbox': 3.9.5(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/toggle@3.11.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/interactions': 3.25.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -16995,16 +16389,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/toolbar@3.0.0-beta.18(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/toolbar@3.0.0-beta.18(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/focus': 3.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -17014,17 +16398,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/tooltip@3.8.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/tooltip': 3.5.5(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/tooltip': 3.4.18(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/tooltip@3.8.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -17036,19 +16409,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/tree@3.1.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/gridlist': 3.13.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/tree': 3.9.0(react@19.1.1)
-      '@react-types/button': 3.12.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/tree@3.1.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -17063,17 +16423,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/utils@3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/ssr': 3.9.9(react@19.1.1)
-      '@react-stately/flags': 3.1.2
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      clsx: 2.1.1
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/utils@3.29.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/ssr': 3.9.9(react@19.2.1)
@@ -17085,17 +16434,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-aria/virtualizer@4.1.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/virtualizer': 4.4.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   '@react-aria/virtualizer@4.1.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       '@react-aria/i18n': 3.12.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -17106,15 +16444,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@react-aria/visually-hidden@3.8.25(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-aria/visually-hidden@3.8.25(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -17198,26 +16527,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.8
 
-  '@react-stately/autocomplete@3.0.0-beta.2(react@19.1.1)':
-    dependencies:
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/autocomplete@3.0.0-beta.2(react@19.2.1)':
     dependencies:
       '@react-stately/utils': 3.10.7(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/calendar@3.8.2(react@19.1.1)':
-    dependencies:
-      '@internationalized/date': 3.8.2
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/calendar': 3.7.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/calendar@3.8.2(react@19.2.1)':
     dependencies:
@@ -17228,15 +16542,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/checkbox@3.6.15(react@19.1.1)':
-    dependencies:
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/checkbox': 3.9.5(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/checkbox@3.6.15(react@19.2.1)':
     dependencies:
       '@react-stately/form': 3.1.5(react@19.2.1)
@@ -17246,30 +16551,11 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/collections@3.12.5(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/collections@3.12.5(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/color@3.8.6(react@19.1.1)':
-    dependencies:
-      '@internationalized/number': 3.6.3
-      '@internationalized/string': 3.2.7
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/numberfield': 3.9.13(react@19.1.1)
-      '@react-stately/slider': 3.6.5(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/color': 3.0.6(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/color@3.8.6(react@19.2.1)':
     dependencies:
@@ -17284,19 +16570,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/combobox@3.10.6(react@19.1.1)':
-    dependencies:
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/list': 3.12.3(react@19.1.1)
-      '@react-stately/overlays': 3.6.17(react@19.1.1)
-      '@react-stately/select': 3.6.14(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/combobox': 3.13.6(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/combobox@3.10.6(react@19.2.1)':
     dependencies:
       '@react-stately/collections': 3.12.5(react@19.2.1)
@@ -17310,29 +16583,11 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/data@3.13.1(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/data@3.13.1(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/datepicker@3.14.2(react@19.1.1)':
-    dependencies:
-      '@internationalized/date': 3.8.2
-      '@internationalized/string': 3.2.7
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/overlays': 3.6.17(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/datepicker': 3.12.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/datepicker@3.14.2(react@19.2.1)':
     dependencies:
@@ -17346,26 +16601,12 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/disclosure@3.0.5(react@19.1.1)':
-    dependencies:
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/disclosure@3.0.5(react@19.2.1)':
     dependencies:
       '@react-stately/utils': 3.10.7(react@19.2.1)
       '@react-types/shared': 3.30.0(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/dnd@3.6.0(react@19.1.1)':
-    dependencies:
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/dnd@3.6.0(react@19.2.1)':
     dependencies:
@@ -17378,26 +16619,11 @@ snapshots:
     dependencies:
       '@swc/helpers': 0.5.17
 
-  '@react-stately/form@3.1.5(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/form@3.1.5(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/grid@3.11.3(react@19.1.1)':
-    dependencies:
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-types/grid': 3.3.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/grid@3.11.3(react@19.2.1)':
     dependencies:
@@ -17407,18 +16633,6 @@ snapshots:
       '@react-types/shared': 3.30.0(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/layout@4.3.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/table': 3.14.3(react@19.1.1)
-      '@react-stately/virtualizer': 4.4.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/grid': 3.3.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/table': 3.13.1(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-stately/layout@4.3.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -17432,15 +16646,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-stately/list@3.12.3(react@19.1.1)':
-    dependencies:
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/list@3.12.3(react@19.2.1)':
     dependencies:
       '@react-stately/collections': 3.12.5(react@19.2.1)
@@ -17450,14 +16655,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/menu@3.9.5(react@19.1.1)':
-    dependencies:
-      '@react-stately/overlays': 3.6.17(react@19.1.1)
-      '@react-types/menu': 3.10.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/menu@3.9.5(react@19.2.1)':
     dependencies:
       '@react-stately/overlays': 3.6.17(react@19.2.1)
@@ -17465,15 +16662,6 @@ snapshots:
       '@react-types/shared': 3.30.0(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/numberfield@3.9.13(react@19.1.1)':
-    dependencies:
-      '@internationalized/number': 3.6.3
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/numberfield': 3.8.12(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/numberfield@3.9.13(react@19.2.1)':
     dependencies:
@@ -17484,28 +16672,12 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/overlays@3.6.17(react@19.1.1)':
-    dependencies:
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/overlays': 3.8.16(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/overlays@3.6.17(react@19.2.1)':
     dependencies:
       '@react-stately/utils': 3.10.7(react@19.2.1)
       '@react-types/overlays': 3.8.16(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/radio@3.10.14(react@19.1.1)':
-    dependencies:
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/radio': 3.8.10(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/radio@3.10.14(react@19.2.1)':
     dependencies:
@@ -17516,29 +16688,12 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/searchfield@3.5.13(react@19.1.1)':
-    dependencies:
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/searchfield': 3.6.3(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/searchfield@3.5.13(react@19.2.1)':
     dependencies:
       '@react-stately/utils': 3.10.7(react@19.2.1)
       '@react-types/searchfield': 3.6.3(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/select@3.6.14(react@19.1.1)':
-    dependencies:
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/list': 3.12.3(react@19.1.1)
-      '@react-stately/overlays': 3.6.17(react@19.1.1)
-      '@react-types/select': 3.9.13(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/select@3.6.14(react@19.2.1)':
     dependencies:
@@ -17550,14 +16705,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/selection@3.20.3(react@19.1.1)':
-    dependencies:
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/selection@3.20.3(react@19.2.1)':
     dependencies:
       '@react-stately/collections': 3.12.5(react@19.2.1)
@@ -17566,14 +16713,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/slider@3.6.5(react@19.1.1)':
-    dependencies:
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/slider': 3.7.12(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/slider@3.6.5(react@19.2.1)':
     dependencies:
       '@react-stately/utils': 3.10.7(react@19.2.1)
@@ -17581,19 +16720,6 @@ snapshots:
       '@react-types/slider': 3.7.12(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/table@3.14.3(react@19.1.1)':
-    dependencies:
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/flags': 3.1.2
-      '@react-stately/grid': 3.11.3(react@19.1.1)
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/grid': 3.3.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/table': 3.13.1(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/table@3.14.3(react@19.2.1)':
     dependencies:
@@ -17608,14 +16734,6 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/tabs@3.8.3(react@19.1.1)':
-    dependencies:
-      '@react-stately/list': 3.12.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/tabs': 3.3.16(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/tabs@3.8.3(react@19.2.1)':
     dependencies:
       '@react-stately/list': 3.12.3(react@19.2.1)
@@ -17624,25 +16742,11 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/toast@3.1.1(react@19.1.1)':
-    dependencies:
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      use-sync-external-store: 1.5.0(react@19.1.1)
-
   '@react-stately/toast@3.1.1(react@19.2.1)':
     dependencies:
       '@swc/helpers': 0.5.17
       react: 19.2.1
       use-sync-external-store: 1.5.0(react@19.2.1)
-
-  '@react-stately/toggle@3.8.5(react@19.1.1)':
-    dependencies:
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/checkbox': 3.9.5(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/toggle@3.8.5(react@19.2.1)':
     dependencies:
@@ -17652,28 +16756,12 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/tooltip@3.5.5(react@19.1.1)':
-    dependencies:
-      '@react-stately/overlays': 3.6.17(react@19.1.1)
-      '@react-types/tooltip': 3.4.18(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/tooltip@3.5.5(react@19.2.1)':
     dependencies:
       '@react-stately/overlays': 3.6.17(react@19.2.1)
       '@react-types/tooltip': 3.4.18(react@19.2.1)
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/tree@3.9.0(react@19.1.1)':
-    dependencies:
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
 
   '@react-stately/tree@3.9.0(react@19.2.1)':
     dependencies:
@@ -17684,23 +16772,10 @@ snapshots:
       '@swc/helpers': 0.5.17
       react: 19.2.1
 
-  '@react-stately/utils@3.10.7(react@19.1.1)':
-    dependencies:
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-
   '@react-stately/utils@3.10.7(react@19.2.1)':
     dependencies:
       '@swc/helpers': 0.5.17
       react: 19.2.1
-
-  '@react-stately/virtualizer@4.4.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@react-stately/virtualizer@4.4.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
@@ -17710,13 +16785,6 @@ snapshots:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@react-types/autocomplete@3.0.0-alpha.32(react@19.1.1)':
-    dependencies:
-      '@react-types/combobox': 3.13.6(react@19.1.1)
-      '@react-types/searchfield': 3.6.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/autocomplete@3.0.0-alpha.32(react@19.2.1)':
     dependencies:
       '@react-types/combobox': 3.13.6(react@19.2.1)
@@ -17724,33 +16792,16 @@ snapshots:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/breadcrumbs@3.7.14(react@19.1.1)':
-    dependencies:
-      '@react-types/link': 3.6.2(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/breadcrumbs@3.7.14(react@19.2.1)':
     dependencies:
       '@react-types/link': 3.6.2(react@19.2.1)
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/button@3.12.2(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/button@3.12.2(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/calendar@3.7.2(react@19.1.1)':
-    dependencies:
-      '@internationalized/date': 3.8.2
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/calendar@3.7.2(react@19.2.1)':
     dependencies:
@@ -17758,21 +16809,10 @@ snapshots:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/checkbox@3.9.5(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/checkbox@3.9.5(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/color@3.0.6(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/slider': 3.7.12(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/color@3.0.6(react@19.2.1)':
     dependencies:
@@ -17780,23 +16820,10 @@ snapshots:
       '@react-types/slider': 3.7.12(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/combobox@3.13.6(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/combobox@3.13.6(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/datepicker@3.12.2(react@19.1.1)':
-    dependencies:
-      '@internationalized/date': 3.8.2
-      '@react-types/calendar': 3.7.2(react@19.1.1)
-      '@react-types/overlays': 3.8.16(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/datepicker@3.12.2(react@19.2.1)':
     dependencies:
@@ -17806,63 +16833,31 @@ snapshots:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/dialog@3.5.19(react@19.1.1)':
-    dependencies:
-      '@react-types/overlays': 3.8.16(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/dialog@3.5.19(react@19.2.1)':
     dependencies:
       '@react-types/overlays': 3.8.16(react@19.2.1)
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/form@3.7.13(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/form@3.7.13(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/grid@3.3.3(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/grid@3.3.3(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/link@3.6.2(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/link@3.6.2(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/listbox@3.7.1(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/listbox@3.7.1(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/menu@3.10.2(react@19.1.1)':
-    dependencies:
-      '@react-types/overlays': 3.8.16(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/menu@3.10.2(react@19.2.1)':
     dependencies:
@@ -17870,61 +16865,30 @@ snapshots:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/meter@3.4.10(react@19.1.1)':
-    dependencies:
-      '@react-types/progress': 3.5.13(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/meter@3.4.10(react@19.2.1)':
     dependencies:
       '@react-types/progress': 3.5.13(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/numberfield@3.8.12(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/numberfield@3.8.12(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/overlays@3.8.16(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/overlays@3.8.16(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/progress@3.5.13(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/progress@3.5.13(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/radio@3.8.10(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/radio@3.8.10(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/searchfield@3.6.3(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/textfield': 3.12.3(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/searchfield@3.6.3(react@19.2.1)':
     dependencies:
@@ -17932,49 +16896,24 @@ snapshots:
       '@react-types/textfield': 3.12.3(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/select@3.9.13(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/select@3.9.13(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/shared@3.30.0(react@19.1.1)':
-    dependencies:
-      react: 19.1.1
-
   '@react-types/shared@3.30.0(react@19.2.1)':
     dependencies:
       react: 19.2.1
-
-  '@react-types/slider@3.7.12(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/slider@3.7.12(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/switch@3.5.12(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/switch@3.5.12(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/table@3.13.1(react@19.1.1)':
-    dependencies:
-      '@react-types/grid': 3.3.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/table@3.13.1(react@19.2.1)':
     dependencies:
@@ -17982,31 +16921,15 @@ snapshots:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/tabs@3.3.16(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/tabs@3.3.16(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
 
-  '@react-types/textfield@3.12.3(react@19.1.1)':
-    dependencies:
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-
   '@react-types/textfield@3.12.3(react@19.2.1)':
     dependencies:
       '@react-types/shared': 3.30.0(react@19.2.1)
       react: 19.2.1
-
-  '@react-types/tooltip@3.4.18(react@19.1.1)':
-    dependencies:
-      '@react-types/overlays': 3.8.16(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   '@react-types/tooltip@3.4.18(react@19.2.1)':
     dependencies:
@@ -18373,9 +17296,9 @@ snapshots:
     dependencies:
       '@solana/kit': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
 
-  '@solana-program/token@0.5.1(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
+  '@solana-program/token@0.5.1(@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)))':
     dependencies:
-      '@solana/kit': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@solana/kit': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
 
   '@solana/accounts@2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)':
     dependencies:
@@ -18676,6 +17599,32 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - ws
 
+  '@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@solana/accounts': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/addresses': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/codecs': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/errors': 4.0.0(typescript@5.8.3)
+      '@solana/functional': 4.0.0(typescript@5.8.3)
+      '@solana/instruction-plans': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/instructions': 4.0.0(typescript@5.8.3)
+      '@solana/keys': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/programs': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/rpc': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/rpc-parsed-types': 4.0.0(typescript@5.8.3)
+      '@solana/rpc-spec-types': 4.0.0(typescript@5.8.3)
+      '@solana/rpc-subscriptions': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@solana/rpc-types': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/signers': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/sysvars': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/transaction-confirmation': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@solana/transaction-messages': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/transactions': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      typescript: 5.8.3
+    transitivePeerDependencies:
+      - fastestsmallesttextencoderdecoder
+      - ws
+
   '@solana/kit@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
       '@solana/accounts': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
@@ -18864,6 +17813,15 @@ snapshots:
       typescript: 5.8.3
       ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
 
+  '@solana/rpc-subscriptions-channel-websocket@4.0.0(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@solana/errors': 4.0.0(typescript@5.8.3)
+      '@solana/functional': 4.0.0(typescript@5.8.3)
+      '@solana/rpc-subscriptions-spec': 4.0.0(typescript@5.8.3)
+      '@solana/subscribable': 4.0.0(typescript@5.8.3)
+      typescript: 5.8.3
+      ws: 7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+
   '@solana/rpc-subscriptions-channel-websocket@4.0.0(typescript@5.8.3)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
     dependencies:
       '@solana/errors': 4.0.0(typescript@5.8.3)
@@ -18902,6 +17860,24 @@ snapshots:
       '@solana/rpc-transformers': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       '@solana/rpc-types': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       '@solana/subscribable': 2.1.1(typescript@5.8.3)
+      typescript: 5.8.3
+    transitivePeerDependencies:
+      - fastestsmallesttextencoderdecoder
+      - ws
+
+  '@solana/rpc-subscriptions@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@solana/errors': 4.0.0(typescript@5.8.3)
+      '@solana/fast-stable-stringify': 4.0.0(typescript@5.8.3)
+      '@solana/functional': 4.0.0(typescript@5.8.3)
+      '@solana/promises': 4.0.0(typescript@5.8.3)
+      '@solana/rpc-spec-types': 4.0.0(typescript@5.8.3)
+      '@solana/rpc-subscriptions-api': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/rpc-subscriptions-channel-websocket': 4.0.0(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@solana/rpc-subscriptions-spec': 4.0.0(typescript@5.8.3)
+      '@solana/rpc-transformers': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/rpc-types': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/subscribable': 4.0.0(typescript@5.8.3)
       typescript: 5.8.3
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
@@ -19144,6 +18120,23 @@ snapshots:
       '@solana/rpc-types': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       '@solana/transaction-messages': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       '@solana/transactions': 2.1.1(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      typescript: 5.8.3
+    transitivePeerDependencies:
+      - fastestsmallesttextencoderdecoder
+      - ws
+
+  '@solana/transaction-confirmation@4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@solana/addresses': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/codecs-strings': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/errors': 4.0.0(typescript@5.8.3)
+      '@solana/keys': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/promises': 4.0.0(typescript@5.8.3)
+      '@solana/rpc': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/rpc-subscriptions': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@solana/rpc-types': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/transaction-messages': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
+      '@solana/transactions': 4.0.0(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)
       typescript: 5.8.3
     transitivePeerDependencies:
       - fastestsmallesttextencoderdecoder
@@ -19771,19 +18764,19 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@storybook/addon-styling-webpack@3.0.0(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(webpack@5.101.3)':
+  '@storybook/addon-styling-webpack@3.0.0(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(webpack@5.101.3)':
     dependencies:
-      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
+      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
       webpack: 5.101.3(webpack-cli@6.0.1)
 
-  '@storybook/addon-themes@10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))':
+  '@storybook/addon-themes@10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))':
     dependencies:
-      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
+      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
       ts-dedent: 2.2.0
 
-  '@storybook/builder-webpack5@10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(typescript@5.8.3)':
+  '@storybook/builder-webpack5@10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(typescript@5.8.3)':
     dependencies:
-      '@storybook/core-webpack': 10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))
+      '@storybook/core-webpack': 10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))
       '@vitest/mocker': 3.2.4
       case-sensitive-paths-webpack-plugin: 2.4.0
       cjs-module-lexer: 1.4.3
@@ -19792,7 +18785,7 @@ snapshots:
       fork-ts-checker-webpack-plugin: 9.1.0(typescript@5.8.3)(webpack@5.101.3)
       html-webpack-plugin: 5.6.5(webpack@5.101.3)
       magic-string: 0.30.21
-      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
+      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
       style-loader: 4.0.0(webpack@5.101.3)
       terser-webpack-plugin: 5.3.14(webpack@5.101.3)
       ts-dedent: 2.2.0
@@ -19811,24 +18804,19 @@ snapshots:
       - vite
       - webpack-cli
 
-  '@storybook/core-webpack@10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))':
+  '@storybook/core-webpack@10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))':
     dependencies:
-      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
+      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
       ts-dedent: 2.2.0
 
   '@storybook/global@5.0.0': {}
-
-  '@storybook/icons@2.0.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
-    dependencies:
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   '@storybook/icons@2.0.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
     dependencies:
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
 
-  '@storybook/nextjs@10.1.2(next@16.0.7(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.89.2))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.89.2)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(type-fest@4.41.0)(typescript@5.8.3)(webpack-hot-middleware@2.26.1)(webpack@5.101.3)':
+  '@storybook/nextjs@10.1.2(next@16.0.10(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(type-fest@4.41.0)(typescript@5.8.3)(webpack-hot-middleware@2.26.1)(webpack@5.101.3)':
     dependencies:
       '@babel/core': 7.27.4
       '@babel/plugin-syntax-bigint': 7.8.3(@babel/core@7.27.4)
@@ -19844,27 +18832,27 @@ snapshots:
       '@babel/preset-typescript': 7.27.1(@babel/core@7.27.4)
       '@babel/runtime': 7.27.6
       '@pmmmwh/react-refresh-webpack-plugin': 0.5.17(react-refresh@0.14.2)(type-fest@4.41.0)(webpack-hot-middleware@2.26.1)(webpack@5.101.3)
-      '@storybook/builder-webpack5': 10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(typescript@5.8.3)
-      '@storybook/preset-react-webpack': 10.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(typescript@5.8.3)
-      '@storybook/react': 10.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(typescript@5.8.3)
+      '@storybook/builder-webpack5': 10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(typescript@5.8.3)
+      '@storybook/preset-react-webpack': 10.1.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(typescript@5.8.3)
+      '@storybook/react': 10.1.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(typescript@5.8.3)
       '@types/semver': 7.7.1
       babel-loader: 9.2.1(@babel/core@7.27.4)(webpack@5.101.3)
       css-loader: 6.11.0(webpack@5.101.3)
       image-size: 2.0.2
       loader-utils: 3.3.1
-      next: 16.0.7(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.89.2)
+      next: 16.0.10(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
       node-polyfill-webpack-plugin: 2.0.1(webpack@5.101.3)
       postcss: 8.5.6
       postcss-loader: 8.2.0(postcss@8.5.6)(typescript@5.8.3)(webpack@5.101.3)
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
       react-refresh: 0.14.2
       resolve-url-loader: 5.0.0
       sass-loader: 16.0.6(sass@1.89.2)(webpack@5.101.3)
       semver: 7.7.2
-      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
+      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
       style-loader: 3.3.4(webpack@5.101.3)
-      styled-jsx: 5.1.6(@babel/core@7.27.4)(react@19.1.1)
+      styled-jsx: 5.1.6(@babel/core@7.27.4)(react@19.2.1)
       tsconfig-paths: 4.2.0
       tsconfig-paths-webpack-plugin: 4.2.0
     optionalDependencies:
@@ -19890,18 +18878,18 @@ snapshots:
       - webpack-hot-middleware
       - webpack-plugin-serve
 
-  '@storybook/preset-react-webpack@10.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(typescript@5.8.3)':
+  '@storybook/preset-react-webpack@10.1.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(typescript@5.8.3)':
     dependencies:
-      '@storybook/core-webpack': 10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))
+      '@storybook/core-webpack': 10.1.2(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))
       '@storybook/react-docgen-typescript-plugin': 1.0.6--canary.9.0c3f3b7.0(typescript@5.8.3)(webpack@5.101.3)
       '@types/semver': 7.7.1
       magic-string: 0.30.21
-      react: 19.1.1
+      react: 19.2.1
       react-docgen: 7.1.1
-      react-dom: 19.1.1(react@19.1.1)
+      react-dom: 19.2.1(react@19.2.1)
       resolve: 1.22.10
       semver: 7.7.2
-      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
+      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
       tsconfig-paths: 4.2.0
       webpack: 5.101.3(webpack-cli@6.0.1)
     optionalDependencies:
@@ -19927,20 +18915,20 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@storybook/react-dom-shim@10.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))':
+  '@storybook/react-dom-shim@10.1.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))':
     dependencies:
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
+      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
 
-  '@storybook/react@10.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(typescript@5.8.3)':
+  '@storybook/react@10.1.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(typescript@5.8.3)':
     dependencies:
       '@storybook/global': 5.0.0
-      '@storybook/react-dom-shim': 10.1.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))
-      react: 19.1.1
+      '@storybook/react-dom-shim': 10.1.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))
+      react: 19.2.1
       react-docgen: 8.0.2
-      react-dom: 19.1.1(react@19.1.1)
-      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
+      react-dom: 19.2.1(react@19.2.1)
+      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
     optionalDependencies:
       typescript: 5.8.3
     transitivePeerDependencies:
@@ -23928,15 +22916,6 @@ snapshots:
       string.prototype.matchall: 4.0.12
       string.prototype.repeat: 1.0.0
 
-  eslint-plugin-storybook@9.0.11(eslint@9.29.0(jiti@2.6.1))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10))(typescript@5.8.3):
-    dependencies:
-      '@typescript-eslint/utils': 8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3)
-      eslint: 9.29.0(jiti@2.6.1)
-      storybook: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - supports-color
-      - typescript
-
   eslint-plugin-storybook@9.0.11(eslint@9.29.0(jiti@2.6.1))(storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10))(typescript@5.8.3):
     dependencies:
       '@typescript-eslint/utils': 8.34.1(eslint@9.29.0(jiti@2.6.1))(typescript@5.8.3)
@@ -24409,15 +23388,6 @@ snapshots:
   format@0.2.2: {}
 
   fraction.js@4.3.7: {}
-
-  framer-motion@12.23.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
-    dependencies:
-      motion-dom: 12.23.12
-      motion-utils: 12.23.6
-      tslib: 2.8.1
-    optionalDependencies:
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   framer-motion@12.23.16(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
     dependencies:
@@ -26078,14 +25048,6 @@ snapshots:
 
   motion-utils@12.23.6: {}
 
-  motion@12.23.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
-    dependencies:
-      framer-motion: 12.23.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      tslib: 2.8.1
-    optionalDependencies:
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-
   motion@12.23.16(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
     dependencies:
       framer-motion: 12.23.16(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -26196,9 +25158,9 @@ snapshots:
       - babel-plugin-macros
     optional: true
 
-  next@16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2):
+  next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2):
     dependencies:
-      '@next/env': 16.0.7
+      '@next/env': 16.0.10
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001723
       postcss: 8.4.31
@@ -26206,48 +25168,23 @@ snapshots:
       react-dom: 19.2.1(react@19.2.1)
       styled-jsx: 5.1.6(@babel/core@7.27.4)(react@19.2.1)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 16.0.7
-      '@next/swc-darwin-x64': 16.0.7
-      '@next/swc-linux-arm64-gnu': 16.0.7
-      '@next/swc-linux-arm64-musl': 16.0.7
-      '@next/swc-linux-x64-gnu': 16.0.7
-      '@next/swc-linux-x64-musl': 16.0.7
-      '@next/swc-win32-arm64-msvc': 16.0.7
-      '@next/swc-win32-x64-msvc': 16.0.7
+      '@next/swc-darwin-arm64': 16.0.10
+      '@next/swc-darwin-x64': 16.0.10
+      '@next/swc-linux-arm64-gnu': 16.0.10
+      '@next/swc-linux-arm64-musl': 16.0.10
+      '@next/swc-linux-x64-gnu': 16.0.10
+      '@next/swc-linux-x64-musl': 16.0.10
+      '@next/swc-win32-arm64-msvc': 16.0.10
+      '@next/swc-win32-x64-msvc': 16.0.10
       sass: 1.89.2
       sharp: 0.34.5
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
 
-  next@16.0.7(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(sass@1.89.2):
+  next@16.0.10(@babel/core@7.28.5)(babel-plugin-react-compiler@19.1.0-rc.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2):
     dependencies:
-      '@next/env': 16.0.7
-      '@swc/helpers': 0.5.15
-      caniuse-lite: 1.0.30001723
-      postcss: 8.4.31
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      styled-jsx: 5.1.6(@babel/core@7.28.5)(react@19.1.1)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 16.0.7
-      '@next/swc-darwin-x64': 16.0.7
-      '@next/swc-linux-arm64-gnu': 16.0.7
-      '@next/swc-linux-arm64-musl': 16.0.7
-      '@next/swc-linux-x64-gnu': 16.0.7
-      '@next/swc-linux-x64-musl': 16.0.7
-      '@next/swc-win32-arm64-msvc': 16.0.7
-      '@next/swc-win32-x64-msvc': 16.0.7
-      babel-plugin-react-compiler: 19.1.0-rc.1
-      sass: 1.89.2
-      sharp: 0.34.5
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-plugin-macros
-
-  next@16.0.7(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2):
-    dependencies:
-      '@next/env': 16.0.7
+      '@next/env': 16.0.10
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001723
       postcss: 8.4.31
@@ -26255,14 +25192,15 @@ snapshots:
       react-dom: 19.2.1(react@19.2.1)
       styled-jsx: 5.1.6(@babel/core@7.28.5)(react@19.2.1)
     optionalDependencies:
-      '@next/swc-darwin-arm64': 16.0.7
-      '@next/swc-darwin-x64': 16.0.7
-      '@next/swc-linux-arm64-gnu': 16.0.7
-      '@next/swc-linux-arm64-musl': 16.0.7
-      '@next/swc-linux-x64-gnu': 16.0.7
-      '@next/swc-linux-x64-musl': 16.0.7
-      '@next/swc-win32-arm64-msvc': 16.0.7
-      '@next/swc-win32-x64-msvc': 16.0.7
+      '@next/swc-darwin-arm64': 16.0.10
+      '@next/swc-darwin-x64': 16.0.10
+      '@next/swc-linux-arm64-gnu': 16.0.10
+      '@next/swc-linux-arm64-musl': 16.0.10
+      '@next/swc-linux-x64-gnu': 16.0.10
+      '@next/swc-linux-x64-musl': 16.0.10
+      '@next/swc-win32-arm64-msvc': 16.0.10
+      '@next/swc-win32-x64-msvc': 16.0.10
+      babel-plugin-react-compiler: 19.1.0-rc.1
       sass: 1.89.2
       sharp: 0.34.5
     transitivePeerDependencies:
@@ -26366,12 +25304,12 @@ snapshots:
 
   nullthrows@1.1.1: {}
 
-  nuqs@2.8.0(next@16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1):
+  nuqs@2.8.0(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1):
     dependencies:
       '@standard-schema/spec': 1.0.0
       react: 19.2.1
     optionalDependencies:
-      next: 16.0.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+      next: 16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
 
   nwsapi@2.2.20: {}
 
@@ -27111,39 +26049,6 @@ snapshots:
       minimist: 1.2.8
       strip-json-comments: 2.0.1
 
-  react-aria-components@1.10.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
-    dependencies:
-      '@internationalized/date': 3.8.2
-      '@internationalized/string': 3.2.7
-      '@react-aria/autocomplete': 3.0.0-beta.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/collections': 3.0.0-rc.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/dnd': 3.10.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/live-announcer': 3.4.3
-      '@react-aria/overlays': 3.27.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/ssr': 3.9.9(react@19.1.1)
-      '@react-aria/toolbar': 3.0.0-beta.18(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/virtualizer': 4.1.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/autocomplete': 3.0.0-beta.2(react@19.1.1)
-      '@react-stately/layout': 4.3.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-stately/table': 3.14.3(react@19.1.1)
-      '@react-stately/utils': 3.10.7(react@19.1.1)
-      '@react-stately/virtualizer': 4.4.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/form': 3.7.13(react@19.1.1)
-      '@react-types/grid': 3.3.3(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      '@react-types/table': 3.13.1(react@19.1.1)
-      '@swc/helpers': 0.5.17
-      client-only: 0.0.1
-      react: 19.1.1
-      react-aria: 3.41.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      react-dom: 19.1.1(react@19.1.1)
-      react-stately: 3.39.0(react@19.1.1)
-      use-sync-external-store: 1.5.0(react@19.1.1)
-
   react-aria-components@1.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
     dependencies:
       '@internationalized/date': 3.8.2
@@ -27176,53 +26081,6 @@ snapshots:
       react-dom: 19.2.1(react@19.2.1)
       react-stately: 3.39.0(react@19.2.1)
       use-sync-external-store: 1.5.0(react@19.2.1)
-
-  react-aria@3.41.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1):
-    dependencies:
-      '@internationalized/string': 3.2.7
-      '@react-aria/breadcrumbs': 3.5.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/button': 3.13.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/calendar': 3.8.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/checkbox': 3.15.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/color': 3.0.9(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/combobox': 3.12.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/datepicker': 3.14.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/dialog': 3.5.27(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/disclosure': 3.0.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/dnd': 3.10.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/focus': 3.20.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/gridlist': 3.13.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/i18n': 3.12.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/interactions': 3.25.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/label': 3.7.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/landmark': 3.0.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/link': 3.8.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/listbox': 3.14.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/menu': 3.18.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/meter': 3.4.24(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/numberfield': 3.11.16(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/overlays': 3.27.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/progress': 3.4.24(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/radio': 3.11.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/searchfield': 3.8.6(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/select': 3.15.7(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/selection': 3.24.3(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/separator': 3.4.10(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/slider': 3.7.21(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/ssr': 3.9.9(react@19.1.1)
-      '@react-aria/switch': 3.7.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/table': 3.17.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/tabs': 3.10.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/tag': 3.6.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/textfield': 3.17.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/toast': 3.0.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/tooltip': 3.8.5(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/tree': 3.1.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/utils': 3.29.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-aria/visually-hidden': 3.8.25(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
 
   react-aria@3.41.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
     dependencies:
@@ -27396,36 +26254,6 @@ snapshots:
       webrtc-adapter: 7.7.1
 
   react-refresh@0.14.2: {}
-
-  react-stately@3.39.0(react@19.1.1):
-    dependencies:
-      '@react-stately/calendar': 3.8.2(react@19.1.1)
-      '@react-stately/checkbox': 3.6.15(react@19.1.1)
-      '@react-stately/collections': 3.12.5(react@19.1.1)
-      '@react-stately/color': 3.8.6(react@19.1.1)
-      '@react-stately/combobox': 3.10.6(react@19.1.1)
-      '@react-stately/data': 3.13.1(react@19.1.1)
-      '@react-stately/datepicker': 3.14.2(react@19.1.1)
-      '@react-stately/disclosure': 3.0.5(react@19.1.1)
-      '@react-stately/dnd': 3.6.0(react@19.1.1)
-      '@react-stately/form': 3.1.5(react@19.1.1)
-      '@react-stately/list': 3.12.3(react@19.1.1)
-      '@react-stately/menu': 3.9.5(react@19.1.1)
-      '@react-stately/numberfield': 3.9.13(react@19.1.1)
-      '@react-stately/overlays': 3.6.17(react@19.1.1)
-      '@react-stately/radio': 3.10.14(react@19.1.1)
-      '@react-stately/searchfield': 3.5.13(react@19.1.1)
-      '@react-stately/select': 3.6.14(react@19.1.1)
-      '@react-stately/selection': 3.20.3(react@19.1.1)
-      '@react-stately/slider': 3.6.5(react@19.1.1)
-      '@react-stately/table': 3.14.3(react@19.1.1)
-      '@react-stately/tabs': 3.8.3(react@19.1.1)
-      '@react-stately/toast': 3.1.1(react@19.1.1)
-      '@react-stately/toggle': 3.8.5(react@19.1.1)
-      '@react-stately/tooltip': 3.5.5(react@19.1.1)
-      '@react-stately/tree': 3.9.0(react@19.1.1)
-      '@react-types/shared': 3.30.0(react@19.1.1)
-      react: 19.1.1
 
   react-stately@3.39.0(react@19.2.1):
     dependencies:
@@ -28148,28 +26976,6 @@ snapshots:
       es-errors: 1.3.0
       internal-slot: 1.1.0
 
-  storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(utf-8-validate@5.0.10):
-    dependencies:
-      '@storybook/global': 5.0.0
-      '@storybook/icons': 2.0.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@testing-library/jest-dom': 6.6.3
-      '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.0)
-      '@vitest/expect': 3.2.4
-      '@vitest/spy': 3.2.4
-      esbuild: 0.25.5
-      recast: 0.23.11
-      semver: 7.7.2
-      use-sync-external-store: 1.5.0(react@19.1.1)
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-    optionalDependencies:
-      prettier: 3.5.3
-    transitivePeerDependencies:
-      - '@testing-library/dom'
-      - bufferutil
-      - react
-      - react-dom
-      - utf-8-validate
-
   storybook@10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10):
     dependencies:
       '@storybook/global': 5.0.0
@@ -28364,13 +27170,6 @@ snapshots:
     optionalDependencies:
       '@babel/core': 7.27.4
 
-  styled-jsx@5.1.6(@babel/core@7.28.5)(react@19.1.1):
-    dependencies:
-      client-only: 0.0.1
-      react: 19.1.1
-    optionalDependencies:
-      '@babel/core': 7.28.5
-
   styled-jsx@5.1.6(@babel/core@7.28.5)(react@19.2.1):
     dependencies:
       client-only: 0.0.1
@@ -28502,12 +27301,6 @@ snapshots:
       css-what: 6.1.0
       csso: 5.0.5
       picocolors: 1.1.1
-
-  swr@2.3.3(react@19.1.1):
-    dependencies:
-      dequal: 2.0.3
-      react: 19.1.1
-      use-sync-external-store: 1.5.0(react@19.1.1)
 
   swr@2.3.3(react@19.2.1):
     dependencies:
@@ -29008,10 +27801,6 @@ snapshots:
   use-sync-external-store@1.2.0(react@19.2.1):
     dependencies:
       react: 19.2.1
-
-  use-sync-external-store@1.5.0(react@19.1.1):
-    dependencies:
-      react: 19.1.1
 
   use-sync-external-store@1.5.0(react@19.2.1):
     dependencies:
