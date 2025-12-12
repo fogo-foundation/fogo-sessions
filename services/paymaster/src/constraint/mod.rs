@@ -1,19 +1,19 @@
 use anchor_lang::AnchorDeserialize;
 use axum::http::StatusCode;
-use borsh::BorshDeserialize;
 use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
-use solana_compute_budget_interface::ComputeBudgetInstruction;
-use solana_message::compiled_instruction::CompiledInstruction;
-use solana_message::VersionedMessage;
 use solana_program::keccak;
 use solana_pubkey::Pubkey;
-use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
+use transaction::{InstructionWithIndex, TransactionToValidate};
+
+mod gas;
+mod templates;
+pub mod transaction;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "version")]
@@ -81,35 +81,42 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
-fn instruction_matches_program(
-    transaction: &VersionedTransaction,
-    instruction_index: usize,
-    program_to_match: &Pubkey,
-) -> anyhow::Result<bool> {
-    let instruction = transaction.message.instructions().get(instruction_index);
-    if let Some(instruction) = instruction {
-        let static_accounts = transaction.message.static_account_keys();
-        let program_id = instruction.program_id(static_accounts);
-        if program_id == program_to_match {
-            return Ok(true);
-        }
-    } else {
-        anyhow::bail!("Instruction index {instruction_index} out of bounds");
-    }
-
-    Ok(false)
-}
-
 impl VariationOrderedInstructionConstraints {
     pub async fn validate_transaction(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut instruction_index = 0;
-        let mut constraint_index = 0;
-        check_gas_spend(transaction, self.max_gas_spend)?;
+        self.validate_compute_units(transaction)?;
+        self.validate_instruction_constraints(transaction, contextual_domain_keys, chain_index)
+            .await
+    }
+
+    fn validate_compute_units(
+        &self,
+        transaction: &TransactionToValidate<'_>,
+    ) -> Result<(), (StatusCode, String)> {
+        if transaction.gas_spent > self.max_gas_spend {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Transaction gas spend {} exceeds maximum allowed {}",
+                    transaction.gas_spent, self.max_gas_spend
+                ),
+            ));
+        }
+        Ok(())
+    }
+
+    pub async fn validate_instruction_constraints(
+        &self,
+        transaction: &TransactionToValidate<'_>,
+        contextual_domain_keys: &ContextualDomainKeys,
+        chain_index: &ChainIndex,
+    ) -> Result<(), (StatusCode, String)> {
+        let mut substantive_instructions = transaction.substantive_instructions.clone();
+        let mut instruction = substantive_instructions.pop_front();
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
@@ -117,46 +124,49 @@ impl VariationOrderedInstructionConstraints {
         // constraints failing while matching against j+1 would result in a valid transaction match.
         // Technically, the correct way to validate this is via branching (efficiently via DP), but given
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
-        while constraint_index < self.instructions.len() {
-            let is_compute_budget_ix = instruction_matches_program(
-                transaction,
-                instruction_index,
-                &solana_compute_budget_interface::id(),
-            )
-            .unwrap_or(false);
-
-            if is_compute_budget_ix {
-                instruction_index += 1;
-                continue;
-            }
-
-            let constraint = &self.instructions[constraint_index];
-            let result = constraint
-                .validate_instruction(
-                    transaction,
-                    instruction_index,
-                    contextual_domain_keys,
-                    &self.name,
-                    chain_index,
-                )
-                .await;
-
-            if result.is_err() {
-                if constraint.required {
-                    return result;
+        for (constraint_index, constraint) in self.instructions.iter().enumerate() {
+            let constraint_validation_result = {
+                if let Some(instruction_with_index) = &instruction {
+                    constraint
+                        .validate_instruction(
+                            transaction,
+                            instruction_with_index,
+                            contextual_domain_keys,
+                            &self.name,
+                            chain_index,
+                        )
+                        .await
+                } else {
+                    Err((
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Ran out of instructions while validating constraint {constraint_index} for variation {}",
+                        self.name
+                    ),
+                ))
                 }
-                constraint_index += 1;
-            } else {
-                instruction_index += 1;
-                constraint_index += 1;
+            };
+
+            match constraint_validation_result {
+                Ok(_) => {
+                    instruction = substantive_instructions.pop_front();
+                }
+                Err(e) if constraint.required => {
+                    return Err(e);
+                }
+                Err(_) => {}
             }
         }
 
-        if instruction_index != transaction.message.instructions().len() {
+        if let Some(InstructionWithIndex {
+            index,
+            instruction: _,
+        }) = instruction
+        {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Instruction {instruction_index} does not match any expected instruction for variation {}",
+                    "Ran out of constraints while validating instruction {index} for variation {}",
                     self.name
                 ),
             ));
@@ -182,75 +192,36 @@ impl InstructionConstraint {
     pub async fn validate_instruction(
         &self,
         transaction: &VersionedTransaction,
-        instruction_index: usize,
+        instruction_with_index: &InstructionWithIndex<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
         variation_name: &str,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let instruction = &transaction.message.instructions().get(instruction_index).ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Transaction is missing instruction {instruction_index} for variation {variation_name}",
-                ),
-            )
-        })?;
         let static_accounts = transaction.message.static_account_keys();
         let signatures = &transaction.signatures;
 
-        let program_id = instruction.program_id(static_accounts);
+        let program_id = instruction_with_index
+            .instruction
+            .program_id(static_accounts);
         if *program_id != self.program {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
-                    "Transaction instruction {instruction_index} program ID {program_id} does not match expected ID {} for variation {variation_name}",
+                    "Transaction instruction {} program ID {program_id} does not match expected ID {} for variation {variation_name}",
+                    instruction_with_index.index,
                     self.program,
                 ),
             ));
         }
 
-        for (i, account_constraint) in self.accounts.iter().enumerate() {
-            let account_index = usize::from(*instruction
-                .accounts
-                .get(usize::from(account_constraint.index))
-                .ok_or_else(|| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Transaction instruction {instruction_index} missing account at index {i} for variation {variation_name}",
-                        ),
-                    )
-                })?);
-            let account = if let Some(acc) = static_accounts.get(account_index) {
-                acc
-            } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
-                let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
-                    .iter()
-                    .flat_map(|x| {
-                        x.writable_indexes
-                            .clone()
-                            .into_iter()
-                            .map(|y| (x.account_key, y))
-                    })
-                    .chain(lookup_tables.iter().flat_map(|x| {
-                        x.readonly_indexes
-                            .clone()
-                            .into_iter()
-                            .map(|y| (x.account_key, y))
-                    }))
-                    .collect();
-                let account_position_lookups = account_index - static_accounts.len();
-                &chain_index
-                    .find_and_query_lookup_table(lookup_accounts, account_position_lookups)
-                    .await?
-            } else {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Transaction instruction {instruction_index} account index {account_index} out of bounds for variation {variation_name}",
-                    ),
-                ));
-            };
+        for account_constraint in &self.accounts {
+            let account_pubkey = chain_index
+                .resolve_instruction_account_pubkey(
+                    transaction,
+                    instruction_with_index,
+                    account_constraint.index.into(),
+                )
+                .await?;
 
             let signers = static_accounts
                 .iter()
@@ -258,15 +229,15 @@ impl InstructionConstraint {
                 .cloned()
                 .collect::<Vec<_>>();
             account_constraint.check_account(
-                account,
+                &account_pubkey,
                 signers,
                 contextual_domain_keys,
-                instruction_index,
+                instruction_with_index.index,
             )?;
         }
 
         for data_constraint in &self.data {
-            data_constraint.check_data(&instruction.data, instruction_index)?;
+            data_constraint.check_data(instruction_with_index)?;
         }
 
         Ok(())
@@ -424,9 +395,10 @@ pub struct DataConstraint {
 impl DataConstraint {
     pub fn check_data(
         &self,
-        data: &[u8],
-        instruction_index: usize,
+        instruction_with_index: &InstructionWithIndex<'_>,
     ) -> Result<(), (StatusCode, String)> {
+        let instruction_index = instruction_with_index.index;
+        let data = &instruction_with_index.instruction.data;
         let length = self.data_type.byte_length();
         let end_byte = length + usize::from(self.start_byte);
         if end_byte > data.len() {
@@ -765,112 +737,4 @@ pub fn compare_primitive_data_types(
     } else {
         Err("Constraint not met".into())
     }
-}
-
-pub const LAMPORTS_PER_SIGNATURE: u64 = 5000;
-pub const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
-
-/// Checks that the transaction's gas spend (signatures + priority fee) does not exceed the maximum allowed.
-/// Does not account for spend on account creation or other outlets, since those cannot be determined from the transaction data alone.
-pub fn check_gas_spend(
-    transaction: &VersionedTransaction,
-    max_gas_spend: u64,
-) -> Result<(), (StatusCode, String)> {
-    let gas_spend = compute_gas_spent(transaction)?;
-    if gas_spend > max_gas_spend {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            format!("Transaction gas spend {gas_spend} exceeds maximum allowed {max_gas_spend}",),
-        ));
-    }
-    Ok(())
-}
-
-/// Computes the priority fee from the transaction's compute budget instructions.
-/// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
-/// If multiple compute budget instructions are present, the validation will fail.
-/// If compute budget instructions have invalid data, the validation will fail.
-pub fn process_compute_budget_instructions(
-    transaction: &VersionedTransaction,
-) -> Result<u64, (StatusCode, String)> {
-    let mut cu_limit = None;
-    let mut micro_lamports_per_cu = None;
-
-    let msg = &transaction.message;
-    let instructions: Vec<&CompiledInstruction> = match msg {
-        VersionedMessage::Legacy(m) => m.instructions.iter().collect(),
-        VersionedMessage::V0(m) => m.instructions.iter().collect(),
-    };
-
-    // should not support multiple compute budget instructions: https://github.com/solana-labs/solana/blob/ca115594ff61086d67b4fec8977f5762e526a457/program-runtime/src/compute_budget.rs#L162
-    for ix in instructions {
-        if ix.program_id(msg.static_account_keys()) != &solana_compute_budget_interface::id() {
-            continue;
-        }
-
-        if let Ok(cu_ix) = ComputeBudgetInstruction::try_from_slice(&ix.data) {
-            match cu_ix {
-                ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
-                    if cu_limit.is_some() {
-                        return Err((
-                            StatusCode::BAD_REQUEST,
-                            "Multiple SetComputeUnitLimit instructions found".to_string(),
-                        ));
-                    }
-                    cu_limit = Some(u64::from(units));
-                }
-                ComputeBudgetInstruction::SetComputeUnitPrice(micro_lamports) => {
-                    if micro_lamports_per_cu.is_some() {
-                        return Err((
-                            StatusCode::BAD_REQUEST,
-                            "Multiple SetComputeUnitPrice instructions found".to_string(),
-                        ));
-                    }
-                    micro_lamports_per_cu = Some(micro_lamports);
-                }
-                _ => {}
-            }
-        } else {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "Invalid compute budget instruction data".to_string(),
-            ));
-        }
-    }
-
-    let priority_fee = cu_limit
-        .unwrap_or(DEFAULT_COMPUTE_UNIT_LIMIT)
-        .saturating_mul(micro_lamports_per_cu.unwrap_or(0))
-        / 1_000_000;
-    Ok(priority_fee)
-}
-
-/// The Solana precompile programs that verify signatures.
-pub const PRECOMPILE_SIGNATURE_PROGRAMS: &[Pubkey] = &[
-    ed25519_program::ID,
-    secp256k1_program::ID,
-    secp256r1_program::ID,
-];
-
-/// Counts the number of signatures verified by precompile programs in the transaction.
-/// Based on core solana fee calc logic: https://github.com/dourolabs/agave/blob/cb32984a9b0d5c2c6f7775bed39b66d3a22e3c46/fee/src/lib.rs#L65-L83
-pub fn get_number_precompile_signatures(transaction: &VersionedTransaction) -> u64 {
-    transaction
-        .message
-        .instructions()
-        .iter()
-        .filter(|ix| {
-            let program_id = ix.program_id(transaction.message.static_account_keys());
-            PRECOMPILE_SIGNATURE_PROGRAMS.contains(program_id)
-        })
-        .map(|ix| u64::from(ix.data.first().copied().unwrap_or(0)))
-        .fold(0u64, |acc, x| acc.saturating_add(x))
-}
-
-/// Computes the gas spend (in lamports) for a transaction based on signatures and priority fee.
-pub fn compute_gas_spent(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
-    let n_signatures = (transaction.signatures.len() as u64)
-        .saturating_add(get_number_precompile_signatures(transaction));
-    let priority_fee = process_compute_budget_instructions(transaction)?;
-    Ok((n_signatures.saturating_mul(LAMPORTS_PER_SIGNATURE)).saturating_add(priority_fee))
 }
