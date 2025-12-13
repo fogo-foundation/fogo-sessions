@@ -1,11 +1,4 @@
 {
-  "extends": "@cprussin/tsconfig/nextjs.json",
-  "include": [
-    "*.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".storybook/**/*.ts",
-    ".storybook/**/*.tsx"
-  ],
+  "extends": "@cprussin/tsconfig/react.json",
   "exclude": ["node_modules", "dist"]
 }

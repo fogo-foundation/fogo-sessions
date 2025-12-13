@@ -23,9 +23,8 @@
     },
     "start:dev": {
       "with": [
-        "@fogo/sessions-sdk#start:dev",
-        "@fogo/sessions-sdk-web#start:dev",
-        "@fogo/sessions-sdk-react#start:dev"
+        "@fogo/sessions-sdk-react#start:dev",
+        "@fogo/component-library#start:dev"
       ]
     },
     "test:lint": {

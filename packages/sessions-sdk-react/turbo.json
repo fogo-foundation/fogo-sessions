@@ -14,11 +14,13 @@
     },
     "build:css:cjs": {
       "dependsOn": ["//#install:modules"],
-      "cache": false
+      "inputs": ["src/**/*.scss"],
+      "outputs": ["dist/cjs/**/*.css"]
     },
     "build:css:esm": {
       "dependsOn": ["//#install:modules"],
-      "cache": false
+      "inputs": ["src/**/*.scss"],
+      "outputs": ["dist/esm/**/*.css"]
     },
     "fix:lint": {
       "dependsOn": ["fix:lint:eslint", "fix:lint:stylelint"],
@@ -33,7 +35,13 @@
       "cache": false
     },
     "start:dev": {
-      "with": ["start:dev:tsc", "start:dev:sass"],
+      "with": [
+        "start:dev:tsc",
+        "start:dev:sass",
+        "@fogo/sessions-sdk#start:dev",
+        "@fogo/sessions-sdk-web#start:dev",
+        "@fogo/component-library#start:dev"
+      ],
       "persistent": false
     },
     "start:dev:tsc": {

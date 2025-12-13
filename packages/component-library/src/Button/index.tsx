@@ -1,8 +1,10 @@
+"use client";
+
 import clsx from "clsx";
 import type { ComponentProps } from "react";
 import { Button as UnstyledButton, Link } from "react-aria-components";
 
-import styles from "./button.module.css";
+import styles from "./index.module.css";
 
 type Variant = "primary" | "secondary" | "solid" | "ghost" | "outline";
 type Size = "sm" | "md" | "lg";

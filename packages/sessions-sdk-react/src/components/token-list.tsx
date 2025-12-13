@@ -5,10 +5,10 @@ import { GridList, GridListItem } from "react-aria-components";
 
 import { amountToString } from "../amount-to-string.js";
 import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
+import { Button } from "./component-library/Button/index.js";
+import { Link } from "./component-library/Link/index.js";
 import { CopyButton } from "./copy-button.js";
 import { FetchError } from "./fetch-error.js";
-import { Link } from "./link.js";
 import { NotionalAmount } from "./notional-amount.js";
 import styles from "./token-list.module.css";
 import { TruncateKey } from "./truncate-key.js";

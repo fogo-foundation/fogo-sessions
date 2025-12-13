@@ -10,14 +10,14 @@ import { Heading } from "react-aria-components";
 
 import type { SessionStates } from "../session-state.js";
 import type { SolanaWallet } from "../solana-wallet.js";
-import { Button } from "./button.js";
+import { Button } from "./component-library/Button/index.js";
 import { Disclaimer } from "./disclaimer.js";
 import { ModalDialog } from "./modal-dialog.js";
 import { SessionLimits } from "./session-limits.js";
 import styles from "./sign-in-modal.module.css";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
 import { isCancelable, StateType } from "../session-state.js";
-import { Link } from "./link.js";
+import { Link } from "./component-library/Link/index.js";
 
 type Props = Omit<
   ComponentProps<typeof ModalDialog>,

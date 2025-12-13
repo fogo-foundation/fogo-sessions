@@ -19,6 +19,7 @@
     "test:types": "tsc"
   },
   "dependencies": {
+    "@fogo/component-library": "workspace:*",
     "@fogo/sessions-sdk-react": "workspace:*",
     "@next/third-parties": "catalog:",
     "@phosphor-icons/react": "catalog:",

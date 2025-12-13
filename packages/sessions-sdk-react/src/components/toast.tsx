@@ -9,7 +9,7 @@ import {
   UNSTABLE_ToastQueue as ToastQueue,
 } from "react-aria-components";
 
-import { Button } from "./button.js";
+import { Button } from "./component-library/Button/index.js";
 import styles from "./toast.module.css";
 
 const ONE_SECOND_IN_MS = 1000;

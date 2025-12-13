@@ -1,5 +1,5 @@
 @use "modern-normalize";
-@use "../../theme";
+@use "@fogo/component-library/theme";
 
 :root {
   background: theme.color("demo-bg");

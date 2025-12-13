@@ -1,7 +1,9 @@
-@use "../theme";
+@use "./component-library/theme";
+@use "../reset";
+@use "../layer";
 
 .toastRegion {
-  @include theme.reset {
+  @include reset.reset {
     position: fixed;
     bottom: theme.spacing(4);
     left: theme.spacing(4);
@@ -10,7 +12,7 @@
     flex-flow: column nowrap;
     gap: theme.spacing(3.5);
     outline: none;
-    z-index: theme.layer("toast");
+    z-index: layer.layer("toast");
 
     @include theme.breakpoint("sm") {
       bottom: unset;

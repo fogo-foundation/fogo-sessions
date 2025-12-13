@@ -1,6 +1,6 @@
 import { Network } from "@fogo/sessions-sdk";
 
-import { Button } from "./button.js";
+import { Button } from "./component-library/Button/index.js";
 import styles from "./get-tokens-page.module.css";
 import { useFaucet } from "../hooks/use-faucet.js";
 import { useSessionContext } from "../hooks/use-session.js";
