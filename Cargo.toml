@@ -32,6 +32,7 @@ futures = "0.3.31"
 governor = "0.6.3"
 hex = "0.4.3"
 intent-transfer = { version = "0.1.0", path = "programs/intent-transfer" }
+itertools = "0.14.0"
 mpl-token-metadata = "5.1.0"
 nom = "8.0.0"
 solana-intents = { version = "0.1.0", path = "packages/solana-intents" }

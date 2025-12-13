@@ -100,6 +100,7 @@
             final.pnpm
             final.python3
             final.tilt
+            final.jq
             final.openssl
             final.pkg-config
             (final.rust-bin.nightly.latest.default.override {extensions = ["rust-analyzer"];})

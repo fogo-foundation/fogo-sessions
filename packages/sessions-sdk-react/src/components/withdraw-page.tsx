@@ -26,6 +26,7 @@ import { USDC } from "../wormhole-routes.js";
 import { ExplorerLink } from "./explorer-link.js";
 import { StateType, useData } from "../hooks/use-data.js";
 import { usePrice } from "../hooks/use-price.js";
+import { signWithWallet } from "../solana-wallet.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -171,7 +172,8 @@ const LoadedWithdrawForm = ({
             sessionPublicKey: sessionState.sessionPublicKey,
             sessionKey: sessionState.sessionKey,
             walletPublicKey: sessionState.walletPublicKey,
-            solanaWallet: sessionState.solanaWallet,
+            signMessage: (message) =>
+              signWithWallet(sessionState.solanaWallet, message),
             fromToken: USDC.chains[network].fogo,
             toToken: USDC.chains[network].solana,
             amount: stringToAmount(amount, USDC.decimals),

@@ -35,6 +35,7 @@ catalog:
   "@solana/wallet-adapter-base": 0.9.27
   "@solana/wallet-adapter-ledger": ^0.9.29
   "@solana/wallet-adapter-wallets": ^0.19.10
+  "@solana/wallet-standard-features": ^1.3.0
   "@solana/wallet-standard-wallet-adapter-react": ^1.1.4
   "@solana/web3.js": ^1.92.3
   "@solana/webcrypto-ed25519-polyfill": ^2.3.0

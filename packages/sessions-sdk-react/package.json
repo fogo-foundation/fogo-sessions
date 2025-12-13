@@ -65,6 +65,7 @@
     "@solana/wallet-adapter-backpack": "catalog:",
     "@solana/wallet-adapter-base": "catalog:",
     "@solana/wallet-adapter-wallets": "catalog:",
+    "@solana/wallet-standard-features": "catalog:",
     "@solana/wallet-standard-wallet-adapter-react": "catalog:",
     "@solana/web3.js": "catalog:",
     "@wormhole-foundation/sdk": "catalog:",
