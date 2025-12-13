@@ -1,11 +1,13 @@
+use crate::offchain_message::OffchainMessage;
 use borsh::BorshDeserialize;
-use solana_offchain_message::OffchainMessage;
+use solana_offchain_message::OffchainMessage as LegacyOffchainMessage;
 use solana_program::{
     account_info::AccountInfo, ed25519_program, instruction::Instruction,
     program_error::ProgramError, pubkey::Pubkey, sysvar::instructions::get_instruction_relative,
 };
 
 mod key_value;
+mod offchain_message;
 mod symbol_or_mint;
 mod version;
 
@@ -118,6 +120,7 @@ impl Ed25519InstructionHeader {
 #[derive(Debug, PartialEq)]
 enum Message {
     Raw(Vec<u8>),
+    LegacyOffchainMessage(LegacyOffchainMessage),
     OffchainMessage(OffchainMessage),
 }
 
@@ -125,34 +128,46 @@ impl From<Message> for Vec<u8> {
     fn from(message: Message) -> Self {
         match message {
             Message::Raw(message) => message,
-            Message::OffchainMessage(message) => message.get_message().to_vec(),
+            Message::LegacyOffchainMessage(message) => message.get_message().to_vec(),
+            Message::OffchainMessage(message) => message.into(),
         }
     }
 }
 
-fn get_length_with_header(message: &OffchainMessage) -> usize {
+fn get_length_with_header(message: &LegacyOffchainMessage) -> usize {
     match message {
-        OffchainMessage::V0(_) => message.get_message().len() + OffchainMessage::HEADER_LEN + 3,
+        LegacyOffchainMessage::V0(_) => {
+            message.get_message().len() + LegacyOffchainMessage::HEADER_LEN + 3
+        }
     }
 }
 
 impl Message {
     fn deserialize(data: &[u8]) -> std::io::Result<Self> {
-        if OffchainMessage::SIGNING_DOMAIN.len() <= data.len()
-            && data[0..OffchainMessage::SIGNING_DOMAIN.len()] == *OffchainMessage::SIGNING_DOMAIN
-        {
-            let message = OffchainMessage::deserialize(data).map_err(|_| {
-                std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid offchain message")
-            })?;
-            if data.len() > get_length_with_header(&message) {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidData,
-                    "Not all bytes read",
-                )); // make it behave like try_from_slice, so it fails if all bytes are not read
+        match data.try_into() {
+            Ok(message) => Ok(Self::OffchainMessage(message)),
+            _ => {
+                if LegacyOffchainMessage::SIGNING_DOMAIN.len() <= data.len()
+                    && data[0..LegacyOffchainMessage::SIGNING_DOMAIN.len()]
+                        == *LegacyOffchainMessage::SIGNING_DOMAIN
+                {
+                    let message = LegacyOffchainMessage::deserialize(data).map_err(|_| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Invalid offchain message",
+                        )
+                    })?;
+                    if data.len() > get_length_with_header(&message) {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Not all bytes read",
+                        )); // make it behave like try_from_slice, so it fails if all bytes are not read
+                    }
+                    Ok(Self::LegacyOffchainMessage(message))
+                } else {
+                    Ok(Self::Raw(data.to_vec()))
+                }
             }
-            Ok(Self::OffchainMessage(message))
-        } else {
-            Ok(Self::Raw(data.to_vec()))
         }
     }
 }
@@ -184,16 +199,16 @@ mod tests {
 
     #[test]
     fn test_offchain_message_roundtrip() {
-        let offchain_message = OffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
+        let offchain_message = LegacyOffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
         assert_eq!(
             Message::deserialize(&offchain_message.serialize().unwrap()).unwrap(),
-            Message::OffchainMessage(offchain_message.clone())
+            Message::LegacyOffchainMessage(offchain_message.clone())
         );
     }
 
     #[test]
     fn test_offchain_message_short() {
-        let offchain_message = OffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
+        let offchain_message = LegacyOffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
 
         let mut message_serialized_short: Vec<u8> = offchain_message.serialize().unwrap();
         message_serialized_short.pop();
@@ -208,7 +223,7 @@ mod tests {
 
     #[test]
     fn test_offchain_message_long() {
-        let offchain_message = OffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
+        let offchain_message = LegacyOffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
 
         let message_serialized_long: Vec<u8> = offchain_message
             .serialize()

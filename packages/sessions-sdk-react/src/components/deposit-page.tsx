@@ -182,7 +182,8 @@ const DepositForm = ({
           bridgeIn({
             context,
             walletPublicKey: sessionState.walletPublicKey,
-            solanaWallet: sessionState.solanaWallet,
+            signTransaction: (tx) =>
+              sessionState.solanaWallet.signTransaction(tx),
             fromToken: USDC.chains[network].solana,
             toToken: USDC.chains[network].fogo,
             amount: stringToAmount(amount, USDC.decimals),
