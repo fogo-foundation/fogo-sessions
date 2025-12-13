@@ -76,7 +76,7 @@ catalog:
   lucide-react: ^0.473.0
   modern-normalize: ^3.0.1
   motion: ^12.23.16
-  next: ^16.0.7
+  next: ^16.0.10
   pino: ^9.7.0
   pino-pretty: ^13.0.0
   postcss: ^8.5.1
@@ -84,10 +84,10 @@ catalog:
   prettier: ^3.5.3
   puppeteer: ^24.10.1
   qrcode.react: ^4.2.0
-  react: ^19.1.2
+  react: ^19.1.4
   react-aria: ^3.41.1
   react-aria-components: ^1.10.1
-  react-dom: ^19.1.2
+  react-dom: ^19.1.4
   sass: ^1.89.2
   sass-loader: ^16.0.5
   storybook: ^10.1.2

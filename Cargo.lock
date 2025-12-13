@@ -1993,7 +1993,7 @@ dependencies = [
 
 [[package]]
 name = "fogo-sessions-sdk"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
