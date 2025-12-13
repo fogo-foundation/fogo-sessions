@@ -14,19 +14,12 @@ import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { sha256 } from "@noble/hashes/sha2";
 import { fromLegacyPublicKey } from "@solana/compat";
-import type { SignatureBytes } from "@solana/kit";
 import {
   generateKeyPair,
   getAddressFromPublicKey,
   getProgramDerivedAddress,
-  signatureBytes,
-  verifySignature,
 } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
-import type {
-  BaseSignerWalletAdapter,
-  MessageSignerWalletAdapterProps,
-} from "@solana/wallet-adapter-base";
 import type {
   TransactionError,
   TransactionInstruction,
@@ -103,7 +96,9 @@ const SESSION_ESTABLISHMENT_LOOKUP_TABLE_ADDRESS = {
 type EstablishSessionOptions = {
   context: SessionContext;
   walletPublicKey: PublicKey;
-  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  signMessage: (
+    message: Uint8Array,
+  ) => Promise<{ signedMessage: Uint8Array; signature: Uint8Array }>;
   expires: Date;
   extra?: Record<string, string> | undefined;
   createUnsafeExtractableSessionKey?: boolean | undefined;
@@ -125,7 +120,7 @@ export const establishSession = async (
       options,
       sessionKey,
       await Promise.all([
-        buildIntentInstruction(options, sessionKey),
+        buildStartSessionIntentInstruction(options, sessionKey),
         buildStartSessionInstruction(options, sessionKey),
       ]),
       options.sessionEstablishmentLookupTable,
@@ -140,7 +135,7 @@ export const establishSession = async (
         : [];
 
     const [intentInstruction, startSessionInstruction] = await Promise.all([
-      buildIntentInstruction(options, sessionKey, tokenInfo),
+      buildStartSessionIntentInstruction(options, sessionKey, tokenInfo),
       buildStartSessionInstruction(options, sessionKey, tokenInfo),
     ]);
     return sendSessionEstablishTransaction(
@@ -193,7 +188,9 @@ export const replaceSession = async (
   options: {
     context: SessionContext;
     session: Session;
-    signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+    signMessage: (
+      message: Uint8Array,
+    ) => Promise<{ signedMessage: Uint8Array; signature: Uint8Array }>;
     expires: Date;
     extra?: Record<string, string> | undefined;
   } & (
@@ -547,103 +544,43 @@ const getTokenInfo = async (
 
 type TokenInfo = Awaited<ReturnType<typeof getTokenInfo>>[number];
 
-const serializeU16LE = (value: number) => {
-  const result = new ArrayBuffer(2);
-  new DataView(result).setUint16(0, value, true); // littleEndian = true
-  return new Uint8Array(result);
-};
-
-// Some wallets add a prefix to the messag before signing, for example Ledger through Phantom
-const addOffchainMessagePrefixToMessageIfNeeded = async (
-  walletPublicKey: PublicKey,
-  signature: SignatureBytes,
-  message: Uint8Array,
-) => {
-  const publicKey = await crypto.subtle.importKey(
-    "raw",
-    walletPublicKey.toBytes(),
-    { name: "Ed25519" },
-    true,
-    ["verify"],
-  );
-
-  if (await verifySignature(publicKey, signature, message)) {
-    return message;
-  } else {
-    // Source: https://github.com/anza-xyz/solana-sdk/blob/master/offchain-message/src/lib.rs#L162
-    const messageWithOffchainMessagePrefix = Uint8Array.from([
-      // eslint-disable-next-line unicorn/number-literal-case
-      0xff,
-      ...new TextEncoder().encode("solana offchain"),
-      0,
-      1,
-      ...serializeU16LE(message.length),
-      ...message,
-    ]);
-    if (
-      await verifySignature(
-        publicKey,
-        signature,
-        messageWithOffchainMessagePrefix,
-      )
-    ) {
-      return messageWithOffchainMessagePrefix;
-    } else {
-      throw new Error(
-        "The signature provided by the browser wallet is not valid",
-      );
-    }
-  }
-};
-const buildIntentInstruction = async (
+const buildStartSessionIntentInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
   tokens?: TokenInfo[],
-) => {
-  const message = await buildMessage({
-    chainId: options.context.chainId,
+) =>
+  buildIntentInstruction(options, MESSAGE_HEADER, {
+    version: `${CURRENT_MAJOR}.${CURRENT_MINOR}`,
+    chain_id: options.context.chainId,
     domain: options.context.domain,
-    sessionKey,
-    expires: options.expires,
-    tokens,
-    extra: options.extra,
+    expires: options.expires.toISOString(),
+    session_key: await getAddressFromPublicKey(sessionKey.publicKey),
+    tokens: serializeTokenList(tokens),
   });
 
-  const intentSignature = signatureBytes(await options.signMessage(message));
+const buildIntentInstruction = async (
+  options: {
+    signMessage: (
+      message: Uint8Array,
+    ) => Promise<{ signedMessage: Uint8Array; signature: Uint8Array }>;
+    walletPublicKey: PublicKey;
+  },
+  header: string,
+  body: Record<string, string>,
+  extra?: Record<string, string>,
+) => {
+  const message = new TextEncoder().encode(
+    [header, serializeKV(body), extra && serializeExtra(extra)].join("\n"),
+  );
+
+  const { signature, signedMessage } = await options.signMessage(message);
 
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
-    signature: intentSignature,
-    message: await addOffchainMessagePrefixToMessageIfNeeded(
-      options.walletPublicKey,
-      intentSignature,
-      message,
-    ),
+    signature,
+    message: signedMessage,
   });
 };
-
-const buildMessage = async (
-  body: Pick<EstablishSessionOptions, "expires" | "extra"> & {
-    chainId: string;
-    domain: string;
-    sessionKey: CryptoKeyPair;
-    tokens?: TokenInfo[] | undefined;
-  },
-) =>
-  new TextEncoder().encode(
-    [
-      MESSAGE_HEADER,
-      serializeKV({
-        version: `${CURRENT_MAJOR}.${CURRENT_MINOR}`,
-        chain_id: body.chainId,
-        domain: body.domain,
-        expires: body.expires.toISOString(),
-        session_key: await getAddressFromPublicKey(body.sessionKey.publicKey),
-        tokens: serializeTokenList(body.tokens),
-      }),
-      body.extra && serializeExtra(body.extra),
-    ].join("\n"),
-  );
 
 const serializeExtra = (extra: Record<string, string>) => {
   for (const [key, value] of Object.entries(extra)) {
@@ -857,7 +794,9 @@ Signing this intent will transfer the tokens as described below.
 type SendTransferOptions = {
   context: SessionContext;
   walletPublicKey: PublicKey;
-  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  signMessage: (
+    message: Uint8Array,
+  ) => Promise<{ signedMessage: Uint8Array; signature: Uint8Array }>;
   mint: PublicKey;
   amount: bigint;
   recipient: PublicKey;
@@ -925,32 +864,15 @@ const buildTransferIntentInstruction = async (
     getNonce(program, options.walletPublicKey, NonceType.Transfer),
     getMint(options.context.connection, options.mint),
   ]);
-  const message = new TextEncoder().encode(
-    [
-      TRANSFER_MESSAGE_HEADER,
-      serializeKV({
-        version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
-        chain_id: options.context.chainId,
-        token: symbol ?? options.mint.toBase58(),
-        amount: amountToString(options.amount, decimals),
-        recipient: options.recipient.toBase58(),
-        fee_token: feeToken,
-        fee_amount: feeAmount,
-        nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
-      }),
-    ].join("\n"),
-  );
-
-  const intentSignature = signatureBytes(await options.signMessage(message));
-
-  return Ed25519Program.createInstructionWithPublicKey({
-    publicKey: options.walletPublicKey.toBytes(),
-    signature: intentSignature,
-    message: await addOffchainMessagePrefixToMessageIfNeeded(
-      options.walletPublicKey,
-      intentSignature,
-      message,
-    ),
+  return buildIntentInstruction(options, TRANSFER_MESSAGE_HEADER, {
+    version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
+    chain_id: options.context.chainId,
+    token: symbol ?? options.mint.toBase58(),
+    amount: amountToString(options.amount, decimals),
+    recipient: options.recipient.toBase58(),
+    fee_token: feeToken,
+    fee_amount: feeAmount,
+    nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
   });
 };
 
@@ -964,7 +886,9 @@ type SendBridgeOutOptions = {
   sessionKey: CryptoKeyPair;
   sessionPublicKey: PublicKey;
   walletPublicKey: PublicKey;
-  solanaWallet: MessageSignerWalletAdapterProps;
+  signMessage: (
+    message: Uint8Array,
+  ) => Promise<{ signedMessage: Uint8Array; signature: Uint8Array }>;
   amount: bigint;
   fromToken: WormholeToken & { chain: "Fogo" };
   toToken: WormholeToken & { chain: "Solana" };
@@ -1156,42 +1080,25 @@ const buildBridgeOutIntent = async (
     options.walletPublicKey,
     NonceType.Bridge,
   );
-  const message = new TextEncoder().encode(
-    [
-      BRIDGE_OUT_MESSAGE_HEADER,
-      serializeKV({
-        version: `${CURRENT_BRIDGE_OUT_MAJOR}.${CURRENT_BRIDGE_OUT_MINOR}`,
-        from_chain_id: options.context.chainId,
-        to_chain_id: "solana",
-        token: symbol ?? options.fromToken.mint.toBase58(),
-        amount: amountToString(options.amount, decimals),
-        recipient_address: options.walletPublicKey.toBase58(),
-        fee_token: feeToken,
-        fee_amount: feeAmount,
-        nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
-      }),
-    ].join("\n"),
-  );
-
-  const intentSignature = signatureBytes(
-    await options.solanaWallet.signMessage(message),
-  );
-
-  return Ed25519Program.createInstructionWithPublicKey({
-    publicKey: options.walletPublicKey.toBytes(),
-    signature: intentSignature,
-    message: await addOffchainMessagePrefixToMessageIfNeeded(
-      options.walletPublicKey,
-      intentSignature,
-      message,
-    ),
+  return buildIntentInstruction(options, BRIDGE_OUT_MESSAGE_HEADER, {
+    version: `${CURRENT_BRIDGE_OUT_MAJOR}.${CURRENT_BRIDGE_OUT_MINOR}`,
+    from_chain_id: options.context.chainId,
+    to_chain_id: "solana",
+    token: symbol ?? options.fromToken.mint.toBase58(),
+    amount: amountToString(options.amount, decimals),
+    recipient_address: options.walletPublicKey.toBase58(),
+    fee_token: feeToken,
+    fee_amount: feeAmount,
+    nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
   });
 };
 
 type SendBridgeInOptions = {
   context: SessionContext;
   walletPublicKey: PublicKey;
-  solanaWallet: BaseSignerWalletAdapter;
+  signTransaction: (
+    transaction: VersionedTransaction,
+  ) => Promise<VersionedTransaction>;
   amount: bigint;
   fromToken: WormholeToken & { chain: "Solana" };
   toToken: WormholeToken & { chain: "Fogo" };
@@ -1215,13 +1122,11 @@ export const bridgeIn = async (options: SendBridgeInOptions) => {
           sign: (transactions) =>
             Promise.all(
               transactions.map(async ({ transaction }) => {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                const signedTx: VersionedTransaction =
-                  await options.solanaWallet.signTransaction(
-                    // Hooray for Wormhole's incomplete typing eh?
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                    transaction.transaction,
-                  );
+                const signedTx = await options.signTransaction(
+                  // Hooray for Wormhole's incomplete typing eh?
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+                  transaction.transaction,
+                );
                 // Hooray for Wormhole's incomplete typing eh?
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                 signedTx.sign(transaction.signers);

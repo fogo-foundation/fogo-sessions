@@ -32,6 +32,7 @@ import { StateType, useData } from "../hooks/use-data.js";
 import { usePrice } from "../hooks/use-price.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
+import { signWithWallet } from "../solana-wallet.js";
 
 type Props = {
   icon?: string | undefined;
@@ -192,7 +193,7 @@ const LoadedSendTokenPage = ({
             context,
             walletPublicKey: sessionState.walletPublicKey,
             signMessage: (message) =>
-              sessionState.solanaWallet.signMessage(message),
+              signWithWallet(sessionState.solanaWallet, message),
             mint: tokenMint,
             amount: stringToAmount(amount, decimals),
             recipient: new PublicKey(recipient),
