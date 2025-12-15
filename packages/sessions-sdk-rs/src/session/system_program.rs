@@ -15,7 +15,7 @@ pub struct ActiveSessionInfo<T: IsAuthorizedTokens> {
     pub user: Pubkey,
     pub expiration: UnixTimestamp,
     #[borsh_skip]
-    _phantom_data: std::marker::PhantomData<T>,
+    pub _phantom_data: std::marker::PhantomData<T>,
 }
 
 impl Session {
