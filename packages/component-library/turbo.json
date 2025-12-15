@@ -12,6 +12,10 @@
         "build:esm"
       ]
     },
+    "build:storybook": {
+      "dependsOn": ["//#install:modules"],
+      "outputs": ["storybook-static/**"]
+    },
     "build:css:cjs": {
       "dependsOn": ["//#install:modules"],
       "inputs": ["src/**/*.scss"],

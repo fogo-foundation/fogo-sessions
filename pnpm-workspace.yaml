@@ -106,7 +106,6 @@ engineStrict: true
 managePackageManagerVersions: false
 
 onlyBuiltDependencies:
-  - "@parcel/watcher"
   - "@swc/core"
   - bigint-buffer
   - blake-hash
