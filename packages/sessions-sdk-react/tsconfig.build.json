@@ -9,7 +9,7 @@
     "node_modules",
     "dist",
     "integration-tests",
-    "**/*.stories.*",
+    "src/components/component-library/**/*.stories.*",
     "**/*.test.ts"
   ]
 }
