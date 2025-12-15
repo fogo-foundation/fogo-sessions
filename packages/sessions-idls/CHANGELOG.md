@@ -1,5 +1,11 @@
 # @fogo/sessions-idls
 
+## 0.0.12 (2025-12-10)
+
+### Fixes
+
+- Add repository to package.json
+
 ## 0.0.11
 
 ### Patch Changes

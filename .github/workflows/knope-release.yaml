@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   publish:
@@ -46,6 +47,11 @@ jobs:
         with:
           run_install: true
 
+      # Ensure npm 11.5.1 or later is installed -- mandatory for Trusted
+      # Publishing, see https://docs.npmjs.com/trusted-publishers
+      - name: Update npm
+        run: npm install -g npm@latest
+
       - name: Install Knope
         uses: knope-dev/action@v2.1.0
         with:
@@ -59,11 +65,19 @@ jobs:
       - name: Fetch tags created by Knope
         run: git fetch --tags
 
-      - name: Publish npm packages
-        run: pnpm turbo publish
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Build Node packages
+        run: |
+          pnpm turbo build
+          for package in packages/*/package.json; do
+            packagePath=${package///package.json}
+            mv "${packagePath}" "${packagePath}-old"
+            mv "${packagePath}-old/dist" "${packagePath}"
+            rm -rf "${packagePath}-old"
+          done
+          pnpm i --no-frozen-lockfile
+
+      - name: Publish Node packages to npm
+        run: pnpm publish --no-git-checks -r
 
       - name: Publish Cargo packages
         run: |

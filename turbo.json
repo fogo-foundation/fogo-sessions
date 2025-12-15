@@ -4,14 +4,6 @@
   "globalPassThroughEnv": ["COREPACK_HOME"],
   "ui": "tui",
   "tasks": {
-    "//#build:replace-packages-with-built-packages": {
-      "dependsOn": [
-        "@fogo/sessions-idls#build",
-        "@fogo/sessions-sdk-react#build",
-        "@fogo/sessions-sdk#build",
-        "@fogo/sessions-sdk-web#build"
-      ]
-    },
     "//#fix": {
       "dependsOn": ["//#fix:lint", "//#fix:format"],
       "cache": false
@@ -34,10 +26,6 @@
         "!**/dist/**"
       ],
       "outputs": ["pnpm-lock.yaml"]
-    },
-    "//#publish": {
-      "dependsOn": ["//#build:replace-packages-with-built-packages"],
-      "cache": false
     },
     "//#run:domain-registry": {
       "dependsOn": ["@fogo/scripts#build"],

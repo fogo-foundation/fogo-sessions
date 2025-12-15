@@ -1,3 +1,9 @@
+## 0.5.7 (2025-12-10)
+
+### Fixes
+
+- Update paymaster URLs to the latest version
+
 ## 0.5.6 (2025-12-05)
 
 ### Fixes

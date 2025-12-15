@@ -1,0 +1,18 @@
+@use "./components/component-library/theme";
+
+// The layering here is a bit odd.  These have to be super high numbers so that
+// they overlay no matter what the apps are doing, and in particular, we need
+// the modal dialog to be a higher z-index than the [default overlay z-index set
+// by react-aria](https://github.com/adobe/react-spectrum/blob/62eb6ceca97aef110118ea1e41f70636e70bd573/packages/%40react-aria/overlays/src/useOverlayPosition.ts#L305),
+// since that z-index also applies to the wallet popup and we want modal dialogs
+// to go above the wallet popup always.
+$layer: (
+  "session-panel": 999996,
+  "modal-dialog": 999997,
+  "select": 999998,
+  "toast": 999999,
+);
+
+@function layer($value) {
+  @return theme.map-get-strict($layer, $value);
+}

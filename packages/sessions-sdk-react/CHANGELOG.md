@@ -1,5 +1,23 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.8 (2025-12-10)
+
+### Fixes
+
+- Add repository to package.json
+
+## 0.1.7 (2025-12-10)
+
+### Fixes
+
+- Add link to Mayan from bridge in page
+
+## 0.1.6 (2025-12-10)
+
+### Fixes
+
+- Add native tokens and change "Your Wallet" to "Your Fogo Wallet"
+
 ## 0.1.5
 
 ### Patch Changes

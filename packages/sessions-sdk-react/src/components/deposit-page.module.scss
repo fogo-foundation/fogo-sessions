@@ -1,4 +1,4 @@
-@use "../theme";
+@use "./component-library/theme";
 
 .depositPage {
   height: 100%;
@@ -68,6 +68,12 @@
       .action {
         white-space: nowrap;
       }
+    }
+
+    .mayanLink {
+      @include theme.text("sm");
+
+      margin-top: -#{theme.spacing(2)};
     }
   }
 

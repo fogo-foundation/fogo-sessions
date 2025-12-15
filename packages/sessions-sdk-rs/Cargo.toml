@@ -3,7 +3,7 @@ name = "fogo-sessions-sdk"
 description = "A set of utilities for SVM on-chain programs integrating with Fogo sessions"
 edition = { workspace = true }
 license = { workspace = true }
-version = "0.7.0"
+version = "0.7.2"
 
 [lib]
 crate-type = ["rlib"]
@@ -13,6 +13,7 @@ name = "fogo_sessions_sdk"
 token-program = []
 anchor = ["anchor-lang"]
 anchor-idl = ["anchor-lang/idl-build"]
+system-program = []
 
 [dependencies]
 borsh = { version = ">=0.10.0, <1.0.0"}

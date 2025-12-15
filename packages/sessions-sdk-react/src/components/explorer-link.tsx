@@ -2,7 +2,7 @@ import { Network } from "@fogo/sessions-sdk";
 import type { ComponentProps } from "react";
 import type { Link as UnstyledLink } from "react-aria-components";
 
-import { Link } from "./link.js";
+import { Link } from "./component-library/Link/index.js";
 
 type Props = ComponentProps<typeof UnstyledLink> & {
   network: Network;
