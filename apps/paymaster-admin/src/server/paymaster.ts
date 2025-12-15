@@ -60,7 +60,6 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
     [walletAddress],
   );
 
-  // If user doesn't exist in database, return undefined
   if (!rows[0]) {
     return;
   }
