@@ -87,6 +87,7 @@
     "react": "catalog:",
     "sass": "catalog:",
     "sass-loader": "catalog:",
+    "storybook": "catalog:",
     "style-loader": "catalog:",
     "stylelint": "catalog:",
     "stylelint-config-standard-scss": "catalog:",

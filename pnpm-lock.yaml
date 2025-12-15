@@ -246,6 +246,9 @@ catalogs:
     sass-loader:
       specifier: ^16.0.5
       version: 16.0.6
+    storybook:
+      specifier: ^10.1.2
+      version: 10.1.2
     style-loader:
       specifier: ^4.0.0
       version: 4.0.0
@@ -630,6 +633,9 @@ importers:
       sass-loader:
         specifier: 'catalog:'
         version: 16.0.6(sass@1.89.2)(webpack@5.101.3)
+      storybook:
+        specifier: 'catalog:'
+        version: 10.1.2(@testing-library/dom@10.4.0)(bufferutil@4.0.9)(prettier@3.5.3)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(utf-8-validate@5.0.10)
       style-loader:
         specifier: 'catalog:'
         version: 4.0.0(webpack@5.101.3)
