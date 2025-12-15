@@ -47,4 +47,4 @@ export const DOMAIN = getEnvOrDefault(
   "https://sessions-example.fogo.io",
 );
 
-export const DATABASE_URL = demand("DATABASE_URL");
+export const DATABASE_URL = getEnvOrDefault("DATABASE_URL", "postgres://paymaster:paymaster@localhost:5432/paymaster");
