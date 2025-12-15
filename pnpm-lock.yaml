@@ -615,6 +615,9 @@ importers:
       jest:
         specifier: 'catalog:'
         version: 29.7.0(@types/node@24.0.3)
+      next:
+        specifier: 'catalog:'
+        version: 16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
       prettier:
         specifier: 'catalog:'
         version: 3.5.3

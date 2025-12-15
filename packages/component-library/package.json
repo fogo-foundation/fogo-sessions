@@ -82,6 +82,7 @@
     "css-loader": "catalog:",
     "eslint": "catalog:",
     "jest": "catalog:",
+    "next": "catalog:",
     "prettier": "catalog:",
     "react": "catalog:",
     "sass": "catalog:",
