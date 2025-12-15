@@ -3,16 +3,7 @@
   "compilerOptions": {
     "noEmit": false,
     "incremental": false,
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "isolatedModules": false
+    "declaration": true
   },
-  "exclude": [
-    ".storybook",
-    "node_modules",
-    "dist",
-    "examples/",
-    "**/*.stories.*",
-    "**/__tests__/*"
-  ]
+  "exclude": ["node_modules", "dist", "integration-tests", "**/*.test.ts"]
 }
