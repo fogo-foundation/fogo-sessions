@@ -8,18 +8,18 @@
     "url": "https://github.com/fogo-foundation/fogo-sessions",
     "directory": "packages/component-library"
   },
-  "keywords": [
-    "fogo",
-    "sessions",
-    "crypto",
-    "wallet",
-    "web",
-    "react"
-  ],
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": "22"
   },
+  "keywords": [
+    "crypto",
+    "fogo",
+    "react",
+    "sessions",
+    "wallet",
+    "web"
+  ],
   "exports": {
     "./*": {
       "import": {
@@ -37,14 +37,16 @@
     "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "build:css:cjs": "sass --pkg-importer node --no-source-map src:dist/cjs",
     "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
-    "build:theme.scss": "mkdir -p dist && cp src/theme.scss dist/theme.scss",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "build:theme.scss": "mkdir -p dist && cp src/theme.scss dist/theme.scss",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
     "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
     "start:dev:theme.scss": "copy-and-watch --watch src/theme.scss dist",
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
+    "build:storybook": "storybook build",
+    "storybook": "storybook dev -p 6006",
     "test:format": "run-jest --colors --selectProjects format",
     "test:lint:eslint": "run-jest --colors --selectProjects lint",
     "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
@@ -67,17 +69,26 @@
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
+    "@storybook/addon-styling-webpack": "catalog:",
+    "@storybook/addon-themes": "catalog:",
+    "@storybook/nextjs": "catalog:",
+    "@storybook/react": "catalog:",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
+    "css-loader": "catalog:",
     "eslint": "catalog:",
     "jest": "catalog:",
+    "next": "catalog:",
     "prettier": "catalog:",
     "react": "catalog:",
     "sass": "catalog:",
+    "sass-loader": "catalog:",
+    "storybook": "catalog:",
+    "style-loader": "catalog:",
     "stylelint": "catalog:",
     "stylelint-config-standard-scss": "catalog:",
     "typescript": "catalog:"

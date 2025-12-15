@@ -1,4 +1,11 @@
 {
   "extends": "@cprussin/tsconfig/react.json",
+  "include": [
+    "*.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".storybook/**/*.ts",
+    ".storybook/**/*.tsx"
+  ],
   "exclude": ["node_modules", "dist"]
 }
