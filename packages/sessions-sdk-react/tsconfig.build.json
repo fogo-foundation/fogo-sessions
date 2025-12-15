@@ -5,5 +5,11 @@
     "incremental": false,
     "declaration": true
   },
-  "exclude": ["node_modules", "dist", "integration-tests", "**/*.stories.*", "**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "integration-tests",
+    "**/*.stories.*",
+    "**/*.test.ts"
+  ]
 }
