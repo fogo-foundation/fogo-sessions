@@ -3,8 +3,11 @@ import { getMint } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect } from "react";
 
+import {
+  StateType,
+  useData,
+} from "../components/component-library/useData/index.js";
 import { getMetadata } from "../get-metadata.js";
-import { StateType, useData } from "../components/component-library/useData/index.js";
 import { useConnection, useSessionContext } from "./use-session.js";
 
 export { StateType } from "../components/component-library/useData/index.js";
