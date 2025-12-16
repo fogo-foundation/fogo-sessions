@@ -2769,6 +2769,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "chain-id",
+ "fogo-sessions-sdk",
  "hex",
  "indoc",
  "litesvm",

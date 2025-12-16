@@ -60,12 +60,12 @@ pub mod intent_transfer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
+    use fogo_sessions_sdk::intent_transfer::INTENT_TRANSFER_SETTER;
 
     #[test]
     fn test_session_setter_pda_derivation() {
         assert_eq!(
-            Pubkey::from_str("EkYeW6iAtp2XsxsFZ2pDryf54qSND4RkGFCgMmX55vBL").unwrap(),
+            INTENT_TRANSFER_SETTER,
             Pubkey::find_program_address(&[INTENT_TRANSFER_SEED], &ID).0
         );
     }
