@@ -28,6 +28,7 @@ nom = { workspace = true }
 solana-intents = { workspace = true }
 
 [dev-dependencies]
+fogo-sessions-sdk = { workspace = true }
 indoc = "2.0.6"
 litesvm = "0.7.1"
 solana-account = {workspace = true}
