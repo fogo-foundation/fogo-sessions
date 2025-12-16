@@ -1,20 +1,13 @@
 import * as React from "react";
 
-import { TextField as TextFieldComponent } from "./index.js";
+import { TextField as TextFieldComponent } from "./index.jsx";
 
-type TextFieldStoryArgs = React.ComponentProps<typeof TextFieldComponent> & {
-  label: string;
-  labelExtra: string;
-  placeholder: string;
-  double: boolean;
-  isDisabled: boolean;
-  isPending: boolean;
-  isInvalid: boolean;
-  errorMessage: string;
-};
 
 const meta = {
   component: TextFieldComponent,
+  globals: {
+    backgrounds: { value: 'dark' },
+  },
   argTypes: {
     label: {
       control: "text",
@@ -68,7 +61,7 @@ const meta = {
 };
 export default meta;
 
-export const Field = {
+export const TextField = {
   args: {
     label: "Label",
     labelExtra: "Optional",
@@ -76,14 +69,10 @@ export const Field = {
     double: false,
     isDisabled: false,
     isPending: false,
-    isInvalid: false,
-    errorMessage: "This is an error",
   },
-  render: ({ isInvalid, errorMessage, ...args }: TextFieldStoryArgs) => (
+  render: (args: React.ComponentProps<typeof TextFieldComponent>) => (
     <TextFieldComponent
       {...args}
-      isInvalid={isInvalid}
-      errorMessage={isInvalid ? errorMessage : undefined}
     />
   ),
 };

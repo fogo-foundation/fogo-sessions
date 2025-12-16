@@ -14,6 +14,7 @@ const ToastStoryInner = ({ title, description, timeoutMs }: ToastStoryArgs) => {
   return (
     <div style={{ display: "flex", gap: 12 }}>
       <Button
+        variant="secondary"
         onClick={() => {
           toast.success(title, description, { timeout: timeoutMs });
         }}
@@ -22,7 +23,6 @@ const ToastStoryInner = ({ title, description, timeoutMs }: ToastStoryArgs) => {
       </Button>
 
       <Button
-        variant="secondary"
         onClick={() => {
           toast.error(title, description, { timeout: timeoutMs });
         }}
@@ -35,6 +35,9 @@ const ToastStoryInner = ({ title, description, timeoutMs }: ToastStoryArgs) => {
 
 const meta = {
   component: ToastProvider,
+  globals: {
+    backgrounds: { value: 'dark' },
+  },
   argTypes: {
     title: {
       control: "text",

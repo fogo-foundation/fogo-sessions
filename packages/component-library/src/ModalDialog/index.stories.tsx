@@ -14,18 +14,6 @@ const meta = {
         category: "Contents",
       },
     },
-    isDisabled: {
-      control: "boolean",
-      table: {
-        category: "State",
-      },
-    },
-    isPending: {
-      control: "boolean",
-      table: {
-        category: "State",
-      },
-    },
   },
 } satisfies Meta<typeof ModalDialogComponent>;
 export default meta;

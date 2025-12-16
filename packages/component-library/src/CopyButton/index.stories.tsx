@@ -2,6 +2,9 @@ import { CopyButton as CopyButtonComponent } from "./index.jsx";
 
 const meta = {
   component: CopyButtonComponent,
+  globals: {
+    backgrounds: { value: 'dark' },
+  },
   argTypes: {
     children: {
       control: "text",
