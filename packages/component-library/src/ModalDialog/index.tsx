@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps } from "react";
 import { Dialog, Modal, ModalOverlay } from "react-aria-components";
 
-import styles from "./modal-dialog.module.css";
+import styles from "./index.module.css";
 
 const MotionModal = motion.create(Modal);
 const MotionModalOverlay = motion.create(ModalOverlay);

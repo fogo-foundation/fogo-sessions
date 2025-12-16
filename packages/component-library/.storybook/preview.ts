@@ -8,7 +8,18 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
-
+    backgrounds: {
+      values: [
+        {
+          name: "light",
+          value: "#ffffff",
+        },
+        {
+          name: "dark",
+          value: "#27272c",
+        },
+      ],
+    },
     a11y: {
       // 'todo' - show a11y violations in the test UI only
       // 'error' - fail CI on a11y violations

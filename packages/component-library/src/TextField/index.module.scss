@@ -1,0 +1,141 @@
+@use "../theme";
+@use "../reset";
+
+.textField {
+  @include reset.reset {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: theme.spacing(3);
+
+    .labelLine {
+      @include theme.text("xs", "medium");
+
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      flex-grow: 1;
+
+      .label {
+        color: theme.color("paragraph");
+        width: 100%;
+      }
+    }
+
+    .inputGroup {
+      position: relative;
+      display: grid;
+
+      .input {
+        @include theme.text("sm");
+
+        padding: theme.spacing(3);
+        border-radius: theme.border-radius("lg");
+        border: 1px solid theme.color("border");
+        background: theme.color("input-bg");
+        outline: 3px solid transparent;
+        color: theme.color("foreground");
+        height: theme.spacing(8);
+        width: 100%;
+        text-box-trim: none;
+        text-overflow: ellipsis;
+        transition:
+          border-color 50ms linear,
+          outline-color 50ms linear;
+
+        &::placeholder {
+          color: theme.color("muted");
+          opacity: 0.5;
+        }
+
+        &[data-hovered] {
+          border-color: theme.color("border-hover");
+        }
+
+        &[data-focused] {
+          border-color: theme.color("accent");
+          outline-color: theme.color("accent-opaque");
+        }
+      }
+
+      .error {
+        @include theme.text("sm", "normal");
+
+        position: absolute;
+        background: theme.color("demo-bg");
+        color: theme.color("states", "error", "foreground");
+        padding: theme.spacing(3);
+        border: 1px solid theme.color("states", "error", "foreground");
+        left: theme.spacing(4);
+        bottom: theme.spacing(10);
+        display: none;
+        border-radius: theme.border-radius("md");
+        box-shadow: theme.shadow();
+
+        .overlayArrow {
+          fill: theme.color("demo-bg");
+          stroke: theme.color("states", "error", "foreground");
+          position: absolute;
+          bottom: -#{theme.spacing(3)};
+          left: theme.spacing(4);
+        }
+      }
+    }
+
+    &[data-double] {
+      .input {
+        height: theme.spacing(14);
+        text-overflow: unset;
+        resize: none;
+        overflow: hidden;
+      }
+
+      .error {
+        bottom: theme.spacing(16);
+      }
+    }
+
+    &[data-disabled],
+    &[data-pending] {
+      .input {
+        background: theme.color("button", "disabled", "background");
+
+        &::placeholder {
+          color: theme.color("button", "disabled", "foreground");
+          opacity: 1;
+        }
+
+        &,
+        &[data-hovered] {
+          border-color: theme.color("button", "disabled", "foreground");
+        }
+      }
+    }
+
+    &[data-disabled] {
+      &,
+      .input {
+        cursor: not-allowed;
+      }
+    }
+
+    &[data-pending] {
+      &,
+      .input {
+        cursor: wait;
+      }
+    }
+
+    &[data-invalid] {
+      .input:not([data-focused]) {
+        border-color: theme.color("states", "error", "foreground");
+      }
+
+      .inputGroup:has(.input[data-hovered]),
+      .inputGroup:has(.input[data-focused]) {
+        .error {
+          display: block;
+        }
+      }
+    }
+  }
+}

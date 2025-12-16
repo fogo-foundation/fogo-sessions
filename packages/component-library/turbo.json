@@ -13,6 +13,9 @@
         "build:esm"
       ]
     },
+    "storybook": {
+      "dependsOn": ["//#install:modules"]
+    },
     "build:storybook": {
       "dependsOn": ["//#install:modules"],
       "outputs": ["storybook-static/**"]
