@@ -12,7 +12,7 @@ import type { SessionStates } from "../session-state.js";
 import type { SolanaWallet } from "../solana-wallet.js";
 import { Button } from "./component-library/Button/index.js";
 import { Disclaimer } from "./disclaimer.js";
-import { ModalDialog } from "./modal-dialog.js";
+import { ModalDialog } from "./component-library/ModalDialog/index.js";
 import { SessionLimits } from "./session-limits.js";
 import styles from "./sign-in-modal.module.css";
 import { useSession, useSessionContext } from "../hooks/use-session.js";

@@ -15,7 +15,7 @@ import type {
 } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
 import { Link } from "./component-library/Link/index.js";
-import { CopyButton } from "./copy-button.js";
+import { CopyButton } from "./component-library/CopyButton/index.js";
 import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import { GetTokensPage } from "./get-tokens-page.js";

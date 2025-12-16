@@ -16,10 +16,10 @@ import { Link } from "./component-library/Link/index.js";
 import styles from "./deposit-page.module.css";
 import { ExplorerLink, Chain } from "./explorer-link.js";
 import { FetchError } from "./fetch-error.js";
-import { useToast } from "./toast.js";
+import { useToast } from "./component-library/Toast/index.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
-import { StateType, useData } from "../hooks/use-data.js";
+import { StateType, useData } from "./component-library/useData/index.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { USDC } from "../wormhole-routes.js";
 

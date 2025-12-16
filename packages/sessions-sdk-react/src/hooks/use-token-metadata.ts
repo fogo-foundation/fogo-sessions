@@ -4,10 +4,10 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect } from "react";
 
 import { getMetadata } from "../get-metadata.js";
-import { StateType, useData } from "./use-data.js";
+import { StateType, useData } from "../components/component-library/useData/index.js";
 import { useConnection, useSessionContext } from "./use-session.js";
 
-export { StateType } from "./use-data.js";
+export { StateType } from "../components/component-library/useData/index.js";
 
 export type Metadata = Awaited<ReturnType<typeof getTokenMetadata>>;
 

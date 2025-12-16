@@ -19,6 +19,7 @@ import {
 } from "../../config/server";
 import { LoggerProvider } from "../../hooks/use-logger";
 import { FogoWordmark } from "../Home/fogo-wordmark";
+import { TextField } from '@fogo/component-library/TextField';
 
 const ReportAccessibility = dynamic(() =>
   import("./report-accessibility").then((mod) => mod.ReportAccessibility),
@@ -55,6 +56,7 @@ export const Root = ({ children }: Props) => (
                 >
                   Terms of Use
                 </Link>
+                <TextField label="Label" placeholder="Placeholder" />
               </footer>
             </FogoNetworkProvider>
           </body>
