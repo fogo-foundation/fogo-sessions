@@ -2,11 +2,10 @@ import * as React from "react";
 
 import { TextField as TextFieldComponent } from "./index.jsx";
 
-
 const meta = {
   component: TextFieldComponent,
   globals: {
-    backgrounds: { value: 'dark' },
+    backgrounds: { value: "dark" },
   },
   argTypes: {
     label: {
@@ -71,8 +70,6 @@ export const TextField = {
     isPending: false,
   },
   render: (args: React.ComponentProps<typeof TextFieldComponent>) => (
-    <TextFieldComponent
-      {...args}
-    />
+    <TextFieldComponent {...args} />
   ),
 };

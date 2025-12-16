@@ -5,7 +5,7 @@ import { Link as LinkComponent } from "./index.jsx";
 const meta = {
   component: LinkComponent,
   globals: {
-    backgrounds: { value: 'dark' },
+    backgrounds: { value: "dark" },
   },
   argTypes: {
     children: {

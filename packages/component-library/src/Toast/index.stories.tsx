@@ -36,7 +36,7 @@ const ToastStoryInner = ({ title, description, timeoutMs }: ToastStoryArgs) => {
 const meta = {
   component: ToastProvider,
   globals: {
-    backgrounds: { value: 'dark' },
+    backgrounds: { value: "dark" },
   },
   argTypes: {
     title: {
