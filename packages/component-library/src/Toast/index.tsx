@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import type { ReactNode } from "react";

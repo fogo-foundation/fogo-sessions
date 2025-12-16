@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { CopyIcon } from "@phosphor-icons/react/dist/ssr/Copy";
