@@ -8,6 +8,7 @@
         "build:cjs",
         "build:css:cjs",
         "build:css:esm",
+        "build:package-json",
         "build:theme.scss",
         "build:esm"
       ]
