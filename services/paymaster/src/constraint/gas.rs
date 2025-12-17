@@ -16,6 +16,8 @@ const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
 fn process_compute_budget_instructions(transaction: &VersionedTransaction) -> anyhow::Result<u64> {
     let mut cu_limit = None;
     let mut micro_lamports_per_cu = None;
+    let mut request_heap_frame = false;
+    let mut set_loaded_accounts_data_size_limit = false;
 
     let msg = &transaction.message;
     let instructions: Vec<&CompiledInstruction> = match msg {
@@ -43,7 +45,21 @@ fn process_compute_budget_instructions(transaction: &VersionedTransaction) -> an
                     }
                     micro_lamports_per_cu = Some(micro_lamports);
                 }
-                _ => {}
+                ComputeBudgetInstruction::RequestHeapFrame(_) => {
+                    if request_heap_frame {
+                        anyhow::bail!("Multiple RequestHeapFrame instructions found");
+                    }   
+                    request_heap_frame = true;
+                }
+                ComputeBudgetInstruction::SetLoadedAccountsDataSizeLimit(_) => {
+                    if set_loaded_accounts_data_size_limit {
+                        anyhow::bail!("Multiple SetLoadedAccountsDataSizeLimit instructions found");
+                    }
+                    set_loaded_accounts_data_size_limit = true;
+                },
+                ComputeBudgetInstruction::Unused => {
+                    anyhow::bail!("Unused compute budget instruction found");
+                }
             }
         } else {
             anyhow::bail!("Invalid compute budget instruction data");
