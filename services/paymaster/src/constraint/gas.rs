@@ -13,9 +13,7 @@ const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
 /// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
 /// If multiple compute budget instructions are present, the validation will fail.
 /// If compute budget instructions have invalid data, the validation will fail.
-fn process_compute_budget_instructions(
-    transaction: &VersionedTransaction,
-) -> anyhow::Result<u64> {
+fn process_compute_budget_instructions(transaction: &VersionedTransaction) -> anyhow::Result<u64> {
     let mut cu_limit = None;
     let mut micro_lamports_per_cu = None;
 
@@ -35,26 +33,20 @@ fn process_compute_budget_instructions(
             match cu_ix {
                 ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
                     if cu_limit.is_some() {
-                        anyhow::bail!(
-                            "Multiple SetComputeUnitLimit instructions found"
-                        );
+                        anyhow::bail!("Multiple SetComputeUnitLimit instructions found");
                     }
                     cu_limit = Some(u64::from(units));
                 }
                 ComputeBudgetInstruction::SetComputeUnitPrice(micro_lamports) => {
                     if micro_lamports_per_cu.is_some() {
-                        anyhow::bail!(
-                            "Multiple SetComputeUnitPrice instructions found",
-                        );
+                        anyhow::bail!("Multiple SetComputeUnitPrice instructions found",);
                     }
                     micro_lamports_per_cu = Some(micro_lamports);
                 }
                 _ => {}
             }
         } else {
-            anyhow::bail!(
-                "Invalid compute budget instruction data"
-            );
+            anyhow::bail!("Invalid compute budget instruction data");
         }
     }
 

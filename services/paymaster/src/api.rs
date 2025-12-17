@@ -367,7 +367,8 @@ async fn sponsor_and_send_handler(
             )
         })?;
 
-    let transaction_to_validate = TransactionToValidate::parse(&transaction).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let transaction_to_validate = TransactionToValidate::parse(&transaction)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     let matched_variation_name = match domain_state
         .validate_transaction(
             &transaction_to_validate,
