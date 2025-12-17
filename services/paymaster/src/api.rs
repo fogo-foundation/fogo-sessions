@@ -393,7 +393,7 @@ async fn sponsor_and_send_handler(
         }
     }
     .to_owned();
-    let gas_spent = transaction_to_validate.gas_spent;
+    let gas_spend = transaction_to_validate.gas_spend;
 
     transaction.signatures[0] = transaction_sponsor.sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
@@ -445,7 +445,7 @@ async fn sponsor_and_send_handler(
                 match fetch_transaction_cost_details(
                     &state.chain_index.rpc,
                     &signature_to_fetch,
-                    gas_spent,
+                    gas_spend,
                     RetryConfig {
                         max_tries: 3,
                         sleep_ms: 2000,

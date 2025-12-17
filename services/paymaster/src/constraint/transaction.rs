@@ -1,4 +1,4 @@
-use crate::constraint::gas::compute_gas_spent;
+use crate::constraint::gas::compute_gas_spend;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::VecDeque;
@@ -7,7 +7,7 @@ use std::ops::Deref;
 pub struct TransactionToValidate<'a> {
     transaction: &'a VersionedTransaction,
     pub substantive_instructions: VecDeque<InstructionWithIndex<'a>>,
-    pub gas_spent: u64,
+    pub gas_spend: u64,
 }
 
 impl<'a> Deref for TransactionToValidate<'a> {
@@ -39,7 +39,7 @@ impl<'a> TransactionToValidate<'a> {
                 .enumerate()
                 .map(|(index, instruction)| InstructionWithIndex { index, instruction })
                 .collect(),
-            gas_spent: compute_gas_spent(transaction)?,
+            gas_spend: compute_gas_spend(transaction)?,
         })
     }
 }

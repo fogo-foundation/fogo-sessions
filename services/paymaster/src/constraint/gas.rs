@@ -80,7 +80,7 @@ fn get_number_precompile_signatures(transaction: &VersionedTransaction) -> u64 {
 }
 
 /// Computes the gas spend (in lamports) for a transaction based on signatures and priority fee.
-pub fn compute_gas_spent(transaction: &VersionedTransaction) -> anyhow::Result<u64> {
+pub fn compute_gas_spend(transaction: &VersionedTransaction) -> anyhow::Result<u64> {
     let n_signatures = (transaction.signatures.len() as u64)
         .saturating_add(get_number_precompile_signatures(transaction));
     let priority_fee = process_compute_budget_instructions(transaction)?;

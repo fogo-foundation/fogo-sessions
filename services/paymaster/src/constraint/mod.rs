@@ -97,12 +97,12 @@ impl VariationOrderedInstructionConstraints {
         &self,
         transaction: &TransactionToValidate<'_>,
     ) -> Result<(), (StatusCode, String)> {
-        if transaction.gas_spent > self.max_gas_spend {
+        if transaction.gas_spend > self.max_gas_spend {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(
                     "Transaction gas spend {} exceeds maximum allowed {}",
-                    transaction.gas_spent, self.max_gas_spend
+                    transaction.gas_spend, self.max_gas_spend
                 ),
             ));
         }
