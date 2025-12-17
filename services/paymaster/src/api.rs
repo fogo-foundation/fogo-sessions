@@ -388,7 +388,7 @@ async fn sponsor_and_send_handler(
             variation.name()
         }
         Err(e) => {
-            obs_validation(domain.clone(), None, e.0.to_string());
+            obs_validation(domain.clone(), None, "invalid".to_string());
             return Err(e.into());
         }
     }
