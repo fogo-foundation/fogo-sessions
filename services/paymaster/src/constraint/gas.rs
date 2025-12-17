@@ -1,12 +1,12 @@
 use borsh::BorshDeserialize;
 use solana_compute_budget_interface::ComputeBudgetInstruction;
+use solana_fee_structure::FeeStructure;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_message::VersionedMessage;
 use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
 
-const LAMPORTS_PER_SIGNATURE: u64 = 5000;
 const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
 
 /// Computes the priority fee from the transaction's compute budget instructions.
@@ -84,5 +84,8 @@ pub fn compute_gas_spend(transaction: &VersionedTransaction) -> anyhow::Result<u
     let n_signatures = (transaction.signatures.len() as u64)
         .saturating_add(get_number_precompile_signatures(transaction));
     let priority_fee = process_compute_budget_instructions(transaction)?;
-    Ok((n_signatures.saturating_mul(LAMPORTS_PER_SIGNATURE)).saturating_add(priority_fee))
+    Ok(
+        (n_signatures.saturating_mul(FeeStructure::default().lamports_per_signature))
+            .saturating_add(priority_fee),
+    )
 }

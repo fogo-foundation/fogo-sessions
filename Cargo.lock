@@ -1961,6 +1961,7 @@ dependencies = [
  "solana-compute-budget-interface",
  "solana-derivation-path",
  "solana-ed25519-program",
+ "solana-fee-structure",
  "solana-hash",
  "solana-keypair",
  "solana-message",
