@@ -1,4 +1,5 @@
 use crate::config_manager::config::Domain;
+use crate::constraint::transaction::TransactionToValidate;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
@@ -118,7 +119,7 @@ impl DomainState {
     #[tracing::instrument(skip_all, fields(specified_variation = variation_name.as_deref(), matched_variation))]
     pub async fn validate_transaction(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_>,
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
         variation_name: Option<String>,
@@ -202,7 +203,7 @@ impl DomainState {
 
     pub async fn validate_transaction_against_variation(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_>,
         tx_variation: &TransactionVariation,
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
@@ -365,9 +366,11 @@ async fn sponsor_and_send_handler(
             )
         })?;
 
+    let transaction_to_validate = TransactionToValidate::parse(&transaction)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     let matched_variation_name = match domain_state
         .validate_transaction(
-            &transaction,
+            &transaction_to_validate,
             &state.chain_index,
             &transaction_sponsor.pubkey(),
             variation,
@@ -384,11 +387,12 @@ async fn sponsor_and_send_handler(
             variation.name()
         }
         Err(e) => {
-            obs_validation(domain.clone(), None, e.0.to_string());
+            obs_validation(domain.clone(), None, "invalid".to_string());
             return Err(e.into());
         }
     }
     .to_owned();
+    let gas_spend = transaction_to_validate.gas_spend;
 
     transaction.signatures[0] = transaction_sponsor.sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
@@ -440,7 +444,7 @@ async fn sponsor_and_send_handler(
                 match fetch_transaction_cost_details(
                     &state.chain_index.rpc,
                     &signature_to_fetch,
-                    &transaction,
+                    gas_spend,
                     RetryConfig {
                         max_tries: 3,
                         sleep_ms: 2000,

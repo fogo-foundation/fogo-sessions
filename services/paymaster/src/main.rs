@@ -10,7 +10,6 @@ mod api;
 mod cli;
 mod config_manager;
 mod constraint;
-mod constraint_templates;
 mod db;
 mod metrics;
 mod pooled_http_sender;

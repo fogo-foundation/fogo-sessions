@@ -5,6 +5,7 @@ use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
     config_manager::config::{Config, Domain},
+    constraint::transaction::TransactionToValidate,
     constraint::{ContextualDomainKeys, TransactionVariation},
     rpc::ChainIndex,
 };
@@ -448,14 +449,18 @@ async fn get_matching_variations<'a>(
 
     let contextual_keys = contextual_keys_cache.get(&domain.domain).await?;
     for variation in domain.tx_variations.values() {
-        let matches = match variation {
-            TransactionVariation::V0(v0_variation) => {
-                v0_variation.validate_transaction(transaction).is_ok()
+        let matches = if let Ok(paymaster_transaction) = TransactionToValidate::parse(transaction) {
+            match variation {
+                TransactionVariation::V0(v0_variation) => v0_variation
+                    .validate_transaction(&paymaster_transaction)
+                    .is_ok(),
+                TransactionVariation::V1(v1_variation) => v1_variation
+                    .validate_transaction(&paymaster_transaction, &contextual_keys, chain_index)
+                    .await
+                    .is_ok(),
             }
-            TransactionVariation::V1(v1_variation) => v1_variation
-                .validate_transaction(transaction, &contextual_keys, chain_index)
-                .await
-                .is_ok(),
+        } else {
+            false
         };
 
         if matches {
