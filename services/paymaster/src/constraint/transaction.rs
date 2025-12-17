@@ -1,5 +1,5 @@
-use crate::constraint::NON_SUBSTANTIVE_PROGRAM_IDS;
 use crate::constraint::gas::compute_gas_spend;
+use crate::constraint::NON_SUBSTANTIVE_PROGRAM_IDS;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_message::VersionedMessage;
 use solana_signature::Signature;
@@ -29,7 +29,8 @@ impl<'a> TransactionToValidate<'a> {
                 .instructions()
                 .iter()
                 .filter(|instruction| {
-                    !NON_SUBSTANTIVE_PROGRAM_IDS.contains(instruction.program_id(transaction.message.static_account_keys()))
+                    !NON_SUBSTANTIVE_PROGRAM_IDS
+                        .contains(instruction.program_id(transaction.message.static_account_keys()))
                 })
                 .enumerate()
                 .map(|(index, instruction)| InstructionWithIndex { index, instruction })
