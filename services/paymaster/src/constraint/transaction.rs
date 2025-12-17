@@ -4,12 +4,11 @@ use solana_message::compiled_instruction::CompiledInstruction;
 use solana_message::VersionedMessage;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
-use std::collections::VecDeque;
 
 pub struct TransactionToValidate<'a> {
     pub message: &'a VersionedMessage,
     pub signatures: &'a [Signature],
-    pub substantive_instructions: VecDeque<InstructionWithIndex<'a>>,
+    pub substantive_instructions: Vec<InstructionWithIndex<'a>>,
     pub gas_spend: u64,
 }
 

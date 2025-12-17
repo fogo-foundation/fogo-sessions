@@ -117,8 +117,8 @@ impl VariationOrderedInstructionConstraints {
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut substantive_instructions = transaction.substantive_instructions.clone();
-        let mut instruction = substantive_instructions.pop_front();
+        let mut substantive_instructions_iterator = transaction.substantive_instructions.iter();
+        let mut instruction = substantive_instructions_iterator.next();
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
@@ -151,7 +151,7 @@ impl VariationOrderedInstructionConstraints {
 
             match constraint_validation_result {
                 Ok(_) => {
-                    instruction = substantive_instructions.pop_front();
+                    instruction = substantive_instructions_iterator.next();
                 }
                 Err(e) if constraint.required => {
                     return Err(e);
