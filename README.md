@@ -44,7 +44,7 @@ To jump straight to examples, go to [here](https://github.com/fogo-foundation/fo
 The Fogo Sessions repository requires the following toolchain versions:
 
 - `nodejs@22.21.1`
-- `pnpm@10.13.1`
+- `pnpm@10.25.0`
 - `rust@1.88.0`
 - `python@3.14.0`
 

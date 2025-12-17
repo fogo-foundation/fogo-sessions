@@ -26,6 +26,7 @@ import { NotionalAmount } from "./notional-amount.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
 import styles from "./withdraw-page.module.css";
+import { signWithWallet } from "../solana-wallet.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -171,7 +172,8 @@ const LoadedWithdrawForm = ({
             sessionPublicKey: sessionState.sessionPublicKey,
             sessionKey: sessionState.sessionKey,
             walletPublicKey: sessionState.walletPublicKey,
-            solanaWallet: sessionState.solanaWallet,
+            signMessage: (message) =>
+              signWithWallet(sessionState.solanaWallet, message),
             fromToken: USDC.chains[network].fogo,
             toToken: USDC.chains[network].solana,
             amount: stringToAmount(amount, USDC.decimals),

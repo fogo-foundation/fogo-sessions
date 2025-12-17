@@ -32,6 +32,7 @@ import { NotionalAmount } from "./notional-amount.js";
 import styles from "./send-token-page.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { TruncateKey } from "./truncate-key.js";
+import { signWithWallet } from "../solana-wallet.js";
 
 type Props = {
   icon?: string | undefined;
@@ -192,7 +193,7 @@ const LoadedSendTokenPage = ({
             context,
             walletPublicKey: sessionState.walletPublicKey,
             signMessage: (message) =>
-              sessionState.solanaWallet.signMessage(message),
+              signWithWallet(sessionState.solanaWallet, message),
             mint: tokenMint,
             amount: stringToAmount(amount, decimals),
             recipient: new PublicKey(recipient),
