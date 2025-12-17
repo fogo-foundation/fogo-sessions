@@ -4,7 +4,10 @@ use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_program::keccak;
-use solana_pubkey::Pubkey;
+use solana_pubkey::{ParsePubkeyError, Pubkey};
+use std::fmt::Display;
+use std::ops::Deref;
+use std::str::FromStr;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
@@ -175,11 +178,63 @@ impl VariationOrderedInstructionConstraints {
     }
 }
 
+const NON_SUBSTANTIVE_PROGRAM_IDS: [Pubkey; 1] = [solana_compute_budget_interface::id()];
+pub struct SubstantiveProgramId(Pubkey);
+
+impl Deref for SubstantiveProgramId {
+    type Target = Pubkey;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Display for SubstantiveProgramId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+pub enum ParseSubstantiveProgramIdError {
+    NonSubstantiveProgramId(Pubkey),
+    ParsePubkeyError(ParsePubkeyError),
+}
+
+impl From<ParsePubkeyError> for ParseSubstantiveProgramIdError {
+    fn from(error: ParsePubkeyError) -> Self {
+        ParseSubstantiveProgramIdError::ParsePubkeyError(error)
+    }
+}
+
+impl Display for ParseSubstantiveProgramIdError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParseSubstantiveProgramIdError::NonSubstantiveProgramId(pubkey) => f.write_str(
+                format!("The program ID {pubkey} is not allowed to be used in V1 constraints")
+                    .as_str(),
+            ),
+            ParseSubstantiveProgramIdError::ParsePubkeyError(error) => error.fmt(f),
+        }
+    }
+}
+
+impl FromStr for SubstantiveProgramId {
+    type Err = ParseSubstantiveProgramIdError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let pubkey = Pubkey::from_str(s)?;
+        if NON_SUBSTANTIVE_PROGRAM_IDS.contains(&pubkey) {
+            return Err(ParseSubstantiveProgramIdError::NonSubstantiveProgramId(
+                pubkey,
+            ));
+        }
+        Ok(SubstantiveProgramId(pubkey))
+    }
+}
+
 #[serde_as]
 #[derive(Serialize, Deserialize)]
 pub struct InstructionConstraint {
     #[serde_as(as = "DisplayFromStr")]
-    pub program: Pubkey,
+    pub program: SubstantiveProgramId,
     #[serde(default)]
     pub accounts: Vec<AccountConstraint>,
     #[serde(default)]
@@ -202,7 +257,7 @@ impl InstructionConstraint {
         let program_id = instruction_with_index
             .instruction
             .program_id(static_accounts);
-        if *program_id != self.program {
+        if program_id != self.program.deref() {
             return Err((
                 StatusCode::BAD_REQUEST,
                 format!(

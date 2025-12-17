@@ -1,3 +1,4 @@
+use crate::constraint::SubstantiveProgramId;
 use crate::constraint::{
     AccountConstraint, ContextualPubkey, DataConstraint, DataConstraintSpecification, DataType,
     DataValue, InstructionConstraint, TransactionVariation, VariationOrderedInstructionConstraints,
@@ -7,7 +8,7 @@ impl InstructionConstraint {
     /// The template for the constraint for the ed25519_program instruction used to verify a single intent signature.
     fn intent_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
-            program: solana_program::ed25519_program::id(),
+            program: SubstantiveProgramId(solana_program::ed25519_program::id()),
             accounts: vec![],
             data: vec![
                 // numSignatures = 1
@@ -72,7 +73,7 @@ impl InstructionConstraint {
     /// The template for the constraint for the StartSession instruction from the session manager program.
     fn start_session_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
-            program: fogo_sessions_sdk::session::SESSION_MANAGER_ID,
+            program: SubstantiveProgramId(fogo_sessions_sdk::session::SESSION_MANAGER_ID),
             accounts: vec![
                 AccountConstraint {
                     index: 0,
@@ -105,7 +106,7 @@ impl InstructionConstraint {
     /// The template for the constraint for the RevokeSession instruction from the session manager program.
     fn revoke_session_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
-            program: fogo_sessions_sdk::session::SESSION_MANAGER_ID,
+            program: SubstantiveProgramId(fogo_sessions_sdk::session::SESSION_MANAGER_ID),
             accounts: vec![AccountConstraint {
                 index: 0,
                 include: vec![ContextualPubkey::NonFeePayerSigner],
