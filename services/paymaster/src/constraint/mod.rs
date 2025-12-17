@@ -228,16 +228,20 @@ impl InstructionConstraint {
                 .take(signatures.len())
                 .cloned()
                 .collect::<Vec<_>>();
-            account_constraint.check_account(
-                &account_pubkey,
-                signers,
-                contextual_domain_keys,
-                instruction_with_index.index,
-            )?;
+            account_constraint
+                .check_account(
+                    &account_pubkey,
+                    signers,
+                    contextual_domain_keys,
+                    instruction_with_index.index,
+                )
+                .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
         }
 
         for data_constraint in &self.data {
-            data_constraint.check_data(instruction_with_index)?;
+            data_constraint
+                .check_data(instruction_with_index)
+                .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
         }
 
         Ok(())
@@ -260,7 +264,7 @@ impl AccountConstraint {
         signers: Vec<Pubkey>,
         contextual_domain_keys: &ContextualDomainKeys,
         instruction_index: usize,
-    ) -> Result<(), (StatusCode, String)> {
+    ) -> anyhow::Result<()> {
         // excludes are AND-gated: all excludes must be satisfied
         self.exclude.iter().try_for_each(|excluded| {
             excluded.matches_account(
@@ -287,12 +291,7 @@ impl AccountConstraint {
             });
 
             if !matches_any {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Instruction {instruction_index}: Account {account} does not match any include constraints",
-                    ),
-                ));
+                anyhow::bail!("Instruction {instruction_index}: Account {account} does not match any include constraints");
             }
         }
 
@@ -320,20 +319,17 @@ impl ContextualPubkey {
         contextual_domain_keys: &ContextualDomainKeys,
         expect_include: bool,
         instruction_index: usize,
-    ) -> Result<(), (StatusCode, String)> {
+    ) -> anyhow::Result<()> {
         match self {
             ContextualPubkey::Explicit { pubkey } => {
                 if expect_include == (account == pubkey) {
                     Ok(())
                 } else {
-                    Err((
-                        StatusCode::BAD_REQUEST,
-                        if expect_include {
-                            format!("Instruction {instruction_index}: Account {account} is not explicitly included")
-                        } else {
-                            format!("Instruction {instruction_index}: Account {account} is explicitly excluded")
-                        },
-                    ))
+                    Err(anyhow::anyhow!(if expect_include {
+                        format!("Instruction {instruction_index}: Account {account} is not explicitly included")
+                    } else {
+                        format!("Instruction {instruction_index}: Account {account} is explicitly excluded")
+                    },))
                 }
             }
 
@@ -341,14 +337,11 @@ impl ContextualPubkey {
                 if expect_include == (signers.iter().skip(1).any(|s| s == account)) {
                     Ok(())
                 } else {
-                    Err((
-                        StatusCode::BAD_REQUEST,
-                        if expect_include {
-                            format!("Instruction {instruction_index}: Account {account} is not a non-fee-payer signer")
-                        } else {
-                            format!("Instruction {instruction_index}: Account {account} should be excluded as a non-fee-payer signer")
-                        },
-                    ))
+                    Err(anyhow::anyhow!(if expect_include {
+                        format!("Instruction {instruction_index}: Account {account} is not a non-fee-payer signer")
+                    } else {
+                        format!("Instruction {instruction_index}: Account {account} should be excluded as a non-fee-payer signer")
+                    },))
                 }
             }
 
@@ -356,14 +349,11 @@ impl ContextualPubkey {
                 if expect_include == (*account == contextual_domain_keys.sponsor) {
                     Ok(())
                 } else {
-                    Err((
-                        StatusCode::BAD_REQUEST,
-                        if expect_include {
-                            format!("Instruction {instruction_index}: Account {account} is not the sponsor account")
-                        } else {
-                            format!("Instruction {instruction_index}: Account {account} should be excluded as the sponsor account")
-                        },
-                    ))
+                    Err(anyhow::anyhow!(if expect_include {
+                        format!("Instruction {instruction_index}: Account {account} is not the sponsor account")
+                    } else {
+                        format!("Instruction {instruction_index}: Account {account} should be excluded as the sponsor account")
+                    },))
                 }
             }
 
@@ -371,14 +361,11 @@ impl ContextualPubkey {
                 if expect_include == (*account == contextual_domain_keys.domain_registry) {
                     Ok(())
                 } else {
-                    Err((
-                        StatusCode::BAD_REQUEST,
-                        if expect_include {
-                            format!("Instruction {instruction_index}: Account {account} is not the domain registry account")
-                        } else {
-                            format!("Instruction {instruction_index}: Account {account} should be excluded as the domain registry account")
-                        },
-                    ))
+                    Err(anyhow::anyhow!(if expect_include {
+                        format!("Instruction {instruction_index}: Account {account} is not the domain registry account")
+                    } else {
+                        format!("Instruction {instruction_index}: Account {account} should be excluded as the domain registry account")
+                    },))
                 }
             }
         }
@@ -393,24 +380,18 @@ pub struct DataConstraint {
 }
 
 impl DataConstraint {
-    fn check_data(
-        &self,
-        instruction_with_index: &InstructionWithIndex<'_>,
-    ) -> Result<(), (StatusCode, String)> {
+    fn check_data(&self, instruction_with_index: &InstructionWithIndex<'_>) -> anyhow::Result<()> {
         let instruction_index = instruction_with_index.index;
         let data = &instruction_with_index.instruction.data;
         let length = self.data_type.byte_length();
         let end_byte = length + usize::from(self.start_byte);
         if end_byte > data.len() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
-                    self.start_byte,
-                    end_byte - 1,
-                    data.len()
-                ),
-            ));
+            anyhow::bail!(
+                "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
+                self.start_byte,
+                end_byte - 1,
+                data.len()
+            );
         }
 
         let mut data_to_analyze = &data[usize::from(self.start_byte)..end_byte];
@@ -419,52 +400,28 @@ impl DataConstraint {
             DataType::U8 => DataValue::U8(data_to_analyze[0]),
             DataType::U16 => {
                 let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Instruction {instruction_index}: Data constraint expects 2 bytes for U16, found {} bytes",
-                            data_to_analyze.len()
-                        ),
-                    )
+                    anyhow::anyhow!("Instruction {instruction_index}: Data constraint expects 2 bytes for U16, found {} bytes", data_to_analyze.len())
                 })?);
                 DataValue::U16(data_u16)
             }
 
             DataType::U32 => {
                 let data_u32 = u32::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Instruction {instruction_index}: Data constraint expects 4 bytes for U32, found {} bytes",
-                            data_to_analyze.len()
-                        ),
-                    )
+                    anyhow::anyhow!("Instruction {instruction_index}: Data constraint expects 4 bytes for U32, found {} bytes", data_to_analyze.len())
                 })?);
                 DataValue::U32(data_u32)
             }
 
             DataType::U64 => {
                 let data_u64 = u64::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Instruction {instruction_index}: Data constraint expects 8 bytes for U64, found {} bytes",
-                            data_to_analyze.len()
-                        ),
-                    )
+                    anyhow::anyhow!("Instruction {instruction_index}: Data constraint expects 8 bytes for U64, found {} bytes", data_to_analyze.len())
                 })?);
                 DataValue::U64(data_u64)
             }
 
             DataType::Pubkey => {
                 let data_pubkey = Pubkey::new_from_array(data_to_analyze.try_into().map_err(|_| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Instruction {instruction_index}: Data constraint expects 32 bytes for Pubkey, found {} bytes",
-                            data_to_analyze.len()
-                        ),
-                    )
+                    anyhow::anyhow!("Instruction {instruction_index}: Data constraint expects 32 bytes for Pubkey, found {} bytes", data_to_analyze.len())
                 })?);
                 DataValue::Pubkey(data_pubkey)
             }
@@ -473,13 +430,10 @@ impl DataConstraint {
                 length: expected_length,
             } => {
                 if data_to_analyze.len() != expected_length {
-                    return Err((
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Instruction {instruction_index}: Data constraint expects {expected_length} bytes for Bytes, found {} bytes",
-                            data_to_analyze.len()
-                        ),
-                    ));
+                    anyhow::bail!(
+                        "Instruction {instruction_index}: Data constraint expects {expected_length} bytes for Bytes, found {} bytes",
+                        data_to_analyze.len()
+                    );
                 }
                 let data_to_analyze_string = hex::encode(data_to_analyze);
                 DataValue::Bytes(data_to_analyze_string)
@@ -487,12 +441,7 @@ impl DataConstraint {
 
             DataType::NttSignedQuote => {
                 let signed_quote = SignedQuote::deserialize(&mut data_to_analyze).map_err(|e| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        format!(
-                            "Instruction {instruction_index}: Failed to deserialize NTT SignedQuote: {e}",
-                        ),
-                    )
+                    anyhow::anyhow!("Instruction {instruction_index}: Failed to deserialize NTT SignedQuote: {e}")
                 })?;
                 let recovered_quoter = recover_signer_pubkey(signed_quote)?;
                 DataValue::NttSignedQuoter(NttSignedQuoter(recovered_quoter))
@@ -501,11 +450,8 @@ impl DataConstraint {
 
         compare_primitive_data_types(data_to_analyze_deserialized, &self.constraint).map_err(
             |err| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Instruction {instruction_index}: Data constraint not satisfied: {err}"
-                    ),
+                anyhow::anyhow!(
+                    "Instruction {instruction_index}: Data constraint not satisfied: {err}"
                 )
             },
         )?;
@@ -514,37 +460,23 @@ impl DataConstraint {
     }
 }
 
-fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode, String)> {
-    let message_body = signed_quote.try_get_message_body().map_err(|e| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Failed to extract message from signed quote: {e}"),
-        )
-    })?;
+fn recover_signer_pubkey(signed_quote: SignedQuote) -> anyhow::Result<H160> {
+    let message_body = signed_quote
+        .try_get_message_body()
+        .map_err(|e| anyhow::anyhow!("Failed to extract message from signed quote: {e}"))?;
 
     let message = libsecp256k1::Message::parse(&keccak::hash(&message_body).0);
 
     let (signature, recovery_index) = signed_quote.try_get_signature_components().map_err(|e| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Failed to extract signature components from signed quote: {e}"),
-        )
+        anyhow::anyhow!("Failed to extract signature components from signed quote: {e}")
     })?;
     let sig = libsecp256k1::Signature::parse_standard_slice(signature)
-        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid signature: {e}")))?;
-    let recovery_id = libsecp256k1::RecoveryId::parse_rpc(recovery_index).map_err(|e| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Invalid recovery index in signature: {e}"),
-        )
-    })?;
+        .map_err(|e| anyhow::anyhow!("Invalid signature: {e}"))?;
+    let recovery_id = libsecp256k1::RecoveryId::parse_rpc(recovery_index)
+        .map_err(|e| anyhow::anyhow!("Invalid recovery index in signature: {e}"))?;
 
-    let secp_pubkey = libsecp256k1::recover(&message, &sig, &recovery_id).map_err(|e| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Failed to recover secp256k1 public key: {e}"),
-        )
-    })?;
+    let secp_pubkey = libsecp256k1::recover(&message, &sig, &recovery_id)
+        .map_err(|e| anyhow::anyhow!("Failed to recover secp256k1 public key: {e}"))?;
     let secp_pubkey_serialized = secp_pubkey.serialize();
     let pubkey_hashed = keccak::hash(
         secp_pubkey_serialized
@@ -559,10 +491,7 @@ fn recover_signer_pubkey(signed_quote: SignedQuote) -> Result<H160, (StatusCode,
         .expect("Slice of 20 bytes should convert to H160");
 
     if evm_address != signed_quote.header.quoter_address {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Recovered quoter address does not match stated quoter address".into(),
-        ));
+        anyhow::bail!("Recovered quoter address does not match stated quoter address");
     };
 
     Ok(evm_address)
