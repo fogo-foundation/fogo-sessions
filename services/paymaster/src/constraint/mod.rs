@@ -117,8 +117,7 @@ impl VariationOrderedInstructionConstraints {
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut substantive_instructions_iterator = transaction.substantive_instructions.iter();
-        let mut instruction = substantive_instructions_iterator.next();
+        let mut substantive_instructions_iterator = transaction.substantive_instructions.iter().peekable();
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
@@ -128,7 +127,7 @@ impl VariationOrderedInstructionConstraints {
         // the expected variation space and a desire to avoid complexity, we use this greedy approach.
         for (constraint_index, constraint) in self.instructions.iter().enumerate() {
             let constraint_validation_result = {
-                if let Some(instruction_with_index) = &instruction {
+                if let Some(instruction_with_index) = substantive_instructions_iterator.peek() {
                     constraint
                         .validate_instruction(
                             transaction,
@@ -151,7 +150,7 @@ impl VariationOrderedInstructionConstraints {
 
             match constraint_validation_result {
                 Ok(_) => {
-                    instruction = substantive_instructions_iterator.next();
+                    substantive_instructions_iterator.next();
                 }
                 Err(e) if constraint.required => {
                     return Err(e);
@@ -163,7 +162,7 @@ impl VariationOrderedInstructionConstraints {
         if let Some(InstructionWithIndex {
             index,
             instruction: _,
-        }) = instruction
+        }) = substantive_instructions_iterator.peek()
         {
             return Err((
                 StatusCode::BAD_REQUEST,
