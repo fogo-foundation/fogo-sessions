@@ -21,7 +21,7 @@ use tokio::time::timeout;
 
 use crate::{
     api::{ConfirmationResult, PubsubClientWithReconnect},
-    constraint::transaction::InstructionWithIndex,
+    constraint::transaction::{InstructionWithIndex, TransactionToValidate},
 };
 
 pub struct ChainIndex {
@@ -86,7 +86,7 @@ impl ChainIndex {
     /// Find the pubkey for the account at index `account_index_within_instruction` within the `instruction_with_index` in the given `transaction`.
     pub async fn resolve_instruction_account_pubkey(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_>,
         instruction_with_index: &InstructionWithIndex<'_>,
         account_index_within_instruction: usize,
     ) -> Result<Pubkey, (StatusCode, String)> {

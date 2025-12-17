@@ -5,7 +5,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_program::keccak;
 use solana_pubkey::Pubkey;
-use solana_transaction::versioned::VersionedTransaction;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
@@ -49,7 +48,7 @@ pub struct VariationProgramWhitelist {
 impl VariationProgramWhitelist {
     pub fn validate_transaction(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_>,
     ) -> Result<(), (StatusCode, String)> {
         for instruction in transaction.message.instructions() {
             let program_id = instruction.program_id(transaction.message.static_account_keys());
@@ -191,7 +190,7 @@ pub struct InstructionConstraint {
 impl InstructionConstraint {
     async fn validate_instruction(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_>,
         instruction_with_index: &InstructionWithIndex<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
         variation_name: &str,

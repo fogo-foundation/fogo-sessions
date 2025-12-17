@@ -1,21 +1,15 @@
 use crate::constraint::gas::compute_gas_spend;
 use solana_message::compiled_instruction::CompiledInstruction;
+use solana_message::VersionedMessage;
+use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::VecDeque;
-use std::ops::Deref;
 
 pub struct TransactionToValidate<'a> {
-    transaction: &'a VersionedTransaction,
+    pub message: &'a VersionedMessage,
+    pub signatures: &'a [Signature],
     pub substantive_instructions: VecDeque<InstructionWithIndex<'a>>,
     pub gas_spend: u64,
-}
-
-impl<'a> Deref for TransactionToValidate<'a> {
-    type Target = VersionedTransaction;
-
-    fn deref(&self) -> &Self::Target {
-        self.transaction
-    }
 }
 
 #[derive(Clone)]
@@ -27,7 +21,8 @@ pub struct InstructionWithIndex<'a> {
 impl<'a> TransactionToValidate<'a> {
     pub fn parse(transaction: &'a VersionedTransaction) -> anyhow::Result<Self> {
         Ok(Self {
-            transaction,
+            message: &transaction.message,
+            signatures: &transaction.signatures,
             substantive_instructions: transaction
                 .message
                 .instructions()
