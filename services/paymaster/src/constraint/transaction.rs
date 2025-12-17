@@ -26,7 +26,7 @@ pub struct InstructionWithIndex<'a> {
 }
 
 impl<'a> TransactionToValidate<'a> {
-    pub fn parse(transaction: &'a VersionedTransaction) -> Result<Self, (StatusCode, String)> {
+    pub fn parse(transaction: &'a VersionedTransaction) -> anyhow::Result<Self> {
         Ok(Self {
             transaction,
             substantive_instructions: transaction

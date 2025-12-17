@@ -1,4 +1,3 @@
-use axum::http::StatusCode;
 use borsh::BorshDeserialize;
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_message::compiled_instruction::CompiledInstruction;
@@ -16,7 +15,7 @@ const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
 /// If compute budget instructions have invalid data, the validation will fail.
 fn process_compute_budget_instructions(
     transaction: &VersionedTransaction,
-) -> Result<u64, (StatusCode, String)> {
+) -> anyhow::Result<u64> {
     let mut cu_limit = None;
     let mut micro_lamports_per_cu = None;
 
@@ -36,29 +35,26 @@ fn process_compute_budget_instructions(
             match cu_ix {
                 ComputeBudgetInstruction::SetComputeUnitLimit(units) => {
                     if cu_limit.is_some() {
-                        return Err((
-                            StatusCode::BAD_REQUEST,
-                            "Multiple SetComputeUnitLimit instructions found".to_string(),
-                        ));
+                        anyhow::bail!(
+                            "Multiple SetComputeUnitLimit instructions found"
+                        );
                     }
                     cu_limit = Some(u64::from(units));
                 }
                 ComputeBudgetInstruction::SetComputeUnitPrice(micro_lamports) => {
                     if micro_lamports_per_cu.is_some() {
-                        return Err((
-                            StatusCode::BAD_REQUEST,
-                            "Multiple SetComputeUnitPrice instructions found".to_string(),
-                        ));
+                        anyhow::bail!(
+                            "Multiple SetComputeUnitPrice instructions found",
+                        );
                     }
                     micro_lamports_per_cu = Some(micro_lamports);
                 }
                 _ => {}
             }
         } else {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "Invalid compute budget instruction data".to_string(),
-            ));
+            anyhow::bail!(
+                "Invalid compute budget instruction data"
+            );
         }
     }
 
@@ -92,7 +88,7 @@ fn get_number_precompile_signatures(transaction: &VersionedTransaction) -> u64 {
 }
 
 /// Computes the gas spend (in lamports) for a transaction based on signatures and priority fee.
-pub fn compute_gas_spent(transaction: &VersionedTransaction) -> Result<u64, (StatusCode, String)> {
+pub fn compute_gas_spent(transaction: &VersionedTransaction) -> anyhow::Result<u64> {
     let n_signatures = (transaction.signatures.len() as u64)
         .saturating_add(get_number_precompile_signatures(transaction));
     let priority_fee = process_compute_budget_instructions(transaction)?;
