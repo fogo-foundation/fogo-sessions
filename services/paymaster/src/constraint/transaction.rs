@@ -1,5 +1,4 @@
 use crate::constraint::gas::compute_gas_spent;
-use reqwest::StatusCode;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_transaction::versioned::VersionedTransaction;
 use std::collections::VecDeque;
