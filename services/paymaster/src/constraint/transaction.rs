@@ -33,7 +33,7 @@ impl<'a> TransactionToValidate<'a> {
                         .contains(instruction.program_id(transaction.message.static_account_keys()))
                 })
                 .enumerate()
-                .map(|(index, instruction)| InstructionWithIndex { index, instruction })
+                .map(|(index, instruction)| InstructionWithIndex { index, instruction }) // We store the indexes of instructions in the original vector so we can return them in the error messages if a tranasaction fails validation
                 .collect(),
             gas_spend: compute_gas_spend(transaction)?,
         })

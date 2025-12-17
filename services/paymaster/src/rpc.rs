@@ -87,13 +87,12 @@ impl ChainIndex {
     pub async fn resolve_instruction_account_pubkey(
         &self,
         transaction: &TransactionToValidate<'_>,
-        instruction_with_index: &InstructionWithIndex<'_>,
-        account_index_within_instruction: usize,
-    ) -> Result<Pubkey, (StatusCode, String)> {
-        let InstructionWithIndex {
+        InstructionWithIndex {
             index: instruction_index,
             instruction,
-        } = &instruction_with_index;
+        }: &InstructionWithIndex<'_>,
+        account_index_within_instruction: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
         let account_index_within_transaction = usize::from(*instruction
             .accounts
             .get(account_index_within_instruction)

@@ -434,21 +434,25 @@ pub struct DataConstraint {
 }
 
 impl DataConstraint {
-    fn check_data(&self, instruction_with_index: &InstructionWithIndex<'_>) -> anyhow::Result<()> {
-        let instruction_index = instruction_with_index.index;
-        let data = &instruction_with_index.instruction.data;
+    fn check_data(
+        &self,
+        InstructionWithIndex {
+            index: instruction_index,
+            instruction,
+        }: &InstructionWithIndex<'_>,
+    ) -> anyhow::Result<()> {
         let length = self.data_type.byte_length();
         let end_byte = length + usize::from(self.start_byte);
-        if end_byte > data.len() {
+        if end_byte > instruction.data.len() {
             anyhow::bail!(
                 "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
                 self.start_byte,
                 end_byte - 1,
-                data.len()
+                instruction.data.len()
             );
         }
 
-        let mut data_to_analyze = &data[usize::from(self.start_byte)..end_byte];
+        let mut data_to_analyze = &instruction.data[usize::from(self.start_byte)..end_byte];
         let data_to_analyze_deserialized = match self.data_type {
             DataType::Bool => DataValue::Bool(data_to_analyze[0] != 0),
             DataType::U8 => DataValue::U8(data_to_analyze[0]),
