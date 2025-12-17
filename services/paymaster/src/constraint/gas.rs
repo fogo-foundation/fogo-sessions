@@ -48,7 +48,7 @@ fn process_compute_budget_instructions(transaction: &VersionedTransaction) -> an
                 ComputeBudgetInstruction::RequestHeapFrame(_) => {
                     if request_heap_frame {
                         anyhow::bail!("Multiple RequestHeapFrame instructions found");
-                    }   
+                    }
                     request_heap_frame = true;
                 }
                 ComputeBudgetInstruction::SetLoadedAccountsDataSizeLimit(_) => {
@@ -56,7 +56,7 @@ fn process_compute_budget_instructions(transaction: &VersionedTransaction) -> an
                         anyhow::bail!("Multiple SetLoadedAccountsDataSizeLimit instructions found");
                     }
                     set_loaded_accounts_data_size_limit = true;
-                },
+                }
                 ComputeBudgetInstruction::Unused => {
                     anyhow::bail!("Unused compute budget instruction found");
                 }
