@@ -129,7 +129,7 @@ impl From<Message> for Vec<u8> {
         match message {
             Message::Raw(message) => message,
             Message::LegacyOffchainMessage(message) => message.get_message().to_vec(),
-            Message::OffchainMessage(message) => message.into(),
+            Message::OffchainMessage(message) => message.get_message().as_bytes().to_owned(),
         }
     }
 }

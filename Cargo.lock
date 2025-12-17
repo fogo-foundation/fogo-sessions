@@ -5701,7 +5701,6 @@ dependencies = [
  "nom 8.0.0",
  "solana-offchain-message",
  "solana-program",
- "solana-pubkey",
 ]
 
 [[package]]

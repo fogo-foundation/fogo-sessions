@@ -1,6 +1,6 @@
 use borsh::BorshDeserialize;
 use itertools::Itertools;
-use solana_pubkey::Pubkey;
+use solana_program::pubkey::Pubkey;
 use std::{
     hash::Hash,
     str::{from_utf8, Utf8Error},
@@ -16,20 +16,20 @@ pub enum OffchainMessage {
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct OffchainMessageV0 {
-    application_domain: String,
+    application_domain: [u8; 32],
     signers: Vec<Pubkey>,
-    message: Vec<u8>,
+    message: String,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct OffchainMessageV1 {
     signers: Vec<Pubkey>,
-    message: Vec<u8>,
+    message: String,
 }
 
-impl From<OffchainMessage> for Vec<u8> {
-    fn from(message: OffchainMessage) -> Self {
-        match message {
+impl OffchainMessage {
+    pub fn get_message(&self) -> &String {
+        match self {
             OffchainMessage::V0(OffchainMessageV0 { message, .. }) => message,
             OffchainMessage::V1(OffchainMessageV1 { message, .. }) => message,
         }
@@ -91,14 +91,10 @@ impl TryFrom<OffchainMessageHeaderV0> for OffchainMessageV0 {
         } else if message.len() > max_message_len(message_format) {
             Err(MessageDeserializeError::MessageTooLong)
         } else {
-            let application_domain = from_utf8(&application_domain)
-                .map_err(MessageDeserializeError::InvalidApplicationDomain)?
-                .trim()
-                .to_owned();
             Ok(Self {
                 application_domain,
                 signers,
-                message,
+                message: from_utf8(&message)?.to_string(),
             })
         }
     }
@@ -126,22 +122,17 @@ impl TryFrom<OffchainMessageHeaderV1> for OffchainMessageV1 {
         // See constraints in https://github.com/solana-foundation/SRFCs/discussions/3
         if signers.is_empty() {
             Err(MessageDeserializeError::NoSigners)
-        } else if !is_sorted_lexicographically(&signers) {
+        } else if !signers.is_sorted() {
             Err(MessageDeserializeError::SignersNotSorted)
         } else if contains_duplicates(&signers) {
             Err(MessageDeserializeError::DuplicateSigners)
         } else {
-            Ok(Self { signers, message })
+            Ok(Self {
+                signers,
+                message: from_utf8(&message)?.to_string(),
+            })
         }
     }
-}
-
-fn is_sorted_lexicographically<T: ToString>(slice: &[T]) -> bool {
-    slice
-        .iter()
-        .map(|item| item.to_string())
-        .collect::<Vec<_>>()
-        .is_sorted()
 }
 
 fn contains_duplicates<T: Eq + Hash>(slice: &[T]) -> bool {
@@ -154,12 +145,19 @@ pub enum MessageDeserializeError {
     #[allow(dead_code)]
     IncorrectMessageFormat(std::io::Error),
     #[allow(dead_code)]
-    InvalidApplicationDomain(Utf8Error),
     MessageContainsNonPrintableAscii,
+    #[allow(dead_code)]
+    MessageNotUtf8(Utf8Error),
     MessageTooLong,
     NoSigners,
     SignersNotSorted,
     DuplicateSigners,
+}
+
+impl From<Utf8Error> for MessageDeserializeError {
+    fn from(err: Utf8Error) -> Self {
+        Self::MessageNotUtf8(err)
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, BorshDeserialize)]
@@ -227,7 +225,7 @@ enum MessageFormat {
 mod tests {
     mod v0 {
         use super::super::*;
-        use solana_pubkey::pubkey;
+        use solana_program::pubkey::pubkey;
 
         #[test]
         fn test_valid() {
@@ -256,13 +254,16 @@ mod tests {
                 )
                 .unwrap(),
                 OffchainMessage::V0(OffchainMessageV0 {
-                    application_domain: String::from("foobar"),
+                    application_domain: String::from("foobar                          ")
+                        .into_bytes()
+                        .try_into()
+                        .unwrap(),
                     signers: vec![
                         pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm"),
                         pubkey!("865UEUDXB7h2XcPtnkpGS2DPhe9Y58r6RFCAhG4UE1iN"),
                         pubkey!("Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ")
                     ],
-                    message: b"foobarbaz".to_vec()
+                    message: String::from("foobarbaz")
                 })
             )
         }
@@ -288,34 +289,6 @@ mod tests {
                 )
                 .unwrap_err(),
                 MessageDeserializeError::InvalidSigningDomain
-            ))
-        }
-
-        #[test]
-        fn test_invalid_application_domain() {
-            assert!(matches!(
-                OffchainMessage::try_from(
-                    [
-                        b"\xffsolana offchain".to_vec(),
-                        vec![0],
-                        [
-                            0, 159, 146, 150, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                        ]
-                        .to_vec(),
-                        vec![1],
-                        vec![1],
-                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm")
-                            .to_bytes()
-                            .to_vec(),
-                        9u16.to_le_bytes().to_vec(),
-                        b"foobarbaz".to_vec()
-                    ]
-                    .concat()
-                    .as_ref()
-                )
-                .unwrap_err(),
-                MessageDeserializeError::InvalidApplicationDomain(_)
             ))
         }
 
@@ -370,7 +343,7 @@ mod tests {
 
     mod v1 {
         use super::super::*;
-        use solana_pubkey::pubkey;
+        use solana_program::pubkey::pubkey;
 
         #[test]
         fn test_valid() {
@@ -380,13 +353,13 @@ mod tests {
                         b"\xffsolana offchain".to_vec(),
                         vec![1],
                         vec![3],
+                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm")
+                            .to_bytes()
+                            .to_vec(),
                         pubkey!("865UEUDXB7h2XcPtnkpGS2DPhe9Y58r6RFCAhG4UE1iN")
                             .to_bytes()
                             .to_vec(),
                         pubkey!("Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ")
-                            .to_bytes()
-                            .to_vec(),
-                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm")
                             .to_bytes()
                             .to_vec(),
                         b"foobarbaz".to_vec()
@@ -397,11 +370,11 @@ mod tests {
                 .unwrap(),
                 OffchainMessage::V1(OffchainMessageV1 {
                     signers: vec![
+                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm"),
                         pubkey!("865UEUDXB7h2XcPtnkpGS2DPhe9Y58r6RFCAhG4UE1iN"),
                         pubkey!("Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ"),
-                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm"),
                     ],
-                    message: b"foobarbaz".to_vec()
+                    message: String::from("foobarbaz")
                 })
             )
         }
@@ -453,10 +426,10 @@ mod tests {
                         b"\xffsolana offchain".to_vec(),
                         vec![1],
                         vec![3],
-                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm")
+                        pubkey!("865UEUDXB7h2XcPtnkpGS2DPhe9Y58r6RFCAhG4UE1iN")
                             .to_bytes()
                             .to_vec(),
-                        pubkey!("865UEUDXB7h2XcPtnkpGS2DPhe9Y58r6RFCAhG4UE1iN")
+                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm")
                             .to_bytes()
                             .to_vec(),
                         pubkey!("Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ")
@@ -480,13 +453,13 @@ mod tests {
                         b"\xffsolana offchain".to_vec(),
                         vec![1],
                         vec![3],
+                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm")
+                            .to_bytes()
+                            .to_vec(),
+                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm")
+                            .to_bytes()
+                            .to_vec(),
                         pubkey!("Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ")
-                            .to_bytes()
-                            .to_vec(),
-                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm")
-                            .to_bytes()
-                            .to_vec(),
-                        pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm")
                             .to_bytes()
                             .to_vec(),
                         b"foobarbaz".to_vec()

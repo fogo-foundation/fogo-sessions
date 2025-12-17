@@ -16,4 +16,3 @@ itertools.workspace = true
 nom = { workspace = true }
 solana-offchain-message = { workspace = true }
 solana-program = { workspace = true }
-solana-pubkey.workspace = true
