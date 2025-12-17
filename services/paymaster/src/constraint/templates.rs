@@ -5,7 +5,7 @@ use crate::constraint::{
 
 impl InstructionConstraint {
     /// The template for the constraint for the ed25519_program instruction used to verify a single intent signature.
-    pub fn intent_instruction_constraint() -> InstructionConstraint {
+    fn intent_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: solana_program::ed25519_program::id(),
             accounts: vec![],
@@ -70,7 +70,7 @@ impl InstructionConstraint {
     }
 
     /// The template for the constraint for the StartSession instruction from the session manager program.
-    pub fn start_session_instruction_constraint() -> InstructionConstraint {
+    fn start_session_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: fogo_sessions_sdk::session::SESSION_MANAGER_ID,
             accounts: vec![
@@ -103,7 +103,7 @@ impl InstructionConstraint {
     }
 
     /// The template for the constraint for the RevokeSession instruction from the session manager program.
-    pub fn revoke_session_instruction_constraint() -> InstructionConstraint {
+    fn revoke_session_instruction_constraint() -> InstructionConstraint {
         InstructionConstraint {
             program: fogo_sessions_sdk::session::SESSION_MANAGER_ID,
             accounts: vec![AccountConstraint {

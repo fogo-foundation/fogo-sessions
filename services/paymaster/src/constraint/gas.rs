@@ -7,14 +7,14 @@ use solana_pubkey::Pubkey;
 use solana_sdk_ids::{ed25519_program, secp256k1_program, secp256r1_program};
 use solana_transaction::versioned::VersionedTransaction;
 
-pub const LAMPORTS_PER_SIGNATURE: u64 = 5000;
-pub const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
+const LAMPORTS_PER_SIGNATURE: u64 = 5000;
+const DEFAULT_COMPUTE_UNIT_LIMIT: u64 = 200_000;
 
 /// Computes the priority fee from the transaction's compute budget instructions.
 /// Extracts the compute unit price and limit from the instructions. Uses default values if not set.
 /// If multiple compute budget instructions are present, the validation will fail.
 /// If compute budget instructions have invalid data, the validation will fail.
-pub fn process_compute_budget_instructions(
+fn process_compute_budget_instructions(
     transaction: &VersionedTransaction,
 ) -> Result<u64, (StatusCode, String)> {
     let mut cu_limit = None;
@@ -70,7 +70,7 @@ pub fn process_compute_budget_instructions(
 }
 
 /// The Solana precompile programs that verify signatures.
-pub const PRECOMPILE_SIGNATURE_PROGRAMS: &[Pubkey] = &[
+const PRECOMPILE_SIGNATURE_PROGRAMS: &[Pubkey] = &[
     ed25519_program::ID,
     secp256k1_program::ID,
     secp256r1_program::ID,
@@ -78,7 +78,7 @@ pub const PRECOMPILE_SIGNATURE_PROGRAMS: &[Pubkey] = &[
 
 /// Counts the number of signatures verified by precompile programs in the transaction.
 /// Based on core solana fee calc logic: https://github.com/dourolabs/agave/blob/cb32984a9b0d5c2c6f7775bed39b66d3a22e3c46/fee/src/lib.rs#L65-L83
-pub fn get_number_precompile_signatures(transaction: &VersionedTransaction) -> u64 {
+fn get_number_precompile_signatures(transaction: &VersionedTransaction) -> u64 {
     transaction
         .message
         .instructions()

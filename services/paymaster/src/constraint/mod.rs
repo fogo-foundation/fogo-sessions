@@ -109,7 +109,7 @@ impl VariationOrderedInstructionConstraints {
         Ok(())
     }
 
-    pub async fn validate_instruction_constraints(
+    async fn validate_instruction_constraints(
         &self,
         transaction: &TransactionToValidate<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
@@ -189,7 +189,7 @@ pub struct InstructionConstraint {
 }
 
 impl InstructionConstraint {
-    pub async fn validate_instruction(
+    async fn validate_instruction(
         &self,
         transaction: &VersionedTransaction,
         instruction_with_index: &InstructionWithIndex<'_>,
@@ -254,7 +254,7 @@ pub struct AccountConstraint {
 }
 
 impl AccountConstraint {
-    pub fn check_account(
+    fn check_account(
         &self,
         account: &Pubkey,
         signers: Vec<Pubkey>,
@@ -313,7 +313,7 @@ pub enum ContextualPubkey {
 }
 
 impl ContextualPubkey {
-    pub fn matches_account(
+    fn matches_account(
         &self,
         account: &Pubkey,
         signers: &[Pubkey],
@@ -393,7 +393,7 @@ pub struct DataConstraint {
 }
 
 impl DataConstraint {
-    pub fn check_data(
+    fn check_data(
         &self,
         instruction_with_index: &InstructionWithIndex<'_>,
     ) -> Result<(), (StatusCode, String)> {
@@ -584,7 +584,7 @@ pub enum DataType {
 }
 
 impl DataType {
-    pub fn byte_length(&self) -> usize {
+    fn byte_length(&self) -> usize {
         match self {
             DataType::U8 => 1,
             DataType::U16 => 2,
@@ -650,7 +650,7 @@ pub enum DataConstraintSpecification {
     Neq(Vec<DataValue>),
 }
 
-pub fn compare_primitive_data_types(
+fn compare_primitive_data_types(
     a: DataValue,
     constraint: &DataConstraintSpecification,
 ) -> Result<(), String> {

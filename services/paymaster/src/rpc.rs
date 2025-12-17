@@ -357,7 +357,7 @@ pub async fn send_and_confirm_transaction_ftl(
     Ok(ConfirmationResultInternal::Success { signature })
 }
 
-pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
+const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[tracing::instrument(
     skip_all,
