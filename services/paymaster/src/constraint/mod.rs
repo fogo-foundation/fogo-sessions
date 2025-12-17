@@ -117,7 +117,8 @@ impl VariationOrderedInstructionConstraints {
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
-        let mut substantive_instructions_iterator = transaction.substantive_instructions.iter().peekable();
+        let mut substantive_instructions_iterator =
+            transaction.substantive_instructions.iter().peekable();
 
         // Note: this validation algorithm is technically incorrect, because of optional constraints.
         // E.g. instruction i might match against both constraint j and constraint j+1; if constraint j
