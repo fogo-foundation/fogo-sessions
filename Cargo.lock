@@ -1993,7 +1993,7 @@ dependencies = [
 
 [[package]]
 name = "fogo-sessions-sdk"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
@@ -2769,6 +2769,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "chain-id",
+ "fogo-sessions-sdk",
  "hex",
  "indoc",
  "litesvm",

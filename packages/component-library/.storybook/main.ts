@@ -76,8 +76,12 @@ const config = {
   ],
 
   webpackFinal: (config) => {
-    // Allow Storybook to load SCSS when components import CSS (when a matching
-    // .scss file exists). This avoids having to update imports in source.
+    // Note that the logic below is a workaround to be able to run and build storybook with the components from the /src directory.
+    // there are 2 particular cases
+    // 1. we are importing the styles with .css extension, but the component has a matching .scss file in /src
+    //  -> we need to replace the .css extension with .scss extension
+    // 2. we are importing the components with .js extension, but the component has a matching .tsx or .ts file in /src
+    //  -> we need to replace the .js extension with .tsx or .ts extension
     config.plugins ??= [];
     config.plugins.push(
       new webpack.NormalModuleReplacementPlugin(/\.css$/i, (resource) => {
@@ -86,6 +90,20 @@ const config = {
         const candidate = resource.request.replace(/\.css$/i, ".scss");
         const candidateAbs = path.resolve(resource.context, candidate);
         if (fs.existsSync(candidateAbs)) resource.request = candidate;
+      }),
+      new webpack.NormalModuleReplacementPlugin(/\.js$/i, (resource) => {
+        if (!resource.request.endsWith(".js")) return;
+
+        // .tsx first (most common), then .ts
+        const candidates = [".tsx", ".ts"];
+        for (const ext of candidates) {
+          const candidate = resource.request.replace(/\.js$/i, ext);
+          const candidateAbs = path.resolve(resource.context, candidate);
+          if (fs.existsSync(candidateAbs)) {
+            resource.request = candidate;
+            return;
+          }
+        }
       }),
     );
 

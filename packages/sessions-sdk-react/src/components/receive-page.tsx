@@ -3,7 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
-import { CopyButton } from "./copy-button.js";
+import { CopyButton } from "./component-library/CopyButton/index.js";
 import styles from "./receive-page.module.css";
 
 type Props = {

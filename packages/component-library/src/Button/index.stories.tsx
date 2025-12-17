@@ -4,6 +4,9 @@ import { Button as ButtonComponent } from "./index.jsx";
 
 const meta = {
   component: ButtonComponent,
+  globals: {
+    backgrounds: { value: "dark" },
+  },
   argTypes: {
     children: {
       control: "text",

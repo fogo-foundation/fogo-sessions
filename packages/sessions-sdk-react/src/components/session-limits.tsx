@@ -20,7 +20,7 @@ import {
 import { stringToAmount, amountToString } from "../amount-to-string.js";
 import type { WalletConnectedSessionState } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
-import { TextField } from "./field.js";
+import { TextField } from "./component-library/TextField/index.js";
 import styles from "./session-limits.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { useSessionContext } from "../hooks/use-session.js";

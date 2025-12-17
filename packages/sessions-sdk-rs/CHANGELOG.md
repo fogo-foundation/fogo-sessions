@@ -1,3 +1,9 @@
+## 0.7.4 (2025-12-16)
+
+### Fixes
+
+- Add intent transfer setter address to the sdk
+
 ## 0.7.3 (2025-12-15)
 
 ### Fixes
