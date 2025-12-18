@@ -21,6 +21,7 @@ catalog:
   "@metaplex-foundation/umi": ^1.2.0
   "@metaplex-foundation/umi-bundle-defaults": ^1.2.0
   "@metaplex-foundation/umi-web3js-adapters": ^1.4.1
+  "@neondatabase/serverless": ^1.0.2
   "@next/third-parties": ^16.0.7
   "@noble/hashes": ^1.8.0
   "@phosphor-icons/react": ^2.1.10
@@ -78,7 +79,6 @@ catalog:
   modern-normalize: ^3.0.1
   motion: ^12.23.16
   next: ^16.0.10
-  pg: ^8.16.3
   pino: ^9.7.0
   pino-pretty: ^13.0.0
   postcss: ^8.5.1

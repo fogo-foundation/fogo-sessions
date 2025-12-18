@@ -9,13 +9,11 @@ export const Base58Pubkey = z
 const u16 = z.number().int().min(0).max(65_535);
 const u64 = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 
-const TimeStr = z.preprocess((val) => {
-  if (val instanceof Date) return val;
-  if (typeof val === "string" || typeof val === "number") {
-    return new Date(val);
-  }
-  return val; // will prob fail against z.date() below
-}, z.date());
+const TimeStr = z.preprocess(
+  (val) =>
+    typeof val === "string" || typeof val === "number" ? new Date(val) : val,
+  z.date(),
+);
 
 export const PrimitiveDataValueSchema = z.union([
   z.object({ U8: z.number().int().min(0).max(255) }),
@@ -31,15 +29,9 @@ export const PrimitiveDataValueSchema = z.union([
 ]);
 
 export const PrimitiveDataTypeSchema = z.union([
-  z.literal("U8"),
-  z.literal("U16"),
-  z.literal("U32"),
-  z.literal("U64"),
-  z.literal("Bool"),
-  z.literal("Pubkey"),
+  z.enum(["U8", "U16", "U32", "U64", "Bool", "pubkey"]),
   z.object({ Bytes: z.object({ length: z.number().int().min(0) }) }),
 ]);
-
 export const DataConstraintSpecificationSchema = z.union([
   z.object({ LessThan: PrimitiveDataValueSchema }),
   z.object({ GreaterThan: PrimitiveDataValueSchema }),

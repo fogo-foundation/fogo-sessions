@@ -1,19 +1,19 @@
 "use client";
+import { StateType } from "@fogo/component-library/useData";
 import { SessionButton } from "@fogo/sessions-sdk-react";
 
-import { useUserData } from "../user-data-context";
+import { useUserData } from "../../client/paymaster";
 
 export const Home = () => {
-  const { userData, isLoading, error, isUserNotFound, refetch } = useUserData();
+  const userData = useUserData();
   return (
     <div>
       <h1>Home</h1>
       <SessionButton />
-      {userData && <pre>{JSON.stringify(userData, undefined, 2)}</pre>}
-      {isLoading && <div>Loading...</div>}
-      {error && <div>Error: {error.message}</div>}
-      {isUserNotFound && <div>User not found</div>}
-      {userData && <button onClick={() => void refetch()}>Refetch</button>}
+      {userData.type === StateType.Loading && <div>Loading...</div>}
+      {userData.type === StateType.Loaded && (
+        <pre>{JSON.stringify(userData.data, undefined, 2)}</pre>
+      )}
     </div>
   );
 };
