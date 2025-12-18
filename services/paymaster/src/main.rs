@@ -61,24 +61,13 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
 
     db::pool::init_db_connection(&opts.db_url).await?;
     /* TODO Revert this once we have a good way of modifying the config from the DB. */
-    let mut config_db =
-        config_manager::load_config::load_db_config(opts.network_environment).await?;
+    // let mut config =
+    //     config_manager::load_config::load_db_config(opts.network_environment).await?;
     let mut config: Config = config::Config::builder()
         .add_source(config::File::with_name(&opts.config_file))
         .build()?
         .try_deserialize()?;
     config.assign_defaults()?;
-
-    config_db.assign_defaults()?;
-    // print json length for both
-    println!(
-        "config json length: {}",
-        serde_json::to_string(&config).unwrap().len()
-    );
-    println!(
-        "config_db json length: {}",
-        serde_json::to_string(&config_db).unwrap().len()
-    );
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
