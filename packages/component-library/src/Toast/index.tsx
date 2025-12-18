@@ -11,7 +11,7 @@ import {
   UNSTABLE_ToastQueue as ToastQueue,
 } from "react-aria-components";
 
-import styles from "./index.module.css";
+import { classes } from "./index.styles.js";
 import { Button } from "../Button/index.js";
 
 const ONE_SECOND_IN_MS = 1000;
@@ -22,19 +22,19 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ToastContext value={toastQueue}>
       {children}
-      <ToastRegion className={styles.toastRegion ?? ""} queue={toastQueue}>
+      <ToastRegion className={classes.toastRegion} queue={toastQueue}>
         {({ toast }) => (
           <ReactAriaToast
-            className={styles.toast ?? ""}
+            className={classes.toast}
             toast={toast}
             data-variant={TOAST_TYPE_TO_VARIANT[toast.content.type]}
           >
-            <ToastContent className={styles.toastContent}>
-              <Text slot="title" className={styles.title}>
+            <ToastContent className={classes.toastContent}>
+              <Text slot="title" className={classes.title}>
                 {toast.content.title}
               </Text>
               {toast.content.description && (
-                <Text slot="description" className={styles.description}>
+                <Text slot="description" className={classes.description}>
                   {toast.content.description}
                 </Text>
               )}
@@ -43,7 +43,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
               slot="close"
               variant="ghost"
               size="sm"
-              className={styles.dismissButton ?? ""}
+              className={classes.dismissButton}
             >
               <XIcon size={16} />
             </Button>

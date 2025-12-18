@@ -1,3 +1,5 @@
+import type { SimpleStyleRules } from "simplestyle-js";
+
 type HexColor = `#${string}`;
 
 function assertKey<
@@ -574,7 +576,7 @@ const srOnlyStyles = {
 function textStyles(
   size: FontSizeKey = "base",
   weight: FontWeightKey = "normal",
-) {
+): SimpleStyleRules["key"] {
   return {
     fontSize: getFontSize(size),
     fontStyle: "normal",

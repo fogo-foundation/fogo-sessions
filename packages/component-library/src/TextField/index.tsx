@@ -11,7 +11,7 @@ import {
   Group,
 } from "react-aria-components";
 
-import styles from "./index.module.css";
+import { classes } from "./index.styles.js";
 
 export const TextField = ({
   label,
@@ -32,38 +32,38 @@ export const TextField = ({
   double?: boolean | undefined;
 }) => (
   <TextFieldImpl
-    className={clsx(styles.textField, className)}
+    className={clsx(classes.textField, className)}
     data-double={props.double ? "" : undefined}
     data-pending={isPending ? "" : undefined}
     isDisabled={isPending ?? props.isDisabled ?? false}
     {...props}
   >
-    <div className={clsx(styles.labelLine, labelLineClassName)}>
-      {label && <Label className={styles.label ?? ""}>{label}</Label>}
-      {labelExtra && <div className={styles.labelExtra}>{labelExtra}</div>}
+    <div className={clsx(classes.labelLine, labelLineClassName)}>
+      {label && <Label className={classes.label}>{label}</Label>}
+      {labelExtra && <div className={classes.labelExtra}>{labelExtra}</div>}
     </div>
-    <Group className={clsx(styles.inputGroup, inputGroupClassName)}>
+    <Group className={clsx(classes.inputGroup, inputGroupClassName)}>
       {props.double ? (
         <TextArea
           data-1p-ignore
           placeholder={placeholder}
-          className={styles.input ?? ""}
+          className={classes.input}
         />
       ) : (
         <Input
           data-1p-ignore
           placeholder={placeholder}
-          className={styles.input ?? ""}
+          className={classes.input}
         />
       )}
-      <FieldError className={styles.error ?? ""}>
+      <FieldError className={classes.error}>
         {({ defaultChildren }) => (
           <>
             <svg
               width={12}
               height={12}
               viewBox="0 0 12 12"
-              className={styles.overlayArrow}
+              className={classes.overlayArrow}
             >
               <path d="M0 0 L6 6 L12 0" />
             </svg>

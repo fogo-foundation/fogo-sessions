@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps } from "react";
 import { Dialog, Modal, ModalOverlay } from "react-aria-components";
 
-import styles from "./index.module.css";
+import { classes } from "./index.styles.js";
 
 const MotionModal = motion.create(Modal);
 const MotionModalOverlay = motion.create(ModalOverlay);
@@ -23,7 +23,7 @@ export const ModalDialog = ({
     {isOpen && (
       <MotionModalOverlay
         isDismissable
-        className={styles.modalOverlay ?? ""}
+        className={classes.modalOverlay}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -35,10 +35,10 @@ export const ModalDialog = ({
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           exit={{ scale: 1.1 }}
-          className={styles.modal ?? ""}
+          className={classes.modal}
         >
           {(args) => (
-            <Dialog className={clsx(styles.dialog, dialogClassName)}>
+            <Dialog className={clsx(classes.dialog, dialogClassName)}>
               {typeof children === "function" ? children(args) : children}
             </Dialog>
           )}
