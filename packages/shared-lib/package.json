@@ -1,0 +1,62 @@
+{
+  "private": true,
+  "name": "@fogo/shared-lib",
+  "description": "collection of utilities and typings that can be used on the server or in the UI",
+  "version": "0.0.0",
+  "type": "module",
+  "files": [
+    "dist/**"
+  ],
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "ts-duality --copyOtherFiles",
+    "clean": "rm -rf ./dist",
+    "fix:lint": "biome check --write",
+    "test:lint": "biome check",
+    "test:types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@better-builds/ts-duality": "catalog:",
+    "@cprussin/eslint-config": "catalog:",
+    "@cprussin/tsconfig": "catalog:",
+    "typescript": "catalog:"
+  },
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.cjs"
+      },
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.mjs"
+      }
+    },
+    "./util": {
+      "require": {
+        "types": "./dist/cjs/util/index.d.ts",
+        "default": "./dist/cjs/util/index.cjs"
+      },
+      "import": {
+        "types": "./dist/esm/util/index.d.ts",
+        "default": "./dist/esm/util/index.mjs"
+      }
+    },
+    "./util/is-null-or-undefined": {
+      "require": {
+        "types": "./dist/cjs/util/is-null-or-undefined.d.ts",
+        "default": "./dist/cjs/util/is-null-or-undefined.cjs"
+      },
+      "import": {
+        "types": "./dist/esm/util/is-null-or-undefined.d.ts",
+        "default": "./dist/esm/util/is-null-or-undefined.mjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "module": "./dist/esm/index.mjs",
+  "types": "./dist/cjs/index.d.ts",
+  "main": "./dist/cjs/index.cjs"
+}

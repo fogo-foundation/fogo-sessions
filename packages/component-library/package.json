@@ -61,9 +61,11 @@
     "@react-hookz/web": "catalog:",
     "clsx": "catalog:",
     "copy-and-watch": "catalog:",
+    "@fogo/shared-lib": "workspace:",
     "modern-normalize": "catalog:",
     "motion": "catalog:",
     "react-aria-components": "catalog:",
+    "simplestyle-js": "catalog:",
     "swr": "catalog:"
   },
   "devDependencies": {

@@ -4,7 +4,7 @@ import clsx from "clsx";
 import type { ComponentProps } from "react";
 import { Button as UnstyledButton, Link } from "react-aria-components";
 
-import styles from "./index.module.css";
+import { classes } from "./index.styles.js";
 
 type Variant = "primary" | "secondary" | "solid" | "ghost" | "outline";
 type Size = "sm" | "md" | "lg";
@@ -35,7 +35,7 @@ const mkProps = ({
   size?: Size | undefined;
 }) => ({
   ...otherProps,
-  className: clsx(styles.button, className),
+  className: clsx(classes.button, className),
   "data-variant": variant,
   "data-size": size,
 });
