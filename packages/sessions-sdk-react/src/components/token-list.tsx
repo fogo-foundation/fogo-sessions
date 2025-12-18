@@ -50,7 +50,8 @@ export const TokenList = ({
       );
     }
     case TokenDataStateType.Loaded: {
-      return state.data.tokensInWallet.length === 0 ? (
+      return state.data.tokensInWallet.length === 0 &&
+        state.data.nativeBalance === 0n ? (
         <div className={styles.tokenListEmpty}>
           <WalletIcon className={styles.emptyIcon} />
           <span className={styles.message}>Your wallet is empty</span>
