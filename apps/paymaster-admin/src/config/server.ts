@@ -42,7 +42,7 @@ export const GOOGLE_ANALYTICS_ID = defaultInProduction(
 export const RPC = getEnvOrDefault("RPC", "https://testnet.fogo.io");
 export const DOMAIN = getEnvOrDefault(
   "DOMAIN",
-  "https://admin.dourolabs-paymaster.xyz"
+  "https://admin.dourolabs-paymaster.xyz",
 );
 
 export const DATABASE_URL = getEnvOrDefault(
