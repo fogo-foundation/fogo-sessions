@@ -4,14 +4,6 @@ import { motion } from "motion/react";
 import { GridList, GridListItem } from "react-aria-components";
 
 import { amountToString } from "../amount-to-string.js";
-import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
-import { CopyButton } from "./copy-button.js";
-import { FetchError } from "./fetch-error.js";
-import { Link } from "./link.js";
-import { NotionalAmount } from "./notional-amount.js";
-import styles from "./token-list.module.css";
-import { TruncateKey } from "./truncate-key.js";
 import { usePrice } from "../hooks/use-price.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
@@ -19,6 +11,14 @@ import {
   StateType as PriceDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
+import type { EstablishedSessionState } from "../session-state.js";
+import { Button } from "./component-library/Button/index.js";
+import { CopyButton } from "./component-library/CopyButton/index.js";
+import { Link } from "./component-library/Link/index.js";
+import { FetchError } from "./fetch-error.js";
+import { NotionalAmount } from "./notional-amount.js";
+import styles from "./token-list.module.css";
+import { TruncateKey } from "./truncate-key.js";
 
 const FOGO_DECIMALS = 9;
 

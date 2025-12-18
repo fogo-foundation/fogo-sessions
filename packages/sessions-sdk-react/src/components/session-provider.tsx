@@ -62,14 +62,15 @@ import {
   deserializePublicKeyMap,
 } from "../deserialize-public-key.js";
 import { errorToString } from "../error-to-string.js";
-import type { EstablishedOptions, StateType } from "../session-state.js";
-import { RenewSessionModal } from "./renew-session-modal.js";
-import { SignInModal } from "./sign-in-modal.js";
-import { ToastProvider, useToast } from "./toast.js";
 import { SessionContext as SessionReactContext } from "../hooks/use-session.js";
 import { getCacheKey } from "../hooks/use-token-account-data.js";
+import type { EstablishedOptions, StateType } from "../session-state.js";
+import { ToastProvider, useToast } from "./component-library/Toast/index.js";
+import { RenewSessionModal } from "./renew-session-modal.js";
+import { SignInModal } from "./sign-in-modal.js";
 import { SessionState } from "../session-state.js";
 import type { SolanaMobileWallet, SolanaWallet } from "../solana-wallet.js";
+import { signWithWallet } from "../solana-wallet.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
@@ -422,7 +423,7 @@ const useSessionState = ({
             expires: new Date(Date.now() + duration),
             context,
             signMessage: (message) =>
-              establishedOptions.solanaWallet.signMessage(message),
+              signWithWallet(establishedOptions.solanaWallet, message),
             session,
             ...(limits === undefined ? { unlimited: true } : { limits }),
           }),
@@ -928,7 +929,7 @@ const establishSession = async (
   const result = await establishSessionImpl({
     expires: new Date(Date.now() + sessionDuration),
     context,
-    signMessage: (message: Uint8Array) => wallet.signMessage(message),
+    signMessage: (message) => signWithWallet(wallet, message),
     walletPublicKey: walletPublicKey,
     sessionEstablishmentLookupTable,
     ...(limits === undefined ? { unlimited: true } : { limits }),

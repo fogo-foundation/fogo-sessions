@@ -4,6 +4,9 @@ import { Link as LinkComponent } from "./index.jsx";
 
 const meta = {
   component: LinkComponent,
+  globals: {
+    backgrounds: { value: "dark" },
+  },
   argTypes: {
     children: {
       control: "text",
@@ -33,11 +36,5 @@ export const Link = {
     href: "https://www.fogo.io",
     target: "_blank",
     isDisabled: false,
-  },
-} satisfies StoryObj<typeof LinkComponent>;
-
-export const Button = {
-  args: {
-    children: "Link Button",
   },
 } satisfies StoryObj<typeof LinkComponent>;

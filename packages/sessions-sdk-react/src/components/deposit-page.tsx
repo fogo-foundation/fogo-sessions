@@ -9,19 +9,19 @@ import { Form } from "react-aria-components";
 import type { KeyedMutator } from "swr";
 
 import { stringToAmount } from "../amount-to-string.js";
-import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
 import { errorToString } from "../error-to-string.js";
-import styles from "./deposit-page.module.css";
-import { Link } from "./link.js";
-import { useToast } from "./toast.js";
-import { TokenAmountInput } from "./token-amount-input.js";
-import { UsdcIcon } from "./usdc-icon.js";
-import { StateType, useData } from "../hooks/use-data.js";
 import { useSessionContext } from "../hooks/use-session.js";
+import type { EstablishedSessionState } from "../session-state.js";
 import { USDC } from "../wormhole-routes.js";
+import { Button } from "./component-library/Button/index.js";
+import { Link } from "./component-library/Link/index.js";
+import { useToast } from "./component-library/Toast/index.js";
+import { StateType, useData } from "./component-library/useData/index.js";
+import styles from "./deposit-page.module.css";
 import { ExplorerLink, Chain } from "./explorer-link.js";
 import { FetchError } from "./fetch-error.js";
+import { TokenAmountInput } from "./token-amount-input.js";
+import { UsdcIcon } from "./usdc-icon.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -182,7 +182,8 @@ const DepositForm = ({
           bridgeIn({
             context,
             walletPublicKey: sessionState.walletPublicKey,
-            solanaWallet: sessionState.solanaWallet,
+            signTransaction: (tx) =>
+              sessionState.solanaWallet.signTransaction(tx),
             fromToken: USDC.chains[network].solana,
             toToken: USDC.chains[network].fogo,
             amount: stringToAmount(amount, USDC.decimals),

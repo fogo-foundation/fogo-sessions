@@ -4,41 +4,40 @@
   "tasks": {
     "build": {
       "dependsOn": [
-        "//#install:modules",
-        "clean",
-        "build:declarations",
-        "build:scss",
-        "build:svg"
+        "^build",
+        "build:cjs",
+        "build:css:cjs",
+        "build:css:esm",
+        "build:package-json",
+        "build:theme.scss",
+        "build:esm"
       ]
     },
-    "build:declarations": {
-      "dependsOn": ["//#install:modules", "^build"],
-      "inputs": ["src/**/*.ts", "src/**/*.tsx"],
-      "outputs": ["dist/**/*.d.ts"]
-    },
-    "build:scss": {
-      "dependsOn": ["//#install:modules"],
-      "inputs": ["src/**/*.scss"],
-      "outputs": ["dist/**/*.scss"]
+    "storybook": {
+      "dependsOn": ["//#install:modules"]
     },
     "build:storybook": {
+      "dependsOn": ["//#install:modules"],
       "outputs": ["storybook-static/**"]
     },
-    "build:svg": {
+    "build:css:cjs": {
       "dependsOn": ["//#install:modules"],
-      "inputs": ["src/**/*.svg"],
-      "outputs": ["dist/**/*.svg"]
+      "inputs": ["src/**/*.scss"],
+      "outputs": ["dist/cjs/**/*.css"]
     },
-    "clean": {
-      "cache": false,
-      "outputs": []
+    "build:css:esm": {
+      "dependsOn": ["//#install:modules"],
+      "inputs": ["src/**/*.scss"],
+      "outputs": ["dist/esm/**/*.css"]
+    },
+    "build:theme.scss": {
+      "dependsOn": ["//#install:modules"],
+      "inputs": ["src/theme.scss"],
+      "outputs": ["dist/theme.scss"]
     },
     "fix:lint": {
-      "dependsOn": [
-        "//#install:modules",
-        "fix:lint:eslint",
-        "fix:lint:stylelint"
-      ]
+      "dependsOn": ["fix:lint:eslint", "fix:lint:stylelint"],
+      "cache": false
     },
     "fix:lint:eslint": {
       "dependsOn": ["//#install:modules", "^build"],
@@ -48,8 +47,32 @@
       "dependsOn": ["//#install:modules"],
       "cache": false
     },
+    "start:dev": {
+      "with": ["start:dev:sass", "start:dev:theme.scss", "start:dev:tsc"],
+      "persistent": false
+    },
+    "start:dev:sass": {
+      "dependsOn": ["//#install:modules"],
+      "persistent": true,
+      "cache": false
+    },
+    "start:dev:theme.scss": {
+      "dependsOn": ["//#install:modules", "^build"],
+      "persistent": true,
+      "cache": false
+    },
+    "start:dev:tsc": {
+      "dependsOn": ["//#install:modules", "^build"],
+      "persistent": true,
+      "cache": false
+    },
     "test:lint": {
-      "dependsOn": ["test:lint:eslint", "test:lint:stylelint"]
+      "dependsOn": [
+        "//#install:modules",
+        "^build",
+        "test:lint:eslint",
+        "test:lint:stylelint"
+      ]
     },
     "test:lint:eslint": {
       "dependsOn": ["//#install:modules", "^build"]

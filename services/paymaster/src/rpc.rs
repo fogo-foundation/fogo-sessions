@@ -21,7 +21,7 @@ use tokio::time::timeout;
 
 use crate::{
     api::{ConfirmationResult, PubsubClientWithReconnect},
-    constraint::compute_gas_spent,
+    constraint::transaction::{InstructionWithIndex, TransactionToValidate},
 };
 
 pub struct ChainIndex {
@@ -83,8 +83,66 @@ fn to_error_response(err: Error) -> ErrorResponse {
 }
 
 impl ChainIndex {
+    /// Find the pubkey for the account at index `account_index_within_instruction` within the `instruction_with_index` in the given `transaction`.
+    pub async fn resolve_instruction_account_pubkey(
+        &self,
+        transaction: &TransactionToValidate<'_>,
+        InstructionWithIndex {
+            index: instruction_index,
+            instruction,
+        }: &InstructionWithIndex<'_>,
+        account_index_within_instruction: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        let account_index_within_transaction = usize::from(*instruction
+            .accounts
+            .get(account_index_within_instruction)
+            .ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Account index {account_index_within_instruction} out of bounds for instruction {instruction_index}",
+                    ),
+                )
+            })?);
+        if let Some(pubkey) = transaction
+            .message
+            .static_account_keys()
+            .get(account_index_within_transaction)
+        {
+            Ok(*pubkey)
+        } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
+            let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
+                .iter()
+                .flat_map(|x| {
+                    x.writable_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                })
+                .chain(lookup_tables.iter().flat_map(|x| {
+                    x.readonly_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                }))
+                .collect();
+            let account_index_within_lookup_tables =
+                account_index_within_transaction - transaction.message.static_account_keys().len();
+            return self
+                .find_and_query_lookup_table(lookup_accounts, account_index_within_lookup_tables)
+                .await;
+        } else {
+            Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Account index {account_index_within_instruction} for instruction {instruction_index} expected to be in the address table lookup but the transaction does not reference any address table lookups",
+                ),
+            ))
+        }
+    }
+
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
-    pub async fn find_and_query_lookup_table(
+    async fn find_and_query_lookup_table(
         &self,
         lookup_accounts: Vec<(Pubkey, u8)>,
         account_position_lookups: usize,
@@ -298,7 +356,7 @@ pub async fn send_and_confirm_transaction_ftl(
     Ok(ConfirmationResultInternal::Success { signature })
 }
 
-pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
+const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[tracing::instrument(
     skip_all,
@@ -426,7 +484,7 @@ pub struct RetryConfig {
 pub async fn fetch_transaction_cost_details(
     rpc: &RpcClient,
     signature: &Signature,
-    transaction: &VersionedTransaction,
+    gas_spent: u64,
     retry_config: RetryConfig,
 ) -> anyhow::Result<TransactionCostDetails> {
     let config = RpcTransactionConfig {
@@ -466,10 +524,7 @@ pub async fn fetch_transaction_cost_details(
                             });
                         (meta.fee, balance_spend)
                     })
-                    .unwrap_or_else(|| {
-                        let fee = compute_gas_spent(transaction).unwrap_or(0);
-                        (fee, None)
-                    });
+                    .unwrap_or_else(|| (gas_spent, None));
 
                 return Ok(TransactionCostDetails { fee, balance_spend });
             }

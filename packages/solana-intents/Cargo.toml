@@ -12,6 +12,7 @@ name = "solana_intents"
 
 [dependencies]
 borsh = { workspace = true }
+itertools.workspace = true
 nom = { workspace = true }
 solana-offchain-message = { workspace = true }
 solana-program = { workspace = true }

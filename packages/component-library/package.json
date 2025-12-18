@@ -2,65 +2,90 @@
   "name": "@fogo/component-library",
   "version": "0.0.0",
   "private": true,
+  "description": "React components and hooks for use in various Sessions related projects",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fogo-foundation/fogo-sessions",
+    "directory": "packages/component-library"
+  },
   "type": "module",
   "engines": {
     "node": "22"
   },
+  "keywords": [
+    "crypto",
+    "fogo",
+    "react",
+    "sessions",
+    "wallet",
+    "web"
+  ],
   "exports": {
-    "./Link": {
-      "default": "./dist/Link/index.mjs"
+    "./*": {
+      "import": {
+        "types": "./dist/esm/*/index.d.ts",
+        "default": "./dist/esm/*/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/*/index.d.ts",
+        "default": "./dist/cjs/*/index.js"
+      }
     },
     "./theme": "./dist/theme.scss"
   },
   "scripts": {
-    "build": "ts-duality --noCjs",
-    "build:scss": "copyfiles -u 1 \"src/**/*.scss\" ./dist",
-    "build:storybook": "storybook build",
-    "clean": "rm -rf ./dist",
+    "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "build:css:cjs": "sass --pkg-importer node --no-source-map src:dist/cjs",
+    "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
+    "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "build:package-json": "transform-package-json --no-remove-private ./package.json dist/package.json",
+    "build:theme.scss": "mkdir -p dist && cp src/theme.scss dist/theme.scss",
     "fix:format": "prettier --write .",
     "fix:lint:eslint": "eslint --fix .",
     "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
-    "start:dev": "storybook dev --port 4000 --no-open",
-    "test:format": "prettier --check .",
-    "test:lint:eslint": "eslint . --max-warnings 0",
-    "test:lint:stylelint": "stylelint 'src/**/*.scss' --max-warnings 0",
+    "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
+    "start:dev:theme.scss": "copy-and-watch --watch src/theme.scss dist",
+    "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
+    "build:storybook": "storybook build",
+    "storybook": "storybook dev -p 6006",
+    "test:format": "run-jest --colors --selectProjects format",
+    "test:lint:eslint": "run-jest --colors --selectProjects lint",
+    "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
     "test:types": "tsc"
   },
   "peerDependencies": {
-    "next": "catalog:",
-    "react": "catalog:"
+    "react": "^19"
   },
   "dependencies": {
+    "@phosphor-icons/react": "catalog:",
+    "@react-hookz/web": "catalog:",
     "clsx": "catalog:",
+    "copy-and-watch": "catalog:",
     "modern-normalize": "catalog:",
     "motion": "catalog:",
-    "react-aria": "catalog:",
     "react-aria-components": "catalog:",
-    "react-dom": "catalog:",
     "swr": "catalog:"
   },
   "devDependencies": {
-    "@better-builds/ts-duality": "catalog:",
-    "@babel/preset-typescript": "catalog:",
     "@cprussin/eslint-config": "catalog:",
+    "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
+    "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
-    "@phosphor-icons/react": "catalog:",
     "@storybook/addon-styling-webpack": "catalog:",
     "@storybook/addon-themes": "catalog:",
     "@storybook/nextjs": "catalog:",
     "@storybook/react": "catalog:",
-    "@svgr/webpack": "catalog:",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "autoprefixer": "catalog:",
-    "babel-plugin-react-compiler": "catalog:",
-    "copyfiles": "catalog:",
     "css-loader": "catalog:",
     "eslint": "catalog:",
-    "postcss": "catalog:",
-    "postcss-loader": "catalog:",
+    "jest": "catalog:",
+    "next": "catalog:",
     "prettier": "catalog:",
     "react": "catalog:",
     "sass": "catalog:",
@@ -70,10 +95,5 @@
     "stylelint": "catalog:",
     "stylelint-config-standard-scss": "catalog:",
     "typescript": "catalog:"
-  },
-  "ts-duality": {
-    "extraExports": {
-      "./theme": "./dist/theme.scss"
-    }
   }
 }

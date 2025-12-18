@@ -1,7 +1,9 @@
 @use "../theme";
+@use "../reset";
+@use "../layer";
 
 .modalOverlay {
-  @include theme.reset {
+  @include reset.reset {
     position: fixed;
     top: 0;
     left: 0;
@@ -12,7 +14,7 @@
     display: grid;
     justify-content: center;
     align-items: start;
-    z-index: theme.layer("modal-dialog");
+    z-index: layer.layer("modal-dialog");
     overflow: auto;
 
     .modal {

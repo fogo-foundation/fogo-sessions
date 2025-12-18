@@ -1,3 +1,5 @@
+"use client";
+
 import clsx from "clsx";
 import type { ReactNode, ComponentProps } from "react";
 import {
@@ -9,7 +11,7 @@ import {
   Group,
 } from "react-aria-components";
 
-import styles from "./field.module.css";
+import styles from "./index.module.css";
 
 export const TextField = ({
   label,

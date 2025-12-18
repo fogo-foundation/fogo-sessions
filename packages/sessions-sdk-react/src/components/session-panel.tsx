@@ -13,22 +13,22 @@ import type {
   EstablishedSessionState,
   SessionState,
 } from "../session-state.js";
-import { Button } from "./button.js";
-import { CopyButton } from "./copy-button.js";
+import { Button } from "./component-library/Button/index.js";
+import { CopyButton } from "./component-library/CopyButton/index.js";
+import { Link } from "./component-library/Link/index.js";
 import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import { GetTokensPage } from "./get-tokens-page.js";
-import { Link } from "./link.js";
 import { ReceivePage } from "./receive-page.js";
 import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
 import { SessionLimitsTab } from "./session-limits-tab.js";
 import styles from "./session-panel.module.css";
+import { TruncateKey } from "./truncate-key.js";
+import { WithdrawPage } from "./withdraw-page.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { isEstablished } from "../session-state.js";
-import { TruncateKey } from "./truncate-key.js";
 import { WalletPage } from "./wallet-page.js";
-import { WithdrawPage } from "./withdraw-page.js";
 
 type Props = Omit<ComponentProps<"div">, "children"> & {
   onClose?: (() => void) | undefined;

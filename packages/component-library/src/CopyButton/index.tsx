@@ -1,3 +1,5 @@
+"use client";
+
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { CopyIcon } from "@phosphor-icons/react/dist/ssr/Copy";
 import clsx from "clsx";
@@ -5,7 +7,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { useState, useCallback } from "react";
 import { Button } from "react-aria-components";
 
-import styles from "./copy-button.module.css";
+import styles from "./index.module.css";
 
 type Variant = "inline" | "expanded";
 

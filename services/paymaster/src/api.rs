@@ -1,4 +1,5 @@
 use crate::config_manager::config::Domain;
+use crate::constraint::transaction::TransactionToValidate;
 use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
@@ -11,9 +12,6 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
 use axum::Json;
-use nonempty::NonEmpty;
-use solana_derivation_path::DerivationPath;
-
 use axum::{
     http::{HeaderName, Method},
     Router,
@@ -25,10 +23,12 @@ use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
+use nonempty::NonEmpty;
 use serde_with::{serde_as, DisplayFromStr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
+use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
 use solana_pubkey::Pubkey;
@@ -119,7 +119,7 @@ impl DomainState {
     #[tracing::instrument(skip_all, fields(specified_variation = variation_name.as_deref(), matched_variation))]
     pub async fn validate_transaction(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_>,
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
         variation_name: Option<String>,
@@ -203,7 +203,7 @@ impl DomainState {
 
     pub async fn validate_transaction_against_variation(
         &self,
-        transaction: &VersionedTransaction,
+        transaction: &TransactionToValidate<'_>,
         tx_variation: &TransactionVariation,
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
@@ -366,9 +366,11 @@ async fn sponsor_and_send_handler(
             )
         })?;
 
+    let transaction_to_validate = TransactionToValidate::parse(&transaction)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     let matched_variation_name = match domain_state
         .validate_transaction(
-            &transaction,
+            &transaction_to_validate,
             &state.chain_index,
             &transaction_sponsor.pubkey(),
             variation,
@@ -385,11 +387,12 @@ async fn sponsor_and_send_handler(
             variation.name()
         }
         Err(e) => {
-            obs_validation(domain.clone(), None, e.0.to_string());
+            obs_validation(domain.clone(), None, "invalid".to_string());
             return Err(e.into());
         }
     }
     .to_owned();
+    let gas_spend = transaction_to_validate.gas_spend;
 
     transaction.signatures[0] = transaction_sponsor.sign_message(&transaction.message.serialize());
     tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
@@ -441,7 +444,7 @@ async fn sponsor_and_send_handler(
                 match fetch_transaction_cost_details(
                     &state.chain_index.rpc,
                     &signature_to_fetch,
-                    &transaction,
+                    gas_spend,
                     RetryConfig {
                         max_tries: 3,
                         sleep_ms: 2000,

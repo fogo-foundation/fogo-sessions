@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { Heading } from "react-aria-components";
 
-import { ModalDialog } from "./modal-dialog.js";
+import { ModalDialog } from "./component-library/ModalDialog/index.js";
 import styles from "./renew-session-modal.module.css";
 import { SessionLimits } from "./session-limits.js";
 import { useSession } from "../hooks/use-session.js";

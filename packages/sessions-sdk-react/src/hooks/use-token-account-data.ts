@@ -4,13 +4,13 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { z } from "zod";
 
+import { useData } from "../components/component-library/useData/index.js";
 import { getMetadata } from "../get-metadata.js";
 import type { WalletConnectedSessionState } from "../session-state.js";
 import { isEstablished } from "../session-state.js";
-import { useData } from "./use-data.js";
 import { useConnection, useSessionContext } from "./use-session.js";
 
-export { StateType } from "./use-data.js";
+export { StateType } from "../components/component-library/useData/index.js";
 
 export const useTokenAccountData = (
   sessionState: WalletConnectedSessionState,

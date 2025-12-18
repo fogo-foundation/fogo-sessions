@@ -1961,6 +1961,7 @@ dependencies = [
  "solana-compute-budget-interface",
  "solana-derivation-path",
  "solana-ed25519-program",
+ "solana-fee-structure",
  "solana-hash",
  "solana-keypair",
  "solana-message",
@@ -1993,7 +1994,7 @@ dependencies = [
 
 [[package]]
 name = "fogo-sessions-sdk"
-version = "0.7.1"
+version = "0.7.4"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
@@ -2769,6 +2770,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "chain-id",
+ "fogo-sessions-sdk",
  "hex",
  "indoc",
  "litesvm",
@@ -5696,6 +5698,7 @@ name = "solana-intents"
 version = "0.1.0"
 dependencies = [
  "borsh 1.5.7",
+ "itertools 0.14.0",
  "nom 8.0.0",
  "solana-offchain-message",
  "solana-program",
