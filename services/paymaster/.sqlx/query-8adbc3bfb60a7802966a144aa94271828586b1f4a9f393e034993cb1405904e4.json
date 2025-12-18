@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n          id,\n          domain,\n          enable_session_management,\n          enable_preflight_simulation\n        FROM domain_config\n        ",
+  "query": "\n        SELECT\n          id,\n          domain,\n          enable_session_management,\n          enable_preflight_simulation\n        FROM domain_config\n        WHERE network_environment = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -25,7 +25,19 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        {
+          "Custom": {
+            "name": "network_environment",
+            "kind": {
+              "Enum": [
+                "mainnet",
+                "testnet"
+              ]
+            }
+          }
+        }
+      ]
     },
     "nullable": [
       false,
@@ -34,5 +46,5 @@
       false
     ]
   },
-  "hash": "51eb043b6db122d73f8deb6c05c515b4ea8b21e447cd7bf5146869a6431ed4d8"
+  "hash": "8adbc3bfb60a7802966a144aa94271828586b1f4a9f393e034993cb1405904e4"
 }
