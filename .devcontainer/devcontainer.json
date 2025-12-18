@@ -31,11 +31,17 @@
   "runArgs": [
     "--platform=linux/amd64"
   ],
+  // --- PERFORMANCE OVERRIDES ---
+  // This creates a named volume so files live in the Docker container.
+  // FS bridged mounts on MacOS have abysmal performance, so this is a necessary evil
+  "workspaceMount": "source=fogo-sessions-unique-vol,target=/workspaces/fogo-sessions,type=volume",
+  "workspaceFolder": "/workspaces/fogo-sessions",
   "customizations": {
     "vscode": {
       "extensions": [
         "arcanis.vscode-zipfs",
         "bbenoist.nix",
+        "biomejs.biome",
         "dbaeumer.vscode-eslint",
         "eamodio.gitlens",
         "editorconfig.editorconfig",
