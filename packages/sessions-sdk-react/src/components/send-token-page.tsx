@@ -314,18 +314,21 @@ const SendTokenPageImpl = ({
         maxSendAmount: bigint;
       }
   )) => {
-  const scannerShowing = !props.isLoading && props.scanner !== undefined;
+  const { isLoading } = props;
+  const amount = "amount" in props ? props.amount : "";
+
+  const scannerShowing = !isLoading && props.scanner !== undefined;
 
   const notionalAmount = useMemo(() => {
-    if (props.isLoading || !props.amount) {
+    if (isLoading || !amount) {
       return;
     }
     try {
-      return stringToAmount(props.amount, decimals);
+      return stringToAmount(amount, decimals);
     } catch {
       return;
     }
-  }, [props.isLoading, decimals, props.amount]);
+  }, [amount, decimals, isLoading]);
 
   return (
     <div className={styles.sendTokenPage ?? ""}>
@@ -340,8 +343,7 @@ const SendTokenPageImpl = ({
       <Form
         aria-hidden={scannerShowing ? "true" : undefined}
         className={styles.sendTokenForm ?? ""}
-        {...(!props.isLoading &&
-          !props.isSubmitting && { onSubmit: props.onSubmit })}
+        {...(!isLoading && !props.isSubmitting && { onSubmit: props.onSubmit })}
       >
         <div className={styles.header}>
           {icon ? (
@@ -373,7 +375,7 @@ const SendTokenPageImpl = ({
             <Link
               excludeFromTabOrder={scannerShowing}
               className={styles.action ?? ""}
-              {...(props.isLoading || props.isSubmitting
+              {...(isLoading || props.isSubmitting
                 ? { isPending: true }
                 : {
                     onPress: props.onPressScanner,
@@ -395,12 +397,12 @@ const SendTokenPageImpl = ({
               return;
             }
           }}
-          {...(props.isLoading || props.isSubmitting
+          {...(isLoading || props.isSubmitting
             ? { isPending: true }
             : {
                 onChange: props.onChangeRecipient,
               })}
-          {...(!props.isLoading && {
+          {...(!isLoading && {
             value: props.recipient,
           })}
         />
@@ -418,7 +420,7 @@ const SendTokenPageImpl = ({
             <Link
               excludeFromTabOrder={scannerShowing}
               className={styles.action ?? ""}
-              {...(props.isLoading || props.isSubmitting
+              {...(isLoading || props.isSubmitting
                 ? { isPending: true }
                 : {
                     onPress: () => {
@@ -431,17 +433,17 @@ const SendTokenPageImpl = ({
               Max
             </Link>
           }
-          {...(props.isLoading || props.isSubmitting
+          {...(isLoading || props.isSubmitting
             ? { isPending: true }
             : {
                 max: props.maxSendAmount,
                 onChange: props.onChangeAmount,
               })}
-          {...(!props.isLoading && {
-            value: props.amount,
+          {...(!isLoading && {
+            value: amount,
           })}
         />
-        {!props.isLoading &&
+        {!isLoading &&
           props.price !== undefined &&
           notionalAmount !== undefined && (
             <NotionalAmount
@@ -456,15 +458,15 @@ const SendTokenPageImpl = ({
           type="submit"
           variant="secondary"
           className={styles.submitButton ?? ""}
-          isPending={props.isLoading === true || props.isSubmitting}
+          isPending={isLoading === true || props.isSubmitting}
         >
           Send
         </Button>
         <div
           className={styles.fee}
-          data-is-loading={props.isLoading ? "" : undefined}
+          data-is-loading={isLoading ? "" : undefined}
         >
-          {!props.isLoading && (
+          {!isLoading && (
             <>
               Fee:{" "}
               {amountToString(props.feeConfig.fee, props.feeConfig.decimals)}{" "}
@@ -473,7 +475,7 @@ const SendTokenPageImpl = ({
           )}
         </div>
       </Form>
-      {!props.isLoading && props.scanner}
+      {!isLoading && props.scanner}
     </div>
   );
 };

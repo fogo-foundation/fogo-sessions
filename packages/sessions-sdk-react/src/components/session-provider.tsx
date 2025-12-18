@@ -53,7 +53,7 @@ import type {
   ReactNode,
   SetStateAction,
 } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { mutate } from "swr";
 import { z } from "zod";
 
@@ -511,7 +511,7 @@ const useSessionState = ({
       const handleSwitchWallet = (key: PublicKey) => {
         const newAddress = key.toBase58();
         if (newAddress !== currentAddress) {
-          connectWallet({
+          connectWalletRef.current({
             wallet,
             requestedLimits: undefined,
             onCancel: () => {
@@ -537,7 +537,6 @@ const useSessionState = ({
       setShowBridgeIn,
       updateSession,
       network,
-      connectWallet,
     ],
   );
 
@@ -719,6 +718,14 @@ const useSessionState = ({
     ],
   );
 
+  /** refs */
+  const connectWalletRef = useRef(connectWallet);
+
+  /** effects */
+  useEffect(() => {
+    connectWalletRef.current = connectWallet;
+  });
+
   const requestWallet = useCallback(
     (requestedLimits?: Map<PublicKey, bigint>) => {
       const cancel = () => {
@@ -728,7 +735,7 @@ const useSessionState = ({
         SessionState.SelectingWallet({
           cancel,
           selectWallet: (wallet) => {
-            connectWallet({
+            connectWalletRef.current({
               wallet,
               requestedLimits,
               onCancel: cancel,
@@ -740,7 +747,7 @@ const useSessionState = ({
         }),
       );
     },
-    [connectWallet],
+    [],
   );
 
   useEffect(() => {

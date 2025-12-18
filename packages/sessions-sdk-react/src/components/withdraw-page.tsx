@@ -260,7 +260,7 @@ const WithdrawFormImpl = (
     } catch {
       return;
     }
-  }, [props.isLoading, props.amount]);
+  }, [props]);
 
   return (
     <Form
