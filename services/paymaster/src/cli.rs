@@ -1,4 +1,4 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Parser)]
 #[command(version, about)]
@@ -16,11 +16,22 @@ pub enum Command {
     Migrate(MigrateOptions),
 }
 
+#[derive(Debug, Clone, Copy, ValueEnum)]
+#[clap()]
+pub enum NetworkEnvironment {
+    Mainnet,
+    Testnet,
+}
+
 #[derive(Args, Debug, Clone)]
 pub struct RunOptions {
     /// Postgres connection string (required via flag or env)
     #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
     pub db_url: String,
+
+    /// Network environment to run the paymaster for
+    #[arg(long, env = "NETWORK_ENVIRONMENT")]
+    pub network_environment: NetworkEnvironment,
 
     // TODO this is part of the temporary change to load the config from the file. Should be removed.
     /// Path to TOML config

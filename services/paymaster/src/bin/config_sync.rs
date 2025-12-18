@@ -20,16 +20,29 @@ pub enum VariationVersion {
     V1,
 }
 
+#[derive(Clone, Debug, PartialEq, Type, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[sqlx(type_name = "network_environment")]
+pub enum NetworkEnvironment {
+    #[sqlx(rename = "mainnet")]
+    Mainnet,
+    #[sqlx(rename = "testnet")]
+    Testnet,
+}
+
 #[derive(Debug, Parser)]
 #[command(version, about)]
 pub struct Cli {
-    /// Postgres connection string (required via flag or env)
+    /// Postgres connection string
     #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
     pub db_url: String,
 
-    /// Path to TOML config used to populate the DB (required via flag or env)
+    /// Path to TOML config used to populate the DB
     #[arg(short, long, env = "CONFIG_FILE")]
     pub config: String,
+
+    /// Network environment to sync as
+    #[arg(short, long, env = "NETWORK_ENVIRONMENT")]
+    pub network_environment: String,
 }
 
 // Get the registrable domain from a URL.
@@ -114,6 +127,7 @@ async fn insert_or_return_app(user_id: &Uuid, name: &str) -> Result<Uuid, sqlx::
 async fn insert_or_update_domain_config(
     app_id: &Uuid,
     domain: &Domain,
+    network_environment: &NetworkEnvironment,
 ) -> Result<Uuid, sqlx::Error> {
     let res = sqlx::query!(
         r#"
@@ -122,10 +136,11 @@ async fn insert_or_update_domain_config(
           app_id,
           domain,
           enable_session_management,
-          enable_preflight_simulation
+          enable_preflight_simulation,
+          network_environment
         )
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (domain)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (domain, network_environment)
         DO UPDATE SET
           enable_session_management   = EXCLUDED.enable_session_management,
           enable_preflight_simulation = EXCLUDED.enable_preflight_simulation
@@ -136,6 +151,7 @@ async fn insert_or_update_domain_config(
         domain.domain,
         domain.enable_session_management,
         domain.enable_preflight_simulation,
+        network_environment as _,
     )
     .fetch_one(pool())
     .await?;
@@ -200,7 +216,10 @@ async fn insert_or_update_variation(
     Ok(row.id)
 }
 
-pub async fn sync_from_config(config: &Config) -> Result<(), anyhow::Error> {
+pub async fn sync_from_config(
+    config: &Config,
+    network_environment: NetworkEnvironment,
+) -> Result<(), anyhow::Error> {
     println!("Syncing database from config");
     for domain in &config.domains {
         // try to parse the domain as a url and get the host or just return the domain if it's not a valid url
@@ -214,7 +233,8 @@ pub async fn sync_from_config(config: &Config) -> Result<(), anyhow::Error> {
 
         let user = insert_or_return_user(&host).await?;
         let app = insert_or_return_app(&user, &host).await?;
-        let domain_config = insert_or_update_domain_config(&app, domain).await?;
+        let domain_config =
+            insert_or_update_domain_config(&app, domain, &network_environment).await?;
         for variation in domain.tx_variations.values() {
             insert_or_update_variation(&domain_config, variation).await?;
         }
@@ -232,10 +252,14 @@ pub fn load_file_config(config_path: &str) -> Result<Config> {
     Ok(config)
 }
 
-async fn run_sync_config(db_url: &str, config_path: &str) -> anyhow::Result<()> {
+async fn run_sync_config(
+    db_url: &str,
+    config_path: &str,
+    network_environment: NetworkEnvironment,
+) -> anyhow::Result<()> {
     fogo_paymaster::db::pool::init_db_connection(db_url).await?;
     let config = load_file_config(config_path)?;
-    sync_from_config(&config).await?;
+    sync_from_config(&config, network_environment).await?;
     Ok(())
 }
 
@@ -244,6 +268,17 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv()?;
     let opts = Cli::parse();
 
-    run_sync_config(&opts.db_url, &opts.config).await?;
+    let network_environment = match opts.network_environment.as_str() {
+        "mainnet" => NetworkEnvironment::Mainnet,
+        "testnet" => NetworkEnvironment::Testnet,
+        _ => {
+            return Err(anyhow::anyhow!(
+                "Invalid network environment: {}",
+                opts.network_environment
+            ))
+        }
+    };
+
+    run_sync_config(&opts.db_url, &opts.config, network_environment).await?;
     Ok(())
 }
