@@ -2,15 +2,6 @@ import type { SimpleStyleRules } from "simplestyle-js";
 
 type HexColor = `#${string}`;
 
-function assertKey<
-  T extends Record<PropertyKey, unknown>,
-  K extends PropertyKey,
->(map: T, key: K): asserts key is K & keyof T {
-  if (!(key in map)) {
-    throw new Error(`Missing key "${String(key)}" in map`);
-  }
-}
-
 function hexToRgb(hex: HexColor): { b: number; g: number; r: number } {
   const normalized = hex.replace("#", "");
   const expanded =
@@ -54,7 +45,6 @@ const fontWeight = {
 export type FontWeightKey = keyof typeof fontWeight;
 
 function getFontWeight(weight: FontWeightKey): number {
-  assertKey(fontWeight, weight);
   return fontWeight[weight];
 }
 
@@ -94,7 +84,6 @@ const letterSpacing = {
 export type LetterSpacingKey = keyof typeof letterSpacing;
 
 function getLetterSpacing(spacingKey: LetterSpacingKey = "normal"): string {
-  assertKey(letterSpacing, spacingKey);
   return letterSpacing[spacingKey];
 }
 
@@ -111,11 +100,6 @@ const borderRadius = {
 } as const;
 
 export type BorderRadiusKey = keyof typeof borderRadius;
-
-function getBorderRadius(radius: BorderRadiusKey = "base"): string {
-  assertKey(borderRadius, radius);
-  return borderRadius[radius];
-}
 
 const colorPalette = {
   amber: {
@@ -604,7 +588,6 @@ export const theme = {
   colorPalette,
   fontSize,
   fontWeight,
-  getBorderRadius,
   getFontSize,
   getFontWeight,
   getLetterSpacing,

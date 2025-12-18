@@ -16,8 +16,12 @@ import { USDC } from "../wormhole-routes.js";
 import { Button } from "./component-library/Button/index.js";
 import { Link } from "./component-library/Link/index.js";
 import { useToast } from "./component-library/Toast/index.js";
+import {
+  createStyles,
+  keyframes,
+  theme,
+} from "./component-library/css/index.js";
 import { StateType, useData } from "./component-library/useData/index.js";
-import styles from "./deposit-page.module.css";
 import { ExplorerLink, Chain } from "./explorer-link.js";
 import { FetchError } from "./fetch-error.js";
 import { TokenAmountInput } from "./token-amount-input.js";
@@ -38,11 +42,11 @@ const NO_ACCOUNT_MESSAGE =
   "failed to get token account balance: Invalid param: could not find account";
 
 export const DepositPage = ({ onPressBack, ...props }: Props) => (
-  <div className={styles.depositPage ?? ""}>
+  <div className={classes.depositPage}>
     <Button
       onPress={onPressBack}
       variant="outline"
-      className={styles.backButton ?? ""}
+      className={classes.backButton}
     >
       Back
     </Button>
@@ -75,7 +79,7 @@ const DepositPageContents = (props: Omit<Props, "onPressBack">) => {
     case StateType.Error: {
       return (
         <FetchError
-          className={styles.fetchError}
+          className={classes.fetchError}
           headline="Failed to load Solana account balances"
           error={solanaBalances.error}
           reset={solanaBalances.reset}
@@ -86,7 +90,7 @@ const DepositPageContents = (props: Omit<Props, "onPressBack">) => {
       if (solanaBalances.data.sol === 0) {
         return (
           <FetchError
-            className={styles.fetchError}
+            className={classes.fetchError}
             headline="No SOL in your Solana wallet"
             error="You must have SOL in your Solana wallet to pay gas on Solana to transfer to Fogo."
           />
@@ -94,7 +98,7 @@ const DepositPageContents = (props: Omit<Props, "onPressBack">) => {
       } else if (solanaBalances.data.usdc.amount === "0") {
         return (
           <FetchError
-            className={styles.fetchError}
+            className={classes.fetchError}
             headline="No USDC in your Solana wallet"
             error="You have no USDC on Solana to transfer to Fogo."
           />
@@ -239,19 +243,19 @@ const DepositForm = ({
   );
 
   return (
-    <Form className={styles.depositForm ?? ""} onSubmit={doSubmit}>
-      <div className={styles.header}>
-        <UsdcIcon className={styles.tokenIcon} />
-        <h2 className={styles.tokenName}>
+    <Form className={classes.depositForm} onSubmit={doSubmit}>
+      <div className={classes.header}>
+        <UsdcIcon className={classes.tokenIcon} />
+        <h2 className={classes.tokenName}>
           Transfer USD Coin from Solana to Fogo
         </h2>
         <div
-          className={styles.amountInWallet}
+          className={classes.amountInWallet}
           data-is-loading={props.isLoading ? "" : undefined}
         >
           {!props.isLoading && (
             <>
-              <span className={styles.amount}>
+              <span className={classes.amount}>
                 {props.balances.usdc.uiAmountString ?? "0"}
               </span>{" "}
               USDC available
@@ -260,7 +264,7 @@ const DepositForm = ({
         </div>
       </div>
       <TokenAmountInput
-        className={styles.field ?? ""}
+        className={classes.field}
         decimals={USDC.decimals}
         label="Amount"
         name="amount"
@@ -272,7 +276,7 @@ const DepositForm = ({
         placeholder="Enter an amount"
         labelExtra={
           <Link
-            className={styles.action ?? ""}
+            className={classes.action}
             {...(props.isLoading
               ? { isPending: true }
               : {
@@ -294,13 +298,13 @@ const DepositForm = ({
       <Button
         type="submit"
         variant="secondary"
-        className={styles.submitButton ?? ""}
+        className={classes.submitButton}
         isPending={props.isLoading === true || isSubmitting}
       >
         Transfer
       </Button>
       <Link
-        className={styles.mayanLink ?? ""}
+        className={classes.mayanLink}
         href="https://swap.mayan.finance/"
         target="_blank"
       >
@@ -309,3 +313,77 @@ const DepositForm = ({
     </Form>
   );
 };
+
+const { keyframe: pulseKeyframes } = keyframes(
+  "fogo-depoist-page-pulse-animation",
+  () => ({
+    "50%": {
+      opacity: "0.5",
+    },
+  }),
+);
+
+const { classes } = createStyles("fogo-deposit-page", () => ({
+  action: {
+    whiteSpace: "nowrap",
+  },
+  amount: {
+    wordBreak: "break-all",
+  },
+  amountInWallet: {
+    ...theme.textStyles("sm"),
+    color: theme.color.paragraph,
+    height: "1em",
+
+    "&[data-is-loading]": {
+      display: "inline-block",
+      background: theme.color.skeleton,
+      width: theme.spacing(30),
+      animation: `${pulseKeyframes} 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`,
+      borderRadius: theme.borderRadius.md,
+    },
+  },
+  backButton: {
+    left: theme.spacing(4),
+    position: "absolute",
+    top: theme.spacing(4),
+  },
+  depositForm: {
+    alignItems: "center",
+    display: "flex",
+    flexFlow: "column nowrap",
+    gap: theme.spacing(8),
+    padding: `${theme.spacing(16)} ${theme.spacing(8)}`,
+  },
+  depositPage: {
+    height: "100%",
+    position: "relative",
+  },
+  fetchError: {
+    height: "100%",
+  },
+  field: {
+    width: "100%",
+  },
+  header: {
+    alignItems: "center",
+    display: "flex",
+    flexFlow: "column nowrap",
+    gap: theme.spacing(4),
+    textAlign: "center",
+  },
+  mayanLink: {
+    ...theme.textStyles("sm"),
+    marginTop: `calc(${theme.spacing(2)} * -1)`,
+  },
+  submitButton: {},
+  tokenIcon: {
+    width: theme.spacing(12),
+    height: theme.spacing(12),
+    borderRadius: theme.borderRadius.full,
+  },
+  tokenName: {
+    ...theme.textStyles("lg", "medium"),
+    color: theme.color.heading,
+  },
+}));
