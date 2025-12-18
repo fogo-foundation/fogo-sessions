@@ -166,7 +166,7 @@ export const FogoSessionProvider = ({
 
   const walletsWithMobileAdapter = useMemo(
     () =>
-      mobileWalletAdapter == undefined
+      mobileWalletAdapter === undefined
         ? filteredWalletsWithStandardAdapters
         : [mobileWalletAdapter, ...filteredWalletsWithStandardAdapters],
     [filteredWalletsWithStandardAdapters, mobileWalletAdapter],
@@ -307,7 +307,6 @@ const SessionProvider = ({
       onStartSessionInit,
       defaultRequestedLimits,
       showBridgeIn,
-      setShowBridgeIn,
     ],
   );
 
@@ -538,6 +537,7 @@ const useSessionState = ({
       setShowBridgeIn,
       updateSession,
       network,
+      connectWallet,
     ],
   );
 
@@ -772,7 +772,14 @@ const useSessionState = ({
     // We very explicitly only want this effect to fire at startup or when the
     // network changes and never in other cases
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [network]);
+  }, [
+    network,
+    completeSessionSetup,
+    getSessionContext,
+    requestWallet,
+    walletName.value,
+    wallets.find,
+  ]);
 
   return state;
 };

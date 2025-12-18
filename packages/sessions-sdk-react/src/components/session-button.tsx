@@ -64,17 +64,14 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
       }
     }
   }, [sessionState, limits, onStartSessionInit]);
-  const handleSessionPanelOpenChange = useCallback(
-    (isOpen: boolean) => {
-      if (!isOpen) {
-        setSessionPanelOpen(false);
-      }
-    },
-    [setSessionPanelOpen],
-  );
+  const handleSessionPanelOpenChange = useCallback((isOpen: boolean) => {
+    if (!isOpen) {
+      setSessionPanelOpen(false);
+    }
+  }, []);
   const closeSessionPanel = useCallback(() => {
     setSessionPanelOpen(false);
-  }, [setSessionPanelOpen]);
+  }, []);
   const isLoading = [
     SessionStateType.Initializing,
     SessionStateType.CheckingStoredSession,

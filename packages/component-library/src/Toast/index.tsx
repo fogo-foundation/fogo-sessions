@@ -55,34 +55,34 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
 
 export const useToast = () => {
   const queue = use(ToastContext);
-  if (queue) {
-    const mkToastFn = useCallback(
-      (toastType: ToastType) =>
-        (
-          title: ReactNode,
-          description?: ReactNode,
-          {
-            timeout = DEFAULT_TOAST_TIMEOUT,
-            ...opts
-          }: Parameters<typeof queue.add>[1] | undefined = {},
-        ) =>
-          queue.add(
-            { type: toastType, title, description },
-            { timeout, ...opts },
-          ),
-      [queue],
-    );
-    return useMemo(
-      () => ({
-        queue,
-        success: mkToastFn(ToastType.Success),
-        error: mkToastFn(ToastType.Error),
-      }),
-      [queue, mkToastFn],
-    );
-  } else {
+  const mkToastFn = useCallback(
+    (toastType: ToastType) =>
+      (
+        title: ReactNode,
+        description?: ReactNode,
+        {
+          timeout = DEFAULT_TOAST_TIMEOUT,
+          ...opts
+        }: Parameters<ToastQueue<ToastContents>["add"]>[1] | undefined = {},
+      ) =>
+        queue?.add(
+          { type: toastType, title, description },
+          { timeout, ...opts },
+        ),
+    [queue],
+  );
+  const out = useMemo(
+    () => ({
+      queue,
+      success: mkToastFn(ToastType.Success),
+      error: mkToastFn(ToastType.Error),
+    }),
+    [queue, mkToastFn],
+  );
+  if (!queue) {
     throw new Error("Toast queue not initialized");
   }
+  return out;
 };
 
 const ToastContext = createContext<undefined | ToastQueue<ToastContents>>(

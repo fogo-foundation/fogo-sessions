@@ -8,7 +8,7 @@ type Props = {
   reset?: () => void;
 };
 
-export const Error = ({ error, reset }: Props) => {
+export const ErrorComponent = ({ error, reset }: Props) => {
   const logger = useLogger();
 
   useEffect(() => {

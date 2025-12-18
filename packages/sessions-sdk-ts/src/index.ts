@@ -433,6 +433,7 @@ const sessionInfoSchema = z
     sponsor: z.instanceof(PublicKey),
   })
   .transform(({ session_info, major, sponsor }) => {
+    // biome-ignore lint/suspicious/noImplicitAnyLet: the typing is a discriminated union and doesn't have per-union type exports
     let activeSessionInfo;
     let minor: 1 | 2 | 3 | 4;
 

@@ -27,15 +27,15 @@ export function parseDerivationPath(source: string): {
     return {};
   } else {
     const parts = key.split("/");
-    if (parts.length == 1) {
+    if (parts.length === 1) {
       return { derivationAccount: Number(parts[0]) };
-    } else if (parts.length == 2) {
+    } else if (parts.length === 2) {
       return {
         derivationAccount: Number(parts[0]),
         derivationChange: Number(parts[1]),
       };
     } else {
-      throw new Error("The provided derivation path is too long: " + key);
+      throw new Error(`The provided derivation path is too long: ${key}`);
     }
   }
 }
@@ -152,7 +152,7 @@ export class LedgerNodeWallet {
     const publicKey = await getPublicKey(transport, derivationPath);
     // eslint-disable-next-line no-console
     console.log(
-      "Loaded Ledger hardware wallet with public key: " + publicKey.toBase58(),
+      `Loaded Ledger hardware wallet with public key: ${publicKey.toBase58()}`,
     );
     return new LedgerNodeWallet(derivationPath, transport, publicKey);
   }

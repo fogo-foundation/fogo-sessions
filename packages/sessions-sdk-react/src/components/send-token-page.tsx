@@ -325,7 +325,7 @@ const SendTokenPageImpl = ({
     } catch {
       return;
     }
-  }, [props.isLoading, props.isLoading ? undefined : props.amount, decimals]);
+  }, [props.isLoading, decimals, props.amount]);
 
   return (
     <div className={styles.sendTokenPage ?? ""}>
