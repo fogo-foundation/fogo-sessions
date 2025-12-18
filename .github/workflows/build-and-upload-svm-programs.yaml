@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - programs/**
+      - packages/sessions-sdk-rs/**
+      - packages/solana-intents/**
   push:
     branches:
       - main
     paths:
       - programs/**
+      - packages/sessions-sdk-rs/**
+      - packages/solana-intents/**
 
 jobs:
   build:
