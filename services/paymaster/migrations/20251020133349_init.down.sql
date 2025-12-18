@@ -5,5 +5,6 @@ DROP TABLE IF EXISTS domain_config;
 DROP TABLE IF EXISTS app;
 DROP TABLE IF EXISTS "user";
 DROP TYPE IF EXISTS variation_version;
+DROP TYPE IF EXISTS network_environment;
 
 COMMIT;
