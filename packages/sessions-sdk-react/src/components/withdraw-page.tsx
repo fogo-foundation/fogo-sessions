@@ -195,7 +195,6 @@ const LoadedWithdrawForm = ({
           }
         })
         .catch((error: unknown) => {
-          // eslint-disable-next-line no-console
           console.error(error);
           toast.error("Failed to withdraw tokens", errorToString(error));
         })

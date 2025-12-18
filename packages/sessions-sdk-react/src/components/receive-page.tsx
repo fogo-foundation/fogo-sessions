@@ -18,13 +18,7 @@ export const ReceivePage = ({ onPressDone, sessionState }: Props) => (
         <QrCodeIcon className={styles.icon} />
         <span className={styles.text}>Receive</span>
       </h1>
-      <Button
-        variant="secondary"
-        size="sm"
-        onPress={onPressDone}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus
-      >
+      <Button variant="secondary" size="sm" onPress={onPressDone} autoFocus>
         Done
       </Button>
     </div>

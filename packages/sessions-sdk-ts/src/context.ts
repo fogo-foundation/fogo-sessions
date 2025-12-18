@@ -9,7 +9,6 @@ import type {
   TransactionOrInstructions,
 } from "./connection.js";
 
-// eslint-disable-next-line unicorn/no-typeof-undefined
 const IS_BROWSER = typeof globalThis.window !== "undefined";
 
 export const SESSIONS_INTERNAL_PAYMASTER_DOMAIN = "sessions";

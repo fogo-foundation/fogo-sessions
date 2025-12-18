@@ -38,11 +38,11 @@
     "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
-    "fix:lint:eslint": "biome check --write",
+    "fix:lint:biome": "biome check --write",
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
     "test:integration": "run-jest --colors --selectProjects integration",
-    "test:lint:eslint": "biome check",
+    "test:lint:biome": "biome check",
     "test:types": "tsc",
     "fix:lint": "biome check --write",
     "test:lint": "biome check"

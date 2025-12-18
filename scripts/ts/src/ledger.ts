@@ -50,7 +50,6 @@ const P2_EXTEND = 0x01;
 const P2_MORE = 0x02;
 
 const MAX_PAYLOAD = 255;
-// eslint-disable-next-line unicorn/number-literal-case
 const LEDGER_CLA = 0xe0;
 
 async function getPublicKey(
@@ -150,7 +149,6 @@ export class LedgerNodeWallet {
       derivationChange,
     );
     const publicKey = await getPublicKey(transport, derivationPath);
-    // eslint-disable-next-line no-console
     console.log(
       `Loaded Ledger hardware wallet with public key: ${publicKey.toBase58()}`,
     );
@@ -162,7 +160,6 @@ export class LedgerNodeWallet {
   ): Promise<T> {
     const transport = this._transport;
     const publicKey = this.publicKey;
-    // eslint-disable-next-line no-console
     console.log(
       `Waiting for your approval on Ledger hardware wallet usb://ledger/${this.publicKey.toBase58()}`,
     );

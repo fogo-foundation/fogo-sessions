@@ -376,7 +376,6 @@ const LimitsPage = ({
       className={styles.sessionLimits}
       sessionState={sessionState}
       buttonText="Log in"
-      // eslint-disable-next-line jsx-a11y/no-autofocus
       autoFocus
     />
   </Page>

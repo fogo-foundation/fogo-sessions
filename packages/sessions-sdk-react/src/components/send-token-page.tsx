@@ -259,7 +259,6 @@ const LoadedSendTokenPage = ({
         showScanner ? (
           <div className={styles.qrCodeScanner}>
             <Button
-              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
               variant="solid"
               className={styles.closeButton ?? ""}
@@ -367,7 +366,6 @@ const SendTokenPageImpl = ({
           name="recipient"
           label="Recipient"
           isRequired
-          // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
           placeholder="Enter recipient address"
           double

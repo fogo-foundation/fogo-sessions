@@ -133,7 +133,6 @@ export const FogoSessionProvider = ({
 }: Props) => {
   // We have to typecast this unfortunately because the Solana library typings are broken
   const walletsWithStandardAdapters = useStandardWalletAdapters(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
     wallets as any,
   ) as unknown as SolanaWallet[];
   const filteredWalletsWithStandardAdapters = useMemo(
@@ -150,7 +149,6 @@ export const FogoSessionProvider = ({
             addressSelector: createDefaultAddressSelector(),
             appIdentity: {
               uri:
-                // eslint-disable-next-line unicorn/no-typeof-undefined
                 typeof globalThis.window === "undefined"
                   ? ""
                   : `${globalThis.window.location.protocol}//${globalThis.window.location.host}`,
@@ -386,7 +384,6 @@ const useSessionState = ({
             "We couldn't update your token balances, please try refreshing the page",
             errorToString(error),
           );
-          // eslint-disable-next-line no-console
           console.error("Failed to update token account data", error);
         }
       }
@@ -411,7 +408,6 @@ const useSessionState = ({
       limits: Map<PublicKey, bigint> | undefined;
       onSuccess: (session: Session) => void;
     }) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { updateSession, ...updatingOptions } = establishedOptions;
       setState(
         SessionState.UpdatingSession({ ...updatingOptions, previousState }),
@@ -458,7 +454,6 @@ const useSessionState = ({
         sessionKey: session.sessionKey,
         walletPublicKey: session.walletPublicKey,
       }).catch((error: unknown) => {
-        // eslint-disable-next-line no-console
         console.error("Failed to persist session", error);
       });
       const establishedOptions: EstablishedOptions = {
@@ -582,7 +577,6 @@ const useSessionState = ({
           }
         })
         .catch((error: unknown) => {
-          // eslint-disable-next-line no-console
           console.error("Failed to establish session", error);
           toast.error(
             "Failed to establish session, please try again",
@@ -770,7 +764,6 @@ const useSessionState = ({
             }
           })
           .catch((error: unknown) => {
-            // eslint-disable-next-line
             console.error("Failed to restore stored session", error);
             setState(SessionState.NotEstablished(requestWallet));
           });
@@ -778,7 +771,6 @@ const useSessionState = ({
     }
     // We very explicitly only want this effect to fire at startup or when the
     // network changes and never in other cases
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     network,
     completeSessionSetup,
@@ -954,7 +946,6 @@ const establishSession = async (
         // Use promise `.catch` here so that we don't block
         revokeSession({ context, session: result.session }).catch(
           (error: unknown) => {
-            // eslint-disable-next-line no-console
             console.error("Failed to revoke cancelled session", error);
           },
         );
@@ -996,7 +987,6 @@ const disconnect = (
       localStorage.removeItem("walletName");
     })
     .catch((error: unknown) => {
-      // eslint-disable-next-line no-console
       console.error("Failed to clean up session", error);
     });
 };
@@ -1017,7 +1007,6 @@ class InvariantFailedError extends Error {
 }
 
 type ConstrainedOmit<T, K> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [P in keyof T as Exclude<P, K & keyof any>]: T[P];
 };
 

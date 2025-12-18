@@ -841,7 +841,6 @@ export const sendTransfer = async (options: SendTransferOptions) => {
           source: sourceAta,
           sponsor: options.context.internalPayer,
           metadata:
-            // eslint-disable-next-line unicorn/no-null
             symbol === undefined ? null : new PublicKey(metadataAddress),
         })
         .instruction(),
@@ -953,8 +952,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
         mint: options.fromToken.mint,
         metadata:
           metadata?.symbol === undefined
-            ? // eslint-disable-next-line unicorn/no-null
-              null
+            ? null
             : new PublicKey(metadataAddress),
         source: getAssociatedTokenAddressSync(
           options.fromToken.mint,
@@ -1124,11 +1122,9 @@ export const bridgeIn = async (options: SendBridgeInOptions) => {
               transactions.map(async ({ transaction }) => {
                 const signedTx = await options.signTransaction(
                   // Hooray for Wormhole's incomplete typing eh?
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                   transaction.transaction,
                 );
                 // Hooray for Wormhole's incomplete typing eh?
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                 signedTx.sign(transaction.signers);
                 return signedTx.serialize();
               }),

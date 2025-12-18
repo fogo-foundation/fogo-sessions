@@ -34,7 +34,6 @@ export const CopyButton = ({
         }, 2000);
       })
       .catch((error: unknown) => {
-        // eslint-disable-next-line no-console
         console.error(error);
       });
   }, [text]);

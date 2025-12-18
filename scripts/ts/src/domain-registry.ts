@@ -106,14 +106,11 @@ const handleList = async (args: { domain: string } & AnchorArgs) => {
     for (let i = 0; i < domainRecordData.length; i += 64) {
       programs.push(new PublicKey(domainRecordData.subarray(i, i + 32)));
     }
-    // eslint-disable-next-line no-console
     console.log(`Programs in domain record for "${args.domain}":`);
     for (const program of programs) {
-      // eslint-disable-next-line no-console
       console.log(`- ${program.toBase58()}`);
     }
   } else {
-    // eslint-disable-next-line no-console
     console.log(`No domain record found for domain "${args.domain}"`);
   }
 };

@@ -55,7 +55,6 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
               }
             })
             .catch((error: unknown) => {
-              // eslint-disable-next-line no-console
               console.error("Error in `onStartSessionInit` callback", error);
             });
         } else if (callbackReturn !== false) {

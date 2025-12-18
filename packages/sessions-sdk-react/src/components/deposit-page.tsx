@@ -209,14 +209,12 @@ const DepositForm = ({
               ),
             );
             mutateAmountAvailable?.().catch((error: unknown) => {
-              // eslint-disable-next-line no-console
               console.error("Failed to update Solana USDC balance", error);
             });
             onSendComplete();
           }
         })
         .catch((error: unknown) => {
-          // eslint-disable-next-line no-console
           console.error(error);
           toast.error(
             "Failed to transfer tokens to Fogo",

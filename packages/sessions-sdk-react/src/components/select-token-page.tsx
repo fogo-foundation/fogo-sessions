@@ -24,13 +24,7 @@ export const SelectTokenPage = ({
         <PaperPlaneTiltIcon className={styles.icon} />
         <span className={styles.text}>Send</span>
       </h1>
-      <Button
-        variant="outline"
-        size="sm"
-        onPress={onPressBack}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus
-      >
+      <Button variant="outline" size="sm" onPress={onPressBack} autoFocus>
         Back
       </Button>
     </div>

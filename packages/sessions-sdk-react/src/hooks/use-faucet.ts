@@ -27,7 +27,6 @@ export const useFaucet = (sessionState: EstablishedSessionState) => {
           clearInterval(interval);
           mutate(getCacheKey(network, sessionState.walletPublicKey)).catch(
             (error: unknown) => {
-              // eslint-disable-next-line no-console
               console.error("Failed to update token account data", error);
             },
           );

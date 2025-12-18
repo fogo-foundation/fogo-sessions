@@ -13,7 +13,6 @@ export const useAsync = <T>(fn: () => Promise<T>) => {
         setState(State.Complete(result));
       })
       .catch((error: unknown) => {
-        // eslint-disable-next-line no-console
         console.error(error);
         setState(State.ErrorState(error));
         throw error;

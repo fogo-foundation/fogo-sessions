@@ -82,7 +82,6 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
         uri: args.tokenUri ?? "",
         sellerFeeBasisPoints: percentAmount(0),
         tokenStandard: TokenStandard.Fungible,
-        // eslint-disable-next-line unicorn/no-null
         creators: null,
       }).sendAndConfirm(umi),
     );
@@ -97,7 +96,6 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
           symbol: args.symbol ?? metadata.symbol,
           uri: args.tokenUri ?? metadata.uri,
           sellerFeeBasisPoints: 0,
-          // eslint-disable-next-line unicorn/no-null
           creators: null,
         },
       }).sendAndConfirm(umi),
@@ -106,6 +104,5 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
 };
 
 const printSignature = ({ signature }: { signature: TransactionSignature }) => {
-  // eslint-disable-next-line no-console
   console.log(`Transaction signature: ${base58.deserialize(signature)[0]}`);
 };

@@ -36,10 +36,10 @@
       "outputs": ["dist/theme.scss"]
     },
     "fix:lint": {
-      "dependsOn": ["fix:lint:eslint", "fix:lint:stylelint"],
+      "dependsOn": ["fix:lint:biome", "fix:lint:stylelint"],
       "cache": false
     },
-    "fix:lint:eslint": {
+    "fix:lint:biome": {
       "dependsOn": ["//#install:modules", "^build"],
       "cache": false
     },
@@ -70,11 +70,11 @@
       "dependsOn": [
         "//#install:modules",
         "^build",
-        "test:lint:eslint",
+        "test:lint:biome",
         "test:lint:stylelint"
       ]
     },
-    "test:lint:eslint": {
+    "test:lint:biome": {
       "dependsOn": ["//#install:modules", "^build"]
     },
     "test:lint:stylelint": {
