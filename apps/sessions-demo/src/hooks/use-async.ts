@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 
 export const useAsync = <T>(fn: () => Promise<T>) => {
   const [state, setState] = useState<State<T>>(State.Base());

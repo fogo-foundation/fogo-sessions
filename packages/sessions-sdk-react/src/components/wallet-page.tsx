@@ -4,17 +4,16 @@ import { ExportIcon } from "@phosphor-icons/react/dist/ssr/Export";
 import { HandCoinsIcon } from "@phosphor-icons/react/dist/ssr/HandCoins";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
 import { QrCodeIcon } from "@phosphor-icons/react/dist/ssr/QrCode";
-import { Button as UnstyledButton, Toolbar } from "react-aria-components";
-
-import type { EstablishedSessionState } from "../session-state.js";
-import { TokenList } from "./token-list.js";
-import styles from "./wallet-page.module.css";
+import { Toolbar, Button as UnstyledButton } from "react-aria-components";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
+import type { EstablishedSessionState } from "../session-state.js";
+import { TokenList } from "./token-list.js";
+import styles from "./wallet-page.module.css";
 
 type Props = {
   onPressSend: () => void;

@@ -1,7 +1,6 @@
-import * as React from "react";
-
-import { ToastProvider, useToast } from "./index.jsx";
+import type * as React from "react";
 import { Button } from "../Button/index.jsx";
+import { ToastProvider, useToast } from "./index.jsx";
 
 type ToastStoryArgs = {
   title: React.ReactNode;

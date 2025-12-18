@@ -1,13 +1,13 @@
 import type {
-  MessageSignerWalletAdapterProps,
   BaseSignerWalletAdapter,
-  WalletReadyState,
+  MessageSignerWalletAdapterProps,
   WalletError,
+  WalletReadyState,
 } from "@solana/wallet-adapter-base";
 import { isWalletAdapterCompatibleStandardWallet } from "@solana/wallet-adapter-base";
 import { SolanaSignMessage } from "@solana/wallet-standard-features";
-import { PublicKey } from "@solana/web3.js";
-import { SolanaMobileWalletAdapter } from "@solana-mobile/wallet-adapter-mobile";
+import type { PublicKey } from "@solana/web3.js";
+import type { SolanaMobileWalletAdapter } from "@solana-mobile/wallet-adapter-mobile";
 
 /**
  * The BaseWalletAdapter is used by all Solana wallet types. It extends EventEmitter but the types from the EventEmitter are not present so we are creating our own

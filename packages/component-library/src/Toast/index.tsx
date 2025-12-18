@@ -4,15 +4,14 @@ import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import type { ReactNode } from "react";
 import { createContext, use, useCallback, useMemo } from "react";
 import {
-  Text,
   UNSTABLE_Toast as ReactAriaToast,
+  Text,
   UNSTABLE_ToastContent as ToastContent,
-  UNSTABLE_ToastRegion as ToastRegion,
   UNSTABLE_ToastQueue as ToastQueue,
+  UNSTABLE_ToastRegion as ToastRegion,
 } from "react-aria-components";
-
-import styles from "./index.module.css";
 import { Button } from "../Button/index.js";
+import styles from "./index.module.css";
 
 const ONE_SECOND_IN_MS = 1000;
 const DEFAULT_TOAST_TIMEOUT = 5 * ONE_SECOND_IN_MS;

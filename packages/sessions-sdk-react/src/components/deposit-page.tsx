@@ -1,10 +1,10 @@
-import { bridgeIn, Network } from "@fogo/sessions-sdk";
+import { bridgeIn, type Network } from "@fogo/sessions-sdk";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import type { Connection, PublicKey, TokenAmount } from "@solana/web3.js";
 import { SolanaJSONRPCError } from "@solana/web3.js";
 import { TransferState } from "@wormhole-foundation/sdk";
 import type { FormEvent } from "react";
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Form } from "react-aria-components";
 import type { KeyedMutator } from "swr";
 
@@ -18,7 +18,7 @@ import { Link } from "./component-library/Link/index.js";
 import { useToast } from "./component-library/Toast/index.js";
 import { StateType, useData } from "./component-library/useData/index.js";
 import styles from "./deposit-page.module.css";
-import { ExplorerLink, Chain } from "./explorer-link.js";
+import { Chain, ExplorerLink } from "./explorer-link.js";
 import { FetchError } from "./fetch-error.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";

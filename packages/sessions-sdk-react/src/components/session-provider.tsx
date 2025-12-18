@@ -1,24 +1,24 @@
 "use client";
 
 import type {
-  SendTransactionOptions,
   Network,
+  SendTransactionOptions,
   Session,
+  SessionContext,
   SessionContext as SessionExecutionContext,
   TransactionOrInstructions,
-  SessionContext,
 } from "@fogo/sessions-sdk";
 import {
-  establishSession as establishSessionImpl,
-  replaceSession,
-  createSessionContext,
-  createSessionConnection,
-  SessionResultType,
-  reestablishSession,
   AuthorizedTokens,
-  TransactionResultType,
-  revokeSession,
   createLogInToken,
+  createSessionConnection,
+  createSessionContext,
+  establishSession as establishSessionImpl,
+  reestablishSession,
+  replaceSession,
+  revokeSession,
+  SessionResultType,
+  TransactionResultType,
 } from "@fogo/sessions-sdk";
 import {
   clearStoredSession,
@@ -33,13 +33,13 @@ import type {
 } from "@solana/wallet-adapter-base";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import {
-  SolflareWalletAdapter,
-  PhantomWalletAdapter,
-  NightlyWalletAdapter,
   BitgetWalletAdapter,
+  NightlyWalletAdapter,
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { useStandardWalletAdapters } from "@solana/wallet-standard-wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import {
   createDefaultAddressSelector,
   createDefaultAuthorizationResultCache,
@@ -53,7 +53,7 @@ import type {
   ReactNode,
   SetStateAction,
 } from "react";
-import { useMemo, useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { mutate } from "swr";
 import { z } from "zod";
 
@@ -65,12 +65,12 @@ import { errorToString } from "../error-to-string.js";
 import { SessionContext as SessionReactContext } from "../hooks/use-session.js";
 import { getCacheKey } from "../hooks/use-token-account-data.js";
 import type { EstablishedOptions, StateType } from "../session-state.js";
-import { ToastProvider, useToast } from "./component-library/Toast/index.js";
-import { RenewSessionModal } from "./renew-session-modal.js";
-import { SignInModal } from "./sign-in-modal.js";
 import { SessionState } from "../session-state.js";
 import type { SolanaMobileWallet, SolanaWallet } from "../solana-wallet.js";
 import { signWithWallet } from "../solana-wallet.js";
+import { ToastProvider, useToast } from "./component-library/Toast/index.js";
+import { RenewSessionModal } from "./renew-session-modal.js";
+import { SignInModal } from "./sign-in-modal.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;

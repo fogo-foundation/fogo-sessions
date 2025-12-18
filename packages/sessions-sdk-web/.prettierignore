@@ -1,5 +1,0 @@
-.turbo/
-coverage/
-node_modules/
-dist/
-integration-tests/__fixtures__/**/pnpm-lock.yaml

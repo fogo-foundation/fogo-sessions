@@ -1,0 +1,68 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true
+  },
+  "formatter": {
+    "bracketSameLine": false,
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "useEditorconfig": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "a11y": {
+        "noSvgWithoutTitle": "warn",
+        "useSemanticElements": "warn"
+      },
+      "recommended": true,
+      "suspicious": {
+        "noFallthroughSwitchClause": "off",
+        "noUnknownAtRules": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "arrowParentheses": "always",
+      "enabled": true,
+      "quoteStyle": "double"
+    }
+  },
+  "css": {
+    "parser": {
+      "cssModules": true,
+      "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on",
+        "recommended": true
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.rs", "**/*.sol"],
+      "linter": {
+        "enabled": false
+      },
+      "formatter": {
+        "bracketSameLine": true,
+        "enabled": true,
+        "indentStyle": "space",
+        "indentWidth": 2
+      }
+    }
+  ]
+}

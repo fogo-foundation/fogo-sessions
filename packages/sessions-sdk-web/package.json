@@ -35,12 +35,10 @@
     "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
-    "fix:format": "prettier --write .",
-    "fix:lint": "eslint --fix . --max-warnings 0",
+    "fix:lint": "biome check --write",
     "start:dev": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
-    "test:format": "run-jest --colors --selectProjects format",
     "test:integration": "run-jest --colors --selectProjects integration",
-    "test:lint": "run-jest --colors --selectProjects lint",
+    "test:lint": "biome check",
     "test:types": "tsc"
   },
   "dependencies": {
@@ -50,16 +48,12 @@
     "idb": "catalog:"
   },
   "devDependencies": {
-    "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
-    "eslint": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "puppeteer": "catalog:",
     "typescript": "catalog:"
   }

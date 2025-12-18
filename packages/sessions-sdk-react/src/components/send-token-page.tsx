@@ -1,7 +1,7 @@
 import {
+  getTransferFee,
   sendTransfer,
   TransactionResultType,
-  getTransferFee,
 } from "@fogo/sessions-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { Scanner } from "@yudiel/react-qr-scanner";
@@ -12,7 +12,7 @@ import type {
   FormEventHandler,
   ReactNode,
 } from "react";
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
@@ -21,6 +21,7 @@ import { usePrice } from "../hooks/use-price.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import type { EstablishedSessionState } from "../session-state.js";
+import { signWithWallet } from "../solana-wallet.js";
 import { Button } from "./component-library/Button/index.js";
 import { Link } from "./component-library/Link/index.js";
 import { TextField } from "./component-library/TextField/index.js";
@@ -32,7 +33,6 @@ import { NotionalAmount } from "./notional-amount.js";
 import styles from "./send-token-page.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { TruncateKey } from "./truncate-key.js";
-import { signWithWallet } from "../solana-wallet.js";
 
 type Props = {
   icon?: string | undefined;

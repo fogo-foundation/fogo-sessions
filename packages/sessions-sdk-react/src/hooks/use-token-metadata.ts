@@ -1,6 +1,6 @@
 import type { Network } from "@fogo/sessions-sdk";
 import { getMint } from "@solana/spl-token";
-import { Connection, PublicKey } from "@solana/web3.js";
+import type { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect } from "react";
 
 import {

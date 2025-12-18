@@ -2,14 +2,12 @@
 import { readFile } from "node:fs/promises";
 
 import { Wallet } from "@coral-xyz/anchor";
-import Transport, {
-  StatusCodes,
-  TransportStatusError,
-} from "@ledgerhq/hw-transport";
+import type Transport from "@ledgerhq/hw-transport";
+import { StatusCodes, TransportStatusError } from "@ledgerhq/hw-transport";
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
 import { getDerivationPath } from "@solana/wallet-adapter-ledger";
 import type { Transaction } from "@solana/web3.js";
-import { Keypair, VersionedTransaction, PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey, VersionedTransaction } from "@solana/web3.js";
 
 export const parseSignerSource = async (source: string) =>
   source.startsWith("usb://ledger")

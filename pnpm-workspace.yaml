@@ -9,8 +9,8 @@ catalog:
   "@changesets/cli": ^2.29.4
   "@better-builds/ts-duality": ^0.1.2
   "@babel/preset-typescript": ^7.27.1
+  "@biomejs/biome": ^2.3.10
   "@coral-xyz/anchor": ^0.31.1
-  "@cprussin/eslint-config": ^5.0.0
   "@cprussin/jest-config": ^3.1.2
   "@cprussin/prettier-config": ^3.0.0
   "@cprussin/transform-package-json": ^2.1.0
@@ -71,7 +71,6 @@ catalog:
   clsx: ^2.1.1
   dnum: ^2.15.0
   css-loader: ^7.1.2
-  eslint: ^9.28.0
   idb: ^8.0.3
   jest: ^29.7.0
   lucide-react: ^0.473.0

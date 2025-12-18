@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { mutate } from "swr";
 
 import type { EstablishedSessionState } from "../session-state.js";
