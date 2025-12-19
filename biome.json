@@ -337,14 +337,10 @@
       }
     },
     {
-      "includes": [
-        "**/*.json"
-      ]
+      "includes": ["**/*.json"]
     },
     {
-      "includes": [
-        "**/*.json"
-      ],
+      "includes": ["**/*.json"],
       "javascript": {
         "globals": []
       },
@@ -357,9 +353,7 @@
       }
     },
     {
-      "includes": [
-        "**/*.json"
-      ],
+      "includes": ["**/*.json"],
       "linter": {
         "rules": {}
       }
@@ -370,29 +364,19 @@
       }
     },
     {
-      "includes": [
-        "**/*.cjs"
-      ],
+      "includes": ["**/*.cjs"],
       "javascript": {
-        "globals": [
-          "exports"
-        ]
+        "globals": ["exports"]
       }
     },
     {
-      "includes": [
-        "**/*.js"
-      ],
+      "includes": ["**/*.js"],
       "javascript": {
-        "globals": [
-          "exports"
-        ]
+        "globals": ["exports"]
       }
     },
     {
-      "includes": [
-        "**/*.test.ts"
-      ],
+      "includes": ["**/*.test.ts"],
       "linter": {
         "rules": {}
       }
