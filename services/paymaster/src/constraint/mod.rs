@@ -273,7 +273,7 @@ impl InstructionConstraint {
         for account_constraint in &self.accounts {
             let account_pubkey = chain_index
                 .resolve_instruction_account_pubkey(
-                    transaction,
+                    transaction.message,
                     instruction_with_index,
                     account_constraint.index.into(),
                 )

@@ -2,6 +2,7 @@ use crate::constraint::fee::compute_paymaster_toll;
 use crate::constraint::gas::compute_gas_spend;
 use crate::constraint::NON_SUBSTANTIVE_PROGRAM_IDS;
 use crate::rpc::ChainIndex;
+use reqwest::StatusCode;
 use solana_message::compiled_instruction::CompiledInstruction;
 use solana_message::VersionedMessage;
 use solana_pubkey::Pubkey;
@@ -27,7 +28,7 @@ impl<'a> TransactionToValidate<'a> {
     pub async fn parse(
         transaction: &'a VersionedTransaction,
         chain_index: &ChainIndex,
-    ) -> anyhow::Result<Self> {
+    ) -> Result<Self, (StatusCode, String)> {
         Ok(Self {
             message: &transaction.message,
             signatures: &transaction.signatures,
@@ -42,7 +43,8 @@ impl<'a> TransactionToValidate<'a> {
                 .enumerate()
                 .map(|(index, instruction)| InstructionWithIndex { index, instruction }) // We store the indexes of instructions in the original vector so we can return them in the error messages if a tranasaction fails validation
                 .collect(),
-            gas_spend: compute_gas_spend(transaction)?,
+            gas_spend: compute_gas_spend(transaction)
+                .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
             paymaster_fee: compute_paymaster_toll(transaction, chain_index).await?,
         })
     }

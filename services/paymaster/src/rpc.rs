@@ -22,7 +22,7 @@ use tokio::time::timeout;
 
 use crate::{
     api::{ConfirmationResult, PubsubClientWithReconnect},
-    constraint::transaction::{InstructionWithIndex, TransactionToValidate},
+    constraint::transaction::InstructionWithIndex,
 };
 
 pub struct ChainIndex {
