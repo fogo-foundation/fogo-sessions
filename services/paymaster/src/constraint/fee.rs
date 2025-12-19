@@ -29,7 +29,6 @@ pub async fn compute_paymaster_fees(
             let amount = parse_pay_toll_instruction(instruction)
                 .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
-            // this is not the best if there are multiple address lookup tables
             let mint = chain_index
                 .resolve_instruction_account_pubkey(
                     &transaction.message,
