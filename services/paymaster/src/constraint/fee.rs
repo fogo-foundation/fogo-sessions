@@ -33,10 +33,7 @@ pub async fn compute_paymaster_fees(
             let mint = chain_index
                 .resolve_instruction_account_pubkey(
                     &transaction.message,
-                    &InstructionWithIndex {
-                        index,
-                        instruction,
-                    },
+                    &InstructionWithIndex { index, instruction },
                     PAY_TOLL_INSTRUCTION_MINT_INDEX,
                 )
                 .await?;
