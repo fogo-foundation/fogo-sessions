@@ -1,31 +1,31 @@
 import { useData } from "@fogo/component-library/useData";
-import { isEstablished, useSession } from "@fogo/sessions-sdk-react";
-import { useCallback, useEffect } from "react";
-import { mutate } from "swr";
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
+import { useCallback } from "react";
 
+import type { User } from "../db-schema";
 import { UserSchema } from "../db-schema";
 
-export const useUserData = () => {
-  const sessionState = useSession();
-  const readyToFetch = isEstablished(sessionState);
-
+export const useUserData = (sessionState: EstablishedSessionState) => {
   const getUserData = useCallback(async () => {
-    if (readyToFetch) {
-      const sessionToken = await sessionState.createLogInToken();
-      return fetchUserData(sessionToken);
-    }
-    return;
-  }, [sessionState, readyToFetch]);
+    const sessionToken = await sessionState.createLogInToken();
+    return fetchUserData(sessionToken);
+  }, [sessionState]);
 
-  useEffect(() => {
-    // revalidate when the user connects/disconnects/switches wallets
-    mutate(["user-data"]).catch((error: unknown) => {
-      // eslint-disable-next-line no-console
-      console.error("Failed to revalidate user data", error);
-    });
-  }, [readyToFetch]);
-  return useData(["user-data"], getUserData, { revalidateOnFocus: true });
+  return useData(
+    ["user-data", sessionState.walletPublicKey.toBase58()],
+    getUserData,
+    { revalidateOnFocus: true },
+  );
 };
+
+export enum FetchUserDataStateType {
+  Success,
+  NotFound,
+}
+
+export type FetchUserDataResult =
+  | { type: FetchUserDataStateType.Success; user: User }
+  | { type: FetchUserDataStateType.NotFound };
 
 export const fetchUserData = async (sessionToken: string) => {
   const url = new URL("/api/auth/user-data", globalThis.location.origin);
@@ -34,17 +34,15 @@ export const fetchUserData = async (sessionToken: string) => {
     headers: { Authorization: `Bearer ${sessionToken}` },
   });
   if (response.status === 404) {
-    throw new UserNotFoundError();
+    return { type: FetchUserDataStateType.NotFound };
   } else if (response.ok) {
-    return UserSchema.parse(await response.json());
+    return {
+      type: FetchUserDataStateType.Success,
+      user: UserSchema.parse(await response.json()),
+    };
   } else {
-    throw new Error("Failed to fetch user data");
+    return new Error(
+      `Failed to fetch user data: ${response.status.toString()} ${response.statusText}`,
+    );
   }
 };
-
-export class UserNotFoundError extends Error {
-  constructor() {
-    super("User not found");
-    this.name = "UserNotFoundError";
-  }
-}

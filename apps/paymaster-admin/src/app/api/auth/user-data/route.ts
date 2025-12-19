@@ -16,12 +16,12 @@ const fetchData = async (
 export const GET = async (request: NextRequest) => {
   const walletAddress = request.headers.get("x-authenticated-user");
   if (!walletAddress) {
-    return NextResponse.json("Unauthorized", { status: 401 });
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const userData = await fetchData(walletAddress);
   if (!userData) {
-    return NextResponse.json("User not found", { status: 404 });
+    return new Response("User not found", { status: 404 });
   }
   return NextResponse.json(userData);
 };
