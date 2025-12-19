@@ -2,23 +2,23 @@
 
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { LockIcon } from "@phosphor-icons/react/dist/ssr/Lock";
-import type { PublicKey } from "@solana/web3.js";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PublicKey } from "@solana/web3.js";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
+  Button as UnstyledButton,
   Dialog,
   Popover,
-  Button as UnstyledButton,
 } from "react-aria-components";
 
 import { deserializePublicKeyMap } from "../deserialize-public-key.js";
-import { useSession, useSessionContext } from "../hooks/use-session.js";
-import {
-  isEstablished,
-  StateType as SessionStateType,
-} from "../session-state.js";
 import { FogoLogo } from "./fogo-logo.js";
 import styles from "./session-button.module.css";
 import { SessionPanel } from "./session-panel.js";
+import { useSession, useSessionContext } from "../hooks/use-session.js";
+import {
+  StateType as SessionStateType,
+  isEstablished,
+} from "../session-state.js";
 import { TruncateKey } from "./truncate-key.js";
 
 type Props = {
@@ -55,6 +55,7 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
               }
             })
             .catch((error: unknown) => {
+              // eslint-disable-next-line no-console
               console.error("Error in `onStartSessionInit` callback", error);
             });
         } else if (callbackReturn !== false) {
@@ -63,14 +64,17 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
       }
     }
   }, [sessionState, limits, onStartSessionInit]);
-  const handleSessionPanelOpenChange = useCallback((isOpen: boolean) => {
-    if (!isOpen) {
-      setSessionPanelOpen(false);
-    }
-  }, []);
+  const handleSessionPanelOpenChange = useCallback(
+    (isOpen: boolean) => {
+      if (!isOpen) {
+        setSessionPanelOpen(false);
+      }
+    },
+    [setSessionPanelOpen],
+  );
   const closeSessionPanel = useCallback(() => {
     setSessionPanelOpen(false);
-  }, []);
+  }, [setSessionPanelOpen]);
   const isLoading = [
     SessionStateType.Initializing,
     SessionStateType.CheckingStoredSession,

@@ -8,17 +8,18 @@ import {
   useSession,
 } from "@fogo/sessions-sdk-react";
 import { NATIVE_MINT } from "@solana/spl-token";
-import type { PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import Link from "next/link";
 import { useMemo } from "react";
-import { StateType as AsyncStateType } from "../../hooks/use-async";
-import { Button } from "../Button";
+
 import styles from "./demo.module.scss";
 import { useAirdrop } from "./use-airdrop";
 import { useAirdropUsdc } from "./use-airdrop-usdc";
 import { useTrade } from "./use-trade";
 import type { Transaction } from "./use-transaction-log";
 import { useTransactionLog } from "./use-transaction-log";
+import { StateType as AsyncStateType } from "../../hooks/use-async";
+import { Button } from "../Button";
 
 export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
   const connection = useConnection();

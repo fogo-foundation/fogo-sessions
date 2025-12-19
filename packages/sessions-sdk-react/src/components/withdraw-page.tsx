@@ -1,11 +1,11 @@
 import {
   bridgeOut,
-  getBridgeOutFee,
-  type Network,
+  Network,
   TransactionResultType,
+  getBridgeOutFee,
 } from "@fogo/sessions-sdk";
 import type { FormEvent, FormEventHandler } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
@@ -15,7 +15,6 @@ import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import type { EstablishedSessionState } from "../session-state.js";
-import { signWithWallet } from "../solana-wallet.js";
 import { USDC } from "../wormhole-routes.js";
 import { Button } from "./component-library/Button/index.js";
 import { Link } from "./component-library/Link/index.js";
@@ -27,6 +26,7 @@ import { NotionalAmount } from "./notional-amount.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
 import styles from "./withdraw-page.module.css";
+import { signWithWallet } from "../solana-wallet.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -195,6 +195,7 @@ const LoadedWithdrawForm = ({
           }
         })
         .catch((error: unknown) => {
+          // eslint-disable-next-line no-console
           console.error(error);
           toast.error("Failed to withdraw tokens", errorToString(error));
         })
@@ -259,7 +260,11 @@ const WithdrawFormImpl = (
     } catch {
       return;
     }
-  }, [props]);
+  }, [
+    props.isLoading,
+    props.isLoading ? undefined : props.amount,
+    USDC.decimals,
+  ]);
 
   return (
     <Form

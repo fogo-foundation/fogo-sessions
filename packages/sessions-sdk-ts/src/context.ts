@@ -1,7 +1,7 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { ChainIdProgram } from "@fogo/sessions-idls";
-import { Keypair, type Connection as Web3Connection } from "@solana/web3.js";
+import { Connection as Web3Connection, Keypair } from "@solana/web3.js";
 
 import type {
   Connection,
@@ -9,6 +9,7 @@ import type {
   TransactionOrInstructions,
 } from "./connection.js";
 
+// eslint-disable-next-line unicorn/no-typeof-undefined
 const IS_BROWSER = typeof globalThis.window !== "undefined";
 
 export const SESSIONS_INTERNAL_PAYMASTER_DOMAIN = "sessions";

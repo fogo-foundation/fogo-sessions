@@ -4,14 +4,15 @@ import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import type { ReactNode } from "react";
 import { createContext, use, useCallback, useMemo } from "react";
 import {
-  UNSTABLE_Toast as ReactAriaToast,
   Text,
+  UNSTABLE_Toast as ReactAriaToast,
   UNSTABLE_ToastContent as ToastContent,
-  UNSTABLE_ToastQueue as ToastQueue,
   UNSTABLE_ToastRegion as ToastRegion,
+  UNSTABLE_ToastQueue as ToastQueue,
 } from "react-aria-components";
-import { Button } from "../Button/index.js";
+
 import styles from "./index.module.css";
+import { Button } from "../Button/index.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const DEFAULT_TOAST_TIMEOUT = 5 * ONE_SECOND_IN_MS;
@@ -55,34 +56,34 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
 
 export const useToast = () => {
   const queue = use(ToastContext);
-  const mkToastFn = useCallback(
-    (toastType: ToastType) =>
-      (
-        title: ReactNode,
-        description?: ReactNode,
-        {
-          timeout = DEFAULT_TOAST_TIMEOUT,
-          ...opts
-        }: Parameters<ToastQueue<ToastContents>["add"]>[1] | undefined = {},
-      ) =>
-        queue?.add(
-          { type: toastType, title, description },
-          { timeout, ...opts },
-        ),
-    [queue],
-  );
-  const out = useMemo(
-    () => ({
-      queue,
-      success: mkToastFn(ToastType.Success),
-      error: mkToastFn(ToastType.Error),
-    }),
-    [queue, mkToastFn],
-  );
-  if (!queue) {
+  if (queue) {
+    const mkToastFn = useCallback(
+      (toastType: ToastType) =>
+        (
+          title: ReactNode,
+          description?: ReactNode,
+          {
+            timeout = DEFAULT_TOAST_TIMEOUT,
+            ...opts
+          }: Parameters<typeof queue.add>[1] | undefined = {},
+        ) =>
+          queue.add(
+            { type: toastType, title, description },
+            { timeout, ...opts },
+          ),
+      [queue],
+    );
+    return useMemo(
+      () => ({
+        queue,
+        success: mkToastFn(ToastType.Success),
+        error: mkToastFn(ToastType.Error),
+      }),
+      [queue, mkToastFn],
+    );
+  } else {
     throw new Error("Toast queue not initialized");
   }
-  return out;
 };
 
 const ToastContext = createContext<undefined | ToastQueue<ToastContents>>(

@@ -1,39 +1,39 @@
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
-import type { PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import type { FormEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import {
+  Button as UnstyledButton,
   Checkbox,
   Form,
+  Select,
   Label,
+  SelectValue,
+  Popover,
   ListBox,
   ListBoxItem,
-  Popover,
-  Select,
-  SelectValue,
-  Button as UnstyledButton,
 } from "react-aria-components";
 
-import { amountToString, stringToAmount } from "../amount-to-string.js";
+import { stringToAmount, amountToString } from "../amount-to-string.js";
+import type { WalletConnectedSessionState } from "../session-state.js";
+import { Button } from "./component-library/Button/index.js";
+import { TextField } from "./component-library/TextField/index.js";
+import styles from "./session-limits.module.css";
+import { TokenAmountInput } from "./token-amount-input.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { TokenAccountData } from "../hooks/use-token-account-data.js";
 import {
-  StateType as TokenDataStateType,
   useTokenAccountData,
+  StateType as TokenDataStateType,
 } from "../hooks/use-token-account-data.js";
 import {
   StateType as TokenMetadataStateType,
   useTokenMetadata,
 } from "../hooks/use-token-metadata.js";
-import type { WalletConnectedSessionState } from "../session-state.js";
-import { isEstablished, isUpdatable, StateType } from "../session-state.js";
-import { Button } from "./component-library/Button/index.js";
-import { TextField } from "./component-library/TextField/index.js";
-import styles from "./session-limits.module.css";
-import { TokenAmountInput } from "./token-amount-input.js";
+import { StateType, isEstablished, isUpdatable } from "../session-state.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;

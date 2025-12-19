@@ -1,5 +1,7 @@
+/* eslint-disable n/no-process-env */
+
 import "server-only";
-import { type FogoSessionProvider, Network } from "@fogo/sessions-sdk-react";
+import { FogoSessionProvider, Network } from "@fogo/sessions-sdk-react";
 import type { ComponentProps } from "react";
 
 const getNetwork = () => {

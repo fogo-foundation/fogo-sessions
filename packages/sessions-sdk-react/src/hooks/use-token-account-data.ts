@@ -1,6 +1,6 @@
 import type { Network } from "@fogo/sessions-sdk";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { type Connection, PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { z } from "zod";
 

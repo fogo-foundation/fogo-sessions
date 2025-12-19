@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 import { useCallback, useMemo } from "react";
 
-import { amountToString, stringToAmount } from "../amount-to-string.js";
+import { stringToAmount, amountToString } from "../amount-to-string.js";
 import { errorToString } from "../error-to-string.js";
 import { TextField } from "./component-library/TextField/index.js";
 

@@ -27,16 +27,16 @@ import type {
 } from "@solana/web3.js";
 import {
   ComputeBudgetProgram,
-  type Connection,
+  Connection,
   Ed25519Program,
   Keypair,
   PublicKey,
 } from "@solana/web3.js";
 import type {
-  Chain,
   Network as WormholeNetwork,
+  Chain,
 } from "@wormhole-foundation/sdk";
-import { routes, Wormhole, wormhole } from "@wormhole-foundation/sdk";
+import { Wormhole, wormhole, routes } from "@wormhole-foundation/sdk";
 import solanaSdk from "@wormhole-foundation/sdk/solana";
 import { contracts } from "@wormhole-foundation/sdk-base";
 import { nttExecutorRoute } from "@wormhole-foundation/sdk-route-ntt";
@@ -60,18 +60,19 @@ import {
 } from "./crypto.js";
 
 export {
-  type Connection,
-  createSessionConnection,
-  Network,
-  type TransactionOrInstructions,
-  type TransactionResult,
-  TransactionResultType,
-} from "./connection.js";
-export {
-  createSessionContext,
-  type SendTransactionOptions,
   type SessionContext,
+  type SendTransactionOptions,
+  createSessionContext,
 } from "./context.js";
+
+export {
+  type TransactionResult,
+  type Connection,
+  type TransactionOrInstructions,
+  Network,
+  TransactionResultType,
+  createSessionConnection,
+} from "./connection.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
@@ -433,7 +434,6 @@ const sessionInfoSchema = z
     sponsor: z.instanceof(PublicKey),
   })
   .transform(({ session_info, major, sponsor }) => {
-    // biome-ignore lint/suspicious/noImplicitAnyLet: the typing is a discriminated union and doesn't have per-union type exports
     let activeSessionInfo;
     let minor: 1 | 2 | 3 | 4;
 
@@ -841,6 +841,7 @@ export const sendTransfer = async (options: SendTransferOptions) => {
           source: sourceAta,
           sponsor: options.context.internalPayer,
           metadata:
+            // eslint-disable-next-line unicorn/no-null
             symbol === undefined ? null : new PublicKey(metadataAddress),
         })
         .instruction(),
@@ -952,7 +953,8 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
         mint: options.fromToken.mint,
         metadata:
           metadata?.symbol === undefined
-            ? null
+            ? // eslint-disable-next-line unicorn/no-null
+              null
             : new PublicKey(metadataAddress),
         source: getAssociatedTokenAddressSync(
           options.fromToken.mint,
@@ -1122,9 +1124,11 @@ export const bridgeIn = async (options: SendBridgeInOptions) => {
               transactions.map(async ({ transaction }) => {
                 const signedTx = await options.signTransaction(
                   // Hooray for Wormhole's incomplete typing eh?
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                   transaction.transaction,
                 );
                 // Hooray for Wormhole's incomplete typing eh?
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
                 signedTx.sign(transaction.signers);
                 return signedTx.serialize();
               }),

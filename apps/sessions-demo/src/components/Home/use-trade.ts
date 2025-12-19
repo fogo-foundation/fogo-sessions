@@ -1,4 +1,4 @@
-import { AnchorProvider, BN, type Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
 import { ExampleProgram } from "@fogo/sessions-idls";
 import { TransactionResultType } from "@fogo/sessions-sdk";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
@@ -8,10 +8,11 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import type { PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
-import { useAsync } from "../../hooks/use-async";
+
 import type { Transaction } from "./use-transaction-log";
+import { useAsync } from "../../hooks/use-async";
 
 export const useTrade = (
   sessionState: EstablishedSessionState,
@@ -38,7 +39,7 @@ export const useTrade = (
       await new ExampleProgram(
         new AnchorProvider(connection, {} as Wallet, {}),
       ).methods
-        .exampleTransfer(new BN(amount * 10 ** decimals))
+        .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
         .accountsPartial({
           signerOrSession: sessionState.sessionPublicKey,
           sink: sinkAta,

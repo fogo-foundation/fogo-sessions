@@ -2,12 +2,14 @@
 import { readFile } from "node:fs/promises";
 
 import { Wallet } from "@coral-xyz/anchor";
-import type Transport from "@ledgerhq/hw-transport";
-import { StatusCodes, TransportStatusError } from "@ledgerhq/hw-transport";
+import Transport, {
+  StatusCodes,
+  TransportStatusError,
+} from "@ledgerhq/hw-transport";
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
 import { getDerivationPath } from "@solana/wallet-adapter-ledger";
 import type { Transaction } from "@solana/web3.js";
-import { Keypair, PublicKey, VersionedTransaction } from "@solana/web3.js";
+import { Keypair, VersionedTransaction, PublicKey } from "@solana/web3.js";
 
 export const parseSignerSource = async (source: string) =>
   source.startsWith("usb://ledger")
@@ -27,15 +29,15 @@ export function parseDerivationPath(source: string): {
     return {};
   } else {
     const parts = key.split("/");
-    if (parts.length === 1) {
+    if (parts.length == 1) {
       return { derivationAccount: Number(parts[0]) };
-    } else if (parts.length === 2) {
+    } else if (parts.length == 2) {
       return {
         derivationAccount: Number(parts[0]),
         derivationChange: Number(parts[1]),
       };
     } else {
-      throw new Error(`The provided derivation path is too long: ${key}`);
+      throw new Error("The provided derivation path is too long: " + key);
     }
   }
 }
@@ -50,6 +52,7 @@ const P2_EXTEND = 0x01;
 const P2_MORE = 0x02;
 
 const MAX_PAYLOAD = 255;
+// eslint-disable-next-line unicorn/number-literal-case
 const LEDGER_CLA = 0xe0;
 
 async function getPublicKey(
@@ -149,8 +152,9 @@ export class LedgerNodeWallet {
       derivationChange,
     );
     const publicKey = await getPublicKey(transport, derivationPath);
+    // eslint-disable-next-line no-console
     console.log(
-      `Loaded Ledger hardware wallet with public key: ${publicKey.toBase58()}`,
+      "Loaded Ledger hardware wallet with public key: " + publicKey.toBase58(),
     );
     return new LedgerNodeWallet(derivationPath, transport, publicKey);
   }
@@ -160,6 +164,7 @@ export class LedgerNodeWallet {
   ): Promise<T> {
     const transport = this._transport;
     const publicKey = this.publicKey;
+    // eslint-disable-next-line no-console
     console.log(
       `Waiting for your approval on Ledger hardware wallet usb://ledger/${this.publicKey.toBase58()}`,
     );

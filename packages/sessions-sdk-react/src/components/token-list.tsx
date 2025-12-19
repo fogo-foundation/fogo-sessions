@@ -7,8 +7,8 @@ import { amountToString } from "../amount-to-string.js";
 import { usePrice } from "../hooks/use-price.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
-  StateType as PriceDataStateType,
   StateType as TokenDataStateType,
+  StateType as PriceDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
 import type { EstablishedSessionState } from "../session-state.js";
@@ -50,7 +50,8 @@ export const TokenList = ({
       );
     }
     case TokenDataStateType.Loaded: {
-      return state.data.tokensInWallet.length === 0 ? (
+      return state.data.tokensInWallet.length === 0 &&
+        state.data.nativeBalance === 0n ? (
         <div className={styles.tokenListEmpty}>
           <WalletIcon className={styles.emptyIcon} />
           <span className={styles.message}>Your wallet is empty</span>

@@ -1,21 +1,21 @@
 import { createSessionConnection } from "@fogo/sessions-sdk";
 import {
-  address,
-  appendTransactionMessageInstructions,
-  createKeyPairSignerFromBytes,
   createTransactionMessage,
-  getSignatureFromTransaction,
-  pipe,
-  sendTransactionWithoutConfirmingFactory,
-  setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstructions,
+  pipe,
+  address,
+  setTransactionMessageFeePayerSigner,
+  sendTransactionWithoutConfirmingFactory,
   signTransactionMessageWithSigners,
+  getSignatureFromTransaction,
+  createKeyPairSignerFromBytes,
 } from "@solana/kit";
 import {
   findAssociatedTokenPda,
+  TOKEN_PROGRAM_ADDRESS,
   getCreateAssociatedTokenIdempotentInstruction,
   getMintToInstruction,
-  TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
 import { z } from "zod";
 

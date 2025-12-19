@@ -1,6 +1,6 @@
 import type { Network } from "@fogo/sessions-sdk";
 import { getMint } from "@solana/spl-token";
-import type { Connection, PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect } from "react";
 
 import {
@@ -35,6 +35,7 @@ export const useTokenMetadata = (mint: PublicKey) => {
   useEffect(() => {
     if (data.type === StateType.NotLoaded) {
       data.mutate().catch((error: unknown) => {
+        // eslint-disable-next-line no-console
         console.error("Failed to fetch token metadata", error);
       });
     }

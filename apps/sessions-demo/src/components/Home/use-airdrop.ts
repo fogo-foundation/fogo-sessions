@@ -1,8 +1,9 @@
 import { TransactionResultType } from "@fogo/sessions-sdk";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { useCallback } from "react";
-import { useAsync } from "../../hooks/use-async";
+
 import type { Transaction } from "./use-transaction-log";
+import { useAsync } from "../../hooks/use-async";
 
 export const useAirdrop = (
   sessionState: EstablishedSessionState,

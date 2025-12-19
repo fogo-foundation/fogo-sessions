@@ -1,7 +1,7 @@
 import {
-  getTransferFee,
   sendTransfer,
   TransactionResultType,
+  getTransferFee,
 } from "@fogo/sessions-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { Scanner } from "@yudiel/react-qr-scanner";
@@ -12,7 +12,7 @@ import type {
   FormEventHandler,
   ReactNode,
 } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
@@ -21,7 +21,6 @@ import { usePrice } from "../hooks/use-price.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import type { EstablishedSessionState } from "../session-state.js";
-import { signWithWallet } from "../solana-wallet.js";
 import { Button } from "./component-library/Button/index.js";
 import { Link } from "./component-library/Link/index.js";
 import { TextField } from "./component-library/TextField/index.js";
@@ -33,6 +32,7 @@ import { NotionalAmount } from "./notional-amount.js";
 import styles from "./send-token-page.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { TruncateKey } from "./truncate-key.js";
+import { signWithWallet } from "../solana-wallet.js";
 
 type Props = {
   icon?: string | undefined;
@@ -259,6 +259,7 @@ const LoadedSendTokenPage = ({
         showScanner ? (
           <div className={styles.qrCodeScanner}>
             <Button
+              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
               variant="solid"
               className={styles.closeButton ?? ""}
@@ -313,21 +314,18 @@ const SendTokenPageImpl = ({
         maxSendAmount: bigint;
       }
   )) => {
-  const { isLoading } = props;
-  const amount = "amount" in props ? props.amount : "";
-
-  const scannerShowing = !isLoading && props.scanner !== undefined;
+  const scannerShowing = !props.isLoading && props.scanner !== undefined;
 
   const notionalAmount = useMemo(() => {
-    if (isLoading || !amount) {
+    if (props.isLoading || !props.amount) {
       return;
     }
     try {
-      return stringToAmount(amount, decimals);
+      return stringToAmount(props.amount, decimals);
     } catch {
       return;
     }
-  }, [amount, decimals, isLoading]);
+  }, [props.isLoading, props.isLoading ? undefined : props.amount, decimals]);
 
   return (
     <div className={styles.sendTokenPage ?? ""}>
@@ -342,7 +340,8 @@ const SendTokenPageImpl = ({
       <Form
         aria-hidden={scannerShowing ? "true" : undefined}
         className={styles.sendTokenForm ?? ""}
-        {...(!isLoading && !props.isSubmitting && { onSubmit: props.onSubmit })}
+        {...(!props.isLoading &&
+          !props.isSubmitting && { onSubmit: props.onSubmit })}
       >
         <div className={styles.header}>
           {icon ? (
@@ -366,6 +365,7 @@ const SendTokenPageImpl = ({
           name="recipient"
           label="Recipient"
           isRequired
+          // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
           placeholder="Enter recipient address"
           double
@@ -373,7 +373,7 @@ const SendTokenPageImpl = ({
             <Link
               excludeFromTabOrder={scannerShowing}
               className={styles.action ?? ""}
-              {...(isLoading || props.isSubmitting
+              {...(props.isLoading || props.isSubmitting
                 ? { isPending: true }
                 : {
                     onPress: props.onPressScanner,
@@ -395,12 +395,12 @@ const SendTokenPageImpl = ({
               return;
             }
           }}
-          {...(isLoading || props.isSubmitting
+          {...(props.isLoading || props.isSubmitting
             ? { isPending: true }
             : {
                 onChange: props.onChangeRecipient,
               })}
-          {...(!isLoading && {
+          {...(!props.isLoading && {
             value: props.recipient,
           })}
         />
@@ -418,7 +418,7 @@ const SendTokenPageImpl = ({
             <Link
               excludeFromTabOrder={scannerShowing}
               className={styles.action ?? ""}
-              {...(isLoading || props.isSubmitting
+              {...(props.isLoading || props.isSubmitting
                 ? { isPending: true }
                 : {
                     onPress: () => {
@@ -431,17 +431,17 @@ const SendTokenPageImpl = ({
               Max
             </Link>
           }
-          {...(isLoading || props.isSubmitting
+          {...(props.isLoading || props.isSubmitting
             ? { isPending: true }
             : {
                 max: props.maxSendAmount,
                 onChange: props.onChangeAmount,
               })}
-          {...(!isLoading && {
-            value: amount,
+          {...(!props.isLoading && {
+            value: props.amount,
           })}
         />
-        {!isLoading &&
+        {!props.isLoading &&
           props.price !== undefined &&
           notionalAmount !== undefined && (
             <NotionalAmount
@@ -456,15 +456,15 @@ const SendTokenPageImpl = ({
           type="submit"
           variant="secondary"
           className={styles.submitButton ?? ""}
-          isPending={isLoading === true || props.isSubmitting}
+          isPending={props.isLoading === true || props.isSubmitting}
         >
           Send
         </Button>
         <div
           className={styles.fee}
-          data-is-loading={isLoading ? "" : undefined}
+          data-is-loading={props.isLoading ? "" : undefined}
         >
-          {!isLoading && (
+          {!props.isLoading && (
             <>
               Fee:{" "}
               {amountToString(props.feeConfig.fee, props.feeConfig.decimals)}{" "}
@@ -473,7 +473,7 @@ const SendTokenPageImpl = ({
           )}
         </div>
       </Form>
-      {!isLoading && props.scanner}
+      {!props.isLoading && props.scanner}
     </div>
   );
 };

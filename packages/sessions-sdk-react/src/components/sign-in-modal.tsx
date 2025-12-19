@@ -5,7 +5,7 @@ import { useLocalStorageValue, useResizeObserver } from "@react-hookz/web";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { Heading } from "react-aria-components";
 
 import { useSession, useSessionContext } from "../hooks/use-session.js";
@@ -376,6 +376,7 @@ const LimitsPage = ({
       className={styles.sessionLimits}
       sessionState={sessionState}
       buttonText="Log in"
+      // eslint-disable-next-line jsx-a11y/no-autofocus
       autoFocus
     />
   </Page>

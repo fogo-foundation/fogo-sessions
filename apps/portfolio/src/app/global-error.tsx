@@ -2,14 +2,14 @@
 
 import type { ComponentProps } from "react";
 
-import { ErrorComponent } from "../components/Error";
+import { Error } from "../components/Error";
 import { LoggerProvider } from "../hooks/use-logger";
 
-const GlobalError = (props: ComponentProps<typeof ErrorComponent>) => (
+const GlobalError = (props: ComponentProps<typeof Error>) => (
   <LoggerProvider>
     <html lang="en" dir="ltr">
       <body>
-        <ErrorComponent {...props} />
+        <Error {...props} />
       </body>
     </html>
   </LoggerProvider>

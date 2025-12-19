@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import type { ComponentProps } from "react";
-import { Link, Button as UnstyledButton } from "react-aria-components";
+import { Button as UnstyledButton, Link } from "react-aria-components";
 
 import styles from "./index.module.css";
 

@@ -2,18 +2,17 @@
 
 import { Network } from "@fogo/sessions-sdk";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
-import type { PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import { motion } from "motion/react";
 import type { ComponentProps } from "react";
-import { useCallback, useEffect, useState } from "react";
-import { Heading, Tab, TabList, TabPanel, Tabs } from "react-aria-components";
-import { useSessionContext } from "../hooks/use-session.js";
+import { useState, useCallback, useEffect } from "react";
+import { Tabs, TabList, Tab, TabPanel, Heading } from "react-aria-components";
+
 import type {
   EstablishedSessionState,
   SessionState,
 } from "../session-state.js";
-import { isEstablished } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
 import { CopyButton } from "./component-library/CopyButton/index.js";
 import { Link } from "./component-library/Link/index.js";
@@ -26,8 +25,10 @@ import { SendTokenPage } from "./send-token-page.js";
 import { SessionLimitsTab } from "./session-limits-tab.js";
 import styles from "./session-panel.module.css";
 import { TruncateKey } from "./truncate-key.js";
-import { WalletPage } from "./wallet-page.js";
 import { WithdrawPage } from "./withdraw-page.js";
+import { useSessionContext } from "../hooks/use-session.js";
+import { isEstablished } from "../session-state.js";
+import { WalletPage } from "./wallet-page.js";
 
 type Props = Omit<ComponentProps<"div">, "children"> & {
   onClose?: (() => void) | undefined;
@@ -236,27 +237,29 @@ const Tokens = ({
       );
     }
     case TokenScreenType.Send: {
-      return (
-        <SendTokenPage
-          sessionState={sessionState}
-          onPressBack={() => {
-            if (
-              currentScreen.prevScreen === TokenScreenType.SelectTokenToSend
-            ) {
-              showSelectTokenToSend();
-            } else {
-              showWallet();
-            }
-          }}
-          decimals={currentScreen.decimals}
-          tokenMint={currentScreen.tokenMint}
-          tokenName={currentScreen.tokenName}
-          icon={currentScreen.icon}
-          symbol={currentScreen.symbol}
-          amountAvailable={currentScreen.amountAvailable}
-          onSendComplete={showWallet}
-        />
-      );
+      {
+        return (
+          <SendTokenPage
+            sessionState={sessionState}
+            onPressBack={() => {
+              if (
+                currentScreen.prevScreen === TokenScreenType.SelectTokenToSend
+              ) {
+                showSelectTokenToSend();
+              } else {
+                showWallet();
+              }
+            }}
+            decimals={currentScreen.decimals}
+            tokenMint={currentScreen.tokenMint}
+            tokenName={currentScreen.tokenName}
+            icon={currentScreen.icon}
+            symbol={currentScreen.symbol}
+            amountAvailable={currentScreen.amountAvailable}
+            onSendComplete={showWallet}
+          />
+        );
+      }
     }
     case TokenScreenType.Receive: {
       return (

@@ -4,7 +4,7 @@ import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { CopyIcon } from "@phosphor-icons/react/dist/ssr/Copy";
 import clsx from "clsx";
 import type { ComponentProps, ReactNode } from "react";
-import { useCallback, useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "react-aria-components";
 
 import styles from "./index.module.css";
@@ -34,6 +34,7 @@ export const CopyButton = ({
         }, 2000);
       })
       .catch((error: unknown) => {
+        // eslint-disable-next-line no-console
         console.error(error);
       });
   }, [text]);

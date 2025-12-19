@@ -1,14 +1,14 @@
 "use client";
 
 import clsx from "clsx";
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode, ComponentProps } from "react";
 import {
   FieldError,
-  Group,
   Input,
-  Label,
   TextArea,
+  Label,
   TextField as TextFieldImpl,
+  Group,
 } from "react-aria-components";
 
 import styles from "./index.module.css";

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import type { EstablishedSessionState } from "../session-state.js";
-import { SessionLimits } from "./session-limits.js";
 import styles from "./session-limits-tab.module.css";
+import { SessionLimits } from "./session-limits.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;

@@ -9,16 +9,16 @@ import type { ReactNode } from "react";
 import { FogoSessionProvider } from "./fogo-session-provider";
 import styles from "./index.module.scss";
 import "./root.scss";
-import {
-  DOMAIN,
-  ENABLE_ACCESSIBILITY_REPORTING,
-  GOOGLE_ANALYTICS_ID,
-} from "../../config/server";
-import { LoggerProvider } from "../../hooks/use-logger";
-import { FogoWordmark } from "../Home/fogo-wordmark";
 import { FogoNetworkProvider } from "./network-provider";
 import { NetworkSelect } from "./network-select";
 import { RouterProvider } from "./router-provider";
+import {
+  ENABLE_ACCESSIBILITY_REPORTING,
+  GOOGLE_ANALYTICS_ID,
+  DOMAIN,
+} from "../../config/server";
+import { LoggerProvider } from "../../hooks/use-logger";
+import { FogoWordmark } from "../Home/fogo-wordmark";
 
 const ReportAccessibility = dynamic(() =>
   import("./report-accessibility").then((mod) => mod.ReportAccessibility),

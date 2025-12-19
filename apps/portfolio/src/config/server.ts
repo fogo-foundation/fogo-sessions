@@ -1,4 +1,7 @@
-// Centralized location for declaring and loading env variables.
+// Disable the following rule because this file is the intended place to declare
+// and load all env variables.
+/* eslint-disable n/no-process-env */
+
 import "server-only";
 
 /**

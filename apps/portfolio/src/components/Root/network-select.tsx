@@ -5,15 +5,16 @@ import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { useCallback } from "react";
 import {
   Button,
-  ListBox,
-  ListBoxItem,
-  Popover,
   Select,
   SelectValue,
+  Popover,
+  ListBox,
+  ListBoxItem,
 } from "react-aria-components";
-import { useLogger } from "../../hooks/use-logger";
+
 import { useNetwork } from "./network-provider";
 import styles from "./network-select.module.scss";
+import { useLogger } from "../../hooks/use-logger";
 
 const NETWORKS = [
   { key: Network.Mainnet, label: "Mainnet" },

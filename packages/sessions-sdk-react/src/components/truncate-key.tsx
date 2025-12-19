@@ -1,4 +1,4 @@
-import type { PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { useMemo } from "react";
 
 export const TruncateKey = ({ keyValue }: { keyValue: PublicKey }) =>
