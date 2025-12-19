@@ -96,7 +96,8 @@ impl VariationOrderedInstructionConstraints {
         paymaster_fee_coefficients: &HashMap<Pubkey, u64>,
     ) -> Result<(), (StatusCode, String)> {
         self.validate_compute_units(transaction)?;
-        self.validate_paymaster_toll(transaction, paymaster_fee_coefficients).map_err(|e|(StatusCode::BAD_REQUEST, e.to_string()))?;
+        self.validate_paymaster_toll(transaction, paymaster_fee_coefficients)
+            .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
         self.validate_instruction_constraints(transaction, contextual_domain_keys, chain_index)
             .await
     }
@@ -184,7 +185,8 @@ impl VariationOrderedInstructionConstraints {
     }
 }
 
-const NON_SUBSTANTIVE_PROGRAM_IDS: [Pubkey; 2] = [solana_compute_budget_interface::id(), TOLLBOOTH_PROGRAM_ID];
+const NON_SUBSTANTIVE_PROGRAM_IDS: [Pubkey; 2] =
+    [solana_compute_budget_interface::id(), TOLLBOOTH_PROGRAM_ID];
 pub struct SubstantiveProgramId(Pubkey);
 
 impl Deref for SubstantiveProgramId {

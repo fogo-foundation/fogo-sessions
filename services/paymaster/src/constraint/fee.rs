@@ -7,7 +7,13 @@ use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
 use tollbooth::{self, instruction::PayToll};
 
-use crate::{constraint::{VariationOrderedInstructionConstraints, transaction::{InstructionWithIndex, TransactionToValidate}}, rpc::ChainIndex};
+use crate::{
+    constraint::{
+        transaction::{InstructionWithIndex, TransactionToValidate},
+        VariationOrderedInstructionConstraints,
+    },
+    rpc::ChainIndex,
+};
 
 const PAY_TOLL_INSTRUCTION_MINT_INDEX: usize = 4;
 
@@ -35,9 +41,10 @@ pub async fn compute_paymaster_toll(
                 )
                 .await?;
 
-            tolls.entry(mint)
-            .and_modify(|e: &mut u64| *e = e.saturating_add(amount))
-            .or_insert(amount);
+            tolls
+                .entry(mint)
+                .and_modify(|e: &mut u64| *e = e.saturating_add(amount))
+                .or_insert(amount);
         }
     }
     Ok(tolls)
@@ -59,16 +66,25 @@ fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Resu
 }
 
 impl VariationOrderedInstructionConstraints {
-    pub fn validate_paymaster_toll(&self, transaction: &TransactionToValidate<'_>, paymaster_fee_coefficients: &HashMap<Pubkey, u64>) -> anyhow::Result<()> {
+    pub fn validate_paymaster_toll(
+        &self,
+        transaction: &TransactionToValidate<'_>,
+        paymaster_fee_coefficients: &HashMap<Pubkey, u64>,
+    ) -> anyhow::Result<()> {
         let total_fee =
-            paymaster_fee_coefficients.iter().fold(0u64, |mut acc, (mint, coefficient)| {
-                let fee = transaction.paymaster_fee.get(mint).unwrap_or(&0);
-                acc = acc.saturating_add(fee.saturating_mul(*coefficient));
-                acc
-            });
+            paymaster_fee_coefficients
+                .iter()
+                .fold(0u64, |mut acc, (mint, coefficient)| {
+                    let fee = transaction.paymaster_fee.get(mint).unwrap_or(&0);
+                    acc = acc.saturating_add(fee.saturating_mul(*coefficient));
+                    acc
+                });
 
-       anyhow::ensure!(total_fee >= self.paymaster_fee_lamports.unwrap_or(0), "Paymaster fee is not sufficient");
-        
+        anyhow::ensure!(
+            total_fee >= self.paymaster_fee_lamports.unwrap_or(0),
+            "Paymaster fee is not sufficient"
+        );
+
         Ok(())
     }
 }

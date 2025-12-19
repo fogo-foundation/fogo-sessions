@@ -457,7 +457,12 @@ async fn get_matching_variations<'a>(
                     .validate_transaction(&paymaster_transaction)
                     .is_ok(),
                 TransactionVariation::V1(v1_variation) => v1_variation
-                    .validate_transaction(&paymaster_transaction, &contextual_keys, chain_index,  &HashMap::new())
+                    .validate_transaction(
+                        &paymaster_transaction,
+                        &contextual_keys,
+                        chain_index,
+                        &HashMap::new(),
+                    )
                     .await
                     .is_ok(),
             }

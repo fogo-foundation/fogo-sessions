@@ -74,16 +74,18 @@ where
     }
 
     let coefficients: Vec<FeeCoefficient> = Vec::deserialize(deserializer)?;
-    coefficients
-        .into_iter()
-        .try_fold(HashMap::new(), |mut map, FeeCoefficient{mint, coefficient}| {
+    coefficients.into_iter().try_fold(
+        HashMap::new(),
+        |mut map, FeeCoefficient { mint, coefficient }| {
             if map.insert(mint, coefficient).is_some() {
-                return Err(serde::de::Error::custom(format!("Duplicate mint {mint} in paymaster fee coefficients")));
+                return Err(serde::de::Error::custom(format!(
+                    "Duplicate mint {mint} in paymaster fee coefficients"
+                )));
             }
             Ok(map)
-        })
+        },
+    )
 }
-
 
 fn deserialize_transaction_variations<'de, D>(
     deserializer: D,
