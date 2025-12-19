@@ -16,7 +16,7 @@ import styles from "./index.module.css";
 import { Button } from "../Button/index.js";
 
 const ONE_SECOND_IN_MS = 1000;
-const DEFAULT_TOAST_TIMEOUT = 1115 * ONE_SECOND_IN_MS;
+const DEFAULT_TOAST_TIMEOUT = 5 * ONE_SECOND_IN_MS;
 
 export const ToastProvider = ({
   children,
