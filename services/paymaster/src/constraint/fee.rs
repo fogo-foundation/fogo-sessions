@@ -20,7 +20,7 @@ pub async fn compute_paymaster_toll(
         if instruction.program_id(transaction.message.static_account_keys())
             == &TOLLBOOTH_PROGRAM_ID
         {
-            let (amount, mint_index): (u64, usize) = parse_pay_toll_instruction(instruction)
+            let amount = parse_pay_toll_instruction(instruction)
                 .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
             // this is not the best if there are multiple address lookup tables
@@ -31,7 +31,7 @@ pub async fn compute_paymaster_toll(
                         index: instruction_index,
                         instruction,
                     },
-                    mint_index,
+                    PAY_TOLL_INSTRUCTION_MINT_INDEX,
                 )
                 .await?;
 
@@ -43,7 +43,7 @@ pub async fn compute_paymaster_toll(
     Ok(tolls)
 }
 
-fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Result<(u64, usize)> {
+fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Result<u64> {
     let discriminator = instruction
         .data
         .get(0..1)
@@ -55,12 +55,7 @@ fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Resu
     let PayToll { amount } =
         tollbooth::instruction::PayToll::try_from_slice(&instruction.data[1..])
             .map_err(|_| anyhow::anyhow!("Failed to deserialize PayToll instruction"))?;
-
-    let mint_index = instruction
-        .accounts
-        .get(PAY_TOLL_INSTRUCTION_MINT_INDEX)
-        .ok_or_else(|| anyhow::anyhow!("PayToll instruction missing mint account"))?;
-    Ok((amount, usize::from(*mint_index)))
+    Ok(amount)
 }
 
 impl VariationOrderedInstructionConstraints {

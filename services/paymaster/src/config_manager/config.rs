@@ -1,4 +1,5 @@
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 use solana_pubkey::Pubkey;
 use std::collections::{hash_map::Entry, HashMap};
 use std::num::NonZeroU8;
@@ -64,9 +65,10 @@ fn deserialize_paymaster_fee_coefficients<'de, D>(
 where
     D: Deserializer<'de>,
 {
-
+    #[serde_as]
     #[derive(Deserialize)]
     struct FeeCoefficient {
+        #[serde_as(as = "DisplayFromStr")]
         mint: Pubkey,
         coefficient: u64,
     }

@@ -1,5 +1,6 @@
 use anchor_lang::AnchorDeserialize;
 use axum::http::StatusCode;
+use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
@@ -183,7 +184,7 @@ impl VariationOrderedInstructionConstraints {
     }
 }
 
-const NON_SUBSTANTIVE_PROGRAM_IDS: [Pubkey; 1] = [solana_compute_budget_interface::id()];
+const NON_SUBSTANTIVE_PROGRAM_IDS: [Pubkey; 2] = [solana_compute_budget_interface::id(), TOLLBOOTH_PROGRAM_ID];
 pub struct SubstantiveProgramId(Pubkey);
 
 impl Deref for SubstantiveProgramId {
