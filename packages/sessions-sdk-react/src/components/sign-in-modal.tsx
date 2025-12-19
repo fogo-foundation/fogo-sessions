@@ -54,7 +54,13 @@ export const SignInModal = ({
     sessionState.type === StateType.SettingLimits;
 
   return (
-    <ModalDialog isOpen={isOpen} onOpenChange={onOpenChange} overlayClassName={resetStyles.reset} dialogClassName={resetStyles.reset ?? ""} {...props}>
+    <ModalDialog
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      overlayClassName={resetStyles.reset}
+      dialogClassName={resetStyles.reset ?? ""}
+      {...props}
+    >
       {isOpen && (
         <motion.div
           className={styles.selectWalletAnimationContainer}
