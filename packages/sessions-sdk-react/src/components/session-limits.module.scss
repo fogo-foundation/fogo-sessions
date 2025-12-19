@@ -1,6 +1,5 @@
 @use "./component-library/theme";
 @use "../reset";
-@use "../layer";
 
 .sessionLimits {
   display: flex;
@@ -222,7 +221,6 @@
 }
 
 .selectPopover {
-  @include reset.reset {
     background: theme.color("demo-bg");
     color: theme.color("foreground");
     box-shadow: theme.shadow();
@@ -231,7 +229,6 @@
     outline: none;
     padding: theme.spacing(1) 0;
     min-width: var(--trigger-width);
-    z-index: layer.layer("select") !important;
 
     .selectItem {
       @include theme.text("sm", "normal");
@@ -253,4 +250,3 @@
       }
     }
   }
-}

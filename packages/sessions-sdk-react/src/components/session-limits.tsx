@@ -33,6 +33,8 @@ import {
   StateType as TokenMetadataStateType,
   useTokenMetadata,
 } from "../hooks/use-token-metadata.js";
+import layerStyles from "../layer.module.css";
+import resetStyles from "../reset.module.css";
 import { StateType, isEstablished, isUpdatable } from "../session-state.js";
 
 const ONE_SECOND_IN_MS = 1000;
@@ -140,7 +142,7 @@ export const SessionLimits = ({
             <SelectValue className={styles.value ?? ""} />
             <CaretDownIcon className={styles.arrow ?? ""} />
           </UnstyledButton>
-          <Popover offset={4} className={styles.selectPopover ?? ""}>
+          <Popover offset={4} className={clsx(styles.selectPopover, resetStyles.reset, layerStyles.layerSelect)}>
             <ListBox items={Object.entries(DURATION)}>
               {([key, { label }]) => (
                 <ListBoxItem id={key} className={styles.selectItem ?? ""}>

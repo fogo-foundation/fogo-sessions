@@ -1,4 +1,4 @@
-@use "./theme";
+@use "./components/component-library/theme";
 
 // The layering here is a bit odd.  These have to be super high numbers so that
 // they overlay no matter what the apps are doing, and in particular, we need
@@ -7,10 +7,28 @@
 // since that z-index also applies to the wallet popup and we want modal dialogs
 // to go above the wallet popup always.
 $layer: (
+  "session-panel": 999996,
   "modal-dialog": 999997,
   "toast": 999999,
+  "select": 999998,
 );
 
 @function layer($value) {
   @return theme.map-get-strict($layer, $value);
+}
+
+.layerSessionPanel {
+  z-index: layer("session-panel");
+}
+
+.layerModalDialog {
+  z-index: layer("modal-dialog");
+}
+
+.layerToast {
+  z-index: layer("toast");
+}
+
+.layerSelect {
+  z-index: layer("select");
 }

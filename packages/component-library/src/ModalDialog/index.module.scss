@@ -1,5 +1,4 @@
 @use "../theme";
-@use "../layer";
 
 .modalOverlay {
   position: fixed;
@@ -13,7 +12,6 @@
   justify-content: center;
   align-items: start;
   overflow: auto;
-  z-index: layer.layer("modal-dialog");
 
   .modal {
     margin-top: min(10dvh, theme.spacing(40));

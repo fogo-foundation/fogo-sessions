@@ -6,7 +6,7 @@
   :where(&),
   :where(&)::before,
   :where(&)::after,
-  :where(&) *,
+  :where(&) *:not(svg)
   :where(&) *::before,
   :where(&) *::after {
     all: revert;

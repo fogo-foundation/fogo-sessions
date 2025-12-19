@@ -3,12 +3,14 @@ import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { useLocalStorageValue, useResizeObserver } from "@react-hookz/web";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
+import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { Heading } from "react-aria-components";
 
 import { useSession, useSessionContext } from "../hooks/use-session.js";
+import layerStyles from "../layer.module.css";
 import type { SessionStates } from "../session-state.js";
 import { isCancelable, StateType } from "../session-state.js";
 import type { SolanaWallet } from "../solana-wallet.js";
@@ -57,7 +59,7 @@ export const SignInModal = ({
     <ModalDialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      overlayClassName={resetStyles.reset}
+      overlayClassName={clsx(resetStyles.reset, layerStyles.layerModalDialog)}
       dialogClassName={resetStyles.reset ?? ""}
       {...props}
     >

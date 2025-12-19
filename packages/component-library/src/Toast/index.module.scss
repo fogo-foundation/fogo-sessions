@@ -1,5 +1,4 @@
 @use "../theme";
-@use "../layer";
 
 .toastRegion {
   position: fixed;
@@ -10,7 +9,6 @@
   flex-flow: column nowrap;
   gap: theme.spacing(3.5);
   outline: none;
-  z-index: layer.layer("toast");
 
   @include theme.breakpoint("sm") {
     bottom: unset;
