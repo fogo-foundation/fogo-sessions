@@ -7,9 +7,7 @@
 // since that z-index also applies to the wallet popup and we want modal dialogs
 // to go above the wallet popup always.
 $layer: (
-  "session-panel": 999996,
   "modal-dialog": 999997,
-  "select": 999998,
   "toast": 999999,
 );
 

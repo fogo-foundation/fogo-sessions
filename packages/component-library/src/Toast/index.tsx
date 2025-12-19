@@ -1,6 +1,7 @@
 "use client";
 
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
+import clsx from "clsx";
 import type { ReactNode } from "react";
 import { createContext, use, useCallback, useMemo } from "react";
 import {
@@ -15,14 +16,23 @@ import styles from "./index.module.css";
 import { Button } from "../Button/index.js";
 
 const ONE_SECOND_IN_MS = 1000;
-const DEFAULT_TOAST_TIMEOUT = 5 * ONE_SECOND_IN_MS;
+const DEFAULT_TOAST_TIMEOUT = 1115 * ONE_SECOND_IN_MS;
 
-export const ToastProvider = ({ children }: { children: ReactNode }) => {
+export const ToastProvider = ({
+  children,
+  toastRegionClassName,
+}: {
+  children: ReactNode;
+  toastRegionClassName?: string;
+}) => {
   const toastQueue = useMemo(() => new ToastQueue<ToastContents>(), []);
   return (
     <ToastContext value={toastQueue}>
       {children}
-      <ToastRegion className={styles.toastRegion ?? ""} queue={toastQueue}>
+      <ToastRegion
+        className={clsx(styles.toastRegion, toastRegionClassName)}
+        queue={toastQueue}
+      >
         {({ toast }) => (
           <ReactAriaToast
             className={styles.toast ?? ""}

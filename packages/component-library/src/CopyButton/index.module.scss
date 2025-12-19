@@ -1,119 +1,119 @@
 @use "../theme";
 
 .copyButton {
-    border: none;
-    display: grid;
-    align-items: center;
-    border-radius: theme.border-radius();
-    cursor: copy;
-    background-color: theme.color("button-base");
-    outline: 2px solid transparent;
-    outline-offset: theme.spacing(0.5);
-    transition:
-      outline-color 50ms linear,
-      background-color 50ms linear;
+  border: none;
+  display: grid;
+  align-items: center;
+  border-radius: theme.border-radius();
+  cursor: copy;
+  background-color: theme.color("button-base");
+  outline: 2px solid transparent;
+  outline-offset: theme.spacing(0.5);
+  transition:
+    outline-color 50ms linear,
+    background-color 50ms linear;
 
-    .contents {
-      @include theme.text("xs", "normal");
+  .contents {
+    @include theme.text("xs", "normal");
 
-      padding-left: theme.spacing(0.5);
-      padding-right: theme.spacing(0.5);
-      transition: color 50ms linear;
-      word-break: break-all;
+    padding-left: theme.spacing(0.5);
+    padding-right: theme.spacing(0.5);
+    transition: color 50ms linear;
+    word-break: break-all;
+  }
+
+  .iconContainer {
+    width: theme.spacing(3);
+    height: theme.spacing(3);
+  }
+
+  .hintContainer {
+    height: theme.spacing(3);
+  }
+
+  .iconContainer,
+  .hintContainer {
+    position: relative;
+
+    .copyIcon,
+    .checkIcon,
+    .copyHint,
+    .checkHint {
+      font-size: theme.font-size("xs");
+      position: absolute;
+      inset: 0;
+      transition: opacity linear 50ms;
+    }
+
+    .checkIcon,
+    .checkHint {
+      opacity: 0;
+      color: theme.color("states", "success", "foreground");
+    }
+  }
+
+  &[data-variant="inline"] {
+    grid-template-columns: repeat(2, max-content);
+    gap: theme.spacing(0.5);
+    height: theme.spacing(5);
+    padding-left: theme.spacing(1);
+    padding-right: theme.spacing(1);
+    color: theme.color("muted");
+
+    .hintContainer {
+      display: none;
+    }
+  }
+
+  &[data-variant="expanded"] {
+    grid-template-rows: repeat(2, max-content);
+    gap: theme.spacing(2);
+    padding: theme.spacing(3);
+    color: theme.color("paragraph");
+
+    .hintContainer .copyHint {
+      opacity: 0.5;
     }
 
     .iconContainer {
-      width: theme.spacing(3);
-      height: theme.spacing(3);
+      display: none;
     }
+  }
 
-    .hintContainer {
-      height: theme.spacing(3);
-    }
+  &[data-hovered] {
+    background-color: theme.color("button-hover");
+  }
 
-    .iconContainer,
-    .hintContainer {
-      position: relative;
+  &[data-pressed] {
+    background-color: theme.color("button-pressed");
+  }
 
-      .copyIcon,
-      .checkIcon,
-      .copyHint,
-      .checkHint {
-        font-size: theme.font-size("xs");
-        position: absolute;
-        inset: 0;
-        transition: opacity linear 50ms;
-      }
+  &[data-copied] {
+    cursor: default;
 
-      .checkIcon,
-      .checkHint {
-        opacity: 0;
+    &[data-variant="inline"] {
+      background-color: theme.color("states", "success", "background");
+
+      .contents {
         color: theme.color("states", "success", "foreground");
       }
     }
 
-    &[data-variant="inline"] {
-      grid-template-columns: repeat(2, max-content);
-      gap: theme.spacing(0.5);
-      height: theme.spacing(5);
-      padding-left: theme.spacing(1);
-      padding-right: theme.spacing(1);
-      color: theme.color("muted");
-
-      .hintContainer {
-        display: none;
-      }
-    }
-
-    &[data-variant="expanded"] {
-      grid-template-rows: repeat(2, max-content);
-      gap: theme.spacing(2);
-      padding: theme.spacing(3);
-      color: theme.color("paragraph");
-
-      .hintContainer .copyHint {
-        opacity: 0.5;
+    .iconContainer,
+    .hintContainer {
+      .checkIcon,
+      .checkHint {
+        opacity: 1;
       }
 
-      .iconContainer {
-        display: none;
+      .copyIcon,
+      .copyHint {
+        opacity: 0;
       }
-    }
-
-    &[data-hovered] {
-      background-color: theme.color("button-hover");
-    }
-
-    &[data-pressed] {
-      background-color: theme.color("button-pressed");
-    }
-
-    &[data-copied] {
-      cursor: default;
-
-      &[data-variant="inline"] {
-        background-color: theme.color("states", "success", "background");
-
-        .contents {
-          color: theme.color("states", "success", "foreground");
-        }
-      }
-
-      .iconContainer,
-      .hintContainer {
-        .checkIcon,
-        .checkHint {
-          opacity: 1;
-        }
-
-        .copyIcon,
-        .copyHint {
-          opacity: 0;
-        }
-      }
-    }
-
-    &[data-focus-visible] {
-      outline-color: theme.color("accent");
     }
   }
+
+  &[data-focus-visible] {
+    outline-color: theme.color("accent");
+  }
+}

@@ -18,7 +18,7 @@ import { ModalDialog } from "./component-library/ModalDialog/index.js";
 import { Disclaimer } from "./disclaimer.js";
 import { SessionLimits } from "./session-limits.js";
 import styles from "./sign-in-modal.module.css";
-
+import resetStyles from "../reset.module.css";
 type Props = Omit<
   ComponentProps<typeof ModalDialog>,
   "isOpen" | "onOpenChange" | "children"
@@ -54,7 +54,7 @@ export const SignInModal = ({
     sessionState.type === StateType.SettingLimits;
 
   return (
-    <ModalDialog isOpen={isOpen} onOpenChange={onOpenChange} {...props}>
+    <ModalDialog isOpen={isOpen} onOpenChange={onOpenChange} overlayClassName={resetStyles.reset} dialogClassName={resetStyles.reset ?? ""} {...props}>
       {isOpen && (
         <motion.div
           className={styles.selectWalletAnimationContainer}

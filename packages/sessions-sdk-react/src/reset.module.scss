@@ -1,0 +1,27 @@
+@use "./reset";
+@use "sass:meta";
+@use "./components/component-library/theme";
+
+.reset {
+  :where(&),
+  :where(&)::before,
+  :where(&)::after,
+  :where(&) *,
+  :where(&) *::before,
+  :where(&) *::after {
+    all: revert;
+  }
+
+  @include meta.load-css("pkg:modern-normalize");
+
+  :where(&) {
+    font-family: "Funnel Display", sans-serif;
+    color-scheme: dark;
+    text-align: left;
+
+    *::selection {
+      color: theme.pallette-color("black");
+      background: theme.color("accent");
+    }
+  }
+}
