@@ -90,6 +90,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         opts.ftl_url,
         opts.listen_address,
         domains,
+        config.paymaster_fee_coefficients,
     )
     .await;
     Ok(())

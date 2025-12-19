@@ -182,6 +182,7 @@ pub async fn load_config() -> Result<Config, anyhow::Error> {
     }
 
     Ok(Config {
+        paymaster_fee_coefficients: HashMap::new(),
         domains: domain_map.into_values().collect(),
     })
 }

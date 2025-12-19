@@ -105,6 +105,7 @@ pub struct ServerState {
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
     pub ftl_rpc: Option<RpcClient>,
+    pub paymaster_fee_coefficients: HashMap<Pubkey, u64>,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -122,6 +123,7 @@ impl DomainState {
         transaction: &TransactionToValidate<'_>,
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
+        paymaster_fee_coefficients: &HashMap<Pubkey, u64>,
         variation_name: Option<String>,
     ) -> Result<&TransactionVariation, (StatusCode, String)> {
         let message_bytes = transaction.message.serialize();
@@ -159,6 +161,7 @@ impl DomainState {
                         variation,
                         chain_index,
                         sponsor,
+                        paymaster_fee_coefficients,
                     )
                     .await
                     .map(|_| variation)
@@ -207,6 +210,7 @@ impl DomainState {
         tx_variation: &TransactionVariation,
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
+        paymaster_fee_coefficients: &HashMap<Pubkey, u64>,
     ) -> Result<(), (StatusCode, String)> {
         match tx_variation {
             TransactionVariation::V0(variation) => variation.validate_transaction(transaction),
@@ -219,6 +223,7 @@ impl DomainState {
                             sponsor: *sponsor,
                         },
                         chain_index,
+                        paymaster_fee_coefficients,
                     )
                     .await
             }
@@ -373,6 +378,7 @@ async fn sponsor_and_send_handler(
             &transaction_to_validate,
             &state.chain_index,
             &transaction_sponsor.pubkey(),
+            &state.paymaster_fee_coefficients,
             variation,
         )
         .await
@@ -600,6 +606,7 @@ pub async fn run_server(
     ftl_url: Option<String>,
     listen_address: String,
     domains_states: Arc<ArcSwap<HashMap<String, DomainState>>>,
+    paymaster_fee_coefficients: HashMap<Pubkey, u64>,
 ) {
     let rpc_http_sender = PooledHttpSender::new(rpc_url_http, RPC_POOL_SIZE);
 
@@ -666,6 +673,7 @@ pub async fn run_server(
         .layer(prometheus_layer)
         .with_state(Arc::new(ServerState {
             domains: domains_states,
+            paymaster_fee_coefficients,
             chain_index: ChainIndex {
                 rpc,
                 lookup_table_cache: DashMap::new(),

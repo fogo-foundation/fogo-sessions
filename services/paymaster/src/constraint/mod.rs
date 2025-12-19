@@ -5,6 +5,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_program::keccak;
 use solana_pubkey::{ParsePubkeyError, Pubkey};
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::ops::Deref;
 use std::str::FromStr;
@@ -91,6 +92,7 @@ impl VariationOrderedInstructionConstraints {
         transaction: &TransactionToValidate<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
+        paymaster_fee_coefficients: &HashMap<Pubkey, u64>,
     ) -> Result<(), (StatusCode, String)> {
         self.validate_compute_units(transaction)?;
         self.validate_paymaster_fee(transaction).map_err(|e|(StatusCode::BAD_REQUEST, e.to_string()))?;
