@@ -2,224 +2,219 @@
 @use "../reset";
 
 .sessionButton {
-    width: theme.spacing(48);
-    height: theme.spacing(10);
-    padding: theme.spacing(1);
-    display: flex;
-    flex-flow: row nowrap;
-    gap: theme.spacing(2);
-    border: none;
-    border-radius: theme.border-radius("lg");
-    cursor: pointer;
-    background-color: theme.color("button-signin-bg");
-    outline: 2px solid transparent;
-    outline-offset: theme.spacing(0.5);
-    align-items: center;
-    transition:
-      background-color 50ms linear,
-      outline-color 50ms linear;
+  width: theme.spacing(48);
+  height: theme.spacing(10);
+  padding: theme.spacing(1);
+  display: flex;
+  flex-flow: row nowrap;
+  gap: theme.spacing(2);
+  border: none;
+  border-radius: theme.border-radius("lg");
+  cursor: pointer;
+  background-color: theme.color("button-signin-bg");
+  outline: 2px solid transparent;
+  outline-offset: theme.spacing(0.5);
+  align-items: center;
+  transition:
+    background-color 50ms linear,
+    outline-color 50ms linear;
 
-    .fogoLogoContainer {
-      width: theme.spacing(8);
-      height: theme.spacing(8);
-      background-color: theme.color(
-        "button",
-        "primary",
-        "background",
-        "normal"
-      );
-      display: grid;
-      place-content: center;
-      border-radius: theme.border-radius();
-      transition: background-color 50ms linear;
+  .fogoLogoContainer {
+    width: theme.spacing(8);
+    height: theme.spacing(8);
+    background-color: theme.color("button", "primary", "background", "normal");
+    display: grid;
+    place-content: center;
+    border-radius: theme.border-radius();
+    transition: background-color 50ms linear;
 
-      .fogoLogo {
-        color: theme.pallette-color("white");
-        height: theme.spacing(4);
-        transition: opacity 50ms linear;
-      }
+    .fogoLogo {
+      color: theme.pallette-color("white");
+      height: theme.spacing(4);
+      transition: opacity 50ms linear;
     }
+  }
 
-    .contents {
-      @include theme.text("sm", "medium");
+  .contents {
+    @include theme.text("sm", "medium");
 
+    color: theme.color("heading");
+    text-align: center;
+    flex-grow: 1;
+  }
+
+  .arrowContainer {
+    display: none;
+    width: theme.spacing(6);
+
+    .arrow {
+      transition: transform 300ms;
+      transform-origin: center;
       color: theme.color("heading");
-      text-align: center;
-      flex-grow: 1;
     }
+  }
+
+  .lockIcon {
+    font-size: theme.font-size();
+    color: theme.color("foreground");
+  }
+
+  &[data-compact] {
+    width: auto;
+    padding-right: theme.spacing(3);
 
     .arrowContainer {
-      display: none;
-      width: theme.spacing(6);
+      width: auto;
+    }
+  }
+
+  &[data-hovered] {
+    background-color: theme.color("button-hover");
+  }
+
+  &[data-pressed],
+  &[data-session-panel-open] {
+    background-color: theme.color("button-pressed");
+  }
+
+  &[data-is-signed-in] {
+    .arrowContainer {
+      display: grid;
+      place-content: center;
 
       .arrow {
-        transition: transform 300ms;
-        transform-origin: center;
-        color: theme.color("heading");
+        font-size: theme.spacing(4);
       }
     }
 
-    .lockIcon {
-      font-size: theme.font-size();
-      color: theme.color("foreground");
-    }
-
-    &[data-compact] {
-      width: auto;
-      padding-right: theme.spacing(3);
-
-      .arrowContainer {
-        width: auto;
-      }
-    }
-
-    &[data-hovered] {
-      background-color: theme.color("button-hover");
-    }
-
-    &[data-pressed],
     &[data-session-panel-open] {
-      background-color: theme.color("button-pressed");
-    }
-
-    &[data-is-signed-in] {
-      .arrowContainer {
-        display: grid;
-        place-content: center;
-
-        .arrow {
-          font-size: theme.spacing(4);
-        }
-      }
-
-      &[data-session-panel-open] {
-        .arrow {
-          transform: rotateX(180deg);
-        }
+      .arrow {
+        transform: rotateX(180deg);
       }
     }
+  }
 
-    &[data-focus-visible] {
-      outline-color: theme.color("accent");
+  &[data-focus-visible] {
+    outline-color: theme.color("accent");
+  }
+
+  &[data-pending] {
+    cursor: wait;
+    background-color: theme.color("button", "disabled", "background");
+
+    .contents {
+      color: theme.color("button", "disabled", "foreground");
     }
 
-    &[data-pending] {
-      cursor: wait;
-      background-color: theme.color("button", "disabled", "background");
+    .fogoLogoContainer {
+      background: transparent;
+      position: relative;
 
-      .contents {
-        color: theme.color("button", "disabled", "foreground");
-      }
+      &::after {
+        content: "";
+        display: block;
+        border: 1px solid theme.color("button", "disabled", "foreground");
+        border-top-color: transparent;
+        border-radius: theme.border-radius("full");
+        animation: spin 1s linear infinite;
+        transition: opacity linear 100ms;
+        position: absolute;
+        inset: theme.spacing(2);
 
-      .fogoLogoContainer {
-        background: transparent;
-        position: relative;
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
 
-        &::after {
-          content: "";
-          display: block;
-          border: 1px solid theme.color("button", "disabled", "foreground");
-          border-top-color: transparent;
-          border-radius: theme.border-radius("full");
-          animation: spin 1s linear infinite;
-          transition: opacity linear 100ms;
-          position: absolute;
-          inset: theme.spacing(2);
+          20% {
+            transform: rotate(40deg);
+          }
 
-          @keyframes spin {
-            0% {
-              transform: rotate(0deg);
-            }
+          80% {
+            transform: rotate(320deg);
+          }
 
-            20% {
-              transform: rotate(40deg);
-            }
-
-            80% {
-              transform: rotate(320deg);
-            }
-
-            100% {
-              transform: rotate(360deg);
-            }
+          100% {
+            transform: rotate(360deg);
           }
         }
-
-        .fogoLogo {
-          opacity: 0;
-        }
-      }
-    }
-  }
-
-.sessionPanelPopover {
-    transition:
-      transform 400ms ease-in-out,
-      opacity 200ms;
-
-    @media (max-width: theme.map-get-strict(theme.$breakpoints, "sm")) {
-      position: fixed !important;
-      bottom: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      top: unset !important;
-    }
-
-    @include theme.breakpoint("sm") {
-      transition:
-        transform 200ms,
-        opacity 200ms;
-    }
-
-    .sessionPanelDialog {
-      width: 100%;
-      height: theme.spacing(148);
-      max-height: 80dvh;
-      outline: none;
-
-      @include theme.breakpoint("sm") {
-        width: theme.spacing(88);
       }
 
-      .sessionPanel {
-        box-shadow: theme.shadow();
-      }
-    }
-
-    &[data-entering],
-    &[data-exiting] {
-      transform: translateY(100%);
-    }
-
-    @include theme.breakpoint("sm") {
-      &[data-entering],
-      &[data-exiting] {
-        transform: var(--origin);
+      .fogoLogo {
         opacity: 0;
       }
-
-      &[data-placement="top"] {
-        --origin: translateY(8px);
-
-        margin-bottom: 6px;
-      }
-
-      &[data-placement="bottom"] {
-        --origin: translateY(-8px);
-
-        margin-top: 6px;
-      }
-
-      &[data-placement="right"] {
-        --origin: translateX(-8px);
-
-        margin-left: 6px;
-      }
-
-      &[data-placement="left"] {
-        --origin: translateX(8px);
-
-        margin-right: 6px;
-      }
     }
   }
+}
+
+.sessionPanelPopover {
+  transition:
+    transform 400ms ease-in-out,
+    opacity 200ms;
+
+  @media (max-width: theme.map-get-strict(theme.$breakpoints, "sm")) {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: unset !important;
+  }
+
+  @include theme.breakpoint("sm") {
+    transition:
+      transform 200ms,
+      opacity 200ms;
+  }
+
+  .sessionPanelDialog {
+    width: 100%;
+    height: theme.spacing(148);
+    max-height: 80dvh;
+    outline: none;
+
+    @include theme.breakpoint("sm") {
+      width: theme.spacing(88);
+    }
+
+    .sessionPanel {
+      box-shadow: theme.shadow();
+    }
+  }
+
+  &[data-entering],
+  &[data-exiting] {
+    transform: translateY(100%);
+  }
+
+  @include theme.breakpoint("sm") {
+    &[data-entering],
+    &[data-exiting] {
+      transform: var(--origin);
+      opacity: 0;
+    }
+
+    &[data-placement="top"] {
+      --origin: translateY(8px);
+
+      margin-bottom: 6px;
+    }
+
+    &[data-placement="bottom"] {
+      --origin: translateY(-8px);
+
+      margin-top: 6px;
+    }
+
+    &[data-placement="right"] {
+      --origin: translateX(-8px);
+
+      margin-left: 6px;
+    }
+
+    &[data-placement="left"] {
+      --origin: translateX(8px);
+
+      margin-right: 6px;
+    }
+  }
+}

@@ -175,7 +175,9 @@ export const FogoSessionProvider = ({
   );
 
   return (
-    <ToastProvider toastRegionClassName={clsx(resetStyles.reset, layerStyles.layerToast)}>
+    <ToastProvider
+      toastRegionClassName={clsx(resetStyles.reset, layerStyles.layerToast)}
+    >
       <SessionProvider
         tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
         defaultRequestedLimits={

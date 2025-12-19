@@ -142,7 +142,14 @@ export const SessionLimits = ({
             <SelectValue className={styles.value ?? ""} />
             <CaretDownIcon className={styles.arrow ?? ""} />
           </UnstyledButton>
-          <Popover offset={4} className={clsx(styles.selectPopover, resetStyles.reset, layerStyles.layerSelect)}>
+          <Popover
+            offset={4}
+            className={clsx(
+              styles.selectPopover,
+              resetStyles.reset,
+              layerStyles.layerSelect,
+            )}
+          >
             <ListBox items={Object.entries(DURATION)}>
               {([key, { label }]) => (
                 <ListBoxItem id={key} className={styles.selectItem ?? ""}>

@@ -50,7 +50,10 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
   }, [showBridgeIn, setShowBridgeIn]);
 
   return (
-    <div className={clsx(styles.sessionPanel,resetStyles.reset, className)} {...props}>
+    <div
+      className={clsx(styles.sessionPanel, resetStyles.reset, className)}
+      {...props}
+    >
       <div className={styles.header}>
         <Heading slot="title" className={styles.title}>
           Your <FogoWordmark /> Wallet

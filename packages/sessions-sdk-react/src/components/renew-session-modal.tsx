@@ -40,7 +40,6 @@ export const RenewSessionModal = () => {
       onOpenChange={onOpenChange}
       dialogClassName={styles.renewSessionModal}
       overlayClassName={clsx(resetStyles.reset, layerStyles.layerModalDialog)}
-
     >
       {isOpen && (
         <>

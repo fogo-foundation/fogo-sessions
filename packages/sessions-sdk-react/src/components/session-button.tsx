@@ -142,7 +142,11 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
         </div>
       </UnstyledButton>
       <Popover
-        className={clsx(styles.sessionPanelPopover, resetStyles.reset, layerStyles.layerSessionPanel)}  
+        className={clsx(
+          styles.sessionPanelPopover,
+          resetStyles.reset,
+          layerStyles.layerSessionPanel,
+        )}
         offset={1}
         isOpen={sessionPanelOpen && isEstablished(sessionState)}
         triggerRef={triggerRef}
