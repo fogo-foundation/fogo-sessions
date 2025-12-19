@@ -17,12 +17,12 @@ use crate::{
 
 const PAY_TOLL_INSTRUCTION_MINT_INDEX: usize = 4;
 
-pub async fn compute_paymaster_toll(
+pub async fn compute_paymaster_fees(
     transaction: &VersionedTransaction,
     chain_index: &ChainIndex,
 ) -> Result<HashMap<Pubkey, u64>, (StatusCode, String)> {
     let mut tolls = HashMap::new();
-    for (instruction_index, instruction) in transaction.message.instructions().iter().enumerate() {
+    for (index, instruction) in transaction.message.instructions().iter().enumerate() {
         if instruction.program_id(transaction.message.static_account_keys())
             == &TOLLBOOTH_PROGRAM_ID
         {
@@ -34,7 +34,7 @@ pub async fn compute_paymaster_toll(
                 .resolve_instruction_account_pubkey(
                     &transaction.message,
                     &InstructionWithIndex {
-                        index: instruction_index,
+                        index,
                         instruction,
                     },
                     PAY_TOLL_INSTRUCTION_MINT_INDEX,
@@ -66,7 +66,7 @@ fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Resu
 }
 
 impl VariationOrderedInstructionConstraints {
-    pub fn validate_paymaster_toll(
+    pub fn validate_paymaster_fees(
         &self,
         transaction: &TransactionToValidate<'_>,
         paymaster_fee_coefficients: &HashMap<Pubkey, u64>,

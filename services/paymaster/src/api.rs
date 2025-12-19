@@ -122,8 +122,8 @@ impl DomainState {
         &self,
         transaction: &TransactionToValidate<'_>,
         chain_index: &ChainIndex,
-        sponsor: &Pubkey,
         paymaster_fee_coefficients: &HashMap<Pubkey, u64>,
+        sponsor: &Pubkey,
         variation_name: Option<String>,
     ) -> Result<&TransactionVariation, (StatusCode, String)> {
         let message_bytes = transaction.message.serialize();
@@ -160,8 +160,8 @@ impl DomainState {
                         transaction,
                         variation,
                         chain_index,
-                        sponsor,
                         paymaster_fee_coefficients,
+                        sponsor,
                     )
                     .await
                     .map(|_| variation)
@@ -377,8 +377,8 @@ async fn sponsor_and_send_handler(
         .validate_transaction(
             &transaction_to_validate,
             &state.chain_index,
-            &transaction_sponsor.pubkey(),
             &state.paymaster_fee_coefficients,
+            &transaction_sponsor.pubkey(),
             variation,
         )
         .await

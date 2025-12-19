@@ -1,4 +1,4 @@
-use crate::constraint::fee::compute_paymaster_toll;
+use crate::constraint::fee::compute_paymaster_fees;
 use crate::constraint::gas::compute_gas_spend;
 use crate::constraint::NON_SUBSTANTIVE_PROGRAM_IDS;
 use crate::rpc::ChainIndex;
@@ -45,7 +45,7 @@ impl<'a> TransactionToValidate<'a> {
                 .collect(),
             gas_spend: compute_gas_spend(transaction)
                 .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
-            paymaster_fee: compute_paymaster_toll(transaction, chain_index).await?,
+            paymaster_fee: compute_paymaster_fees(transaction, chain_index).await?,
         })
     }
 }
