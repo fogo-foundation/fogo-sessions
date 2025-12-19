@@ -66,10 +66,10 @@ impl VariationOrderedInstructionConstraints {
     pub fn validate_paymaster_fees(
         &self,
         transaction: &TransactionToValidate<'_>,
-        paymaster_fee_coefficients: &HashMap<Pubkey, u64>,
+        fee_coefficients: &HashMap<Pubkey, u64>,
     ) -> anyhow::Result<()> {
         let total_fee =
-            paymaster_fee_coefficients
+            fee_coefficients
                 .iter()
                 .fold(0u64, |mut acc, (mint, coefficient)| {
                     let fee = transaction.paymaster_fee.get(mint).unwrap_or(&0);

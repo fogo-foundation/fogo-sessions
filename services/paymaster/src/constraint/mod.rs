@@ -93,10 +93,10 @@ impl VariationOrderedInstructionConstraints {
         transaction: &TransactionToValidate<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
         chain_index: &ChainIndex,
-        paymaster_fee_coefficients: &HashMap<Pubkey, u64>,
+        fee_coefficients: &HashMap<Pubkey, u64>,
     ) -> Result<(), (StatusCode, String)> {
         self.validate_compute_units(transaction)?;
-        self.validate_paymaster_fees(transaction, paymaster_fee_coefficients)
+        self.validate_paymaster_fees(transaction, fee_coefficients)
             .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
         self.validate_instruction_constraints(transaction, contextual_domain_keys, chain_index)
             .await

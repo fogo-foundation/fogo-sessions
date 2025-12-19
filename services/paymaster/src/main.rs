@@ -72,7 +72,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     config.assign_defaults()?;
 
     let fee::Config {
-        paymaster_fee_coefficients,
+        fee_coefficients,
     }: fee::Config = config::Config::builder()
         .add_source(config::File::with_name(&opts.config_file))
         .build()?
@@ -100,7 +100,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         opts.ftl_url,
         opts.listen_address,
         domains,
-        paymaster_fee_coefficients,
+        fee_coefficients,
     )
     .await;
     Ok(())
