@@ -209,8 +209,8 @@ impl DomainState {
         transaction: &TransactionToValidate<'_>,
         tx_variation: &TransactionVariation,
         chain_index: &ChainIndex,
-        sponsor: &Pubkey,
         paymaster_fee_coefficients: &HashMap<Pubkey, u64>,
+        sponsor: &Pubkey,
     ) -> Result<(), (StatusCode, String)> {
         match tx_variation {
             TransactionVariation::V0(variation) => variation.validate_transaction(transaction),
