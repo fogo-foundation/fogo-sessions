@@ -63,16 +63,10 @@ fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Resu
     Ok((amount, usize::from(*mint_index)))
 }
 
-const USDC_MINT: Pubkey = solana_program::pubkey!("uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG");
-const FEE_COEFFICIENTS : [(Pubkey, u64); 2] = [
-    (spl_token::native_mint::ID, 1),
-    (USDC_MINT, 3333),
-];
-
 impl VariationOrderedInstructionConstraints {
-    pub fn validate_paymaster_fee(&self, transaction: &TransactionToValidate<'_>) -> anyhow::Result<()> {
+    pub fn validate_paymaster_toll(&self, transaction: &TransactionToValidate<'_>, paymaster_fee_coefficients: &HashMap<Pubkey, u64>) -> anyhow::Result<()> {
         let total_fee =
-            FEE_COEFFICIENTS.iter().fold(0u64, |mut acc, (mint, coefficient)| {
+            paymaster_fee_coefficients.iter().fold(0u64, |mut acc, (mint, coefficient)| {
                 let fee = transaction.paymaster_fee.get(mint).unwrap_or(&0);
                 acc = acc.saturating_add(fee.saturating_mul(*coefficient));
                 acc
