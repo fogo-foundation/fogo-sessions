@@ -1,8 +1,6 @@
 @use "../theme";
-@use "../reset";
 
 .textField {
-  @include reset.reset {
     display: flex;
     flex-flow: column nowrap;
     gap: theme.spacing(3);
@@ -138,4 +136,3 @@
       }
     }
   }
-}

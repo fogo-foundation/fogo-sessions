@@ -1,8 +1,6 @@
 @use "../theme";
-@use "../reset";
 
 .link {
-  @include reset.reset {
     color: theme.color("accent");
     border: none;
     padding: 0;
@@ -32,4 +30,3 @@
       cursor: not-allowed;
     }
   }
-}

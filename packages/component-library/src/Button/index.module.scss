@@ -1,8 +1,6 @@
 @use "../theme";
-@use "../reset";
 
 .button {
-  @include reset.reset {
     border: none;
     display: inline-flex;
     align-items: center;
@@ -130,4 +128,3 @@
       }
     }
   }
-}

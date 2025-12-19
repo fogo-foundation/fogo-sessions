@@ -1,8 +1,6 @@
 @use "../theme";
-@use "../reset";
 
 .copyButton {
-  @include reset.reset {
     border: none;
     display: grid;
     align-items: center;
@@ -119,4 +117,3 @@
       outline-color: theme.color("accent");
     }
   }
-}
