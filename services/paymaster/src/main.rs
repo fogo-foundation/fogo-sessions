@@ -71,9 +71,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .try_deserialize()?;
     config.assign_defaults()?;
 
-    let fee::Config {
-        fee_coefficients,
-    }: fee::Config = config::Config::builder()
+    let fee::Config { fee_coefficients }: fee::Config = config::Config::builder()
         .add_source(config::File::with_name(&opts.config_file))
         .build()?
         .try_deserialize()?;

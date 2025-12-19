@@ -3,9 +3,7 @@ use serde_with::{serde_as, DisplayFromStr};
 use solana_pubkey::Pubkey;
 use std::collections::HashMap;
 
-fn deserialize_fee_coefficients<'de, D>(
-    deserializer: D,
-) -> Result<HashMap<Pubkey, u64>, D::Error>
+fn deserialize_fee_coefficients<'de, D>(deserializer: D) -> Result<HashMap<Pubkey, u64>, D::Error>
 where
     D: Deserializer<'de>,
 {
