@@ -3,6 +3,7 @@ use arc_swap::ArcSwap;
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::trace::{BatchConfig, BatchConfigBuilder};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -35,7 +36,9 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
         .with_resource(resource)
         .with_span_processor(
-            opentelemetry_sdk::trace::BatchSpanProcessor::builder(exporter).build(),
+            opentelemetry_sdk::trace::BatchSpanProcessor::builder(exporter)
+                .with_batch_config(BatchConfigBuilder::default().build())
+                .build(),
         )
         .build();
 
@@ -54,7 +57,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         )
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info,paymaster=trace".parse().unwrap()),
+                .unwrap_or_else(|_| "info".parse().unwrap()),
         )
         .with(telemetry)
         .init();
