@@ -456,15 +456,17 @@ async fn get_matching_variations<'a>(
                 TransactionVariation::V0(v0_variation) => v0_variation
                     .validate_transaction(&paymaster_transaction)
                     .is_ok(),
-                TransactionVariation::V1(v1_variation) => v1_variation
-                    .validate_transaction(
-                        &paymaster_transaction,
-                        &contextual_keys,
-                        chain_index,
-                        &HashMap::new(),
-                    )
-                    .await
-                    .is_ok(),
+                TransactionVariation::V1(v1_variation) => {
+                    v1_variation
+                        .validate_compute_units(
+                            &paymaster_transaction
+                        )
+                        .is_ok()
+                        && (v1_variation
+                            .validate_instruction_constraints(&paymaster_transaction, &contextual_keys, chain_index)
+                            .await
+                            .is_ok())
+                } // TODO: support paymaster fees
             }
         } else {
             false

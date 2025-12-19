@@ -102,7 +102,7 @@ impl VariationOrderedInstructionConstraints {
             .await
     }
 
-    fn validate_compute_units(
+    pub fn validate_compute_units(
         &self,
         transaction: &TransactionToValidate<'_>,
     ) -> Result<(), (StatusCode, String)> {
@@ -118,7 +118,7 @@ impl VariationOrderedInstructionConstraints {
         Ok(())
     }
 
-    async fn validate_instruction_constraints(
+    pub async fn validate_instruction_constraints(
         &self,
         transaction: &TransactionToValidate<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
