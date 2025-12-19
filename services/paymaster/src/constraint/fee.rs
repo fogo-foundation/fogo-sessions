@@ -7,7 +7,7 @@ use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
 use tollbooth::{self, instruction::PayToll};
 
-use crate::{constraint::transaction::InstructionWithIndex, rpc::ChainIndex};
+use crate::{constraint::{VariationOrderedInstructionConstraints, transaction::{InstructionWithIndex, TransactionToValidate}}, rpc::ChainIndex};
 
 const PAY_TOLL_INSTRUCTION_MINT_INDEX: usize = 4;
 
@@ -34,7 +34,10 @@ pub async fn compute_paymaster_toll(
                     mint_index,
                 )
                 .await?;
-            *tolls.entry(mint).or_insert(0) += amount;
+
+            tolls.entry(mint)
+            .and_modify(|e: &mut u64| *e = e.saturating_add(amount))
+            .or_insert(amount);
         }
     }
     Ok(tolls)
@@ -58,4 +61,25 @@ fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Resu
         .get(PAY_TOLL_INSTRUCTION_MINT_INDEX)
         .ok_or_else(|| anyhow::anyhow!("PayToll instruction missing mint account"))?;
     Ok((amount, usize::from(*mint_index)))
+}
+
+const USDC_MINT: Pubkey = solana_program::pubkey!("uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG");
+const FEE_COEFFICIENTS : [(Pubkey, u64); 2] = [
+    (spl_token::native_mint::ID, 1),
+    (USDC_MINT, 3333),
+];
+
+impl VariationOrderedInstructionConstraints {
+    pub fn validate_paymaster_fee(&self, transaction: &TransactionToValidate<'_>) -> anyhow::Result<()> {
+        let total_fee =
+            FEE_COEFFICIENTS.iter().fold(0u64, |mut acc, (mint, coefficient)| {
+                let fee = transaction.paymaster_fee.get(mint).unwrap_or(&0);
+                acc = acc.saturating_add(fee.saturating_mul(*coefficient));
+                acc
+            });
+
+       anyhow::ensure!(total_fee >= self.paymaster_fee_lamports.unwrap_or(0), "Paymaster fee is not sufficient");
+        
+        Ok(())
+    }
 }
