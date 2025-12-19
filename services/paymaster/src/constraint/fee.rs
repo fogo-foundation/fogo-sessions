@@ -31,7 +31,7 @@ pub async fn compute_paymaster_toll(
                         index: instruction_index,
                         instruction,
                     },
-                    usize::from(mint_index),
+                    mint_index,
                 )
                 .await?;
             *tolls.entry(mint).or_insert(0) += amount;
@@ -50,7 +50,7 @@ fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Resu
         "Mismatching discriminator for PayToll instruction"
     );
     let PayToll { amount } =
-        tollbooth::instruction::PayToll::try_from_slice(&mut &instruction.data[1..])
+        tollbooth::instruction::PayToll::try_from_slice(&instruction.data[1..])
             .map_err(|_| anyhow::anyhow!("Failed to deserialize PayToll instruction"))?;
 
     let mint_index = instruction
