@@ -60,7 +60,7 @@ export const TokenList = ({
         </div>
       ) : (
         <GridList
-          className={styles.tokenList ?? ""}
+          className={styles.tokenList}
           selectionMode="none"
           aria-label="Tokens"
           items={[
@@ -100,7 +100,7 @@ export const TokenList = ({
                 textValue="Fogo"
                 key="native-token-balance"
                 data-is-native
-                className={styles.token ?? ""}
+                className={styles.token}
               >
                 <div className={styles.nameAndIcon}>
                   <img
@@ -168,7 +168,7 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
         )}
         <div className={styles.nameAndMint}>
           <span className={styles.name}>{name ?? mint.toBase58()}</span>
-          <CopyButton className={styles.mint ?? ""} text={mint.toBase58()}>
+          <CopyButton className={styles.mint} text={mint.toBase58()}>
             <TruncateKey keyValue={mint} />
           </CopyButton>
         </div>
@@ -190,7 +190,7 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
             <Button
               variant="secondary"
               size="sm"
-              className={styles.sendButton ?? ""}
+              className={styles.sendButton}
               onPress={() => {
                 onPressSend(token);
               }}
@@ -209,7 +209,7 @@ const TokenItem = ({ token, onPressSend, onPressToken }: TokenItemProps) => {
       layoutScroll
       textValue={name ?? mint.toBase58()}
       key={mint.toString()}
-      className={styles.token ?? ""}
+      className={styles.token}
       data-is-button={onPressToken === undefined ? undefined : ""}
       {...(onPressToken && {
         onAction: () => {

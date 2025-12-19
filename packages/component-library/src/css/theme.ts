@@ -512,7 +512,7 @@ function breakpointQuery(point: BreakpointKey): string {
   return `(min-width: ${breakpoints[point]})`;
 }
 
-function breakpointStyles<T extends Record<string, unknown>>(
+function breakpointStyles<T extends SimpleStyleRules["key"]>(
   point: BreakpointKey,
   styles: T,
 ) {

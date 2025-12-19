@@ -45,7 +45,7 @@ export const WithdrawPage = ({ onPressBack, ...props }: Props) => {
       <Button
         onPress={onPressBack}
         variant="outline"
-        className={styles.backButton ?? ""}
+        className={styles.backButton}
       >
         Back
       </Button>
@@ -268,7 +268,7 @@ const WithdrawFormImpl = (
 
   return (
     <Form
-      className={styles.withdrawForm ?? ""}
+      className={styles.withdrawForm}
       {...(!props.isLoading && { onSubmit: props.onSubmit })}
     >
       <div className={styles.header}>
@@ -292,7 +292,7 @@ const WithdrawFormImpl = (
         </div>
       </div>
       <TokenAmountInput
-        className={styles.field ?? ""}
+        className={styles.field}
         decimals={USDC.decimals}
         label="Amount"
         name="amount"
@@ -302,7 +302,7 @@ const WithdrawFormImpl = (
         placeholder="Enter an amount"
         labelExtra={
           <Link
-            className={styles.action ?? ""}
+            className={styles.action}
             {...(props.isLoading || props.isSubmitting
               ? { isPending: true }
               : {
@@ -339,7 +339,7 @@ const WithdrawFormImpl = (
       <Button
         type="submit"
         variant="secondary"
-        className={styles.submitButton ?? ""}
+        className={styles.submitButton}
         isPending={props.isLoading === true || props.isSubmitting}
       >
         Transfer

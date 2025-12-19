@@ -33,6 +33,7 @@ import styles from "./send-token-page.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { TruncateKey } from "./truncate-key.js";
 import { signWithWallet } from "../solana-wallet.js";
+import { createStyles, keyframes } from "./component-library/css/index.js";
 
 type Props = {
   icon?: string | undefined;
@@ -257,20 +258,20 @@ const LoadedSendTokenPage = ({
       feeConfig={feeConfig}
       scanner={
         showScanner ? (
-          <div className={styles.qrCodeScanner}>
+          <div className={classes.qrCodeScanner}>
             <Button
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
               variant="solid"
-              className={styles.closeButton ?? ""}
+              className={classes.closeButton}
               onPress={() => {
                 setShowScanner(false);
               }}
             >
-              <span className={styles.label}>Close</span>
+              <span className={classes.label}>Close</span>
             </Button>
             <Scanner
-              classNames={{ container: styles.camera ?? "" }}
+              classNames={{ container: classes.camera }}
               onScan={(results) => {
                 const value = results[0]?.rawValue;
                 if (value) {
@@ -328,32 +329,32 @@ const SendTokenPageImpl = ({
   }, [props.isLoading, props.isLoading ? undefined : props.amount, decimals]);
 
   return (
-    <div className={styles.sendTokenPage ?? ""}>
+    <div className={classes.sendTokenPage}>
       <Button
         excludeFromTabOrder={scannerShowing}
         onPress={onPressBack}
         variant="outline"
-        className={styles.backButton ?? ""}
+        className={classes.backButton}
       >
         Back
       </Button>
       <Form
         aria-hidden={scannerShowing ? "true" : undefined}
-        className={styles.sendTokenForm ?? ""}
+        className={classes.sendTokenForm}
         {...(!props.isLoading &&
           !props.isSubmitting && { onSubmit: props.onSubmit })}
       >
-        <div className={styles.header}>
+        <div className={classes.header}>
           {icon ? (
-            <img alt="" src={icon} className={styles.tokenIcon} />
+            <img alt="" src={icon} className={classes.tokenIcon} />
           ) : (
-            <div className={styles.tokenIcon} />
+            <div className={classes.tokenIcon} />
           )}
-          <h2 className={styles.tokenName}>
+          <h2 className={classes.tokenName}>
             Send {tokenName ?? <TruncateKey keyValue={tokenMint} />}
           </h2>
-          <div className={styles.amountInWallet}>
-            <span className={styles.amount}>
+          <div className={classes.amountInWallet}>
+            <span className={classes.amount}>
               {amountToString(amountAvailable, decimals)}
             </span>{" "}
             {symbol} available
@@ -361,7 +362,7 @@ const SendTokenPageImpl = ({
         </div>
         <TextField
           excludeFromTabOrder={scannerShowing}
-          className={styles.field ?? ""}
+          className={classes.field}
           name="recipient"
           label="Recipient"
           isRequired
@@ -372,7 +373,7 @@ const SendTokenPageImpl = ({
           labelExtra={
             <Link
               excludeFromTabOrder={scannerShowing}
-              className={styles.action ?? ""}
+              className={classes.action}
               {...(props.isLoading || props.isSubmitting
                 ? { isPending: true }
                 : {
@@ -406,7 +407,7 @@ const SendTokenPageImpl = ({
         />
         <TokenAmountInput
           excludeFromTabOrder={scannerShowing}
-          className={styles.field ?? ""}
+          className={classes.field}
           decimals={decimals}
           label="Amount"
           name="amount"
@@ -417,7 +418,7 @@ const SendTokenPageImpl = ({
           labelExtra={
             <Link
               excludeFromTabOrder={scannerShowing}
-              className={styles.action ?? ""}
+              className={classes.action}
               {...(props.isLoading || props.isSubmitting
                 ? { isPending: true }
                 : {
@@ -448,20 +449,20 @@ const SendTokenPageImpl = ({
               amount={notionalAmount}
               decimals={decimals}
               price={props.price}
-              className={styles.notionalAmount}
+              className={classes.notionalAmount}
             />
           )}
         <Button
           excludeFromTabOrder={scannerShowing}
           type="submit"
           variant="secondary"
-          className={styles.submitButton ?? ""}
+          className={classes.submitButton}
           isPending={props.isLoading === true || props.isSubmitting}
         >
           Send
         </Button>
         <div
-          className={styles.fee}
+          className={classes.fee}
           data-is-loading={props.isLoading ? "" : undefined}
         >
           {!props.isLoading && (
@@ -485,14 +486,119 @@ const FetchError = ({
 }: ComponentProps<typeof FetchErrorImpl> & {
   onPressBack: () => void;
 }) => (
-  <div className={clsx(styles.sendTokenPage, className)}>
+  <div className={clsx(classes.sendTokenPage, className)}>
     <Button
       onPress={onPressBack}
       variant="outline"
-      className={styles.backButton ?? ""}
+      className={classes.backButton}
     >
       Back
     </Button>
-    <FetchErrorImpl className={styles.fetchError} {...props} />
+    <FetchErrorImpl className={classes.fetchError} {...props} />
   </div>
 );
+
+const { keyframe: pulseKeyframe } = keyframes(
+  "fogo-send-token-pulse-keyframe",
+  () => ({
+    "50%": {
+      opacity: "0.5",
+    },
+  }),
+);
+
+const { classes } = createStyles("fogo-send-token-page", (theme) => ({
+  action: {
+    whiteSpace: "nowrap",
+  },
+  amount: {
+    wordBreak: "break-all",
+  },
+  amountInWallet: {
+    ...theme.textStyles("sm"),
+    color: theme.color.paragraph,
+  },
+  backButton: {
+    position: "absolute",
+    top: theme.spacing(4),
+    left: theme.spacing(4),
+  },
+  camera: {
+    zIndex: 0,
+    height: "100%",
+    position: "absolute !important",
+    inset: 0,
+  },
+  closeButton: {
+    position: "absolute",
+    right: theme.spacing(2),
+    top: theme.spacing(2),
+    zIndex: 1,
+  },
+  fee: {
+    ...theme.textStyles("xs"),
+
+    color: theme.color.muted,
+    fontStyle: "italic",
+    marginTop: `calc(${theme.spacing(3)}} * -1)`,
+
+    "&[data-is-loading]": {
+      animation: `${pulseKeyframe} 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`,
+      background: theme.color.skeleton,
+      borderRadius: theme.borderRadius.md,
+      display: "inline-block",
+      height: "1em",
+      width: theme.spacing(25),
+    },
+  },
+  fetchError: {
+    height: "100%",
+    paddingLeft: theme.spacing(8),
+    paddingRight: theme.spacing(8),
+  },
+  field: {
+    width: "100%",
+  },
+  header: {
+    alignItems: "center",
+    display: "flex",
+    flexFlow: "column nowrap",
+    gap: theme.spacing(4),
+    textAlign: "center",
+  },
+  notionalAmount: {
+    ...theme.textStyles("xs"),
+
+    alignSelf: "flex-start",
+    color: theme.color.muted,
+    marginTop: `calc(${theme.spacing(3)} * -1)`,
+  },
+  qrCodeScanner: {
+    background: theme.color["qr-code-scanner-overlay"],
+    display: "grid",
+    inset: 0,
+    placeContent: "center",
+    position: "absolute",
+  },
+  sendTokenForm: {
+    alignItems: "center",
+    display: "flex",
+    flexFlow: "column nowrap",
+    gap: theme.spacing(6),
+    padding: theme.spacing(8),
+    paddingTop: theme.spacing(10),
+  },
+  sendTokenPage: {
+    height: "100%",
+    position: "relative",
+  },
+  tokenIcon: {
+    borderRadius: theme.borderRadius.full,
+    height: theme.spacing(12),
+    width: theme.spacing(12),
+  },
+  tokenName: {
+    ...theme.textStyles("lg", "medium"),
+    color: theme.color.heading,
+  },
+}));

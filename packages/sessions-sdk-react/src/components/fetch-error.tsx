@@ -24,24 +24,41 @@ export const FetchError = ({
     <span className={classes.headline}>{headline}</span>
     <span className={classes.message}>{errorToString(error)}</span>
     {reset !== undefined && (
-      <Button
-        className={classes.retryButton ?? ""}
-        variant="solid"
-        onPress={reset}
-      >
+      <Button className={classes.retryButton} variant="solid" onPress={reset}>
         Retry
       </Button>
     )}
   </div>
 );
 
-const { classes } = createStyles("fogo-fetch-error", (theme) => ({
-  fetchError: {
-    alignItems: "center",
-    display: "flex",
-    gap: theme?.spacing(3),
-    flexFlow: "column nowrap",
-    justifyContent: "center",
-    textAlign: "center",
-  },
-}));
+const { classes } = createStyles("fogo-fetch-error", (theme) => {
+  const headlineAndIconRules = {
+    color: theme.color.states.error.foreground,
+  };
+
+  return {
+    fetchError: {
+      alignItems: "center",
+      display: "flex",
+      gap: theme.spacing(3),
+      flexFlow: "column nowrap",
+      justifyContent: "center",
+      textAlign: "center",
+    },
+    headline: {
+      ...headlineAndIconRules,
+      fontSize: theme.spacing(8),
+    },
+    icon: {
+      ...headlineAndIconRules,
+      ...theme.textStyles(),
+    },
+    message: {
+      ...theme.textStyles("xs"),
+      color: theme.color.muted,
+    },
+    retryButton: {
+      marginTop: theme.spacing(2),
+    },
+  };
+});

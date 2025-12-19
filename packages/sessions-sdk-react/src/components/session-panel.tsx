@@ -65,10 +65,10 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
           </Button>
         )}
       </div>
-      <Tabs className={styles.tabs ?? ""}>
+      <Tabs className={styles.tabs}>
         <TabList
           aria-label="Wallet"
-          className={styles.tabList ?? ""}
+          className={styles.tabList}
           items={[
             { id: "tokens", name: "Tokens" },
             { id: "activity", name: "Activity" },
@@ -78,7 +78,7 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
           ]}
         >
           {({ id, name }) => (
-            <Tab className={styles.tab ?? ""} id={id}>
+            <Tab className={styles.tab} id={id}>
               {({ isSelected }) => (
                 <>
                   <span>{name}</span>
@@ -99,7 +99,7 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
             </Tab>
           )}
         </TabList>
-        <TabPanel className={styles.tabPanel ?? ""} id="tokens">
+        <TabPanel className={styles.tabPanel} id="tokens">
           {isEstablished(sessionState) && (
             <Tokens
               sessionState={sessionState}
@@ -108,14 +108,14 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
             />
           )}
         </TabPanel>
-        <TabPanel className={styles.tabPanel ?? ""} id="activity">
+        <TabPanel className={styles.tabPanel} id="activity">
           {isEstablished(sessionState) && (
             <Activity sessionState={sessionState} />
           )}
         </TabPanel>
         {whitelistedTokens.length > 0 && (
           <TabPanel
-            className={styles.tabPanel ?? ""}
+            className={styles.tabPanel}
             id="session-limits"
             data-panel="session-limits"
           >
@@ -172,7 +172,7 @@ const LogoutButton = ({
   return (
     <Button
       variant="ghost"
-      className={styles.logoutButton ?? ""}
+      className={styles.logoutButton}
       onPress={handleLogOut}
       isDisabled={!isEstablished(sessionState)}
     >

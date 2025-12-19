@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { Heading } from "react-aria-components";
 
 import { ModalDialog } from "./component-library/ModalDialog/index.js";
+import { createStyles } from "./component-library/css/index.js";
 import styles from "./renew-session-modal.module.css";
 import { SessionLimits } from "./session-limits.js";
 import { useSession } from "../hooks/use-session.js";
@@ -35,16 +36,16 @@ export const RenewSessionModal = () => {
     <ModalDialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      dialogClassName={styles.renewSessionModal}
+      dialogClassName={classes.renewSessionModal}
     >
       {isOpen && (
         <>
-          <Heading slot="title" className={styles.heading ?? ""}>
+          <Heading slot="title" className={classes.heading}>
             {isRequestingExtendedExpiry
               ? "Your session is expired"
               : "This trade exceeds your set limits"}
           </Heading>
-          <div className={styles.message}>
+          <div className={classes.message}>
             {isRequestingExtendedExpiry
               ? "Would you like to extend your session?"
               : "Would you like to increase your session limits?"}
@@ -58,3 +59,21 @@ export const RenewSessionModal = () => {
     </ModalDialog>
   );
 };
+
+const { classes } = createStyles("fogo-renew-session-modal", (theme) => ({
+  heading: {
+    ...theme.textStyles("lg", "medium"),
+    color: theme.color.heading,
+  },
+  message: {
+    ...theme.textStyles("sm", "normal"),
+
+    color: theme.color.paragraph,
+    lineHeight: "140%",
+    marginBottom: theme.spacing(4),
+  },
+  renewSessionModal: {
+    display: "grid",
+    gap: theme.spacing(6),
+  },
+}));

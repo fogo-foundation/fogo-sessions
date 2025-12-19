@@ -133,17 +133,17 @@ export const SessionLimits = ({
           name="duration"
           defaultSelectedKey="one-week"
           isDisabled={onSubmit === undefined}
-          className={styles.sessionExpiry ?? ""}
+          className={styles.sessionExpiry}
         >
-          <Label className={styles.label ?? ""}>Session duration</Label>
-          <UnstyledButton className={styles.button ?? ""}>
-            <SelectValue className={styles.value ?? ""} />
-            <CaretDownIcon className={styles.arrow ?? ""} />
+          <Label className={styles.label}>Session duration</Label>
+          <UnstyledButton className={styles.button}>
+            <SelectValue className={styles.value} />
+            <CaretDownIcon className={styles.arrow} />
           </UnstyledButton>
-          <Popover offset={4} className={styles.selectPopover ?? ""}>
+          <Popover offset={4} className={styles.selectPopover}>
             <ListBox items={Object.entries(DURATION)}>
               {([key, { label }]) => (
-                <ListBoxItem id={key} className={styles.selectItem ?? ""}>
+                <ListBoxItem id={key} className={styles.selectItem}>
                   {label}
                 </ListBoxItem>
               )}
@@ -154,7 +154,7 @@ export const SessionLimits = ({
           {enableUnlimited && (
             <Checkbox
               name="applyLimits"
-              className={styles.applyLimits ?? ""}
+              className={styles.applyLimits}
               isDisabled={onSubmit === undefined}
               isSelected={applyLimits}
               onChange={setApplyLimits}
@@ -328,7 +328,7 @@ const Token = ({
             value={metadata.data.decimals}
           />
           <TokenAmountInput
-            className={styles.tokenAmountInput ?? ""}
+            className={styles.tokenAmountInput}
             inputGroupClassName={styles.inputGroup}
             labelLineClassName={styles.labelLine}
             label={
@@ -368,7 +368,7 @@ const Token = ({
 
 const LoadingToken = () => (
   <TextField
-    className={styles.tokenAmountInput ?? ""}
+    className={styles.tokenAmountInput}
     inputGroupClassName={styles.inputGroup}
     label={
       <div className={styles.label}>

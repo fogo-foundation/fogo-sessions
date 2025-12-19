@@ -307,27 +307,27 @@ export const Disclaimer = ({ className, ...props }: ComponentProps<"div">) => (
 
 const { classes } = createStyles("fogo-disclaimer", (theme) => ({
   disclaimer: {
-    ...theme?.textStyles("xs"),
-    color: theme?.color.paragraph,
+    ...theme.textStyles("xs"),
+    color: theme.color.paragraph,
 
     "& p": {
       margin: 0,
-      marginBottom: theme?.spacing(2),
+      marginBottom: theme.spacing(2),
     },
     "& ol, & ul": {
       padding: 0,
     },
     "& ol": {
-      margin: `${String(theme?.spacing(4))}px 0`,
+      margin: `${theme.spacing(4)} 0`,
     },
     "& ul": {
-      margin: `${String(theme?.spacing(2))}px 0`,
-      paddingLeft: `${String(theme?.spacing(6))}px`,
+      margin: `${theme.spacing(2)} 0`,
+      paddingLeft: theme.spacing(6),
     },
     "& h2": {
-      ...theme?.textStyles("sm", "semibold"),
-      color: theme?.color.heading,
-      marginBottom: `${String(theme?.spacing(2))}px`,
+      ...theme.textStyles("sm", "semibold"),
+      color: theme.color.heading,
+      marginBottom: theme.spacing(2),
     },
   },
 }));

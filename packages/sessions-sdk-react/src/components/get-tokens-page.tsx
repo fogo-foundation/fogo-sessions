@@ -1,10 +1,10 @@
 import { Network } from "@fogo/sessions-sdk";
 
-import { Button } from "./component-library/Button/index.js";
-import styles from "./get-tokens-page.module.css";
 import { useFaucet } from "../hooks/use-faucet.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { EstablishedSessionState } from "../session-state.js";
+import { Button } from "./component-library/Button/index.js";
+import { createStyles } from "./component-library/css/index.js";
 
 type Props = {
   onPressBack: () => void;
@@ -21,15 +21,15 @@ export const GetTokensPage = ({
   const { faucetUrl, showFaucet } = useFaucet(sessionState);
 
   return (
-    <div className={styles.getTokensPage ?? ""}>
+    <div className={classes.getTokensPage}>
       <Button
         onPress={onPressBack}
         variant="outline"
-        className={styles.backButton ?? ""}
+        className={classes.backButton}
       >
         Back
       </Button>
-      <ul className={styles.options}>
+      <ul className={classes.options}>
         {network === Network.Testnet && (
           <Button
             href={faucetUrl.toString()}
@@ -47,3 +47,28 @@ export const GetTokensPage = ({
     </div>
   );
 };
+
+const { classes } = createStyles("fogo-get-tokens-page", (theme) => ({
+  backButton: {
+    left: theme.spacing(4),
+    position: "absolute",
+    top: theme.spacing(4),
+  },
+  getTokensPage: {
+    height: "100%",
+    position: "relative",
+  },
+  options: {
+    alignItems: "center",
+    display: "flex",
+    flexFlow: "column nowrap",
+    gap: theme.spacing(6),
+    justifyContent: "stretch",
+    margin: 0,
+    padding: `${theme.spacing(24)} ${theme.spacing(8)}`,
+
+    "& > *": {
+      width: "100%",
+    },
+  },
+}));

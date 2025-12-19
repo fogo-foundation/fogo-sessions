@@ -254,11 +254,7 @@ const WalletsPage = ({
   }, [wallets]);
   return (
     <Page heading="Select a wallet" message="Select a Solana wallet to connect">
-      <Button
-        variant="ghost"
-        onPress={cancel}
-        className={styles.closeButton ?? ""}
-      >
+      <Button variant="ghost" onPress={cancel} className={styles.closeButton}>
         <XIcon />
       </Button>
       {installedWallets.length === 0 ? (
@@ -269,7 +265,7 @@ const WalletsPage = ({
           </span>
           <Link
             href="https://solana.com/solana-wallets"
-            className={styles.hint ?? ""}
+            className={styles.hint}
             target="_blank"
           >
             Get an SVM wallet
@@ -282,7 +278,7 @@ const WalletsPage = ({
               key={wallet.name}
               onPress={() => selectWallet?.(wallet)}
               variant="outline"
-              className={styles.wallet ?? ""}
+              className={styles.wallet}
               isPending={selectWallet === undefined}
             >
               <div className={styles.walletNameAndIcon}>
@@ -298,7 +294,7 @@ const WalletsPage = ({
         <div className={styles.moreOptionsContainer}>
           <Button
             variant="ghost"
-            className={styles.moreOptions ?? ""}
+            className={styles.moreOptions}
             onPress={() => {
               setMoreOptionsOpen((value) => !value);
             }}
@@ -320,7 +316,7 @@ const WalletsPage = ({
                     href={wallet.url}
                     target="_blank"
                     variant="outline"
-                    className={styles.wallet ?? ""}
+                    className={styles.wallet}
                     isPending={selectWallet === undefined}
                   >
                     <div className={styles.walletNameAndIcon}>
@@ -392,7 +388,7 @@ const Page = ({
   children: ReactNode;
 }) => (
   <>
-    <Heading slot="title" className={styles.heading ?? ""}>
+    <Heading slot="title" className={styles.heading}>
       {heading}
     </Heading>
     <div className={styles.message}>{message}</div>

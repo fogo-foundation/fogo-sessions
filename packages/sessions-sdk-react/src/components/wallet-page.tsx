@@ -39,9 +39,9 @@ export const WalletPage = ({
   const tokenAccountState = useTokenAccountData(sessionState);
   return (
     <div className={styles.walletPage}>
-      <Toolbar className={styles.topButtons ?? ""}>
+      <Toolbar className={styles.topButtons}>
         <UnstyledButton
-          className={styles.topButton ?? ""}
+          className={styles.topButton}
           onPress={onPressSend}
           isPending={
             tokenAccountState.type === TokenDataStateType.Loading ||
@@ -56,32 +56,26 @@ export const WalletPage = ({
           <PaperPlaneTiltIcon className={styles.icon} />
           <span className={styles.text}>Send</span>
         </UnstyledButton>
-        <UnstyledButton
-          className={styles.topButton ?? ""}
-          onPress={onPressReceive}
-        >
+        <UnstyledButton className={styles.topButton} onPress={onPressReceive}>
           <QrCodeIcon className={styles.icon} />
           <span className={styles.text}>Receive</span>
         </UnstyledButton>
         {network === Network.Mainnet ? (
           <UnstyledButton
-            className={styles.topButton ?? ""}
+            className={styles.topButton}
             onPress={onPressTransferIn}
           >
             <DownloadSimpleIcon className={styles.icon} />
             <span className={styles.text}>Transfer in</span>
           </UnstyledButton>
         ) : (
-          <UnstyledButton
-            className={styles.topButton ?? ""}
-            onPress={onPressGet}
-          >
+          <UnstyledButton className={styles.topButton} onPress={onPressGet}>
             <HandCoinsIcon className={styles.icon} />
             <span className={styles.text}>Get tokens</span>
           </UnstyledButton>
         )}
         <UnstyledButton
-          className={styles.topButton ?? ""}
+          className={styles.topButton}
           onPress={onPressWithdraw}
           isPending={
             tokenAccountState.type === TokenDataStateType.Loading ||
