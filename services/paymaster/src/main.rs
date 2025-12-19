@@ -3,7 +3,7 @@ use arc_swap::ArcSwap;
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
-use opentelemetry_sdk::trace::{BatchConfig, BatchConfigBuilder};
+use opentelemetry_sdk::trace::BatchConfigBuilder;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
