@@ -4,7 +4,7 @@ import type { ComponentProps, ReactNode } from "react";
 
 import { errorToString } from "../error-to-string.js";
 import { Button } from "./component-library/Button/index.js";
-import styles from "./fetch-error.module.css";
+import { createStyles } from "./component-library/css/bind.js";
 
 type Props = {
   headline: ReactNode;
@@ -19,13 +19,13 @@ export const FetchError = ({
   className,
   ...props
 }: Props) => (
-  <div className={clsx(styles.fetchError, className)} {...props}>
-    <WarningCircleIcon className={styles.icon} />
-    <span className={styles.headline}>{headline}</span>
-    <span className={styles.message}>{errorToString(error)}</span>
+  <div className={clsx(classes.fetchError, className)} {...props}>
+    <WarningCircleIcon className={classes.icon} />
+    <span className={classes.headline}>{headline}</span>
+    <span className={classes.message}>{errorToString(error)}</span>
     {reset !== undefined && (
       <Button
-        className={styles.retryButton ?? ""}
+        className={classes.retryButton ?? ""}
         variant="solid"
         onPress={reset}
       >
@@ -34,3 +34,14 @@ export const FetchError = ({
     )}
   </div>
 );
+
+const { classes } = createStyles("fogo-fetch-error", (theme) => ({
+  fetchError: {
+    alignItems: "center",
+    display: "flex",
+    gap: theme?.spacing(3),
+    flexFlow: "column nowrap",
+    justifyContent: "center",
+    textAlign: "center",
+  },
+}));

@@ -1,8 +1,7 @@
 import { createStyles } from "../css/index.js";
 import { resetAllLocalRules } from "../css/reset.js";
-import { theme } from "../css/theme.js";
 
-export const { classes } = createStyles("Fogo-TextField", () => ({
+export const { classes } = createStyles("Fogo-TextField", (theme) => ({
   labelLine: {
     ...theme.textStyles("xs", "medium"),
     display: "flex",
@@ -27,7 +26,7 @@ export const { classes } = createStyles("Fogo-TextField", () => ({
     ...theme.textStyles("sm"),
     background: theme.color["input-bg"],
     border: `1px solid ${theme.color.border}`,
-    borderRadius: theme.getBorderRadius("lg"),
+    borderRadius: theme.borderRadius.lg,
     color: theme.color.foreground,
     height: theme.spacing(8),
     outline: "3px solid transparent",
@@ -57,9 +56,9 @@ export const { classes } = createStyles("Fogo-TextField", () => ({
     ...theme.textStyles("sm", "normal"),
     background: theme.color["demo-bg"],
     border: `1px solid ${theme.color.states.error.foreground}`,
-    borderRadius: theme.getBorderRadius("md"),
+    borderRadius: theme.borderRadius.md,
     bottom: theme.spacing(10),
-    boxShadow: theme.getShadow(),
+    boxShadow: theme.shadow.base,
     color: theme.color.states.error.foreground,
     display: "none",
     left: theme.spacing(4),
@@ -76,23 +75,23 @@ export const { classes } = createStyles("Fogo-TextField", () => ({
   },
 
   textField: {
-    ...resetAllLocalRules(),
+    ...resetAllLocalRules(theme),
     display: "flex",
     flexFlow: "column nowrap",
     gap: theme.spacing(3),
 
-    '&[data-double] $input': {
+    "&[data-double] $input": {
       height: theme.spacing(14),
       overflow: "hidden",
       resize: "none",
       textOverflow: "unset",
     },
 
-    '&[data-double] $error': {
+    "&[data-double] $error": {
       bottom: theme.spacing(16),
     },
 
-    '&[data-disabled], &[data-pending]': {
+    "&[data-disabled], &[data-pending]": {
       $input: {
         background: theme.color.button.disabled.background,
 
@@ -119,11 +118,11 @@ export const { classes } = createStyles("Fogo-TextField", () => ({
       },
     },
 
-    '&[data-invalid] $input:not([data-focused])': {
+    "&[data-invalid] $input:not([data-focused])": {
       borderColor: theme.color.states.error.foreground,
     },
 
-    '&[data-invalid] $inputGroup:has($input[data-hovered]), &[data-invalid] $inputGroup:has($input[data-focused])':
+    "&[data-invalid] $inputGroup:has($input[data-hovered]), &[data-invalid] $inputGroup:has($input[data-focused])":
       {
         $error: {
           display: "block",

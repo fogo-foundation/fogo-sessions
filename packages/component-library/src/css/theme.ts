@@ -44,10 +44,6 @@ const fontWeight = {
 
 export type FontWeightKey = keyof typeof fontWeight;
 
-function getFontWeight(weight: FontWeightKey): number {
-  return fontWeight[weight];
-}
-
 const fontSize = {
   "2xl": "1.5rem",
   "3xl": "1.875rem",
@@ -67,11 +63,6 @@ const fontSize = {
 
 export type FontSizeKey = keyof typeof fontSize;
 
-function getFontSize(size: FontSizeKey = "base"): string {
-  assertKey(fontSize, size);
-  return fontSize[size];
-}
-
 const letterSpacing = {
   normal: "0em",
   tight: "-0.025em",
@@ -82,10 +73,6 @@ const letterSpacing = {
 } as const;
 
 export type LetterSpacingKey = keyof typeof letterSpacing;
-
-function getLetterSpacing(spacingKey: LetterSpacingKey = "normal"): string {
-  return letterSpacing[spacingKey];
-}
 
 const borderRadius = {
   "2xl": "1rem",
@@ -540,11 +527,6 @@ const shadow = {
 
 export type ShadowKey = keyof typeof shadow;
 
-function getShadow(size: ShadowKey = "base"): string {
-  assertKey(shadow, size);
-  return shadow[size];
-}
-
 const srOnlyStyles = {
   borderWidth: 0,
   clip: "rect(0, 0, 0, 0)",
@@ -562,9 +544,9 @@ function textStyles(
   weight: FontWeightKey = "normal",
 ): SimpleStyleRules["key"] {
   return {
-    fontSize: getFontSize(size),
+    fontSize: theme.fontSize[size],
     fontStyle: "normal",
-    fontWeight: getFontWeight(weight),
+    fontWeight: theme.fontWeight[weight],
     margin: 0,
     textBoxEdge: "cap alphabetic",
     textBoxTrim: "trim-both",
@@ -588,10 +570,6 @@ export const theme = {
   colorPalette,
   fontSize,
   fontWeight,
-  getFontSize,
-  getFontWeight,
-  getLetterSpacing,
-  getShadow,
   letterSpacing,
   layer,
   rgba,

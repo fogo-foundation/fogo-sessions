@@ -1,13 +1,12 @@
 import { createStyles } from "../css/index.js";
 import { resetAllLocalRules } from "../css/reset.js";
-import { theme } from "../css/theme.js";
 
-export const { classes } = createStyles("Fogo-Link", () => ({
+export const { classes } = createStyles("Fogo-Link", (theme) => ({
   link: {
-    ...resetAllLocalRules(),
+    ...resetAllLocalRules(theme),
     background: "transparent",
     border: "none",
-    borderRadius: theme.getBorderRadius("sm"),
+    borderRadius: theme.borderRadius.sm,
     color: theme.color.accent,
     cursor: "pointer",
     outline: "2px solid transparent",

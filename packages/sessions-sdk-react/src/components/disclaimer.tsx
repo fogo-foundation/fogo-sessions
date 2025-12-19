@@ -1,10 +1,10 @@
 import clsx from "clsx";
 import type { ComponentProps } from "react";
 
-import styles from "./disclaimer.module.css";
+import { createStyles } from "./component-library/css/index.js";
 
 export const Disclaimer = ({ className, ...props }: ComponentProps<"div">) => (
-  <div className={clsx(className, styles.disclaimer)} {...props}>
+  <div className={clsx(className, classes.disclaimer)} {...props}>
     <p>
       The Fogo1 Foundation (“<b>Fogo Foundation</b>”) has made available the
       Fogo Sessions wallet integration tools and connection interface (including
@@ -304,3 +304,30 @@ export const Disclaimer = ({ className, ...props }: ComponentProps<"div">) => (
     </ol>
   </div>
 );
+
+const { classes } = createStyles("fogo-disclaimer", (theme) => ({
+  disclaimer: {
+    ...theme?.textStyles("xs"),
+    color: theme?.color.paragraph,
+
+    "& p": {
+      margin: 0,
+      marginBottom: theme?.spacing(2),
+    },
+    "& ol, & ul": {
+      padding: 0,
+    },
+    "& ol": {
+      margin: `${String(theme?.spacing(4))}px 0`,
+    },
+    "& ul": {
+      margin: `${String(theme?.spacing(2))}px 0`,
+      paddingLeft: `${String(theme?.spacing(6))}px`,
+    },
+    "& h2": {
+      ...theme?.textStyles("sm", "semibold"),
+      color: theme?.color.heading,
+      marginBottom: `${String(theme?.spacing(2))}px`,
+    },
+  },
+}));

@@ -1,13 +1,13 @@
 import type { SimpleStyleRules } from "simplestyle-js";
 
 import { imports } from "./bind.js";
-import { theme } from "./theme.js";
+import type { Theme } from "./theme.js";
 
 imports("reset-imports", () => [
   '@import url("https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap");',
 ]);
 
-export function resetAllLocalRules(): SimpleStyleRules {
+export function resetAllLocalRules(theme: Theme): SimpleStyleRules {
   return {
     [`&,
 &::before,

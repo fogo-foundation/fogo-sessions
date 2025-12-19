@@ -1,10 +1,9 @@
 import { createStyles } from "../css/index.js";
 import { resetAllLocalRules } from "../css/reset.js";
-import { theme } from "../css/theme.js";
 
-export const { classes } = createStyles("Fogo-ModalDialog", () => ({
+export const { classes } = createStyles("Fogo-ModalDialog", (theme) => ({
   modalOverlay: {
-    ...resetAllLocalRules(),
+    ...resetAllLocalRules(theme),
     alignItems: "start",
     backdropFilter: "blur(8px)",
     background: theme.color["modal-overlay"],
@@ -22,8 +21,8 @@ export const { classes } = createStyles("Fogo-ModalDialog", () => ({
   modal: {
     backgroundColor: theme.color.card,
     border: `1px solid ${theme.color["widget-border"]}`,
-    borderRadius: theme.getBorderRadius("xl"),
-    boxShadow: theme.getShadow(),
+    borderRadius: theme.borderRadius.xl,
+    boxShadow: theme.shadow.base,
     marginBottom: `min(10dvh, ${theme.spacing(40)})`,
     marginTop: `min(10dvh, ${theme.spacing(40)})`,
     maxWidth: "90dvw",
