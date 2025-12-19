@@ -15,7 +15,7 @@ pub struct TransactionToValidate<'a> {
     pub signatures: &'a [Signature],
     pub substantive_instructions: Vec<InstructionWithIndex<'a>>,
     pub gas_spend: u64,
-    pub paymaster_fee: HashMap<Pubkey, u64>,
+    pub paymaster_fees: HashMap<Pubkey, u64>,
 }
 
 #[derive(Clone)]
@@ -45,7 +45,7 @@ impl<'a> TransactionToValidate<'a> {
                 .collect(),
             gas_spend: compute_gas_spend(transaction)
                 .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
-            paymaster_fee: compute_paymaster_fees(transaction, chain_index).await?,
+            paymaster_fees: compute_paymaster_fees(transaction, chain_index).await?,
         })
     }
 }
