@@ -13,6 +13,7 @@ use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
 use transaction::{InstructionWithIndex, TransactionToValidate};
 
+mod fee;
 mod gas;
 mod templates;
 pub mod transaction;
@@ -75,6 +76,7 @@ pub struct VariationOrderedInstructionConstraints {
     #[serde(default)]
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
+    pub paymaster_fee_lamports: Option<u64>,
 }
 
 #[derive(Clone)]

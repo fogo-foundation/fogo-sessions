@@ -9,6 +9,7 @@ use solana_client::{
     rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig, RpcTransactionConfig},
 };
 use solana_commitment_config::CommitmentConfig;
+use solana_message::VersionedMessage;
 use solana_pubkey::Pubkey;
 use solana_rpc_client_api::client_error::{Error, ErrorKind};
 use solana_rpc_client_api::request::RpcRequest;
@@ -86,7 +87,7 @@ impl ChainIndex {
     /// Find the pubkey for the account at index `account_index_within_instruction` within the `instruction_with_index` in the given `transaction`.
     pub async fn resolve_instruction_account_pubkey(
         &self,
-        transaction: &TransactionToValidate<'_>,
+        message: &VersionedMessage,
         InstructionWithIndex {
             index: instruction_index,
             instruction,
@@ -104,13 +105,12 @@ impl ChainIndex {
                     ),
                 )
             })?);
-        if let Some(pubkey) = transaction
-            .message
+        if let Some(pubkey) = message
             .static_account_keys()
             .get(account_index_within_transaction)
         {
             Ok(*pubkey)
-        } else if let Some(lookup_tables) = transaction.message.address_table_lookups() {
+        } else if let Some(lookup_tables) = message.address_table_lookups() {
             let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
                 .iter()
                 .flat_map(|x| {
@@ -127,7 +127,7 @@ impl ChainIndex {
                 }))
                 .collect();
             let account_index_within_lookup_tables =
-                account_index_within_transaction - transaction.message.static_account_keys().len();
+                account_index_within_transaction - message.static_account_keys().len();
             return self
                 .find_and_query_lookup_table(lookup_accounts, account_index_within_lookup_tables)
                 .await;
