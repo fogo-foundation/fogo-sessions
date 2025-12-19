@@ -5,7 +5,7 @@
   :where(&),
   :where(&)::before,
   :where(&)::after,
-  :where(&) *:not(svg):not(svg *), // ignore svg elements and their children
+  :where(&) *:not(svg, svg *), /* ignore svg elements and their children*/
   :where(&) *::before,
   :where(&) *::after {
     all: revert;
