@@ -18,7 +18,7 @@ $layer: (
 }
 
 .layerSessionPanel {
-  z-index: layer("session-panel");
+  z-index: layer("session-panel") !important;
 }
 
 .layerModalDialog {
@@ -30,5 +30,5 @@ $layer: (
 }
 
 .layerSelect {
-  z-index: layer("select");
+  z-index: layer("select") !important;
 }
