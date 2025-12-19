@@ -4,5 +4,6 @@
     "source.fixAll.biome": "always"
   },
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "biomejs.biome"
+  "editor.defaultFormatter": "biomejs.biome",
+  "typescript.preferences.preferTypeOnlyAutoImports": true
 }
