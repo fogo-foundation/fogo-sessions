@@ -1,6 +1,4 @@
 use serde::{Deserialize, Deserializer, Serialize};
-use serde_with::{serde_as, DisplayFromStr};
-use solana_pubkey::Pubkey;
 use std::collections::{hash_map::Entry, HashMap};
 use std::num::NonZeroU8;
 
@@ -59,34 +57,6 @@ fn insert_variation(
     Ok(())
 }
 
-fn deserialize_paymaster_fee_coefficients<'de, D>(
-    deserializer: D,
-) -> Result<HashMap<Pubkey, u64>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[serde_as]
-    #[derive(Deserialize)]
-    struct FeeCoefficient {
-        #[serde_as(as = "DisplayFromStr")]
-        mint: Pubkey,
-        coefficient: u64,
-    }
-
-    let coefficients: Vec<FeeCoefficient> = Vec::deserialize(deserializer)?;
-    coefficients.into_iter().try_fold(
-        HashMap::new(),
-        |mut map, FeeCoefficient { mint, coefficient }| {
-            if map.insert(mint, coefficient).is_some() {
-                return Err(serde::de::Error::custom(format!(
-                    "Duplicate mint {mint} in paymaster fee coefficients"
-                )));
-            }
-            Ok(map)
-        },
-    )
-}
-
 fn deserialize_transaction_variations<'de, D>(
     deserializer: D,
 ) -> Result<HashMap<String, TransactionVariation>, D::Error>
@@ -104,8 +74,6 @@ where
 
 #[derive(Deserialize, Serialize, Default)]
 pub struct Config {
-    #[serde(deserialize_with = "deserialize_paymaster_fee_coefficients")]
-    pub paymaster_fee_coefficients: HashMap<Pubkey, u64>,
     pub domains: Vec<Domain>,
 }
 pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 15_000;
