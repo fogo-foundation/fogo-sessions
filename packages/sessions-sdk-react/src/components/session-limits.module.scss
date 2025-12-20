@@ -1,6 +1,4 @@
 @use "./component-library/theme";
-@use "../reset";
-@use "../layer";
 
 .sessionLimits {
   display: flex;
@@ -222,35 +220,32 @@
 }
 
 .selectPopover {
-  @include reset.reset {
-    background: theme.color("demo-bg");
-    color: theme.color("foreground");
-    box-shadow: theme.shadow();
-    border: 1px solid theme.color("widget-border");
-    border-radius: theme.border-radius("base");
-    outline: none;
-    padding: theme.spacing(1) 0;
-    min-width: var(--trigger-width);
-    z-index: layer.layer("select") !important;
+  background: theme.color("demo-bg");
+  color: theme.color("foreground");
+  box-shadow: theme.shadow();
+  border: 1px solid theme.color("widget-border");
+  border-radius: theme.border-radius("base");
+  outline: none;
+  padding: theme.spacing(1) 0;
+  min-width: var(--trigger-width);
 
-    .selectItem {
-      @include theme.text("sm", "normal");
+  .selectItem {
+    @include theme.text("sm", "normal");
 
-      padding: theme.spacing(2) theme.spacing(4);
-      cursor: pointer;
-      outline: 2px solid transparent;
-      outline-offset: -#{theme.spacing(0.5)};
-      transition:
-        background-color 50ms linear,
-        outline-color 50ms linear;
+    padding: theme.spacing(2) theme.spacing(4);
+    cursor: pointer;
+    outline: 2px solid transparent;
+    outline-offset: -#{theme.spacing(0.5)};
+    transition:
+      background-color 50ms linear,
+      outline-color 50ms linear;
 
-      &[data-focused] {
-        background-color: theme.color("button", "ghost", "background", "hover");
-      }
+    &[data-focused] {
+      background-color: theme.color("button", "ghost", "background", "hover");
+    }
 
-      &[data-focus-visible] {
-        outline-color: theme.color("accent");
-      }
+    &[data-focus-visible] {
+      outline-color: theme.color("accent");
     }
   }
 }

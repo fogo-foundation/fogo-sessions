@@ -23,6 +23,7 @@ import { ReceivePage } from "./receive-page.js";
 import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
 import { SessionLimitsTab } from "./session-limits-tab.js";
+import resetStyles from "../reset.module.css";
 import styles from "./session-panel.module.css";
 import { TruncateKey } from "./truncate-key.js";
 import { WithdrawPage } from "./withdraw-page.js";
@@ -49,7 +50,10 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
   }, [showBridgeIn, setShowBridgeIn]);
 
   return (
-    <div className={clsx(styles.sessionPanel, className)} {...props}>
+    <div
+      className={clsx(styles.sessionPanel, resetStyles.reset, className)}
+      {...props}
+    >
       <div className={styles.header}>
         <Heading slot="title" className={styles.title}>
           Your <FogoWordmark /> Wallet

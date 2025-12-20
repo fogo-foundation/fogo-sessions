@@ -16,3 +16,19 @@ $layer: (
 @function layer($value) {
   @return theme.map-get-strict($layer, $value);
 }
+
+.layerSessionPanel {
+  z-index: layer("session-panel") !important;
+}
+
+.layerModalDialog {
+  z-index: layer("modal-dialog");
+}
+
+.layerToast {
+  z-index: layer("toast");
+}
+
+.layerSelect {
+  z-index: layer("select") !important;
+}
