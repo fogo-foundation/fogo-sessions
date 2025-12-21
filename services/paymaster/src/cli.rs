@@ -21,6 +21,7 @@ pub enum Command {
 pub enum NetworkEnvironment {
     Mainnet,
     Testnet,
+    Localnet,
 }
 
 #[derive(Args, Debug, Clone)]

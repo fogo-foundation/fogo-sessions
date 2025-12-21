@@ -39,6 +39,8 @@ pub enum NetworkEnvironment {
     Mainnet,
     #[sqlx(rename = "testnet")]
     Testnet,
+    #[sqlx(rename = "localnet")]
+    Localnet,
 }
 
 fn handle_transaction_variation_v0(
@@ -90,6 +92,7 @@ pub async fn load_config(
     let network_environment_sqlx = match network_environment {
         CliNetworkEnvironment::Mainnet => NetworkEnvironment::Mainnet,
         CliNetworkEnvironment::Testnet => NetworkEnvironment::Testnet,
+        CliNetworkEnvironment::Localnet => NetworkEnvironment::Localnet,
     };
     let domain_rows = sqlx::query_as!(
         DomainConfig,

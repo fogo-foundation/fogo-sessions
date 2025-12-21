@@ -4,6 +4,7 @@ use config::File;
 use fogo_paymaster::config_manager::config::Config;
 use fogo_paymaster::config_manager::config::Domain;
 use fogo_paymaster::constraint::TransactionVariation;
+use fogo_paymaster::db::config::NetworkEnvironment;
 use fogo_paymaster::db::pool::pool;
 use serde::{Deserialize, Serialize};
 use sqlx::Type;
@@ -18,15 +19,6 @@ pub enum VariationVersion {
 
     #[sqlx(rename = "v1")]
     V1,
-}
-
-#[derive(Clone, Debug, PartialEq, Type, Eq, PartialOrd, Ord, Deserialize, Serialize)]
-#[sqlx(type_name = "network_environment")]
-pub enum NetworkEnvironment {
-    #[sqlx(rename = "mainnet")]
-    Mainnet,
-    #[sqlx(rename = "testnet")]
-    Testnet,
 }
 
 #[derive(Debug, Parser)]
@@ -271,6 +263,7 @@ async fn main() -> anyhow::Result<()> {
     let network_environment = match opts.network_environment.as_str() {
         "mainnet" => NetworkEnvironment::Mainnet,
         "testnet" => NetworkEnvironment::Testnet,
+        "localnet" => NetworkEnvironment::Localnet,
         _ => {
             return Err(anyhow::anyhow!(
                 "Invalid network environment: {}",

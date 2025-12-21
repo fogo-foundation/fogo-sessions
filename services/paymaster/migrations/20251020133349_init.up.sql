@@ -1,5 +1,5 @@
 CREATE TYPE variation_version AS ENUM ('v0', 'v1');
-CREATE TYPE network_environment AS ENUM ('mainnet', 'testnet');
+CREATE TYPE network_environment AS ENUM ('mainnet', 'testnet', 'localnet');
 
 CREATE TABLE "user" (
   id uuid PRIMARY KEY,
