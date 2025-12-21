@@ -8,8 +8,6 @@ import {
 } from "@fogo/sessions-sdk-react";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
-import { Auth } from "../Auth";
-import { Navbar } from "../Navbar";
 import { UserNotFound } from "../UserNotFound";
 import { PaymasterLoading } from "../loading";
 import { UserApps } from "./user-apps";
@@ -24,7 +22,7 @@ export const Apps = () => {
   } else if (isEstablished(sessionState)) {
     return <AppsContents sessionState={sessionState} />;
   } else {
-    return <Auth />;
+    return;
   }
 };
 
@@ -63,7 +61,6 @@ const AppData = ({
       }
       return (
         <div>
-          <Navbar />
           <h1>Home</h1>
           <UserApps user={userData.data.user} />
         </div>

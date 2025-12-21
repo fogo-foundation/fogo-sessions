@@ -9,8 +9,6 @@ import {
 import { useParams } from "next/navigation";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
-import { Auth } from "../Auth";
-import { Navbar } from "../Navbar";
 import { UserNotFound } from "../UserNotFound";
 import { PaymasterLoading } from "../loading";
 import { AppDomains } from "./app-domains";
@@ -26,7 +24,7 @@ export const Domain = () => {
   } else if (isEstablished(sessionState)) {
     return <DomainContents sessionState={sessionState} appId={appId} />;
   } else {
-    return <Auth />;
+    return;
   }
 };
 
@@ -72,7 +70,6 @@ const DomainData = ({
       }
       return (
         <div>
-          <Navbar />
           <h1>App {app.name} Domains</h1>
           <AppDomains app={app} />
         </div>
