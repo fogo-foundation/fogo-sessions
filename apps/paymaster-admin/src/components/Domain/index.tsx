@@ -22,15 +22,15 @@ export const Domain = () => {
     sessionState.type === SessionStateType.Initializing ||
     sessionState.type === SessionStateType.CheckingStoredSession
   ) {
-    return <AppsContents isLoading />;
+    return <DomainContents isLoading />;
   } else if (isEstablished(sessionState)) {
-    return <AppsContents sessionState={sessionState} appId={appId} />;
+    return <DomainContents sessionState={sessionState} appId={appId} />;
   } else {
     return <Auth />;
   }
 };
 
-type AppsContentsProps =
+type DomainContentsProps =
   | {
       isLoading?: false;
       sessionState: EstablishedSessionState;
@@ -40,14 +40,14 @@ type AppsContentsProps =
       isLoading: true;
     };
 
-const AppsContents = (props: AppsContentsProps) => {
+const DomainContents = (props: DomainContentsProps) => {
   if (props.isLoading) {
     return <PaymasterLoading />;
   }
-  return <AppData sessionState={props.sessionState} appId={props.appId} />;
+  return <DomainData sessionState={props.sessionState} appId={props.appId} />;
 };
 
-const AppData = ({
+const DomainData = ({
   sessionState,
   appId,
 }: {
