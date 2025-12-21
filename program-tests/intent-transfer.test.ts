@@ -1,24 +1,19 @@
 import { describe, test, before, beforeEach } from "node:test";
 import assert from "node:assert";
+import { onchain } from "@fogo/sessions-sdk";
 import type { Address, KeyPairSigner } from "@solana/kit";
 import { address } from "@solana/kit";
 import { getSetComputeUnitLimitInstruction } from "@solana-program/compute-budget";
 import { serialize, deserialize } from "@xlabs-xyz/binary-layout";
-import { type Snapshot, ForkSvm } from "@xlabs-xyz/fork-svm";
+import type { Snapshot } from "@xlabs-xyz/fork-svm";
+import { ForkSvm, assertTxSuccess, createCurried } from "@xlabs-xyz/fork-svm";
 import {
   nativeMint,
   svmAddressItem,
   addressLookupTableLayout,
 } from "@xlabs-xyz/svm";
-import {
-  fogoRpcUrl,
-  fogo,
-  assertTxSuccess,
-  genKp,
-  createHelpers,
-  signMessageFunc,
-} from "./utils.js";
-import { onchain } from "@fogo/sessions-sdk";
+
+import { fogoRpcUrl, fogo, genKp, signMessageFunc } from "./utils.js";
 
 const {
   chainIdToUsdcMint,
@@ -82,14 +77,14 @@ describe("IntentTransfer", function () {
     createAta,
     getTokenBalance,
     createAndSendTx,
-  } = createHelpers(forkSvm);
+  } = createCurried(forkSvm);
 
   const createFeeConfig = (mint: Address, intrachainFee: bigint, bridgeFee: bigint) => {
     const data = serialize(feeConfigLayout, {
       intrachainTransferFee: intrachainFee,
       bridgeTransferFee: bridgeFee,
     });
-    createAccount(feeConfigPda(mint), data, intentTransferProgramId);
+    createAccount(feeConfigPda(mint), { data, programId: intentTransferProgramId });
   };
 
   const spoofSignedQuote = (now: Date, payeeAddress: Address): Uint8Array =>
@@ -157,7 +152,7 @@ describe("IntentTransfer", function () {
     await assertTxSuccess(createAndSendTx([verifyIx, transferIx], sponsorKp));
 
     const [balanceAfter, sponsorFeeBalance, recipientBalance] = await Promise.all(
-      [userSplFogo, sponsorSplFogo, recipientSplFogo].map(getTokenBalance),
+      [userSplFogo, sponsorSplFogo, recipientSplFogo].map(getTokenBalance()),
     );
 
     assert.equal(
@@ -233,7 +228,7 @@ describe("IntentTransfer", function () {
     await assertTxSuccess(createAndSendTx(ixs, sponsorKp, [outboxItemKp], [alt]));
 
     const [balanceAfter, sponsorFeeBalance] =
-      await Promise.all([userUsdc, sponsorUsdc].map(getTokenBalance));
+      await Promise.all([userUsdc, sponsorUsdc].map(getTokenBalance()));
 
     assert.equal(
       balanceAfter,

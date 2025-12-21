@@ -13,6 +13,7 @@
     "@fogo/sessions-sdk": "workspace:*",
     "@solana/kit": "catalog:",
     "@solana-program/compute-budget": "catalog:",
+    "@solana-program/stake": "catalog:",
     "@xlabs-xyz/amount": "catalog:",
     "@xlabs-xyz/binary-layout": "catalog:",
     "@xlabs-xyz/common": "catalog:",

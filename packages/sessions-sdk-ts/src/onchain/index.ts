@@ -5,6 +5,7 @@ export * from "./domain-registry.js";
 export * from "./intent-transfer.js";
 export * from "./mpl-metadata.js";
 export * from "./session-manager.js";
+export * from "./session-stake.js";
 export * from "./svm-intent.js";
 export * from "./wormhole.js";
 

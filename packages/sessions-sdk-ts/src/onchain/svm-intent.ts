@@ -1,4 +1,4 @@
-import type{ Address, SignatureBytes } from "@solana/kit";
+import type{ Address, SignatureBytes, ReadonlyUint8Array } from "@solana/kit";
 import { getPublicKeyFromAddress, verifySignature } from "@solana/kit";
 import { serialize } from "@xlabs-xyz/binary-layout";
 import type {RoUint8Array} from "@xlabs-xyz/const-utils";
@@ -41,7 +41,11 @@ const addPrefixIfNeeded = async (
   bytesMessage: RoUint8Array,
 ): Promise<RoUint8Array> => {
   const publicKey = await getPublicKeyFromAddress(owner);
-  if (await verifySignature(publicKey, signature as SignatureBytes, bytesMessage))
+  if (await verifySignature(
+    publicKey,
+    signature as SignatureBytes,
+    bytesMessage as ReadonlyUint8Array
+  ))
     return bytesMessage;
 
   const messageFormat = "LimitedUtf8" as const;
