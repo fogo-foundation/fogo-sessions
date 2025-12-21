@@ -75,5 +75,8 @@ const DomainData = ({
         </div>
       );
     }
+    default: {
+      return;
+    }
   }
 };

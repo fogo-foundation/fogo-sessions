@@ -10,7 +10,7 @@ import { useEffect } from "react";
 export const Auth = () => {
   const sessionState = useSession();
   const router = useRouter();
-  
+
   useEffect(() => {
     if (isEstablished(sessionState)) {
       router.push("/apps");

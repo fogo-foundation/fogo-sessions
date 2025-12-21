@@ -66,5 +66,8 @@ const AppData = ({
         </div>
       );
     }
+    default: {
+      return;
+    }
   }
 };
