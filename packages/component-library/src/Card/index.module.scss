@@ -1,0 +1,9 @@
+@use "../theme";
+
+.card {
+  background-color: theme.color("background");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("lg");
+  padding: theme.spacing(4);
+  color: theme.color("foreground");
+}
