@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { connection } from "./fogo-connection";
 
 export const config = {
-  matcher: "/api/:path*",
+  matcher: "/api/auth/:path*",
 };
 
 export default async function proxy(request: NextRequest) {

@@ -122,3 +122,4 @@ export const UserSchema = z.object({
 });
 
 export type User = z.infer<typeof UserSchema>;
+export type App = z.infer<typeof AppWithDomainConfigsSchema>;

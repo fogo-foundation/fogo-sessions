@@ -27,7 +27,9 @@ export type FetchUserDataResult =
   | { type: FetchUserDataStateType.Success; user: User }
   | { type: FetchUserDataStateType.NotFound };
 
-export const fetchUserData = async (sessionToken: string) => {
+export const fetchUserData = async (
+  sessionToken: string,
+): Promise<FetchUserDataResult> => {
   const url = new URL("/api/auth/user-data", globalThis.location.origin);
   url.searchParams.set("sessionToken", sessionToken);
   const response = await fetch(url, {
@@ -41,7 +43,7 @@ export const fetchUserData = async (sessionToken: string) => {
       user: UserSchema.parse(await response.json()),
     };
   } else {
-    return new Error(
+    throw new Error(
       `Failed to fetch user data: ${response.status.toString()} ${response.statusText}`,
     );
   }
