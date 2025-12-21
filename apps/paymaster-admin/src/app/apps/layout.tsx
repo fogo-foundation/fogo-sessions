@@ -1,1 +1,1 @@
-export { AuthenticatedLayout as default } from "../../components/Apps/layout";
+export { AuthenticatedLayout as default } from "../../components/App/layout";
