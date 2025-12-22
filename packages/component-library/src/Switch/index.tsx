@@ -1,3 +1,5 @@
+"use client";
+
 import clsx from "clsx";
 import type { ComponentProps } from "react";
 import { Switch as AriaSwitch } from "react-aria-components";
