@@ -2,7 +2,7 @@
 import { SessionStateType, useSession } from "@fogo/sessions-sdk-react";
 
 import { Auth } from "../Auth";
-import { Navbar } from "../NavBar";
+import { Navbar } from "../Navbar";
 
 export const AuthenticationLayout = ({
   children,
