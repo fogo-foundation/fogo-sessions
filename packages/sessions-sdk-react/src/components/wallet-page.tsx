@@ -14,7 +14,10 @@ import {
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
-import { ActionButton, ActionButtonToolbar } from "./component-library/ActionButton/index.js";
+import {
+  ActionButton,
+  ActionButtonToolbar,
+} from "./component-library/ActionButton/index.js";
 
 type Props = {
   onPressSend: () => void;
@@ -55,10 +58,7 @@ export const WalletPage = ({
         >
           Send
         </ActionButton>
-        <ActionButton
-          onPress={onPressReceive}
-          icon={<QrCodeIcon />}
-        >
+        <ActionButton onPress={onPressReceive} icon={<QrCodeIcon />}>
           Receive
         </ActionButton>
         {network === Network.Mainnet ? (
@@ -69,10 +69,7 @@ export const WalletPage = ({
             Transfer in
           </ActionButton>
         ) : (
-          <ActionButton
-            onPress={onPressGet}
-            icon={<HandCoinsIcon />}
-          >
+          <ActionButton onPress={onPressGet} icon={<HandCoinsIcon />}>
             Get tokens
           </ActionButton>
         )}
