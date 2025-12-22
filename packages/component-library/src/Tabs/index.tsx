@@ -19,10 +19,8 @@ export type TabItem = {
 
 type TabsProps = ComponentProps<typeof AriaTabs>;
 
-export const Tabs = ({ className, children, ...props }: TabsProps) => (
-  <AriaTabs className={clsx(styles.tabs, className)} {...props}>
-    {children}
-  </AriaTabs>
+export const Tabs = ({ className, ...props }: TabsProps) => (
+  <AriaTabs className={clsx(styles.tabs, className)} {...props} />
 );
 
 type TabListProps = Omit<
