@@ -14,10 +14,17 @@ import { UserApps } from "./user-apps";
 
 export const Apps = () => {
   const sessionState = useSession();
-  if (
-    sessionState.type === SessionStateType.Initializing ||
-    sessionState.type === SessionStateType.CheckingStoredSession
-  ) {
+
+  const isWalletLoading = [
+    SessionStateType.Initializing,
+    SessionStateType.CheckingStoredSession,
+    SessionStateType.RequestingLimits,
+    SessionStateType.SettingLimits,
+    SessionStateType.WalletConnecting,
+    SessionStateType.SelectingWallet,
+  ].includes(sessionState.type);
+
+  if (isWalletLoading) {
     return <AppsContents isLoading />;
   } else if (isEstablished(sessionState)) {
     return <AppsContents sessionState={sessionState} />;

@@ -16,10 +16,16 @@ import { AppDomains } from "./app-domains";
 export const Domain = () => {
   const { appId } = useParams<{ appId: string }>();
   const sessionState = useSession();
-  if (
-    sessionState.type === SessionStateType.Initializing ||
-    sessionState.type === SessionStateType.CheckingStoredSession
-  ) {
+  const isWalletLoading = [
+    SessionStateType.Initializing,
+    SessionStateType.CheckingStoredSession,
+    SessionStateType.RequestingLimits,
+    SessionStateType.SettingLimits,
+    SessionStateType.WalletConnecting,
+    SessionStateType.SelectingWallet,
+  ].includes(sessionState.type);
+
+  if (isWalletLoading) {
     return <DomainContents isLoading />;
   } else if (isEstablished(sessionState)) {
     return <DomainContents sessionState={sessionState} appId={appId} />;

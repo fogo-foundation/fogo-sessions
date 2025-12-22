@@ -16,7 +16,9 @@ const fetchData = async (
 export const GET = async (request: NextRequest) => {
   const walletAddress = request.headers.get("x-authenticated-user");
   if (!walletAddress) {
-    return new Response("Unauthorized", { status: 401 });
+    throw new Error(
+      "Unauthorized. Failed to get wallet address from request headers.",
+    );
   }
 
   const userData = await fetchData(walletAddress);

@@ -1,1 +1,1 @@
-export { Auth as default } from "../components/Auth/index";
+export { Apps as default } from "../components/App";
