@@ -2,10 +2,15 @@
   "name": "@fogo/paymaster-admin",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22"
+  },
   "scripts": {
     "build": "next build",
     "fix:format": "prettier --write .",
     "fix:lint": "eslint --fix .",
+    "pull:env": "[ $CI ] || VERCEL_ORG_ID=team_M8yTQcRiKOduAwHNMhHQInWq VERCEL_PROJECT_ID=prj_0YVLB5TIHu7VXdMyib1Zmjq4iwtZ vercel env pull",
     "start:dev": "next dev --port 3002",
     "start:prod": "next start --port 3002",
     "test:format": "prettier --check .",
@@ -13,16 +18,25 @@
     "test:types": "tsc"
   },
   "dependencies": {
+    "@fogo/component-library": "workspace:*",
+    "@fogo/sessions-sdk": "workspace:",
+    "@fogo/sessions-sdk-react": "workspace:*",
+    "@neondatabase/serverless": "catalog:",
+    "@react-hookz/web": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "clsx": "catalog:",
+    "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "next": "catalog:",
-    "clsx": "catalog:"
+    "swr": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
     "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
+    "@types/pg": "catalog:",
     "@types/react": "catalog:",
     "autoprefixer": "catalog:",
     "postcss": "catalog:",
