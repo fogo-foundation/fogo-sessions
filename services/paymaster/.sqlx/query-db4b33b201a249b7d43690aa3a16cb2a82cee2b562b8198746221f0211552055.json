@@ -18,10 +18,7 @@
           "Custom": {
             "name": "variation_version",
             "kind": {
-              "Enum": [
-                "v0",
-                "v1"
-              ]
+              "Enum": ["v0", "v1"]
             }
           }
         },
@@ -29,9 +26,7 @@
         "Jsonb"
       ]
     },
-    "nullable": [
-      false
-    ]
+    "nullable": [false]
   },
   "hash": "db4b33b201a249b7d43690aa3a16cb2a82cee2b562b8198746221f0211552055"
 }

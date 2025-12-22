@@ -84,7 +84,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
@@ -99,7 +99,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
@@ -113,7 +113,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
@@ -139,7 +139,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
