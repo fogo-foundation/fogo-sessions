@@ -1,4 +1,3 @@
-use crate::cli::NetworkEnvironment as CliNetworkEnvironment;
 use crate::config_manager::config::{default_one, Config, Domain};
 use crate::constraint::{
     TransactionVariation, VariationOrderedInstructionConstraints, VariationProgramWhitelist,
@@ -86,11 +85,7 @@ fn handle_transaction_variation_v1(
     ))
 }
 
-pub async fn load_config(
-    network_environment: CliNetworkEnvironment,
-) -> Result<Config, anyhow::Error> {
-    let network_environment_sqlx: NetworkEnvironment = network_environment.into();
-
+pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Config, anyhow::Error> {
     let domain_rows = sqlx::query_as!(
         DomainConfig,
         r#"
@@ -102,7 +97,7 @@ pub async fn load_config(
         FROM domain_config
         WHERE network_environment = $1
         "#,
-        network_environment_sqlx as _,
+        network_environment as _,
     )
     .fetch_all(pool::pool())
     .await?;
