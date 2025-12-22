@@ -6,7 +6,7 @@ use serde_json::Value;
 use solana_pubkey::Pubkey;
 use sqlx::{
     types::{Json, JsonValue},
-    FromRow,
+    FromRow, Type,
 };
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -29,6 +29,17 @@ struct Variation {
     name: String,
     max_gas_spend: Option<i64>,
     transaction_variation: Json<Value>,
+}
+
+#[derive(Clone, Debug, PartialEq, Type, Eq, PartialOrd, Ord)]
+#[sqlx(type_name = "network_environment")]
+pub enum NetworkEnvironment {
+    #[sqlx(rename = "mainnet")]
+    Mainnet,
+    #[sqlx(rename = "testnet")]
+    Testnet,
+    #[sqlx(rename = "localnet")]
+    Localnet,
 }
 
 fn handle_transaction_variation_v0(
@@ -74,7 +85,7 @@ fn handle_transaction_variation_v1(
     ))
 }
 
-pub async fn load_config() -> Result<Config, anyhow::Error> {
+pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Config, anyhow::Error> {
     let domain_rows = sqlx::query_as!(
         DomainConfig,
         r#"
@@ -84,7 +95,9 @@ pub async fn load_config() -> Result<Config, anyhow::Error> {
           enable_session_management,
           enable_preflight_simulation
         FROM domain_config
+        WHERE network_environment = $1
         "#,
+        network_environment as _,
     )
     .fetch_all(pool::pool())
     .await?;

@@ -1,4 +1,5 @@
 CREATE TYPE variation_version AS ENUM ('v0', 'v1');
+CREATE TYPE network_environment AS ENUM ('mainnet', 'testnet', 'localnet');
 
 CREATE TABLE "user" (
   id uuid PRIMARY KEY,
@@ -19,11 +20,14 @@ CREATE TABLE app (
 CREATE TABLE domain_config (
   id uuid PRIMARY KEY,
   app_id uuid NOT NULL REFERENCES app(id) ON DELETE CASCADE,
-  domain text NOT NULL UNIQUE,
+  domain text NOT NULL,
+  network_environment network_environment NOT NULL,
   enable_session_management boolean NOT NULL DEFAULT false,
   enable_preflight_simulation boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  
+  CONSTRAINT domain_config_domain_network_environment_unique UNIQUE (domain, network_environment)
 );
 
 

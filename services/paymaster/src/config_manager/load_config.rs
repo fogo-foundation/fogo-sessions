@@ -1,4 +1,5 @@
 use crate::api::{self, DomainState};
+use crate::cli::NetworkEnvironment;
 use crate::config_manager::config::Config;
 use crate::db;
 use anyhow::Result;
@@ -8,8 +9,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::interval;
 #[allow(dead_code)] // TODO: This module is unused until we bring back the DB
-pub async fn load_db_config() -> Result<Config> {
-    let config = db::config::load_config().await?;
+pub async fn load_db_config(network_environment: NetworkEnvironment) -> Result<Config> {
+    let config = db::config::load_config(network_environment.into()).await?;
     // config.assign_defaults(); TODO: we need to load ntt_quoter from db
     Ok(config)
 }
@@ -17,6 +18,7 @@ pub async fn load_db_config() -> Result<Config> {
 #[allow(dead_code)] // TODO: This module is unused until we bring back the DB
 /// Spawn a background task to refresh the config every 10 seconds.
 pub fn spawn_config_refresher(
+    network_environment: NetworkEnvironment,
     mnemonic: String,
     domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
     db_refresh_interval_seconds: u64,
@@ -28,7 +30,7 @@ pub fn spawn_config_refresher(
 
         loop {
             ticker.tick().await;
-            match load_db_config().await {
+            match load_db_config(network_environment).await {
                 Ok(new_config) => {
                     // Recompute the derived state
                     let new_domains = api::get_domain_state_map(new_config.domains, &mnemonic);

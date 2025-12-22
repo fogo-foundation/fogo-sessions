@@ -64,7 +64,8 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
 
     db::pool::init_db_connection(&opts.db_url).await?;
     /* TODO Revert this once we have a good way of modifying the config from the DB. */
-    // let config = config_manager::load_config::load_db_config().await?;
+    // let mut config =
+    //     config_manager::load_config::load_db_config(opts.network_environment).await?;
     let mut config: Config = config::Config::builder()
         .add_source(config::File::with_name(&opts.config_file))
         .build()?
@@ -79,6 +80,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     )));
     // TODO this is commented out as part of the temporary change to load the config from the file.
     // config_manager::load_config::spawn_config_refresher(
+    //     opts.network_environment,
     //     mnemonic,
     //     Arc::clone(&domains),
     //     opts.db_refresh_interval_seconds,

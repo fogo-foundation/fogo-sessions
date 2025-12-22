@@ -63,21 +63,24 @@ cargo run --bin fogo-paymaster migrate
 
 ### Seeding
 
-Seeding is optional, but simplifies bootstrapping a local configuration. Provide both a database URL and a path to a TOML config (an example lives at `tilt/configs/paymaster.toml`):
+Seeding is optional, but simplifies bootstrapping a local configuration. Provide both a database URL, a path to a TOML config (an example lives at `tilt/configs/paymaster.toml`), and the network you'd like this config to live in (eg: `testnet`/`mainnet`):
 
 ```bash
-cargo run --bin paymaster-seed -- --db-url "postgres://paymaster:paymaster@localhost:5432/paymaster" --config tilt/configs/paymaster.toml
+cargo run --bin paymaster-config-sync -- --config="./tilt/configs/paymaster.toml" --db-url="postgres://paymaster:paymaster@localhost:5432/paymaster" --network-environment testnet
 ```
+
+note that running the `paymaster-config-sync` multiple times will act as an upsert command where it will create variations if they don't exist or update them if they're already present in the db.
 
 ### Running the paymaster
 
-Launch the service with either environment variables or explicit flags. The minimum inputs are the database URL, HTTP RPC endpoint, and a mnemonic file path for the sponsor wallet. Example:
+Launch the service with either environment variables or explicit flags. The minimum inputs are the database URL, HTTP RPC endpoint, network (eg. `testnet`/`mainnet`) and a mnemonic file path for the sponsor wallet. Example:
 
 ```bash
 cargo run --bin fogo-paymaster run \
   --db-url "postgres://paymaster:paymaster@localhost:5432/paymaster" \
   --rpc-url-http https://testnet-alt.fogo.io \
   --mnemonic-file ./tilt/secrets/mnemonic
+  --network-environment testnet
 ```
 
 Optional flags:

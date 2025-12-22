@@ -1,5 +1,5 @@
-use clap::{Args, Parser, Subcommand};
-
+use crate::db::config::NetworkEnvironment as DbNetworkEnvironment;
+use clap::{Args, Parser, Subcommand, ValueEnum};
 #[derive(Debug, Parser)]
 #[command(version, about)]
 pub struct Cli {
@@ -16,11 +16,33 @@ pub enum Command {
     Migrate(MigrateOptions),
 }
 
+#[derive(Debug, Clone, Copy, ValueEnum)]
+#[clap()]
+pub enum NetworkEnvironment {
+    Mainnet,
+    Testnet,
+    Localnet,
+}
+
+impl From<NetworkEnvironment> for DbNetworkEnvironment {
+    fn from(val: NetworkEnvironment) -> Self {
+        match val {
+            NetworkEnvironment::Mainnet => DbNetworkEnvironment::Mainnet,
+            NetworkEnvironment::Testnet => DbNetworkEnvironment::Testnet,
+            NetworkEnvironment::Localnet => DbNetworkEnvironment::Localnet,
+        }
+    }
+}
+
 #[derive(Args, Debug, Clone)]
 pub struct RunOptions {
     /// Postgres connection string (required via flag or env)
     #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
     pub db_url: String,
+
+    /// Network environment to run the paymaster for
+    #[arg(long, env = "NETWORK_ENVIRONMENT")]
+    pub network_environment: NetworkEnvironment,
 
     // TODO this is part of the temporary change to load the config from the file. Should be removed.
     /// Path to TOML config
