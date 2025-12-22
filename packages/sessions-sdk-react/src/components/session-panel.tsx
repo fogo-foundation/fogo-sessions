@@ -95,7 +95,11 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
           )}
         </TabPanel>
         {whitelistedTokens.length > 0 && (
-          <TabPanel id="session-limits" data-panel="session-limits" className={styles.tabPanel ?? ""}>
+          <TabPanel
+            id="session-limits"
+            data-panel="session-limits"
+            className={styles.tabPanel ?? ""}
+          >
             {isEstablished(sessionState) && (
               <SessionLimitsTab sessionState={sessionState} />
             )}
