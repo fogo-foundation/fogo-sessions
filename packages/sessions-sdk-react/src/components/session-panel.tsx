@@ -4,10 +4,9 @@ import { Network } from "@fogo/sessions-sdk";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
-import { motion } from "motion/react";
 import type { ComponentProps } from "react";
 import { useState, useCallback, useEffect } from "react";
-import { Tabs, TabList, Tab, TabPanel, Heading } from "react-aria-components";
+import { Heading } from "react-aria-components";
 
 import type {
   EstablishedSessionState,
@@ -16,6 +15,7 @@ import type {
 import { Button } from "./component-library/Button/index.js";
 import { CopyButton } from "./component-library/CopyButton/index.js";
 import { Link } from "./component-library/Link/index.js";
+import { Tabs, TabList, TabPanel } from "./component-library/Tabs/index.js";
 import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import { GetTokensPage } from "./get-tokens-page.js";
@@ -69,10 +69,9 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
           </Button>
         )}
       </div>
-      <Tabs className={styles.tabs ?? ""}>
+      <Tabs>
         <TabList
           aria-label="Wallet"
-          className={styles.tabList ?? ""}
           items={[
             { id: "tokens", name: "Tokens" },
             { id: "activity", name: "Activity" },
@@ -80,30 +79,8 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
               ? []
               : [{ id: "session-limits", name: "Session" }]),
           ]}
-        >
-          {({ id, name }) => (
-            <Tab className={styles.tab ?? ""} id={id}>
-              {({ isSelected }) => (
-                <>
-                  <span>{name}</span>
-                  {isSelected && (
-                    <motion.span
-                      layoutId="underline"
-                      className={styles.underline}
-                      transition={{
-                        type: "spring",
-                        bounce: 0.6,
-                        duration: 0.6,
-                      }}
-                      style={{ originY: "top" }}
-                    />
-                  )}
-                </>
-              )}
-            </Tab>
-          )}
-        </TabList>
-        <TabPanel className={styles.tabPanel ?? ""} id="tokens">
+        />
+        <TabPanel id="tokens">
           {isEstablished(sessionState) && (
             <Tokens
               sessionState={sessionState}
@@ -112,17 +89,13 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
             />
           )}
         </TabPanel>
-        <TabPanel className={styles.tabPanel ?? ""} id="activity">
+        <TabPanel id="activity">
           {isEstablished(sessionState) && (
             <Activity sessionState={sessionState} />
           )}
         </TabPanel>
         {whitelistedTokens.length > 0 && (
-          <TabPanel
-            className={styles.tabPanel ?? ""}
-            id="session-limits"
-            data-panel="session-limits"
-          >
+          <TabPanel id="session-limits" data-panel="session-limits">
             {isEstablished(sessionState) && (
               <SessionLimitsTab sessionState={sessionState} />
             )}

@@ -1,0 +1,63 @@
+@use "../theme";
+
+.tabs {
+  display: grid;
+  grid-template-rows: theme.spacing(10) 1fr;
+  overflow: hidden;
+}
+
+.tabList {
+  display: flex;
+  flex-flow: row nowrap;
+  gap: theme.spacing(1);
+  border-bottom: 1px solid theme.color("widget-border");
+}
+
+.tab {
+  @include theme.text("xs", "semibold");
+
+  color: theme.color("muted");
+  flex-grow: 1;
+  display: grid;
+  place-content: center;
+  position: relative;
+  outline: 2px solid transparent;
+  outline-offset: -#{theme.spacing(0.5)};
+  transition:
+    color 50ms linear,
+    background-color 50ms linear,
+    outline-color 50ms linear;
+
+  &:not([data-selected]) {
+    cursor: pointer;
+
+    &[data-hovered] {
+      background: theme.color("button-hover");
+      color: theme.color("foreground");
+    }
+
+    &[data-pressed] {
+      background: theme.color("button-pressed");
+      color: theme.color("foreground");
+    }
+  }
+
+  &[data-focus-visible] {
+    outline-color: theme.color("accent");
+  }
+}
+
+.underline {
+  position: absolute;
+  bottom: 0;
+  left: theme.spacing(3);
+  right: theme.spacing(3);
+  height: theme.spacing(0.5);
+  background: theme.color("accent");
+  border-top-left-radius: theme.border-radius("sm");
+  border-top-right-radius: theme.border-radius("sm");
+}
+
+.tabPanel {
+  overflow: hidden;
+}
