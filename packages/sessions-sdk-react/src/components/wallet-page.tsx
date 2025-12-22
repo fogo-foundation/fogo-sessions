@@ -4,7 +4,6 @@ import { ExportIcon } from "@phosphor-icons/react/dist/ssr/Export";
 import { HandCoinsIcon } from "@phosphor-icons/react/dist/ssr/HandCoins";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
 import { QrCodeIcon } from "@phosphor-icons/react/dist/ssr/QrCode";
-import { Button as UnstyledButton, Toolbar } from "react-aria-components";
 
 import type { EstablishedSessionState } from "../session-state.js";
 import { TokenList } from "./token-list.js";
@@ -15,6 +14,7 @@ import {
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
+import { ActionButton, ActionButtonToolbar } from "./component-library/ActionButton/index.js";
 
 type Props = {
   onPressSend: () => void;
@@ -39,9 +39,8 @@ export const WalletPage = ({
   const tokenAccountState = useTokenAccountData(sessionState);
   return (
     <div className={styles.walletPage}>
-      <Toolbar className={styles.topButtons ?? ""}>
-        <UnstyledButton
-          className={styles.topButton ?? ""}
+      <ActionButtonToolbar>
+        <ActionButton
           onPress={onPressSend}
           isPending={
             tokenAccountState.type === TokenDataStateType.Loading ||
@@ -52,36 +51,32 @@ export const WalletPage = ({
             (tokenAccountState.type === TokenDataStateType.Loaded &&
               tokenAccountState.data.tokensInWallet.length === 0)
           }
+          icon={<PaperPlaneTiltIcon />}
         >
-          <PaperPlaneTiltIcon className={styles.icon} />
-          <span className={styles.text}>Send</span>
-        </UnstyledButton>
-        <UnstyledButton
-          className={styles.topButton ?? ""}
+          Send
+        </ActionButton>
+        <ActionButton
           onPress={onPressReceive}
+          icon={<QrCodeIcon />}
         >
-          <QrCodeIcon className={styles.icon} />
-          <span className={styles.text}>Receive</span>
-        </UnstyledButton>
+          Receive
+        </ActionButton>
         {network === Network.Mainnet ? (
-          <UnstyledButton
-            className={styles.topButton ?? ""}
+          <ActionButton
             onPress={onPressTransferIn}
+            icon={<DownloadSimpleIcon />}
           >
-            <DownloadSimpleIcon className={styles.icon} />
-            <span className={styles.text}>Transfer in</span>
-          </UnstyledButton>
+            Transfer in
+          </ActionButton>
         ) : (
-          <UnstyledButton
-            className={styles.topButton ?? ""}
+          <ActionButton
             onPress={onPressGet}
+            icon={<HandCoinsIcon />}
           >
-            <HandCoinsIcon className={styles.icon} />
-            <span className={styles.text}>Get tokens</span>
-          </UnstyledButton>
+            Get tokens
+          </ActionButton>
         )}
-        <UnstyledButton
-          className={styles.topButton ?? ""}
+        <ActionButton
           onPress={onPressWithdraw}
           isPending={
             tokenAccountState.type === TokenDataStateType.Loading ||
@@ -92,11 +87,11 @@ export const WalletPage = ({
             (tokenAccountState.type === TokenDataStateType.Loaded &&
               tokenAccountState.data.tokensInWallet.length === 0)
           }
+          icon={<ExportIcon />}
         >
-          <ExportIcon className={styles.icon} />
-          <span className={styles.text}>Transfer out</span>
-        </UnstyledButton>
-      </Toolbar>
+          Transfer out
+        </ActionButton>
+      </ActionButtonToolbar>
       <TokenList
         sessionState={sessionState}
         onPressSend={onPressSendForToken}
