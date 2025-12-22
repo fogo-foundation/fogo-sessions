@@ -6,7 +6,7 @@ import { Toolbar, Button as UnstyledButton } from "react-aria-components";
 
 import styles from "./index.module.css";
 
-type ActionButtonProps = ComponentProps<typeof UnstyledButton> & {
+type ActionButtonProps = Omit<ComponentProps<typeof UnstyledButton>, "children"> & {
   icon?: ReactNode;
   children: ReactNode;
 };
