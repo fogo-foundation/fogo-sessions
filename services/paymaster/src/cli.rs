@@ -1,5 +1,5 @@
+use crate::db::config::NetworkEnvironment as DbNetworkEnvironment;
 use clap::{Args, Parser, Subcommand, ValueEnum};
-
 #[derive(Debug, Parser)]
 #[command(version, about)]
 pub struct Cli {
@@ -22,6 +22,16 @@ pub enum NetworkEnvironment {
     Mainnet,
     Testnet,
     Localnet,
+}
+
+impl From<NetworkEnvironment> for DbNetworkEnvironment {
+    fn from(val: NetworkEnvironment) -> Self {
+        match val {
+            NetworkEnvironment::Mainnet => DbNetworkEnvironment::Mainnet,
+            NetworkEnvironment::Testnet => DbNetworkEnvironment::Testnet,
+            NetworkEnvironment::Localnet => DbNetworkEnvironment::Localnet,
+        }
+    }
 }
 
 #[derive(Args, Debug, Clone)]

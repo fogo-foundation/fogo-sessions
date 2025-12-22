@@ -89,11 +89,8 @@ fn handle_transaction_variation_v1(
 pub async fn load_config(
     network_environment: CliNetworkEnvironment,
 ) -> Result<Config, anyhow::Error> {
-    let network_environment_sqlx = match network_environment {
-        CliNetworkEnvironment::Mainnet => NetworkEnvironment::Mainnet,
-        CliNetworkEnvironment::Testnet => NetworkEnvironment::Testnet,
-        CliNetworkEnvironment::Localnet => NetworkEnvironment::Localnet,
-    };
+    let network_environment_sqlx: NetworkEnvironment = network_environment.into();
+
     let domain_rows = sqlx::query_as!(
         DomainConfig,
         r#"

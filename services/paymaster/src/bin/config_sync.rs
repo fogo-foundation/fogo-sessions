@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use config::File;
+use fogo_paymaster::cli::NetworkEnvironment as CliNetworkEnvironment;
 use fogo_paymaster::config_manager::config::Config;
 use fogo_paymaster::config_manager::config::Domain;
 use fogo_paymaster::constraint::TransactionVariation;
@@ -34,7 +35,7 @@ pub struct Cli {
 
     /// Network environment to sync as
     #[arg(short, long, env = "NETWORK_ENVIRONMENT")]
-    pub network_environment: String,
+    pub network_environment: CliNetworkEnvironment,
 }
 
 // Get the registrable domain from a URL.
@@ -260,17 +261,7 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv()?;
     let opts = Cli::parse();
 
-    let network_environment = match opts.network_environment.as_str() {
-        "mainnet" => NetworkEnvironment::Mainnet,
-        "testnet" => NetworkEnvironment::Testnet,
-        "localnet" => NetworkEnvironment::Localnet,
-        _ => {
-            return Err(anyhow::anyhow!(
-                "Invalid network environment: {}",
-                opts.network_environment
-            ))
-        }
-    };
+    let network_environment = opts.network_environment.into();
 
     run_sync_config(&opts.db_url, &opts.config, network_environment).await?;
     Ok(())
