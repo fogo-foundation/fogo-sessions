@@ -1,0 +1,66 @@
+@use "../theme";
+
+.actionButton {
+  display: grid;
+  grid-template-rows: repeat(2, max-content);
+  padding: theme.spacing(3) theme.spacing(1.5);
+  gap: theme.spacing(2);
+  background-color: theme.color("button-base");
+  border: none;
+  border-radius: theme.border-radius("lg");
+  flex: 0;
+  flex-grow: 1;
+  color: theme.color("muted");
+  cursor: pointer;
+  text-decoration: none;
+  justify-items: center;
+  text-align: center;
+  outline: 2px solid transparent;
+  outline-offset: theme.spacing(0.5);
+  transition:
+    color 50ms linear,
+    background-color 50ms linear,
+    outline-color 50ms linear;
+
+  &[data-hovered] {
+    background-color: theme.color("button-hover");
+    color: theme.color("heading");
+  }
+
+  &[data-pressed] {
+    background-color: theme.color("button-pressed");
+    color: theme.color("heading");
+  }
+
+  &[data-focus-visible] {
+    outline-color: theme.color("accent");
+  }
+
+  &[data-pending],
+  &[data-disabled] {
+    opacity: 0.5;
+  }
+
+  &[data-pending] {
+    cursor: wait;
+  }
+
+  &[data-disabled] {
+    cursor: not-allowed;
+  }
+}
+
+.icon {
+  font-size: theme.font-size("xl");
+}
+
+.text {
+  @include theme.text("xxs", "normal");
+}
+
+.actionButtonToolbar {
+  display: flex;
+  flex-flow: row nowrap;
+  gap: theme.spacing(1);
+  padding: theme.spacing(2);
+}
