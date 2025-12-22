@@ -60,10 +60,8 @@
   &[data-disabled] {
     color: theme.color("muted");
 
-    .track {
-      .handle {
-        background: theme.color("button", "disabled", "background");
-      }
+    .track .handle {
+      background: theme.color("button", "disabled", "background");
     }
   }
 }
