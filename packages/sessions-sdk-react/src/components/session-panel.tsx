@@ -80,7 +80,7 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
               : [{ id: "session-limits", name: "Session" }]),
           ]}
         />
-        <TabPanel id="tokens">
+        <TabPanel id="tokens" className={styles.tabPanel ?? ""}>
           {isEstablished(sessionState) && (
             <Tokens
               sessionState={sessionState}
@@ -89,13 +89,13 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
             />
           )}
         </TabPanel>
-        <TabPanel id="activity">
+        <TabPanel id="activity" className={styles.tabPanel ?? ""}>
           {isEstablished(sessionState) && (
             <Activity sessionState={sessionState} />
           )}
         </TabPanel>
         {whitelistedTokens.length > 0 && (
-          <TabPanel id="session-limits" data-panel="session-limits">
+          <TabPanel id="session-limits" data-panel="session-limits" className={styles.tabPanel ?? ""}>
             {isEstablished(sessionState) && (
               <SessionLimitsTab sessionState={sessionState} />
             )}

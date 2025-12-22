@@ -45,19 +45,15 @@
   &[data-focus-visible] {
     outline-color: theme.color("accent");
   }
-}
 
-.underline {
-  position: absolute;
-  bottom: 0;
-  left: theme.spacing(3);
-  right: theme.spacing(3);
-  height: theme.spacing(0.5);
-  background: theme.color("accent");
-  border-top-left-radius: theme.border-radius("sm");
-  border-top-right-radius: theme.border-radius("sm");
-}
-
-.tabPanel {
-  overflow: hidden;
+  .underline {
+    position: absolute;
+    bottom: 0;
+    left: theme.spacing(3);
+    right: theme.spacing(3);
+    height: theme.spacing(0.5);
+    background: theme.color("accent");
+    border-top-left-radius: theme.border-radius("sm");
+    border-top-right-radius: theme.border-radius("sm");
+  }
 }
