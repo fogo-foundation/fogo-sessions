@@ -1,3 +1,6 @@
+import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
+import { TollboothIdl, TollboothProgram } from "@fogo/sessions-idls";
+import { sha256 } from "@noble/hashes/sha2";
 import {
   fromLegacyKeypair,
   fromLegacyPublicKey,
@@ -10,6 +13,7 @@ import type {
   TransactionWithLifetime,
   Rpc,
   GetLatestBlockhashApi,
+  Address,
 } from "@solana/kit";
 import {
   createSolanaRpc,
@@ -24,7 +28,9 @@ import {
   compressTransactionMessageUsingAddressLookupTables,
   createSignerFromKeyPair,
   partiallySignTransaction,
+  getAddressFromPublicKey,
 } from "@solana/kit";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import type {
   AddressLookupTableAccount,
   TransactionError,
@@ -37,6 +43,8 @@ import {
   PublicKey,
 } from "@solana/web3.js";
 import { z } from "zod";
+
+import { USDC_MINT } from "./index.js";
 
 export enum Network {
   Testnet,
@@ -108,6 +116,7 @@ export const createSessionConnection = (
       domain: string,
       sessionKey: CryptoKeyPair | undefined,
       instructions: TransactionOrInstructions,
+      walletPublicKey: PublicKey,
       extraConfig?: SendTransactionOptions,
     ) =>
       sendToPaymaster(
@@ -115,6 +124,7 @@ export const createSessionConnection = (
         domain,
         sessionKey,
         instructions,
+        walletPublicKey,
         extraConfig,
       ),
     getSponsor: (domain: string) => getSponsor(options, sponsorCache, domain),
@@ -170,6 +180,7 @@ const sendToPaymaster = async (
   domain: string,
   sessionKey: CryptoKeyPair | undefined,
   instructions: TransactionOrInstructions,
+  walletPublicKey: PublicKey,
   extraConfig?: SendTransactionOptions,
 ): Promise<TransactionResult> => {
   const signerKeys = await getSignerKeys(sessionKey, extraConfig?.extraSigners);
@@ -178,8 +189,10 @@ const sendToPaymaster = async (
     ? await buildTransaction(
         connection,
         domain,
+        sessionKey,
         signerKeys,
         instructions,
+        walletPublicKey,
         extraConfig,
       )
     : await addSignaturesToExistingTransaction(instructions, signerKeys);
@@ -224,28 +237,50 @@ const buildTransaction = async (
     sponsorCache: Map<string, PublicKey>;
   },
   domain: string,
+  sessionKey: CryptoKeyPair | undefined,
   signerKeys: CryptoKeyPair[],
   instructions: (TransactionInstruction | Instruction)[],
+  walletPublicKey: PublicKey,
   extraConfig?: {
     addressLookupTable?: string | undefined;
     extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
+    variation?: string | undefined;
   },
 ) => {
-  const [{ value: latestBlockhash }, sponsor, addressLookupTable, signers] =
-    await Promise.all([
-      connection.rpc.getLatestBlockhash().send(),
-      connection.sponsor === undefined
-        ? getSponsor(connection, connection.sponsorCache, domain)
-        : Promise.resolve(connection.sponsor),
-      extraConfig?.addressLookupTable === undefined
-        ? Promise.resolve(undefined)
-        : getAddressLookupTable(
-            connection.connection,
-            connection.addressLookupTableCache,
-            extraConfig.addressLookupTable,
-          ),
-      Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
-    ]);
+  const feeMint = new PublicKey(USDC_MINT[connection.network]); // TODO: make this configurable
+  const [
+    { value: latestBlockhash },
+    sponsor,
+    addressLookupTable,
+    signers,
+    feeAmount,
+    sessionKeyAddress,
+  ] = await Promise.all([
+    connection.rpc.getLatestBlockhash().send(),
+    connection.sponsor === undefined
+      ? getSponsor(connection, connection.sponsorCache, domain)
+      : Promise.resolve(connection.sponsor),
+    extraConfig?.addressLookupTable === undefined
+      ? Promise.resolve(undefined)
+      : getAddressLookupTable(
+          connection.connection,
+          connection.addressLookupTableCache,
+          extraConfig.addressLookupTable,
+        ),
+    Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
+    getFee(connection, domain, extraConfig?.variation, feeMint),
+    sessionKey === undefined
+      ? Promise.resolve(undefined)
+      : getAddressFromPublicKey(sessionKey.publicKey),
+  ]);
+
+  const tollboothInstructions = await buildTollboothInstructionsIfNeeded({
+    sessionKeyAddress,
+    walletPublicKey,
+    domain,
+    feeMint,
+    feeAmount,
+  });
 
   return partiallySignTransactionMessageWithSigners(
     pipe(
@@ -261,6 +296,7 @@ const buildTransaction = async (
           ),
           tx,
         ),
+      (tx) => appendTransactionMessageInstructions(tollboothInstructions, tx),
       (tx) =>
         addressLookupTable === undefined
           ? tx
@@ -273,6 +309,53 @@ const buildTransaction = async (
       (tx) => addSignersToTransactionMessage(signers, tx),
     ),
   );
+};
+
+export const getDomainTollRecipientAddress = (domain: string) => {
+  const hash = sha256(domain);
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("toll_recipient"), hash],
+    new PublicKey(TollboothIdl.address),
+  )[0];
+};
+
+const buildTollboothInstructionsIfNeeded = async ({
+  sessionKeyAddress,
+  walletPublicKey,
+  domain,
+  feeMint,
+  feeAmount,
+}: {
+  sessionKeyAddress: Address | undefined;
+  walletPublicKey: PublicKey;
+  domain: string;
+  feeMint: PublicKey;
+  feeAmount: BN;
+}) => {
+  if (feeAmount.eq(new BN(0)) || sessionKeyAddress === undefined) {
+    return [];
+  }
+
+  const userTokenAccount = getAssociatedTokenAddressSync(
+    feeMint,
+    walletPublicKey,
+  );
+  const recipient = getDomainTollRecipientAddress(domain);
+  const instruction = await new TollboothProgram(
+    new AnchorProvider(
+      {} as Web3Connection,
+      { publicKey: walletPublicKey } as Wallet,
+    ),
+  ).methods
+    .payToll(feeAmount)
+    .accountsPartial({
+      session: new PublicKey(sessionKeyAddress),
+      source: userTokenAccount,
+      destination: getAssociatedTokenAddressSync(feeMint, recipient, true),
+      mint: feeMint,
+    })
+    .instruction();
+  return [fromLegacyTransactionInstruction(instruction)];
 };
 
 const addSignaturesToExistingTransaction = (
@@ -354,6 +437,34 @@ const getSponsor = async (
     }
   } else {
     return value;
+  }
+};
+
+const getFee = async (
+  options: Pick<
+    Parameters<typeof createSessionConnection>[0],
+    "paymaster" | "network"
+  >,
+  domain: string,
+  variation: string | undefined,
+  mint: PublicKey,
+) => {
+  if (variation === undefined) {
+    return new BN(0);
+  }
+  const url = new URL(
+    "/api/fee",
+    options.paymaster ?? DEFAULT_PAYMASTER[options.network],
+  );
+  url.searchParams.set("domain", domain);
+  url.searchParams.set("variation", variation);
+  url.searchParams.set("mint", mint.toBase58());
+  const response = await fetch(url);
+
+  if (response.status === 200) {
+    return new BN(z.string().parse(await response.text()));
+  } else {
+    throw new PaymasterResponseError(response.status, await response.text());
   }
 };
 
