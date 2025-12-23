@@ -555,6 +555,67 @@ async fn sponsor_pubkey_handler(
     Ok(sponsors[sponsor_index].pubkey().to_string())
 }
 
+#[serde_as]
+#[derive(serde::Deserialize, utoipa::IntoParams)]
+#[serde(deny_unknown_fields)]
+#[into_params(parameter_in = Query)]
+struct FeeQuery {
+    #[serde(default)]
+    /// Domain to request the fee for
+    domain: Option<String>,
+
+    #[serde(default)]
+    /// Variation name to request the fee for
+    variation: String,
+
+    #[serde_as(as = "DisplayFromStr")]
+    #[param(value_type = String)]
+    mint: Pubkey,
+}
+
+#[utoipa::path(get, path = "/fee", params(SponsorPubkeyQuery))]
+#[axum::debug_handler]
+async fn fee_handler(
+    State(state): State<Arc<ServerState>>,
+    origin: Option<TypedHeader<Origin>>,
+    Query(FeeQuery { domain, variation, mint }): Query<FeeQuery>,
+) -> Result<Json<u64>, ErrorResponse> {
+    let domain = get_domain_name(domain, origin)?;
+    let domains_guard = state.domains.load();
+    let domain_state = get_domain_state(&domains_guard, &domain)?;
+    let DomainState {
+        tx_variations,
+        ..
+    } = domain_state;
+
+    let variation = tx_variations.get(&variation).ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            format!("Variation {variation} not found for domain {domain}"),
+        )
+    
+    })?;
+
+    let fee_coefficient = state.fee_coefficients.get(&mint).ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            format!("Paying paymaster fees in mint {mint} are not supported"),
+        )
+    })?;
+
+    let paymaster_fee_lamports = match variation {
+        TransactionVariation::V0(_) => {
+           0
+        }
+        TransactionVariation::V1(v1_variation) => {
+            v1_variation.paymaster_fee_lamports.unwrap_or(0)
+        }
+    };
+
+    Ok(Json(paymaster_fee_lamports.div_ceil(*fee_coefficient)))
+    
+}
+
 pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<String, DomainState> {
     domains
         .into_iter()
@@ -627,7 +688,7 @@ pub async fn run_server(
     });
 
     let (router, _) = OpenApiRouter::new()
-        .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
+        .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler, fee_handler))
         .split_for_parts();
 
     let handle = PrometheusBuilder::new()
