@@ -6,7 +6,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_program::keccak;
 use solana_pubkey::{ParsePubkeyError, Pubkey};
-use std::collections::HashMap;
 use std::fmt::Display;
 use std::ops::Deref;
 use std::str::FromStr;

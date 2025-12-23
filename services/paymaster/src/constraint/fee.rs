@@ -1,7 +1,6 @@
 use anchor_lang::{AnchorDeserialize, Discriminator};
 use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use reqwest::StatusCode;
-use solana_hash::Hash;
 use solana_program::instruction::CompiledInstruction;
 use solana_pubkey::Pubkey;
 use solana_transaction::versioned::VersionedTransaction;
