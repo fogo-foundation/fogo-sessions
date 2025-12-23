@@ -1,6 +1,5 @@
-[[fee_coefficients]]
-mint = "So11111111111111111111111111111111111111112"
-coefficient = 1
+[fee_coefficients]
+So11111111111111111111111111111111111111112 = 1
 
 [[domains]]
 domain = "http://localhost:3000"
