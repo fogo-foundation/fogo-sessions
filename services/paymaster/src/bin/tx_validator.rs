@@ -449,15 +449,26 @@ async fn get_matching_variations<'a>(
 
     let contextual_keys = contextual_keys_cache.get(&domain.domain).await?;
     for variation in domain.tx_variations.values() {
-        let matches = if let Ok(paymaster_transaction) = TransactionToValidate::parse(transaction) {
+        let matches = if let Ok(paymaster_transaction) =
+            TransactionToValidate::parse(transaction, chain_index, &HashMap::new()).await
+        {
             match variation {
                 TransactionVariation::V0(v0_variation) => v0_variation
                     .validate_transaction(&paymaster_transaction)
                     .is_ok(),
-                TransactionVariation::V1(v1_variation) => v1_variation
-                    .validate_transaction(&paymaster_transaction, &contextual_keys, chain_index)
-                    .await
-                    .is_ok(),
+                TransactionVariation::V1(v1_variation) => {
+                    v1_variation
+                        .validate_compute_units(&paymaster_transaction)
+                        .is_ok()
+                        && (v1_variation
+                            .validate_instruction_constraints(
+                                &paymaster_transaction,
+                                &contextual_keys,
+                                chain_index,
+                            )
+                            .await
+                            .is_ok())
+                } // TODO: make the tx validator fetch the paymaster fee coefficients so we can use validate_transaction here
             }
         } else {
             false

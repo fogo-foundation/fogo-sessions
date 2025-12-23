@@ -65,6 +65,7 @@ solana-transaction-status-client-types = {workspace = true}
 spl-associated-token-account = {workspace = true}
 sqlx = { version = "0.8", features = [ "postgres", "runtime-tokio", "tls-native-tls", "uuid" ] }
 tokio = {workspace = true}
+tollbooth = {workspace = true, features = ["no-entrypoint"]}
 tower-http = {version = "0.6.6", features = ["cors"]}
 tracing = {workspace = true}
 tracing-opentelemetry = "0.31.0"

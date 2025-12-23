@@ -105,6 +105,7 @@ pub struct ServerState {
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
     pub ftl_rpc: Option<RpcClient>,
+    pub fee_coefficients: HashMap<Pubkey, u64>,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -366,8 +367,9 @@ async fn sponsor_and_send_handler(
             )
         })?;
 
-    let transaction_to_validate = TransactionToValidate::parse(&transaction)
-        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let transaction_to_validate =
+        TransactionToValidate::parse(&transaction, &state.chain_index, &state.fee_coefficients)
+            .await?;
     let matched_variation_name = match domain_state
         .validate_transaction(
             &transaction_to_validate,
@@ -600,6 +602,7 @@ pub async fn run_server(
     ftl_url: Option<String>,
     listen_address: String,
     domains_states: Arc<ArcSwap<HashMap<String, DomainState>>>,
+    fee_coefficients: HashMap<Pubkey, u64>,
 ) {
     let rpc_http_sender = PooledHttpSender::new(rpc_url_http, RPC_POOL_SIZE);
 
@@ -666,6 +669,7 @@ pub async fn run_server(
         .layer(prometheus_layer)
         .with_state(Arc::new(ServerState {
             domains: domains_states,
+            fee_coefficients,
             chain_index: ChainIndex {
                 rpc,
                 lookup_table_cache: DashMap::new(),

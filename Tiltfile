@@ -16,6 +16,8 @@ local_resource(
         ../target/deploy/chain_id.so \
         --bpf-program DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog \
         ../target/deploy/domain_registry.so \
+        --bpf-program toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp \
+        ../target/deploy/tollbooth.so \
         --upgradeable-program Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD \
         ../target/deploy/intent_transfer.so \
         $(solana-keygen pubkey ./keypairs/faucet.json) \

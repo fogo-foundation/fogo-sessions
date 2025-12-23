@@ -1,3 +1,6 @@
+[fee_coefficients]
+So11111111111111111111111111111111111111112 = 1
+
 [[domains]]
 domain = "http://localhost:3000"
 enable_session_management = true
@@ -23,7 +26,7 @@ exclude = []
 index = 1
 include = []
 exclude = [
-    { Explicit = { pubkey = "So11111111111111111111111111111111111111111" } },
+    { Explicit = { pubkey = "So11111111111111111111111111111111111111112" } },
     { NonFeePayerSigner = {} }
 ]
 

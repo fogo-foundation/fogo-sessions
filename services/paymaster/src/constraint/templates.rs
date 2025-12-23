@@ -135,6 +135,7 @@ impl TransactionVariation {
                 InstructionConstraint::start_session_instruction_constraint(),
             ],
             max_gas_spend,
+            paymaster_fee_lamports: None,
         })
     }
 
@@ -144,6 +145,7 @@ impl TransactionVariation {
             name: "Session Revocation".to_string(),
             instructions: vec![InstructionConstraint::revoke_session_instruction_constraint()],
             max_gas_spend,
+            paymaster_fee_lamports: None,
         })
     }
 }
