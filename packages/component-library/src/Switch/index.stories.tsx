@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { Switch as SwitchComponent } from "./index.js";
+import { Switch as SwitchComponent } from "./index.jsx";
 
 const meta = {
   component: SwitchComponent,
@@ -8,16 +8,27 @@ const meta = {
     backgrounds: { value: "dark" },
   },
   argTypes: {
-    children: {
-      control: "text",
-      table: {
-        category: "Contents",
-      },
-    },
     isDisabled: {
       control: "boolean",
       table: {
-        category: "States",
+        category: "State",
+      },
+    },
+    isPending: {
+      control: "boolean",
+      table: {
+        category: "State",
+      },
+    },
+    onChange: {
+      table: {
+        category: "Behavior",
+      },
+    },
+    children: {
+      control: "text",
+      table: {
+        category: "Label",
       },
     },
   },
@@ -28,5 +39,6 @@ export const Switch = {
   args: {
     children: "Enable Session Management",
     isDisabled: false,
+    isPending: false,
   },
 } satisfies StoryObj<typeof SwitchComponent>;

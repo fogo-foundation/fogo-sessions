@@ -1,67 +1,84 @@
 @use "../theme";
 
 .switch {
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: theme.spacing(4);
   color: theme.color("paragraph");
 
   @include theme.text("base", "normal");
 
-  --width: #{theme.spacing(8)};
-  --height: #{theme.spacing(5)};
+  .indicator {
+    width: theme.spacing(6.5);
+    height: theme.spacing(4.5);
+    background-color: theme.color("button-base");
+    border-radius: theme.border-radius("2xl");
+    display: inline-flex;
+    align-items: center;
+    padding: 0 theme.spacing(0.5);
+    transition-property: background-color, outline-color;
+    transition-duration: 100ms;
+    transition-timing-function: linear;
+    border: 1px solid transparent;
+    outline-offset: 0;
+    outline: theme.spacing(1) solid transparent;
 
-  .track {
-    position: relative;
-    height: var(--height);
-    width: var(--width);
-    border-radius: var(--height);
-    transition: all 200ms;
-    scale: 1;
-    background: theme.color("button-base");
-
-    .handle {
-      height: calc(var(--width) / 2);
-      width: calc(var(--width) / 2);
-      margin-top: theme.spacing(0.5);
-      margin-left: theme.spacing(0.5);
-      aspect-ratio: 1;
-      border-radius: calc(var(--width) / 2);
-      transition: all 200ms;
-      transform-origin: 0 50%;
-      will-change: transform;
-      background: theme.color("button", "solid", "background", "normal");
+    .dot {
+      width: theme.spacing(4);
+      height: theme.spacing(4);
+      background-color: theme.color("button", "solid", "background", "normal");
+      border-radius: theme.border-radius("full");
+      transition: background-color 100ms linear;
     }
   }
 
-  &[data-pressed] .handle {
-    scale: 1.2 1;
-    border-radius: var(--height) / calc(var(--height) * 1.2);
-    background: theme.color("button", "solid", "background", "pressed");
+  .label {
+    @include theme.text("sm", "normal");
+
+    display: inline-block;
+    margin: 0 theme.spacing(2);
+  }
+
+  &[data-hovered] {
+    .dot {
+      background-color: theme.color("button", "solid", "background", "pressed");
+    }
   }
 
   &[data-selected] {
-    .track {
-      background: theme.color("accent");
+    .indicator {
+      justify-content: flex-end;
+      background-color: theme.color("accent");
 
-      .handle {
-        transform: translateX(calc(var(--width) / 2 - theme.spacing(1)));
-        transform-origin: calc(var(--width) - theme.spacing(1)) 50%;
-        background: theme.color("card");
+      .dot {
+        background-color: theme.color("card");
       }
     }
   }
 
-  &[data-focus-visible] .track {
-    outline: 2px solid theme.color("accent");
-    outline-offset: 2px;
+  &[data-disabled],
+  &[data-pending] {
+    .indicator {
+      background-color: theme.color("button", "disabled", "background");
+
+      .dot {
+        background-color: theme.color("button", "disabled", "background");
+      }
+    }
   }
 
   &[data-disabled] {
-    color: theme.color("muted");
+    cursor: not-allowed;
+  }
 
-    .track .handle {
-      background: theme.color("button", "disabled", "background");
+  &[data-pending] {
+    cursor: wait;
+  }
+
+  &[data-focus-visible] {
+    .indicator {
+      outline: 2px solid theme.color("accent");
+      outline-offset: 2px;
     }
   }
 }
