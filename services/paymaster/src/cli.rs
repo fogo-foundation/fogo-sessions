@@ -1,3 +1,5 @@
+use std::fmt::{self, Display};
+
 use crate::db::config::NetworkEnvironment as DbNetworkEnvironment;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 #[derive(Debug, Parser)]
@@ -22,6 +24,16 @@ pub enum NetworkEnvironment {
     Mainnet,
     Testnet,
     Localnet,
+}
+
+impl Display for NetworkEnvironment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NetworkEnvironment::Mainnet => write!(f, "mainnet"),
+            NetworkEnvironment::Testnet => write!(f, "testnet"),
+            NetworkEnvironment::Localnet => write!(f, "localnet"),
+        }
+    }
 }
 
 impl From<NetworkEnvironment> for DbNetworkEnvironment {
