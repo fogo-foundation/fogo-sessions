@@ -8,10 +8,7 @@ use std::collections::HashMap;
 use tollbooth::{self, instruction::PayToll};
 
 use crate::{
-    constraint::{
-        transaction::{InstructionWithIndex, TransactionToValidate},
-        VariationOrderedInstructionConstraints,
-    },
+    constraint::transaction::InstructionWithIndex,
     rpc::ChainIndex,
 };
 
