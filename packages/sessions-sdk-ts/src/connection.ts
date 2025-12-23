@@ -36,6 +36,7 @@ import {
   VersionedTransaction,
   PublicKey,
 } from "@solana/web3.js";
+import { USDC_MINT } from "./index.js";
 import { z } from "zod";
 
 export enum Network {
@@ -108,6 +109,7 @@ export const createSessionConnection = (
       domain: string,
       sessionKey: CryptoKeyPair | undefined,
       instructions: TransactionOrInstructions,
+      walletPublicKey: PublicKey,
       extraConfig?: SendTransactionOptions,
     ) =>
       sendToPaymaster(
@@ -115,6 +117,7 @@ export const createSessionConnection = (
         domain,
         sessionKey,
         instructions,
+        walletPublicKey,
         extraConfig,
       ),
     getSponsor: (domain: string) => getSponsor(options, sponsorCache, domain),
@@ -170,6 +173,7 @@ const sendToPaymaster = async (
   domain: string,
   sessionKey: CryptoKeyPair | undefined,
   instructions: TransactionOrInstructions,
+  walletPublicKey: PublicKey,
   extraConfig?: SendTransactionOptions,
 ): Promise<TransactionResult> => {
   const signerKeys = await getSignerKeys(sessionKey, extraConfig?.extraSigners);
@@ -180,6 +184,7 @@ const sendToPaymaster = async (
         domain,
         signerKeys,
         instructions,
+        walletPublicKey,
         extraConfig,
       )
     : await addSignaturesToExistingTransaction(instructions, signerKeys);
@@ -226,12 +231,14 @@ const buildTransaction = async (
   domain: string,
   signerKeys: CryptoKeyPair[],
   instructions: (TransactionInstruction | Instruction)[],
+  walletPublicKey: PublicKey,
   extraConfig?: {
     addressLookupTable?: string | undefined;
     extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
+    variation?: string | undefined;
   },
 ) => {
-  const [{ value: latestBlockhash }, sponsor, addressLookupTable, signers] =
+  const [{ value: latestBlockhash }, sponsor, addressLookupTable, signers, fee] =
     await Promise.all([
       connection.rpc.getLatestBlockhash().send(),
       connection.sponsor === undefined
@@ -245,6 +252,7 @@ const buildTransaction = async (
             extraConfig.addressLookupTable,
           ),
       Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
+      getFee(connection, domain, extraConfig?.variation ?? "", USDC_MINT[connection.network]),
     ]);
 
   return partiallySignTransactionMessageWithSigners(
@@ -355,6 +363,31 @@ const getSponsor = async (
   } else {
     return value;
   }
+};
+
+const getFee = async (
+  options: Pick<
+    Parameters<typeof createSessionConnection>[0],
+    "paymaster" | "network"
+  >,
+  domain: string,
+  variation: string,
+  mint: PublicKey,
+) => {
+    const url = new URL(
+      "/api/fee",
+      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
+    );
+    url.searchParams.set("domain", domain);
+    url.searchParams.set("variation", variation);
+    url.searchParams.set("mint", mint.toBase58());
+    const response = await fetch(url);
+
+    if (response.status === 200) {
+      return z.number().parse(await response.text());
+    } else {
+      throw new PaymasterResponseError(response.status, await response.text());
+    }
 };
 
 const getAddressLookupTable = async (

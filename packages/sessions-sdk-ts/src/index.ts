@@ -156,6 +156,7 @@ const sendSessionEstablishTransaction = async (
   const result = await options.context.sendTransaction(
     sessionKey,
     instructions,
+    options.walletPublicKey,
     {
       variation: "Session Establishment",
       addressLookupTable:
@@ -220,6 +221,7 @@ export const revokeSession = async (options: {
     return options.context.sendTransaction(
       options.session.sessionKey,
       [instruction],
+      options.session.walletPublicKey,
       {
         variation: "Session Revocation",
       },
@@ -271,7 +273,7 @@ const createSession = async (
         sessionKey,
         payer: context.payer,
         sendTransaction: (instructions, extraConfig) =>
-          context.sendTransaction(sessionKey, instructions, extraConfig),
+          context.sendTransaction(sessionKey, instructions, walletPublicKey, extraConfig),
         sessionInfo,
       };
 };
@@ -738,7 +740,7 @@ export type Session = {
   sessionInfo: NonNullable<z.infer<typeof sessionInfoSchema>>;
 };
 
-const USDC_MINT = {
+export const USDC_MINT = {
   [Network.Mainnet]: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
   [Network.Testnet]: "ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND",
 };
@@ -846,6 +848,7 @@ export const sendTransfer = async (options: SendTransferOptions) => {
         })
         .instruction(),
     ],
+    options.walletPublicKey,
     {
       variation: "Intent Transfer",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
@@ -977,6 +980,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       ComputeBudgetProgram.setComputeUnitLimit({ units: BRIDGE_OUT_CUS }),
       ...instructions,
     ],
+    options.walletPublicKey,
     {
       variation: "Intent NTT Bridge",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
