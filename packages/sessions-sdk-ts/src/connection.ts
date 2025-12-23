@@ -247,7 +247,7 @@ const buildTransaction = async (
     variation?: string | undefined;
   },
 ) => {
-  const feeMint = new PublicKey(USDC_MINT[connection.network]);
+  const feeMint = new PublicKey(USDC_MINT[connection.network]); // TODO: make this configurable
   const [
     { value: latestBlockhash },
     sponsor,
