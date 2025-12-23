@@ -1,7 +1,11 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { ChainIdProgram } from "@fogo/sessions-idls";
-import { Connection as Web3Connection, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  Connection as Web3Connection,
+  Keypair,
+  PublicKey,
+} from "@solana/web3.js";
 
 import type {
   Connection,

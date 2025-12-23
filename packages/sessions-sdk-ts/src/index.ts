@@ -273,7 +273,12 @@ const createSession = async (
         sessionKey,
         payer: context.payer,
         sendTransaction: (instructions, extraConfig) =>
-          context.sendTransaction(sessionKey, instructions, walletPublicKey, extraConfig),
+          context.sendTransaction(
+            sessionKey,
+            instructions,
+            walletPublicKey,
+            extraConfig,
+          ),
         sessionInfo,
       };
 };
