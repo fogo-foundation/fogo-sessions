@@ -1,7 +1,6 @@
-use std::fmt::{self, Display};
-
 use crate::db::config::NetworkEnvironment as DbNetworkEnvironment;
 use clap::{Args, Parser, Subcommand, ValueEnum};
+use std::fmt::{self, Display};
 #[derive(Debug, Parser)]
 #[command(version, about)]
 pub struct Cli {
