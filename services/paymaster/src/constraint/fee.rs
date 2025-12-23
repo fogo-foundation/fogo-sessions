@@ -7,10 +7,7 @@ use solana_transaction::versioned::VersionedTransaction;
 use std::collections::HashMap;
 use tollbooth::{self, instruction::PayToll};
 
-use crate::{
-    constraint::transaction::InstructionWithIndex,
-    rpc::ChainIndex,
-};
+use crate::{constraint::transaction::InstructionWithIndex, rpc::ChainIndex};
 
 const PAY_TOLL_INSTRUCTION_MINT_INDEX: usize = 4;
 
