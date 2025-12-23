@@ -80,6 +80,7 @@ local_resource(
     """
     pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json localnet &&
     pnpm turbo run:domain-registry -- add http://localhost:3000 Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 -u l -k ./tilt/keypairs/faucet.json &&
+    pnpm turbo run:domain-registry -- add http://localhost:3000 toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp -u l -k ./tilt/keypairs/faucet.json &&
     pnpm turbo run:register-fee-config -- %s 100000 100000 -u l -k ./tilt/keypairs/faucet.json
     """ % USDC_MINT,
     resource_deps=["svm-localnet", "check-fee-mint-authority"],
@@ -98,7 +99,7 @@ local_resource(
 
 local_resource(
     "paymaster",
-    serve_cmd="cargo run --bin fogo-paymaster migrate --db-url postgres://paymaster:paymaster@localhost:5432/paymaster --network-environment localnet && cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster --config-file ./tilt/configs/paymaster.toml --rpc-url-http http://localhost:8899 --rpc-url-ws ws://localhost:8900 --network-environment localnet",
+    serve_cmd="cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster --config-file ./tilt/configs/paymaster.toml --rpc-url-http http://localhost:8899 --rpc-url-ws ws://localhost:8900 --network-environment localnet",
     resource_deps=["svm-localnet"],
 )
 

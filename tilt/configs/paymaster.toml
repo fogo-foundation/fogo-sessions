@@ -1,5 +1,6 @@
 [fee_coefficients]
 So11111111111111111111111111111111111111112 = 1
+ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND = 3000
 
 [[domains]]
 domain = "http://localhost:3000"
@@ -58,6 +59,7 @@ constraint = { EqualTo = [ {U8 = 4}, {U8 = 5} ] }
 version = "v1"
 name = "Example v1 Variation"
 max_gas_spend = 1000000
+paymaster_fee_lamports = 2039280
 
 # Instruction 0
 [[domains.tx_variations.instructions]]
