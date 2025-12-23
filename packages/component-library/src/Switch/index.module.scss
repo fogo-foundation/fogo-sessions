@@ -1,0 +1,84 @@
+@use "../theme";
+
+.switch {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: theme.color("paragraph");
+
+  @include theme.text("base", "normal");
+
+  .indicator {
+    width: theme.spacing(6.5);
+    height: theme.spacing(4.5);
+    background-color: theme.color("button-base");
+    border-radius: theme.border-radius("2xl");
+    display: inline-flex;
+    align-items: center;
+    padding: 0 theme.spacing(0.5);
+    transition-property: background-color, outline-color;
+    transition-duration: 100ms;
+    transition-timing-function: linear;
+    border: 1px solid transparent;
+    outline-offset: 0;
+    outline: theme.spacing(1) solid transparent;
+
+    .dot {
+      width: theme.spacing(4);
+      height: theme.spacing(4);
+      background-color: theme.color("button", "solid", "background", "normal");
+      border-radius: theme.border-radius("full");
+      transition: background-color 100ms linear;
+    }
+  }
+
+  .label {
+    @include theme.text("sm", "normal");
+
+    display: inline-block;
+    margin: 0 theme.spacing(2);
+  }
+
+  &[data-hovered] {
+    .dot {
+      background-color: theme.color("button", "solid", "background", "pressed");
+    }
+  }
+
+  &[data-selected] {
+    .indicator {
+      justify-content: flex-end;
+      background-color: theme.color("accent");
+
+      .dot {
+        background-color: theme.color("card");
+      }
+    }
+  }
+
+  &[data-disabled],
+  &[data-pending] {
+    .indicator {
+      background-color: theme.color("button", "disabled", "background");
+
+      .dot {
+        background-color: theme.color("button", "disabled", "background");
+      }
+    }
+  }
+
+  &[data-disabled] {
+    cursor: not-allowed;
+  }
+
+  &[data-pending] {
+    cursor: wait;
+  }
+
+  &[data-focus-visible] {
+    .indicator {
+      outline: 2px solid theme.color("accent");
+      outline-offset: 2px;
+    }
+  }
+}
