@@ -233,7 +233,7 @@ const buildTollboothInstruction = async (
   amount: number,
 ) => {
   const userTokenAccount = getAssociatedTokenAddressSync(mint, walletPublicKey);
-  const destination = getDomainTollRecipientAddress(domain);
+  const recipient = getDomainTollRecipientAddress(domain);
   const instruction = 
     await new TollboothProgram(
     new AnchorProvider(
@@ -245,7 +245,7 @@ const buildTollboothInstruction = async (
     .accountsPartial({
       session: new PublicKey(sessionKeyPublicKey),
       source: userTokenAccount,
-      destination,
+      destination: getAssociatedTokenAddressSync(mint, recipient, true),
       mint,
     })
     .instruction();
@@ -291,7 +291,7 @@ const buildTransaction = async (
       getFee(connection, domain, extraConfig?.variation, new PublicKey(USDC_MINT[connection.network])),
     ]);
 
-    const tollboothInstructions = sessionKeyPublicKey === undefined ? [] : [await buildTollboothInstruction(sessionKeyPublicKey, walletPublicKey, domain, new PublicKey(USDC_MINT[connection.network]), fee)];
+    const tollboothInstructions = sessionKeyPublicKey === undefined ? [] : fee.eq(new BN(0)) ? [] : [await buildTollboothInstruction(sessionKeyPublicKey, walletPublicKey, domain, new PublicKey(USDC_MINT[connection.network]), fee)];
 
   return partiallySignTransactionMessageWithSigners(
     pipe(
@@ -420,9 +420,9 @@ const getFee = async (
   domain: string,
   variation: string | undefined,
   mint: PublicKey,
-) => {
+) =>  {
   if (variation === undefined) {
-    return 0;
+    return new BN(0);
   }
   const url = new URL(
     "/api/fee",
@@ -434,7 +434,7 @@ const getFee = async (
   const response = await fetch(url);
 
   if (response.status === 200) {
-    return z.number().parse(await response.text());
+    return new BN(z.string().parse(await response.text()));
   } else {
     throw new PaymasterResponseError(response.status, await response.text());
   }
