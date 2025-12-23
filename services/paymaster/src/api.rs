@@ -570,11 +570,11 @@ struct FeeQuery {
 
     #[serde_as(as = "DisplayFromStr")]
     #[param(value_type = String)]
+    /// 
     mint: Pubkey,
 }
 
-#[utoipa::path(get, path = "/fee", params(SponsorPubkeyQuery))]
-#[axum::debug_handler]
+#[utoipa::path(get, path = "/fee", params(FeeQuery))]
 async fn fee_handler(
     State(state): State<Arc<ServerState>>,
     origin: Option<TypedHeader<Origin>>,
