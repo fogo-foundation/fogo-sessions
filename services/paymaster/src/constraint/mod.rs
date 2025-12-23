@@ -118,6 +118,27 @@ impl VariationOrderedInstructionConstraints {
         Ok(())
     }
 
+    pub fn validate_paymaster_fees(
+        &self,
+        transaction: &TransactionToValidate<'_>,
+        fee_coefficients: &HashMap<Pubkey, u64>,
+    ) -> anyhow::Result<()> {
+        let total_fee = fee_coefficients
+            .iter()
+            .fold(0u64, |mut acc, (mint, coefficient)| {
+                let fee = transaction.paymaster_fees.get(mint).unwrap_or(&0);
+                acc = acc.saturating_add(fee.saturating_mul(*coefficient));
+                acc
+            });
+
+        anyhow::ensure!(
+            total_fee >= self.paymaster_fee_lamports.unwrap_or(0),
+            "Paymaster fee is not sufficient"
+        );
+
+        Ok(())
+    }
+
     pub async fn validate_instruction_constraints(
         &self,
         transaction: &TransactionToValidate<'_>,
