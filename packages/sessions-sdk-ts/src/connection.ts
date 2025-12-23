@@ -10,6 +10,7 @@ import type {
   TransactionWithLifetime,
   Rpc,
   GetLatestBlockhashApi,
+  Address,
 } from "@solana/kit";
 import {
   createSolanaRpc,
@@ -24,6 +25,7 @@ import {
   compressTransactionMessageUsingAddressLookupTables,
   createSignerFromKeyPair,
   partiallySignTransaction,
+  getAddressFromPublicKey,
 } from "@solana/kit";
 import type {
   AddressLookupTableAccount,
@@ -38,6 +40,10 @@ import {
 } from "@solana/web3.js";
 import { USDC_MINT } from "./index.js";
 import { z } from "zod";
+import { TollboothIdl, TollboothProgram } from "@fogo/sessions-idls";
+import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
+import { sha256 } from "@noble/hashes/sha2";
 
 export enum Network {
   Testnet,
@@ -182,6 +188,7 @@ const sendToPaymaster = async (
     ? await buildTransaction(
         connection,
         domain,
+        sessionKey?.publicKey ? await getAddressFromPublicKey(sessionKey.publicKey) : undefined,
         signerKeys,
         instructions,
         walletPublicKey,
@@ -218,6 +225,34 @@ const sendToPaymaster = async (
   }
 };
 
+const buildTollboothInstruction = async (
+  sessionKeyPublicKey: Address,
+  walletPublicKey: PublicKey,
+  domain: string,
+  mint: PublicKey,
+  amount: number,
+) => {
+  const userTokenAccount = getAssociatedTokenAddressSync(mint, walletPublicKey);
+  const destination = getDomainTollRecipientAddress(domain);
+  const instruction = 
+    await new TollboothProgram(
+    new AnchorProvider(
+      {} as Web3Connection,
+      { publicKey: walletPublicKey } as Wallet,
+    ),
+  ).methods
+    .payToll(new BN(amount))
+    .accountsPartial({
+      session: new PublicKey(sessionKeyPublicKey),
+      source: userTokenAccount,
+      destination,
+      mint,
+    })
+    .instruction();
+    return fromLegacyTransactionInstruction(instruction);
+};
+
+
 const buildTransaction = async (
   connection: Pick<
     Parameters<typeof createSessionConnection>[0],
@@ -229,6 +264,7 @@ const buildTransaction = async (
     sponsorCache: Map<string, PublicKey>;
   },
   domain: string,
+  sessionKeyPublicKey: Address | undefined,
   signerKeys: CryptoKeyPair[],
   instructions: (TransactionInstruction | Instruction)[],
   walletPublicKey: PublicKey,
@@ -252,8 +288,10 @@ const buildTransaction = async (
             extraConfig.addressLookupTable,
           ),
       Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
-      getFee(connection, domain, extraConfig?.variation ?? "", USDC_MINT[connection.network]),
+      getFee(connection, domain, extraConfig?.variation, new PublicKey(USDC_MINT[connection.network])),
     ]);
+
+    const tollboothInstructions = sessionKeyPublicKey === undefined ? [] : [await buildTollboothInstruction(sessionKeyPublicKey, walletPublicKey, domain, new PublicKey(USDC_MINT[connection.network]), fee)];
 
   return partiallySignTransactionMessageWithSigners(
     pipe(
@@ -269,6 +307,7 @@ const buildTransaction = async (
           ),
           tx,
         ),
+        (tx) => appendTransactionMessageInstructions(tollboothInstructions, tx),
       (tx) =>
         addressLookupTable === undefined
           ? tx
@@ -281,6 +320,14 @@ const buildTransaction = async (
       (tx) => addSignersToTransactionMessage(signers, tx),
     ),
   );
+};
+
+export const getDomainTollRecipientAddress = (domain: string) => {
+  const hash = sha256(domain);
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("toll_recipient"), hash],
+    new PublicKey(TollboothIdl.address),
+  )[0];
 };
 
 const addSignaturesToExistingTransaction = (
@@ -371,23 +418,26 @@ const getFee = async (
     "paymaster" | "network"
   >,
   domain: string,
-  variation: string,
+  variation: string | undefined,
   mint: PublicKey,
 ) => {
-    const url = new URL(
-      "/api/fee",
-      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
-    );
-    url.searchParams.set("domain", domain);
-    url.searchParams.set("variation", variation);
-    url.searchParams.set("mint", mint.toBase58());
-    const response = await fetch(url);
+  if (variation === undefined) {
+    return 0;
+  }
+  const url = new URL(
+    "/api/fee",
+    options.paymaster ?? DEFAULT_PAYMASTER[options.network],
+  );
+  url.searchParams.set("domain", domain);
+  url.searchParams.set("variation", variation);
+  url.searchParams.set("mint", mint.toBase58());
+  const response = await fetch(url);
 
-    if (response.status === 200) {
-      return z.number().parse(await response.text());
-    } else {
-      throw new PaymasterResponseError(response.status, await response.text());
-    }
+  if (response.status === 200) {
+    return z.number().parse(await response.text());
+  } else {
+    throw new PaymasterResponseError(response.status, await response.text());
+  }
 };
 
 const getAddressLookupTable = async (
