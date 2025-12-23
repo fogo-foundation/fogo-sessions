@@ -688,7 +688,8 @@ pub async fn run_server(
     });
 
     let (router, _) = OpenApiRouter::new()
-        .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler, fee_handler))
+        .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
+        .routes(routes!(fee_handler))
         .split_for_parts();
 
     let handle = PrometheusBuilder::new()
