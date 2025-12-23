@@ -14,8 +14,7 @@ const PAY_TOLL_INSTRUCTION_MINT_INDEX: usize = 4;
 pub async fn compute_paymaster_fees(
     transaction: &VersionedTransaction,
     chain_index: &ChainIndex,
-    fee_coefficients: &HashMap<Pubkey, u64>
-    
+    fee_coefficients: &HashMap<Pubkey, u64>,
 ) -> Result<u64, (StatusCode, String)> {
     let mut total_fee = 0u64;
     for (index, instruction) in transaction.message.instructions().iter().enumerate() {
@@ -33,7 +32,8 @@ pub async fn compute_paymaster_fees(
                 )
                 .await?;
 
-            total_fee = total_fee.saturating_add(amount.saturating_mul(*fee_coefficients.get(&mint).unwrap_or(&0)));
+            total_fee = total_fee
+                .saturating_add(amount.saturating_mul(*fee_coefficients.get(&mint).unwrap_or(&0)));
         }
     }
     Ok(total_fee)

@@ -28,7 +28,7 @@ impl<'a> TransactionToValidate<'a> {
     pub async fn parse(
         transaction: &'a VersionedTransaction,
         chain_index: &ChainIndex,
-        fee_coefficients: &HashMap<Pubkey, u64>
+        fee_coefficients: &HashMap<Pubkey, u64>,
     ) -> Result<Self, (StatusCode, String)> {
         Ok(Self {
             message: &transaction.message,
@@ -46,7 +46,8 @@ impl<'a> TransactionToValidate<'a> {
                 .collect(),
             gas_spend: compute_gas_spend(transaction)
                 .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
-            total_fee_lamports: compute_paymaster_fees(transaction, chain_index, fee_coefficients).await?,
+            total_fee_lamports: compute_paymaster_fees(transaction, chain_index, fee_coefficients)
+                .await?,
         })
     }
 }

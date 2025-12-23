@@ -368,7 +368,8 @@ async fn sponsor_and_send_handler(
         })?;
 
     let transaction_to_validate =
-        TransactionToValidate::parse(&transaction, &state.chain_index, &state.fee_coefficients).await?;
+        TransactionToValidate::parse(&transaction, &state.chain_index, &state.fee_coefficients)
+            .await?;
     let matched_variation_name = match domain_state
         .validate_transaction(
             &transaction_to_validate,
