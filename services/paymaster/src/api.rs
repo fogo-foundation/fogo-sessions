@@ -570,7 +570,7 @@ struct FeeQuery {
 
     #[serde_as(as = "DisplayFromStr")]
     #[param(value_type = String)]
-    ///
+    /// Token mint to pay the fee in
     mint: Pubkey,
 }
 
