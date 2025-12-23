@@ -122,7 +122,6 @@ impl DomainState {
         &self,
         transaction: &TransactionToValidate<'_>,
         chain_index: &ChainIndex,
-        fee_coefficients: &HashMap<Pubkey, u64>,
         sponsor: &Pubkey,
         variation_name: Option<String>,
     ) -> Result<&TransactionVariation, (StatusCode, String)> {
@@ -160,7 +159,6 @@ impl DomainState {
                         transaction,
                         variation,
                         chain_index,
-                        fee_coefficients,
                         sponsor,
                     )
                     .await
@@ -209,7 +207,6 @@ impl DomainState {
         transaction: &TransactionToValidate<'_>,
         tx_variation: &TransactionVariation,
         chain_index: &ChainIndex,
-        fee_coefficients: &HashMap<Pubkey, u64>,
         sponsor: &Pubkey,
     ) -> Result<(), (StatusCode, String)> {
         match tx_variation {
@@ -223,7 +220,6 @@ impl DomainState {
                             sponsor: *sponsor,
                         },
                         chain_index,
-                        fee_coefficients,
                     )
                     .await
             }
@@ -372,12 +368,11 @@ async fn sponsor_and_send_handler(
         })?;
 
     let transaction_to_validate =
-        TransactionToValidate::parse(&transaction, &state.chain_index).await?;
+        TransactionToValidate::parse(&transaction, &state.chain_index, &state.fee_coefficients).await?;
     let matched_variation_name = match domain_state
         .validate_transaction(
             &transaction_to_validate,
             &state.chain_index,
-            &state.fee_coefficients,
             &transaction_sponsor.pubkey(),
             variation,
         )

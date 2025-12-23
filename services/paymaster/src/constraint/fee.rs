@@ -1,6 +1,7 @@
 use anchor_lang::{AnchorDeserialize, Discriminator};
 use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use reqwest::StatusCode;
+use solana_hash::Hash;
 use solana_program::instruction::CompiledInstruction;
 use solana_pubkey::Pubkey;
 use solana_transaction::versioned::VersionedTransaction;
@@ -14,8 +15,10 @@ const PAY_TOLL_INSTRUCTION_MINT_INDEX: usize = 4;
 pub async fn compute_paymaster_fees(
     transaction: &VersionedTransaction,
     chain_index: &ChainIndex,
-) -> Result<HashMap<Pubkey, u64>, (StatusCode, String)> {
-    let mut tolls = HashMap::new();
+    fee_coefficients: &HashMap<Pubkey, u64>
+    
+) -> Result<u64, (StatusCode, String)> {
+    let mut total_fee = 0u64;
     for (index, instruction) in transaction.message.instructions().iter().enumerate() {
         if instruction.program_id(transaction.message.static_account_keys())
             == &TOLLBOOTH_PROGRAM_ID
@@ -31,13 +34,10 @@ pub async fn compute_paymaster_fees(
                 )
                 .await?;
 
-            tolls
-                .entry(mint)
-                .and_modify(|e: &mut u64| *e = e.saturating_add(amount))
-                .or_insert(amount);
+            total_fee = total_fee.saturating_add(amount.saturating_mul(*fee_coefficients.get(&mint).unwrap_or(&0)));
         }
     }
-    Ok(tolls)
+    Ok(total_fee)
 }
 
 fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Result<u64> {

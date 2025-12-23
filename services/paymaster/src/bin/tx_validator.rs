@@ -450,7 +450,7 @@ async fn get_matching_variations<'a>(
     let contextual_keys = contextual_keys_cache.get(&domain.domain).await?;
     for variation in domain.tx_variations.values() {
         let matches = if let Ok(paymaster_transaction) =
-            TransactionToValidate::parse(transaction, chain_index).await
+            TransactionToValidate::parse(transaction, chain_index, &HashMap::new()).await
         {
             match variation {
                 TransactionVariation::V0(v0_variation) => v0_variation
