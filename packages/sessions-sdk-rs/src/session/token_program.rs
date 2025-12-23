@@ -73,7 +73,7 @@ impl Session {
     ) -> Result<(), SessionError> {
         self.check_is_live_and_unrevoked()?;
         self.check_user(source_account_owner)?;
-        if destination_account_info.key == source_account_owner {
+        if destination_account_info.key != source_account_owner {
             return Err(SessionError::TokenCloseAccountWrongDestination);
         }
         Ok(())
