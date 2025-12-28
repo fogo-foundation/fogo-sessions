@@ -1,6 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "extends": ["//"],
+  "extends": [
+    "//"
+  ],
   "tasks": {
     "build": {
       "dependsOn": [
@@ -13,26 +15,26 @@
       ]
     },
     "build:css:cjs": {
-      "dependsOn": ["//#install:modules"],
-      "inputs": ["src/**/*.scss"],
-      "outputs": ["dist/cjs/**/*.css"]
+      "dependsOn": [
+        "//#install:modules"
+      ],
+      "inputs": [
+        "src/**/*.scss"
+      ],
+      "outputs": [
+        "dist/cjs/**/*.css"
+      ]
     },
     "build:css:esm": {
-      "dependsOn": ["//#install:modules"],
-      "inputs": ["src/**/*.scss"],
-      "outputs": ["dist/esm/**/*.css"]
-    },
-    "fix:lint": {
-      "dependsOn": ["fix:lint:biome", "fix:lint:stylelint"],
-      "cache": false
-    },
-    "fix:lint:biome": {
-      "dependsOn": ["//#install:modules", "^build"],
-      "cache": false
-    },
-    "fix:lint:stylelint": {
-      "dependsOn": ["//#install:modules"],
-      "cache": false
+      "dependsOn": [
+        "//#install:modules"
+      ],
+      "inputs": [
+        "src/**/*.scss"
+      ],
+      "outputs": [
+        "dist/esm/**/*.css"
+      ]
     },
     "start:dev": {
       "with": [
@@ -45,28 +47,19 @@
       "persistent": false
     },
     "start:dev:tsc": {
-      "dependsOn": ["//#install:modules", "^build"],
+      "dependsOn": [
+        "//#install:modules",
+        "^build"
+      ],
       "persistent": true,
       "cache": false
     },
     "start:dev:sass": {
-      "dependsOn": ["//#install:modules"],
+      "dependsOn": [
+        "//#install:modules"
+      ],
       "persistent": true,
       "cache": false
-    },
-    "test:lint": {
-      "dependsOn": [
-        "//#install:modules",
-        "^build",
-        "test:lint:biome",
-        "test:lint:stylelint"
-      ]
-    },
-    "test:lint:biome": {
-      "dependsOn": ["//#install:modules", "^build"]
-    },
-    "test:lint:stylelint": {
-      "dependsOn": ["//#install:modules"]
     }
   }
 }

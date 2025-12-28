@@ -1,12 +1,13 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
   "vcs": {
-    "enabled": true,
     "clientKind": "git",
+    "defaultBranch": "origin/main",
+    "enabled": true,
     "useIgnoreFile": true
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": true
   },
   "formatter": {
     "bracketSameLine": false,
@@ -337,10 +338,14 @@
       }
     },
     {
-      "includes": ["**/*.json"]
+      "includes": [
+        "**/*.json"
+      ]
     },
     {
-      "includes": ["**/*.json"],
+      "includes": [
+        "**/*.json"
+      ],
       "javascript": {
         "globals": []
       },
@@ -353,7 +358,9 @@
       }
     },
     {
-      "includes": ["**/*.json"],
+      "includes": [
+        "**/*.json"
+      ],
       "linter": {
         "rules": {}
       }
@@ -364,19 +371,29 @@
       }
     },
     {
-      "includes": ["**/*.cjs"],
+      "includes": [
+        "**/*.cjs"
+      ],
       "javascript": {
-        "globals": ["exports"]
+        "globals": [
+          "exports"
+        ]
       }
     },
     {
-      "includes": ["**/*.js"],
+      "includes": [
+        "**/*.js"
+      ],
       "javascript": {
-        "globals": ["exports"]
+        "globals": [
+          "exports"
+        ]
       }
     },
     {
-      "includes": ["**/*.test.ts"],
+      "includes": [
+        "**/*.test.ts"
+      ],
       "linter": {
         "rules": {}
       }

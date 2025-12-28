@@ -8,13 +8,11 @@
   },
   "scripts": {
     "build": "next build",
-    "fix:lint:biome": "biome check --write",
     "start:dev": "next dev --port 3001",
     "start:prod": "next start --port 3001",
-    "test:lint:biome": "biome check",
     "test:types": "tsc",
     "fix:lint": "biome check --write",
-    "test:lint": "biome check"
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi"
   },
   "dependencies": {
     "@fogo/component-library": "workspace:*",

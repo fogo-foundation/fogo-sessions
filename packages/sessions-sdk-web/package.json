@@ -38,7 +38,7 @@
     "fix:lint": "biome check --write",
     "start:dev": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "test:integration": "run-jest --colors --selectProjects integration",
-    "test:lint": "biome check",
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
     "test:types": "tsc"
   },
   "dependencies": {

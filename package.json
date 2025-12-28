@@ -15,7 +15,7 @@
     "run:register-ntt-manager": "register-ntt-manager",
     "run:register-fee-config": "register-fee-config",
     "run:update-metadata": "update-metadata",
-    "test:lint": "biome check",
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
     "turbo": "[ ! -d node_modules ] && pnpm install; turbo"
   },
   "devDependencies": {

@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc --noEmit false --outDir ./dist",
     "fix:lint": "biome check --write",
-    "test:lint": "biome check",
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
     "test:types": "tsc"
   },
   "dependencies": {
