@@ -1,8 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "extends": [
-    "//"
-  ],
+  "extends": ["//"],
   "tasks": {
     "build": {
       "dependsOn": [
@@ -16,79 +14,43 @@
       ]
     },
     "storybook": {
-      "dependsOn": [
-        "//#install:modules"
-      ]
+      "dependsOn": ["//#install:modules"]
     },
     "build:storybook": {
-      "dependsOn": [
-        "//#install:modules"
-      ],
-      "outputs": [
-        "storybook-static/**"
-      ]
+      "dependsOn": ["//#install:modules"],
+      "outputs": ["storybook-static/**"]
     },
     "build:css:cjs": {
-      "dependsOn": [
-        "//#install:modules"
-      ],
-      "inputs": [
-        "src/**/*.scss"
-      ],
-      "outputs": [
-        "dist/cjs/**/*.css"
-      ]
+      "dependsOn": ["//#install:modules"],
+      "inputs": ["src/**/*.scss"],
+      "outputs": ["dist/cjs/**/*.css"]
     },
     "build:css:esm": {
-      "dependsOn": [
-        "//#install:modules"
-      ],
-      "inputs": [
-        "src/**/*.scss"
-      ],
-      "outputs": [
-        "dist/esm/**/*.css"
-      ]
+      "dependsOn": ["//#install:modules"],
+      "inputs": ["src/**/*.scss"],
+      "outputs": ["dist/esm/**/*.css"]
     },
     "build:theme.scss": {
-      "dependsOn": [
-        "//#install:modules"
-      ],
-      "inputs": [
-        "src/theme.scss"
-      ],
-      "outputs": [
-        "dist/theme.scss"
-      ]
+      "dependsOn": ["//#install:modules"],
+      "inputs": ["src/theme.scss"],
+      "outputs": ["dist/theme.scss"]
     },
     "start:dev": {
-      "with": [
-        "start:dev:sass",
-        "start:dev:theme.scss",
-        "start:dev:tsc"
-      ],
+      "with": ["start:dev:sass", "start:dev:theme.scss", "start:dev:tsc"],
       "persistent": false
     },
     "start:dev:sass": {
-      "dependsOn": [
-        "//#install:modules"
-      ],
+      "dependsOn": ["//#install:modules"],
       "persistent": true,
       "cache": false
     },
     "start:dev:theme.scss": {
-      "dependsOn": [
-        "//#install:modules",
-        "^build"
-      ],
+      "dependsOn": ["//#install:modules", "^build"],
       "persistent": true,
       "cache": false
     },
     "start:dev:tsc": {
-      "dependsOn": [
-        "//#install:modules",
-        "^build"
-      ],
+      "dependsOn": ["//#install:modules", "^build"],
       "persistent": true,
       "cache": false
     }
