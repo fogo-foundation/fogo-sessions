@@ -1,8 +1,12 @@
-use crate::{cli::Cli, config_manager::config::Config};
+use crate::{
+    cli::Cli,
+    config_manager::{config::Config, fee},
+};
 use arc_swap::ArcSwap;
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::trace::BatchConfigBuilder;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -35,7 +39,9 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
         .with_resource(resource)
         .with_span_processor(
-            opentelemetry_sdk::trace::BatchSpanProcessor::builder(exporter).build(),
+            opentelemetry_sdk::trace::BatchSpanProcessor::builder(exporter)
+                .with_batch_config(BatchConfigBuilder::default().build())
+                .build(),
         )
         .build();
 
@@ -54,19 +60,25 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         )
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info,paymaster=trace".parse().unwrap()),
+                .unwrap_or_else(|_| "info".parse().unwrap()),
         )
         .with(telemetry)
         .init();
 
     db::pool::init_db_connection(&opts.db_url).await?;
     /* TODO Revert this once we have a good way of modifying the config from the DB. */
-    // let config = config_manager::load_config::load_db_config().await?;
+    // let mut config =
+    //     config_manager::load_config::load_db_config(opts.network_environment).await?;
     let mut config: Config = config::Config::builder()
         .add_source(config::File::with_name(&opts.config_file))
         .build()?
         .try_deserialize()?;
     config.assign_defaults()?;
+
+    let fee::Config { fee_coefficients }: fee::Config = config::Config::builder()
+        .add_source(config::File::with_name(&opts.config_file))
+        .build()?
+        .try_deserialize()?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
@@ -76,6 +88,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     )));
     // TODO this is commented out as part of the temporary change to load the config from the file.
     // config_manager::load_config::spawn_config_refresher(
+    //     opts.network_environment,
     //     mnemonic,
     //     Arc::clone(&domains),
     //     opts.db_refresh_interval_seconds,
@@ -90,6 +103,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         opts.ftl_url,
         opts.listen_address,
         domains,
+        fee_coefficients,
     )
     .await;
     Ok(())

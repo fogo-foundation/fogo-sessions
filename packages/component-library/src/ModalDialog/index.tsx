@@ -11,19 +11,21 @@ const MotionModalOverlay = motion.create(ModalOverlay);
 type Props = Omit<ComponentProps<typeof MotionModalOverlay>, "children"> & {
   children: ComponentProps<typeof Modal>["children"];
   dialogClassName?: string | undefined;
+  overlayClassName?: string | undefined;
 };
 
 export const ModalDialog = ({
   children,
   isOpen,
   dialogClassName,
+  overlayClassName,
   ...props
 }: Props) => (
   <AnimatePresence>
     {isOpen && (
       <MotionModalOverlay
         isDismissable
-        className={styles.modalOverlay ?? ""}
+        className={clsx(styles.modalOverlay, overlayClassName)}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

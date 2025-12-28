@@ -23,7 +23,7 @@ domain-registry = { path = "../domain-registry", features = ["no-entrypoint"] }
 chrono = "0.4.41"
 fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["anchor"] }
 mpl-token-metadata = { workspace = true }
-solana-intents = { path = "../../packages/solana-intents" }
+solana-intents = { workspace = true }
 nom = { workspace = true }
 
 [dev-dependencies]

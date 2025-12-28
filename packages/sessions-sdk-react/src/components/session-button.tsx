@@ -3,6 +3,7 @@
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { LockIcon } from "@phosphor-icons/react/dist/ssr/Lock";
 import { PublicKey } from "@solana/web3.js";
+import clsx from "clsx";
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
   Button as UnstyledButton,
@@ -20,6 +21,8 @@ import {
   isEstablished,
 } from "../session-state.js";
 import { TruncateKey } from "./truncate-key.js";
+import layerStyles from "../layer.module.css";
+import resetStyles from "../reset.module.css";
 
 type Props = {
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
@@ -111,7 +114,7 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
     <>
       <UnstyledButton
         ref={triggerRef}
-        className={styles.sessionButton ?? ""}
+        className={clsx(styles.sessionButton, resetStyles.reset)}
         isDisabled={isLoading}
         isPending={isLoading}
         onPress={handlePress}
@@ -139,7 +142,11 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
         </div>
       </UnstyledButton>
       <Popover
-        className={styles.sessionPanelPopover ?? ""}
+        className={clsx(
+          styles.sessionPanelPopover,
+          resetStyles.reset,
+          layerStyles.layerSessionPanel,
+        )}
         offset={1}
         isOpen={sessionPanelOpen && isEstablished(sessionState)}
         triggerRef={triggerRef}

@@ -1,5 +1,6 @@
 use anchor_lang::AnchorDeserialize;
 use axum::http::StatusCode;
+use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use intent_transfer::bridge::processor::bridge_ntt_tokens::{SignedQuote, H160};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::{serde_as, DisplayFromStr};
@@ -13,6 +14,7 @@ use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
 use transaction::{InstructionWithIndex, TransactionToValidate};
 
+mod fee;
 mod gas;
 mod templates;
 pub mod transaction;
@@ -75,6 +77,7 @@ pub struct VariationOrderedInstructionConstraints {
     #[serde(default)]
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
+    pub paymaster_fee_lamports: Option<u64>,
 }
 
 #[derive(Clone)]
@@ -91,11 +94,13 @@ impl VariationOrderedInstructionConstraints {
         chain_index: &ChainIndex,
     ) -> Result<(), (StatusCode, String)> {
         self.validate_compute_units(transaction)?;
+        self.validate_paymaster_fees(transaction)
+            .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
         self.validate_instruction_constraints(transaction, contextual_domain_keys, chain_index)
             .await
     }
 
-    fn validate_compute_units(
+    pub fn validate_compute_units(
         &self,
         transaction: &TransactionToValidate<'_>,
     ) -> Result<(), (StatusCode, String)> {
@@ -111,7 +116,19 @@ impl VariationOrderedInstructionConstraints {
         Ok(())
     }
 
-    async fn validate_instruction_constraints(
+    pub fn validate_paymaster_fees(
+        &self,
+        transaction: &TransactionToValidate<'_>,
+    ) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            transaction.total_fee_lamports >= self.paymaster_fee_lamports.unwrap_or(0),
+            "Paymaster fee is not sufficient"
+        );
+
+        Ok(())
+    }
+
+    pub async fn validate_instruction_constraints(
         &self,
         transaction: &TransactionToValidate<'_>,
         contextual_domain_keys: &ContextualDomainKeys,
@@ -178,7 +195,8 @@ impl VariationOrderedInstructionConstraints {
     }
 }
 
-const NON_SUBSTANTIVE_PROGRAM_IDS: [Pubkey; 1] = [solana_compute_budget_interface::id()];
+const NON_SUBSTANTIVE_PROGRAM_IDS: [Pubkey; 2] =
+    [solana_compute_budget_interface::id(), TOLLBOOTH_PROGRAM_ID];
 pub struct SubstantiveProgramId(Pubkey);
 
 impl Deref for SubstantiveProgramId {
@@ -271,7 +289,7 @@ impl InstructionConstraint {
         for account_constraint in &self.accounts {
             let account_pubkey = chain_index
                 .resolve_instruction_account_pubkey(
-                    transaction,
+                    transaction.message,
                     instruction_with_index,
                     account_constraint.index.into(),
                 )

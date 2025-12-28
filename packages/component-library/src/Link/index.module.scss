@@ -1,35 +1,32 @@
 @use "../theme";
-@use "../reset";
 
 .link {
-  @include reset.reset {
-    color: theme.color("accent");
-    border: none;
-    padding: 0;
-    background: transparent;
-    cursor: pointer;
-    outline: 2px solid transparent;
-    outline-offset: theme.spacing(0.5);
-    border-radius: theme.border-radius("sm");
-    text-decoration: none;
-    transition: color 50ms linear;
+  color: theme.color("accent");
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: theme.spacing(0.5);
+  border-radius: theme.border-radius("sm");
+  text-decoration: none;
+  transition: color 50ms linear;
 
-    &[data-hovered] {
-      text-decoration: underline;
-    }
+  &[data-hovered] {
+    text-decoration: underline;
+  }
 
-    &[data-focus-visible] {
-      outline-color: theme.color("accent");
-    }
+  &[data-focus-visible] {
+    outline-color: theme.color("accent");
+  }
 
-    &[data-pending] {
-      cursor: wait;
-      color: theme.color("muted");
-    }
+  &[data-pending] {
+    cursor: wait;
+    color: theme.color("muted");
+  }
 
-    &[data-disabled] {
-      color: theme.color("muted");
-      cursor: not-allowed;
-    }
+  &[data-disabled] {
+    color: theme.color("muted");
+    cursor: not-allowed;
   }
 }

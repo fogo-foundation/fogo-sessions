@@ -47,6 +47,7 @@ import {
   SolanaMobileWalletAdapter,
   SolanaMobileWalletAdapterWalletName,
 } from "@solana-mobile/wallet-adapter-mobile";
+import clsx from "clsx";
 import type {
   ComponentProps,
   Dispatch,
@@ -64,6 +65,8 @@ import {
 import { errorToString } from "../error-to-string.js";
 import { SessionContext as SessionReactContext } from "../hooks/use-session.js";
 import { getCacheKey } from "../hooks/use-token-account-data.js";
+import layerStyles from "../layer.module.css";
+import resetStyles from "../reset.module.css";
 import type { EstablishedOptions, StateType } from "../session-state.js";
 import { ToastProvider, useToast } from "./component-library/Toast/index.js";
 import { RenewSessionModal } from "./renew-session-modal.js";
@@ -173,7 +176,9 @@ export const FogoSessionProvider = ({
   );
 
   return (
-    <ToastProvider>
+    <ToastProvider
+      toastRegionClassName={clsx(resetStyles.reset, layerStyles.layerToast)}
+    >
       <SessionProvider
         tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
         defaultRequestedLimits={
