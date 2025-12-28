@@ -7,8 +7,8 @@
     "pnpm": "^10.25.0"
   },
   "scripts": {
-    "fix:lint": "biome check --write",
-    "fix:lint:unsafe": "biome check --write --unsafe",
+    "fix:lint": "if [ \"$CI\" = \"true\" ]; then biome check --write --changed; else biome check; fi",
+    "fix:lint:unsafe": "if [ \"$CI\" = \"true\" ]; then biome check --write --changed --unsafe; else biome check; fi",
     "install:modules": "[ $CI ] && true || pnpm install",
     "run:domain-registry": "domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
