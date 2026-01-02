@@ -35,18 +35,6 @@
       "inputs": ["src/theme.scss"],
       "outputs": ["dist/theme.scss"]
     },
-    "fix:lint": {
-      "dependsOn": ["fix:lint:eslint", "fix:lint:stylelint"],
-      "cache": false
-    },
-    "fix:lint:eslint": {
-      "dependsOn": ["//#install:modules", "^build"],
-      "cache": false
-    },
-    "fix:lint:stylelint": {
-      "dependsOn": ["//#install:modules"],
-      "cache": false
-    },
     "start:dev": {
       "with": ["start:dev:sass", "start:dev:theme.scss", "start:dev:tsc"],
       "persistent": false
@@ -65,20 +53,6 @@
       "dependsOn": ["//#install:modules", "^build"],
       "persistent": true,
       "cache": false
-    },
-    "test:lint": {
-      "dependsOn": [
-        "//#install:modules",
-        "^build",
-        "test:lint:eslint",
-        "test:lint:stylelint"
-      ]
-    },
-    "test:lint:eslint": {
-      "dependsOn": ["//#install:modules", "^build"]
-    },
-    "test:lint:stylelint": {
-      "dependsOn": ["//#install:modules"]
     }
   }
 }

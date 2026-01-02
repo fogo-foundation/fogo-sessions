@@ -8,13 +8,11 @@
   },
   "scripts": {
     "build": "next build",
-    "fix:format": "prettier --write .",
-    "fix:lint": "eslint --fix .",
+    "fix:lint": "biome check --write",
     "pull:env": "[ $CI ] || VERCEL_ORG_ID=team_M8yTQcRiKOduAwHNMhHQInWq VERCEL_PROJECT_ID=prj_0YVLB5TIHu7VXdMyib1Zmjq4iwtZ vercel env pull",
     "start:dev": "next dev --port 3002",
     "start:prod": "next start --port 3002",
-    "test:format": "prettier --check .",
-    "test:lint": "eslint . --max-warnings 0",
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
     "test:types": "tsc"
   },
   "dependencies": {
@@ -32,9 +30,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@types/pg": "catalog:",
     "@types/react": "catalog:",

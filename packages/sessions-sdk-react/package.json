@@ -38,15 +38,11 @@
     "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
-    "fix:format": "prettier --write .",
-    "fix:lint:eslint": "eslint --fix .",
-    "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
+    "fix:lint": "biome check --write",
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
-    "test:format": "run-jest --colors --selectProjects format",
     "test:integration": "run-jest --colors --selectProjects integration",
-    "test:lint:eslint": "run-jest --colors --selectProjects lint",
-    "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
     "test:types": "tsc"
   },
   "peerDependencies": {
@@ -82,9 +78,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@testing-library/dom": "catalog:",
@@ -93,9 +87,7 @@
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
-    "eslint": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "puppeteer": "catalog:",
     "react": "catalog:",
     "sass": "catalog:",

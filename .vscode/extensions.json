@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "biomejs.biome",
+    "tamasfe.even-better-toml",
+    "mhutchie.git-graph",
+    "eamodio.gitlens",
+    "yoavbls.pretty-ts-errors",
+    "rust-lang.rust-analyzer",
+    "mrmlnc.vscode-scss"
+  ]
+}

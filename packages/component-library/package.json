@@ -39,19 +39,15 @@
     "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json --no-remove-private ./package.json dist/package.json",
+    "build:storybook": "storybook build",
     "build:theme.scss": "mkdir -p dist && cp src/theme.scss dist/theme.scss",
-    "fix:format": "prettier --write .",
-    "fix:lint:eslint": "eslint --fix .",
-    "fix:lint:stylelint": "stylelint --fix 'src/**/*.scss'",
+    "fix:lint": "biome check --write",
     "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
     "start:dev:theme.scss": "copy-and-watch --watch src/theme.scss dist",
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
-    "build:storybook": "storybook build",
     "storybook": "storybook dev -p 6006",
-    "test:format": "run-jest --colors --selectProjects format",
-    "test:lint:eslint": "run-jest --colors --selectProjects lint",
-    "test:lint:stylelint": "stylelint --color 'src/**/*.scss'",
-    "test:types": "tsc"
+    "test:types": "tsc",
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi"
   },
   "peerDependencies": {
     "react": "^19"
@@ -67,9 +63,7 @@
     "swr": "catalog:"
   },
   "devDependencies": {
-    "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@storybook/addon-styling-webpack": "catalog:",
@@ -83,10 +77,8 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "css-loader": "catalog:",
-    "eslint": "catalog:",
     "jest": "catalog:",
     "next": "catalog:",
-    "prettier": "catalog:",
     "react": "catalog:",
     "sass": "catalog:",
     "sass-loader": "catalog:",

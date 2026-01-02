@@ -30,28 +30,22 @@
   "scripts": {
     "build:cjs": "swc src -d dist/cjs --strip-leading-paths --copy-files -C module.type=commonjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "build:esm": "swc src -d dist/esm --strip-leading-paths --copy-files -C jsc.experimental.keepImportAttributes=true && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "build:idl": "mkdir -p src/idl src/types && for program in chain-id domain-registry example intent-transfer session-manager tollbooth; do anchor idl build --program-name $program --out-ts src/types/$program.ts --out src/idl/$program.json; done",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
     "build:types": "tsc --project tsconfig.build.json",
-    "build:idl": "mkdir -p src/idl src/types && for program in chain-id domain-registry example intent-transfer session-manager tollbooth; do anchor idl build --program-name $program --out-ts src/types/$program.ts --out src/idl/$program.json; done",
-    "fix:format": "prettier --write .",
-    "fix:lint": "eslint --fix . --max-warnings 0",
-    "test:format": "run-jest --colors --selectProjects format",
-    "test:lint": "run-jest --colors --selectProjects lint",
+    "fix:lint": "biome check --write",
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
     "test:types": "tsc"
   },
   "devDependencies": {
-    "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@swc/cli": "catalog:",
     "@swc/core": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
-    "eslint": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "typescript": "catalog:"
   },
   "dependencies": {
