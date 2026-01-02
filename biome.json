@@ -7,6 +7,11 @@
     "useIgnoreFile": true
   },
   "files": {
+    "includes": [
+      "**",
+      "!**/tilt/**",
+      "!**/.sqlx/**"
+    ],
     "ignoreUnknown": true
   },
   "formatter": {
@@ -99,7 +104,7 @@
       },
       "style": {
         "noNegationElse": "off",
-        "noNestedTernary": "off",
+        "noNestedTernary": "warn",
         "noProcessEnv": "error",
         "noSubstr": "error",
         "useBlockStatements": "off",
@@ -177,31 +182,11 @@
           "complexity": {
             "noArguments": "error"
           },
-          "correctness": {
-            "noConstAssign": "off",
-            "noGlobalObjectCalls": "off",
-            "noInvalidBuiltinInstantiation": "off",
-            "noInvalidConstructorSuper": "off",
-            "noSetterReturn": "off",
-            "noUndeclaredVariables": "off",
-            "noUnreachable": "off",
-            "noUnreachableSuper": "off"
-          },
           "style": {
             "useConst": "error"
           },
           "suspicious": {
-            "noClassAssign": "off",
-            "noDuplicateClassMembers": "off",
-            "noDuplicateObjectKeys": "off",
-            "noDuplicateParameters": "off",
-            "noFunctionAssign": "off",
-            "noImportAssign": "off",
-            "noRedeclare": "off",
-            "noUnsafeNegation": "off",
-            "noVar": "error",
-            "noWith": "off",
-            "useGetterReturn": "off"
+            "noVar": "error"
           }
         }
       }
@@ -250,31 +235,11 @@
           "complexity": {
             "noArguments": "error"
           },
-          "correctness": {
-            "noConstAssign": "off",
-            "noGlobalObjectCalls": "off",
-            "noInvalidBuiltinInstantiation": "off",
-            "noInvalidConstructorSuper": "off",
-            "noSetterReturn": "off",
-            "noUndeclaredVariables": "off",
-            "noUnreachable": "off",
-            "noUnreachableSuper": "off"
-          },
           "style": {
             "useConst": "error"
           },
           "suspicious": {
-            "noClassAssign": "off",
-            "noDuplicateClassMembers": "off",
-            "noDuplicateObjectKeys": "off",
-            "noDuplicateParameters": "off",
-            "noFunctionAssign": "off",
-            "noImportAssign": "off",
-            "noRedeclare": "off",
-            "noUnsafeNegation": "off",
-            "noVar": "error",
-            "noWith": "off",
-            "useGetterReturn": "off"
+            "noVar": "error"
           }
         }
       }
@@ -338,10 +303,14 @@
       }
     },
     {
-      "includes": ["**/*.json"]
+      "includes": [
+        "**/*.json"
+      ]
     },
     {
-      "includes": ["**/*.json"],
+      "includes": [
+        "**/*.json"
+      ],
       "javascript": {
         "globals": []
       },
@@ -354,7 +323,9 @@
       }
     },
     {
-      "includes": ["**/*.json"],
+      "includes": [
+        "**/*.json"
+      ],
       "linter": {
         "rules": {}
       }
@@ -365,19 +336,29 @@
       }
     },
     {
-      "includes": ["**/*.cjs"],
+      "includes": [
+        "**/*.cjs"
+      ],
       "javascript": {
-        "globals": ["exports"]
+        "globals": [
+          "exports"
+        ]
       }
     },
     {
-      "includes": ["**/*.js"],
+      "includes": [
+        "**/*.js"
+      ],
       "javascript": {
-        "globals": ["exports"]
+        "globals": [
+          "exports"
+        ]
       }
     },
     {
-      "includes": ["**/*.test.ts"],
+      "includes": [
+        "**/*.test.ts"
+      ],
       "linter": {
         "rules": {}
       }

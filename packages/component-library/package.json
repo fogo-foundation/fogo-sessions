@@ -39,14 +39,14 @@
     "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json --no-remove-private ./package.json dist/package.json",
+    "build:storybook": "storybook build",
     "build:theme.scss": "mkdir -p dist && cp src/theme.scss dist/theme.scss",
+    "fix:lint": "biome check --write",
     "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
     "start:dev:theme.scss": "copy-and-watch --watch src/theme.scss dist",
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
-    "build:storybook": "storybook build",
     "storybook": "storybook dev -p 6006",
     "test:types": "tsc",
-    "fix:lint": "biome check --write",
     "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi"
   },
   "peerDependencies": {

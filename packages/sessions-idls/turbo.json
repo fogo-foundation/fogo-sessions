@@ -1,15 +1,29 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "extends": ["//"],
+  "extends": [
+    "//"
+  ],
   "tasks": {
     "build:cjs": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": [
+        "//#install:modules",
+        "^build",
+        "build:idl"
+      ]
     },
     "build:esm": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": [
+        "//#install:modules",
+        "^build",
+        "build:idl"
+      ]
     },
     "build:idl": {
-      "inputs": ["../../**/*.rs", "../../**/Cargo.toml", "../../Anchor.toml"],
+      "inputs": [
+        "../../**/*.rs",
+        "../../**/Cargo.toml",
+        "../../Anchor.toml"
+      ],
       "outputs": [
         "src/idl/chain-id.json",
         "src/idl/domain-registry.json",
@@ -26,10 +40,32 @@
       ]
     },
     "build:types": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": [
+        "//#install:modules",
+        "^build",
+        "build:idl"
+      ]
+    },
+    "fix:lint": {
+      "dependsOn": [
+        "//#install:modules",
+        "^build",
+        "build:idl"
+      ]
+    },
+    "test:lint": {
+      "dependsOn": [
+        "//#install:modules",
+        "^build",
+        "build:idl"
+      ]
     },
     "test:types": {
-      "dependsOn": ["//#install:modules", "^build", "build:idl"]
+      "dependsOn": [
+        "//#install:modules",
+        "^build",
+        "build:idl"
+      ]
     }
   }
 }
