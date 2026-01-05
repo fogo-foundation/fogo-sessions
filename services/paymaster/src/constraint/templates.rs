@@ -129,19 +129,21 @@ impl InstructionConstraint {
 
     /// The template for the constraint for transferring FOGO to one's ATA account via system_program::session_wrap
     pub fn session_wrap_instruction_constraint() -> InstructionConstraint {
-        InstructionConstraint { 
-            program: SubstantiveProgramId(solana_program::system_program::id()), 
+        InstructionConstraint {
+            program: SubstantiveProgramId(solana_program::system_program::id()),
             accounts: vec![],
             data: vec![
                 // instruction = 4_000_000 (SessionWrap)
                 DataConstraint {
-                    start_byte: 0, 
-                    data_type: DataType::U32, 
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U32(4_000_000)]), 
+                    start_byte: 0,
+                    data_type: DataType::U32,
+                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U32(
+                        4_000_000,
+                    )]),
                 },
-            ], 
-            required: false, 
-            enable_wrap_native: false 
+            ],
+            required: false,
+            enable_wrap_native: false,
         }
     }
 
@@ -159,7 +161,7 @@ impl InstructionConstraint {
                 },
             ],
             required: false,
-            enable_wrap_native: false
+            enable_wrap_native: false,
         }
     }
 
@@ -177,7 +179,7 @@ impl InstructionConstraint {
                 },
             ],
             required: false,
-            enable_wrap_native: false
+            enable_wrap_native: false,
         }
     }
 }
