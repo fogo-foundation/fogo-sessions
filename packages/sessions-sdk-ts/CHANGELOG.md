@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.29 (2026-01-05)
+
+### Fixes
+
+- Fix ledger support for new firmware (for wallets that have support for signing messages on new Ledger firmware)
+
 ## 0.0.28 (2025-12-10)
 
 ### Fixes
