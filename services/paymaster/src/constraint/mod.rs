@@ -74,7 +74,7 @@ impl VariationProgramWhitelist {
 #[derive(Serialize, Deserialize)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_and_expand_instructions")]
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,
@@ -258,6 +258,32 @@ pub struct InstructionConstraint {
     #[serde(default)]
     pub data: Vec<DataConstraint>,
     pub required: bool,
+    #[serde(default)]
+    pub wrap_native_prefix: bool,
+}
+
+fn deserialize_and_expand_instructions<'de, D>(
+    deserializer: D,
+) -> Result<Vec<InstructionConstraint>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let instructions = Vec::<InstructionConstraint>::deserialize(deserializer)?;
+    Ok(instructions
+        .into_iter()
+        .flat_map(|instruction| {
+            if instruction.wrap_native_prefix {
+                vec![
+                    InstructionConstraint::session_wrap_instruction_constraint(),
+                    InstructionConstraint::create_ata_idempotent_instruction_constraint(),
+                    InstructionConstraint::sync_native_instruction_constraint(),
+                    instruction,
+                ]
+            } else {
+                vec![instruction]
+            }
+        })
+        .collect())
 }
 
 impl InstructionConstraint {

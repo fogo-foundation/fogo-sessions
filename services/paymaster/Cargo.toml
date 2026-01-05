@@ -63,6 +63,7 @@ solana-transaction = {workspace = true}
 solana-transaction-error = {workspace = true}
 solana-transaction-status-client-types = {workspace = true}
 spl-associated-token-account = {workspace = true}
+spl-token = {workspace = true}
 sqlx = { version = "0.8", features = [ "postgres", "runtime-tokio", "tls-native-tls", "uuid" ] }
 tokio = {workspace = true}
 tollbooth = {workspace = true, features = ["no-entrypoint"]}
