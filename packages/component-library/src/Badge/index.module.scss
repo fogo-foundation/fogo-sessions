@@ -1,0 +1,68 @@
+@use "../theme";
+
+.badge {
+  display: inline-flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+  border-radius: theme.border-radius("3xl");
+  transition-property: color, background-color, border-color;
+  transition-duration: 100ms;
+  transition-timing-function: linear;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+  line-height: normal;
+
+  &[data-size="xs"] {
+    height: theme.spacing(4);
+    padding: 0 theme.spacing(2);
+    font-size: theme.font-size("xxs");
+    font-weight: theme.font-weight("medium");
+  }
+
+  &[data-size="md"] {
+    height: theme.spacing(6);
+    padding: 0 theme.spacing(3);
+    font-size: theme.font-size("xs");
+    font-weight: theme.font-weight("medium");
+  }
+
+  &[data-size="lg"] {
+    height: theme.spacing(9);
+    padding: 0 theme.spacing(5);
+    font-size: theme.font-size("sm");
+    font-weight: theme.font-weight("semibold");
+  }
+
+  @each $variant in ("error", "success") {
+    &[data-variant="#{$variant}"] {
+      border-color: theme.color("states", $variant, "background");
+
+      &[data-style="filled"] {
+        background: theme.color("states", $variant, "background");
+      }
+
+      &[data-style="outline"] {
+        color: theme.color("states", $variant, "background");
+      }
+    }
+  }
+
+  &[data-variant="neutral"] {
+    color: theme.color("muted");
+    border-color: theme.color("button","outline","background","pressed");
+
+    &[data-style="filled"] {
+      background: theme.color("button","outline","background","pressed");
+    }
+
+    &[data-style="outline"] {
+      color: theme.color("muted");
+    }
+  }
+
+  &[data-style="filled"] {
+    color: theme.color("muted");
+  }
+}
