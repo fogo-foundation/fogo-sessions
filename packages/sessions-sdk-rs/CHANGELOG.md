@@ -1,3 +1,9 @@
+## 0.7.5 (2026-01-05)
+
+### Features
+
+- Add support for unwrapping tokens
+
 ## 0.7.4 (2025-12-16)
 
 ### Fixes
