@@ -268,19 +268,19 @@ fn deserialize_and_expand_instructions<'de, D>(
 where
     D: Deserializer<'de>,
 {
-    let instructions = Vec::<InstructionConstraint>::deserialize(deserializer)?;
-    Ok(instructions
+    let constraints = Vec::<InstructionConstraint>::deserialize(deserializer)?;
+    Ok(constraints
         .into_iter()
-        .flat_map(|instruction| {
-            if instruction.wrap_native_prefix {
+        .flat_map(|base| {
+            if base.wrap_native_prefix {
                 vec![
                     InstructionConstraint::session_wrap_instruction_constraint(),
                     InstructionConstraint::create_ata_idempotent_instruction_constraint(),
                     InstructionConstraint::sync_native_instruction_constraint(),
-                    instruction,
+                    base,
                 ]
             } else {
-                vec![instruction]
+                vec![base]
             }
         })
         .collect())
