@@ -1,0 +1,7 @@
+@use "@fogo/component-library/theme";
+
+.main {
+  @include theme.max-width;
+  height: 100%;
+  padding: theme.spacing(8) 0;
+}

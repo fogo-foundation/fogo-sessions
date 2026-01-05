@@ -1,7 +1,11 @@
 @use "modern-normalize";
 @use "@fogo/component-library/theme";
 
-body {
+html, body {
+  width: 100%;
+  height: 100%;
   background-color: theme.color("background");
   color: theme.color("foreground");
+  display: flex;
+  flex-direction: column;
 }

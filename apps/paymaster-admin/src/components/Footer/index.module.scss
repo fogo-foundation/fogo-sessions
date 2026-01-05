@@ -1,0 +1,21 @@
+@use "@fogo/component-library/theme";
+  
+.footer {
+  border-top: 1px solid theme.color("border");
+  background: theme.color("card");
+  .footerContent {
+    @include theme.max-width;
+    display: flex;
+    padding: theme.spacing(8.5) theme.spacing(2);
+    justify-content: space-between;
+    align-items: center;
+    gap: theme.spacing(4);
+    align-self: stretch;
+
+    .footerText {
+      @include theme.text("sm", "normal");
+      color: theme.color("muted");
+      margin-top: theme.spacing(4);
+    }
+  }
+}
