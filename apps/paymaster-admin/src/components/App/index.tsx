@@ -8,8 +8,8 @@ import {
 } from "@fogo/sessions-sdk-react";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
-import { UserNotFound } from "../UserNotFound";
 import { PaymasterLoading } from "../loading";
+import { UserNotFound } from "../UserNotFound";
 import { UserApps } from "./user-apps";
 
 export const Apps = () => {

@@ -1,0 +1,7 @@
+@use "modern-normalize";
+@use "@fogo/component-library/theme";
+
+body {
+  background-color: theme.color("background");
+  color: theme.color("foreground");
+}

@@ -19,7 +19,7 @@ export const PrimitiveDataValueSchema = z.union([
   z.object({ U8: z.number().int().min(0).max(255) }),
   z.object({ U16: z.number().int().min(0).max(65_535) }),
   // prettier-ignore
-  z.object({ U32: z.number().int().min(0).max(0xFF_FF_FF_FF) }),
+  z.object({ U32: z.number().int().min(0).max(0xff_ff_ff_ff) }),
   z.object({ U64: u64 }),
   z.object({ Bool: z.boolean() }),
   z.object({ Pubkey: Base58Pubkey }),

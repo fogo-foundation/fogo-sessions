@@ -3,16 +3,17 @@
 /* eslint-disable n/no-process-env */
 
 import "server-only";
+import { env } from "node:process";
 
 /**
  * Indicates that this server is the live user-facing production server.
  */
-export const IS_PRODUCTION_SERVER = process.env.VERCEL_ENV === "production";
+export const IS_PRODUCTION_SERVER = env.VERCEL_ENV === "production";
 /**
  * Throw if the env var `key` is not set (at either runtime or build time).
  */
 export const demand = (key: string): string => {
-  const value = process.env[key];
+  const value = env[key];
   if (value === undefined || value === "") {
     throw new MissingEnvironmentError(key);
   } else {
@@ -28,11 +29,11 @@ class MissingEnvironmentError extends Error {
 }
 
 const getEnvOrDefault = (key: string, defaultValue: string) =>
-  process.env[key] ?? defaultValue;
+  env[key] ?? defaultValue;
 
 const defaultInProduction = IS_PRODUCTION_SERVER
   ? getEnvOrDefault
-  : (key: string) => process.env[key];
+  : (key: string) => env[key];
 
 export const GOOGLE_ANALYTICS_ID = defaultInProduction(
   "GOOGLE_ANALYTICS_ID",

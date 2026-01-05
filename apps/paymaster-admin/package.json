@@ -36,6 +36,7 @@
     "@types/react": "catalog:",
     "autoprefixer": "catalog:",
     "postcss": "catalog:",
+    "modern-normalize": "catalog:",
     "typescript": "catalog:"
   }
 }

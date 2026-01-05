@@ -9,8 +9,8 @@ import {
 import { useParams } from "next/navigation";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
-import { UserNotFound } from "../UserNotFound";
 import { PaymasterLoading } from "../loading";
+import { UserNotFound } from "../UserNotFound";
 import { AppDomains } from "./app-domains";
 
 export const Domain = () => {

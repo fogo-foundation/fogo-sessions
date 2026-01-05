@@ -1,0 +1,62 @@
+@use "@fogo/component-library/theme";
+
+.authContainer {
+  .authCard {
+    background-color: theme.color("card");
+    width: theme.spacing(109);
+    position: fixed;
+    top: 0;
+    left: theme.spacing(10);
+    padding: theme.spacing(14) theme.spacing(8);
+    bottom: 0;
+
+    .fogoPaymasterLabel {
+      margin-top: theme.spacing(8);
+    }
+
+    .authCardDescription {
+      @include theme.text("2xl", "light");
+      color: theme.color("muted");
+      width: 80%;
+      margin-top: theme.spacing(9.5);
+    }
+
+    .paymasterImage {
+      position: absolute;
+      top: theme.spacing(40);
+      left: 75%;
+    }
+
+    .connectWalletCard {
+      margin-top: theme.spacing(40);
+      padding: theme.spacing(6);
+      background-color: theme.color("background");
+      border-radius: theme.border-radius("xl");
+      border: 1px solid theme.color("border");
+      width: 120%;
+      position: relative;
+      .connectWalletCardHighlightLine {
+        width: 204px;
+        height: 1px;
+        position:absolute;
+        top: 0;
+        left: theme.spacing(6);
+        background: linear-gradient(90deg, #{theme.color("border")} 0%, #F6401B 47.46%, #{theme.color("border")} 98.72%);
+filter: blur(1px);
+
+
+      }
+      .connectWalletCardTitle {
+        @include theme.text("2xl", "normal");
+        color: theme.color("heading");
+      }
+      .connectWalletCardDescription {
+        @include theme.text("base", "normal");
+        color: theme.color("paragraph");
+        opacity: 0.6;
+
+        margin: theme.spacing(4) 0 theme.spacing(4);
+      }
+    }
+  }
+}
