@@ -67,7 +67,7 @@ impl InstructionConstraint {
                 },
             ],
             required: true,
-            wrap_native_prefix: false,
+            enable_wrap_native: false,
         }
     }
 
@@ -101,7 +101,7 @@ impl InstructionConstraint {
                 },
             ],
             required: true,
-            wrap_native_prefix: false,
+            enable_wrap_native: false,
         }
     }
 
@@ -123,7 +123,7 @@ impl InstructionConstraint {
                 },
             ],
             required: true,
-            wrap_native_prefix: false,
+            enable_wrap_native: false,
         }
     }
 
@@ -141,7 +141,7 @@ impl InstructionConstraint {
                 },
             ], 
             required: false, 
-            wrap_native_prefix: false 
+            enable_wrap_native: false 
         }
     }
 
@@ -159,7 +159,7 @@ impl InstructionConstraint {
                 },
             ],
             required: false,
-            wrap_native_prefix: false
+            enable_wrap_native: false
         }
     }
 
@@ -177,7 +177,7 @@ impl InstructionConstraint {
                 },
             ],
             required: false,
-            wrap_native_prefix: false
+            enable_wrap_native: false
         }
     }
 }

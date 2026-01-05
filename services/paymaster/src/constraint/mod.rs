@@ -259,7 +259,7 @@ pub struct InstructionConstraint {
     pub data: Vec<DataConstraint>,
     pub required: bool,
     #[serde(default)]
-    pub wrap_native_prefix: bool,
+    pub enable_wrap_native: bool,
 }
 
 fn deserialize_and_expand_instructions<'de, D>(
@@ -272,7 +272,7 @@ where
     Ok(constraints
         .into_iter()
         .flat_map(|base| {
-            if base.wrap_native_prefix {
+            if base.enable_wrap_native {
                 vec![
                     InstructionConstraint::session_wrap_instruction_constraint(),
                     InstructionConstraint::create_ata_idempotent_instruction_constraint(),
