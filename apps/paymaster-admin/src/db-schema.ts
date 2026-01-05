@@ -94,9 +94,16 @@ export const VariationSchema = z.discriminatedUnion("version", [
   VariationV1Schema,
 ]);
 
+export const NetworkEnvironmentSchema = z.enum([
+  "mainnet",
+  "testnet",
+  "localnet",
+]);
+
 export const DomainConfigWithVariationsSchema = z.object({
   id: UUID,
   domain: z.string(),
+  network_environment: NetworkEnvironmentSchema,
   enable_session_management: z.boolean(),
   enable_preflight_simulation: z.boolean(),
   created_at: TimeStr,

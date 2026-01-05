@@ -1,7 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import { fetchUserPaymasterData } from "../../../../server/paymaster";
 
 const fetchData = async (

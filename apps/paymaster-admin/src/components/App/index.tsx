@@ -66,12 +66,7 @@ const AppData = ({
       if (userData.data.type === FetchUserDataStateType.NotFound) {
         return <UserNotFound />;
       }
-      return (
-        <div>
-          <h1>Home</h1>
-          <UserApps user={userData.data.user} />
-        </div>
-      );
+      return <UserApps user={userData.data.user} />;
     }
     default: {
       return;
