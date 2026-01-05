@@ -66,16 +66,8 @@ impl Session {
         Ok(self.authorized_tokens()?.clone())
     }
 
-    pub fn check_can_close_token_account(
-        &self,
-        source_account_owner: &Pubkey,
-        destination_account_info: &AccountInfo,
-    ) -> Result<(), SessionError> {
+    pub fn get_user_checked_token_program(&self) -> Result<Pubkey, SessionError> {
         self.check_is_live_and_unrevoked()?;
-        self.check_user(source_account_owner)?;
-        if destination_account_info.key != source_account_owner {
-            return Err(SessionError::TokenCloseAccountWrongDestination);
-        }
-        Ok(())
+        Ok(*self.user()?)
     }
 }
