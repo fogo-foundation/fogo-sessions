@@ -7,15 +7,15 @@
     "pnpm": "^10.25.0"
   },
   "scripts": {
-    "fix:lint": "if [ \"$CI\" = \"true\" ]; then biome check --write --changed; else biome check; fi",
-    "fix:lint:unsafe": "if [ \"$CI\" = \"true\" ]; then biome check --write --changed --unsafe; else biome check; fi",
+    "fix:lint": "if [ \"$CI\" = \"true\" ]; then biome check --write --changed --no-errors-on-unmatched; else biome check; fi",
+    "fix:lint:unsafe": "if [ \"$CI\" = \"true\" ]; then biome check --write --changed --no-errors-on-unmatched --unsafe; else biome check; fi",
     "install:modules": "[ $CI ] && true || pnpm install",
     "run:domain-registry": "domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
     "run:register-ntt-manager": "register-ntt-manager",
     "run:register-fee-config": "register-fee-config",
     "run:update-metadata": "update-metadata",
-    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed --no-errors-on-unmatched; else biome check; fi",
     "turbo": "[ ! -d node_modules ] && pnpm install; turbo"
   },
   "devDependencies": {
