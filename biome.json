@@ -1,5 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
+  "root": true,
   "vcs": {
     "clientKind": "git",
     "defaultBranch": "origin/main",
@@ -7,14 +8,19 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/tilt/**", "!**/.sqlx/**"],
+    "includes": [
+      "**",
+      "!**/tilt/**",
+      "!**/.sqlx/**"
+    ],
     "ignoreUnknown": true
   },
   "formatter": {
     "bracketSameLine": false,
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "useEditorconfig": true
   },
   "linter": {
     "enabled": true,
@@ -299,10 +305,14 @@
       }
     },
     {
-      "includes": ["**/*.json"]
+      "includes": [
+        "**/*.json"
+      ]
     },
     {
-      "includes": ["**/*.json"],
+      "includes": [
+        "**/*.json"
+      ],
       "javascript": {
         "globals": []
       },
@@ -315,7 +325,9 @@
       }
     },
     {
-      "includes": ["**/*.json"],
+      "includes": [
+        "**/*.json"
+      ],
       "linter": {
         "rules": {}
       }
@@ -326,19 +338,29 @@
       }
     },
     {
-      "includes": ["**/*.cjs"],
+      "includes": [
+        "**/*.cjs"
+      ],
       "javascript": {
-        "globals": ["exports"]
+        "globals": [
+          "exports"
+        ]
       }
     },
     {
-      "includes": ["**/*.js"],
+      "includes": [
+        "**/*.js"
+      ],
       "javascript": {
-        "globals": ["exports"]
+        "globals": [
+          "exports"
+        ]
       }
     },
     {
-      "includes": ["**/*.test.ts"],
+      "includes": [
+        "**/*.test.ts"
+      ],
       "linter": {
         "rules": {}
       }
