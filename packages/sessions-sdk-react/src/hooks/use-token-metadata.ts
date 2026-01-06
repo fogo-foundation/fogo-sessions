@@ -35,7 +35,7 @@ export const useTokenMetadata = (mint: PublicKey) => {
   useEffect(() => {
     if (data.type === StateType.NotLoaded) {
       data.mutate().catch((error: unknown) => {
-        // eslint-disable-next-line no-console
+        // biome-ignore lint/suspicious/noConsole: we want to log the error
         console.error("Failed to fetch token metadata", error);
       });
     }

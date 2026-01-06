@@ -1,10 +1,9 @@
 import { Network } from "@fogo/sessions-sdk";
-
-import { Button } from "./component-library/Button/index.js";
-import styles from "./get-tokens-page.module.css";
 import { useFaucet } from "../hooks/use-faucet.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { EstablishedSessionState } from "../session-state.js";
+import { Button } from "./component-library/Button/index.js";
+import styles from "./get-tokens-page.module.css";
 
 type Props = {
   onPressBack: () => void;
