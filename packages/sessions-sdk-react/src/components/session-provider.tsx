@@ -488,6 +488,8 @@ const useSessionState = ({
         showBridgeIn: () => {
           setShowBridgeIn(true);
         },
+        getSessionWrapInstructions: (amount: bigint) => session.getSessionWrapInstructions(amount),
+        getSessionUnwrapInstructions: () => session.getSessionUnwrapInstructions(),
         expiration: session.sessionInfo.expiration,
         updateSession: (previousState, duration, limits) => {
           updateSession({
