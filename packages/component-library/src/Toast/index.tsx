@@ -5,15 +5,14 @@ import clsx from "clsx";
 import type { ReactNode } from "react";
 import { createContext, use, useCallback, useMemo } from "react";
 import {
-  Text,
   UNSTABLE_Toast as ReactAriaToast,
+  Text,
   UNSTABLE_ToastContent as ToastContent,
-  UNSTABLE_ToastRegion as ToastRegion,
   UNSTABLE_ToastQueue as ToastQueue,
+  UNSTABLE_ToastRegion as ToastRegion,
 } from "react-aria-components";
-
-import styles from "./index.module.css";
 import { Button } from "../Button/index.js";
+import styles from "./index.module.css";
 
 const ONE_SECOND_IN_MS = 1000;
 const DEFAULT_TOAST_TIMEOUT = 5 * ONE_SECOND_IN_MS;
@@ -67,6 +66,7 @@ export const ToastProvider = ({
 export const useToast = () => {
   const queue = use(ToastContext);
   if (queue) {
+    // biome-ignore lint/correctness/useHookAtTopLevel: reason
     const mkToastFn = useCallback(
       (toastType: ToastType) =>
         (
@@ -83,6 +83,7 @@ export const useToast = () => {
           ),
       [queue],
     );
+    // biome-ignore lint/correctness/useHookAtTopLevel: reason
     return useMemo(
       () => ({
         queue,

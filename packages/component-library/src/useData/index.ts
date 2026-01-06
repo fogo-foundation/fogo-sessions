@@ -9,13 +9,13 @@ export const useData = <T>(...args: Parameters<typeof useSWR<T>>) => {
 
   const reset = useCallback(() => {
     mutate(undefined).catch((error: unknown) => {
-      // eslint-disable-next-line no-console
+      // biome-ignore lint/suspicious/noConsole: reason
       console.error("Failed to reset data", error);
     });
   }, [mutate]);
 
   if (error) {
-    // eslint-disable-next-line no-console
+    // biome-ignore lint/suspicious/noConsole: reason
     console.error("Data fetch failed:", error);
     return State.ErrorState(new UseDataError(error), reset);
   } else if (isLoading) {
