@@ -91,6 +91,7 @@
           FORCE_COLOR = 1;
           PUPPETEER_SKIP_DOWNLOAD = 1;
           PUPPETEER_EXECUTABLE_PATH = final.lib.getExe final.chromium;
+          BIOME_BINARY = final.lib.getExe final.biome;
           name = "project-shell";
           buildInputs = [
             final.cli
@@ -103,6 +104,7 @@
             final.jq
             final.openssl
             final.pkg-config
+            final.biome
             (final.rust-bin.nightly.latest.default.override {extensions = ["rust-analyzer"];})
             solana-nix.packages."${system}".solana-cli
             solana-nix.packages."${system}".anchor-cli
