@@ -132,9 +132,8 @@ export const FogoSessionProvider = ({
   privacyPolicyUrl,
   ...props
 }: Props) => {
-  // We have to typecast this unfortunately because the Solana library typings are broken
   const walletsWithStandardAdapters = useStandardWalletAdapters(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: We have to typecast this unfortunately because the Solana library typings are broken
     wallets as any,
   ) as unknown as SolanaWallet[];
   const filteredWalletsWithStandardAdapters = useMemo(
@@ -779,7 +778,7 @@ const useSessionState = ({
 /**
  * Waits for the wallet to be ready before trying autoConnect. This is especially needed for Nightly Wallet as it's not instantly ready.
  */
-const waitForWalletReady = async (wallet: SolanaWallet) => {
+const waitForWalletReady = (wallet: SolanaWallet) => {
   const WALLET_READY_TIMEOUT = 3000;
   const isWalletInReadyState = wallet.readyState === WalletReadyState.Installed;
 
@@ -1002,7 +1001,7 @@ class InvariantFailedError extends Error {
 }
 
 type ConstrainedOmit<T, K> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: todo add explanation
   [P in keyof T as Exclude<P, K & keyof any>]: T[P];
 };
 
