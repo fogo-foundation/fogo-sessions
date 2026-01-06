@@ -38,13 +38,16 @@
       .connectWalletCardHighlightLine {
         width: 204px;
         height: 1px;
-        position:absolute;
+        position: absolute;
         top: 0;
         left: theme.spacing(6);
-        background: linear-gradient(90deg, #{theme.color("border")} 0%, #F6401B 47.46%, #{theme.color("border")} 98.72%);
-filter: blur(1px);
-
-
+        background: linear-gradient(
+          90deg,
+          #{theme.color("border")} 0%,
+          #f6401b 47.46%,
+          #{theme.color("border")} 98.72%
+        );
+        filter: blur(1px);
       }
       .connectWalletCardTitle {
         @include theme.text("2xl", "normal");

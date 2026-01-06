@@ -5,24 +5,27 @@
   align-items: center;
   margin-bottom: theme.spacing(4);
   .userAppsTitle {
-  @include theme.text("2xl", "medium");
-  color: theme.color("heading");
+    @include theme.text("2xl", "medium");
+    color: theme.color("heading");
     margin-bottom: theme.spacing(4);
   }
 }
 
 .userApps {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: theme.spacing(4);
+
+  @include theme.breakpoint("md") {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
   .appCard {
     height: 202px;
-     display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     .appCardContent {
-     
       .appCardTitle {
         @include theme.text("2xl", "normal");
         margin-bottom: theme.spacing(4);

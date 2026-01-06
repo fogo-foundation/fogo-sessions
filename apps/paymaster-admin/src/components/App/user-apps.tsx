@@ -1,3 +1,4 @@
+import { Badge } from "@fogo/component-library/Badge";
 import { Button } from "@fogo/component-library/Button";
 import { Card } from "@fogo/component-library/Card";
 import { AppWindowIcon } from "@phosphor-icons/react/dist/ssr/AppWindow";
@@ -27,7 +28,9 @@ export const UserApps = ({ user }: { user: User }) => {
   return (
     <>
       <div className={styles.userAppsHeader}>
-        <h1 className={styles.userAppsTitle}>Apps ({user.apps.length})</h1>
+        <h1 className={styles.userAppsTitle}>
+          Apps <Badge size="xs">{user.apps.length}</Badge>
+        </h1>
         <Button variant="secondary">
           Request App <AppWindowIcon />
         </Button>
