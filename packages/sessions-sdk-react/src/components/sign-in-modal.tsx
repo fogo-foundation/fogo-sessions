@@ -3,10 +3,9 @@ import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { useLocalStorageValue, useResizeObserver } from "@react-hookz/web";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
-import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Heading } from "react-aria-components";
 
 import { useSession, useSessionContext } from "../hooks/use-session.js";
@@ -20,7 +19,7 @@ import { ModalDialog } from "./component-library/ModalDialog/index.js";
 import { Disclaimer } from "./disclaimer.js";
 import { SessionLimits } from "./session-limits.js";
 import styles from "./sign-in-modal.module.css";
-import resetStyles from "../reset.module.css";
+
 type Props = Omit<
   ComponentProps<typeof ModalDialog>,
   "isOpen" | "onOpenChange" | "children"
@@ -59,8 +58,7 @@ export const SignInModal = ({
     <ModalDialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      overlayClassName={clsx(resetStyles.reset, layerStyles.layerModalDialog)}
-      dialogClassName={resetStyles.reset ?? ""}
+      overlayClassName={layerStyles.layerModalDialog ?? ""}
       {...props}
     >
       {isOpen && (
@@ -133,60 +131,59 @@ const SignInModalContents = ({
     didAcceptDisclaimer.set(true);
   }, [didAcceptDisclaimer]);
 
+  const selectWalletOrDisclaimer = didAcceptDisclaimer.value ? (
+    <motion.div
+      key="wallets"
+      initial={initialDidAcceptDisclaimer.current ? false : { x: "100%" }}
+      animate={{ x: 0 }}
+      exit={{ x: "-100%" }}
+      ref={(elem) => {
+        step2.current = elem;
+        if (elem) {
+          if (elem.parentElement !== null) {
+            elem.parentElement.style.height = `${elem.offsetHeight.toString()}px`;
+          }
+          setHeight(elem.offsetHeight);
+        }
+      }}
+    >
+      <WalletsPage
+        wallets={wallets}
+        selectWallet={
+          sessionState.type === StateType.SelectingWallet
+            ? sessionState.selectWallet
+            : undefined
+        }
+        cancel={onClose}
+        privacyPolicyUrl={privacyPolicyUrl}
+        termsOfServiceUrl={termsOfServiceUrl}
+      />
+    </motion.div>
+  ) : (
+    <motion.div
+      key="disclaimer"
+      exit={{ x: "-100%" }}
+      ref={(elem) => {
+        step1.current = elem;
+        if (elem) {
+          if (elem.parentElement !== null) {
+            elem.parentElement.style.height = `${elem.offsetHeight.toString()}px`;
+          }
+          setHeight(elem.offsetHeight);
+        }
+      }}
+    >
+      <DisclaimerPage onCancel={onClose} onAccept={handleDidAcceptDisclaimer} />
+    </motion.div>
+  );
+
   return (
     <AnimatePresence>
       {sessionState.type === StateType.SelectingWallet ||
       sessionState.type === StateType.WalletConnecting ||
       (sessionState.type === StateType.SettingLimits &&
         whitelistedTokens.length === 0) ? (
-        didAcceptDisclaimer.value ? (
-          <motion.div
-            key="wallets"
-            initial={initialDidAcceptDisclaimer.current ? false : { x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            ref={(elem) => {
-              step2.current = elem;
-              if (elem) {
-                if (elem.parentElement !== null) {
-                  elem.parentElement.style.height = `${elem.offsetHeight.toString()}px`;
-                }
-                setHeight(elem.offsetHeight);
-              }
-            }}
-          >
-            <WalletsPage
-              wallets={wallets}
-              selectWallet={
-                sessionState.type === StateType.SelectingWallet
-                  ? sessionState.selectWallet
-                  : undefined
-              }
-              cancel={onClose}
-              privacyPolicyUrl={privacyPolicyUrl}
-              termsOfServiceUrl={termsOfServiceUrl}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="disclaimer"
-            exit={{ x: "-100%" }}
-            ref={(elem) => {
-              step1.current = elem;
-              if (elem) {
-                if (elem.parentElement !== null) {
-                  elem.parentElement.style.height = `${elem.offsetHeight.toString()}px`;
-                }
-                setHeight(elem.offsetHeight);
-              }
-            }}
-          >
-            <DisclaimerPage
-              onCancel={onClose}
-              onAccept={handleDidAcceptDisclaimer}
-            />
-          </motion.div>
-        )
+        selectWalletOrDisclaimer
       ) : (
         <motion.div
           key="limits"

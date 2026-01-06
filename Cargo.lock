@@ -1995,7 +1995,7 @@ dependencies = [
 
 [[package]]
 name = "fogo-sessions-sdk"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.4",
@@ -5696,7 +5696,7 @@ dependencies = [
 
 [[package]]
 name = "solana-intents"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "borsh 1.5.7",
  "itertools 0.14.0",

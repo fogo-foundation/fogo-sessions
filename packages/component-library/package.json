@@ -47,7 +47,7 @@
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "storybook": "storybook dev -p 6006",
     "test:types": "tsc",
-    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi"
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed --no-errors-on-unmatched; else biome check; fi"
   },
   "peerDependencies": {
     "react": "^19"

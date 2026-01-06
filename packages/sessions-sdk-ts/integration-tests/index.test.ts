@@ -19,7 +19,7 @@ describe("integration", () => {
     async () => {
       const { stdout } = await execAsync("node ./index.js", {
         cwd: TEST_DIR,
-        // eslint-disable-next-line n/no-process-env
+        // biome-ignore lint/style/noProcessEnv: reason
         env: { ...process.env, FORCE_COLOR: "0" },
       });
       expect(stdout).toMatchSnapshot();

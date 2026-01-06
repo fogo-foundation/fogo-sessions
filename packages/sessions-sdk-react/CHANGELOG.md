@@ -1,5 +1,12 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.9 (2026-01-05)
+
+### Fixes
+
+- Fix ledger support for new firmware (for wallets that have support for signing messages on new Ledger firmware)
+- Fix to show wallet balance when wallet only contains native tokens
+
 ## 0.1.8 (2025-12-10)
 
 ### Fixes
