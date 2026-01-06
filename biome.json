@@ -208,6 +208,29 @@
       "enabled": true
     }
   },
+  "overrides": [
+    {
+      "includes": [
+        "*.spec.ts",
+        "*.test.ts",
+        "*.spec.tsx",
+        "*.test.tsx"
+      ],
+      "javascript": {
+        "globals": [
+          "afterEach",
+          "afterAll",
+          "beforeEach",
+          "beforeAll",
+          "describe",
+          "expect",
+          "it",
+          "test",
+          "jest"
+        ]
+      }
+    }
+  ],
   "assist": {
     "enabled": true,
     "actions": {
