@@ -269,7 +269,8 @@ where
     D: Deserializer<'de>,
 {
     let constraints = Vec::<InstructionConstraint>::deserialize(deserializer)?;
-    Ok(constraints
+    let has_wrap_native = constraints.iter().any(|c| c.enable_wrap_native);
+    let constraints_with_prefixes: Vec<InstructionConstraint> = constraints
         .into_iter()
         .flat_map(|base| {
             if base.enable_wrap_native {
@@ -283,6 +284,10 @@ where
                 vec![base]
             }
         })
+        .collect();
+    Ok(constraints_with_prefixes
+        .into_iter()
+        .chain(has_wrap_native.then(|| InstructionConstraint::close_token_account_constraint()))
         .collect())
 }
 
