@@ -33,10 +33,10 @@ import {
   PublicKey,
 } from "@solana/web3.js";
 import type {
-  Network as WormholeNetwork,
   Chain,
+  Network as WormholeNetwork,
 } from "@wormhole-foundation/sdk";
-import { Wormhole, wormhole, routes } from "@wormhole-foundation/sdk";
+import { routes, Wormhole, wormhole } from "@wormhole-foundation/sdk";
 import solanaSdk from "@wormhole-foundation/sdk/solana";
 import { contracts } from "@wormhole-foundation/sdk-base";
 import { nttExecutorRoute } from "@wormhole-foundation/sdk-route-ntt";
@@ -60,19 +60,18 @@ import {
 } from "./crypto.js";
 
 export {
-  type SessionContext,
-  type SendTransactionOptions,
-  createSessionContext,
-} from "./context.js";
-
-export {
-  type TransactionResult,
   type Connection,
-  type TransactionOrInstructions,
-  Network,
-  TransactionResultType,
   createSessionConnection,
+  Network,
+  type TransactionOrInstructions,
+  type TransactionResult,
+  TransactionResultType,
 } from "./connection.js";
+export {
+  createSessionContext,
+  type SendTransactionOptions,
+  type SessionContext,
+} from "./context.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
