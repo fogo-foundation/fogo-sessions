@@ -138,7 +138,12 @@
         "useUnifiedTypeSignatures": "error",
         "noInferrableTypes": "error",
         "useConsistentArrayType": "error",
-        "useConsistentTypeDefinitions": "error",
+        "useConsistentTypeDefinitions": {
+          "level": "error",
+          "options": {
+            "style": "type"
+          }
+        },
         "useShorthandFunctionType": "error"
       },
       "suspicious": {
@@ -193,8 +198,7 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "double"
-    },
-    "globals": []
+    }
   },
   "json": {
     "formatter": {
@@ -206,20 +210,23 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.test.ts"],
-      "linter": {
-        "rules": {}
-      },
+      "includes": [
+        "**/*.spec.ts",
+        "**/*.test.ts",
+        "**/*.spec.tsx",
+        "**/*.test.tsx"
+      ],
       "javascript": {
         "globals": [
+          "afterEach",
+          "afterAll",
+          "beforeEach",
+          "beforeAll",
           "describe",
+          "expect",
           "it",
           "test",
-          "expect",
-          "beforeEach",
-          "afterEach",
-          "beforeAll",
-          "afterAll"
+          "jest"
         ]
       }
     }

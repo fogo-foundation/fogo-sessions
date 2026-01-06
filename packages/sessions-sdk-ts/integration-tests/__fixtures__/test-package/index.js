@@ -1,2 +1,2 @@
-// eslint-disable-next-line no-console
+// biome-ignore lint/suspicious/noConsole: reason
 console.log("Hello, World!");
