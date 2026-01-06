@@ -135,17 +135,17 @@ export const FogoSessionProvider = ({
   // We have to typecast this unfortunately because the Solana library typings are broken
   const walletsWithStandardAdapters = useStandardWalletAdapters(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-    wallets as any
+    wallets as any,
   ) as unknown as SolanaWallet[];
   const filteredWalletsWithStandardAdapters = useMemo(
     () => filterUnwantedWallets(walletsWithStandardAdapters),
-    [walletsWithStandardAdapters]
+    [walletsWithStandardAdapters],
   );
   const mobileWalletAdapter = useMemo(
     () =>
       isMobile(filteredWalletsWithStandardAdapters)
-        ? filteredWalletsWithStandardAdapters.find(
-            (adapter) => adapter.name === SolanaMobileWalletAdapterWalletName
+        ? (filteredWalletsWithStandardAdapters.find(
+            (adapter) => adapter.name === SolanaMobileWalletAdapterWalletName,
           ) ??
           (new SolanaMobileWalletAdapter({
             addressSelector: createDefaultAddressSelector(),
@@ -160,9 +160,9 @@ export const FogoSessionProvider = ({
             chain: "mainnet-beta",
             onWalletNotFound: createDefaultWalletNotFoundHandler(),
             // doing type casting to use our type with the EventEmitter types
-          }) as SolanaMobileWallet)
+          }) as SolanaMobileWallet))
         : undefined,
-    [filteredWalletsWithStandardAdapters]
+    [filteredWalletsWithStandardAdapters],
   );
 
   const walletsWithMobileAdapter = useMemo(
@@ -170,7 +170,7 @@ export const FogoSessionProvider = ({
       mobileWalletAdapter == undefined
         ? filteredWalletsWithStandardAdapters
         : [mobileWalletAdapter, ...filteredWalletsWithStandardAdapters],
-    [filteredWalletsWithStandardAdapters, mobileWalletAdapter]
+    [filteredWalletsWithStandardAdapters, mobileWalletAdapter],
   );
 
   return (
@@ -206,7 +206,7 @@ const isMobile = (wallets: SolanaWallet[]) => {
     wallets.some(
       (wallet) =>
         wallet.name !== SolanaMobileWalletAdapterWalletName &&
-        wallet.readyState === WalletReadyState.Installed
+        wallet.readyState === WalletReadyState.Installed,
     )
   ) {
     return false;
@@ -261,7 +261,7 @@ const SessionProvider = ({
         sendToPaymaster,
         sponsor,
       }),
-    [network, rpc, paymaster, sendToPaymaster, sponsor]
+    [network, rpc, paymaster, sendToPaymaster, sponsor],
   );
 
   const getSessionContext = useMemo(() => {
@@ -308,7 +308,7 @@ const SessionProvider = ({
       onStartSessionInit,
       defaultRequestedLimits,
       showBridgeIn,
-    ]
+    ],
   );
 
   return <SessionReactContext value={state}>{children}</SessionReactContext>;
@@ -344,12 +344,12 @@ const useSessionState = ({
       session: Session,
       establishedOptions: EstablishedOptions,
       instructions: TransactionOrInstructions,
-      options?: SendTransactionOptions
+      options?: SendTransactionOptions,
     ) => {
       const result = await session.sendTransaction(instructions, options);
       if (result.type === TransactionResultType.Failed) {
         const parsedError = instructionErrorCustomSchema.safeParse(
-          result.error
+          result.error,
         );
         if (parsedError.success) {
           switch (parsedError.data.InstructionError[1].Custom) {
@@ -361,7 +361,7 @@ const useSessionState = ({
                   cancel: () => {
                     setState(SessionState.Established(establishedOptions));
                   },
-                })
+                }),
               );
               break;
             }
@@ -373,7 +373,7 @@ const useSessionState = ({
                   cancel: () => {
                     setState(SessionState.Established(establishedOptions));
                   },
-                })
+                }),
               );
               break;
             }
@@ -385,7 +385,7 @@ const useSessionState = ({
         } catch (error: unknown) {
           toast.error(
             "We couldn't update your token balances, please try refreshing the page",
-            errorToString(error)
+            errorToString(error),
           );
           // biome-ignore lint/suspicious/noConsole: we want to log the error
           console.error("Failed to update token account data", error);
@@ -393,7 +393,7 @@ const useSessionState = ({
       }
       return result;
     },
-    [onOpenExtendSessionExpiry, onOpenSessionLimitsReached, toast, network]
+    [onOpenExtendSessionExpiry, onOpenSessionLimitsReached, toast, network],
   );
 
   const updateSession = useCallback(
@@ -415,7 +415,7 @@ const useSessionState = ({
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { updateSession, ...updatingOptions } = establishedOptions;
       setState(
-        SessionState.UpdatingSession({ ...updatingOptions, previousState })
+        SessionState.UpdatingSession({ ...updatingOptions, previousState }),
       );
       getSessionContext()
         .then((context) =>
@@ -426,7 +426,7 @@ const useSessionState = ({
               signWithWallet(establishedOptions.solanaWallet, message),
             session,
             ...(limits === undefined ? { unlimited: true } : { limits }),
-          })
+          }),
         )
         .then((result) => {
           switch (result.type) {
@@ -438,7 +438,7 @@ const useSessionState = ({
             case SessionResultType.Failed: {
               toast.error(
                 "Failed to update session",
-                errorToString(result.error)
+                errorToString(result.error),
               );
               setState(SessionState.Established(establishedOptions));
               return;
@@ -450,7 +450,7 @@ const useSessionState = ({
           setState(SessionState.Established(establishedOptions));
         });
     },
-    [getSessionContext, toast]
+    [getSessionContext, toast],
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: completeSessionSetup calls connectWallet and connectWallet calls completeSessionSetup. We should introduce another state in the wallet for when the user is switching accounts and refactor this to remove the circular dependency.
@@ -539,7 +539,7 @@ const useSessionState = ({
       setShowBridgeIn,
       updateSession,
       network,
-    ]
+    ],
   );
 
   const submitLimits = useCallback(
@@ -567,7 +567,7 @@ const useSessionState = ({
             onCancel();
           },
           walletPublicKey,
-        })
+        }),
       );
       establishSession(
         getSessionContext(),
@@ -576,7 +576,7 @@ const useSessionState = ({
         sessionDuration,
         limits,
         controller.signal,
-        sessionEstablishmentLookupTable
+        sessionEstablishmentLookupTable,
       )
         .then((session) => {
           if (session !== undefined) {
@@ -588,7 +588,7 @@ const useSessionState = ({
           console.error("Failed to establish session", error);
           toast.error(
             "Failed to establish session, please try again",
-            errorToString(error)
+            errorToString(error),
           );
           onError();
         });
@@ -599,7 +599,7 @@ const useSessionState = ({
       toast,
       sessionEstablishmentLookupTable,
       network,
-    ]
+    ],
   );
 
   const requestLimits = useCallback(
@@ -607,7 +607,7 @@ const useSessionState = ({
       wallet: SolanaWallet,
       walletPublicKey: PublicKey,
       requestedLimits: Map<PublicKey, bigint> | undefined,
-      onCancel: () => void
+      onCancel: () => void,
     ) => {
       setState(
         SessionState.RequestingLimits({
@@ -629,15 +629,15 @@ const useSessionState = ({
                   wallet,
                   walletPublicKey,
                   requestedLimits,
-                  onCancel
+                  onCancel,
                 );
               },
             });
           },
-        })
+        }),
       );
     },
-    [submitLimits, network]
+    [submitLimits, network],
   );
 
   const connectWallet = useCallback(
@@ -662,7 +662,7 @@ const useSessionState = ({
               controller.abort();
               onCancel();
             },
-          })
+          }),
         );
       }
       connectWalletImpl(network, getSessionContext(), wallet, controller.signal)
@@ -692,7 +692,7 @@ const useSessionState = ({
                   wallet,
                   result.walletPublicKey,
                   requestedLimits,
-                  onCancel
+                  onCancel,
                 );
               }
               return;
@@ -717,7 +717,7 @@ const useSessionState = ({
       requestLimits,
       toast,
       network,
-    ]
+    ],
   );
 
   const requestWallet = useCallback(
@@ -738,10 +738,10 @@ const useSessionState = ({
               },
             });
           },
-        })
+        }),
       );
     },
-    [connectWallet]
+    [connectWallet],
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: We very explicitly only want this effect to fire at startup or when the network changes and never in other cases
@@ -808,7 +808,7 @@ const waitForWalletReady = async (wallet: SolanaWallet) => {
 const checkStoredSession = async (
   network: Network,
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: SolanaWallet
+  wallet: SolanaWallet,
 ) => {
   await waitForWalletReady(wallet);
   await wallet.autoConnect();
@@ -819,7 +819,7 @@ const checkStoredSession = async (
       network,
       sessionContext,
       wallet,
-      wallet.publicKey
+      wallet.publicKey,
     );
     switch (result.type) {
       case ConnectWalletStateType.Connected: {
@@ -840,7 +840,7 @@ const connectWalletImpl = async (
   network: Network,
   sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
-  abortSignal: AbortSignal
+  abortSignal: AbortSignal,
 ) => {
   await wallet.connect();
   if (abortSignal.aborted || !wallet.connected) {
@@ -853,7 +853,7 @@ const connectWalletImpl = async (
       sessionContext,
       wallet,
       walletPublicKey,
-      abortSignal
+      abortSignal,
     );
   }
 };
@@ -863,7 +863,7 @@ const tryLoadStoredSession = async (
   sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
   walletPublicKey: PublicKey,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
 ) => {
   const storedSession = await getStoredSession(network, walletPublicKey);
   if (abortSignal?.aborted) {
@@ -875,7 +875,7 @@ const tryLoadStoredSession = async (
     const session = await reestablishSession(
       await sessionContext,
       storedSession.walletPublicKey,
-      storedSession.sessionKey
+      storedSession.sessionKey,
     );
     if (abortSignal?.aborted) {
       await wallet.disconnect();
@@ -922,7 +922,7 @@ const establishSession = async (
   sessionDuration: number,
   limits: Map<PublicKey, bigint> | undefined,
   abortSignal: AbortSignal,
-  sessionEstablishmentLookupTable?: string
+  sessionEstablishmentLookupTable?: string,
 ) => {
   const context = await sessionContext;
   const result = await establishSessionImpl({
@@ -941,7 +941,7 @@ const establishSession = async (
           (error: unknown) => {
             // biome-ignore lint/suspicious/noConsole: we want to log the error
             console.error("Failed to revoke cancelled session", error);
-          }
+          },
         );
         return;
       } else {
@@ -964,7 +964,7 @@ const disconnect = (
   sessionInfo?: {
     session: Session;
     sessionContext: Promise<SessionExecutionContext>;
-  }
+  },
 ) => {
   Promise.all([
     wallet.disconnect(),
@@ -972,7 +972,7 @@ const disconnect = (
       ? []
       : [
           sessionInfo.sessionContext.then((context) =>
-            revokeSession({ context, session: sessionInfo.session })
+            revokeSession({ context, session: sessionInfo.session }),
           ),
           clearStoredSession(network, sessionInfo.session.walletPublicKey),
         ]),
