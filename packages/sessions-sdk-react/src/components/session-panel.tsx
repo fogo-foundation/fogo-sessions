@@ -5,17 +5,19 @@ import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import type { ComponentProps } from "react";
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Heading } from "react-aria-components";
-
+import { useSessionContext } from "../hooks/use-session.js";
+import resetStyles from "../reset.module.css";
 import type {
   EstablishedSessionState,
   SessionState,
 } from "../session-state.js";
+import { isEstablished } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
 import { CopyButton } from "./component-library/CopyButton/index.js";
 import { Link } from "./component-library/Link/index.js";
-import { Tabs, TabList, TabPanel } from "./component-library/Tabs/index.js";
+import { TabList, TabPanel, Tabs } from "./component-library/Tabs/index.js";
 import { DepositPage } from "./deposit-page.js";
 import { FogoWordmark } from "./fogo-wordmark.js";
 import { GetTokensPage } from "./get-tokens-page.js";
@@ -23,13 +25,10 @@ import { ReceivePage } from "./receive-page.js";
 import { SelectTokenPage } from "./select-token-page.js";
 import { SendTokenPage } from "./send-token-page.js";
 import { SessionLimitsTab } from "./session-limits-tab.js";
-import resetStyles from "../reset.module.css";
 import styles from "./session-panel.module.css";
 import { TruncateKey } from "./truncate-key.js";
-import { WithdrawPage } from "./withdraw-page.js";
-import { useSessionContext } from "../hooks/use-session.js";
-import { isEstablished } from "../session-state.js";
 import { WalletPage } from "./wallet-page.js";
+import { WithdrawPage } from "./withdraw-page.js";
 
 type Props = Omit<ComponentProps<"div">, "children"> & {
   onClose?: (() => void) | undefined;

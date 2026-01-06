@@ -6,11 +6,12 @@ import { WalletReadyState } from "@solana/wallet-adapter-base";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Heading } from "react-aria-components";
 
 import { useSession, useSessionContext } from "../hooks/use-session.js";
 import layerStyles from "../layer.module.css";
+import resetStyles from "../reset.module.css";
 import type { SessionStates } from "../session-state.js";
 import { isCancelable, StateType } from "../session-state.js";
 import type { SolanaWallet } from "../solana-wallet.js";
@@ -20,7 +21,7 @@ import { ModalDialog } from "./component-library/ModalDialog/index.js";
 import { Disclaimer } from "./disclaimer.js";
 import { SessionLimits } from "./session-limits.js";
 import styles from "./sign-in-modal.module.css";
-import resetStyles from "../reset.module.css";
+
 type Props = Omit<
   ComponentProps<typeof ModalDialog>,
   "isOpen" | "onOpenChange" | "children"

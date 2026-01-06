@@ -4,25 +4,25 @@ import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { LockIcon } from "@phosphor-icons/react/dist/ssr/Lock";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
-import { useMemo, useState, useRef, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Button as UnstyledButton,
   Dialog,
   Popover,
+  Button as UnstyledButton,
 } from "react-aria-components";
 
 import { deserializePublicKeyMap } from "../deserialize-public-key.js";
+import { useSession, useSessionContext } from "../hooks/use-session.js";
+import layerStyles from "../layer.module.css";
+import resetStyles from "../reset.module.css";
+import {
+  isEstablished,
+  StateType as SessionStateType,
+} from "../session-state.js";
 import { FogoLogo } from "./fogo-logo.js";
 import styles from "./session-button.module.css";
 import { SessionPanel } from "./session-panel.js";
-import { useSession, useSessionContext } from "../hooks/use-session.js";
-import {
-  StateType as SessionStateType,
-  isEstablished,
-} from "../session-state.js";
 import { TruncateKey } from "./truncate-key.js";
-import layerStyles from "../layer.module.css";
-import resetStyles from "../reset.module.css";
 
 type Props = {
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
@@ -58,7 +58,7 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
               }
             })
             .catch((error: unknown) => {
-              // eslint-disable-next-line no-console
+              // biome-ignore lint/suspicious/noConsole: reason
               console.error("Error in `onStartSessionInit` callback", error);
             });
         } else if (callbackReturn !== false) {
