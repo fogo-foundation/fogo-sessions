@@ -74,7 +74,7 @@ impl VariationProgramWhitelist {
 #[derive(Serialize, Deserialize)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
-    #[serde(default, deserialize_with = "deserialize_and_expand_instructions")]
+    #[serde(default, deserialize_with = "deserialize_and_expand_instruction_constraints")]
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,
@@ -262,7 +262,8 @@ pub struct InstructionConstraint {
     pub enable_wrap_native: bool,
 }
 
-fn deserialize_and_expand_instructions<'de, D>(
+/// Deserializes instruction constraints and expands them to include prefixes/suffixes if necessary.
+fn deserialize_and_expand_instruction_constraints<'de, D>(
     deserializer: D,
 ) -> Result<Vec<InstructionConstraint>, D::Error>
 where
