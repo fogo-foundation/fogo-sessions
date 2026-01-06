@@ -7,8 +7,8 @@ import { amountToString } from "../amount-to-string.js";
 import { usePrice } from "../hooks/use-price.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
-  StateType as TokenDataStateType,
   StateType as PriceDataStateType,
+  StateType as TokenDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
 import type { EstablishedSessionState } from "../session-state.js";

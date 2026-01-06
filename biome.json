@@ -341,6 +341,18 @@
       "includes": ["**/*.test.ts"],
       "linter": {
         "rules": {}
+      },
+      "javascript": {
+        "globals": [
+          "describe",
+          "it",
+          "test",
+          "expect",
+          "beforeEach",
+          "afterEach",
+          "beforeAll",
+          "afterAll"
+        ]
       }
     },
     {

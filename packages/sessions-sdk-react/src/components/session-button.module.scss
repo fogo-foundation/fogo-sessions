@@ -1,6 +1,7 @@
 @use "./component-library/theme";
-
+@use "./component-library/reset";
 .sessionButton {
+  @include reset.reset {
   width: theme.spacing(48);
   height: theme.spacing(10);
   padding: theme.spacing(1);
@@ -145,8 +146,9 @@
     }
   }
 }
-
+}
 .sessionPanelPopover {
+  @include reset.reset {
   transition:
     transform 400ms ease-in-out,
     opacity 200ms;
@@ -216,4 +218,5 @@
       margin-right: 6px;
     }
   }
+}
 }

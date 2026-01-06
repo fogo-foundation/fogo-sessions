@@ -1,6 +1,7 @@
 @use "./component-library/theme";
-
+@use "./component-library/reset";
 .sessionPanel {
+  @include reset.reset {
   width: 100%;
   height: 100%;
   background: theme.color("card");
@@ -81,4 +82,5 @@
       color: theme.pallette-color("white");
     }
   }
+}
 }

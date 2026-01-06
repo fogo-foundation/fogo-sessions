@@ -1,24 +1,24 @@
 "use client";
 
 import type {
-  SendTransactionOptions,
   Network,
+  SendTransactionOptions,
   Session,
+  SessionContext,
   SessionContext as SessionExecutionContext,
   TransactionOrInstructions,
-  SessionContext,
 } from "@fogo/sessions-sdk";
 import {
-  establishSession as establishSessionImpl,
-  replaceSession,
-  createSessionContext,
-  createSessionConnection,
-  SessionResultType,
-  reestablishSession,
   AuthorizedTokens,
-  TransactionResultType,
-  revokeSession,
   createLogInToken,
+  createSessionConnection,
+  createSessionContext,
+  establishSession as establishSessionImpl,
+  reestablishSession,
+  replaceSession,
+  revokeSession,
+  SessionResultType,
+  TransactionResultType,
 } from "@fogo/sessions-sdk";
 import {
   clearStoredSession,
@@ -33,10 +33,10 @@ import type {
 } from "@solana/wallet-adapter-base";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import {
-  SolflareWalletAdapter,
-  PhantomWalletAdapter,
-  NightlyWalletAdapter,
   BitgetWalletAdapter,
+  NightlyWalletAdapter,
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { useStandardWalletAdapters } from "@solana/wallet-standard-wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
@@ -47,14 +47,13 @@ import {
   SolanaMobileWalletAdapter,
   SolanaMobileWalletAdapterWalletName,
 } from "@solana-mobile/wallet-adapter-mobile";
-import clsx from "clsx";
 import type {
   ComponentProps,
   Dispatch,
   ReactNode,
   SetStateAction,
 } from "react";
-import { useMemo, useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { mutate } from "swr";
 import { z } from "zod";
 
@@ -66,14 +65,13 @@ import { errorToString } from "../error-to-string.js";
 import { SessionContext as SessionReactContext } from "../hooks/use-session.js";
 import { getCacheKey } from "../hooks/use-token-account-data.js";
 import layerStyles from "../layer.module.css";
-import resetStyles from "../reset.module.css";
 import type { EstablishedOptions, StateType } from "../session-state.js";
-import { ToastProvider, useToast } from "./component-library/Toast/index.js";
-import { RenewSessionModal } from "./renew-session-modal.js";
-import { SignInModal } from "./sign-in-modal.js";
 import { SessionState } from "../session-state.js";
 import type { SolanaMobileWallet, SolanaWallet } from "../solana-wallet.js";
 import { signWithWallet } from "../solana-wallet.js";
+import { ToastProvider, useToast } from "./component-library/Toast/index.js";
+import { RenewSessionModal } from "./renew-session-modal.js";
+import { SignInModal } from "./sign-in-modal.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
@@ -137,17 +135,17 @@ export const FogoSessionProvider = ({
   // We have to typecast this unfortunately because the Solana library typings are broken
   const walletsWithStandardAdapters = useStandardWalletAdapters(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-    wallets as any,
+    wallets as any
   ) as unknown as SolanaWallet[];
   const filteredWalletsWithStandardAdapters = useMemo(
     () => filterUnwantedWallets(walletsWithStandardAdapters),
-    [walletsWithStandardAdapters],
+    [walletsWithStandardAdapters]
   );
   const mobileWalletAdapter = useMemo(
     () =>
       isMobile(filteredWalletsWithStandardAdapters)
-        ? (filteredWalletsWithStandardAdapters.find(
-            (adapter) => adapter.name === SolanaMobileWalletAdapterWalletName,
+        ? filteredWalletsWithStandardAdapters.find(
+            (adapter) => adapter.name === SolanaMobileWalletAdapterWalletName
           ) ??
           (new SolanaMobileWalletAdapter({
             addressSelector: createDefaultAddressSelector(),
@@ -162,9 +160,9 @@ export const FogoSessionProvider = ({
             chain: "mainnet-beta",
             onWalletNotFound: createDefaultWalletNotFoundHandler(),
             // doing type casting to use our type with the EventEmitter types
-          }) as SolanaMobileWallet))
+          }) as SolanaMobileWallet)
         : undefined,
-    [filteredWalletsWithStandardAdapters],
+    [filteredWalletsWithStandardAdapters]
   );
 
   const walletsWithMobileAdapter = useMemo(
@@ -172,13 +170,11 @@ export const FogoSessionProvider = ({
       mobileWalletAdapter == undefined
         ? filteredWalletsWithStandardAdapters
         : [mobileWalletAdapter, ...filteredWalletsWithStandardAdapters],
-    [filteredWalletsWithStandardAdapters, mobileWalletAdapter],
+    [filteredWalletsWithStandardAdapters, mobileWalletAdapter]
   );
 
   return (
-    <ToastProvider
-      toastRegionClassName={clsx(resetStyles.reset, layerStyles.layerToast)}
-    >
+    <ToastProvider toastRegionClassName={layerStyles.layerToast ?? ""}>
       <SessionProvider
         tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
         defaultRequestedLimits={
@@ -210,7 +206,7 @@ const isMobile = (wallets: SolanaWallet[]) => {
     wallets.some(
       (wallet) =>
         wallet.name !== SolanaMobileWalletAdapterWalletName &&
-        wallet.readyState === WalletReadyState.Installed,
+        wallet.readyState === WalletReadyState.Installed
     )
   ) {
     return false;
@@ -265,7 +261,7 @@ const SessionProvider = ({
         sendToPaymaster,
         sponsor,
       }),
-    [network, rpc, paymaster, sendToPaymaster, sponsor],
+    [network, rpc, paymaster, sendToPaymaster, sponsor]
   );
 
   const getSessionContext = useMemo(() => {
@@ -312,8 +308,7 @@ const SessionProvider = ({
       onStartSessionInit,
       defaultRequestedLimits,
       showBridgeIn,
-      setShowBridgeIn,
-    ],
+    ]
   );
 
   return <SessionReactContext value={state}>{children}</SessionReactContext>;
@@ -349,12 +344,12 @@ const useSessionState = ({
       session: Session,
       establishedOptions: EstablishedOptions,
       instructions: TransactionOrInstructions,
-      options?: SendTransactionOptions,
+      options?: SendTransactionOptions
     ) => {
       const result = await session.sendTransaction(instructions, options);
       if (result.type === TransactionResultType.Failed) {
         const parsedError = instructionErrorCustomSchema.safeParse(
-          result.error,
+          result.error
         );
         if (parsedError.success) {
           switch (parsedError.data.InstructionError[1].Custom) {
@@ -366,7 +361,7 @@ const useSessionState = ({
                   cancel: () => {
                     setState(SessionState.Established(establishedOptions));
                   },
-                }),
+                })
               );
               break;
             }
@@ -378,7 +373,7 @@ const useSessionState = ({
                   cancel: () => {
                     setState(SessionState.Established(establishedOptions));
                   },
-                }),
+                })
               );
               break;
             }
@@ -390,15 +385,15 @@ const useSessionState = ({
         } catch (error: unknown) {
           toast.error(
             "We couldn't update your token balances, please try refreshing the page",
-            errorToString(error),
+            errorToString(error)
           );
-          // eslint-disable-next-line no-console
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
           console.error("Failed to update token account data", error);
         }
       }
       return result;
     },
-    [onOpenExtendSessionExpiry, onOpenSessionLimitsReached, toast, network],
+    [onOpenExtendSessionExpiry, onOpenSessionLimitsReached, toast, network]
   );
 
   const updateSession = useCallback(
@@ -420,7 +415,7 @@ const useSessionState = ({
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { updateSession, ...updatingOptions } = establishedOptions;
       setState(
-        SessionState.UpdatingSession({ ...updatingOptions, previousState }),
+        SessionState.UpdatingSession({ ...updatingOptions, previousState })
       );
       getSessionContext()
         .then((context) =>
@@ -431,7 +426,7 @@ const useSessionState = ({
               signWithWallet(establishedOptions.solanaWallet, message),
             session,
             ...(limits === undefined ? { unlimited: true } : { limits }),
-          }),
+          })
         )
         .then((result) => {
           switch (result.type) {
@@ -443,7 +438,7 @@ const useSessionState = ({
             case SessionResultType.Failed: {
               toast.error(
                 "Failed to update session",
-                errorToString(result.error),
+                errorToString(result.error)
               );
               setState(SessionState.Established(establishedOptions));
               return;
@@ -455,16 +450,17 @@ const useSessionState = ({
           setState(SessionState.Established(establishedOptions));
         });
     },
-    [getSessionContext, toast],
+    [getSessionContext, toast]
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: completeSessionSetup calls connectWallet and connectWallet calls completeSessionSetup. We should introduce another state in the wallet for when the user is switching accounts and refactor this to remove the circular dependency.
   const completeSessionSetup = useCallback(
     (session: Session, wallet: SolanaWallet, onEndSession: () => void) => {
       setStoredSession(network, {
         sessionKey: session.sessionKey,
         walletPublicKey: session.walletPublicKey,
       }).catch((error: unknown) => {
-        // eslint-disable-next-line no-console
+        // biome-ignore lint/suspicious/noConsole: we want to log the error
         console.error("Failed to persist session", error);
       });
       const establishedOptions: EstablishedOptions = {
@@ -543,7 +539,7 @@ const useSessionState = ({
       setShowBridgeIn,
       updateSession,
       network,
-    ],
+    ]
   );
 
   const submitLimits = useCallback(
@@ -571,7 +567,7 @@ const useSessionState = ({
             onCancel();
           },
           walletPublicKey,
-        }),
+        })
       );
       establishSession(
         getSessionContext(),
@@ -580,7 +576,7 @@ const useSessionState = ({
         sessionDuration,
         limits,
         controller.signal,
-        sessionEstablishmentLookupTable,
+        sessionEstablishmentLookupTable
       )
         .then((session) => {
           if (session !== undefined) {
@@ -588,11 +584,11 @@ const useSessionState = ({
           }
         })
         .catch((error: unknown) => {
-          // eslint-disable-next-line no-console
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
           console.error("Failed to establish session", error);
           toast.error(
             "Failed to establish session, please try again",
-            errorToString(error),
+            errorToString(error)
           );
           onError();
         });
@@ -603,7 +599,7 @@ const useSessionState = ({
       toast,
       sessionEstablishmentLookupTable,
       network,
-    ],
+    ]
   );
 
   const requestLimits = useCallback(
@@ -611,7 +607,7 @@ const useSessionState = ({
       wallet: SolanaWallet,
       walletPublicKey: PublicKey,
       requestedLimits: Map<PublicKey, bigint> | undefined,
-      onCancel: () => void,
+      onCancel: () => void
     ) => {
       setState(
         SessionState.RequestingLimits({
@@ -633,15 +629,15 @@ const useSessionState = ({
                   wallet,
                   walletPublicKey,
                   requestedLimits,
-                  onCancel,
+                  onCancel
                 );
               },
             });
           },
-        }),
+        })
       );
     },
-    [submitLimits, network],
+    [submitLimits, network]
   );
 
   const connectWallet = useCallback(
@@ -666,7 +662,7 @@ const useSessionState = ({
               controller.abort();
               onCancel();
             },
-          }),
+          })
         );
       }
       connectWalletImpl(network, getSessionContext(), wallet, controller.signal)
@@ -696,7 +692,7 @@ const useSessionState = ({
                   wallet,
                   result.walletPublicKey,
                   requestedLimits,
-                  onCancel,
+                  onCancel
                 );
               }
               return;
@@ -721,7 +717,7 @@ const useSessionState = ({
       requestLimits,
       toast,
       network,
-    ],
+    ]
   );
 
   const requestWallet = useCallback(
@@ -742,12 +738,13 @@ const useSessionState = ({
               },
             });
           },
-        }),
+        })
       );
     },
-    [connectWallet],
+    [connectWallet]
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We very explicitly only want this effect to fire at startup or when the network changes and never in other cases
   useEffect(() => {
     if (walletName.value === undefined) {
       setState(SessionState.NotEstablished(requestWallet));
@@ -768,15 +765,12 @@ const useSessionState = ({
             }
           })
           .catch((error: unknown) => {
-            // eslint-disable-next-line
+            // biome-ignore lint/suspicious/noConsole: we want to log the error
             console.error("Failed to restore stored session", error);
             setState(SessionState.NotEstablished(requestWallet));
           });
       }
     }
-    // We very explicitly only want this effect to fire at startup or when the
-    // network changes and never in other cases
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [network]);
 
   return state;
@@ -814,7 +808,7 @@ const waitForWalletReady = async (wallet: SolanaWallet) => {
 const checkStoredSession = async (
   network: Network,
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: SolanaWallet,
+  wallet: SolanaWallet
 ) => {
   await waitForWalletReady(wallet);
   await wallet.autoConnect();
@@ -825,7 +819,7 @@ const checkStoredSession = async (
       network,
       sessionContext,
       wallet,
-      wallet.publicKey,
+      wallet.publicKey
     );
     switch (result.type) {
       case ConnectWalletStateType.Connected: {
@@ -846,7 +840,7 @@ const connectWalletImpl = async (
   network: Network,
   sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
-  abortSignal: AbortSignal,
+  abortSignal: AbortSignal
 ) => {
   await wallet.connect();
   if (abortSignal.aborted || !wallet.connected) {
@@ -859,7 +853,7 @@ const connectWalletImpl = async (
       sessionContext,
       wallet,
       walletPublicKey,
-      abortSignal,
+      abortSignal
     );
   }
 };
@@ -869,7 +863,7 @@ const tryLoadStoredSession = async (
   sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
   walletPublicKey: PublicKey,
-  abortSignal?: AbortSignal,
+  abortSignal?: AbortSignal
 ) => {
   const storedSession = await getStoredSession(network, walletPublicKey);
   if (abortSignal?.aborted) {
@@ -881,7 +875,7 @@ const tryLoadStoredSession = async (
     const session = await reestablishSession(
       await sessionContext,
       storedSession.walletPublicKey,
-      storedSession.sessionKey,
+      storedSession.sessionKey
     );
     if (abortSignal?.aborted) {
       await wallet.disconnect();
@@ -928,7 +922,7 @@ const establishSession = async (
   sessionDuration: number,
   limits: Map<PublicKey, bigint> | undefined,
   abortSignal: AbortSignal,
-  sessionEstablishmentLookupTable?: string,
+  sessionEstablishmentLookupTable?: string
 ) => {
   const context = await sessionContext;
   const result = await establishSessionImpl({
@@ -945,9 +939,9 @@ const establishSession = async (
         // Use promise `.catch` here so that we don't block
         revokeSession({ context, session: result.session }).catch(
           (error: unknown) => {
-            // eslint-disable-next-line no-console
+            // biome-ignore lint/suspicious/noConsole: we want to log the error
             console.error("Failed to revoke cancelled session", error);
-          },
+          }
         );
         return;
       } else {
@@ -970,7 +964,7 @@ const disconnect = (
   sessionInfo?: {
     session: Session;
     sessionContext: Promise<SessionExecutionContext>;
-  },
+  }
 ) => {
   Promise.all([
     wallet.disconnect(),
@@ -978,7 +972,7 @@ const disconnect = (
       ? []
       : [
           sessionInfo.sessionContext.then((context) =>
-            revokeSession({ context, session: sessionInfo.session }),
+            revokeSession({ context, session: sessionInfo.session })
           ),
           clearStoredSession(network, sessionInfo.session.walletPublicKey),
         ]),
@@ -987,7 +981,7 @@ const disconnect = (
       localStorage.removeItem("walletName");
     })
     .catch((error: unknown) => {
-      // eslint-disable-next-line no-console
+      // biome-ignore lint/suspicious/noConsole: we want to log the error
       console.error("Failed to clean up session", error);
     });
 };
