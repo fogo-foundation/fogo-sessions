@@ -510,11 +510,8 @@ const SymbolOrMint = {
     mint,
   }),
 };
-type SymbolOrMint = ReturnType<
-  (typeof SymbolOrMint)[keyof typeof SymbolOrMint]
->;
 
-const getTokenInfo = async (
+const getTokenInfo = (
   context: SessionContext,
   limits: Map<PublicKey, bigint>,
 ) => {
