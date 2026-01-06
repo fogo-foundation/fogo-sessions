@@ -259,7 +259,7 @@ pub struct InstructionConstraint {
     pub data: Vec<DataConstraint>,
     pub required: bool,
     #[serde(default)]
-    pub enable_wrap_native: bool,
+    pub require_wrap_native: bool,
 }
 
 /// Deserializes instruction constraints and expands them to include prefixes/suffixes if necessary.
@@ -270,11 +270,11 @@ where
     D: Deserializer<'de>,
 {
     let constraints = Vec::<InstructionConstraint>::deserialize(deserializer)?;
-    let has_wrap_native = constraints.iter().any(|c| c.enable_wrap_native);
+    let has_wrap_native = constraints.iter().any(|c| c.require_wrap_native);
     let constraints_with_prefixes: Vec<InstructionConstraint> = constraints
         .into_iter()
         .flat_map(|base| {
-            if base.enable_wrap_native {
+            if base.require_wrap_native {
                 vec![
                     InstructionConstraint::session_wrap_instruction_constraint(),
                     InstructionConstraint::create_ata_idempotent_instruction_constraint(),
