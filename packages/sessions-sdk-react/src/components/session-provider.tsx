@@ -1,24 +1,24 @@
 "use client";
 
 import type {
-  SendTransactionOptions,
   Network,
+  SendTransactionOptions,
   Session,
+  SessionContext,
   SessionContext as SessionExecutionContext,
   TransactionOrInstructions,
-  SessionContext,
 } from "@fogo/sessions-sdk";
 import {
-  establishSession as establishSessionImpl,
-  replaceSession,
-  createSessionContext,
-  createSessionConnection,
-  SessionResultType,
-  reestablishSession,
   AuthorizedTokens,
-  TransactionResultType,
-  revokeSession,
   createLogInToken,
+  createSessionConnection,
+  createSessionContext,
+  establishSession as establishSessionImpl,
+  reestablishSession,
+  replaceSession,
+  revokeSession,
+  SessionResultType,
+  TransactionResultType,
 } from "@fogo/sessions-sdk";
 import {
   clearStoredSession,
@@ -33,10 +33,10 @@ import type {
 } from "@solana/wallet-adapter-base";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
 import {
-  SolflareWalletAdapter,
-  PhantomWalletAdapter,
-  NightlyWalletAdapter,
   BitgetWalletAdapter,
+  NightlyWalletAdapter,
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { useStandardWalletAdapters } from "@solana/wallet-standard-wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
@@ -47,14 +47,13 @@ import {
   SolanaMobileWalletAdapter,
   SolanaMobileWalletAdapterWalletName,
 } from "@solana-mobile/wallet-adapter-mobile";
-import clsx from "clsx";
 import type {
   ComponentProps,
   Dispatch,
   ReactNode,
   SetStateAction,
 } from "react";
-import { useMemo, useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { mutate } from "swr";
 import { z } from "zod";
 
@@ -66,14 +65,13 @@ import { errorToString } from "../error-to-string.js";
 import { SessionContext as SessionReactContext } from "../hooks/use-session.js";
 import { getCacheKey } from "../hooks/use-token-account-data.js";
 import layerStyles from "../layer.module.css";
-import resetStyles from "../reset.module.css";
 import type { EstablishedOptions, StateType } from "../session-state.js";
-import { ToastProvider, useToast } from "./component-library/Toast/index.js";
-import { RenewSessionModal } from "./renew-session-modal.js";
-import { SignInModal } from "./sign-in-modal.js";
 import { SessionState } from "../session-state.js";
 import type { SolanaMobileWallet, SolanaWallet } from "../solana-wallet.js";
 import { signWithWallet } from "../solana-wallet.js";
+import { ToastProvider, useToast } from "./component-library/Toast/index.js";
+import { RenewSessionModal } from "./renew-session-modal.js";
+import { SignInModal } from "./sign-in-modal.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
@@ -134,9 +132,8 @@ export const FogoSessionProvider = ({
   privacyPolicyUrl,
   ...props
 }: Props) => {
-  // We have to typecast this unfortunately because the Solana library typings are broken
   const walletsWithStandardAdapters = useStandardWalletAdapters(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: We have to typecast this unfortunately because the Solana library typings are broken
     wallets as any,
   ) as unknown as SolanaWallet[];
   const filteredWalletsWithStandardAdapters = useMemo(
@@ -176,9 +173,7 @@ export const FogoSessionProvider = ({
   );
 
   return (
-    <ToastProvider
-      toastRegionClassName={clsx(resetStyles.reset, layerStyles.layerToast)}
-    >
+    <ToastProvider toastRegionClassName={layerStyles.layerToast ?? ""}>
       <SessionProvider
         tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
         defaultRequestedLimits={
@@ -312,7 +307,6 @@ const SessionProvider = ({
       onStartSessionInit,
       defaultRequestedLimits,
       showBridgeIn,
-      setShowBridgeIn,
     ],
   );
 
@@ -392,7 +386,7 @@ const useSessionState = ({
             "We couldn't update your token balances, please try refreshing the page",
             errorToString(error),
           );
-          // eslint-disable-next-line no-console
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
           console.error("Failed to update token account data", error);
         }
       }
@@ -458,13 +452,14 @@ const useSessionState = ({
     [getSessionContext, toast],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: completeSessionSetup calls connectWallet and connectWallet calls completeSessionSetup. We should introduce another state in the wallet for when the user is switching accounts and refactor this to remove the circular dependency.
   const completeSessionSetup = useCallback(
     (session: Session, wallet: SolanaWallet, onEndSession: () => void) => {
       setStoredSession(network, {
         sessionKey: session.sessionKey,
         walletPublicKey: session.walletPublicKey,
       }).catch((error: unknown) => {
-        // eslint-disable-next-line no-console
+        // biome-ignore lint/suspicious/noConsole: we want to log the error
         console.error("Failed to persist session", error);
       });
       const establishedOptions: EstablishedOptions = {
@@ -588,7 +583,7 @@ const useSessionState = ({
           }
         })
         .catch((error: unknown) => {
-          // eslint-disable-next-line no-console
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
           console.error("Failed to establish session", error);
           toast.error(
             "Failed to establish session, please try again",
@@ -748,6 +743,7 @@ const useSessionState = ({
     [connectWallet],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We very explicitly only want this effect to fire at startup or when the network changes and never in other cases
   useEffect(() => {
     if (walletName.value === undefined) {
       setState(SessionState.NotEstablished(requestWallet));
@@ -768,15 +764,12 @@ const useSessionState = ({
             }
           })
           .catch((error: unknown) => {
-            // eslint-disable-next-line
+            // biome-ignore lint/suspicious/noConsole: we want to log the error
             console.error("Failed to restore stored session", error);
             setState(SessionState.NotEstablished(requestWallet));
           });
       }
     }
-    // We very explicitly only want this effect to fire at startup or when the
-    // network changes and never in other cases
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [network]);
 
   return state;
@@ -785,7 +778,7 @@ const useSessionState = ({
 /**
  * Waits for the wallet to be ready before trying autoConnect. This is especially needed for Nightly Wallet as it's not instantly ready.
  */
-const waitForWalletReady = async (wallet: SolanaWallet) => {
+const waitForWalletReady = (wallet: SolanaWallet) => {
   const WALLET_READY_TIMEOUT = 3000;
   const isWalletInReadyState = wallet.readyState === WalletReadyState.Installed;
 
@@ -945,7 +938,7 @@ const establishSession = async (
         // Use promise `.catch` here so that we don't block
         revokeSession({ context, session: result.session }).catch(
           (error: unknown) => {
-            // eslint-disable-next-line no-console
+            // biome-ignore lint/suspicious/noConsole: we want to log the error
             console.error("Failed to revoke cancelled session", error);
           },
         );
@@ -987,7 +980,7 @@ const disconnect = (
       localStorage.removeItem("walletName");
     })
     .catch((error: unknown) => {
-      // eslint-disable-next-line no-console
+      // biome-ignore lint/suspicious/noConsole: we want to log the error
       console.error("Failed to clean up session", error);
     });
 };
@@ -1008,7 +1001,7 @@ class InvariantFailedError extends Error {
 }
 
 type ConstrainedOmit<T, K> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: todo add explanation
   [P in keyof T as Exclude<P, K & keyof any>]: T[P];
 };
 

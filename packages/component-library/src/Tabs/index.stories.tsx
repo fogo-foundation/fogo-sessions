@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { Tabs as TabsComponent, TabList, Tab, TabPanel } from "./index.jsx";
+import { Tab, TabList, TabPanel, Tabs as TabsComponent } from "./index.jsx";
 
 const meta = {
   component: TabsComponent,

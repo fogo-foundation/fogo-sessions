@@ -1,5 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
+  "root": true,
   "vcs": {
     "clientKind": "git",
     "defaultBranch": "origin/main",
@@ -7,14 +8,23 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/tilt/**", "!**/.sqlx/**"],
+    "includes": [
+      "**",
+      "!**/tilt",
+      "!**/.sqlx",
+      "!.turbo/**/*",
+      "!dist/**/*",
+      "!coverage/**/*",
+      "!node_modules/**/*",
+      "!*.tsbuildinfo"
+    ],
     "ignoreUnknown": true
   },
   "formatter": {
-    "bracketSameLine": false,
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "bracketSameLine": false
   },
   "linter": {
     "enabled": true,
@@ -63,7 +73,12 @@
         "noUselessSwitchCase": "error",
         "useDateNow": "error",
         "useFlatMap": "error",
-        "useIndexOf": "error"
+        "useIndexOf": "error",
+        "noArguments": "error",
+        "noUselessConstructor": "error",
+        "noUselessTypeConstraint": "error",
+        "useLiteralKeys": "error",
+        "useOptionalChain": "error"
       },
       "correctness": {
         "noChildrenProp": "error",
@@ -99,6 +114,7 @@
         "noDangerouslySetInnerHtmlWithChildren": "error"
       },
       "style": {
+        "noDoneCallback": "error",
         "noNegationElse": "off",
         "noNestedTernary": "warn",
         "noProcessEnv": "error",
@@ -111,7 +127,24 @@
         "useNumberNamespace": "error",
         "useNumericSeparators": "error",
         "useThrowNewError": "error",
-        "useTrimStartEnd": "error"
+        "useTrimStartEnd": "error",
+        "useConst": "error",
+        "noCommonJs": "error",
+        "noNamespace": "error",
+        "noNonNullAssertion": "error",
+        "useArrayLiterals": "error",
+        "useAsConstAssertion": "error",
+        "useLiteralEnumMembers": "error",
+        "useUnifiedTypeSignatures": "error",
+        "noInferrableTypes": "error",
+        "useConsistentArrayType": "error",
+        "useConsistentTypeDefinitions": {
+          "level": "error",
+          "options": {
+            "style": "type"
+          }
+        },
+        "useShorthandFunctionType": "error"
       },
       "suspicious": {
         "noAlert": "error",
@@ -148,209 +181,53 @@
         "noWith": "error",
         "useErrorMessage": "error",
         "useGetterReturn": "error",
-        "useNumberToFixedDigitsArgument": "error"
+        "useNumberToFixedDigitsArgument": "error",
+        "noConfusingVoidType": "error",
+        "noExplicitAny": "error",
+        "noExtraNonNullAssertion": "error",
+        "noMisleadingInstantiator": "error",
+        "noNonNullAssertedOptionalChain": "error",
+        "noUnsafeDeclarationMerging": "error",
+        "useAwait": "error",
+        "useNamespaceKeyword": "error",
+        "useAdjacentOverloadSignatures": "error"
       }
-    },
-    "includes": [
-      "**",
-      "!.turbo/**/*",
-      "!dist/**/*",
-      "!coverage/**/*",
-      "!node_modules/**/*",
-      "!*.tsbuildinfo"
-    ]
+    }
   },
+
   "javascript": {
     "formatter": {
       "quoteStyle": "double"
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true
     },
-    "globals": []
+    "linter": {
+      "enabled": true
+    }
   },
   "overrides": [
     {
+      "includes": [
+        "**/*.spec.ts",
+        "**/*.test.ts",
+        "**/*.spec.tsx",
+        "**/*.test.tsx"
+      ],
       "javascript": {
-        "globals": []
-      }
-    },
-    {
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noArguments": "error"
-          },
-          "style": {
-            "useConst": "error"
-          },
-          "suspicious": {
-            "noVar": "error"
-          }
-        }
-      }
-    },
-    {
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noStaticOnlyClass": "error",
-            "noUselessConstructor": "error",
-            "noUselessTypeConstraint": "error"
-          },
-          "correctness": {
-            "noUnusedVariables": "error"
-          },
-          "style": {
-            "noCommonJs": "error",
-            "noNamespace": "error",
-            "noNonNullAssertion": "error",
-            "useArrayLiterals": "error",
-            "useAsConstAssertion": "error",
-            "useLiteralEnumMembers": "error",
-            "useUnifiedTypeSignatures": "error"
-          },
-          "suspicious": {
-            "noConfusingVoidType": "error",
-            "noExplicitAny": "error",
-            "noExtraNonNullAssertion": "error",
-            "noMisleadingInstantiator": "error",
-            "noNonNullAssertedOptionalChain": "error",
-            "noUnsafeDeclarationMerging": "error",
-            "useAwait": "error",
-            "useNamespaceKeyword": "error"
-          }
-        }
-      }
-    },
-    {
-      "javascript": {
-        "globals": []
-      }
-    },
-    {
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noArguments": "error"
-          },
-          "style": {
-            "useConst": "error"
-          },
-          "suspicious": {
-            "noVar": "error"
-          }
-        }
-      }
-    },
-    {
-      "linter": {
-        "rules": {
-          "complexity": {
-            "useLiteralKeys": "error",
-            "useOptionalChain": "error"
-          },
-          "style": {
-            "noInferrableTypes": "error",
-            "useConsistentArrayType": "error",
-            "useConsistentTypeDefinitions": "error",
-            "useForOf": "error",
-            "useShorthandFunctionType": "error"
-          },
-          "suspicious": {
-            "noEmptyBlockStatements": "error",
-            "useAdjacentOverloadSignatures": "error"
-          }
-        }
-      }
-    },
-    {
-      "linter": {
-        "rules": {}
-      }
-    },
-    {
-      "javascript": {
-        "globals": []
-      },
-      "linter": {
-        "rules": {
-          "style": {
-            "useConsistentTypeDefinitions": "error"
-          }
-        }
-      }
-    },
-    {
-      "javascript": {
-        "globals": []
-      },
-      "linter": {
-        "rules": {
-          "style": {
-            "noDoneCallback": "error"
-          }
-        }
-      }
-    },
-    {
-      "javascript": {
-        "globals": []
-      },
-      "linter": {
-        "rules": {}
-      }
-    },
-    {
-      "includes": ["**/*.json"]
-    },
-    {
-      "includes": ["**/*.json"],
-      "javascript": {
-        "globals": []
-      },
-      "linter": {
-        "rules": {
-          "correctness": {
-            "noUnusedVariables": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["**/*.json"],
-      "linter": {
-        "rules": {}
-      }
-    },
-    {
-      "javascript": {
-        "globals": []
-      }
-    },
-    {
-      "includes": ["**/*.cjs"],
-      "javascript": {
-        "globals": ["exports"]
-      }
-    },
-    {
-      "includes": ["**/*.js"],
-      "javascript": {
-        "globals": ["exports"]
-      }
-    },
-    {
-      "includes": ["**/*.test.ts"],
-      "linter": {
-        "rules": {}
-      }
-    },
-    {
-      "linter": {
-        "rules": {}
-      }
-    },
-    {
-      "linter": {
-        "rules": {}
+        "globals": [
+          "afterEach",
+          "afterAll",
+          "beforeEach",
+          "beforeAll",
+          "describe",
+          "expect",
+          "it",
+          "test",
+          "jest"
+        ]
       }
     }
   ],
@@ -358,7 +235,8 @@
     "enabled": true,
     "actions": {
       "source": {
-        "organizeImports": "on"
+        "organizeImports": "on",
+        "recommended": true
       }
     }
   }

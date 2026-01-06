@@ -1,6 +1,8 @@
 @use "./component-library/theme";
+@use "./component-library/reset";
 
 .sessionLimits {
+  @include reset.reset {
   display: flex;
   flex-flow: column nowrap;
   gap: theme.spacing(6);
@@ -248,4 +250,5 @@
       outline-color: theme.color("accent");
     }
   }
+}
 }

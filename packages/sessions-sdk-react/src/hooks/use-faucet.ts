@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { mutate } from "swr";
 
 import type { EstablishedSessionState } from "../session-state.js";
@@ -27,7 +27,7 @@ export const useFaucet = (sessionState: EstablishedSessionState) => {
           clearInterval(interval);
           mutate(getCacheKey(network, sessionState.walletPublicKey)).catch(
             (error: unknown) => {
-              // eslint-disable-next-line no-console
+              // biome-ignore lint/suspicious/noConsole: we want to log the error
               console.error("Failed to update token account data", error);
             },
           );

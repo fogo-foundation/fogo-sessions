@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-react",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "description": "React components and hooks for integrating with Fogo sessions",
   "repository": {
@@ -42,7 +42,7 @@
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
     "test:integration": "run-jest --colors --selectProjects integration",
-    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
+    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed --no-errors-on-unmatched; else biome check; fi",
     "test:types": "tsc"
   },
   "peerDependencies": {
