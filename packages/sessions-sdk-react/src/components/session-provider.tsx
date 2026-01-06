@@ -476,6 +476,8 @@ const useSessionState = ({
           onEndSession();
         },
         payer: session.payer,
+        getSessionWrapInstructions: (amount: bigint) => session.getSessionWrapInstructions(amount),
+        getSessionUnwrapInstructions: () => session.getSessionUnwrapInstructions(),
         sendTransaction: (instructions, options) =>
           sendTransaction(session, establishedOptions, instructions, options),
         sessionKey: session.sessionKey,
@@ -488,8 +490,6 @@ const useSessionState = ({
         showBridgeIn: () => {
           setShowBridgeIn(true);
         },
-        getSessionWrapInstructions: (amount: bigint) => session.getSessionWrapInstructions(amount),
-        getSessionUnwrapInstructions: () => session.getSessionUnwrapInstructions(),
         expiration: session.sessionInfo.expiration,
         updateSession: (previousState, duration, limits) => {
           updateSession({
