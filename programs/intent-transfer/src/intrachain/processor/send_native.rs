@@ -4,22 +4,30 @@ use crate::{
     fees::{PaidInstruction, VerifyAndCollectAccounts},
     intrachain::message::Message,
     nonce::{self, Nonce},
-    verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
+    verify::{verify_and_update_nonce, verify_signer_matches_source},
     INTENT_TRANSFER_SEED,
 };
-use anchor_lang::{prelude::*, solana_program::sysvar::instructions};
+use anchor_lang::{
+    prelude::*,
+    solana_program::{
+        instruction::{AccountMeta, Instruction},
+        program,
+        sysvar::instructions,
+    },
+    system_program,
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{
-        spl_token::try_ui_amount_into_amount, transfer_checked, Mint, Token, TokenAccount,
-        TransferChecked,
-    },
+    token::{spl_token::try_ui_amount_into_amount, Mint, Token, TokenAccount},
 };
 use chain_id::ChainId;
-use solana_intents::Intent;
+use solana_intents::{Intent, SymbolOrMint};
+
+const FOGO_DECIMALS: u8 = 9;
+const SYSTEM_PROGRAM_INTENT_TRANSFER_DISCRIMINATOR: u32 = 4_000_001;
 
 #[derive(Accounts)]
-pub struct SendTokens<'info> {
+pub struct SendNative<'info> {
     #[account(seeds = [chain_id::SEED], seeds::program = chain_id::ID, bump)]
     pub chain_id: Account<'info, ChainId>,
 
@@ -31,21 +39,19 @@ pub struct SendTokens<'info> {
     #[account(seeds = [INTENT_TRANSFER_SEED], bump)]
     pub intent_transfer_setter: UncheckedAccount<'info>,
 
-    #[account(mut, token::mint = mint)]
-    pub source: Account<'info, TokenAccount>,
+    /// CHECK: this is checked against the intent message
+    #[account(mut)]
+    pub source: UncheckedAccount<'info>,
 
-    #[account(init_if_needed, payer = sponsor, associated_token::mint = mint, associated_token::authority = destination_owner)]
-    pub destination: Account<'info, TokenAccount>,
-
-    pub mint: Account<'info, Mint>,
-
-    pub metadata: Option<UncheckedAccount<'info>>,
+    /// CHECK: this is checked against the intent message
+    #[account(mut)]
+    pub destination: UncheckedAccount<'info>,
 
     #[account(
         init_if_needed,
         payer = sponsor,
         space = Nonce::DISCRIMINATOR.len() + Nonce::INIT_SPACE,
-        seeds = [nonce::INTENT_TRANSFER_NONCE_SEED, source.owner.key().as_ref()],
+        seeds = [nonce::INTENT_TRANSFER_NONCE_SEED, source.key().as_ref()],
         bump
     )]
     pub nonce: Account<'info, Nonce>,
@@ -53,10 +59,7 @@ pub struct SendTokens<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
 
-    /// CHECK: This account is checked against the signed message
-    pub destination_owner: AccountInfo<'info>,
-
-    #[account(mut, token::mint = fee_mint, token::authority = source.owner )]
+    #[account(mut, token::mint = fee_mint, token::authority = source)]
     pub fee_source: Account<'info, TokenAccount>,
 
     #[account(init_if_needed, payer = sponsor, associated_token::mint = fee_mint, associated_token::authority = sponsor)]
@@ -74,7 +77,7 @@ pub struct SendTokens<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-impl<'info> PaidInstruction<'info> for SendTokens<'info> {
+impl<'info> PaidInstruction<'info> for SendNative<'info> {
     fn fee_amount(&self) -> u64 {
         self.fee_config.intrachain_transfer_fee
     }
@@ -100,19 +103,15 @@ impl<'info> PaidInstruction<'info> for SendTokens<'info> {
     }
 }
 
-impl<'info> SendTokens<'info> {
+impl<'info> SendNative<'info> {
     pub fn verify_and_send(&mut self, signer_seeds: &[&[&[u8]]]) -> Result<()> {
         let Self {
             chain_id,
             destination,
             intent_transfer_setter,
-            metadata,
-            mint,
-            source,
             sysvar_instructions,
-            token_program,
             nonce,
-            destination_owner,
+            source,
             ..
         } = self;
 
@@ -136,30 +135,40 @@ impl<'info> SendTokens<'info> {
             return err!(IntentTransferError::ChainIdMismatch);
         }
 
-        verify_symbol_or_mint(&symbol_or_mint, metadata, mint)?;
-        verify_signer_matches_source(signer, source.owner)?;
+        if symbol_or_mint != SymbolOrMint::Symbol(String::from("FOGO")) {
+            return err!(IntentTransferError::SymbolMismatch);
+        }
+
+        verify_signer_matches_source(signer, source.key())?;
 
         require_keys_eq!(
             recipient,
-            destination_owner.key(),
+            destination.key(),
             IntentTransferError::RecipientMismatch
         );
 
         verify_and_update_nonce(nonce, new_nonce)?;
 
-        transfer_checked(
-            CpiContext::new_with_signer(
-                token_program.to_account_info(),
-                TransferChecked {
-                    authority: intent_transfer_setter.to_account_info(),
-                    from: source.to_account_info(),
-                    mint: mint.to_account_info(),
-                    to: destination.to_account_info(),
-                },
-                signer_seeds,
-            ),
-            try_ui_amount_into_amount(amount, mint.decimals)?,
-            mint.decimals,
+        program::invoke_signed(
+            &Instruction {
+                program_id: system_program::ID,
+                accounts: vec![
+                    AccountMeta::new(source.key(), false),
+                    AccountMeta::new(destination.key(), false),
+                    AccountMeta::new_readonly(intent_transfer_setter.key(), true),
+                ],
+                data: SYSTEM_PROGRAM_INTENT_TRANSFER_DISCRIMINATOR
+                    .to_le_bytes()
+                    .into_iter()
+                    .chain(try_ui_amount_into_amount(amount, FOGO_DECIMALS)?.to_le_bytes())
+                    .collect(),
+            },
+            &[
+                source.to_account_info(),
+                destination.to_account_info(),
+                intent_transfer_setter.to_account_info(),
+            ],
+            signer_seeds,
         )?;
 
         self.verify_and_collect_fee(fee_amount, fee_symbol_or_mint, signer_seeds)

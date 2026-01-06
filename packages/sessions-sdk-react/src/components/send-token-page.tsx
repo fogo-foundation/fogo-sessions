@@ -1,5 +1,6 @@
 import {
   getTransferFee,
+  sendNativeTransfer,
   sendTransfer,
   TransactionResultType,
 } from "@fogo/sessions-sdk";
@@ -19,7 +20,10 @@ import { amountToString, stringToAmount } from "../amount-to-string.js";
 import { errorToString } from "../error-to-string.js";
 import { usePrice } from "../hooks/use-price.js";
 import { useSessionContext } from "../hooks/use-session.js";
-import { useTokenAccountData } from "../hooks/use-token-account-data.js";
+import {
+  type Token,
+  useTokenAccountData,
+} from "../hooks/use-token-account-data.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { signWithWallet } from "../solana-wallet.js";
 import { Button } from "./component-library/Button/index.js";
@@ -35,19 +39,16 @@ import { TokenAmountInput } from "./token-amount-input.js";
 import { TruncateKey } from "./truncate-key.js";
 
 type Props = {
-  icon?: string | undefined;
-  tokenName?: string | undefined;
-  tokenMint: PublicKey;
-  decimals: number;
-  symbol?: string | undefined;
-  amountAvailable: bigint;
+  token: Token;
   sessionState: EstablishedSessionState;
   onPressBack: () => void;
   onSendComplete: () => void;
 };
 
 export const SendTokenPage = (props: Props) => {
-  const priceState = usePrice(props.tokenMint.toBase58());
+  const priceState = usePrice(
+    props.token.isNative ? "native" : props.token.mint.toBase58(),
+  );
   const price =
     priceState.type === StateType.Loaded ? priceState.data : undefined;
 
@@ -149,8 +150,8 @@ const useFeeTokenAccountBalance = (
       return {
         ...accountData,
         data:
-          accountData.data.tokensInWallet.find((token) =>
-            token.mint.equals(feeConfig.mint),
+          accountData.data.tokensInWallet.find(
+            (token) => !token.isNative && token.mint.equals(feeConfig.mint),
           )?.amountInWallet ?? 0n,
       };
     }
@@ -158,9 +159,7 @@ const useFeeTokenAccountBalance = (
 };
 
 const LoadedSendTokenPage = ({
-  decimals,
   sessionState,
-  tokenMint,
   onSendComplete,
   feeConfig,
   price,
@@ -193,18 +192,20 @@ const LoadedSendTokenPage = ({
 
       setIsSubmitting(true);
       getSessionContext()
-        .then((context) =>
-          sendTransfer({
+        .then((context) => {
+          const args = {
             context,
             walletPublicKey: sessionState.walletPublicKey,
-            signMessage: (message) =>
+            signMessage: (message: Uint8Array) =>
               signWithWallet(sessionState.solanaWallet, message),
-            mint: tokenMint,
-            amount: stringToAmount(amount, decimals),
+            amount: stringToAmount(amount, props.token.decimals),
             recipient: new PublicKey(recipient),
             feeConfig,
-          }),
-        )
+          };
+          return props.token.isNative
+            ? sendNativeTransfer(args)
+            : sendTransfer({ ...args, mint: props.token.mint });
+        })
         .then((result) => {
           if (result.type === TransactionResultType.Success) {
             toast.success(
@@ -224,11 +225,10 @@ const LoadedSendTokenPage = ({
         });
     },
     [
-      decimals,
+      props.token,
       getSessionContext,
       sessionState.walletPublicKey,
       sessionState.solanaWallet,
-      tokenMint,
       onSendComplete,
       toast,
       feeConfig,
@@ -237,16 +237,15 @@ const LoadedSendTokenPage = ({
   );
 
   // if the token being sent is the same as the fee token, we need to account for the fee when calculating the max amount to send
-  const maxSendAmount = feeConfig.mint.equals(tokenMint)
-    ? props.amountAvailable - feeConfig.fee
-    : props.amountAvailable;
+  const maxSendAmount =
+    props.token.isNative || !feeConfig.mint.equals(props.token.mint)
+      ? props.token.amountInWallet
+      : props.token.amountInWallet - feeConfig.fee;
 
   return (
     <SendTokenPageImpl
       {...props}
-      decimals={decimals}
       sessionState={sessionState}
-      tokenMint={tokenMint}
       onSendComplete={onSendComplete}
       isSubmitting={isSubmitting}
       onSubmit={onSubmit}
@@ -294,16 +293,11 @@ const LoadedSendTokenPage = ({
 const SendTokenPageImpl = ({
   onPressBack,
   sessionState,
-  tokenName,
-  tokenMint,
-  decimals,
-  icon,
-  symbol,
-  amountAvailable,
+  token,
   ...props
 }: Props &
   (
-    | { isLoading: true }
+    | { isLoading: true; amount?: undefined }
     | {
         isLoading?: false;
         isSubmitting: boolean;
@@ -321,17 +315,16 @@ const SendTokenPageImpl = ({
   )) => {
   const scannerShowing = !props.isLoading && props.scanner !== undefined;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional due to the types
   const notionalAmount = useMemo(() => {
     if (props.isLoading || !props.amount) {
       return;
     }
     try {
-      return stringToAmount(props.amount, decimals);
+      return stringToAmount(props.amount, token.decimals);
     } catch {
       return;
     }
-  }, [props.isLoading, props.isLoading ? undefined : props.amount, decimals]);
+  }, [props.isLoading, props.amount, token.decimals]);
 
   return (
     <div className={styles.sendTokenPage ?? ""}>
@@ -350,19 +343,22 @@ const SendTokenPageImpl = ({
           !props.isSubmitting && { onSubmit: props.onSubmit })}
       >
         <div className={styles.header}>
-          {icon ? (
-            <img alt="" src={icon} className={styles.tokenIcon} />
+          {token.image ? (
+            <img alt="" src={token.image} className={styles.tokenIcon} />
           ) : (
             <div className={styles.tokenIcon} />
           )}
           <h2 className={styles.tokenName}>
-            Send {tokenName ?? <TruncateKey keyValue={tokenMint} />}
+            Send{" "}
+            {token.isNative
+              ? token.name
+              : (token.name ?? <TruncateKey keyValue={token.mint} />)}
           </h2>
           <div className={styles.amountInWallet}>
             <span className={styles.amount}>
-              {amountToString(amountAvailable, decimals)}
+              {amountToString(token.amountInWallet, token.decimals)}
             </span>{" "}
-            {symbol} available
+            {token.symbol} available
           </div>
         </div>
         <TextField
@@ -413,10 +409,10 @@ const SendTokenPageImpl = ({
         <TokenAmountInput
           excludeFromTabOrder={scannerShowing}
           className={styles.field ?? ""}
-          decimals={decimals}
+          decimals={token.decimals}
           label="Amount"
           name="amount"
-          symbol={symbol}
+          symbol={token.symbol}
           isRequired
           gt={0n}
           placeholder="Enter an amount"
@@ -429,7 +425,7 @@ const SendTokenPageImpl = ({
                 : {
                     onPress: () => {
                       props.onChangeAmount(
-                        amountToString(props.maxSendAmount, decimals),
+                        amountToString(props.maxSendAmount, token.decimals),
                       );
                     },
                   })}
@@ -452,7 +448,7 @@ const SendTokenPageImpl = ({
           notionalAmount !== undefined && (
             <NotionalAmount
               amount={notionalAmount}
-              decimals={decimals}
+              decimals={token.decimals}
               price={props.price}
               className={styles.notionalAmount}
             />

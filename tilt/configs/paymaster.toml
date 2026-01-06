@@ -135,11 +135,11 @@ constraint = { EqualTo = [ {U16 = 0xffff} ] }
 program = "Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD"
 required = true
 
-# instruction = 0 (SendTokens)
+# instruction = 0 (SendTokens) | 4 (SendNative)
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
 data_type = "U8"
-constraint = { EqualTo = [ {U8 = 0} ] }
+constraint = { EqualTo = [ {U8 = 0}, {U8 = 4} ] }
 
 
 

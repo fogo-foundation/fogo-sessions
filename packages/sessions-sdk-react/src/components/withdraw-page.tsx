@@ -112,8 +112,8 @@ const WithdrawFormWithFeeConfig = (
     }
     case StateType.Loaded: {
       const feeTokenAccountBalance =
-        tokenAccountState.data.tokensInWallet.find((token) =>
-          token.mint.equals(props.feeConfig.mint),
+        tokenAccountState.data.tokensInWallet.find(
+          (token) => !token.isNative && token.mint.equals(props.feeConfig.mint),
         )?.amountInWallet ?? 0n;
 
       return feeTokenAccountBalance < props.feeConfig.fee ? (
@@ -243,7 +243,7 @@ const LoadedWithdrawForm = ({
 
 const WithdrawFormImpl = (
   props:
-    | { isLoading: true }
+    | { isLoading: true; amount?: undefined }
     | {
         isLoading?: false;
         isSubmitting: boolean;
@@ -256,7 +256,6 @@ const WithdrawFormImpl = (
         maxWithdrawAmount: bigint;
       },
 ) => {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: this is intentional due to the types
   const notionalAmount = useMemo(() => {
     if (props.isLoading || !props.amount) {
       return;
@@ -266,7 +265,7 @@ const WithdrawFormImpl = (
     } catch {
       return;
     }
-  }, [props.isLoading, props.isLoading ? undefined : props.amount]);
+  }, [props.isLoading, props.amount]);
 
   return (
     <Form
@@ -362,6 +361,7 @@ const WithdrawFormImpl = (
 };
 
 const getUsdcBalance = (network: Network, tokensInWallet: Token[]) =>
-  tokensInWallet.find((token) =>
-    token.mint.equals(USDC.chains[network].fogo.mint),
+  tokensInWallet.find(
+    (token) =>
+      !token.isNative && token.mint.equals(USDC.chains[network].fogo.mint),
   )?.amountInWallet ?? 0n;

@@ -897,6 +897,80 @@ const buildTransferIntentInstruction = async (
   });
 };
 
+type SendNativeTransferOptions = {
+  context: SessionContext;
+  walletPublicKey: PublicKey;
+  signMessage: (
+    message: Uint8Array,
+  ) => Promise<{ signedMessage: Uint8Array; signature: Uint8Array }>;
+  amount: bigint;
+  recipient: PublicKey;
+  feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
+};
+
+export const sendNativeTransfer = async (
+  options: SendNativeTransferOptions,
+) => {
+  const program = new IntentTransferProgram(
+    new AnchorProvider(options.context.connection, {} as Wallet, {}),
+  );
+
+  return options.context.sendTransaction(
+    undefined,
+    [
+      await buildNativeTransferIntentInstruction(
+        program,
+        options,
+        options.feeConfig.symbolOrMint,
+        amountToString(options.feeConfig.fee, options.feeConfig.decimals),
+      ),
+      await program.methods
+        .sendNative()
+        .accounts({
+          feeMetadata: options.feeConfig.metadata,
+          feeMint: options.feeConfig.mint,
+          feeSource: getAssociatedTokenAddressSync(
+            options.feeConfig.mint,
+            options.walletPublicKey,
+          ),
+          source: options.walletPublicKey,
+          destination: options.recipient,
+          sponsor: options.context.internalPayer,
+        })
+        .instruction(),
+    ],
+    {
+      variation: "Intent Transfer",
+      paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+    },
+  );
+};
+
+const FOGO_DECIMALS = 9;
+
+const buildNativeTransferIntentInstruction = async (
+  program: IntentTransferProgram,
+  options: SendNativeTransferOptions,
+  feeToken: string,
+  feeAmount: string,
+) => {
+  const nonce = await getNonce(
+    program,
+    options.walletPublicKey,
+    NonceType.Transfer,
+  );
+  return buildIntentInstruction(options, TRANSFER_MESSAGE_HEADER, {
+    version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
+    chain_id: options.context.chainId,
+    token: "FOGO",
+    amount: amountToString(options.amount, FOGO_DECIMALS),
+    recipient: options.recipient.toBase58(),
+    fee_token: feeToken,
+    fee_amount: feeAmount,
+    nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
+  });
+};
+
 const BRIDGE_OUT_MESSAGE_HEADER = `Fogo Bridge Transfer:
 Signing this intent will bridge out the tokens as described below.
 `;

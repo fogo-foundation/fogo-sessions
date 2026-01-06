@@ -16,6 +16,7 @@ use crate::config::state::fee_config::FeeConfig;
 use bridge::processor::bridge_ntt_tokens::*;
 use config::processor::register_fee_config::*;
 use config::processor::register_ntt_config::*;
+use intrachain::processor::send_native::*;
 use intrachain::processor::send_tokens::*;
 
 const INTENT_TRANSFER_SEED: &[u8] = b"intent_transfer";
@@ -54,6 +55,12 @@ pub mod intent_transfer {
         fee_config: FeeConfig,
     ) -> Result<()> {
         ctx.accounts.process(fee_config)
+    }
+
+    #[instruction(discriminator = [4])]
+    pub fn send_native<'info>(ctx: Context<'_, '_, '_, 'info, SendNative<'info>>) -> Result<()> {
+        ctx.accounts
+            .verify_and_send(&[&[INTENT_TRANSFER_SEED, &[ctx.bumps.intent_transfer_setter]]])
     }
 }
 
