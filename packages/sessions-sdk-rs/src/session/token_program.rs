@@ -65,4 +65,9 @@ impl Session {
         self.check_authorized_program_signer(signers)?;
         Ok(self.authorized_tokens()?.clone())
     }
+
+    pub fn get_user_checked_token_program(&self) -> Result<Pubkey, SessionError> {
+        self.check_is_live_and_unrevoked()?;
+        Ok(*self.user()?)
+    }
 }

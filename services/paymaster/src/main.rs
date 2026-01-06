@@ -27,7 +27,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let resource = opentelemetry_sdk::Resource::builder()
         .with_attributes(vec![opentelemetry::KeyValue::new(
             "service.name",
-            "paymaster-service",
+            format!("paymaster-service-{}", opts.network_environment),
         )])
         .build();
 
