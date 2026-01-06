@@ -288,7 +288,7 @@ where
         .collect();
     Ok(constraints_with_prefixes
         .into_iter()
-        .chain(has_wrap_native.then(|| InstructionConstraint::close_token_account_constraint()))
+        .chain(has_wrap_native.then(InstructionConstraint::close_token_account_constraint))
         .collect())
 }
 
