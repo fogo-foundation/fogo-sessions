@@ -24,8 +24,7 @@
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
-    "bracketSameLine": false,
-    "useEditorconfig": true
+    "bracketSameLine": false
   },
   "linter": {
     "enabled": true,
@@ -201,7 +200,7 @@
       "enabled": true
     },
     "linter": {
-      "enabled": false
+      "enabled": true
     }
   },
   "assist": {
