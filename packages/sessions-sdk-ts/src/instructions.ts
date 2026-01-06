@@ -31,7 +31,11 @@ export function createSessionWrapInstruction(
     programId: SystemProgram.programId,
     keys: [
       { pubkey: walletPublicKey, isSigner: false, isWritable: true },
-      { pubkey: getNativeMintAssociatedTokenAddressSync(walletPublicKey), isSigner: false, isWritable: true },
+      {
+        pubkey: getNativeMintAssociatedTokenAddressSync(walletPublicKey),
+        isSigner: false,
+        isWritable: true,
+      },
       { pubkey: sessionKey, isSigner: true, isWritable: false },
     ],
     data: Buffer.from(data),

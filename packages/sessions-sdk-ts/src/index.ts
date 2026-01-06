@@ -58,7 +58,10 @@ import {
   signMessageWithKey,
   verifyMessageWithKey,
 } from "./crypto.js";
-import { createSessionUnwrapInstruction, createSessionWrapInstructions } from "./instructions.js";
+import {
+  createSessionUnwrapInstruction,
+  createSessionWrapInstructions,
+} from "./instructions.js";
 
 export {
   type Connection,
@@ -270,8 +273,15 @@ const createSession = async (
         walletPublicKey,
         sessionKey,
         payer: context.payer,
-        getSessionWrapInstructions: (amount: bigint) => createSessionWrapInstructions(sessionPublicKey, walletPublicKey, amount),
-        getSessionUnwrapInstructions: () => [createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey)],
+        getSessionWrapInstructions: (amount: bigint) =>
+          createSessionWrapInstructions(
+            sessionPublicKey,
+            walletPublicKey,
+            amount,
+          ),
+        getSessionUnwrapInstructions: () => [
+          createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey),
+        ],
         sendTransaction: (instructions, extraConfig) =>
           context.sendTransaction(sessionKey, instructions, extraConfig),
         sessionInfo,
