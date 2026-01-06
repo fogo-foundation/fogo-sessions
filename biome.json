@@ -197,8 +197,7 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "double"
-    },
-    "globals": []
+    }
   },
   "json": {
     "formatter": {
@@ -211,10 +210,10 @@
   "overrides": [
     {
       "includes": [
-        "*.spec.ts",
-        "*.test.ts",
-        "*.spec.tsx",
-        "*.test.tsx"
+        "**/*.spec.ts",
+        "**/*.test.ts",
+        "**/*.spec.tsx",
+        "**/*.test.tsx"
       ],
       "javascript": {
         "globals": [
