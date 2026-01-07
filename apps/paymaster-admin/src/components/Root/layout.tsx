@@ -13,9 +13,15 @@ export const AuthenticationLayout = ({
 }) => {
   const sessionState = useSession();
 
-  if (sessionState.type === SessionStateType.NotEstablished) {
+  if (
+    sessionState.type === SessionStateType.NotEstablished ||
+    sessionState.type === SessionStateType.SelectingWallet ||
+    sessionState.type === SessionStateType.RequestingLimits ||
+    sessionState.type === SessionStateType.SettingLimits
+  ) {
     return <Auth />;
   }
+
   return (
     <>
       <Navbar />

@@ -6,17 +6,35 @@ import { GridList, GridListItem } from "react-aria-components";
 import type { App, User } from "../../db-schema";
 import styles from "./user-apps.module.scss";
 
-const AppCard = ({ app }: { app: App }) => {
+type AppCardProps =
+  | {
+      app: App;
+      isLoading?: false;
+    }
+  | {
+      isLoading: true;
+    };
+
+const AppCard = (props: AppCardProps) => {
+  if (props.isLoading) {
+    return (
+      <Card className={styles.appCard}>
+        <div className={styles.appCardContent}>
+          <h3 className={styles.appCardTitle}>Loading...</h3>
+        </div>
+      </Card>
+    );
+  }
   return (
     <Card className={styles.appCard}>
       <div className={styles.appCardContent}>
-        <h3 className={styles.appCardTitle}>{app.name}</h3>
+        <h3 className={styles.appCardTitle}>{props.app.name}</h3>
         <p className={styles.appCardDescription}>
-          Created: {app.created_at.toLocaleDateString()}
+          Created: {props.app.created_at.toLocaleDateString()}
         </p>
       </div>
       <div>
-        <Button variant="outline" href={`/apps/${app.id}`}>
+        <Button variant="outline" href={`/apps/${props.app.id}`}>
           View
         </Button>
       </div>
@@ -24,12 +42,31 @@ const AppCard = ({ app }: { app: App }) => {
   );
 };
 
-export const UserApps = ({ user }: { user: User }) => {
+type UserAppsProps =
+  | {
+      user: User;
+      isLoading?: false;
+    }
+  | {
+      isLoading: true;
+    };
+
+export const UserApps = (props: UserAppsProps) => {
+  if (props.isLoading) {
+    return (
+      <>
+        <div className={styles.userAppsHeader}>
+          <h1 className={styles.userAppsTitle}>Loading...</h1>
+        </div>
+        <div className={styles.userApps}></div>
+      </>
+    );
+  }
   return (
     <>
       <div className={styles.userAppsHeader}>
         <h1 className={styles.userAppsTitle}>
-          Apps <Badge size="xs">{user.apps.length}</Badge>
+          Apps <Badge size="xs">{props.user.apps.length}</Badge>
         </h1>
         <Button variant="secondary">
           Request App <AppWindowIcon />
@@ -39,7 +76,7 @@ export const UserApps = ({ user }: { user: User }) => {
         className={styles.userApps ?? ""}
         selectionMode="none"
         aria-label="Tokens"
-        items={user.apps}
+        items={props.user.apps}
       >
         {(item) => (
           <GridListItem key={item.id}>

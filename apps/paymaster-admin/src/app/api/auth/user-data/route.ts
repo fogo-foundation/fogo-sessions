@@ -3,7 +3,8 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { fetchUserPaymasterData } from "../../../../server/paymaster";
 
-const fetchData = (
+// biome-ignore lint/suspicious/useAwait: "use cache" functions need to be async
+const fetchData = async (
   walletAddress: string,
 ): Promise<ReturnType<typeof fetchUserPaymasterData>> => {
   "use cache";

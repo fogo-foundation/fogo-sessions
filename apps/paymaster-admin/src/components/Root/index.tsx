@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { DOMAIN } from "../../config/server";
 import { AuthenticationLayout } from "./layout";
 import "./root.scss";
+
 type Props = {
   children: ReactNode;
 };

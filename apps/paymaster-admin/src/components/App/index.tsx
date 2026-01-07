@@ -57,7 +57,7 @@ const AppData = ({
   const userData = useUserData(sessionState);
   switch (userData.type) {
     case StateType.Loading: {
-      return <PaymasterLoading />;
+      return <UserApps isLoading />;
     }
     case StateType.Error: {
       return <div>Error loading user data: {userData.error.message}</div>;
