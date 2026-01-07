@@ -133,11 +133,7 @@ export const FogoSessionProvider = ({
   ...props
 }: Props) => {
   const walletsWithStandardAdapters = useStandardWalletAdapters(
-<<<<<<< HEAD
-    // biome-ignore lint/suspicious/noExplicitAny: reason
-=======
     // biome-ignore lint/suspicious/noExplicitAny: We have to typecast this unfortunately because the Solana library typings are broken
->>>>>>> main
     wallets as any,
   ) as unknown as SolanaWallet[];
   const filteredWalletsWithStandardAdapters = useMemo(
@@ -390,11 +386,7 @@ const useSessionState = ({
             "We couldn't update your token balances, please try refreshing the page",
             errorToString(error),
           );
-<<<<<<< HEAD
-          // biome-ignore lint/suspicious/noConsole: reason
-=======
           // biome-ignore lint/suspicious/noConsole: we want to log the error
->>>>>>> main
           console.error("Failed to update token account data", error);
         }
       }
@@ -467,11 +459,7 @@ const useSessionState = ({
         sessionKey: session.sessionKey,
         walletPublicKey: session.walletPublicKey,
       }).catch((error: unknown) => {
-<<<<<<< HEAD
-        // biome-ignore lint/suspicious/noConsole: reason
-=======
         // biome-ignore lint/suspicious/noConsole: we want to log the error
->>>>>>> main
         console.error("Failed to persist session", error);
       });
       const establishedOptions: EstablishedOptions = {
@@ -601,11 +589,7 @@ const useSessionState = ({
           }
         })
         .catch((error: unknown) => {
-<<<<<<< HEAD
-          // biome-ignore lint/suspicious/noConsole: reason
-=======
           // biome-ignore lint/suspicious/noConsole: we want to log the error
->>>>>>> main
           console.error("Failed to establish session", error);
           toast.error(
             "Failed to establish session, please try again",
@@ -786,11 +770,7 @@ const useSessionState = ({
             }
           })
           .catch((error: unknown) => {
-<<<<<<< HEAD
-            // biome-ignore lint/suspicious/noConsole: reason
-=======
             // biome-ignore lint/suspicious/noConsole: we want to log the error
->>>>>>> main
             console.error("Failed to restore stored session", error);
             setState(SessionState.NotEstablished(requestWallet));
           });
@@ -964,11 +944,7 @@ const establishSession = async (
         // Use promise `.catch` here so that we don't block
         revokeSession({ context, session: result.session }).catch(
           (error: unknown) => {
-<<<<<<< HEAD
-            // biome-ignore lint/suspicious/noConsole: reason
-=======
             // biome-ignore lint/suspicious/noConsole: we want to log the error
->>>>>>> main
             console.error("Failed to revoke cancelled session", error);
           },
         );
@@ -1010,11 +986,7 @@ const disconnect = (
       localStorage.removeItem("walletName");
     })
     .catch((error: unknown) => {
-<<<<<<< HEAD
-      // biome-ignore lint/suspicious/noConsole: reason
-=======
       // biome-ignore lint/suspicious/noConsole: we want to log the error
->>>>>>> main
       console.error("Failed to clean up session", error);
     });
 };
@@ -1035,11 +1007,7 @@ class InvariantFailedError extends Error {
 }
 
 type ConstrainedOmit<T, K> = {
-<<<<<<< HEAD
-  // biome-ignore lint/suspicious/noExplicitAny: reason
-=======
   // biome-ignore lint/suspicious/noExplicitAny: todo add explanation
->>>>>>> main
   [P in keyof T as Exclude<P, K & keyof any>]: T[P];
 };
 
