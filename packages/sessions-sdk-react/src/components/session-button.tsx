@@ -12,6 +12,7 @@ import {
 } from "react-aria-components";
 
 import { deserializePublicKeyMap } from "../deserialize-public-key.js";
+import { DisplayAddress } from "./display-address.js";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
 import layerStyles from "../layer.module.css";
 import {
@@ -21,7 +22,6 @@ import {
 import { FogoLogo } from "./fogo-logo.js";
 import styles from "./session-button.module.css";
 import { SessionPanel } from "./session-panel.js";
-import { TruncateKey } from "./truncate-key.js";
 
 type Props = {
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
@@ -126,7 +126,7 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
         {!compact && (
           <span className={styles.contents}>
             {isEstablished(sessionState) ? (
-              <TruncateKey keyValue={sessionState.walletPublicKey} />
+              <DisplayAddress address={sessionState.walletPublicKey} />
             ) : (
               "Sign in"
             )}
