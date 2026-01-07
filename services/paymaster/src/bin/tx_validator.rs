@@ -6,7 +6,7 @@ use dashmap::DashMap;
 use fogo_paymaster::{
     config_manager::config::{Config, Domain},
     constraint::{
-        insert_session_management_variations, transaction::TransactionToValidate,
+        transaction::TransactionToValidate,
         ContextualDomainKeys, TransactionVariation,
     },
     rpc::ChainIndex,
