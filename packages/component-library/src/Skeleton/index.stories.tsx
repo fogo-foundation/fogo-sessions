@@ -32,14 +32,7 @@ export default meta;
 
 export const Skeleton = {
   render: (args) => (
-    <div
-      style={{
-        width: "100%",
-        height: "100px",
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
+    <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
       <SkeletonComponent {...args} />
     </div>
   ),
