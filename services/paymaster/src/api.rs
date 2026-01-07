@@ -1,7 +1,7 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
 use crate::constraint::{
-    insert_session_management_variations, ContextualDomainKeys, TransactionVariation,
+    ContextualDomainKeys, TransactionVariation,
 };
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
@@ -583,21 +583,13 @@ pub fn get_domain_state_map(
                 }))
                 .expect("number_of_signers in NonZero so this should never be empty");
 
-                let mut tx_variations: HashMap<String, TransactionVariation> = tx_variations
-                    .into_iter()
-                    .map(|(name, config)| (name, config.into()))
-                    .collect();
-                if enable_session_management {
-                    insert_session_management_variations(&mut tx_variations)?;
-                }
-
                 Ok((
                     domain,
                     DomainState {
                         domain_registry_key,
                         sponsors,
                         enable_preflight_simulation,
-                        tx_variations,
+                        tx_variations: Domain::into_domain_state_transaction_variations(tx_variations, enable_session_management)?,
                         next_autoassigned_sponsor_index: Arc::new(AtomicUsize::new(0)),
                     },
                 ))

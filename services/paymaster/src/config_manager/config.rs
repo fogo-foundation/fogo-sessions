@@ -2,7 +2,7 @@ use serde::{Deserialize, Deserializer};
 use std::collections::{hash_map::Entry, HashMap};
 use std::num::NonZeroU8;
 
-use crate::constraint::config;
+use crate::constraint::{self, config, insert_session_management_variations};
 
 fn default_true() -> bool {
     true
@@ -33,6 +33,16 @@ pub struct Domain {
     pub tx_variations: HashMap<String, config::TransactionVariation>,
 }
 
+impl Domain {
+    pub fn into_domain_state_transaction_variations(tx_variations: HashMap<String, config::TransactionVariation>, enable_session_management: bool) -> anyhow::Result<HashMap<String, constraint::TransactionVariation>> {
+        let mut tx_variations = tx_variations.into_iter().map(|(name, variation)| (name, variation.into())).collect();
+        if enable_session_management {
+            insert_session_management_variations(&mut tx_variations)?;
+        }
+        Ok(tx_variations)
+    }
+}
+
 fn insert_variation(
     tx_variations: &mut HashMap<String, config::TransactionVariation>,
     variation: config::TransactionVariation,
@@ -43,11 +53,14 @@ fn insert_variation(
             entry.insert(variation);
         }
         Entry::Occupied(_) => {
-            return Err(anyhow::anyhow!(format!("Duplicate transaction variation '{key}'")))
+            return Err(anyhow::anyhow!(format!(
+                "Duplicate transaction variation '{key}'"
+            )))
         }
     }
     Ok(())
 }
+
 
 fn deserialize_transaction_variations<'de, D>(
     deserializer: D,
@@ -69,4 +82,3 @@ where
 pub struct Config {
     pub domains: Vec<Domain>,
 }
-

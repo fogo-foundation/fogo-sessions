@@ -131,16 +131,8 @@ async fn main() -> Result<()> {
             let domains: Domains = get_domains_for_validation(config, &domain)
                 .into_iter()
                 .map(
-                    |domain| -> Result<(String, HashMap<String, TransactionVariation>)> {
-                        let mut tx_variations = domain
-                            .tx_variations
-                            .into_iter()
-                            .map(|(name, variation)| (name, variation.into()))
-                            .collect();
-                        if domain.enable_session_management {
-                            insert_session_management_variations(&mut tx_variations)?;
-                        }
-                        Ok((domain.domain.clone(), tx_variations))
+                    |Domain { domain, tx_variations, enable_session_management, .. }| -> Result<(String, HashMap<String, TransactionVariation>)> {
+                        Ok((domain, Domain::into_domain_state_transaction_variations(tx_variations, enable_session_management)?))
                     },
                 )
                 .collect::<Result<Domains>>()?;
