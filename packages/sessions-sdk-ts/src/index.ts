@@ -747,7 +747,9 @@ export type Session = {
   sessionKey: CryptoKeyPair;
   walletPublicKey: PublicKey;
   payer: PublicKey;
-  getSystemProgramSessionWrapInstruction: (amount: bigint) => TransactionInstruction;
+  getSystemProgramSessionWrapInstruction: (
+    amount: bigint,
+  ) => TransactionInstruction;
   getSessionWrapInstructions: (amount: bigint) => TransactionInstruction[];
   getSessionUnwrapInstructions: () => TransactionInstruction[];
   sendTransaction: (
