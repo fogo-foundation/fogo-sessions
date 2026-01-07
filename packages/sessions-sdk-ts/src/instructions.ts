@@ -48,7 +48,7 @@ export function createSystemProgramSessionWrapInstruction(
 
 /**
  * Creates the sequence of instructions required to wrap native tokens within a session.
- * 
+ *
  * Note: This function sets the session key as the payer for the `CreateAssociatedTokenAccountIdempotent` instruction, which is unconventional since the session key can't spend funds.
  * It works because at the time `CreateAssociatedTokenAccountIdempotent` is called, the `userTokenAccount` has already been funded by the `SessionWrap` instruction.
  * The paymaster will reject the transaction if the payer of the `CreateAssociatedTokenAccountIdempotent` is set to the paymaster payer to avoid the paymaster's funds getting drained.
@@ -64,7 +64,11 @@ export function createSessionWrapInstructions(
   );
 
   return [
-    createSystemProgramSessionWrapInstruction(sessionKey, walletPublicKey, amount),
+    createSystemProgramSessionWrapInstruction(
+      sessionKey,
+      walletPublicKey,
+      amount,
+    ),
     createAssociatedTokenAccountIdempotentInstruction(
       sessionKey, // This is unconventional! Read the note in the function's docs.
       userTokenAccount,
@@ -75,6 +79,9 @@ export function createSessionWrapInstructions(
   ];
 }
 
+/**
+ * Creates the instruction required to unwrap native tokens within a session.
+ */
 export function createSessionUnwrapInstruction(
   sessionKey: PublicKey,
   walletPublicKey: PublicKey,
