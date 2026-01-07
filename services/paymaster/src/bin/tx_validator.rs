@@ -191,7 +191,7 @@ fn get_domains_for_validation(
             .find(|d| d.domain == *domain_name)
             .expect("Specified domain not found in config")]
     } else {
-        config.domains.into_iter().collect()
+        config.domains
     }
 }
 
