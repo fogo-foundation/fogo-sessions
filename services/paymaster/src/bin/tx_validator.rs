@@ -190,7 +190,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn get_domains_for_validation<'a>(
+fn get_domains_for_validation(
     config: fogo_paymaster::config_manager::config::Config,
     domain: &Option<String>,
 ) -> Vec<Domain> {
