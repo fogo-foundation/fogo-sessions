@@ -33,8 +33,6 @@
     "build:idl": "mkdir -p src/idl src/types && for program in chain-id domain-registry example intent-transfer session-manager tollbooth; do anchor idl build --program-name $program --out-ts src/types/$program.ts --out src/idl/$program.json; done",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
     "build:types": "tsc --project tsconfig.build.json",
-    "fix:lint": "biome check --write",
-    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed --no-errors-on-unmatched; else biome check; fi",
     "test:types": "tsc"
   },
   "devDependencies": {
