@@ -32,7 +32,7 @@ export const Select = <T extends string | number>({
   ...props
 }: SelectProps<T>) => {
   return (
-    <AriaSelect {...props} className={clsx(styles.network, className)}>
+    <AriaSelect {...props} className={clsx(styles.select, className)}>
       <Button className={styles.button ?? ""}>
         <SelectValue className={styles.value ?? ""} />
         <CaretDownIcon className={styles.arrow ?? ""} />
