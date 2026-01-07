@@ -108,6 +108,7 @@ pub fn load_file_config(config_path: &str) -> Result<Config> {
 }
 
 type Domains = HashMap<String, HashMap<String, TransactionVariation>>;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
