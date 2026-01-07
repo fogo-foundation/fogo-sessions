@@ -16,21 +16,21 @@
 
   &[data-size="xs"] {
     height: theme.spacing(4);
-    padding: 0 theme.spacing(2);
+    padding: theme.spacing(0.25) theme.spacing(2);
     font-size: theme.font-size("xxs");
     font-weight: theme.font-weight("medium");
   }
 
   &[data-size="md"] {
     height: theme.spacing(6);
-    padding: 0 theme.spacing(3);
+    padding: theme.spacing(0.25) theme.spacing(3);
     font-size: theme.font-size("xs");
     font-weight: theme.font-weight("medium");
   }
 
   &[data-size="lg"] {
     height: theme.spacing(9);
-    padding: 0 theme.spacing(5);
+    padding: theme.spacing(0.25) theme.spacing(5);
     font-size: theme.font-size("sm");
     font-weight: theme.font-weight("semibold");
   }
