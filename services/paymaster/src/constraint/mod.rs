@@ -20,12 +20,8 @@ mod gas;
 mod templates;
 pub mod transaction;
 
-#[derive(Serialize)]
 pub enum TransactionVariation {
-    #[serde(rename = "v0")]
     V0(VariationProgramWhitelist),
-
-    #[serde(rename = "v1")]
     V1(VariationOrderedInstructionConstraints),
 }
 
@@ -71,10 +67,8 @@ impl VariationProgramWhitelist {
     }
 }
 
-#[derive(Serialize)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
-    #[serde(default)]
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,

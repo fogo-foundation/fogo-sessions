@@ -1,4 +1,4 @@
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 use std::collections::{hash_map::Entry, HashMap};
 use std::num::NonZeroU8;
 
@@ -12,7 +12,7 @@ pub fn default_one() -> NonZeroU8 {
     NonZeroU8::new(1).expect("non-zero u8 provided, should not panic")
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize)]
 pub struct Domain {
     /// The domain that the paymaster should sponsor.
     pub domain: String,
@@ -74,8 +74,7 @@ where
         })
 }
 
-// TODO: does this need the Serialize trait? We can remove a bunch of Serialize/serde tagging if not.
-#[derive(Deserialize, Serialize, Default)]
+#[derive(Deserialize, Default)]
 pub struct Config {
     pub domains: Vec<Domain>,
 }

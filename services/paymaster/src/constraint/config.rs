@@ -6,6 +6,7 @@ use crate::constraint::{
 };
 
 #[derive(Deserialize)]
+#[serde(tag = "version")]
 pub enum TransactionVariation {
     #[serde(rename = "v0")]
     V0(VariationProgramWhitelist),
@@ -47,12 +48,20 @@ pub struct InstructionConstraint {
 }
 
 impl From<InstructionConstraint> for constraint::InstructionConstraint {
-    fn from(config: InstructionConstraint) -> Self {
+    fn from(
+        InstructionConstraint {
+            program,
+            accounts,
+            data,
+            required,
+            requires_wrapped_native_tokens: _,
+        }: InstructionConstraint,
+    ) -> Self {
         constraint::InstructionConstraint {
-            program: config.program,
-            accounts: config.accounts,
-            data: config.data,
-            required: config.required,
+            program,
+            accounts,
+            data,
+            required,
         }
     }
 }
@@ -60,8 +69,15 @@ impl From<InstructionConstraint> for constraint::InstructionConstraint {
 impl From<VariationOrderedInstructionConstraints>
     for constraint::VariationOrderedInstructionConstraints
 {
-    fn from(config: VariationOrderedInstructionConstraints) -> Self {
-        let constraints = config.instructions
+    fn from(
+        VariationOrderedInstructionConstraints {
+            name,
+            instructions,
+            max_gas_spend,
+            paymaster_fee_lamports,
+        }: VariationOrderedInstructionConstraints,
+    ) -> Self {
+        let constraints = instructions
             .into_iter()
             .flat_map(|base| {
                 if base.requires_wrapped_native_tokens {
@@ -78,10 +94,10 @@ impl From<VariationOrderedInstructionConstraints>
             })
             .collect();
         Self {
-            name: config.name,
+            name,
             instructions: constraints,
-            max_gas_spend: config.max_gas_spend,
-            paymaster_fee_lamports: config.paymaster_fee_lamports,
+            max_gas_spend,
+            paymaster_fee_lamports,
         }
     }
 }
