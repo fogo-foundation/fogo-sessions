@@ -210,7 +210,10 @@ async fn fetch_transactions(
         let domain_for_sponsor = if let Some(domain_name) = domain {
             domain_name.as_str()
         } else if domains.len() == 1 {
-            domains.keys().next().unwrap()
+            domains
+                .keys()
+                .next()
+                .expect("Length is 1, should not panic")
         } else if domains.is_empty() {
             return Err(anyhow!("No domains found in config"));
         } else {
