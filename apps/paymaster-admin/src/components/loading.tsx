@@ -1,7 +1,5 @@
+import { Skeleton } from "@fogo/component-library/Skeleton";
+
 export const PaymasterLoading = () => {
-  return (
-    <>
-      <div>Loading...</div>
-    </>
-  );
+  return <Skeleton />;
 };

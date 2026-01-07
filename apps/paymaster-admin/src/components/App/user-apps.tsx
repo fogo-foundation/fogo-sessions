@@ -1,6 +1,7 @@
 import { Badge } from "@fogo/component-library/Badge";
 import { Button } from "@fogo/component-library/Button";
 import { Card } from "@fogo/component-library/Card";
+import { Skeleton } from "@fogo/component-library/Skeleton";
 import { AppWindowIcon } from "@phosphor-icons/react/dist/ssr/AppWindow";
 import { GridList, GridListItem } from "react-aria-components";
 import type { App, User } from "../../db-schema";
@@ -56,9 +57,17 @@ export const UserApps = (props: UserAppsProps) => {
     return (
       <>
         <div className={styles.userAppsHeader}>
-          <h1 className={styles.userAppsTitle}>Loading...</h1>
+          <h1 className={styles.userAppsTitle}>
+            <Skeleton className={styles.userAppsTitleSkeleton} />
+          </h1>
+          <Skeleton className={styles.addAppButtonSkeleton} />
         </div>
-        <div className={styles.userApps}></div>
+        <div className={styles.userApps}>
+          <Skeleton className={styles.appCard} />
+          <Skeleton className={styles.appCard} />
+          <Skeleton className={styles.appCard} />
+          <Skeleton className={styles.appCard} />
+        </div>
       </>
     );
   }

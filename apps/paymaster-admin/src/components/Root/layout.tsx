@@ -17,7 +17,8 @@ export const AuthenticationLayout = ({
     sessionState.type === SessionStateType.NotEstablished ||
     sessionState.type === SessionStateType.SelectingWallet ||
     sessionState.type === SessionStateType.RequestingLimits ||
-    sessionState.type === SessionStateType.SettingLimits
+    sessionState.type === SessionStateType.SettingLimits ||
+    sessionState.type === SessionStateType.WalletConnecting
   ) {
     return <Auth />;
   }
