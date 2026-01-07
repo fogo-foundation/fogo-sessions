@@ -11,20 +11,24 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 
-const SESION_WRAP_DISCRIMINATOR = 4_000_000;
+const SESSION_WRAP_DISCRIMINATOR = 4_000_000;
 
 function getNativeMintAssociatedTokenAddressSync(walletPublicKey: PublicKey) {
   return getAssociatedTokenAddressSync(NATIVE_MINT, walletPublicKey);
 }
 
-export function createSessionWrapInstruction(
+/**
+ * Creates the system program instruction `SessionWrap`, only available on Fogo, which allows a session key to transfer native token from its user's wallet to its user's wrapped token associated token account.
+ * This instruction may be combined with the `CreateAssociatedTokenAccountIdempotent` and `SyncNative` instructions for a session to wrap tokens on behalf of its user.
+ */
+export function createSystemProgramSessionWrapInstruction(
   sessionKey: PublicKey,
   walletPublicKey: PublicKey,
   amount: bigint,
 ) {
   const data = new Uint8Array(12);
   const view = new DataView(data.buffer);
-  view.setUint32(0, SESION_WRAP_DISCRIMINATOR, true);
+  view.setUint32(0, SESSION_WRAP_DISCRIMINATOR, true);
   view.setBigUint64(4, amount, true);
 
   return new TransactionInstruction({
@@ -42,6 +46,13 @@ export function createSessionWrapInstruction(
   });
 }
 
+/**
+ * Creates the sequence of instructions required to wrap native tokens within a session.
+ * 
+ * Note: This function sets the session key as the payer for the `CreateAssociatedTokenAccountIdempotent` instruction, which is unconventional since the session key can't spend funds.
+ * It works because at the time `CreateAssociatedTokenAccountIdempotent` is called, the `userTokenAccount` has already been funded by the `SessionWrap` instruction.
+ * The paymaster will reject the transaction if the payer of the `CreateAssociatedTokenAccountIdempotent` is set to the paymaster payer to avoid the paymaster's funds getting drained.
+ */
 export function createSessionWrapInstructions(
   sessionKey: PublicKey,
   walletPublicKey: PublicKey,
@@ -53,9 +64,9 @@ export function createSessionWrapInstructions(
   );
 
   return [
-    createSessionWrapInstruction(sessionKey, walletPublicKey, amount),
+    createSystemProgramSessionWrapInstruction(sessionKey, walletPublicKey, amount),
     createAssociatedTokenAccountIdempotentInstruction(
-      sessionKey,
+      sessionKey, // This is unconventional! Read the note in the function's docs.
       userTokenAccount,
       walletPublicKey,
       NATIVE_MINT,
