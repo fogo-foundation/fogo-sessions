@@ -1,11 +1,10 @@
 "use client";
 
-import { Network } from "@fogo/sessions-sdk-react";
 import { Select } from "@fogo/component-library/Select";
+import { Network } from "@fogo/sessions-sdk-react";
 import { useCallback } from "react";
-
-import { useNetwork } from "./network-provider";
 import { useLogger } from "../../hooks/use-logger";
+import { useNetwork } from "./network-provider";
 
 const NETWORKS = [
   { key: Network.Mainnet, label: "Mainnet" },
