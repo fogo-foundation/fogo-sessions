@@ -220,7 +220,7 @@ async fn fetch_transactions(
         let domain_for_sponsor = if let Some(domain_name) = domain {
             domain_name.as_str()
         } else if domains.len() == 1 {
-            &domains.keys().next().unwrap()
+            domains.keys().next().unwrap()
         } else if domains.is_empty() {
             return Err(anyhow!("No domains found in config"));
         } else {
@@ -549,7 +549,7 @@ impl ContextualKeysCache {
         sponsor_override: Option<Pubkey>,
     ) -> Result<Self> {
         Ok(Self {
-            cache: futures::future::try_join_all(domains.iter().map(|(domain, _)| async {
+            cache: futures::future::try_join_all(domains.keys().map(|domain| async {
                 let keys = compute_contextual_keys(domain, network, sponsor_override).await?;
                 Ok::<_, anyhow::Error>((domain.clone(), keys))
             }))

@@ -1,8 +1,8 @@
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 use std::collections::{hash_map::Entry, HashMap};
 use std::num::NonZeroU8;
 
-use crate::constraint::{self, config};
+use crate::constraint::config;
 
 fn default_true() -> bool {
     true
@@ -58,8 +58,6 @@ where
     let variations: Vec<config::TransactionVariation> = Vec::deserialize(deserializer)?;
     variations
         .into_iter()
-        // TODO: this does not align with the principle of converting outside of deserializers. Deserialize without converting, and convert later.
-        .map(|config| config.into())
         .try_fold(HashMap::new(), |mut map, variation| {
             insert_variation(&mut map, variation).map_err(serde::de::Error::custom)?;
             Ok(map)

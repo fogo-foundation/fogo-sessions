@@ -81,7 +81,7 @@ fn handle_transaction_variation_v1(
     Ok(TransactionVariation::V1(
         VariationOrderedInstructionConstraints {
             name,
-            instructions: instructions.into_iter().map(|c| c.into()).collect(),
+            instructions: instructions.into_iter().collect(),
             max_gas_spend,
             paymaster_fee_lamports: None, // TODO: This should be added to the DB
         },
