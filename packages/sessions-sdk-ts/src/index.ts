@@ -61,6 +61,7 @@ import {
 import {
   createSessionUnwrapInstruction,
   createSessionWrapInstructions,
+  createSystemProgramSessionWrapInstruction,
 } from "./instructions.js";
 
 export {
@@ -273,6 +274,12 @@ const createSession = async (
         walletPublicKey,
         sessionKey,
         payer: context.payer,
+        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
+          createSystemProgramSessionWrapInstruction(
+            sessionPublicKey,
+            walletPublicKey,
+            amount,
+          ),
         getSessionWrapInstructions: (amount: bigint) =>
           createSessionWrapInstructions(
             sessionPublicKey,
@@ -740,6 +747,7 @@ export type Session = {
   sessionKey: CryptoKeyPair;
   walletPublicKey: PublicKey;
   payer: PublicKey;
+  getSystemProgramSessionWrapInstruction: (amount: bigint) => TransactionInstruction;
   getSessionWrapInstructions: (amount: bigint) => TransactionInstruction[];
   getSessionUnwrapInstructions: () => TransactionInstruction[];
   sendTransaction: (

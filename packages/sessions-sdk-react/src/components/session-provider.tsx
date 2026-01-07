@@ -476,6 +476,8 @@ const useSessionState = ({
           onEndSession();
         },
         payer: session.payer,
+        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
+          session.getSystemProgramSessionWrapInstruction(amount),
         getSessionWrapInstructions: (amount: bigint) =>
           session.getSessionWrapInstructions(amount),
         getSessionUnwrapInstructions: () =>
