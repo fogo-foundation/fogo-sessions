@@ -458,7 +458,7 @@ fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransactio
 
 async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
-    domain: &'a str,
+    domain: &str,
     tx_variations: &'a HashMap<String, TransactionVariation>,
     chain_index: &ChainIndex,
     contextual_keys_cache: &ContextualKeysCache,
