@@ -24,15 +24,6 @@ impl From<TransactionVariation> for constraint::TransactionVariation {
     }
 }
 
-#[derive(Deserialize)]
-pub struct VariationOrderedInstructionConstraints {
-    pub name: String,
-    #[serde(default)]
-    pub instructions: Vec<InstructionConstraint>,
-    pub max_gas_spend: u64,
-    pub paymaster_fee_lamports: Option<u64>,
-}
-
 #[serde_as]
 #[derive(Deserialize)]
 pub struct InstructionConstraint {
@@ -64,6 +55,15 @@ impl From<InstructionConstraint> for constraint::InstructionConstraint {
             required,
         }
     }
+}
+
+#[derive(Deserialize)]
+pub struct VariationOrderedInstructionConstraints {
+    pub name: String,
+    #[serde(default)]
+    pub instructions: Vec<InstructionConstraint>,
+    pub max_gas_spend: u64,
+    pub paymaster_fee_lamports: Option<u64>,
 }
 
 impl From<VariationOrderedInstructionConstraints>
