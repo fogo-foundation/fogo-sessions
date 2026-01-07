@@ -1,8 +1,6 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
-use crate::constraint::{
-    ContextualDomainKeys, TransactionVariation,
-};
+use crate::constraint::{ContextualDomainKeys, TransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
@@ -589,7 +587,10 @@ pub fn get_domain_state_map(
                         domain_registry_key,
                         sponsors,
                         enable_preflight_simulation,
-                        tx_variations: Domain::into_domain_state_transaction_variations(tx_variations, enable_session_management)?,
+                        tx_variations: Domain::into_domain_state_transaction_variations(
+                            tx_variations,
+                            enable_session_management,
+                        )?,
                         next_autoassigned_sponsor_index: Arc::new(AtomicUsize::new(0)),
                     },
                 ))

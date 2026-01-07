@@ -5,10 +5,7 @@ use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
     config_manager::config::{Config, Domain},
-    constraint::{
-        transaction::TransactionToValidate,
-        ContextualDomainKeys, TransactionVariation,
-    },
+    constraint::{transaction::TransactionToValidate, ContextualDomainKeys, TransactionVariation},
     rpc::ChainIndex,
 };
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;

@@ -34,8 +34,14 @@ pub struct Domain {
 }
 
 impl Domain {
-    pub fn into_domain_state_transaction_variations(tx_variations: HashMap<String, config::TransactionVariation>, enable_session_management: bool) -> anyhow::Result<HashMap<String, constraint::TransactionVariation>> {
-        let mut tx_variations = tx_variations.into_iter().map(|(name, variation)| (name, variation.into())).collect();
+    pub fn into_domain_state_transaction_variations(
+        tx_variations: HashMap<String, config::TransactionVariation>,
+        enable_session_management: bool,
+    ) -> anyhow::Result<HashMap<String, constraint::TransactionVariation>> {
+        let mut tx_variations = tx_variations
+            .into_iter()
+            .map(|(name, variation)| (name, variation.into()))
+            .collect();
         if enable_session_management {
             insert_session_management_variations(&mut tx_variations)?;
         }
@@ -60,7 +66,6 @@ fn insert_variation(
     }
     Ok(())
 }
-
 
 fn deserialize_transaction_variations<'de, D>(
     deserializer: D,
