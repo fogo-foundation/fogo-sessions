@@ -17,7 +17,7 @@ export const Skeleton = ({
   ...props
 }: Props) => (
   <span
-    data-fill-width={width === undefined ? "" : undefined}
+    data-fill-width={width === undefined}
     {...(width &&
       !fill && { style: { "--skeleton-width": width } as CSSProperties })}
     data-fill={fill ? "" : undefined}
