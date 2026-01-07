@@ -15,9 +15,12 @@ export const getPrice = async (mint: string) => {
 
   const response = await fetch(priceUrl);
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch price: ${response.status.toString()} ${response.statusText}`,
-    );
+    // Don't throw for now since the pricing data isn't yet implemented and this
+    // is just filling logs with noise.
+    return 0;
+    // throw new Error(
+    //   `Failed to fetch price: ${response.status.toString()} ${response.statusText}`,
+    // );
   }
 
   return priceSchema.parse(await response.json());
