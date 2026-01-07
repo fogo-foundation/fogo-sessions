@@ -18,13 +18,7 @@ type AppCardProps =
 
 const AppCard = (props: AppCardProps) => {
   if (props.isLoading) {
-    return (
-      <Card className={styles.appCard}>
-        <div className={styles.appCardContent}>
-          <h3 className={styles.appCardTitle}>Loading...</h3>
-        </div>
-      </Card>
-    );
+    return <Skeleton className={styles.appCard} />;
   }
   return (
     <Card className={styles.appCard}>
@@ -63,10 +57,10 @@ export const UserApps = (props: UserAppsProps) => {
           <Skeleton className={styles.addAppButtonSkeleton} />
         </div>
         <div className={styles.userApps}>
-          <Skeleton className={styles.appCard} />
-          <Skeleton className={styles.appCard} />
-          <Skeleton className={styles.appCard} />
-          <Skeleton className={styles.appCard} />
+          <AppCard isLoading />
+          <AppCard isLoading />
+          <AppCard isLoading />
+          <AppCard isLoading />
         </div>
       </>
     );
@@ -84,7 +78,7 @@ export const UserApps = (props: UserAppsProps) => {
       <GridList
         className={styles.userApps ?? ""}
         selectionMode="none"
-        aria-label="Tokens"
+        aria-label="Apps"
         items={props.user.apps}
       >
         {(item) => (
