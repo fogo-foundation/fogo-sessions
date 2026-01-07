@@ -25,7 +25,7 @@ const AppCard = (props: AppCardProps) => {
       <div className={styles.appCardContent}>
         <h3 className={styles.appCardTitle}>{props.app.name}</h3>
         <p className={styles.appCardDescription}>
-          Created: {props.app.created_at.toLocaleDateString()}
+          Created: {formatDate(props.app.created_at)}
         </p>
       </div>
       <div>
@@ -89,4 +89,12 @@ export const UserApps = (props: UserAppsProps) => {
       </GridList>
     </>
   );
+};
+
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
 };
