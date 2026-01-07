@@ -5,7 +5,10 @@ use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
     config_manager::config::{Config, Domain},
-    constraint::{ContextualDomainKeys, TransactionVariation, insert_session_management_variations, transaction::TransactionToValidate},
+    constraint::{
+        insert_session_management_variations, transaction::TransactionToValidate,
+        ContextualDomainKeys, TransactionVariation,
+    },
     rpc::ChainIndex,
 };
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
@@ -125,13 +128,22 @@ async fn main() -> Result<()> {
             rpc_url_http,
         } => {
             let config = load_file_config(&config)?;
-            let domains: Domains = get_domains_for_validation(config, &domain).into_iter().map(|domain| -> Result<(String, HashMap<String, TransactionVariation>)> { 
-                let mut tx_variations = domain.tx_variations.into_iter().map(|(name, variation)| (name, variation.into())).collect();
-                if domain.enable_session_management {
-                    insert_session_management_variations(&mut tx_variations)?;
-                }
-                Ok((domain.domain.clone(), tx_variations))
-            }).collect::<Result<Domains>>()?;
+            let domains: Domains = get_domains_for_validation(config, &domain)
+                .into_iter()
+                .map(
+                    |domain| -> Result<(String, HashMap<String, TransactionVariation>)> {
+                        let mut tx_variations = domain
+                            .tx_variations
+                            .into_iter()
+                            .map(|(name, variation)| (name, variation.into()))
+                            .collect();
+                        if domain.enable_session_management {
+                            insert_session_management_variations(&mut tx_variations)?;
+                        }
+                        Ok((domain.domain.clone(), tx_variations))
+                    },
+                )
+                .collect::<Result<Domains>>()?;
             let rpc_url_http =
                 rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
@@ -252,20 +264,26 @@ async fn validate_transactions(
         .iter()
         .enumerate()
         .map(|(idx, tx)| async move {
-            let results = futures::future::join_all(domains.iter().map(|(domain, tx_variations)| async {
-                let variations =
-                    get_matching_variations(tx, domain, tx_variations, chain_index, contextual_keys_cache)
-                        .await
-                        .unwrap_or_default();
-                variations
-                    .into_iter()
-                    .map(|v| (domain.as_str(), v))
-                    .collect::<Vec<_>>()
-            }))
-            .await
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>();
+            let results =
+                futures::future::join_all(domains.iter().map(|(domain, tx_variations)| async {
+                    let variations = get_matching_variations(
+                        tx,
+                        domain,
+                        tx_variations,
+                        chain_index,
+                        contextual_keys_cache,
+                    )
+                    .await
+                    .unwrap_or_default();
+                    variations
+                        .into_iter()
+                        .map(|v| (domain.as_str(), v))
+                        .collect::<Vec<_>>()
+                }))
+                .await
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>();
 
             (idx, tx, results)
         })
@@ -532,8 +550,7 @@ impl ContextualKeysCache {
     ) -> Result<Self> {
         Ok(Self {
             cache: futures::future::try_join_all(domains.iter().map(|(domain, _)| async {
-                let keys =
-                    compute_contextual_keys(domain, network, sponsor_override).await?;
+                let keys = compute_contextual_keys(domain, network, sponsor_override).await?;
                 Ok::<_, anyhow::Error>((domain.clone(), keys))
             }))
             .await?

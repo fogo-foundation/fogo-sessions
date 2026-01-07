@@ -1,7 +1,8 @@
 use crate::config_manager::config::{default_one, Config, Domain};
 use crate::constraint::config::InstructionConstraint;
 use crate::constraint::{
-    config::TransactionVariation, config::VariationOrderedInstructionConstraints, VariationProgramWhitelist,
+    config::TransactionVariation, config::VariationOrderedInstructionConstraints,
+    VariationProgramWhitelist,
 };
 use serde_json::Value;
 use solana_pubkey::Pubkey;

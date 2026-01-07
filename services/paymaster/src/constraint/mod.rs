@@ -12,8 +12,8 @@ use std::str::FromStr;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
-use transaction::{InstructionWithIndex, TransactionToValidate};
 pub use templates::insert_session_management_variations;
+use transaction::{InstructionWithIndex, TransactionToValidate};
 
 pub mod config;
 mod fee;

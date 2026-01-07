@@ -69,7 +69,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     /* TODO Revert this once we have a good way of modifying the config from the DB. */
     // let mut config =
     //     config_manager::load_config::load_db_config(opts.network_environment).await?;
-    let mut config: Config = config::Config::builder()
+    let config: Config = config::Config::builder()
         .add_source(config::File::with_name(&opts.config_file))
         .build()?
         .try_deserialize()?;

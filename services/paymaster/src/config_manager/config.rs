@@ -71,31 +71,4 @@ where
 pub struct Config {
     pub domains: Vec<Domain>,
 }
-pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 15_000;
 
-// impl Config {
-//     /// Populate default tx variations for each domain.
-//     /// Call this after loading from file/DB to ensure required variations exist.
-//     pub fn assign_defaults(&mut self) -> anyhow::Result<()> {
-//         for domain in &mut self.domains {
-//             if domain.enable_session_management {
-//                 insert_variation(
-//                     &mut domain.tx_variations,
-//                     constraint::TransactionVariation::session_establishment_variation(
-//                         DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-//                     ),
-//                     true,
-//                 )?;
-
-//                 insert_variation(
-//                     &mut domain.tx_variations,
-//                     constraint::TransactionVariation::session_revocation_variation(
-//                         DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-//                     ),
-//                     true,
-//                 )?;
-//             }
-//         }
-//         Ok(())
-//     }
-// }

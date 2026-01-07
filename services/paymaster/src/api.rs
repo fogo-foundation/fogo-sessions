@@ -1,6 +1,8 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
-use crate::constraint::{ContextualDomainKeys, TransactionVariation, insert_session_management_variations};
+use crate::constraint::{
+    insert_session_management_variations, ContextualDomainKeys, TransactionVariation,
+};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
@@ -555,7 +557,10 @@ async fn sponsor_pubkey_handler(
     Ok(sponsors[sponsor_index].pubkey().to_string())
 }
 
-pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> anyhow::Result<HashMap<String, DomainState>> {
+pub fn get_domain_state_map(
+    domains: Vec<Domain>,
+    mnemonic: &str,
+) -> anyhow::Result<HashMap<String, DomainState>> {
     domains
         .into_iter()
         .map(
@@ -564,7 +569,7 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> anyhow::Res
                  enable_preflight_simulation,
                  tx_variations,
                  number_of_signers,
-                 enable_session_management
+                 enable_session_management,
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
                 let sponsors = NonEmpty::collect((0u8..number_of_signers.into()).map(|i| {
@@ -578,7 +583,10 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> anyhow::Res
                 }))
                 .expect("number_of_signers in NonZero so this should never be empty");
 
-                let mut tx_variations : HashMap<String, TransactionVariation>    = tx_variations.into_iter().map(|(name, config)| (name, config.into())).collect();
+                let mut tx_variations: HashMap<String, TransactionVariation> = tx_variations
+                    .into_iter()
+                    .map(|(name, config)| (name, config.into()))
+                    .collect();
                 if enable_session_management {
                     insert_session_management_variations(&mut tx_variations)?;
                 }

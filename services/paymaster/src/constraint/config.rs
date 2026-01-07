@@ -56,13 +56,15 @@ pub struct InstructionConstraint {
 }
 
 impl From<InstructionConstraint> for constraint::InstructionConstraint {
-    fn from(InstructionConstraint {
-        program,
-        accounts,
-        data,
-        required,
-        requires_wrapped_native_tokens: _,
-    }: InstructionConstraint) -> Self {
+    fn from(
+        InstructionConstraint {
+            program,
+            accounts,
+            data,
+            required,
+            requires_wrapped_native_tokens: _,
+        }: InstructionConstraint,
+    ) -> Self {
         constraint::InstructionConstraint {
             program,
             accounts,

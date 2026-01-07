@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
 use crate::constraint::SubstantiveProgramId;
 use crate::constraint::{
@@ -228,21 +228,34 @@ impl TransactionVariation {
     }
 }
 
-fn insert_variation(tx_variations: &mut HashMap<String, TransactionVariation>, variation: TransactionVariation) -> anyhow::Result<()> {
+fn insert_variation(
+    tx_variations: &mut HashMap<String, TransactionVariation>,
+    variation: TransactionVariation,
+) -> anyhow::Result<()> {
     let key = variation.name().to_string();
     match tx_variations.entry(key.clone()) {
         Entry::Vacant(entry) => {
             entry.insert(variation);
         }
         Entry::Occupied(_) => {
-            return Err(anyhow::anyhow!(format!("Template transaction variation '{key}' conflicts with user-defined variation")))
+            return Err(anyhow::anyhow!(format!(
+                "Template transaction variation '{key}' conflicts with user-defined variation"
+            )))
         }
     }
     Ok(())
 }
 
-pub fn insert_session_management_variations(tx_variations: &mut HashMap<String, TransactionVariation>) -> anyhow::Result<()> {
-    insert_variation(tx_variations, TransactionVariation::session_establishment_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND))?;
-    insert_variation(tx_variations, TransactionVariation::session_revocation_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND))?;
+pub fn insert_session_management_variations(
+    tx_variations: &mut HashMap<String, TransactionVariation>,
+) -> anyhow::Result<()> {
+    insert_variation(
+        tx_variations,
+        TransactionVariation::session_establishment_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND),
+    )?;
+    insert_variation(
+        tx_variations,
+        TransactionVariation::session_revocation_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND),
+    )?;
     Ok(())
-    }
+}
