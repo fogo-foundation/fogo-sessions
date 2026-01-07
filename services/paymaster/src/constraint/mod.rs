@@ -14,13 +14,13 @@ use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
 use transaction::{InstructionWithIndex, TransactionToValidate};
 
+pub mod config;
 mod fee;
 mod gas;
 mod templates;
 pub mod transaction;
 
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "version")]
+#[derive(Serialize)]
 pub enum TransactionVariation {
     #[serde(rename = "v0")]
     V0(VariationProgramWhitelist),
@@ -71,13 +71,10 @@ impl VariationProgramWhitelist {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
-    #[serde(
-        default,
-        deserialize_with = "deserialize_and_expand_instruction_constraints"
-    )]
+    #[serde(default)]
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,
@@ -252,7 +249,7 @@ impl FromStr for SubstantiveProgramId {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct InstructionConstraint {
     #[serde_as(as = "DisplayFromStr")]
     pub program: SubstantiveProgramId,
@@ -261,38 +258,6 @@ pub struct InstructionConstraint {
     #[serde(default)]
     pub data: Vec<DataConstraint>,
     pub required: bool,
-    #[serde(default)]
-    pub require_wrap_native: bool,
-}
-
-/// Deserializes instruction constraints and expands them to include prefixes/suffixes if necessary.
-fn deserialize_and_expand_instruction_constraints<'de, D>(
-    deserializer: D,
-) -> Result<Vec<InstructionConstraint>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let constraints = Vec::<InstructionConstraint>::deserialize(deserializer)?;
-    let has_wrap_native = constraints.iter().any(|c| c.require_wrap_native);
-    let constraints_with_prefixes: Vec<InstructionConstraint> = constraints
-        .into_iter()
-        .flat_map(|base| {
-            if base.require_wrap_native {
-                vec![
-                    InstructionConstraint::session_wrap_instruction_constraint(),
-                    InstructionConstraint::create_ata_idempotent_instruction_constraint(),
-                    InstructionConstraint::sync_native_instruction_constraint(),
-                    base,
-                ]
-            } else {
-                vec![base]
-            }
-        })
-        .collect();
-    Ok(constraints_with_prefixes
-        .into_iter()
-        .chain(has_wrap_native.then(InstructionConstraint::close_token_account_constraint))
-        .collect())
 }
 
 impl InstructionConstraint {

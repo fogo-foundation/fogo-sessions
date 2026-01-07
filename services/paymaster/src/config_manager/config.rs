@@ -2,7 +2,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::{hash_map::Entry, HashMap};
 use std::num::NonZeroU8;
 
-use crate::constraint::TransactionVariation;
+use crate::constraint::{self, config};
 
 fn default_true() -> bool {
     true
@@ -30,12 +30,12 @@ pub struct Domain {
 
     /// The list of transaction types that the paymaster should sponsor.
     #[serde(deserialize_with = "deserialize_transaction_variations")]
-    pub tx_variations: HashMap<String, TransactionVariation>,
+    pub tx_variations: HashMap<String, constraint::TransactionVariation>,
 }
 
 fn insert_variation(
-    tx_variations: &mut HashMap<String, TransactionVariation>,
-    variation: TransactionVariation,
+    tx_variations: &mut HashMap<String, constraint::TransactionVariation>,
+    variation: constraint::TransactionVariation,
     templated: bool,
 ) -> anyhow::Result<()> {
     let key = variation.name().to_string();
@@ -59,19 +59,22 @@ fn insert_variation(
 
 fn deserialize_transaction_variations<'de, D>(
     deserializer: D,
-) -> Result<HashMap<String, TransactionVariation>, D::Error>
+) -> Result<HashMap<String, constraint::TransactionVariation>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let variations: Vec<TransactionVariation> = Vec::deserialize(deserializer)?;
+    let variations: Vec<config::TransactionVariation> = Vec::deserialize(deserializer)?;
     variations
         .into_iter()
+        // TODO: this does not align with the principle of converting outside of deserializers. Deserialize without converting, and convert later.
+        .map(|config| config.into())
         .try_fold(HashMap::new(), |mut map, variation| {
             insert_variation(&mut map, variation, false).map_err(serde::de::Error::custom)?;
             Ok(map)
         })
 }
 
+// TODO: does this need the Serialize trait? We can remove a bunch of Serialize/serde tagging if not.
 #[derive(Deserialize, Serialize, Default)]
 pub struct Config {
     pub domains: Vec<Domain>,
@@ -86,7 +89,7 @@ impl Config {
             if domain.enable_session_management {
                 insert_variation(
                     &mut domain.tx_variations,
-                    TransactionVariation::session_establishment_variation(
+                    constraint::TransactionVariation::session_establishment_variation(
                         DEFAULT_TEMPLATE_MAX_GAS_SPEND,
                     ),
                     true,
@@ -94,7 +97,7 @@ impl Config {
 
                 insert_variation(
                     &mut domain.tx_variations,
-                    TransactionVariation::session_revocation_variation(
+                    constraint::TransactionVariation::session_revocation_variation(
                         DEFAULT_TEMPLATE_MAX_GAS_SPEND,
                     ),
                     true,

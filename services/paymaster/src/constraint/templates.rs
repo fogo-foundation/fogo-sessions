@@ -67,7 +67,6 @@ impl InstructionConstraint {
                 },
             ],
             required: true,
-            require_wrap_native: false,
         }
     }
 
@@ -101,7 +100,6 @@ impl InstructionConstraint {
                 },
             ],
             required: true,
-            require_wrap_native: false,
         }
     }
 
@@ -123,7 +121,6 @@ impl InstructionConstraint {
                 },
             ],
             required: true,
-            require_wrap_native: false,
         }
     }
 
@@ -143,7 +140,6 @@ impl InstructionConstraint {
                 },
             ],
             required: false,
-            require_wrap_native: false,
         }
     }
 
@@ -165,7 +161,6 @@ impl InstructionConstraint {
                 },
             ],
             required: false,
-            require_wrap_native: false,
         }
     }
 
@@ -183,7 +178,6 @@ impl InstructionConstraint {
                 },
             ],
             required: false,
-            require_wrap_native: false,
         }
     }
 
@@ -201,7 +195,6 @@ impl InstructionConstraint {
                 },
             ],
             required: false,
-            require_wrap_native: false,
         }
     }
 }
