@@ -49,7 +49,7 @@ const runTestApp = async (port: number) => {
 
   return {
     page,
-    closeApp: async () => {
+    closeApp: () => {
       next.kill();
       return Promise.all([
         browser.close(),

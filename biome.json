@@ -10,8 +10,8 @@
   "files": {
     "includes": [
       "**",
-      "!**/tilt/**",
-      "!**/.sqlx/**",
+      "!**/tilt",
+      "!**/.sqlx",
       "!.turbo/**/*",
       "!dist/**/*",
       "!coverage/**/*",
@@ -194,6 +194,7 @@
       }
     }
   },
+
   "javascript": {
     "formatter": {
       "quoteStyle": "double"

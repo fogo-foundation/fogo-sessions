@@ -47,7 +47,6 @@ import {
   SolanaMobileWalletAdapter,
   SolanaMobileWalletAdapterWalletName,
 } from "@solana-mobile/wallet-adapter-mobile";
-import clsx from "clsx";
 import type {
   ComponentProps,
   Dispatch,
@@ -66,7 +65,6 @@ import { errorToString } from "../error-to-string.js";
 import { SessionContext as SessionReactContext } from "../hooks/use-session.js";
 import { getCacheKey } from "../hooks/use-token-account-data.js";
 import layerStyles from "../layer.module.css";
-import resetStyles from "../reset.module.css";
 import type { EstablishedOptions, StateType } from "../session-state.js";
 import { SessionState } from "../session-state.js";
 import type { SolanaMobileWallet, SolanaWallet } from "../solana-wallet.js";
@@ -134,9 +132,12 @@ export const FogoSessionProvider = ({
   privacyPolicyUrl,
   ...props
 }: Props) => {
-  // We have to typecast this unfortunately because the Solana library typings are broken
   const walletsWithStandardAdapters = useStandardWalletAdapters(
+<<<<<<< HEAD
     // biome-ignore lint/suspicious/noExplicitAny: reason
+=======
+    // biome-ignore lint/suspicious/noExplicitAny: We have to typecast this unfortunately because the Solana library typings are broken
+>>>>>>> main
     wallets as any,
   ) as unknown as SolanaWallet[];
   const filteredWalletsWithStandardAdapters = useMemo(
@@ -176,9 +177,7 @@ export const FogoSessionProvider = ({
   );
 
   return (
-    <ToastProvider
-      toastRegionClassName={clsx(resetStyles.reset, layerStyles.layerToast)}
-    >
+    <ToastProvider toastRegionClassName={layerStyles.layerToast ?? ""}>
       <SessionProvider
         tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
         defaultRequestedLimits={
@@ -312,7 +311,6 @@ const SessionProvider = ({
       onStartSessionInit,
       defaultRequestedLimits,
       showBridgeIn,
-      setShowBridgeIn,
     ],
   );
 
@@ -392,7 +390,11 @@ const useSessionState = ({
             "We couldn't update your token balances, please try refreshing the page",
             errorToString(error),
           );
+<<<<<<< HEAD
           // biome-ignore lint/suspicious/noConsole: reason
+=======
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
+>>>>>>> main
           console.error("Failed to update token account data", error);
         }
       }
@@ -458,13 +460,18 @@ const useSessionState = ({
     [getSessionContext, toast],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: completeSessionSetup calls connectWallet and connectWallet calls completeSessionSetup. We should introduce another state in the wallet for when the user is switching accounts and refactor this to remove the circular dependency.
   const completeSessionSetup = useCallback(
     (session: Session, wallet: SolanaWallet, onEndSession: () => void) => {
       setStoredSession(network, {
         sessionKey: session.sessionKey,
         walletPublicKey: session.walletPublicKey,
       }).catch((error: unknown) => {
+<<<<<<< HEAD
         // biome-ignore lint/suspicious/noConsole: reason
+=======
+        // biome-ignore lint/suspicious/noConsole: we want to log the error
+>>>>>>> main
         console.error("Failed to persist session", error);
       });
       const establishedOptions: EstablishedOptions = {
@@ -594,7 +601,11 @@ const useSessionState = ({
           }
         })
         .catch((error: unknown) => {
+<<<<<<< HEAD
           // biome-ignore lint/suspicious/noConsole: reason
+=======
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
+>>>>>>> main
           console.error("Failed to establish session", error);
           toast.error(
             "Failed to establish session, please try again",
@@ -754,6 +765,7 @@ const useSessionState = ({
     [connectWallet],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We very explicitly only want this effect to fire at startup or when the network changes and never in other cases
   useEffect(() => {
     if (walletName.value === undefined) {
       setState(SessionState.NotEstablished(requestWallet));
@@ -774,15 +786,16 @@ const useSessionState = ({
             }
           })
           .catch((error: unknown) => {
+<<<<<<< HEAD
             // biome-ignore lint/suspicious/noConsole: reason
+=======
+            // biome-ignore lint/suspicious/noConsole: we want to log the error
+>>>>>>> main
             console.error("Failed to restore stored session", error);
             setState(SessionState.NotEstablished(requestWallet));
           });
       }
     }
-    // We very explicitly only want this effect to fire at startup or when the
-    // network changes and never in other cases
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [network]);
 
   return state;
@@ -951,7 +964,11 @@ const establishSession = async (
         // Use promise `.catch` here so that we don't block
         revokeSession({ context, session: result.session }).catch(
           (error: unknown) => {
+<<<<<<< HEAD
             // biome-ignore lint/suspicious/noConsole: reason
+=======
+            // biome-ignore lint/suspicious/noConsole: we want to log the error
+>>>>>>> main
             console.error("Failed to revoke cancelled session", error);
           },
         );
@@ -993,7 +1010,11 @@ const disconnect = (
       localStorage.removeItem("walletName");
     })
     .catch((error: unknown) => {
+<<<<<<< HEAD
       // biome-ignore lint/suspicious/noConsole: reason
+=======
+      // biome-ignore lint/suspicious/noConsole: we want to log the error
+>>>>>>> main
       console.error("Failed to clean up session", error);
     });
 };
@@ -1014,7 +1035,11 @@ class InvariantFailedError extends Error {
 }
 
 type ConstrainedOmit<T, K> = {
+<<<<<<< HEAD
   // biome-ignore lint/suspicious/noExplicitAny: reason
+=======
+  // biome-ignore lint/suspicious/noExplicitAny: todo add explanation
+>>>>>>> main
   [P in keyof T as Exclude<P, K & keyof any>]: T[P];
 };
 

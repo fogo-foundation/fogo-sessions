@@ -12,8 +12,6 @@
   },
   "scripts": {
     "build": "tsc --noEmit false --outDir ./dist",
-    "fix:lint": "biome check --write",
-    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed --no-errors-on-unmatched; else biome check; fi",
     "test:types": "tsc"
   },
   "dependencies": {

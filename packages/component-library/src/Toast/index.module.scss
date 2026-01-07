@@ -1,69 +1,71 @@
 @use "../theme";
-
+@use "../reset";
 .toastRegion {
-  position: fixed;
-  bottom: theme.spacing(4);
-  left: theme.spacing(4);
-  right: theme.spacing(4);
-  display: flex;
-  flex-flow: column nowrap;
-  gap: theme.spacing(3.5);
-  outline: none;
-
-  @include theme.breakpoint("sm") {
-    bottom: unset;
-    left: unset;
-    top: theme.spacing(6);
-    right: theme.spacing(6);
-    width: theme.spacing(92);
-  }
-
-  .toast {
+  @include reset.reset {
+    position: fixed;
+    bottom: theme.spacing(4);
+    left: theme.spacing(4);
+    right: theme.spacing(4);
+    display: flex;
+    flex-flow: column nowrap;
+    gap: theme.spacing(3.5);
     outline: none;
-    width: 100%;
-    display: grid;
-    grid-template-columns: max-content 1fr max-content;
-    gap: theme.spacing(3) theme.spacing(1);
-    padding: theme.spacing(1);
-    border-radius: theme.border-radius();
-    border: 1px solid theme.color("widget-border");
-    box-shadow: theme.shadow();
-    background-color: theme.color("card");
 
-    &::before {
-      content: "";
-      display: block;
-      width: theme.spacing(0.5);
-      height: 100%;
-      border-radius: theme.border-radius("sm");
-      opacity: 0.4;
+    @include theme.breakpoint("sm") {
+      bottom: unset;
+      left: unset;
+      top: theme.spacing(6);
+      right: theme.spacing(6);
+      width: theme.spacing(92);
     }
 
-    .toastContent {
-      display: flex;
-      flex-flow: column nowrap;
-      gap: theme.spacing(3);
-      padding: theme.spacing(2) theme.spacing(1.5);
+    .toast {
+      outline: none;
+      width: 100%;
+      display: grid;
+      grid-template-columns: max-content 1fr max-content;
+      gap: theme.spacing(3) theme.spacing(1);
+      padding: theme.spacing(1);
+      border-radius: theme.border-radius();
+      border: 1px solid theme.color("widget-border");
+      box-shadow: theme.shadow();
+      background-color: theme.color("card");
 
-      .title {
-        @include theme.text("xs", "normal");
+      &::before {
+        content: "";
+        display: block;
+        width: theme.spacing(0.5);
+        height: 100%;
+        border-radius: theme.border-radius("sm");
+        opacity: 0.4;
       }
 
-      .description {
-        @include theme.text("xxs", "normal");
-
-        color: theme.color("paragraph");
-      }
-    }
-
-    @each $state in ("success", "error") {
-      &[data-variant="#{$state}"] {
-        &::before {
-          background: theme.color("states", $state, "foreground");
-        }
+      .toastContent {
+        display: flex;
+        flex-flow: column nowrap;
+        gap: theme.spacing(3);
+        padding: theme.spacing(2) theme.spacing(1.5);
 
         .title {
-          color: theme.color("states", $state, "foreground");
+          @include theme.text("xs", "normal");
+        }
+
+        .description {
+          @include theme.text("xxs", "normal");
+
+          color: theme.color("paragraph");
+        }
+      }
+
+      @each $state in ("success", "error") {
+        &[data-variant="#{$state}"] {
+          &::before {
+            background: theme.color("states", $state, "foreground");
+          }
+
+          .title {
+            color: theme.color("states", $state, "foreground");
+          }
         }
       }
     }
