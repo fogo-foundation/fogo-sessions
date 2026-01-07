@@ -1,0 +1,52 @@
+@use "../theme";
+
+.fullSkeleton,
+.skeleton {
+  background: theme.color("button", "disabled", "background");
+
+  @include theme.pulse;
+
+  .skeletonLabel {
+    @include theme.sr-only;
+  }
+}
+
+.skeleton {
+  border-radius: theme.border-radius("lg");
+
+  &[data-fill] {
+    width: 100%;
+  }
+
+  .skeletonInner {
+    display: inline flow-root;
+    width: calc(theme.spacing(1) * var(--skeleton-width));
+  }
+
+  &[data-round] {
+    border-radius: theme.border-radius("full");
+    display: inline-block;
+    width: calc(theme.spacing(1) * var(--skeleton-width));
+    height: calc(theme.spacing(1) * var(--skeleton-width));
+
+    .skeletonInner {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &[data-fill-width] {
+    .skeletonInner {
+      width: 100%;
+    }
+
+    &[data-round] {
+      width: 100%;
+      height: 100%;
+
+      .skeletonInner {
+        height: 100%;
+      }
+    }
+  }
+}
