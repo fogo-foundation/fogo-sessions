@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 
 use crate::constraint::{
@@ -23,7 +23,16 @@ impl From<TransactionVariation> for constraint::TransactionVariation {
     }
 }
 
-#[derive(Deserialize)]
+impl TransactionVariation {
+    pub fn name(&self) -> &str {
+        match self {
+            TransactionVariation::V0(v) => &v.name,
+            TransactionVariation::V1(v) => &v.name,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
     #[serde(default)]
@@ -33,7 +42,7 @@ pub struct VariationOrderedInstructionConstraints {
 }
 
 #[serde_as]
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct InstructionConstraint {
     #[serde_as(as = "DisplayFromStr")]
     pub program: SubstantiveProgramId,
@@ -47,12 +56,18 @@ pub struct InstructionConstraint {
 }
 
 impl From<InstructionConstraint> for constraint::InstructionConstraint {
-    fn from(config: InstructionConstraint) -> Self {
+    fn from(InstructionConstraint {
+        program,
+        accounts,
+        data,
+        required,
+        requires_wrapped_native_tokens: _,
+    }: InstructionConstraint) -> Self {
         constraint::InstructionConstraint {
-            program: config.program,
-            accounts: config.accounts,
-            data: config.data,
-            required: config.required,
+            program,
+            accounts,
+            data,
+            required,
         }
     }
 }

@@ -73,7 +73,6 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .add_source(config::File::with_name(&opts.config_file))
         .build()?
         .try_deserialize()?;
-    config.assign_defaults()?;
 
     let fee::Config { fee_coefficients }: fee::Config = config::Config::builder()
         .add_source(config::File::with_name(&opts.config_file))
@@ -85,7 +84,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let domains: SharedDomains = Arc::new(ArcSwap::from_pointee(api::get_domain_state_map(
         config.domains,
         &mnemonic,
-    )));
+    )?));
     // TODO this is commented out as part of the temporary change to load the config from the file.
     // config_manager::load_config::spawn_config_refresher(
     //     opts.network_environment,

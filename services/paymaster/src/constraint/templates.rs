@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+
 use crate::constraint::SubstantiveProgramId;
 use crate::constraint::{
     AccountConstraint, ContextualPubkey, DataConstraint, DataConstraintSpecification, DataType,
@@ -199,6 +202,7 @@ impl InstructionConstraint {
     }
 }
 
+const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 15_000;
 impl TransactionVariation {
     /// The template for the transaction variation that establishes a session.
     pub fn session_establishment_variation(max_gas_spend: u64) -> TransactionVariation {
@@ -223,3 +227,22 @@ impl TransactionVariation {
         })
     }
 }
+
+fn insert_variation(tx_variations: &mut HashMap<String, TransactionVariation>, variation: TransactionVariation) -> anyhow::Result<()> {
+    let key = variation.name().to_string();
+    match tx_variations.entry(key.clone()) {
+        Entry::Vacant(entry) => {
+            entry.insert(variation);
+        }
+        Entry::Occupied(_) => {
+            return Err(anyhow::anyhow!(format!("Template transaction variation '{key}' conflicts with user-defined variation")))
+        }
+    }
+    Ok(())
+}
+
+pub fn insert_session_management_variations(tx_variations: &mut HashMap<String, TransactionVariation>) -> anyhow::Result<()> {
+    insert_variation(tx_variations, TransactionVariation::session_establishment_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND))?;
+    insert_variation(tx_variations, TransactionVariation::session_revocation_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND))?;
+    Ok(())
+    }

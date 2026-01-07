@@ -30,11 +30,9 @@ pub fn spawn_config_refresher(
 
         loop {
             ticker.tick().await;
-            match load_db_config(network_environment).await {
-                Ok(new_config) => {
+            match load_db_config(network_environment).await.and_then(|new_config| api::get_domain_state_map(new_config.domains, &mnemonic)) {
+                Ok(new_domains) => {
                     // Recompute the derived state
-                    let new_domains = api::get_domain_state_map(new_config.domains, &mnemonic);
-
                     domains.store(Arc::new(new_domains));
 
                     tracing::info!("Config/domains refreshed");
