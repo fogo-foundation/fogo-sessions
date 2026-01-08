@@ -29,6 +29,10 @@ changelog = "packages/solana-intents/CHANGELOG.md"
 versioned_files = ["services/paymaster/Cargo.toml", "Cargo.lock"]
 changelog = "services/paymaster/CHANGELOG.md"
 
+[packages.tollbooth]
+versioned_files = ["programs/tollbooth/Cargo.toml", "Cargo.lock"]
+changelog = "programs/tollbooth/CHANGELOG.md"
+
 # ============================================================================
 # TypeScript/npm Packages
 # ============================================================================
