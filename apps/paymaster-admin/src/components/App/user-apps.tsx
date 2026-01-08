@@ -3,8 +3,10 @@ import { Button } from "@fogo/component-library/Button";
 import { Card } from "@fogo/component-library/Card";
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import { AppWindowIcon } from "@phosphor-icons/react/dist/ssr/AppWindow";
+import { useDateFormatter } from "react-aria";
 import { GridList, GridListItem } from "react-aria-components";
 import type { App, User } from "../../db-schema";
+
 import styles from "./user-apps.module.scss";
 
 type AppCardProps =
@@ -17,6 +19,8 @@ type AppCardProps =
     };
 
 const AppCard = (props: AppCardProps) => {
+  const formatter = useDateFormatter();
+
   if (props.isLoading) {
     return <Skeleton className={styles.appCard} />;
   }
@@ -25,7 +29,7 @@ const AppCard = (props: AppCardProps) => {
       <div className={styles.appCardContent}>
         <h3 className={styles.appCardTitle}>{props.app.name}</h3>
         <p className={styles.appCardDescription}>
-          Created: {formatDate(props.app.created_at)}
+          Created: {formatter.format(props.app.created_at)}
         </p>
       </div>
       <div>
