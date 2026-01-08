@@ -1,3 +1,9 @@
+## 0.5.9 (2026-01-08)
+
+### Fixes
+
+- Fix publishing workflow for tollbooth
+
 ## 0.5.8 (2026-01-08)
 
 ### Features
