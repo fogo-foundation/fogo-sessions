@@ -56,20 +56,20 @@ const AppData = ({
 }) => {
   const userData = useUserData(sessionState);
   switch (userData.type) {
-    case StateType.Loading: {
-      return <UserApps isLoading />;
-    }
     case StateType.Error: {
       return <div>Error loading user data: {userData.error.message}</div>;
     }
-    case StateType.Loaded: {
-      if (userData.data.type === FetchUserDataStateType.NotFound) {
-        return <UserNotFound />;
-      }
-      return <UserApps user={userData.data.user} />;
+    case StateType.NotLoaded: {
+      return;
     }
     default: {
-      return;
+      if (
+        (userData.type === StateType.Loaded && userData.data.type) ===
+        FetchUserDataStateType.NotFound
+      ) {
+        return <UserNotFound />;
+      }
+      return <UserApps {...userData} />;
     }
   }
 };

@@ -37,6 +37,29 @@ const AppCard = (props: AppCardProps) => {
   );
 };
 
+type UserAppsTitleProps =
+  | {
+      user: User;
+      isLoading?: false;
+    }
+  | {
+      isLoading: true;
+    };
+
+const UserAppsTitle = (props: UserAppsTitleProps) => {
+  return (
+    <h1 className={styles.userAppsTitle}>
+      {props.isLoading ? (
+        <Skeleton className={styles.userAppsTitleSkeleton} />
+      ) : (
+        <>
+          Apps <Badge size="xs">{props.user.apps.length}</Badge>
+        </>
+      )}
+    </h1>
+  );
+};
+
 type UserAppsProps =
   | {
       user: User;
@@ -51,10 +74,7 @@ export const UserApps = (props: UserAppsProps) => {
     return (
       <>
         <div className={styles.userAppsHeader}>
-          <h1 className={styles.userAppsTitle}>
-            <Skeleton className={styles.userAppsTitleSkeleton} />
-          </h1>
-          <Skeleton className={styles.addAppButtonSkeleton} />
+          <UserAppsTitle isLoading />
         </div>
         <div className={styles.userApps}>
           <AppCard isLoading />
