@@ -1,3 +1,9 @@
+## 0.5.8 (2026-01-08)
+
+### Features
+
+- Add requires wrapped native tokens flag
+
 ## 0.5.7 (2025-12-10)
 
 ### Fixes

@@ -1,5 +1,11 @@
 # @fogo/sessions-idls
 
+## 0.0.13 (2026-01-08)
+
+### Fixes
+
+- Support transferring native tokens with the intent transfer program
+
 ## 0.0.12 (2025-12-10)
 
 ### Fixes
