@@ -1,5 +1,12 @@
 # @fogo/sessions-sdk
 
+## 0.0.30 (2026-01-08)
+
+### Fixes
+
+- Add getSessionWrapInstructions and getSessionUnwrapInstructions to allow wrapping and unwrapping native tokens within sessions
+- Support transferring native tokens with the intent transfer program
+
 ## 0.0.29 (2026-01-05)
 
 ### Fixes
