@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.0.31 (2026-01-08)
+
+### Fixes
+
+- Use v4 sessions
+
 ## 0.0.30 (2026-01-08)
 
 ### Fixes
