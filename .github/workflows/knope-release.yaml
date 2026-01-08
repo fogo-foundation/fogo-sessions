@@ -29,6 +29,11 @@ jobs:
           toolchain: nightly
           default: true
           override: true
+          s
+      - name: Install cargo-release
+        uses: taiki-e/install-action@v1
+        with:
+          tool: cargo-release
 
       - name: Install anchor cli
         run: |
@@ -77,6 +82,6 @@ jobs:
         run: pnpm publish --no-git-checks -r
 
       - name: Publish Cargo packages
-        run: cargo publish -p chain-id -p intent-transfer -p fogo-paymaster -p fogo-sessions-sdk -p solana-intents -p tollbooth
+        run: cargo release publish -p chain-id -p intent-transfer -p fogo-paymaster -p fogo-sessions-sdk -p solana-intents -p tollbooth
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.FOGO_SESSIONS_CARGO_REGISTRY_TOKEN }}
