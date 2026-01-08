@@ -104,6 +104,9 @@ jobs:
                 echo "Publishing fogo-paymaster..."
                 cargo publish -p fogo-paymaster --token $CARGO_REGISTRY_TOKEN || true
                 ;;
+              tollbooth@*|tollbooth/v*)
+                echo "Publishing tollbooth..."
+                cargo publish -p tollbooth --token $CARGO_REGISTRY_TOKEN || true
             esac
           done
         env:
