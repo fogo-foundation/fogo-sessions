@@ -30,6 +30,11 @@ jobs:
           default: true
           override: true
 
+      - name: Install cargo-release
+        uses: taiki-e/install-action@v1
+        with:
+          tool: cargo-release
+
       - name: Install anchor cli
         run: |
           cargo install --git https://github.com/coral-xyz/anchor --tag v0.31.1 --locked avm
@@ -62,9 +67,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Fetch tags created by Knope
-        run: git fetch --tags
-
       - name: Build Node packages
         run: |
           pnpm turbo build
@@ -80,35 +82,6 @@ jobs:
         run: pnpm publish --no-git-checks -r
 
       - name: Publish Cargo packages
-        run: |
-          # Publish packages based on tags created by knope
-          for tag in $(git tag --points-at HEAD); do
-            case $tag in
-              fogo-sessions-sdk@*|fogo-sessions-sdk/v*)
-                echo "Publishing fogo-sessions-sdk..."
-                cargo publish -p fogo-sessions-sdk --token $CARGO_REGISTRY_TOKEN || true
-                ;;
-              solana-intents@*|solana-intents/v*)
-                echo "Publishing solana-intents..."
-                cargo publish -p solana-intents --token $CARGO_REGISTRY_TOKEN || true
-                ;;
-              chain-id@*|chain-id/v*)
-                echo "Publishing chain-id..."
-                cargo publish -p chain-id --token $CARGO_REGISTRY_TOKEN || true
-                ;;
-              intent-transfer@*|intent-transfer/v*)
-                echo "Publishing intent-transfer..."
-                cargo publish -p intent-transfer --token $CARGO_REGISTRY_TOKEN || true
-                ;;
-              tollbooth@*|tollbooth/v*)
-                echo "Publishing tollbooth..."
-                cargo publish -p tollbooth --token $CARGO_REGISTRY_TOKEN || true
-                ;;
-              fogo-paymaster@*|fogo-paymaster/v*)
-                echo "Publishing fogo-paymaster..."
-                cargo publish -p fogo-paymaster --token $CARGO_REGISTRY_TOKEN || true
-                ;;
-            esac
-          done
+        run: cargo release publish -p chain-id -p intent-transfer -p fogo-paymaster -p fogo-sessions-sdk -p solana-intents -p tollbooth
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.FOGO_SESSIONS_CARGO_REGISTRY_TOKEN }}
