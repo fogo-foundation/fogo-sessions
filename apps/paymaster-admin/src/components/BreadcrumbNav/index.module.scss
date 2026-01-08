@@ -1,0 +1,41 @@
+@use '@fogo/component-library/theme';
+
+.breadcrumbNav {
+  padding:  0 0 theme.spacing(2) 0;
+
+  @include theme.breakpoint('md') {
+    padding: 0 0 theme.spacing(8) 0;
+  }
+
+  .breadcrumbNavContainer {
+    display: flex;
+    align-items: center;
+    gap: theme.spacing(4);
+    position: relative;
+
+    .breadcrumbNavArrow {
+      all: unset;
+      @include theme.text('xl', 'normal');
+      color: theme.color('foreground');
+      position: absolute;
+      left: -#{theme.spacing(10)};
+      top: 50%;
+      transform: translateY(-30%);
+      cursor: pointer;
+    }
+
+    .breadcrumbNavAction {
+      margin-left: auto;
+    }
+
+    .breadcrumbNavItem {
+      @include theme.text('3xl', 'normal');
+    }
+
+    .breadcrumbNavSeparator {
+      @include theme.text('3xl', 'normal');
+      color: theme.color('foreground');
+      opacity: 0.2;
+    }
+  }
+}

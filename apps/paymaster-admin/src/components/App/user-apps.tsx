@@ -5,6 +5,7 @@ import { Skeleton } from "@fogo/component-library/Skeleton";
 import { AppWindowIcon } from "@phosphor-icons/react/dist/ssr/AppWindow";
 import { GridList, GridListItem } from "react-aria-components";
 import type { App, User } from "../../db-schema";
+import { ListHeader } from "../ListHeader";
 import styles from "./user-apps.module.scss";
 
 type AppCardProps =
@@ -50,12 +51,7 @@ export const UserApps = (props: UserAppsProps) => {
   if (props.isLoading) {
     return (
       <>
-        <div className={styles.userAppsHeader}>
-          <h1 className={styles.userAppsTitle}>
-            <Skeleton className={styles.userAppsTitleSkeleton} />
-          </h1>
-          <Skeleton className={styles.addAppButtonSkeleton} />
-        </div>
+        <ListHeader isLoading />
         <div className={styles.userApps}>
           <AppCard isLoading />
           <AppCard isLoading />
@@ -67,14 +63,15 @@ export const UserApps = (props: UserAppsProps) => {
   }
   return (
     <>
-      <div className={styles.userAppsHeader}>
-        <h1 className={styles.userAppsTitle}>
-          Apps <Badge size="xs">{props.user.apps.length}</Badge>
-        </h1>
-        <Button variant="secondary">
-          Request App <AppWindowIcon />
-        </Button>
-      </div>
+      <ListHeader
+        title="Apps"
+        count={props.user.apps.length}
+        action={
+          <Button variant="secondary">
+            Request App <AppWindowIcon />
+          </Button>
+        }
+      />
       <GridList
         className={styles.userApps ?? ""}
         selectionMode="none"

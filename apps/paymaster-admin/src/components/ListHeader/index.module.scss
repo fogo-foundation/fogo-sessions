@@ -1,0 +1,27 @@
+@use "@fogo/component-library/theme";
+
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: theme.spacing(4);
+  .listHeaderTitle {
+    @include theme.text('2xl', 'medium');
+    color: theme.color('heading');
+    display: flex;
+    align-items: center;
+    gap: theme.spacing(2);
+  }
+
+  .listHeaderTitleSkeleton {
+    width: theme.spacing(35);
+    height: theme.spacing(6);
+    display: inline-block;
+  }
+
+  .listHeaderActionSkeleton {
+    width: theme.spacing(30);
+    height: theme.spacing(6);
+    display: inline-block;
+  }
+}

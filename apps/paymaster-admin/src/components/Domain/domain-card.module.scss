@@ -1,0 +1,19 @@
+@use '@fogo/component-library/theme';
+
+.domainCard {
+  display: flex;
+  gap: theme.spacing(4);
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  
+  .domainCardHeader {
+    display: flex;
+    align-items: center;
+    gap: theme.spacing(4);
+
+    .domainCardTitle {
+      @include theme.text('base', 'light');
+    }
+  }
+}

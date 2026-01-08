@@ -74,12 +74,7 @@ const DomainData = ({
       if (!app) {
         return <div>App not found</div>;
       }
-      return (
-        <div>
-          <h1>App {app.name} Domains</h1>
-          <AppDomains app={app} />
-        </div>
-      );
+      return <AppDomains app={app} />;
     }
     default: {
       return;
