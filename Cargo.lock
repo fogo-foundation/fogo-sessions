@@ -1941,6 +1941,7 @@ dependencies = [
  "dashmap 6.1.0",
  "dotenvy",
  "fogo-sessions-sdk",
+ "fogo-sessions-tollbooth",
  "futures",
  "governor",
  "hex",
@@ -1983,7 +1984,6 @@ dependencies = [
  "spl-token",
  "sqlx",
  "tokio",
- "tollbooth",
  "tower-http",
  "tracing",
  "tracing-opentelemetry",
@@ -2002,6 +2002,15 @@ dependencies = [
  "borsh 0.10.4",
  "solana-program",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "fogo-sessions-tollbooth"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "fogo-sessions-sdk",
 ]
 
 [[package]]
@@ -8208,15 +8217,6 @@ dependencies = [
  "futures-sink",
  "pin-project-lite",
  "tokio",
-]
-
-[[package]]
-name = "tollbooth"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "fogo-sessions-sdk",
 ]
 
 [[package]]
