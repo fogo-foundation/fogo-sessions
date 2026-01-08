@@ -156,8 +156,8 @@ impl InstructionConstraint {
                 // instruction = 1 (CreateIdempotent)
                 DataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U32,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U32(1)]),
+                    data_type: DataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
                 },
             ],
             required: false,
@@ -173,8 +173,8 @@ impl InstructionConstraint {
                 // instruction = 17 (SyncNative)
                 DataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U32,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U32(17)]),
+                    data_type: DataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(17)]),
                 },
             ],
             required: false,
@@ -190,8 +190,8 @@ impl InstructionConstraint {
                 // instruction = 9 (CloseAccount)
                 DataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U32,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U32(9)]),
+                    data_type: DataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(9)]),
                 },
             ],
             required: false,
