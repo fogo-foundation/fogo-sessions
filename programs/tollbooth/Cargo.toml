@@ -1,5 +1,5 @@
 [package]
-name = "tollbooth"
+name = "fogo-sessions-tollbooth"
 version = "0.1.0"
 edition = { workspace = true }
 
