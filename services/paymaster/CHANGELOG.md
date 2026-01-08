@@ -1,3 +1,9 @@
+## 0.5.10 (2026-01-08)
+
+### Fixes
+
+- Fix incorrect wrap/unwrap constraint templates
+
 ## 0.5.9 (2026-01-08)
 
 ### Fixes
