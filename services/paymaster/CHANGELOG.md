@@ -1,3 +1,10 @@
+## 0.5.11 (2026-01-08)
+
+### Fixes
+
+- Fix incorrect wrap/unwrap constraint templates
+- Test new publish workflow
+
 ## 0.5.9 (2026-01-08)
 
 ### Fixes
