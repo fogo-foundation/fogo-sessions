@@ -32,7 +32,7 @@ export const { classes } = createStyles("fogo-sessions-button", (theme) => {
   const variantStyles: SimpleStyleRules = {};
 
   for (const variant of buttonVariants) {
-    variantStyles[`&[data-variant="${variant}"]`] = {
+    const styles: SimpleStyleRules["key"] = {
       backgroundColor: theme.color.button[variant].background.normal,
       color: theme.color.button[variant].foreground,
 
@@ -42,10 +42,13 @@ export const { classes } = createStyles("fogo-sessions-button", (theme) => {
       "&[data-pressed]": {
         backgroundColor: theme.color.button[variant].background.pressed,
       },
-      // '&[data-variant="outline"]': {
-      //   border: `1px solid ${theme.color.border}`,
-      // },
     };
+
+    if (variant === "outline") {
+      styles.border = `1px solid ${theme.color.border}`;
+    }
+
+    variantStyles[`&[data-variant="${variant}"]`] = styles;
   }
 
   return {
@@ -87,10 +90,6 @@ export const { classes } = createStyles("fogo-sessions-button", (theme) => {
         gap: theme.spacing(2),
       },
       ...variantStyles,
-
-      '&[data-variant="outline"]': {
-        border: `1px solid ${theme.color.border}`,
-      },
       "&[data-focus-visible]": {
         outlineColor: theme.color.accent,
       },

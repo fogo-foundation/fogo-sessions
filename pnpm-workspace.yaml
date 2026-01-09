@@ -7,7 +7,7 @@ packages:
 catalog:
   "@axe-core/react": ^4.10.2
   "@changesets/cli": ^2.29.4
-  "@better-builds/ts-duality": ^0.1.2
+  "@better-builds/ts-duality": ^1.1.0
   "@babel/preset-typescript": ^7.27.1
   "@biomejs/biome": ^2.3.11
   "@coral-xyz/anchor": ^0.31.1
@@ -93,7 +93,7 @@ catalog:
   react-dom: ^19.1.4
   sass: ^1.89.2
   sass-loader: ^16.0.5
-  simplestyle-js: ^5.3.3
+  simplestyle-js: ^5.3.4
   storybook: ^10.1.2
   stylelint: ^16.21.0
   style-loader: ^4.0.0
