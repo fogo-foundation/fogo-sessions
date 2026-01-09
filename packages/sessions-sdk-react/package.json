@@ -64,7 +64,6 @@
     "@solana/web3.js": "catalog:",
     "@wormhole-foundation/sdk": "catalog:",
     "@yudiel/react-qr-scanner": "catalog:",
-    "bcp-47": "catalog:",
     "bs58": "catalog:",
     "clsx": "catalog:",
     "dnum": "catalog:",

@@ -65,7 +65,6 @@ catalog:
   "@yudiel/react-qr-scanner": ^2.3.1
   autoprefixer: ^10.4.20
   babel-plugin-react-compiler: 19.1.0-rc.1
-  bcp-47: ^2.1.0
   bn.js: ^5.1.2
   bs58: ^6.0.0
   copy-and-watch: ^0.1.8
@@ -128,7 +127,7 @@ onlyBuiltDependencies:
 
 packageManagerStrict: true
 
-packageManagerStrictVersion: true
+packageManagerStrictVersion: false
 
 strictDepBuilds: true
 

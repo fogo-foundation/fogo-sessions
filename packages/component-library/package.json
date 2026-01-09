@@ -53,7 +53,6 @@
   "dependencies": {
     "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
-    "bcp-47": "catalog:",
     "clsx": "catalog:",
     "copy-and-watch": "catalog:",
     "modern-normalize": "catalog:",
