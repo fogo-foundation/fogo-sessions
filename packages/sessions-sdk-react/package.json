@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-react",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": true,
   "description": "React components and hooks for integrating with Fogo sessions",
   "repository": {
@@ -51,9 +51,11 @@
     "@fogo/sessions-idls": "workspace:^",
     "@fogo/sessions-sdk": "workspace:^",
     "@fogo/sessions-sdk-web": "workspace:^",
+    "@fogolend/fns-client": "catalog:",
     "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana-mobile/wallet-adapter-mobile": "catalog:",
+    "@solana/compat": "catalog:",
     "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-backpack": "catalog:",

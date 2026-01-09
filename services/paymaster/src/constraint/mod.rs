@@ -14,18 +14,14 @@ use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
 use transaction::{InstructionWithIndex, TransactionToValidate};
 
+pub mod config;
 mod fee;
 mod gas;
 mod templates;
 pub mod transaction;
 
-#[derive(Serialize, Deserialize)]
-#[serde(tag = "version")]
 pub enum TransactionVariation {
-    #[serde(rename = "v0")]
     V0(VariationProgramWhitelist),
-
-    #[serde(rename = "v1")]
     V1(VariationOrderedInstructionConstraints),
 }
 
@@ -71,10 +67,8 @@ impl VariationProgramWhitelist {
     }
 }
 
-#[derive(Serialize, Deserialize)]
 pub struct VariationOrderedInstructionConstraints {
     pub name: String,
-    #[serde(default)]
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,
@@ -249,7 +243,7 @@ impl FromStr for SubstantiveProgramId {
 }
 
 #[serde_as]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct InstructionConstraint {
     #[serde_as(as = "DisplayFromStr")]
     pub program: SubstantiveProgramId,

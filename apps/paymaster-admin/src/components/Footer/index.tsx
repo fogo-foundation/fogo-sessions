@@ -13,7 +13,10 @@ export const Footer = () => (
         </p>
       </div>
       <div>
-        <Link href="https://dourolabs.xyz" target="_blank">
+        <Link
+          href="https://www.dourolabs.xyz/Paymaster-Terms-Of-Service.pdf"
+          target="_blank"
+        >
           Terms of Service
         </Link>
       </div>

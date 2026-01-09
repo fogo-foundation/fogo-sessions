@@ -1922,7 +1922,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "fogo-paymaster"
-version = "0.5.7"
+version = "0.5.10"
 dependencies = [
  "anchor-lang",
  "anyhow",
@@ -1980,6 +1980,7 @@ dependencies = [
  "solana-transaction-error",
  "solana-transaction-status-client-types",
  "spl-associated-token-account",
+ "spl-token",
  "sqlx",
  "tokio",
  "tollbooth",
@@ -2766,7 +2767,7 @@ dependencies = [
 
 [[package]]
 name = "intent-transfer"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anchor-lang",
  "anchor-spl",

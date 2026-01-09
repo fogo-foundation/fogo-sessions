@@ -425,6 +425,7 @@ $color: (
   "muted": rgb(from pallette-color("white") r g b / 65%),
   "image-placeholder": rgb(from pallette-color("white") r g b / 30%),
   "skeleton": rgb(from pallette-color("white") r g b / 10%),
+  "brand": #ff3d00,
   "button": (
     "primary": (
       "foreground": pallette-color("white"),

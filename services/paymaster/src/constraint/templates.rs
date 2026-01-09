@@ -123,6 +123,80 @@ impl InstructionConstraint {
             required: true,
         }
     }
+
+    /// The template for the constraint for transferring FOGO to one's ATA account via system_program::session_wrap
+    pub fn session_wrap_instruction_constraint() -> InstructionConstraint {
+        InstructionConstraint {
+            program: SubstantiveProgramId(solana_program::system_program::id()),
+            accounts: vec![],
+            data: vec![
+                // instruction = 4_000_000 (SessionWrap)
+                DataConstraint {
+                    start_byte: 0,
+                    data_type: DataType::U32,
+                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U32(
+                        4_000_000,
+                    )]),
+                },
+            ],
+            required: false,
+        }
+    }
+
+    /// The template for the constraint for creating an ATA idempotently
+    pub fn create_ata_idempotent_instruction_constraint() -> InstructionConstraint {
+        InstructionConstraint {
+            program: SubstantiveProgramId(spl_associated_token_account::id()),
+            accounts: vec![AccountConstraint {
+                index: 0,
+                include: vec![ContextualPubkey::NonFeePayerSigner],
+                exclude: vec![],
+            }],
+            data: vec![
+                // instruction = 1 (CreateIdempotent)
+                DataConstraint {
+                    start_byte: 0,
+                    data_type: DataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
+                },
+            ],
+            required: false,
+        }
+    }
+
+    /// The template for the constraint for syncing a wrapped native token account
+    pub fn sync_native_instruction_constraint() -> InstructionConstraint {
+        InstructionConstraint {
+            program: SubstantiveProgramId(spl_token::id()),
+            accounts: vec![],
+            data: vec![
+                // instruction = 17 (SyncNative)
+                DataConstraint {
+                    start_byte: 0,
+                    data_type: DataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(17)]),
+                },
+            ],
+            required: false,
+        }
+    }
+
+    /// The template for the constraint for closing a token account
+    pub fn close_token_account_constraint() -> InstructionConstraint {
+        InstructionConstraint {
+            program: SubstantiveProgramId(spl_token::id()),
+            accounts: vec![],
+            data: vec![
+                // instruction = 9 (CloseAccount)
+                DataConstraint {
+                    start_byte: 0,
+                    data_type: DataType::U8,
+                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(9)]),
+                },
+            ],
+            required: false,
+        }
+    }
 }
 
 impl TransactionVariation {

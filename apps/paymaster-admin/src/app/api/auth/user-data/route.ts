@@ -10,7 +10,7 @@ const fetchData = async (
   "use cache";
   cacheTag("user-data");
   cacheLife("seconds");
-  return fetchUserPaymasterData(walletAddress);
+  return await fetchUserPaymasterData(walletAddress);
 };
 
 export const GET = async (request: NextRequest) => {
