@@ -8,23 +8,24 @@
   },
   "scripts": {
     "build": "next build",
-    "fix:lint": "biome check --write",
     "pull:env": "[ $CI ] || VERCEL_ORG_ID=team_M8yTQcRiKOduAwHNMhHQInWq VERCEL_PROJECT_ID=prj_0YVLB5TIHu7VXdMyib1Zmjq4iwtZ vercel env pull",
     "start:dev": "next dev --port 3002",
     "start:prod": "next start --port 3002",
-    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
     "test:types": "tsc"
   },
   "dependencies": {
     "@fogo/component-library": "workspace:*",
     "@fogo/sessions-sdk": "workspace:",
     "@fogo/sessions-sdk-react": "workspace:*",
+    "@phosphor-icons/react": "catalog:",
     "@neondatabase/serverless": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana/web3.js": "catalog:",
     "clsx": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
+    "react-aria": "catalog:",
+    "react-aria-components": "catalog:",
     "react-dom": "catalog:",
     "swr": "catalog:",
     "zod": "catalog:"
@@ -36,6 +37,8 @@
     "@types/react": "catalog:",
     "autoprefixer": "catalog:",
     "postcss": "catalog:",
-    "typescript": "catalog:"
+    "modern-normalize": "catalog:",
+    "typescript": "catalog:",
+    "vercel": "catalog:"
   }
 }

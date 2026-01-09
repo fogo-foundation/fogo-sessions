@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-react",
-  "version": "0.1.8",
+  "version": "0.1.10",
   "private": true,
   "description": "React components and hooks for integrating with Fogo sessions",
   "repository": {
@@ -38,11 +38,9 @@
     "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
-    "fix:lint": "biome check --write",
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
     "test:integration": "run-jest --colors --selectProjects integration",
-    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
     "test:types": "tsc"
   },
   "peerDependencies": {
@@ -53,9 +51,11 @@
     "@fogo/sessions-idls": "workspace:^",
     "@fogo/sessions-sdk": "workspace:^",
     "@fogo/sessions-sdk-web": "workspace:^",
+    "@fogolend/fns-client": "catalog:",
     "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana-mobile/wallet-adapter-mobile": "catalog:",
+    "@solana/compat": "catalog:",
     "@solana/kit": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-backpack": "catalog:",
@@ -73,6 +73,7 @@
     "modern-normalize": "catalog:",
     "motion": "catalog:",
     "qrcode.react": "catalog:",
+    "react-aria": "catalog:",
     "react-aria-components": "catalog:",
     "swr": "catalog:",
     "zod": "catalog:"

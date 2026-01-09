@@ -41,13 +41,11 @@
     "build:package-json": "transform-package-json --no-remove-private ./package.json dist/package.json",
     "build:storybook": "storybook build",
     "build:theme.scss": "mkdir -p dist && cp src/theme.scss dist/theme.scss",
-    "fix:lint": "biome check --write",
     "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
     "start:dev:theme.scss": "copy-and-watch --watch src/theme.scss dist",
     "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "storybook": "storybook dev -p 6006",
-    "test:types": "tsc",
-    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi"
+    "test:types": "tsc"
   },
   "peerDependencies": {
     "react": "^19"
@@ -59,6 +57,7 @@
     "copy-and-watch": "catalog:",
     "modern-normalize": "catalog:",
     "motion": "catalog:",
+    "react-aria": "catalog:",
     "react-aria-components": "catalog:",
     "swr": "catalog:"
   },

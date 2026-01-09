@@ -76,13 +76,14 @@ where
     let variations: Vec<config::TransactionVariation> = Vec::deserialize(deserializer)?;
     variations
         .into_iter()
+        // TODO: this does not align with the principle of converting outside of deserializers. Deserialize without converting, and convert later.
+        .map(|config| config.into())
         .try_fold(HashMap::new(), |mut map, variation| {
             insert_variation(&mut map, variation).map_err(serde::de::Error::custom)?;
             Ok(map)
         })
 }
 
-// TODO: does this need the Serialize trait? We can remove a bunch of Serialize/serde tagging if not.
 #[derive(Deserialize, Default)]
 pub struct Config {
     pub domains: Vec<Domain>,

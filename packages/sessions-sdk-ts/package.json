@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk",
-  "version": "0.0.28",
+  "version": "0.0.32",
   "private": true,
   "description": "A set of utilities for integrating with Fogo sessions",
   "repository": {
@@ -18,7 +18,7 @@
   "main": "./dist/cjs/index.js",
   "types": "./dist/cjs/index.d.ts",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "exports": {
     ".": {
@@ -36,10 +36,8 @@
     "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
     "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "build:package-json": "transform-package-json ./package.json dist/package.json",
-    "fix:lint": "biome check --write",
     "start:dev": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
     "test:integration": "run-jest --colors --selectProjects integration",
-    "test:lint": "if [ \"$CI\" = \"true\" ]; then biome ci --changed; else biome check; fi",
     "test:types": "tsc",
     "test:unit": "run-jest --colors --coverage --selectProjects unit"
   },

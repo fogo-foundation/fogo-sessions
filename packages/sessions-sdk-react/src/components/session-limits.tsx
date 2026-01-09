@@ -6,36 +6,35 @@ import { AnimatePresence, motion } from "motion/react";
 import type { FormEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import {
-  Button as UnstyledButton,
   Checkbox,
   Form,
-  Select,
   Label,
-  SelectValue,
-  Popover,
   ListBox,
   ListBoxItem,
+  Popover,
+  Select,
+  SelectValue,
+  Button as UnstyledButton,
 } from "react-aria-components";
 
-import { stringToAmount, amountToString } from "../amount-to-string.js";
-import type { WalletConnectedSessionState } from "../session-state.js";
-import { Button } from "./component-library/Button/index.js";
-import { TextField } from "./component-library/TextField/index.js";
-import styles from "./session-limits.module.css";
-import { TokenAmountInput } from "./token-amount-input.js";
+import { amountToString, stringToAmount } from "../amount-to-string.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { TokenAccountData } from "../hooks/use-token-account-data.js";
 import {
-  useTokenAccountData,
   StateType as TokenDataStateType,
+  useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
 import {
   StateType as TokenMetadataStateType,
   useTokenMetadata,
 } from "../hooks/use-token-metadata.js";
 import layerStyles from "../layer.module.css";
-import resetStyles from "../reset.module.css";
-import { StateType, isEstablished, isUpdatable } from "../session-state.js";
+import type { WalletConnectedSessionState } from "../session-state.js";
+import { isEstablished, isUpdatable, StateType } from "../session-state.js";
+import { Button } from "./component-library/Button/index.js";
+import { TextField } from "./component-library/TextField/index.js";
+import styles from "./session-limits.module.css";
+import { TokenAmountInput } from "./token-amount-input.js";
 
 const ONE_SECOND_IN_MS = 1000;
 const ONE_MINUTE_IN_MS = 60 * ONE_SECOND_IN_MS;
@@ -144,11 +143,7 @@ export const SessionLimits = ({
           </UnstyledButton>
           <Popover
             offset={4}
-            className={clsx(
-              styles.selectPopover,
-              resetStyles.reset,
-              layerStyles.layerSelect,
-            )}
+            className={clsx(styles.selectPopover, layerStyles.layerSelect)}
           >
             <ListBox items={Object.entries(DURATION)}>
               {([key, { label }]) => (
@@ -259,7 +254,13 @@ const LoadedTokenLimits = ({
       tokenAccountData === undefined
         ? []
         : [
-            ...tokenAccountData.tokensInWallet,
+            // We exclude the native token from session limits, since session
+            // limits don't apply to the native token.  In general that's OK
+            // because all an app can do with the native token is wrap it and
+            // use wFOGO, and users can put limits on wFOGO
+            ...tokenAccountData.tokensInWallet.filter(
+              (token) => !token.isNative,
+            ),
             ...tokenAccountData.sessionLimits,
           ].map((token) => token.mint),
     [tokenAccountData],

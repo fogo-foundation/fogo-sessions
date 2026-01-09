@@ -1,6 +1,6 @@
 [package]
 name = "intent-transfer"
-version = "0.1.0"
+version = "0.1.1"
 description = "Fogo Sessions intent-transfer program"
 license = { workspace = true }
 repository = "https://github.com/fogo-foundation/fogo-sessions"

@@ -3,7 +3,7 @@ use crate::{
     error::IntentTransferError,
     fees::{PaidInstruction, VerifyAndCollectAccounts},
     intrachain::message::Message,
-    nonce::Nonce,
+    nonce::{self, Nonce},
     verify::{verify_and_update_nonce, verify_signer_matches_source, verify_symbol_or_mint},
     INTENT_TRANSFER_SEED,
 };
@@ -17,8 +17,6 @@ use anchor_spl::{
 };
 use chain_id::ChainId;
 use solana_intents::Intent;
-
-const NONCE_SEED: &[u8] = b"nonce";
 
 #[derive(Accounts)]
 pub struct SendTokens<'info> {
@@ -47,7 +45,7 @@ pub struct SendTokens<'info> {
         init_if_needed,
         payer = sponsor,
         space = Nonce::DISCRIMINATOR.len() + Nonce::INIT_SPACE,
-        seeds = [NONCE_SEED, source.owner.key().as_ref()],
+        seeds = [nonce::INTENT_TRANSFER_NONCE_SEED, source.owner.key().as_ref()],
         bump
     )]
     pub nonce: Account<'info, Nonce>,

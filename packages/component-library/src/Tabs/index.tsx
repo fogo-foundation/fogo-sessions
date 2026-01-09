@@ -5,10 +5,10 @@ import { motion } from "motion/react";
 import type { ComponentProps, ReactNode } from "react";
 import { createContext, useContext, useId } from "react";
 import {
-  Tabs as AriaTabs,
-  TabList as AriaTabList,
   Tab as AriaTab,
+  TabList as AriaTabList,
   TabPanel as AriaTabPanel,
+  Tabs as AriaTabs,
 } from "react-aria-components";
 
 import styles from "./index.module.css";

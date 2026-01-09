@@ -6,6 +6,7 @@ use crate::constraint::{
 };
 
 #[derive(Deserialize)]
+#[serde(tag = "version")]
 pub enum TransactionVariation {
     #[serde(rename = "v0")]
     V0(VariationProgramWhitelist),
@@ -30,15 +31,6 @@ impl TransactionVariation {
             TransactionVariation::V1(v) => &v.name,
         }
     }
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct VariationOrderedInstructionConstraints {
-    pub name: String,
-    #[serde(default)]
-    pub instructions: Vec<InstructionConstraint>,
-    pub max_gas_spend: u64,
-    pub paymaster_fee_lamports: Option<u64>,
 }
 
 #[serde_as]
@@ -74,11 +66,27 @@ impl From<InstructionConstraint> for constraint::InstructionConstraint {
     }
 }
 
+#[derive(Deserialize)]
+pub struct VariationOrderedInstructionConstraints {
+    pub name: String,
+    #[serde(default)]
+    pub instructions: Vec<InstructionConstraint>,
+    pub max_gas_spend: u64,
+    pub paymaster_fee_lamports: Option<u64>,
+}
+
 impl From<VariationOrderedInstructionConstraints>
     for constraint::VariationOrderedInstructionConstraints
 {
-    fn from(config: VariationOrderedInstructionConstraints) -> Self {
-        let constraints = config.instructions
+    fn from(
+        VariationOrderedInstructionConstraints {
+            name,
+            instructions,
+            max_gas_spend,
+            paymaster_fee_lamports,
+        }: VariationOrderedInstructionConstraints,
+    ) -> Self {
+        let constraints = instructions
             .into_iter()
             .flat_map(|base| {
                 if base.requires_wrapped_native_tokens {
@@ -95,10 +103,10 @@ impl From<VariationOrderedInstructionConstraints>
             })
             .collect();
         Self {
-            name: config.name,
+            name,
             instructions: constraints,
-            max_gas_spend: config.max_gas_spend,
-            paymaster_fee_lamports: config.paymaster_fee_lamports,
+            max_gas_spend,
+            paymaster_fee_lamports,
         }
     }
 }
