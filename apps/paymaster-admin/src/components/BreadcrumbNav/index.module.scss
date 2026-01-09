@@ -1,13 +1,15 @@
 @use '@fogo/component-library/theme';
 
 .breadcrumbNav {
-  padding:  0 0 theme.spacing(2) 0;
+  padding: 0 0 theme.spacing(2) 0;
+  border-bottom: 1px solid theme.color('border');
 
   @include theme.breakpoint('md') {
-    padding: 0 0 theme.spacing(8) 0;
+    padding: theme.spacing(8) 0;
   }
 
   .breadcrumbNavContainer {
+    @include theme.max-width;
     display: flex;
     align-items: center;
     gap: theme.spacing(4);
@@ -27,15 +29,21 @@
     .breadcrumbNavAction {
       margin-left: auto;
     }
-
-    .breadcrumbNavItem {
-      @include theme.text('3xl', 'normal');
-    }
-
-    .breadcrumbNavSeparator {
-      @include theme.text('3xl', 'normal');
-      color: theme.color('foreground');
-      opacity: 0.2;
-    }
   }
+}
+
+.breadcrumbNavItemSkeleton {
+  width: theme.spacing(35);
+  height: theme.spacing(6);
+  display: inline-block;
+}
+
+.breadcrumbNavItem {
+  @include theme.text('3xl', 'normal');
+}
+
+.breadcrumbNavSeparator {
+  @include theme.text('3xl', 'normal');
+  color: theme.color('foreground');
+  opacity: 0.2;
 }

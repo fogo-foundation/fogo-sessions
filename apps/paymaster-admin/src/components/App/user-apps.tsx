@@ -1,4 +1,3 @@
-import { Badge } from "@fogo/component-library/Badge";
 import { Button } from "@fogo/component-library/Button";
 import { Card } from "@fogo/component-library/Card";
 import { Skeleton } from "@fogo/component-library/Skeleton";
@@ -6,6 +5,7 @@ import { AppWindowIcon } from "@phosphor-icons/react/dist/ssr/AppWindow";
 import { useDateFormatter } from "react-aria";
 import { GridList, GridListItem } from "react-aria-components";
 import type { App, User } from "../../db-schema";
+import { Container } from "../Container";
 import { ListHeader } from "../ListHeader";
 import styles from "./user-apps.module.scss";
 
@@ -40,29 +40,6 @@ const AppCard = (props: AppCardProps) => {
   );
 };
 
-type UserAppsTitleProps =
-  | {
-      user: User;
-      isLoading?: false;
-    }
-  | {
-      isLoading: true;
-    };
-
-const UserAppsTitle = (props: UserAppsTitleProps) => {
-  return (
-    <h1 className={styles.userAppsTitle}>
-      {props.isLoading ? (
-        <Skeleton className={styles.userAppsTitleSkeleton} />
-      ) : (
-        <>
-          Apps <Badge size="xs">{props.user.apps.length}</Badge>
-        </>
-      )}
-    </h1>
-  );
-};
-
 type UserAppsProps =
   | {
       user: User;
@@ -72,32 +49,29 @@ type UserAppsProps =
       isLoading: true;
     };
 
-export const UserApps = (props: UserAppsProps) => {
-  if (props.isLoading) {
-    return (
-      <>
-        <div className={styles.userAppsHeader}>
-          <UserAppsTitle isLoading />
-        </div>
-        <div className={styles.userApps}>
-          <AppCard isLoading />
-          <AppCard isLoading />
-          <AppCard isLoading />
-          <AppCard isLoading />
-        </div>
-      </>
-    );
-  }
-  return (
-    <>
-      <div className={styles.userAppsHeader}>
-        <h1 className={styles.userAppsTitle}>
-          Apps <Badge size="xs">{props.user.apps.length}</Badge>
-        </h1>
-        <Button variant="secondary">
-          Request App <AppWindowIcon />
-        </Button>
+export const UserApps = (props: UserAppsProps) => (
+  <Container>
+    {props.isLoading ? (
+      <ListHeader isLoading />
+    ) : (
+      <ListHeader
+        title="Apps"
+        count={props.user.apps.length}
+        action={
+          <Button variant="secondary">
+            Request App <AppWindowIcon />
+          </Button>
+        }
+      />
+    )}
+    {props.isLoading ? (
+      <div className={styles.userApps}>
+        <AppCard isLoading />
+        <AppCard isLoading />
+        <AppCard isLoading />
+        <AppCard isLoading />
       </div>
+    ) : (
       <GridList
         className={styles.userApps ?? ""}
         selectionMode="none"
@@ -110,6 +84,6 @@ export const UserApps = (props: UserAppsProps) => {
           </GridListItem>
         )}
       </GridList>
-    </>
-  );
-};
+    )}
+  </Container>
+);

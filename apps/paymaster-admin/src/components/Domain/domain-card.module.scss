@@ -6,7 +6,7 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  
+
   .domainCardHeader {
     display: flex;
     align-items: center;
@@ -16,4 +16,8 @@
       @include theme.text('base', 'light');
     }
   }
+}
+
+.domainCardSkeleton {
+  
 }

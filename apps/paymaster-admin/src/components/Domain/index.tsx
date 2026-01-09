@@ -61,7 +61,7 @@ const DomainData = ({
   const userData = useUserData(sessionState);
   switch (userData.type) {
     case StateType.Loading: {
-      return <PaymasterLoading />;
+      return <AppDomains isLoading />;
     }
     case StateType.Error: {
       return <div>Error loading user data: {userData.error.message}</div>;
@@ -74,7 +74,7 @@ const DomainData = ({
       if (!app) {
         return <div>App not found</div>;
       }
-      return <AppDomains app={app} />;
+      return <AppDomains isLoading />;
     }
     default: {
       return;

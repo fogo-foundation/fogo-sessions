@@ -29,7 +29,7 @@ const networkBadgeVariation: Record<
 
 export const DomainCard = (props: DomainCardProps) => {
   if (props.isLoading) {
-    return <Skeleton className={styles.domainCard} />;
+    return <Skeleton className={styles.domainCardSkeleton} />;
   }
 
   return (
