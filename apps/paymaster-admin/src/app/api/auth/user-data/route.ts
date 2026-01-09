@@ -1,7 +1,6 @@
-import { cacheTag, cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import { fetchUserPaymasterData } from "../../../../server/paymaster";
 
 const fetchData = async (
@@ -10,7 +9,7 @@ const fetchData = async (
   "use cache";
   cacheTag("user-data");
   cacheLife("seconds");
-  return fetchUserPaymasterData(walletAddress);
+  return await fetchUserPaymasterData(walletAddress);
 };
 
 export const GET = async (request: NextRequest) => {

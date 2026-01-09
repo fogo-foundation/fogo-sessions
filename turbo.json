@@ -1,7 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": ["NODE_ENV"],
-  "globalPassThroughEnv": ["COREPACK_HOME"],
+  "globalPassThroughEnv": ["COREPACK_HOME", "BIOME_BINARY", "FORCE_COLOR"],
   "ui": "tui",
   "tasks": {
     "//#fix": {
@@ -84,7 +84,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
@@ -99,7 +99,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
@@ -113,7 +113,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
@@ -139,7 +139,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"

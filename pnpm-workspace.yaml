@@ -9,12 +9,13 @@ catalog:
   "@changesets/cli": ^2.29.4
   "@better-builds/ts-duality": ^0.1.2
   "@babel/preset-typescript": ^7.27.1
+  "@biomejs/biome": ^2.3.11
   "@coral-xyz/anchor": ^0.31.1
-  "@cprussin/eslint-config": ^5.0.0
   "@cprussin/jest-config": ^3.1.2
   "@cprussin/prettier-config": ^3.0.0
   "@cprussin/transform-package-json": ^2.1.0
   "@cprussin/tsconfig": ^4.0.1
+  "@fogolend/fns-client": ^0.1.0
   "@ledgerhq/hw-transport": ^6.31.12
   "@ledgerhq/hw-transport-node-hid": ^6.29.13
   "@metaplex-foundation/mpl-token-metadata": ^3.4.0
@@ -67,13 +68,12 @@ catalog:
   babel-plugin-react-compiler: 19.1.0-rc.1
   bn.js: ^5.1.2
   bs58: ^6.0.0
-  copy-and-watch: ^0.1.8
-  copyfiles: ^2.4.1
   class-variance-authority: ^0.7.1
   clsx: ^2.1.1
-  dnum: ^2.15.0
+  copy-and-watch: ^0.1.8
+  copyfiles: ^2.4.1
   css-loader: ^7.1.2
-  eslint: ^9.28.0
+  dnum: ^2.15.0
   idb: ^8.0.3
   jest: ^29.7.0
   lucide-react: ^0.473.0
@@ -101,6 +101,7 @@ catalog:
   thread-stream: ^3.1.0
   turbo: ^2.5.4
   typescript: ^5.8.3
+  vercel: ^50.1.5
   yargs: ^18.0.0
   zod: 3.25.67
 

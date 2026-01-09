@@ -7,27 +7,23 @@
     "pnpm": "^10.25.0"
   },
   "scripts": {
-    "fix:format": "prettier --write .",
-    "fix:lint": "eslint --fix .",
+    "fix:lint": "biome check --write --changed --no-errors-on-unmatched; biome check --write --staged --no-errors-on-unmatched",
+    "fix:lint:unsafe": "biome check --write --unsafe --changed --no-errors-on-unmatched; biome check --write --unsafe --staged --no-errors-on-unmatched",
     "install:modules": "[ $CI ] && true || pnpm install",
     "run:domain-registry": "domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
     "run:register-ntt-manager": "register-ntt-manager",
     "run:register-fee-config": "register-fee-config",
     "run:update-metadata": "update-metadata",
-    "test:format": "run-jest --colors --selectProjects format",
-    "test:lint": "run-jest --colors --selectProjects lint",
+    "test:lint": "biome ci --changed --no-errors-on-unmatched; if [ ! $CI ]; then biome check --staged --no-errors-on-unmatched; fi",
     "turbo": "[ ! -d node_modules ] && pnpm install; turbo"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@changesets/cli": "catalog:",
-    "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
-    "eslint": "catalog:",
     "@fogo/scripts": "workspace:*",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "turbo": "catalog:"
   }
 }

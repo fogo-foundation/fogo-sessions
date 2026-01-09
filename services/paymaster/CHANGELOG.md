@@ -1,3 +1,21 @@
+## 0.5.10 (2026-01-08)
+
+### Fixes
+
+- Fix incorrect wrap/unwrap constraint templates
+
+## 0.5.9 (2026-01-08)
+
+### Fixes
+
+- Fix publishing workflow for tollbooth
+
+## 0.5.8 (2026-01-08)
+
+### Features
+
+- Add requires wrapped native tokens flag
+
 ## 0.5.7 (2025-12-10)
 
 ### Fixes

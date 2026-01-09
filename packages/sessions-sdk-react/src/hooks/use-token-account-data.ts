@@ -12,6 +12,8 @@ import { useConnection, useSessionContext } from "./use-session.js";
 
 export { StateType } from "../components/component-library/useData/index.js";
 
+const FOGO_DECIMALS = 9;
+
 export const useTokenAccountData = (
   sessionState: WalletConnectedSessionState,
 ) => {
@@ -61,15 +63,40 @@ const getTokenAccounts = async (
   );
 
   return {
-    nativeBalance: BigInt(nativeBalance),
-    tokensInWallet: splAccounts
-      .filter(({ amountInWallet }) => amountInWallet !== 0n)
-      .map(({ mint, amountInWallet, decimals }) => ({
-        mint: new PublicKey(mint),
-        amountInWallet,
-        decimals,
-        ...metadata[mint],
-      })),
+    tokensInWallet: [
+      ...(nativeBalance === 0
+        ? []
+        : [
+            {
+              isNative: true as const,
+              amountInWallet: BigInt(nativeBalance),
+              decimals: FOGO_DECIMALS,
+              name: "Fogo",
+              image: "https://api.fogo.io/tokens/fogo.svg",
+              symbol: "FOGO",
+            },
+          ]),
+      ...splAccounts
+        .filter(({ amountInWallet }) => amountInWallet !== 0n)
+        .map(({ mint, amountInWallet, decimals }) => ({
+          isNative: false as const,
+          mint: new PublicKey(mint),
+          amountInWallet,
+          decimals,
+          ...metadata[mint],
+        }))
+        .toSorted((a, b) => {
+          if (a.name === undefined) {
+            return b.name === undefined
+              ? a.mint.toString().localeCompare(b.mint.toString())
+              : 1;
+          } else if (b.name === undefined) {
+            return -1;
+          } else {
+            return a.name.toString().localeCompare(b.name.toString());
+          }
+        }),
+    ],
     sessionLimits: isEstablished(sessionState)
       ? splAccounts
           .filter(

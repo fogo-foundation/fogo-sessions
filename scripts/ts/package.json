@@ -12,10 +12,6 @@
   },
   "scripts": {
     "build": "tsc --noEmit false --outDir ./dist",
-    "fix:format": "prettier --write .",
-    "fix:lint": "eslint --fix . --max-warnings 0",
-    "test:format": "prettier --check .",
-    "test:lint": "eslint . --max-warnings 0",
     "test:types": "tsc"
   },
   "dependencies": {
@@ -35,17 +31,13 @@
     "yargs": "catalog:"
   },
   "devDependencies": {
-    "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@types/bn.js": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
     "@types/yargs": "catalog:",
-    "eslint": "catalog:",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "typescript": "catalog:"
   }
 }

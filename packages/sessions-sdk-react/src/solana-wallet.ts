@@ -1,8 +1,8 @@
 import type {
-  MessageSignerWalletAdapterProps,
   BaseSignerWalletAdapter,
-  WalletReadyState,
+  MessageSignerWalletAdapterProps,
   WalletError,
+  WalletReadyState,
 } from "@solana/wallet-adapter-base";
 import { isWalletAdapterCompatibleStandardWallet } from "@solana/wallet-adapter-base";
 import { SolanaSignMessage } from "@solana/wallet-standard-features";

@@ -1,11 +1,11 @@
 import {
   bridgeOut,
+  getBridgeOutFee,
   Network,
   TransactionResultType,
-  getBridgeOutFee,
 } from "@fogo/sessions-sdk";
 import type { FormEvent, FormEventHandler } from "react";
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
@@ -15,6 +15,7 @@ import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import type { EstablishedSessionState } from "../session-state.js";
+import { signWithWallet } from "../solana-wallet.js";
 import { USDC } from "../wormhole-routes.js";
 import { Button } from "./component-library/Button/index.js";
 import { Link } from "./component-library/Link/index.js";
@@ -26,7 +27,6 @@ import { NotionalAmount } from "./notional-amount.js";
 import { TokenAmountInput } from "./token-amount-input.js";
 import { UsdcIcon } from "./usdc-icon.js";
 import styles from "./withdraw-page.module.css";
-import { signWithWallet } from "../solana-wallet.js";
 
 type Props = {
   sessionState: EstablishedSessionState;
@@ -112,15 +112,20 @@ const WithdrawFormWithFeeConfig = (
     }
     case StateType.Loaded: {
       const feeTokenAccountBalance =
-        tokenAccountState.data.tokensInWallet.find((token) =>
-          token.mint.equals(props.feeConfig.mint),
+        tokenAccountState.data.tokensInWallet.find(
+          (token) => !token.isNative && token.mint.equals(props.feeConfig.mint),
         )?.amountInWallet ?? 0n;
 
       return feeTokenAccountBalance < props.feeConfig.fee ? (
         <FetchError
           className={styles.fetchError}
           headline={`Not enough ${props.feeConfig.symbolOrMint}`}
-          error={`You need at least ${amountToString(props.feeConfig.fee, props.feeConfig.decimals)} ${props.feeConfig.symbolOrMint} to pay network fees to transfer tokens out.`}
+          error={`You need at least ${amountToString(
+            props.feeConfig.fee,
+            props.feeConfig.decimals,
+          )} ${
+            props.feeConfig.symbolOrMint
+          } to pay network fees to transfer tokens out.`}
         />
       ) : (
         <LoadedWithdrawForm
@@ -195,7 +200,7 @@ const LoadedWithdrawForm = ({
           }
         })
         .catch((error: unknown) => {
-          // eslint-disable-next-line no-console
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
           console.error(error);
           toast.error("Failed to withdraw tokens", errorToString(error));
         })
@@ -238,7 +243,7 @@ const LoadedWithdrawForm = ({
 
 const WithdrawFormImpl = (
   props:
-    | { isLoading: true }
+    | { isLoading: true; amount?: undefined }
     | {
         isLoading?: false;
         isSubmitting: boolean;
@@ -260,11 +265,7 @@ const WithdrawFormImpl = (
     } catch {
       return;
     }
-  }, [
-    props.isLoading,
-    props.isLoading ? undefined : props.amount,
-    USDC.decimals,
-  ]);
+  }, [props.isLoading, props.amount]);
 
   return (
     <Form
@@ -360,6 +361,7 @@ const WithdrawFormImpl = (
 };
 
 const getUsdcBalance = (network: Network, tokensInWallet: Token[]) =>
-  tokensInWallet.find((token) =>
-    token.mint.equals(USDC.chains[network].fogo.mint),
+  tokensInWallet.find(
+    (token) =>
+      !token.isNative && token.mint.equals(USDC.chains[network].fogo.mint),
   )?.amountInWallet ?? 0n;

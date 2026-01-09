@@ -30,21 +30,13 @@
           "Custom": {
             "name": "network_environment",
             "kind": {
-              "Enum": [
-                "mainnet",
-                "testnet"
-              ]
+              "Enum": ["mainnet", "testnet"]
             }
           }
         }
       ]
     },
-    "nullable": [
-      false,
-      false,
-      false,
-      false
-    ]
+    "nullable": [false, false, false, false]
   },
   "hash": "8adbc3bfb60a7802966a144aa94271828586b1f4a9f393e034993cb1405904e4"
 }

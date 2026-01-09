@@ -8,12 +8,8 @@
   },
   "scripts": {
     "build": "next build",
-    "fix:format": "prettier --write .",
-    "fix:lint": "eslint --fix .",
     "start:dev": "next dev --port 3000",
     "start:prod": "next start --port 3000",
-    "test:format": "prettier --check .",
-    "test:lint": "eslint --max-warnings 0 .",
     "test:types": "tsc"
   },
   "dependencies": {
@@ -41,9 +37,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
     "@cprussin/tsconfig": "catalog:",
     "@types/react": "catalog:",
     "autoprefixer": "catalog:",

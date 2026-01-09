@@ -1,14 +1,11 @@
-import clsx from "clsx";
 import { useCallback } from "react";
 import { Heading } from "react-aria-components";
-
+import { useSession } from "../hooks/use-session.js";
+import layerStyles from "../layer.module.css";
+import { isCancelable, StateType } from "../session-state.js";
 import { ModalDialog } from "./component-library/ModalDialog/index.js";
 import styles from "./renew-session-modal.module.css";
 import { SessionLimits } from "./session-limits.js";
-import { useSession } from "../hooks/use-session.js";
-import layerStyles from "../layer.module.css";
-import resetStyles from "../reset.module.css";
-import { isCancelable, StateType } from "../session-state.js";
 
 export const RenewSessionModal = () => {
   const sessionState = useSession();
@@ -39,7 +36,7 @@ export const RenewSessionModal = () => {
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       dialogClassName={styles.renewSessionModal}
-      overlayClassName={clsx(resetStyles.reset, layerStyles.layerModalDialog)}
+      overlayClassName={layerStyles.layerModalDialog}
     >
       {isOpen && (
         <>
