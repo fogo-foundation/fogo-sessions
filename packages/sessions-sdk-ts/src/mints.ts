@@ -1,4 +1,4 @@
-import { Network } from "./connection.js";
+import { Network } from "./network.js";
 
 export const USDC_MINT = {
     [Network.Mainnet]: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",

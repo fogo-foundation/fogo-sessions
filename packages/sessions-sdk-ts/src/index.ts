@@ -50,7 +50,7 @@ import type {
   TransactionOrInstructions,
   TransactionResult,
 } from "./connection.js";
-import { Network, TransactionResultType } from "./connection.js";
+import { TransactionResultType } from "./connection.js";
 import type { SendTransactionOptions, SessionContext } from "./context.js";
 import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
 import {
@@ -64,15 +64,16 @@ import {
   createSystemProgramSessionWrapInstruction,
 } from "./instructions.js";
 import { USDC_DECIMALS, USDC_MINT } from "./mints.js";
+import { Network } from "./network.js";
 
 export {
   type Connection,
   createSessionConnection,
-  Network,
   type TransactionOrInstructions,
   type TransactionResult,
   TransactionResultType,
 } from "./connection.js";
+export { Network } from "./network.js";
 export {
   createSessionContext,
   type SendTransactionOptions,

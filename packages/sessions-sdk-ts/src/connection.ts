@@ -45,11 +45,7 @@ import {
 import { z } from "zod";
 
 import { USDC_MINT } from "./mints.js";
-
-export enum Network {
-  Testnet,
-  Mainnet,
-}
+import { Network } from "./network.js";
 
 const DEFAULT_RPC = {
   [Network.Testnet]: "https://testnet.fogo.io",
@@ -449,9 +445,8 @@ const getFee = async (
   variation: string | undefined,
   mint: PublicKey,
 ) => {
-  if (variation === undefined) {
-    return new BN(0);
-  }
+  if (variation){
+  
   const url = new URL(
     "/api/fee",
     options.paymaster ?? DEFAULT_PAYMASTER[options.network],
@@ -466,6 +461,9 @@ const getFee = async (
   } else {
     throw new PaymasterResponseError(response.status, await response.text());
   }
+} else {
+  return new BN(0);
+}
 };
 
 const getAddressLookupTable = async (
