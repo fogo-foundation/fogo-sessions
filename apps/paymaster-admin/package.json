@@ -24,6 +24,7 @@
     "clsx": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
+    "react-aria": "catalog:",
     "react-aria-components": "catalog:",
     "react-dom": "catalog:",
     "swr": "catalog:",
