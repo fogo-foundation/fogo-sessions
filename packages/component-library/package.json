@@ -57,6 +57,7 @@
     "copy-and-watch": "catalog:",
     "modern-normalize": "catalog:",
     "motion": "catalog:",
+    "react-aria": "catalog:",
     "react-aria-components": "catalog:",
     "swr": "catalog:"
   },

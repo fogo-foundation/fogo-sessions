@@ -338,6 +338,9 @@ importers:
       react:
         specifier: 'catalog:'
         version: 19.2.1
+      react-aria:
+        specifier: 'catalog:'
+        version: 3.41.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-aria-components:
         specifier: 'catalog:'
         version: 1.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -575,6 +578,9 @@ importers:
       motion:
         specifier: 'catalog:'
         version: 12.23.16(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      react-aria:
+        specifier: 'catalog:'
+        version: 3.41.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-aria-components:
         specifier: 'catalog:'
         version: 1.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -769,6 +775,9 @@ importers:
       qrcode.react:
         specifier: 'catalog:'
         version: 4.2.0(react@19.2.1)
+      react-aria:
+        specifier: 'catalog:'
+        version: 3.41.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-aria-components:
         specifier: 'catalog:'
         version: 1.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)

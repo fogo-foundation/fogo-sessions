@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { DOMAIN } from "../../config/server";
 import { AuthenticationLayout } from "./layout";
 import "./root.scss";
+import { I18nProvider } from "@fogo/component-library/I18nProvider";
 import styles from "./layout.module.scss";
 
 type Props = {
@@ -12,9 +13,11 @@ type Props = {
 export const Root = ({ children }: Props) => (
   <html lang="en" className={styles.root}>
     <body className={styles.root}>
-      <FogoSessionProvider network={Network.Testnet} domain={DOMAIN}>
-        <AuthenticationLayout>{children}</AuthenticationLayout>
-      </FogoSessionProvider>
+      <I18nProvider>
+        <FogoSessionProvider network={Network.Testnet} domain={DOMAIN}>
+          <AuthenticationLayout>{children}</AuthenticationLayout>
+        </FogoSessionProvider>
+      </I18nProvider>
     </body>
   </html>
 );

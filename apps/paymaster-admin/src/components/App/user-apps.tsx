@@ -3,6 +3,7 @@ import { Button } from "@fogo/component-library/Button";
 import { Card } from "@fogo/component-library/Card";
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import { AppWindowIcon } from "@phosphor-icons/react/dist/ssr/AppWindow";
+import { useDateFormatter } from "react-aria";
 import { GridList, GridListItem } from "react-aria-components";
 import type { App, User } from "../../db-schema";
 import { ListHeader } from "../ListHeader";
@@ -17,15 +18,17 @@ type AppCardProps =
       isLoading: true;
     };
 
-const AppCard = (props: AppCardProps) =>
-  props.isLoading ? (
+const AppCard = (props: AppCardProps) => {
+  const formatter = useDateFormatter();
+
+  return props.isLoading ? (
     <Skeleton className={styles.appCard} />
   ) : (
     <Card className={styles.appCard}>
       <div className={styles.appCardContent}>
         <h3 className={styles.appCardTitle}>{props.app.name}</h3>
         <p className={styles.appCardDescription}>
-          Created: {formatDate(props.app.created_at)}
+          Created: {formatter.format(props.app.created_at)}
         </p>
       </div>
       <div>
@@ -35,6 +38,7 @@ const AppCard = (props: AppCardProps) =>
       </div>
     </Card>
   );
+};
 
 type UserAppsTitleProps =
   | {
@@ -108,12 +112,4 @@ export const UserApps = (props: UserAppsProps) => {
       </GridList>
     </>
   );
-};
-
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date);
 };
