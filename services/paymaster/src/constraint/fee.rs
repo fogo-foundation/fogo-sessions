@@ -48,8 +48,10 @@ fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Resu
         discriminator == tollbooth::instruction::PayToll::DISCRIMINATOR,
         "Mismatching discriminator for PayToll instruction"
     );
-    let PayToll { amount } =
-        tollbooth::instruction::PayToll::try_from_slice(&instruction.data[1..])
-            .map_err(|_| anyhow::anyhow!("Failed to deserialize PayToll instruction"))?;
+    let PayToll {
+        amount,
+        _recipient_id: _,
+    } = tollbooth::instruction::PayToll::try_from_slice(&instruction.data[1..])
+        .map_err(|_| anyhow::anyhow!("Failed to deserialize PayToll instruction"))?;
     Ok(amount)
 }
