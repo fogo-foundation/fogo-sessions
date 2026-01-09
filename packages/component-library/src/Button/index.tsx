@@ -3,11 +3,8 @@
 import clsx from "clsx";
 import type { ComponentProps } from "react";
 import { Link, Button as UnstyledButton } from "react-aria-components";
-
-import styles from "./index.module.css";
-
-type Variant = "primary" | "secondary" | "solid" | "ghost" | "outline";
-type Size = "sm" | "md" | "lg";
+import { classes } from "./index.styles.js";
+import type { Size, Variant } from "./types.js";
 
 type Props = (
   | ComponentProps<typeof UnstyledButton>
@@ -35,7 +32,7 @@ const mkProps = ({
   size?: Size | undefined;
 }) => ({
   ...otherProps,
-  className: clsx(styles.button, className),
+  className: clsx(classes.buttonRoot, className),
   "data-variant": variant,
   "data-size": size,
 });
