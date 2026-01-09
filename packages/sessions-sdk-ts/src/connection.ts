@@ -310,7 +310,7 @@ const buildTransaction = async (
 const getDomainTollRecipientAddress = (domain: string) => {
   const hash = sha256(domain);
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("toll_recipient"), hash],
+    [Buffer.from("toll_recipient"), Buffer.from([0]), hash],
     new PublicKey(TollboothIdl.address),
   )[0];
 };
@@ -340,7 +340,7 @@ const buildTollboothInstructionIfNeeded = async ({
       {} as Wallet,
     ),
   ).methods
-    .payToll(feeAmount)
+    .payToll(feeAmount, 0)
     .accounts({
       session: new PublicKey(sessionKeyAddress),
       source: userTokenAccount,
