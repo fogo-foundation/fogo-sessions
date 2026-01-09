@@ -28,7 +28,6 @@ import {
   StateType as TokenMetadataStateType,
   useTokenMetadata,
 } from "../hooks/use-token-metadata.js";
-import layerStyles from "../layer.module.css";
 import type { WalletConnectedSessionState } from "../session-state.js";
 import { isEstablished, isUpdatable, StateType } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
@@ -141,10 +140,7 @@ export const SessionLimits = ({
             <SelectValue className={styles.value ?? ""} />
             <CaretDownIcon className={styles.arrow ?? ""} />
           </UnstyledButton>
-          <Popover
-            offset={4}
-            className={clsx(styles.selectPopover, layerStyles.layerSelect)}
-          >
+          <Popover offset={4} className={styles.selectPopover ?? ""}>
             <ListBox items={Object.entries(DURATION)}>
               {([key, { label }]) => (
                 <ListBoxItem id={key} className={styles.selectItem ?? ""}>
