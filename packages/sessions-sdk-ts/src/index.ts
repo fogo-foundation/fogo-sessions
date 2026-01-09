@@ -58,6 +58,11 @@ import {
   signMessageWithKey,
   verifyMessageWithKey,
 } from "./crypto.js";
+import {
+  createSessionUnwrapInstruction,
+  createSessionWrapInstructions,
+  createSystemProgramSessionWrapInstruction,
+} from "./instructions.js";
 
 export {
   type Connection,
@@ -81,7 +86,7 @@ const UNLIMITED_TOKEN_PERMISSIONS_VALUE =
 const TOKENLESS_PERMISSIONS_VALUE = "this app may not spend any tokens";
 
 const CURRENT_MAJOR = "0";
-const CURRENT_MINOR = "3";
+const CURRENT_MINOR = "4";
 const CURRENT_INTENT_TRANSFER_MAJOR = "0";
 const CURRENT_INTENT_TRANSFER_MINOR = "2";
 const CURRENT_BRIDGE_OUT_MAJOR = "0";
@@ -269,6 +274,21 @@ const createSession = async (
         walletPublicKey,
         sessionKey,
         payer: context.payer,
+        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
+          createSystemProgramSessionWrapInstruction(
+            sessionPublicKey,
+            walletPublicKey,
+            amount,
+          ),
+        getSessionWrapInstructions: (amount: bigint) =>
+          createSessionWrapInstructions(
+            sessionPublicKey,
+            walletPublicKey,
+            amount,
+          ),
+        getSessionUnwrapInstructions: () => [
+          createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey),
+        ],
         sendTransaction: (instructions, extraConfig) =>
           context.sendTransaction(sessionKey, instructions, extraConfig),
         sessionInfo,
@@ -727,6 +747,11 @@ export type Session = {
   sessionKey: CryptoKeyPair;
   walletPublicKey: PublicKey;
   payer: PublicKey;
+  getSystemProgramSessionWrapInstruction: (
+    amount: bigint,
+  ) => TransactionInstruction;
+  getSessionWrapInstructions: (amount: bigint) => TransactionInstruction[];
+  getSessionUnwrapInstructions: () => TransactionInstruction[];
   sendTransaction: (
     instructions: TransactionOrInstructions,
     extraConfig?: SendTransactionOptions,
@@ -865,6 +890,80 @@ const buildTransferIntentInstruction = async (
     chain_id: options.context.chainId,
     token: symbol ?? options.mint.toBase58(),
     amount: amountToString(options.amount, decimals),
+    recipient: options.recipient.toBase58(),
+    fee_token: feeToken,
+    fee_amount: feeAmount,
+    nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
+  });
+};
+
+type SendNativeTransferOptions = {
+  context: SessionContext;
+  walletPublicKey: PublicKey;
+  signMessage: (
+    message: Uint8Array,
+  ) => Promise<{ signedMessage: Uint8Array; signature: Uint8Array }>;
+  amount: bigint;
+  recipient: PublicKey;
+  feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
+};
+
+export const sendNativeTransfer = async (
+  options: SendNativeTransferOptions,
+) => {
+  const program = new IntentTransferProgram(
+    new AnchorProvider(options.context.connection, {} as Wallet, {}),
+  );
+
+  return options.context.sendTransaction(
+    undefined,
+    [
+      await buildNativeTransferIntentInstruction(
+        program,
+        options,
+        options.feeConfig.symbolOrMint,
+        amountToString(options.feeConfig.fee, options.feeConfig.decimals),
+      ),
+      await program.methods
+        .sendNative()
+        .accounts({
+          feeMetadata: options.feeConfig.metadata,
+          feeMint: options.feeConfig.mint,
+          feeSource: getAssociatedTokenAddressSync(
+            options.feeConfig.mint,
+            options.walletPublicKey,
+          ),
+          source: options.walletPublicKey,
+          destination: options.recipient,
+          sponsor: options.context.internalPayer,
+        })
+        .instruction(),
+    ],
+    {
+      variation: "Intent Transfer",
+      paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+    },
+  );
+};
+
+const FOGO_DECIMALS = 9;
+
+const buildNativeTransferIntentInstruction = async (
+  program: IntentTransferProgram,
+  options: SendNativeTransferOptions,
+  feeToken: string,
+  feeAmount: string,
+) => {
+  const nonce = await getNonce(
+    program,
+    options.walletPublicKey,
+    NonceType.Transfer,
+  );
+  return buildIntentInstruction(options, TRANSFER_MESSAGE_HEADER, {
+    version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
+    chain_id: options.context.chainId,
+    token: "FOGO",
+    amount: amountToString(options.amount, FOGO_DECIMALS),
     recipient: options.recipient.toBase58(),
     fee_token: feeToken,
     fee_amount: feeAmount,

@@ -17,16 +17,15 @@ type AppCardProps =
       isLoading: true;
     };
 
-const AppCard = (props: AppCardProps) => {
-  if (props.isLoading) {
-    return <Skeleton className={styles.appCard} />;
-  }
-  return (
+const AppCard = (props: AppCardProps) =>
+  props.isLoading ? (
+    <Skeleton className={styles.appCard} />
+  ) : (
     <Card className={styles.appCard}>
       <div className={styles.appCardContent}>
         <h3 className={styles.appCardTitle}>{props.app.name}</h3>
         <p className={styles.appCardDescription}>
-          Created: {props.app.created_at.toLocaleDateString()}
+          Created: {formatDate(props.app.created_at)}
         </p>
       </div>
       <div>
@@ -35,6 +34,28 @@ const AppCard = (props: AppCardProps) => {
         </Button>
       </div>
     </Card>
+  );
+
+type UserAppsTitleProps =
+  | {
+      user: User;
+      isLoading?: false;
+    }
+  | {
+      isLoading: true;
+    };
+
+const UserAppsTitle = (props: UserAppsTitleProps) => {
+  return (
+    <h1 className={styles.userAppsTitle}>
+      {props.isLoading ? (
+        <Skeleton className={styles.userAppsTitleSkeleton} />
+      ) : (
+        <>
+          Apps <Badge size="xs">{props.user.apps.length}</Badge>
+        </>
+      )}
+    </h1>
   );
 };
 
@@ -51,7 +72,9 @@ export const UserApps = (props: UserAppsProps) => {
   if (props.isLoading) {
     return (
       <>
-        <ListHeader isLoading />
+        <div className={styles.userAppsHeader}>
+          <UserAppsTitle isLoading />
+        </div>
         <div className={styles.userApps}>
           <AppCard isLoading />
           <AppCard isLoading />
@@ -63,15 +86,14 @@ export const UserApps = (props: UserAppsProps) => {
   }
   return (
     <>
-      <ListHeader
-        title="Apps"
-        count={props.user.apps.length}
-        action={
-          <Button variant="secondary">
-            Request App <AppWindowIcon />
-          </Button>
-        }
-      />
+      <div className={styles.userAppsHeader}>
+        <h1 className={styles.userAppsTitle}>
+          Apps <Badge size="xs">{props.user.apps.length}</Badge>
+        </h1>
+        <Button variant="secondary">
+          Request App <AppWindowIcon />
+        </Button>
+      </div>
       <GridList
         className={styles.userApps ?? ""}
         selectionMode="none"
@@ -86,4 +108,12 @@ export const UserApps = (props: UserAppsProps) => {
       </GridList>
     </>
   );
+};
+
+const formatDate = (date: Date) => {
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
 };

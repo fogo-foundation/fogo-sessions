@@ -254,7 +254,13 @@ const LoadedTokenLimits = ({
       tokenAccountData === undefined
         ? []
         : [
-            ...tokenAccountData.tokensInWallet,
+            // We exclude the native token from session limits, since session
+            // limits don't apply to the native token.  In general that's OK
+            // because all an app can do with the native token is wrap it and
+            // use wFOGO, and users can put limits on wFOGO
+            ...tokenAccountData.tokensInWallet.filter(
+              (token) => !token.isNative,
+            ),
             ...tokenAccountData.sessionLimits,
           ].map((token) => token.mint),
     [tokenAccountData],

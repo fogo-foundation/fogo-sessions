@@ -2,12 +2,12 @@
 
 import { Network } from "@fogo/sessions-sdk";
 import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
-import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import type { ComponentProps } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { Heading } from "react-aria-components";
 import { useSessionContext } from "../hooks/use-session.js";
+import type { Token } from "../hooks/use-token-account-data.js";
 import type {
   EstablishedSessionState,
   SessionState,
@@ -198,15 +198,7 @@ const Tokens = ({
           onPressBack={showWallet}
           onPressTransferIn={showDeposit}
           onPressSend={(token) => {
-            showSend({
-              prevScreen: TokenScreenType.SelectTokenToSend,
-              amountAvailable: token.amountInWallet,
-              decimals: token.decimals,
-              tokenMint: token.mint,
-              icon: token.image,
-              symbol: token.symbol,
-              tokenName: token.name,
-            });
+            showSend({ token, prevScreen: TokenScreenType.SelectTokenToSend });
           }}
           sessionState={sessionState}
         />
@@ -226,12 +218,7 @@ const Tokens = ({
                 showWallet();
               }
             }}
-            decimals={currentScreen.decimals}
-            tokenMint={currentScreen.tokenMint}
-            tokenName={currentScreen.tokenName}
-            icon={currentScreen.icon}
-            symbol={currentScreen.symbol}
-            amountAvailable={currentScreen.amountAvailable}
+            token={currentScreen.token}
             onSendComplete={showWallet}
           />
         );
@@ -284,15 +271,7 @@ const Tokens = ({
           onPressGet={showGet}
           onPressTransferIn={showDeposit}
           onPressSendForToken={(token) => {
-            showSend({
-              prevScreen: TokenScreenType.Wallet,
-              amountAvailable: token.amountInWallet,
-              decimals: token.decimals,
-              tokenMint: token.mint,
-              icon: token.image,
-              symbol: token.symbol,
-              tokenName: token.name,
-            });
+            showSend({ token, prevScreen: TokenScreenType.Wallet });
           }}
           sessionState={sessionState}
         />
@@ -315,15 +294,10 @@ const TokenScreen = {
   SelectTokenToSend: () => ({
     type: TokenScreenType.SelectTokenToSend as const,
   }),
-  Send: (opts: {
-    prevScreen: TokenScreenType;
-    icon?: string | undefined;
-    tokenName?: string | undefined;
-    tokenMint: PublicKey;
-    decimals: number;
-    symbol?: string | undefined;
-    amountAvailable: bigint;
-  }) => ({ type: TokenScreenType.Send as const, ...opts }),
+  Send: (opts: { token: Token; prevScreen: TokenScreenType }) => ({
+    type: TokenScreenType.Send as const,
+    ...opts,
+  }),
   Receive: () => ({ type: TokenScreenType.Receive as const }),
   Get: () => ({ type: TokenScreenType.Get as const }),
   Withdraw: () => ({ type: TokenScreenType.Withdraw as const }),

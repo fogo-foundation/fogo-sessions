@@ -10,24 +10,28 @@ repo = "fogo-sessions"
 # ============================================================================
 
 [packages.chain-id]
-versioned_files = ["programs/chain-id/Cargo.toml", "Cargo.lock"]
+versioned_files = ["programs/chain-id/Cargo.toml", "Cargo.lock", { path = "Cargo.toml", dependency = "chain-id" }]
 changelog = "programs/chain-id/CHANGELOG.md"
 
 [packages.intent-transfer]
-versioned_files = ["programs/intent-transfer/Cargo.toml", "Cargo.lock"]
+versioned_files = ["programs/intent-transfer/Cargo.toml", "Cargo.lock", { path = "Cargo.toml", dependency = "intent-transfer" }]
 changelog = "programs/intent-transfer/CHANGELOG.md"
 
 [packages.fogo-sessions-sdk]
-versioned_files = ["packages/sessions-sdk-rs/Cargo.toml", "Cargo.lock"]
+versioned_files = ["packages/sessions-sdk-rs/Cargo.toml", "Cargo.lock", { path = "Cargo.toml", dependency = "fogo-sessions-sdk" }]
 changelog = "packages/sessions-sdk-rs/CHANGELOG.md"
 
 [packages.solana-intents]
-versioned_files = ["packages/solana-intents/Cargo.toml", "Cargo.lock"]
+versioned_files = ["packages/solana-intents/Cargo.toml", "Cargo.lock", { path = "Cargo.toml", dependency = "solana-intents" }]
 changelog = "packages/solana-intents/CHANGELOG.md"
 
 [packages.fogo-paymaster]
 versioned_files = ["services/paymaster/Cargo.toml", "Cargo.lock"]
 changelog = "services/paymaster/CHANGELOG.md"
+
+[packages.tollbooth]
+versioned_files = ["programs/tollbooth/Cargo.toml", "Cargo.lock", { path = "Cargo.toml", dependency = "tollbooth" }]
+changelog = "programs/tollbooth/CHANGELOG.md"
 
 # ============================================================================
 # TypeScript/npm Packages

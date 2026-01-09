@@ -1,6 +1,9 @@
 [package]
 name = "tollbooth"
 version = "0.1.0"
+description = "Fogo Sessions tollbooth program"
+license = { workspace = true }
+repository = "https://github.com/fogo-foundation/fogo-sessions"
 edition = { workspace = true }
 
 [lib]

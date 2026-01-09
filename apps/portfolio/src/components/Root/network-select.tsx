@@ -1,20 +1,10 @@
 "use client";
 
+import { Select } from "@fogo/component-library/Select";
 import { Network } from "@fogo/sessions-sdk-react";
-import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { useCallback } from "react";
-import {
-  Button,
-  Select,
-  SelectValue,
-  Popover,
-  ListBox,
-  ListBoxItem,
-} from "react-aria-components";
-
-import { useNetwork } from "./network-provider";
-import styles from "./network-select.module.scss";
 import { useLogger } from "../../hooks/use-logger";
+import { useNetwork } from "./network-provider";
 
 const NETWORKS = [
   { key: Network.Mainnet, label: "Mainnet" },
@@ -38,25 +28,11 @@ export const NetworkSelect = () => {
     <Select
       name="network"
       aria-label="Select Network"
-      className={styles.network ?? ""}
+      items={NETWORKS}
       selectedKey={network}
       // @ts-expect-error for some reason, react-aria insists on typing this as
       // Key, rather than narrowing to the type that is passed in as `items`.
       onSelectionChange={updateNetwork}
-    >
-      <Button className={styles.button ?? ""}>
-        <SelectValue className={styles.value ?? ""} />
-        <CaretDownIcon className={styles.arrow ?? ""} />
-      </Button>
-      <Popover offset={4} className={styles.selectPopover ?? ""}>
-        <ListBox items={NETWORKS}>
-          {({ key, label }) => (
-            <ListBoxItem id={key} className={styles.selectItem ?? ""}>
-              {label}
-            </ListBoxItem>
-          )}
-        </ListBox>
-      </Popover>
-    </Select>
+    />
   );
 };

@@ -1,5 +1,15 @@
 @use "@fogo/component-library/theme";
 
+.root {
+  width: 100%;
+  height: 100%;
+  background-color: theme.color("background");
+  color: theme.color("foreground");
+  display: flex;
+  flex-direction: column;
+}
+
+
 .main {
   @include theme.max-width;
   height: 100%;

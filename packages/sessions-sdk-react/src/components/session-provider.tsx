@@ -471,6 +471,12 @@ const useSessionState = ({
           onEndSession();
         },
         payer: session.payer,
+        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
+          session.getSystemProgramSessionWrapInstruction(amount),
+        getSessionWrapInstructions: (amount: bigint) =>
+          session.getSessionWrapInstructions(amount),
+        getSessionUnwrapInstructions: () =>
+          session.getSessionUnwrapInstructions(),
         sendTransaction: (instructions, options) =>
           sendTransaction(session, establishedOptions, instructions, options),
         sessionKey: session.sessionKey,

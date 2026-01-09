@@ -1,4 +1,5 @@
 use crate::config_manager::config::{default_one, Config, Domain};
+use crate::constraint::config::InstructionConstraint;
 use crate::constraint::{
     TransactionVariation, VariationOrderedInstructionConstraints, VariationProgramWhitelist,
 };
@@ -75,11 +76,11 @@ fn handle_transaction_variation_v1(
     name: String,
     max_gas_spend: u64,
 ) -> Result<TransactionVariation, anyhow::Error> {
-    let instructions = serde_json::from_value(transaction_variation.0)?;
+    let instructions: Vec<InstructionConstraint> = serde_json::from_value(transaction_variation.0)?;
     Ok(TransactionVariation::V1(
         VariationOrderedInstructionConstraints {
             name,
-            instructions,
+            instructions: instructions.into_iter().map(|c| c.into()).collect(),
             max_gas_spend,
             paymaster_fee_lamports: None, // TODO: This should be added to the DB
         },
