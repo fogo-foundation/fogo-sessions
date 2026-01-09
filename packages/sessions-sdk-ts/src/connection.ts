@@ -44,7 +44,7 @@ import {
 } from "@solana/web3.js";
 import { z } from "zod";
 
-import { USDC_MINT } from "./index.js";
+import { USDC_MINT } from "./mints.js";
 
 export enum Network {
   Testnet,
@@ -274,7 +274,7 @@ const buildTransaction = async (
       : getAddressFromPublicKey(sessionKey.publicKey),
   ]);
 
-  const tollboothInstructions = await buildTollboothInstructionsIfNeeded({
+  const tollboothInstruction = await buildTollboothInstructionIfNeeded({
     sessionKeyAddress,
     walletPublicKey,
     domain,
@@ -296,7 +296,7 @@ const buildTransaction = async (
           ),
           tx,
         ),
-      (tx) => appendTransactionMessageInstructions(tollboothInstructions, tx),
+      (tx) => tollboothInstruction === undefined ? tx : appendTransactionMessageInstructions([tollboothInstruction], tx),
       (tx) =>
         addressLookupTable === undefined
           ? tx
@@ -311,7 +311,7 @@ const buildTransaction = async (
   );
 };
 
-export const getDomainTollRecipientAddress = (domain: string) => {
+const getDomainTollRecipientAddress = (domain: string) => {
   const hash = sha256(domain);
   return PublicKey.findProgramAddressSync(
     [Buffer.from("toll_recipient"), hash],
@@ -319,7 +319,7 @@ export const getDomainTollRecipientAddress = (domain: string) => {
   )[0];
 };
 
-const buildTollboothInstructionsIfNeeded = async ({
+const buildTollboothInstructionIfNeeded = async ({
   sessionKeyAddress,
   walletPublicKey,
   domain,
@@ -332,10 +332,7 @@ const buildTollboothInstructionsIfNeeded = async ({
   feeMint: PublicKey;
   feeAmount: BN;
 }) => {
-  if (feeAmount.eq(new BN(0)) || sessionKeyAddress === undefined) {
-    return [];
-  }
-
+  if (feeAmount.gt(new BN(0)) && sessionKeyAddress !== undefined) {
   const userTokenAccount = getAssociatedTokenAddressSync(
     feeMint,
     walletPublicKey,
@@ -344,18 +341,21 @@ const buildTollboothInstructionsIfNeeded = async ({
   const instruction = await new TollboothProgram(
     new AnchorProvider(
       {} as Web3Connection,
-      { publicKey: walletPublicKey } as Wallet,
+      {} as Wallet,
     ),
   ).methods
     .payToll(feeAmount)
-    .accountsPartial({
+    .accounts({
       session: new PublicKey(sessionKeyAddress),
       source: userTokenAccount,
       destination: getAssociatedTokenAddressSync(feeMint, recipient, true),
       mint: feeMint,
     })
     .instruction();
-  return [fromLegacyTransactionInstruction(instruction)];
+  return fromLegacyTransactionInstruction(instruction);
+  } else {
+    return undefined;
+  }
 };
 
 const addSignaturesToExistingTransaction = (
@@ -462,7 +462,7 @@ const getFee = async (
   const response = await fetch(url);
 
   if (response.status === 200) {
-    return new BN(z.string().parse(await response.text()));
+    return new BN(await response.text());
   } else {
     throw new PaymasterResponseError(response.status, await response.text());
   }

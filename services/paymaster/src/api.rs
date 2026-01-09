@@ -564,7 +564,6 @@ struct FeeQuery {
     /// Domain to request the fee for
     domain: Option<String>,
 
-    #[serde(default)]
     /// Variation name to request the fee for
     variation: String,
 

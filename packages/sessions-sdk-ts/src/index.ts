@@ -63,6 +63,7 @@ import {
   createSessionWrapInstructions,
   createSystemProgramSessionWrapInstruction,
 } from "./instructions.js";
+import { USDC_DECIMALS, USDC_MINT } from "./mints.js";
 
 export {
   type Connection,
@@ -765,12 +766,6 @@ export type Session = {
   ) => Promise<TransactionResult>;
   sessionInfo: NonNullable<z.infer<typeof sessionInfoSchema>>;
 };
-
-export const USDC_MINT = {
-  [Network.Mainnet]: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-  [Network.Testnet]: "ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND",
-};
-const USDC_DECIMALS = 6;
 
 export const getTransferFee = async (context: SessionContext) => {
   const { fee, ...config } = await getFee(context);
