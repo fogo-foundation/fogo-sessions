@@ -1,122 +1,252 @@
 @use "./component-library/theme";
 @use "./component-library/reset";
+@use "./component-library/layer";
 
 .sessionLimits {
   @include reset.reset {
-  display: flex;
-  flex-flow: column nowrap;
-  gap: theme.spacing(6);
-
-  .body {
     display: flex;
     flex-flow: column nowrap;
     gap: theme.spacing(6);
-  }
+    z-index: layer.layer("select") !important;
 
-  .applyLimits {
-    @include theme.text("xs", "semibold");
+    .body {
+      display: flex;
+      flex-flow: column nowrap;
+      gap: theme.spacing(6);
+    }
 
-    color: theme.color("paragraph");
-    display: flex;
-    position: relative;
-    align-items: center;
-    gap: theme.spacing(3);
-    cursor: pointer;
+    .applyLimits {
+      @include theme.text("xs", "semibold");
 
-    .checkbox {
-      width: theme.spacing(6);
-      height: theme.spacing(6);
-      display: grid;
-      place-content: center;
-      border-radius: theme.border-radius("lg");
-      background-color: transparent;
-      transition: background-color 50ms linear;
+      color: theme.color("paragraph");
+      display: flex;
+      position: relative;
+      align-items: center;
+      gap: theme.spacing(3);
+      cursor: pointer;
 
-      .check {
-        width: theme.spacing(4);
-        height: theme.spacing(4);
-        border-radius: theme.border-radius();
-        border: 1px solid theme.color("border");
-        color: transparent;
-        padding: theme.spacing(0.5);
-        outline: 2px solid transparent;
-        outline-offset: theme.spacing(0.5);
-        transition:
-          outline-color 50ms linear,
-          background-color 100ms linear,
-          border-color 100ms linear,
-          color 100ms linear;
+      .checkbox {
+        width: theme.spacing(6);
+        height: theme.spacing(6);
+        display: grid;
+        place-content: center;
+        border-radius: theme.border-radius("lg");
+        background-color: transparent;
+        transition: background-color 50ms linear;
+
+        .check {
+          width: theme.spacing(4);
+          height: theme.spacing(4);
+          border-radius: theme.border-radius();
+          border: 1px solid theme.color("border");
+          color: transparent;
+          padding: theme.spacing(0.5);
+          outline: 2px solid transparent;
+          outline-offset: theme.spacing(0.5);
+          transition:
+            outline-color 50ms linear,
+            background-color 100ms linear,
+            border-color 100ms linear,
+            color 100ms linear;
+        }
+      }
+
+      &[data-hovered] .checkbox {
+        background-color: theme.color("checkbox-hover");
+      }
+
+      &[data-selected] .check {
+        background-color: theme.color("accent");
+        border-color: theme.color("accent");
+        color: theme.color("background");
+      }
+
+      &[data-focus-visible] .check {
+        outline-color: theme.color("accent");
       }
     }
 
-    &[data-hovered] .checkbox {
-      background-color: theme.color("checkbox-hover");
+    .sessionExpiry {
+      .label {
+        @include theme.text("xs", "medium");
+
+        color: theme.color("paragraph");
+        margin-bottom: theme.spacing(3);
+        display: block;
+      }
+
+      .button {
+        width: 100%;
+        border: 1px solid theme.color("border");
+        background-color: theme.color("background");
+        border-radius: theme.border-radius("lg");
+        height: theme.spacing(9);
+        display: grid;
+        grid-template-columns: 1fr max-content;
+        align-items: center;
+        padding-left: theme.spacing(2.5);
+        padding-right: theme.spacing(2.5);
+        cursor: pointer;
+        outline: 2px solid transparent;
+        outline-offset: theme.spacing(0.5);
+        transition:
+          background-color 50ms linear,
+          outline-color 50ms linear;
+
+        .value,
+        .arrow {
+          color: theme.color("foreground");
+        }
+
+        .value {
+          @include theme.text("sm", "medium");
+
+          text-align: left;
+        }
+
+        .arrow {
+          transition: transform 300ms;
+          transform-origin: center;
+        }
+
+        &[data-hovered] {
+          background-color: theme.color("button-hover");
+        }
+
+        &[data-pressed] {
+          background-color: theme.color("button-pressed");
+
+          .arrow {
+            transform: rotateX(180deg);
+          }
+        }
+
+        &[data-focus-visible] {
+          outline-color: theme.color("accent");
+        }
+      }
     }
 
-    &[data-selected] .check {
-      background-color: theme.color("accent");
-      border-color: theme.color("accent");
-      color: theme.color("background");
+    .tokenList {
+      display: flex;
+      flex-flow: column nowrap;
+      gap: theme.spacing(2);
+      align-items: center;
+      margin: 0;
+      padding: 0;
+      list-style-type: none;
+      overflow: hidden;
+      width: 100%;
+
+      &>li {
+        width: 100%;
+      }
+
+      &[data-enable-unlimited]>li:first-child {
+        margin-top: theme.spacing(6);
+      }
+
+      .tokenAmountInput {
+        width: 100%;
+
+        &,
+        .label {
+          display: flex;
+          flex-flow: row nowrap;
+          gap: theme.spacing(3);
+          align-items: center;
+          overflow: hidden;
+        }
+
+        .labelLine {
+          flex-basis: 0;
+          overflow: hidden;
+        }
+
+        .label {
+          @include theme.text("sm", "medium");
+
+          color: theme.color("heading");
+
+          .icon {
+            width: theme.spacing(8);
+            height: theme.spacing(8);
+            align-items: center;
+            border-radius: theme.border-radius("full");
+            background: theme.color("image-placeholder");
+            flex-shrink: 0;
+          }
+
+          .name {
+            flex-basis: 0;
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+
+        .inputGroup {
+          width: theme.spacing(32);
+          flex-shrink: 0;
+        }
+
+        &[data-pending] {
+          .label {
+
+            .icon,
+            .name {
+              background: theme.color("skeleton");
+              animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+              @keyframes pulse {
+                50% {
+                  opacity: 0.5;
+                }
+              }
+            }
+
+            .name {
+              height: 1em;
+              border-radius: theme.border-radius("md");
+              width: theme.spacing(20);
+            }
+          }
+        }
+      }
     }
 
-    &[data-focus-visible] .check {
-      outline-color: theme.color("accent");
+    .footer {
+      display: flex;
+      place-content: space-between;
+      gap: theme.spacing(8);
+      align-items: center;
     }
   }
 
-  .sessionExpiry {
-    .label {
-      @include theme.text("xs", "medium");
+  .selectPopover {
+    background: theme.color("demo-bg");
+    color: theme.color("foreground");
+    box-shadow: theme.shadow();
+    border: 1px solid theme.color("widget-border");
+    border-radius: theme.border-radius("base");
+    outline: none;
+    padding: theme.spacing(1) 0;
+    min-width: var(--trigger-width);
 
-      color: theme.color("paragraph");
-      margin-bottom: theme.spacing(3);
-      display: block;
-    }
+    .selectItem {
+      @include theme.text("sm", "normal");
 
-    .button {
-      width: 100%;
-      border: 1px solid theme.color("border");
-      background-color: theme.color("background");
-      border-radius: theme.border-radius("lg");
-      height: theme.spacing(9);
-      display: grid;
-      grid-template-columns: 1fr max-content;
-      align-items: center;
-      padding-left: theme.spacing(2.5);
-      padding-right: theme.spacing(2.5);
+      padding: theme.spacing(2) theme.spacing(4);
       cursor: pointer;
       outline: 2px solid transparent;
-      outline-offset: theme.spacing(0.5);
+      outline-offset: -#{theme.spacing(0.5)};
       transition:
         background-color 50ms linear,
         outline-color 50ms linear;
 
-      .value,
-      .arrow {
-        color: theme.color("foreground");
-      }
-
-      .value {
-        @include theme.text("sm", "medium");
-
-        text-align: left;
-      }
-
-      .arrow {
-        transition: transform 300ms;
-        transform-origin: center;
-      }
-
-      &[data-hovered] {
-        background-color: theme.color("button-hover");
-      }
-
-      &[data-pressed] {
-        background-color: theme.color("button-pressed");
-
-        .arrow {
-          transform: rotateX(180deg);
-        }
+      &[data-focused] {
+        background-color: theme.color("button", "ghost", "background", "hover");
       }
 
       &[data-focus-visible] {
@@ -124,131 +254,4 @@
       }
     }
   }
-
-  .tokenList {
-    display: flex;
-    flex-flow: column nowrap;
-    gap: theme.spacing(2);
-    align-items: center;
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-    overflow: hidden;
-    width: 100%;
-
-    & > li {
-      width: 100%;
-    }
-
-    &[data-enable-unlimited] > li:first-child {
-      margin-top: theme.spacing(6);
-    }
-
-    .tokenAmountInput {
-      width: 100%;
-
-      &,
-      .label {
-        display: flex;
-        flex-flow: row nowrap;
-        gap: theme.spacing(3);
-        align-items: center;
-        overflow: hidden;
-      }
-
-      .labelLine {
-        flex-basis: 0;
-        overflow: hidden;
-      }
-
-      .label {
-        @include theme.text("sm", "medium");
-
-        color: theme.color("heading");
-
-        .icon {
-          width: theme.spacing(8);
-          height: theme.spacing(8);
-          align-items: center;
-          border-radius: theme.border-radius("full");
-          background: theme.color("image-placeholder");
-          flex-shrink: 0;
-        }
-
-        .name {
-          flex-basis: 0;
-          flex-grow: 1;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-      }
-
-      .inputGroup {
-        width: theme.spacing(32);
-        flex-shrink: 0;
-      }
-
-      &[data-pending] {
-        .label {
-          .icon,
-          .name {
-            background: theme.color("skeleton");
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-
-            @keyframes pulse {
-              50% {
-                opacity: 0.5;
-              }
-            }
-          }
-
-          .name {
-            height: 1em;
-            border-radius: theme.border-radius("md");
-            width: theme.spacing(20);
-          }
-        }
-      }
-    }
-  }
-
-  .footer {
-    display: flex;
-    place-content: space-between;
-    gap: theme.spacing(8);
-    align-items: center;
-  }
-}
-
-.selectPopover {
-  background: theme.color("demo-bg");
-  color: theme.color("foreground");
-  box-shadow: theme.shadow();
-  border: 1px solid theme.color("widget-border");
-  border-radius: theme.border-radius("base");
-  outline: none;
-  padding: theme.spacing(1) 0;
-  min-width: var(--trigger-width);
-
-  .selectItem {
-    @include theme.text("sm", "normal");
-
-    padding: theme.spacing(2) theme.spacing(4);
-    cursor: pointer;
-    outline: 2px solid transparent;
-    outline-offset: -#{theme.spacing(0.5)};
-    transition:
-      background-color 50ms linear,
-      outline-color 50ms linear;
-
-    &[data-focused] {
-      background-color: theme.color("button", "ghost", "background", "hover");
-    }
-
-    &[data-focus-visible] {
-      outline-color: theme.color("accent");
-    }
-  }
-}
 }

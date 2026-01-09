@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { Heading } from "react-aria-components";
 import { useSession } from "../hooks/use-session.js";
-import layerStyles from "../layer.module.css";
 import { isCancelable, StateType } from "../session-state.js";
 import { ModalDialog } from "./component-library/ModalDialog/index.js";
 import styles from "./renew-session-modal.module.css";
@@ -36,7 +35,6 @@ export const RenewSessionModal = () => {
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       dialogClassName={styles.renewSessionModal}
-      overlayClassName={layerStyles.layerModalDialog}
     >
       {isOpen && (
         <>
