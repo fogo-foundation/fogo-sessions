@@ -8,8 +8,8 @@ import {
 } from "@fogo/sessions-sdk-react";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
-import { UserNotFound } from "../UserNotFound";
 import { PaymasterLoading } from "../loading";
+import { UserNotFound } from "../UserNotFound";
 import { UserApps } from "./user-apps";
 
 export const Apps = () => {
@@ -56,25 +56,20 @@ const AppData = ({
 }) => {
   const userData = useUserData(sessionState);
   switch (userData.type) {
-    case StateType.Loading: {
-      return <PaymasterLoading />;
-    }
     case StateType.Error: {
       return <div>Error loading user data: {userData.error.message}</div>;
     }
-    case StateType.Loaded: {
+    case StateType.NotLoaded: {
+      return;
+    }
+    case StateType.Loading: {
+      return <UserApps isLoading />;
+    }
+    default: {
       if (userData.data.type === FetchUserDataStateType.NotFound) {
         return <UserNotFound />;
       }
-      return (
-        <div>
-          <h1>Home</h1>
-          <UserApps user={userData.data.user} />
-        </div>
-      );
-    }
-    default: {
-      return;
+      return <UserApps user={userData.data.user} />;
     }
   }
 };

@@ -19,7 +19,7 @@ export const PrimitiveDataValueSchema = z.union([
   z.object({ U8: z.number().int().min(0).max(255) }),
   z.object({ U16: z.number().int().min(0).max(65_535) }),
   // prettier-ignore
-  z.object({ U32: z.number().int().min(0).max(0xFF_FF_FF_FF) }),
+  z.object({ U32: z.number().int().min(0).max(0xff_ff_ff_ff) }),
   z.object({ U64: u64 }),
   z.object({ Bool: z.boolean() }),
   z.object({ Pubkey: Base58Pubkey }),
@@ -94,9 +94,16 @@ export const VariationSchema = z.discriminatedUnion("version", [
   VariationV1Schema,
 ]);
 
+export const NetworkEnvironmentSchema = z.enum([
+  "mainnet",
+  "testnet",
+  "localnet",
+]);
+
 export const DomainConfigWithVariationsSchema = z.object({
   id: UUID,
   domain: z.string(),
+  network_environment: NetworkEnvironmentSchema,
   enable_session_management: z.boolean(),
   enable_preflight_simulation: z.boolean(),
   created_at: TimeStr,

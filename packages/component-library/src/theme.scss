@@ -425,6 +425,7 @@ $color: (
   "muted": rgb(from pallette-color("white") r g b / 65%),
   "image-placeholder": rgb(from pallette-color("white") r g b / 30%),
   "skeleton": rgb(from pallette-color("white") r g b / 10%),
+  "brand": #ff3d00,
   "button": (
     "primary": (
       "foreground": pallette-color("white"),
@@ -500,6 +501,26 @@ $breakpoints: (
 @mixin breakpoint($point) {
   @media (min-width: map-get-strict($breakpoints, $point)) {
     @content;
+  }
+}
+
+$max-width: spacing(372);
+$max-width-padding: var(--max-width-padding);
+
+@mixin max-width {
+  & {
+    --max-width-padding: #{spacing(4)};
+
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: $max-width-padding;
+    padding-right: $max-width-padding;
+    width: 100%;
+    max-width: $max-width;
+  }
+
+  @include breakpoint("sm") {
+    --max-width-padding: #{spacing(6)};
   }
 }
 

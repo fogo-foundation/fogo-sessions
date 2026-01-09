@@ -320,6 +320,9 @@ importers:
       '@neondatabase/serverless':
         specifier: 'catalog:'
         version: 1.0.2
+      '@phosphor-icons/react':
+        specifier: 'catalog:'
+        version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@react-hookz/web':
         specifier: 'catalog:'
         version: 25.1.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -335,6 +338,9 @@ importers:
       react:
         specifier: 'catalog:'
         version: 19.2.1
+      react-aria-components:
+        specifier: 'catalog:'
+        version: 1.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
@@ -360,6 +366,9 @@ importers:
       autoprefixer:
         specifier: 'catalog:'
         version: 10.4.21(postcss@8.5.6)
+      modern-normalize:
+        specifier: 'catalog:'
+        version: 3.0.1
       postcss:
         specifier: 'catalog:'
         version: 8.5.6
