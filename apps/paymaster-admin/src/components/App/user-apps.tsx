@@ -16,11 +16,10 @@ type AppCardProps =
       isLoading: true;
     };
 
-const AppCard = (props: AppCardProps) => {
-  if (props.isLoading) {
-    return <Skeleton className={styles.appCard} />;
-  }
-  return (
+const AppCard = (props: AppCardProps) =>
+  props.isLoading ? (
+    <Skeleton className={styles.appCard} />
+  ) : (
     <Card className={styles.appCard}>
       <div className={styles.appCardContent}>
         <h3 className={styles.appCardTitle}>{props.app.name}</h3>
@@ -35,7 +34,7 @@ const AppCard = (props: AppCardProps) => {
       </div>
     </Card>
   );
-};
+
 
 type UserAppsTitleProps =
   | {

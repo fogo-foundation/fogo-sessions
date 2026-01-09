@@ -62,14 +62,14 @@ const AppData = ({
     case StateType.NotLoaded: {
       return;
     }
+    case StateType.Loading: {
+      return <UserApps isLoading />;
+    }
     default: {
-      if (
-        (userData.type === StateType.Loaded && userData.data.type) ===
-        FetchUserDataStateType.NotFound
-      ) {
+      if (userData.data.type === FetchUserDataStateType.NotFound) {
         return <UserNotFound />;
       }
-      return <UserApps {...userData} />;
+      return <UserApps user={userData.data.user} />;
     }
   }
 };
