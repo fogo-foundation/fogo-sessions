@@ -76,8 +76,6 @@ where
     let variations: Vec<config::TransactionVariation> = Vec::deserialize(deserializer)?;
     variations
         .into_iter()
-        // TODO: this does not align with the principle of converting outside of deserializers. Deserialize without converting, and convert later.
-        .map(|config| config.into())
         .try_fold(HashMap::new(), |mut map, variation| {
             insert_variation(&mut map, variation).map_err(serde::de::Error::custom)?;
             Ok(map)
