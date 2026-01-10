@@ -47,7 +47,7 @@ export const useTrade = (
           mint,
         })
         .instruction(),
-    ]);
+    ], { variation: "Example v1 Variation"});
 
     appendTransaction({
       description: "Trade",
