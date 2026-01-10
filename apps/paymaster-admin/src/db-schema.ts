@@ -130,3 +130,4 @@ export const UserSchema = z.object({
 
 export type User = z.infer<typeof UserSchema>;
 export type App = z.infer<typeof AppWithDomainConfigsSchema>;
+export type DomainConfig = z.infer<typeof DomainConfigWithVariationsSchema>;

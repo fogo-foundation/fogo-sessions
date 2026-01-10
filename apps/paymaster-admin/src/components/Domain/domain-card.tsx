@@ -4,14 +4,16 @@ import { Card } from "@fogo/component-library/Card";
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import z from "zod";
 import {
-  type DomainConfigWithVariationsSchema,
+  type App,
+  type DomainConfig,
   NetworkEnvironmentSchema,
 } from "../../db-schema";
 import styles from "./domain-card.module.scss";
 
 type DomainCardProps =
   | {
-      domain: z.infer<typeof DomainConfigWithVariationsSchema>;
+      app: App;
+      domain: DomainConfig;
       isLoading?: false;
     }
   | {
@@ -42,7 +44,10 @@ export const DomainCard = (props: DomainCardProps) =>
           {props.domain.network_environment}
         </Badge>
       </div>
-      <Button variant="outline" href={`/domains/${props.domain.id}`}>
+      <Button
+        variant="outline"
+        href={`/apps/${props.app.id}/domains/${props.domain.id}`}
+      >
         Edit
       </Button>
     </Card>

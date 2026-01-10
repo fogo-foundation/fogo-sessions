@@ -38,12 +38,22 @@
   display: inline-block;
 }
 
+.breadcrumbNavItems {
+  @include theme.text('3xl', 'normal');
+
+  &[data-small] {
+    @include theme.text('xl', 'normal');
+  }
+}
+
 .breadcrumbNavItem {
   @include theme.text('3xl', 'normal');
+  font-size: 1em;
 }
 
 .breadcrumbNavSeparator {
   @include theme.text('3xl', 'normal');
+  font-size: 1em;
   color: theme.color('foreground');
   opacity: 0.2;
 }
