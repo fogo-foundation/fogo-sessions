@@ -292,7 +292,10 @@ const buildTransaction = async (
           ),
           tx,
         ),
-      (tx) => tollboothInstruction === undefined ? tx : appendTransactionMessageInstructions([tollboothInstruction], tx),
+      (tx) =>
+        tollboothInstruction === undefined
+          ? tx
+          : appendTransactionMessageInstructions([tollboothInstruction], tx),
       (tx) =>
         addressLookupTable === undefined
           ? tx
@@ -329,26 +332,23 @@ const buildTollboothInstructionIfNeeded = async ({
   feeAmount: BN;
 }) => {
   if (feeAmount.gt(new BN(0)) && sessionKeyAddress !== undefined) {
-  const userTokenAccount = getAssociatedTokenAddressSync(
-    feeMint,
-    walletPublicKey,
-  );
-  const recipient = getDomainTollRecipientAddress(domain);
-  const instruction = await new TollboothProgram(
-    new AnchorProvider(
-      {} as Web3Connection,
-      {} as Wallet,
-    ),
-  ).methods
-    .payToll(feeAmount, 0)
-    .accounts({
-      session: new PublicKey(sessionKeyAddress),
-      source: userTokenAccount,
-      destination: getAssociatedTokenAddressSync(feeMint, recipient, true),
-      mint: feeMint,
-    })
-    .instruction();
-  return fromLegacyTransactionInstruction(instruction);
+    const userTokenAccount = getAssociatedTokenAddressSync(
+      feeMint,
+      walletPublicKey,
+    );
+    const recipient = getDomainTollRecipientAddress(domain);
+    const instruction = await new TollboothProgram(
+      new AnchorProvider({} as Web3Connection, {} as Wallet),
+    ).methods
+      .payToll(feeAmount, 0)
+      .accounts({
+        session: new PublicKey(sessionKeyAddress),
+        source: userTokenAccount,
+        destination: getAssociatedTokenAddressSync(feeMint, recipient, true),
+        mint: feeMint,
+      })
+      .instruction();
+    return fromLegacyTransactionInstruction(instruction);
   } else {
     return undefined;
   }
@@ -445,25 +445,24 @@ const getFee = async (
   variation: string | undefined,
   mint: PublicKey,
 ) => {
-  if (variation){
-  
-  const url = new URL(
-    "/api/fee",
-    options.paymaster ?? DEFAULT_PAYMASTER[options.network],
-  );
-  url.searchParams.set("domain", domain);
-  url.searchParams.set("variation", variation);
-  url.searchParams.set("mint", mint.toBase58());
-  const response = await fetch(url);
+  if (variation) {
+    const url = new URL(
+      "/api/fee",
+      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
+    );
+    url.searchParams.set("domain", domain);
+    url.searchParams.set("variation", variation);
+    url.searchParams.set("mint", mint.toBase58());
+    const response = await fetch(url);
 
-  if (response.status === 200) {
-    return new BN(await response.text());
+    if (response.status === 200) {
+      return new BN(await response.text());
+    } else {
+      throw new PaymasterResponseError(response.status, await response.text());
+    }
   } else {
-    throw new PaymasterResponseError(response.status, await response.text());
+    return new BN(0);
   }
-} else {
-  return new BN(0);
-}
 };
 
 const getAddressLookupTable = async (
