@@ -10,8 +10,9 @@ import {
 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
-import { useAsync } from "../../hooks/use-async";
+
 import type { Transaction } from "./use-transaction-log";
+import { useAsync } from "../../hooks/use-async";
 
 export const useTrade = (
   sessionState: EstablishedSessionState,
@@ -28,28 +29,25 @@ export const useTrade = (
     );
     const { decimals } = await getMint(connection, mint);
 
-    const result = await sessionState.sendTransaction(
-      [
-        createAssociatedTokenAccountIdempotentInstruction(
-          sessionState.payer,
-          sinkAta,
-          sessionState.payer,
+    const result = await sessionState.sendTransaction([
+      createAssociatedTokenAccountIdempotentInstruction(
+        sessionState.payer,
+        sinkAta,
+        sessionState.payer,
+        mint,
+      ),
+      await new ExampleProgram(
+        new AnchorProvider(connection, {} as Wallet, {}),
+      ).methods
+        .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
+        .accountsPartial({
+          signerOrSession: sessionState.sessionPublicKey,
+          sink: sinkAta,
+          userTokenAccount,
           mint,
-        ),
-        await new ExampleProgram(
-          new AnchorProvider(connection, {} as Wallet, {}),
-        ).methods
-          .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
-          .accountsPartial({
-            signerOrSession: sessionState.sessionPublicKey,
-            sink: sinkAta,
-            userTokenAccount,
-            mint,
-          })
-          .instruction(),
-      ],
-      { variation: "Example v1 Variation" },
-    );
+        })
+        .instruction(),
+    ]);
 
     appendTransaction({
       description: "Trade",
