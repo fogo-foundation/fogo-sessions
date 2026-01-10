@@ -13,17 +13,13 @@ type ListHeaderProps =
       isLoading: true;
     };
 
-export const ListHeader = (props: ListHeaderProps) => {
-  if (props.isLoading) {
-    return (
-      <div className={styles.listHeader}>
-        <Skeleton className={styles.listHeaderTitleSkeleton} />
-        <Skeleton className={styles.listHeaderActionSkeleton} />
-      </div>
-    );
-  }
-
-  return (
+export const ListHeader = (props: ListHeaderProps) => 
+  props.isLoading ? (
+    <div className={styles.listHeader}>
+      <Skeleton className={styles.listHeaderTitleSkeleton} />
+      <Skeleton className={styles.listHeaderActionSkeleton} />
+    </div>
+  ) : (
     <div className={styles.listHeader}>
       <h1 className={styles.listHeaderTitle}>
         {props.title} {props.count && <Badge size="xs">{props.count}</Badge>}
@@ -31,4 +27,3 @@ export const ListHeader = (props: ListHeaderProps) => {
       {props.action}
     </div>
   );
-};
