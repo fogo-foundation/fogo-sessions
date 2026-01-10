@@ -1,6 +1,3 @@
-import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
-import { TollboothIdl, TollboothProgram } from "@fogo/sessions-idls";
-import { sha256 } from "@noble/hashes/sha2";
 import {
   fromLegacyKeypair,
   fromLegacyPublicKey,
@@ -8,7 +5,6 @@ import {
   fromVersionedTransaction,
 } from "@solana/compat";
 import type {
-  Address,
   GetLatestBlockhashApi,
   Instruction,
   Rpc,
@@ -22,7 +18,6 @@ import {
   createSignerFromKeyPair,
   createSolanaRpc,
   createTransactionMessage,
-  getAddressFromPublicKey,
   getBase64EncodedWireTransaction,
   partiallySignTransaction,
   partiallySignTransactionMessageWithSigners,
@@ -30,7 +25,6 @@ import {
   setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash,
 } from "@solana/kit";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import type {
   AddressLookupTableAccount,
   TransactionError,
@@ -44,8 +38,10 @@ import {
 } from "@solana/web3.js";
 import { z } from "zod";
 
-import { USDC_MINT } from "./mints.js";
-import { Network } from "./network.js";
+export enum Network {
+  Testnet,
+  Mainnet,
+}
 
 const DEFAULT_RPC = {
   [Network.Testnet]: "https://testnet.fogo.io",
@@ -112,7 +108,6 @@ export const createSessionConnection = (
       domain: string,
       sessionKey: CryptoKeyPair | undefined,
       instructions: TransactionOrInstructions,
-      walletPublicKey: PublicKey,
       extraConfig?: SendTransactionOptions,
     ) =>
       sendToPaymaster(
@@ -120,7 +115,6 @@ export const createSessionConnection = (
         domain,
         sessionKey,
         instructions,
-        walletPublicKey,
         extraConfig,
       ),
     getSponsor: (domain: string) => getSponsor(options, sponsorCache, domain),
@@ -176,7 +170,6 @@ const sendToPaymaster = async (
   domain: string,
   sessionKey: CryptoKeyPair | undefined,
   instructions: TransactionOrInstructions,
-  walletPublicKey: PublicKey,
   extraConfig?: SendTransactionOptions,
 ): Promise<TransactionResult> => {
   const signerKeys = await getSignerKeys(sessionKey, extraConfig?.extraSigners);
@@ -185,10 +178,8 @@ const sendToPaymaster = async (
     ? await buildTransaction(
         connection,
         domain,
-        sessionKey,
         signerKeys,
         instructions,
-        walletPublicKey,
         extraConfig,
       )
     : await addSignaturesToExistingTransaction(instructions, signerKeys);
@@ -233,50 +224,28 @@ const buildTransaction = async (
     sponsorCache: Map<string, PublicKey>;
   },
   domain: string,
-  sessionKey: CryptoKeyPair | undefined,
   signerKeys: CryptoKeyPair[],
   instructions: (TransactionInstruction | Instruction)[],
-  walletPublicKey: PublicKey,
   extraConfig?: {
     addressLookupTable?: string | undefined;
     extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
-    variation?: string | undefined;
   },
 ) => {
-  const feeMint = new PublicKey(USDC_MINT[connection.network]); // TODO: make this configurable
-  const [
-    { value: latestBlockhash },
-    sponsor,
-    addressLookupTable,
-    signers,
-    feeAmount,
-    sessionKeyAddress,
-  ] = await Promise.all([
-    connection.rpc.getLatestBlockhash().send(),
-    connection.sponsor === undefined
-      ? getSponsor(connection, connection.sponsorCache, domain)
-      : Promise.resolve(connection.sponsor),
-    extraConfig?.addressLookupTable === undefined
-      ? Promise.resolve(undefined)
-      : getAddressLookupTable(
-          connection.connection,
-          connection.addressLookupTableCache,
-          extraConfig.addressLookupTable,
-        ),
-    Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
-    getFee(connection, domain, extraConfig?.variation, feeMint),
-    sessionKey === undefined
-      ? Promise.resolve(undefined)
-      : getAddressFromPublicKey(sessionKey.publicKey),
-  ]);
-
-  const tollboothInstruction = await buildTollboothInstructionIfNeeded({
-    sessionKeyAddress,
-    walletPublicKey,
-    domain,
-    feeMint,
-    feeAmount,
-  });
+  const [{ value: latestBlockhash }, sponsor, addressLookupTable, signers] =
+    await Promise.all([
+      connection.rpc.getLatestBlockhash().send(),
+      connection.sponsor === undefined
+        ? getSponsor(connection, connection.sponsorCache, domain)
+        : Promise.resolve(connection.sponsor),
+      extraConfig?.addressLookupTable === undefined
+        ? Promise.resolve(undefined)
+        : getAddressLookupTable(
+            connection.connection,
+            connection.addressLookupTableCache,
+            extraConfig.addressLookupTable,
+          ),
+      Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
+    ]);
 
   return partiallySignTransactionMessageWithSigners(
     pipe(
@@ -293,10 +262,6 @@ const buildTransaction = async (
           tx,
         ),
       (tx) =>
-        tollboothInstruction === undefined
-          ? tx
-          : appendTransactionMessageInstructions([tollboothInstruction], tx),
-      (tx) =>
         addressLookupTable === undefined
           ? tx
           : compressTransactionMessageUsingAddressLookupTables(tx, {
@@ -308,50 +273,6 @@ const buildTransaction = async (
       (tx) => addSignersToTransactionMessage(signers, tx),
     ),
   );
-};
-
-const getDomainTollRecipientAddress = (domain: string) => {
-  const hash = sha256(domain);
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from("toll_recipient"), Buffer.from([0]), hash],
-    new PublicKey(TollboothIdl.address),
-  )[0];
-};
-
-const buildTollboothInstructionIfNeeded = async ({
-  sessionKeyAddress,
-  walletPublicKey,
-  domain,
-  feeMint,
-  feeAmount,
-}: {
-  sessionKeyAddress: Address | undefined;
-  walletPublicKey: PublicKey;
-  domain: string;
-  feeMint: PublicKey;
-  feeAmount: BN;
-}) => {
-  if (feeAmount.gt(new BN(0)) && sessionKeyAddress !== undefined) {
-    const userTokenAccount = getAssociatedTokenAddressSync(
-      feeMint,
-      walletPublicKey,
-    );
-    const recipient = getDomainTollRecipientAddress(domain);
-    const instruction = await new TollboothProgram(
-      new AnchorProvider({} as Web3Connection, {} as Wallet),
-    ).methods
-      .payToll(feeAmount, 0)
-      .accounts({
-        session: new PublicKey(sessionKeyAddress),
-        source: userTokenAccount,
-        destination: getAssociatedTokenAddressSync(feeMint, recipient, true),
-        mint: feeMint,
-      })
-      .instruction();
-    return fromLegacyTransactionInstruction(instruction);
-  } else {
-    return undefined;
-  }
 };
 
 const addSignaturesToExistingTransaction = (
@@ -433,35 +354,6 @@ const getSponsor = async (
     }
   } else {
     return value;
-  }
-};
-
-const getFee = async (
-  options: Pick<
-    Parameters<typeof createSessionConnection>[0],
-    "paymaster" | "network"
-  >,
-  domain: string,
-  variation: string | undefined,
-  mint: PublicKey,
-) => {
-  if (variation) {
-    const url = new URL(
-      "/api/fee",
-      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
-    );
-    url.searchParams.set("domain", domain);
-    url.searchParams.set("variation", variation);
-    url.searchParams.set("mint", mint.toBase58());
-    const response = await fetch(url);
-
-    if (response.status === 200) {
-      return new BN(await response.text());
-    } else {
-      throw new PaymasterResponseError(response.status, await response.text());
-    }
-  } else {
-    return new BN(0);
   }
 };
 
