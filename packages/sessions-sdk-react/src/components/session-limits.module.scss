@@ -1,12 +1,14 @@
 @use "./component-library/theme";
 @use "./component-library/reset";
+@use "./component-library/layer";
 
 .sessionLimits {
   @include reset.reset {
   display: flex;
   flex-flow: column nowrap;
   gap: theme.spacing(6);
-
+  z-index: layer.layer("select") !important;
+ 
   .body {
     display: flex;
     flex-flow: column nowrap;
