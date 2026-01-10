@@ -27,12 +27,10 @@ const networkBadgeVariation: Record<
   localnet: "neutral",
 };
 
-export const DomainCard = (props: DomainCardProps) => {
-  if (props.isLoading) {
-    return <Skeleton className={styles.domainCardSkeleton} />;
-  }
-
-  return (
+export const DomainCard = (props: DomainCardProps) =>
+  props.isLoading ? (
+    <Skeleton className={styles.domainCardSkeleton} />
+  ) : (
     <Card className={styles.domainCard}>
       <div className={styles.domainCardHeader}>
         <h3 className={styles.domainCardTitle}>{props.domain.domain}</h3>
@@ -49,4 +47,3 @@ export const DomainCard = (props: DomainCardProps) => {
       </Button>
     </Card>
   );
-};
