@@ -20,7 +20,7 @@
       @include theme.text('xl', 'normal');
       color: theme.color('foreground');
       position: absolute;
-      left: -#{theme.spacing(10)};
+      left: -#{theme.spacing(4)};
       top: 50%;
       transform: translateY(-30%);
       cursor: pointer;

@@ -24,7 +24,6 @@ export const AppDomains = (props: AppDomainsProps) => {
     router.push("/");
   }, [router]);
 
-
   return (
     <>
       <BreadcrumbNav
@@ -49,10 +48,7 @@ export const AppDomains = (props: AppDomainsProps) => {
           />
         )}
         {props.isLoading ? (
-          <>
-            <DomainCard isLoading />
-            <DomainCard isLoading />
-          </>
+          <DomainCard isLoading />
         ) : (
           <GridList
             selectionMode="none"
