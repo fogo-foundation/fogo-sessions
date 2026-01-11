@@ -7,6 +7,7 @@ import {
   Select as AriaSelect,
   type SelectProps as AriaSelectProps,
   Button,
+  Label,
   ListBox,
   ListBoxItem,
   Popover,
@@ -20,8 +21,9 @@ type SelectProps<T extends string | number> = Omit<
   "children"
 > & {
   items: Array<{ key: T; label: string }>;
-  placeholder?: string;
+  placeholder?: string | undefined;
   children?: ReactNode;
+  label?: string | undefined;
 };
 
 export const Select = <T extends string | number>({
@@ -29,19 +31,21 @@ export const Select = <T extends string | number>({
   placeholder,
   className,
   children,
+  label,
   ...props
 }: SelectProps<T>) => {
   return (
     <AriaSelect {...props} className={clsx(styles.select, className)}>
+      {label && <Label className={styles.label ?? ""}>Session duration</Label>}
       <Button className={styles.button ?? ""}>
         <SelectValue className={styles.value ?? ""} />
         <CaretDownIcon className={styles.arrow ?? ""} />
       </Button>
       <Popover offset={4} className={styles.selectPopover ?? ""}>
         <ListBox items={items}>
-          {({ key, label }) => (
-            <ListBoxItem id={key} className={styles.selectItem ?? ""}>
-              {label}
+          {(item) => (
+            <ListBoxItem id={item.key} className={styles.selectItem ?? ""}>
+              {item.label}
             </ListBoxItem>
           )}
         </ListBox>
