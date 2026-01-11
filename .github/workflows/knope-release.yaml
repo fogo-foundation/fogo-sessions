@@ -75,7 +75,7 @@ jobs:
           # to be published, but we don't want that to fail the pipeline
           EXIT_CODE=$?
           if [[ "$EXIT_CODE" != "2" ]]; then
-            echo "exitcode=$EXIT_CODE"" >> $GITHUB_OUTPUT
+            echo "exitcode=$EXIT_CODE" >> $GITHUB_OUTPUT
           fi
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.FOGO_SESSIONS_CARGO_REGISTRY_TOKEN }}
