@@ -73,6 +73,7 @@ jobs:
           # cargo release will exit with error code 2 if there are no packages
           # to be published, but we don't want that to fail the pipeline
           EXIT_CODE=$?
+          echo "Caught status code $EXIT_CODE"
           if [[ "$EXIT_CODE" == "2" ]]; then
             exit 0
           else
