@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.12 (2026-01-11)
+
+### Features
+
+- Fix layering issue with select
+
 ## 0.1.11 (2026-01-11)
 
 ### Fixes
