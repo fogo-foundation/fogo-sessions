@@ -1,22 +1,10 @@
-import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
 import { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import type { FormEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
-import {
-  Checkbox,
-  Form,
-  Label,
-  ListBox,
-  ListBoxItem,
-  Popover,
-  Select,
-  SelectValue,
-  Button as UnstyledButton,
-} from "react-aria-components";
-
+import { Checkbox, Form } from "react-aria-components";
 import { amountToString, stringToAmount } from "../amount-to-string.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { TokenAccountData } from "../hooks/use-token-account-data.js";
@@ -31,6 +19,7 @@ import {
 import type { WalletConnectedSessionState } from "../session-state.js";
 import { isEstablished, isUpdatable, StateType } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
+import { Select } from "./component-library/Select/index.js";
 import { TextField } from "./component-library/TextField/index.js";
 import styles from "./session-limits.module.css";
 import { TokenAmountInput } from "./token-amount-input.js";
@@ -131,25 +120,14 @@ export const SessionLimits = ({
         {header}
         <Select
           name="duration"
+          label="Session duration"
           defaultSelectedKey="one-week"
           isDisabled={onSubmit === undefined}
-          className={styles.sessionExpiry ?? ""}
-        >
-          <Label className={styles.label ?? ""}>Session duration</Label>
-          <UnstyledButton className={styles.button ?? ""}>
-            <SelectValue className={styles.value ?? ""} />
-            <CaretDownIcon className={styles.arrow ?? ""} />
-          </UnstyledButton>
-          <Popover offset={4} className={styles.selectPopover ?? ""}>
-            <ListBox items={Object.entries(DURATION)}>
-              {([key, { label }]) => (
-                <ListBoxItem id={key} className={styles.selectItem ?? ""}>
-                  {label}
-                </ListBoxItem>
-              )}
-            </ListBox>
-          </Popover>
-        </Select>
+          items={Object.entries(DURATION).map(([key, { label }]) => ({
+            key,
+            label,
+          }))}
+        />
         <div>
           {enableUnlimited && (
             <Checkbox
