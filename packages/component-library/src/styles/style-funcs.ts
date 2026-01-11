@@ -28,38 +28,13 @@ export function getCssRegistrySingleton() {
   return Singleton.registry;
 }
 
-const {
-  createStyles: _createStyles,
-  imports: _imports,
-  keyframes: _keyframes,
-  rawStyles: _rawStyles,
-} = makeCssFuncs({ variables: Theme });
+// we create an object here so the pointer is maintained
+// to the makeCssFuncs call. This will allow the registry pointer
+// to be updated properly
+const makeCssFuncsOpts = {
+  registry: Singleton.registry,
+  variables: Theme,
+};
 
-export const createStyles: typeof _createStyles = (
-  ruleId,
-  rulesFnc,
-  overrides,
-) =>
-  // @ts-expect-error - typescript confusion that the return type could be a mismatch
-  // despite us declaring the explicit type of the function.
-  // doesn't affect usage or runtime, solely a local (this file only)
-  // typescript issue
-  _createStyles(ruleId, rulesFnc, {
-    ...overrides,
-    registry: Singleton.registry,
-  });
-
-export const imports: typeof _imports = (ruleId, rulesFnc, overrides) =>
-  _imports(ruleId, rulesFnc, { ...overrides, registry: Singleton.registry });
-
-export const keyframes: typeof _keyframes = (ruleId, rulesFnc, overrides) =>
-  _keyframes(ruleId, rulesFnc, {
-    ...overrides,
-    registry: Singleton.registry,
-  });
-
-export const rawStyles: typeof _rawStyles = (ruleId, rulesFnc, overrides) =>
-  _rawStyles(ruleId, rulesFnc, {
-    ...overrides,
-    registry: Singleton.registry,
-  });
+export const { createStyles, imports, keyframes, rawStyles } =
+  makeCssFuncs(makeCssFuncsOpts);

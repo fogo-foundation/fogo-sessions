@@ -85,7 +85,7 @@ export const { classes } = createStyles("fogo-sessions-button", (theme) => {
         ...theme.text("base", "semibold"),
         borderRadius: theme.borderRadius.lg,
         height: theme.spacing(10),
-        paddingLleft: theme.spacing(4),
+        paddingLeft: theme.spacing(4),
         paddingRight: theme.spacing(4),
         gap: theme.spacing(2),
       },

@@ -250,8 +250,8 @@ catalogs:
       specifier: ^16.0.5
       version: 16.0.6
     simplestyle-js:
-      specifier: ^5.3.4
-      version: 5.3.4
+      specifier: ^5.3.5
+      version: 5.3.5
     storybook:
       specifier: ^10.1.2
       version: 10.1.2
@@ -522,7 +522,7 @@ importers:
         version: 19.2.1(react@19.2.1)
       simplestyle-js:
         specifier: 'catalog:'
-        version: 5.3.4(@babel/core@7.28.5)(@types/node@25.0.2)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0)
+        version: 5.3.5(@babel/core@7.28.5)(@types/node@25.0.2)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0)
       swr:
         specifier: 'catalog:'
         version: 2.3.3(react@19.2.1)
@@ -577,7 +577,7 @@ importers:
         version: 1.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       simplestyle-js:
         specifier: 'catalog:'
-        version: 5.3.4(@babel/core@7.28.5)(@types/node@24.0.3)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0)
+        version: 5.3.5(@babel/core@7.28.5)(@types/node@24.0.3)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0)
       swr:
         specifier: 'catalog:'
         version: 2.3.3(react@19.2.1)
@@ -774,7 +774,7 @@ importers:
         version: 1.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       simplestyle-js:
         specifier: 'catalog:'
-        version: 5.3.4(@babel/core@7.28.5)(@types/node@24.0.3)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0)
+        version: 5.3.5(@babel/core@7.28.5)(@types/node@24.0.3)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0)
       swr:
         specifier: 'catalog:'
         version: 2.3.3(react@19.2.1)
@@ -12451,8 +12451,8 @@ packages:
   simple-swizzle@0.2.2:
     resolution: {integrity: sha512-JA//kQgZtbuY83m+xT+tXJkmJncGMTFT+C+g2h2R9uxkYIrE2yy9sgmcLhCnw57/WSD+Eh3J97FPEDFnbXnDUg==}
 
-  simplestyle-js@5.3.4:
-    resolution: {integrity: sha512-FfhCKxSCphnAzURLTngn/jqyuNIa3PVYnz1AGYALQ2RIxPL5M3g05prGPB0fACcf5LC88EU04/D5jzbslj3WrA==}
+  simplestyle-js@5.3.5:
+    resolution: {integrity: sha512-qjmycXG4cpj1czBF7rzmKTdfNe8EbdiZ7LgCcb1XYMorXKa+efRhzk1sv5df3nkiB1eYP+E5yHj2ewwLSSe4rw==}
     peerDependencies:
       react: '>=16.8'
 
@@ -31001,7 +31001,7 @@ snapshots:
     dependencies:
       is-arrayish: 0.3.2
 
-  simplestyle-js@5.3.4(@babel/core@7.28.5)(@types/node@24.0.3)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0):
+  simplestyle-js@5.3.5(@babel/core@7.28.5)(@types/node@24.0.3)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0):
     dependencies:
       csstype: 3.2.3
       deepmerge: 4.3.1
@@ -31050,7 +31050,7 @@ snapshots:
       - uploadthing
       - yaml
 
-  simplestyle-js@5.3.4(@babel/core@7.28.5)(@types/node@25.0.2)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0):
+  simplestyle-js@5.3.5(@babel/core@7.28.5)(@types/node@25.0.2)(@vercel/blob@1.0.2)(idb-keyval@6.2.2)(jiti@2.6.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.55.1)(sass@1.89.2)(terser@5.44.1)(tsx@4.19.2)(typescript@5.8.3)(yaml@2.8.0):
     dependencies:
       csstype: 3.2.3
       deepmerge: 4.3.1
