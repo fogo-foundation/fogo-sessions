@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-idls",
-  "version": "0.0.13",
+  "version": "0.1.0",
   "private": true,
   "description": "The IDLs for the on-chain programs involved in the Fogo Sessions protocol",
   "repository": {

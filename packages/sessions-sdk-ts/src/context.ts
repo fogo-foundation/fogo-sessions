@@ -1,7 +1,11 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { ChainIdProgram } from "@fogo/sessions-idls";
-import { Keypair, Connection as Web3Connection } from "@solana/web3.js";
+import {
+  Keypair,
+  type PublicKey,
+  Connection as Web3Connection,
+} from "@solana/web3.js";
 
 import type {
   Connection,
@@ -36,12 +40,14 @@ export const createSessionContext = async (options: {
     sendTransaction: (
       sessionKey: CryptoKeyPair | undefined,
       instructions: TransactionOrInstructions,
+      walletPublicKey: PublicKey,
       sendTxOptions?: SendTransactionOptions,
     ) =>
       options.connection.sendToPaymaster(
         sendTxOptions?.paymasterDomain ?? domain,
         sessionKey,
         instructions,
+        walletPublicKey,
         {
           ...sendTxOptions,
           addressLookupTable:
