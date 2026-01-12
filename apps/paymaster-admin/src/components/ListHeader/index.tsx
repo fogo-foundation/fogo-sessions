@@ -13,7 +13,7 @@ type ListHeaderProps =
       isLoading: true;
     };
 
-export const ListHeader = (props: ListHeaderProps) => 
+export const ListHeader = (props: ListHeaderProps) =>
   props.isLoading ? (
     <div className={styles.listHeader}>
       <Skeleton className={styles.listHeaderTitleSkeleton} />
