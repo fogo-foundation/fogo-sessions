@@ -18,6 +18,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    .breadcrumbNavTitleContainer {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
     .breadcrumbNavArrow {
       all: unset;
       @include theme.text('xl', 'normal');
@@ -26,15 +33,25 @@
       transform: translateX(-#{theme.spacing(12)});
       cursor: pointer;
     }
-
-    .breadcrumbNavList {
-      display: flex;
-      align-items: center;
-      gap: theme.spacing(4);
-      list-style-type: none;
-      padding: 0;
-    }
   }
+}
+
+.breadcrumbNavTitle {
+  @include theme.text('3xl', 'normal');
+}
+
+.breadcrumbNavTitleSkeleton {
+  width: theme.spacing(80);
+  height: theme.spacing(6);
+  display: inline-block;
+}
+
+.breadcrumbNavList {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(4);
+  list-style-type: none;
+  padding: 0;
 }
 
 .breadcrumbNavItemSkeleton {
@@ -43,23 +60,20 @@
   display: inline-block;
 }
 
-.breadcrumbNavItems {
+.breadcrumbNavItem {
   @include theme.text('3xl', 'normal');
-
   &[data-small] {
     @include theme.text('xl', 'normal');
   }
 }
 
-.breadcrumbNavItem {
-  @include theme.text('3xl', 'normal');
-  font-size: 1em;
-}
-
 .breadcrumbNavSeparator {
   @include theme.text('3xl', 'normal');
-  font-size: 1em;
   color: theme.color('foreground');
   opacity: 0.2;
   margin-left: theme.spacing(4);
+
+  &[data-small] {
+    @include theme.text('xl', 'normal');
+  }
 }

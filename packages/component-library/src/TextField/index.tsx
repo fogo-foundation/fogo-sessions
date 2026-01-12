@@ -38,10 +38,12 @@ export const TextField = ({
     isDisabled={isPending ?? props.isDisabled ?? false}
     {...props}
   >
-    <div className={clsx(styles.labelLine, labelLineClassName)}>
-      {label && <Label className={styles.label ?? ""}>{label}</Label>}
-      {labelExtra && <div className={styles.labelExtra}>{labelExtra}</div>}
-    </div>
+    {(label || labelExtra) && (
+      <div className={clsx(styles.labelLine, labelLineClassName)}>
+        {label && <Label className={styles.label ?? ""}>{label}</Label>}
+        {labelExtra && <div className={styles.labelExtra}>{labelExtra}</div>}
+      </div>
+    )}
     <Group className={clsx(styles.inputGroup, inputGroupClassName)}>
       {props.double ? (
         <TextArea

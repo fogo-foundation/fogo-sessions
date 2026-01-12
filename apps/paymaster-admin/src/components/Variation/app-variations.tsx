@@ -1,9 +1,10 @@
-import { Button } from "@fogo/component-library/Button";
 import type { App, DomainConfig } from "../../db-schema";
 import BreadcrumbNav from "../BreadcrumbNav";
-import { Container } from "../Container";
 import { DomainSettingsButton } from "../Domain/domain-settings-modal";
 import { ListHeader } from "../ListHeader";
+import { AddVariationButton } from "./add-variation-button";
+import styles from "./app-variations.module.scss";
+import VariationsList from "./variations-list";
 
 type AppVariationProps =
   | {
@@ -20,24 +21,35 @@ export const AppVariation = (props: AppVariationProps) => {
     <>
       <BreadcrumbNav
         items={[
-          { label: "Apps", href: "/" },
-          props.isLoading ? { isLoading: true } : { label: props.app.name },
+          props.isLoading
+            ? { isLoading: true }
+            : { label: props.app.name, href: `/apps/${props.app.id}` },
+          props.isLoading
+            ? { isLoading: true }
+            : { label: props.domainConfig.domain },
         ]}
         title={props.isLoading ? undefined : props.domainConfig.domain}
         titleLoading={props.isLoading}
         action={<DomainSettingsButton />}
       />
-      <Container>
+      <div className={styles.container}>
         {props.isLoading ? (
           <ListHeader isLoading />
         ) : (
           <ListHeader
             title="Variation"
-            count={props.domainConfig.variations.length}
-            action={<Button variant="secondary">Add Domain</Button>}
+            isLoading={props.isLoading}
+            {...(!props.isLoading && {
+              count: props.domainConfig.variations.length,
+              action: <AddVariationButton />,
+            })}
           />
         )}
-      </Container>
+        <VariationsList
+          isLoading={props.isLoading}
+          {...(!props.isLoading && { domainConfig: props.domainConfig })}
+        />
+      </div>
     </>
   );
 };

@@ -1,0 +1,24 @@
+@use '@fogo/component-library/theme';
+
+.variationListItem {
+  display: flex;
+  gap: theme.spacing(2);
+  .variationListCard {
+    background-color: #303038;
+    border-radius: theme.border-radius('lg');
+    padding: 0 theme.spacing(4);
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: theme.spacing(3);
+    height: theme.spacing(12);
+  }
+}
+
+.variationListItemSkeleton {
+  height: theme.spacing(12);
+}
+
+.fieldVariationName {
+  flex: 1;
+}
