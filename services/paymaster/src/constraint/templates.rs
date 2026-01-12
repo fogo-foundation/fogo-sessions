@@ -228,7 +228,7 @@ impl TransactionVariation {
     }
 }
 
-fn insert_variation(
+fn insert_template_variation(
     tx_variations: &mut HashMap<String, TransactionVariation>,
     variation: TransactionVariation,
 ) -> anyhow::Result<()> {
@@ -249,11 +249,11 @@ fn insert_variation(
 pub fn insert_session_management_variations(
     tx_variations: &mut HashMap<String, TransactionVariation>,
 ) -> anyhow::Result<()> {
-    insert_variation(
+    insert_template_variation(
         tx_variations,
         TransactionVariation::session_establishment_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND),
     )?;
-    insert_variation(
+    insert_template_variation(
         tx_variations,
         TransactionVariation::session_revocation_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND),
     )?;
