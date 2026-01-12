@@ -1,4 +1,4 @@
-import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr";
+import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr/GasPump";
 import * as React from "react";
 import { TextField as TextFieldComponent } from "./index.jsx";
 
