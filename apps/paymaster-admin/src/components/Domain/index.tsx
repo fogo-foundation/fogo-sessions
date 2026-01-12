@@ -46,7 +46,7 @@ type DomainContentsProps =
 
 const DomainContents = (props: DomainContentsProps) => {
   if (props.isLoading) {
-    return <PaymasterLoading />;
+    return <AppDomains isLoading />;
   }
   return <DomainData sessionState={props.sessionState} appId={props.appId} />;
 };

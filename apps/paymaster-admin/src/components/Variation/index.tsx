@@ -56,7 +56,7 @@ type VariationContentsProps =
 
 const VariationContents = (props: VariationContentsProps) => {
   if (props.isLoading) {
-    return <PaymasterLoading />;
+    return <AppVariation isLoading />;
   }
   return (
     <VariationData

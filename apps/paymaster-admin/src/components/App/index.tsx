@@ -44,7 +44,7 @@ type AppsContentsProps =
 
 const AppsContents = (props: AppsContentsProps) => {
   if (props.isLoading) {
-    return <PaymasterLoading />;
+    return <UserApps isLoading />;
   }
   return <AppData sessionState={props.sessionState} />;
 };
