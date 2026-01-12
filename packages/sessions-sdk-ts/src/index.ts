@@ -78,6 +78,11 @@ export {
   type SendTransactionOptions,
   type SessionContext,
 } from "./context.js";
+export {
+  createSessionUnwrapInstruction,
+  createSessionWrapInstructions,
+  createSystemProgramSessionWrapInstruction,
+} from "./instructions.js";
 export { Network } from "./network.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
