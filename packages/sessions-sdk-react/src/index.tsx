@@ -1,7 +1,4 @@
 export {
-  createSessionUnwrapInstruction,
-  createSessionWrapInstructions,
-  createSystemProgramSessionWrapInstruction,
   Network,
   type TransactionResult,
   TransactionResultType,
