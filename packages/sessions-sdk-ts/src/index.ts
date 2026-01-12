@@ -50,7 +50,7 @@ import type {
   TransactionOrInstructions,
   TransactionResult,
 } from "./connection.js";
-import { Network, TransactionResultType } from "./connection.js";
+import { TransactionResultType } from "./connection.js";
 import type { SendTransactionOptions, SessionContext } from "./context.js";
 import { SESSIONS_INTERNAL_PAYMASTER_DOMAIN } from "./context.js";
 import {
@@ -63,11 +63,12 @@ import {
   createSessionWrapInstructions,
   createSystemProgramSessionWrapInstruction,
 } from "./instructions.js";
+import { USDC_DECIMALS, USDC_MINT } from "./mints.js";
+import { Network } from "./network.js";
 
 export {
   type Connection,
   createSessionConnection,
-  Network,
   type TransactionOrInstructions,
   type TransactionResult,
   TransactionResultType,
@@ -82,6 +83,7 @@ export {
   createSessionWrapInstructions,
   createSystemProgramSessionWrapInstruction,
 } from "./instructions.js";
+export { Network } from "./network.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
@@ -165,6 +167,7 @@ const sendSessionEstablishTransaction = async (
   const result = await options.context.sendTransaction(
     sessionKey,
     instructions,
+    options.walletPublicKey,
     {
       variation: "Session Establishment",
       addressLookupTable:
@@ -229,6 +232,7 @@ export const revokeSession = async (options: {
     return options.context.sendTransaction(
       options.session.sessionKey,
       [instruction],
+      options.session.walletPublicKey,
       {
         variation: "Session Revocation",
       },
@@ -295,7 +299,12 @@ const createSession = async (
           createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey),
         ],
         sendTransaction: (instructions, extraConfig) =>
-          context.sendTransaction(sessionKey, instructions, extraConfig),
+          context.sendTransaction(
+            sessionKey,
+            instructions,
+            walletPublicKey,
+            extraConfig,
+          ),
         sessionInfo,
       };
 };
@@ -764,12 +773,6 @@ export type Session = {
   sessionInfo: NonNullable<z.infer<typeof sessionInfoSchema>>;
 };
 
-const USDC_MINT = {
-  [Network.Mainnet]: "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG",
-  [Network.Testnet]: "ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND",
-};
-const USDC_DECIMALS = 6;
-
 export const getTransferFee = async (context: SessionContext) => {
   const { fee, ...config } = await getFee(context);
   return {
@@ -872,6 +875,7 @@ export const sendTransfer = async (options: SendTransferOptions) => {
         })
         .instruction(),
     ],
+    options.walletPublicKey,
     {
       variation: "Intent Transfer",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
@@ -944,6 +948,7 @@ export const sendNativeTransfer = async (
         })
         .instruction(),
     ],
+    options.walletPublicKey,
     {
       variation: "Intent Transfer",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
@@ -1077,6 +1082,7 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
       ComputeBudgetProgram.setComputeUnitLimit({ units: BRIDGE_OUT_CUS }),
       ...instructions,
     ],
+    options.walletPublicKey,
     {
       variation: "Intent NTT Bridge",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,

@@ -1,5 +1,5 @@
 [fee_coefficients]
-So11111111111111111111111111111111111111112 = 1
+ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND = 3500
 
 [[domains]]
 domain = "http://localhost:3000"
