@@ -1,0 +1,55 @@
+@use '@fogo/component-library/theme';
+
+.breadcrumbNav {
+  padding: 0 0 theme.spacing(2) 0;
+  border-bottom: 1px solid theme.color('border');
+
+  @include theme.breakpoint('md') {
+    padding: theme.spacing(8) 0;
+  }
+
+  .breadcrumbNavAction {
+    margin-left: auto;
+  }
+
+  .breadcrumbNavContainer {
+    @include theme.max-width;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    .breadcrumbNavArrow {
+      all: unset;
+      @include theme.text('xl', 'normal');
+      color: theme.color('foreground');
+      position: absolute;
+      transform: translateX(-#{theme.spacing(12)});
+      cursor: pointer;
+    }
+
+    .breadcrumbNavList {
+      display: flex;
+      align-items: center;
+      gap: theme.spacing(4);
+      list-style-type: none;
+      padding: 0;
+    }
+  }
+}
+
+.breadcrumbNavItemSkeleton {
+  width: theme.spacing(35);
+  height: theme.spacing(6);
+  display: inline-block;
+}
+
+.breadcrumbNavItem {
+  @include theme.text('3xl', 'normal');
+}
+
+.breadcrumbNavSeparator {
+  @include theme.text('3xl', 'normal');
+  color: theme.color('foreground');
+  opacity: 0.2;
+  margin-left: theme.spacing(4);
+}

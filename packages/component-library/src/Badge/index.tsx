@@ -7,7 +7,7 @@ export const VARIANTS = ["neutral", "error", "success"] as const;
 export const STYLES = ["filled", "outline"] as const;
 export const SIZES = ["xs", "md", "lg"] as const;
 
-type Props = ComponentProps<"span"> & {
+export type BadgeProps = ComponentProps<"span"> & {
   variant?: (typeof VARIANTS)[number] | undefined;
   style?: (typeof STYLES)[number] | undefined;
   size?: (typeof SIZES)[number] | undefined;
@@ -20,7 +20,7 @@ export const Badge = ({
   style = "filled",
   children,
   ...props
-}: Props) => (
+}: BadgeProps) => (
   <span
     className={clsx(styles.badge, className)}
     data-variant={variant}
