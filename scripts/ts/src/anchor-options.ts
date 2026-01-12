@@ -32,4 +32,4 @@ export const createAnchorProvider = ({
 }: {
   url: string;
   keypair: Awaited<ReturnType<typeof parseSignerSource>>;
-}) => new AnchorProvider(new Connection(url), keypair);
+}) => new AnchorProvider(new Connection(url, "confirmed"), keypair);
