@@ -1,6 +1,6 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
-use crate::constraint::{ContextualDomainKeys, TransactionVariation};
+use crate::constraint::{ContextualDomainKeys, ParsedTransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
@@ -52,7 +52,7 @@ pub struct DomainState {
     pub sponsors: NonEmpty<Keypair>,
     pub next_autoassigned_sponsor_index: Arc<AtomicUsize>,
     pub enable_preflight_simulation: bool,
-    pub tx_variations: HashMap<String, TransactionVariation>,
+    pub tx_variations: HashMap<String, ParsedTransactionVariation>,
 }
 
 pub struct PubsubClientWithReconnect {
@@ -124,7 +124,7 @@ impl DomainState {
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
         variation_name: Option<String>,
-    ) -> Result<&TransactionVariation, (StatusCode, String)> {
+    ) -> Result<&ParsedTransactionVariation, (StatusCode, String)> {
         let message_bytes = transaction.message.serialize();
         transaction
             .signatures
@@ -205,13 +205,15 @@ impl DomainState {
     pub async fn validate_transaction_against_variation(
         &self,
         transaction: &TransactionToValidate<'_>,
-        tx_variation: &TransactionVariation,
+        tx_variation: &ParsedTransactionVariation,
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
     ) -> Result<(), (StatusCode, String)> {
         match tx_variation {
-            TransactionVariation::V0(variation) => variation.validate_transaction(transaction),
-            TransactionVariation::V1(variation) => {
+            ParsedTransactionVariation::V0(variation) => {
+                variation.validate_transaction(transaction)
+            }
+            ParsedTransactionVariation::V1(variation) => {
                 variation
                     .validate_transaction(
                         transaction,
@@ -602,8 +604,10 @@ async fn fee_handler(
     })?;
 
     let paymaster_fee_lamports = match variation {
-        TransactionVariation::V0(_) => 0,
-        TransactionVariation::V1(v1_variation) => v1_variation.paymaster_fee_lamports.unwrap_or(0),
+        ParsedTransactionVariation::V0(_) => 0,
+        ParsedTransactionVariation::V1(v1_variation) => {
+            v1_variation.paymaster_fee_lamports.unwrap_or(0)
+        }
     };
 
     Ok(Json(paymaster_fee_lamports.div_ceil(*fee_coefficient)))
@@ -641,7 +645,7 @@ pub fn get_domain_state_map(
                         domain_registry_key,
                         sponsors,
                         enable_preflight_simulation,
-                        tx_variations: Domain::into_domain_state_transaction_variations(
+                        tx_variations: Domain::into_parsed_transaction_variations(
                             tx_variations,
                             enable_session_management,
                         )?,

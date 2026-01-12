@@ -2,7 +2,8 @@ use serde::{Deserialize, Deserializer};
 use std::collections::{hash_map::Entry, HashMap};
 use std::num::NonZeroU8;
 
-use crate::constraint::{self, config, insert_session_management_variations};
+use crate::constraint::config::TransactionVariation;
+use crate::constraint::{insert_session_management_variations, ParsedTransactionVariation};
 
 fn default_true() -> bool {
     true
@@ -30,14 +31,14 @@ pub struct Domain {
 
     /// The list of transaction types that the paymaster should sponsor.
     #[serde(deserialize_with = "deserialize_transaction_variations")]
-    pub tx_variations: HashMap<String, config::TransactionVariation>,
+    pub tx_variations: HashMap<String, TransactionVariation>,
 }
 
 impl Domain {
-    pub fn into_domain_state_transaction_variations(
-        tx_variations: HashMap<String, config::TransactionVariation>,
+    pub fn into_parsed_transaction_variations(
+        tx_variations: HashMap<String, TransactionVariation>,
         enable_session_management: bool,
-    ) -> anyhow::Result<HashMap<String, constraint::TransactionVariation>> {
+    ) -> anyhow::Result<HashMap<String, ParsedTransactionVariation>> {
         let mut tx_variations = tx_variations
             .into_iter()
             .map(|(name, variation)| (name, variation.into()))
@@ -50,8 +51,8 @@ impl Domain {
 }
 
 fn insert_variation(
-    tx_variations: &mut HashMap<String, config::TransactionVariation>,
-    variation: config::TransactionVariation,
+    tx_variations: &mut HashMap<String, TransactionVariation>,
+    variation: TransactionVariation,
 ) -> anyhow::Result<()> {
     let key = variation.name().to_string();
     match tx_variations.entry(key.clone()) {
@@ -69,11 +70,11 @@ fn insert_variation(
 
 fn deserialize_transaction_variations<'de, D>(
     deserializer: D,
-) -> Result<HashMap<String, config::TransactionVariation>, D::Error>
+) -> Result<HashMap<String, TransactionVariation>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let variations: Vec<config::TransactionVariation> = Vec::deserialize(deserializer)?;
+    let variations: Vec<TransactionVariation> = Vec::deserialize(deserializer)?;
     variations
         .into_iter()
         .try_fold(HashMap::new(), |mut map, variation| {

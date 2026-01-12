@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 
 use crate::constraint::{
-    self, AccountConstraint, DataConstraint, SubstantiveProgramId, VariationProgramWhitelist,
+    AccountConstraint, DataConstraint, ParsedInstructionConstraint, ParsedTransactionVariation,
+    ParsedVariationOrderedInstructionConstraints, SubstantiveProgramId, VariationProgramWhitelist,
 };
 
 #[derive(Deserialize)]
@@ -15,11 +16,11 @@ pub enum TransactionVariation {
     V1(VariationOrderedInstructionConstraints),
 }
 
-impl From<TransactionVariation> for constraint::TransactionVariation {
+impl From<TransactionVariation> for ParsedTransactionVariation {
     fn from(config: TransactionVariation) -> Self {
         match config {
-            TransactionVariation::V0(v) => constraint::TransactionVariation::V0(v),
-            TransactionVariation::V1(v) => constraint::TransactionVariation::V1(v.into()),
+            TransactionVariation::V0(v) => ParsedTransactionVariation::V0(v),
+            TransactionVariation::V1(v) => ParsedTransactionVariation::V1(v.into()),
         }
     }
 }
@@ -47,7 +48,7 @@ pub struct InstructionConstraint {
     pub requires_wrapped_native_tokens: bool,
 }
 
-impl From<InstructionConstraint> for constraint::InstructionConstraint {
+impl From<InstructionConstraint> for ParsedInstructionConstraint {
     fn from(
         InstructionConstraint {
             program,
@@ -57,7 +58,7 @@ impl From<InstructionConstraint> for constraint::InstructionConstraint {
             requires_wrapped_native_tokens: _,
         }: InstructionConstraint,
     ) -> Self {
-        constraint::InstructionConstraint {
+        ParsedInstructionConstraint {
             program,
             accounts,
             data,
@@ -75,9 +76,7 @@ pub struct VariationOrderedInstructionConstraints {
     pub paymaster_fee_lamports: Option<u64>,
 }
 
-impl From<VariationOrderedInstructionConstraints>
-    for constraint::VariationOrderedInstructionConstraints
-{
+impl From<VariationOrderedInstructionConstraints> for ParsedVariationOrderedInstructionConstraints {
     fn from(
         VariationOrderedInstructionConstraints {
             name,
@@ -91,11 +90,11 @@ impl From<VariationOrderedInstructionConstraints>
             .flat_map(|base| {
                 if base.requires_wrapped_native_tokens {
                     vec![
-                        constraint::InstructionConstraint::session_wrap_instruction_constraint(),
-                        constraint::InstructionConstraint::create_ata_idempotent_instruction_constraint(),
-                        constraint::InstructionConstraint::sync_native_instruction_constraint(),
+                        ParsedInstructionConstraint::session_wrap_instruction_constraint(),
+                        ParsedInstructionConstraint::create_ata_idempotent_instruction_constraint(),
+                        ParsedInstructionConstraint::sync_native_instruction_constraint(),
                         base.into(),
-                        constraint::InstructionConstraint::close_token_account_constraint(),
+                        ParsedInstructionConstraint::close_token_account_constraint(),
                     ]
                 } else {
                     vec![base.into()]

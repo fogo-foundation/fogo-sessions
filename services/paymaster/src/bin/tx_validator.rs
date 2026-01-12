@@ -5,7 +5,9 @@ use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
     config_manager::config::{Config, Domain},
-    constraint::{transaction::TransactionToValidate, ContextualDomainKeys, TransactionVariation},
+    constraint::{
+        transaction::TransactionToValidate, ContextualDomainKeys, ParsedTransactionVariation,
+    },
     rpc::ChainIndex,
 };
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
@@ -107,7 +109,7 @@ pub fn load_file_config(config_path: &str) -> Result<Config> {
     Ok(config)
 }
 
-type Domains = HashMap<String, HashMap<String, TransactionVariation>>;
+type Domains = HashMap<String, HashMap<String, ParsedTransactionVariation>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -129,8 +131,8 @@ async fn main() -> Result<()> {
             let domains: Domains = get_domains_for_validation(config, &domain)
                 .into_iter()
                 .map(
-                    |Domain { domain, tx_variations, enable_session_management, .. }| -> Result<(String, HashMap<String, TransactionVariation>)> {
-                        Ok((domain, Domain::into_domain_state_transaction_variations(tx_variations, enable_session_management)?))
+                    |Domain { domain, tx_variations, enable_session_management, .. }| -> Result<(String, HashMap<String, ParsedTransactionVariation>)> {
+                        Ok((domain, Domain::into_parsed_transaction_variations(tx_variations, enable_session_management)?))
                     },
                 )
                 .collect::<Result<Domains>>()?;
@@ -459,10 +461,10 @@ fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransactio
 async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
     domain: &str,
-    tx_variations: &'a HashMap<String, TransactionVariation>,
+    tx_variations: &'a HashMap<String, ParsedTransactionVariation>,
     chain_index: &ChainIndex,
     contextual_keys_cache: &ContextualKeysCache,
-) -> Result<Vec<&'a TransactionVariation>> {
+) -> Result<Vec<&'a ParsedTransactionVariation>> {
     let mut matching_variations = Vec::new();
 
     let contextual_keys = contextual_keys_cache.get(domain).await?;
@@ -471,10 +473,10 @@ async fn get_matching_variations<'a>(
             TransactionToValidate::parse(transaction, chain_index, &HashMap::new()).await
         {
             match variation {
-                TransactionVariation::V0(v0_variation) => v0_variation
+                ParsedTransactionVariation::V0(v0_variation) => v0_variation
                     .validate_transaction(&paymaster_transaction)
                     .is_ok(),
-                TransactionVariation::V1(v1_variation) => {
+                ParsedTransactionVariation::V1(v1_variation) => {
                     v1_variation
                         .validate_compute_units(&paymaster_transaction)
                         .is_ok()

@@ -4,13 +4,14 @@ use std::collections::HashMap;
 use crate::constraint::SubstantiveProgramId;
 use crate::constraint::{
     AccountConstraint, ContextualPubkey, DataConstraint, DataConstraintSpecification, DataType,
-    DataValue, InstructionConstraint, TransactionVariation, VariationOrderedInstructionConstraints,
+    DataValue, ParsedInstructionConstraint, ParsedTransactionVariation,
+    ParsedVariationOrderedInstructionConstraints,
 };
 
-impl InstructionConstraint {
+impl ParsedInstructionConstraint {
     /// The template for the constraint for the ed25519_program instruction used to verify a single intent signature.
-    fn intent_instruction_constraint() -> InstructionConstraint {
-        InstructionConstraint {
+    fn intent_instruction_constraint() -> ParsedInstructionConstraint {
+        ParsedInstructionConstraint {
             program: SubstantiveProgramId(solana_program::ed25519_program::id()),
             accounts: vec![],
             data: vec![
@@ -74,8 +75,8 @@ impl InstructionConstraint {
     }
 
     /// The template for the constraint for the StartSession instruction from the session manager program.
-    fn start_session_instruction_constraint() -> InstructionConstraint {
-        InstructionConstraint {
+    fn start_session_instruction_constraint() -> ParsedInstructionConstraint {
+        ParsedInstructionConstraint {
             program: SubstantiveProgramId(fogo_sessions_sdk::session::SESSION_MANAGER_ID),
             accounts: vec![
                 AccountConstraint {
@@ -107,8 +108,8 @@ impl InstructionConstraint {
     }
 
     /// The template for the constraint for the RevokeSession instruction from the session manager program.
-    fn revoke_session_instruction_constraint() -> InstructionConstraint {
-        InstructionConstraint {
+    fn revoke_session_instruction_constraint() -> ParsedInstructionConstraint {
+        ParsedInstructionConstraint {
             program: SubstantiveProgramId(fogo_sessions_sdk::session::SESSION_MANAGER_ID),
             accounts: vec![AccountConstraint {
                 index: 0,
@@ -128,8 +129,8 @@ impl InstructionConstraint {
     }
 
     /// The template for the constraint for transferring FOGO to one's ATA account via system_program::session_wrap
-    pub fn session_wrap_instruction_constraint() -> InstructionConstraint {
-        InstructionConstraint {
+    pub fn session_wrap_instruction_constraint() -> ParsedInstructionConstraint {
+        ParsedInstructionConstraint {
             program: SubstantiveProgramId(solana_program::system_program::id()),
             accounts: vec![],
             data: vec![
@@ -147,8 +148,8 @@ impl InstructionConstraint {
     }
 
     /// The template for the constraint for creating an ATA idempotently
-    pub fn create_ata_idempotent_instruction_constraint() -> InstructionConstraint {
-        InstructionConstraint {
+    pub fn create_ata_idempotent_instruction_constraint() -> ParsedInstructionConstraint {
+        ParsedInstructionConstraint {
             program: SubstantiveProgramId(spl_associated_token_account::id()),
             accounts: vec![AccountConstraint {
                 index: 0,
@@ -168,8 +169,8 @@ impl InstructionConstraint {
     }
 
     /// The template for the constraint for syncing a wrapped native token account
-    pub fn sync_native_instruction_constraint() -> InstructionConstraint {
-        InstructionConstraint {
+    pub fn sync_native_instruction_constraint() -> ParsedInstructionConstraint {
+        ParsedInstructionConstraint {
             program: SubstantiveProgramId(spl_token::id()),
             accounts: vec![],
             data: vec![
@@ -185,8 +186,8 @@ impl InstructionConstraint {
     }
 
     /// The template for the constraint for closing a token account
-    pub fn close_token_account_constraint() -> InstructionConstraint {
-        InstructionConstraint {
+    pub fn close_token_account_constraint() -> ParsedInstructionConstraint {
+        ParsedInstructionConstraint {
             program: SubstantiveProgramId(spl_token::id()),
             accounts: vec![],
             data: vec![
@@ -203,14 +204,14 @@ impl InstructionConstraint {
 }
 
 const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 15_000;
-impl TransactionVariation {
+impl ParsedTransactionVariation {
     /// The template for the transaction variation that establishes a session.
-    pub fn session_establishment_variation(max_gas_spend: u64) -> TransactionVariation {
-        TransactionVariation::V1(VariationOrderedInstructionConstraints {
+    pub fn session_establishment_variation(max_gas_spend: u64) -> ParsedTransactionVariation {
+        ParsedTransactionVariation::V1(ParsedVariationOrderedInstructionConstraints {
             name: "Session Establishment".to_string(),
             instructions: vec![
-                InstructionConstraint::intent_instruction_constraint(),
-                InstructionConstraint::start_session_instruction_constraint(),
+                ParsedInstructionConstraint::intent_instruction_constraint(),
+                ParsedInstructionConstraint::start_session_instruction_constraint(),
             ],
             max_gas_spend,
             paymaster_fee_lamports: None,
@@ -218,10 +219,12 @@ impl TransactionVariation {
     }
 
     /// The template for the transaction variation that revokes a session.
-    pub fn session_revocation_variation(max_gas_spend: u64) -> TransactionVariation {
-        TransactionVariation::V1(VariationOrderedInstructionConstraints {
+    pub fn session_revocation_variation(max_gas_spend: u64) -> ParsedTransactionVariation {
+        ParsedTransactionVariation::V1(ParsedVariationOrderedInstructionConstraints {
             name: "Session Revocation".to_string(),
-            instructions: vec![InstructionConstraint::revoke_session_instruction_constraint()],
+            instructions: vec![
+                ParsedInstructionConstraint::revoke_session_instruction_constraint(),
+            ],
             max_gas_spend,
             paymaster_fee_lamports: None,
         })
@@ -229,8 +232,8 @@ impl TransactionVariation {
 }
 
 fn insert_template_variation(
-    tx_variations: &mut HashMap<String, TransactionVariation>,
-    variation: TransactionVariation,
+    tx_variations: &mut HashMap<String, ParsedTransactionVariation>,
+    variation: ParsedTransactionVariation,
 ) -> anyhow::Result<()> {
     let key = variation.name().to_string();
     match tx_variations.entry(key.clone()) {
@@ -247,15 +250,15 @@ fn insert_template_variation(
 }
 
 pub fn insert_session_management_variations(
-    tx_variations: &mut HashMap<String, TransactionVariation>,
+    tx_variations: &mut HashMap<String, ParsedTransactionVariation>,
 ) -> anyhow::Result<()> {
     insert_template_variation(
         tx_variations,
-        TransactionVariation::session_establishment_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND),
+        ParsedTransactionVariation::session_establishment_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND),
     )?;
     insert_template_variation(
         tx_variations,
-        TransactionVariation::session_revocation_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND),
+        ParsedTransactionVariation::session_revocation_variation(DEFAULT_TEMPLATE_MAX_GAS_SPEND),
     )?;
     Ok(())
 }
