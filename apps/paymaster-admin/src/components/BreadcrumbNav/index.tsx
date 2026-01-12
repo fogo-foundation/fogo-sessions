@@ -1,8 +1,11 @@
+"use client";
+
 import { Link } from "@fogo/component-library/Link";
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
+import { Breadcrumb, Breadcrumbs } from "react-aria-components";
 import styles from "./index.module.scss";
 
 type Item =
@@ -27,6 +30,15 @@ const BreadcrumbNav = ({
     }
   }, [items, router]);
 
+  const itemsWithIds = useMemo(
+    () =>
+      items.map((item, index) => ({
+        ...item,
+        id: item.isLoading ? index : item.label,
+      })),
+    [items],
+  );
+
   return (
     <div className={styles.breadcrumbNav}>
       <div className={styles.breadcrumbNavContainer}>
@@ -38,14 +50,23 @@ const BreadcrumbNav = ({
             <ArrowLeftIcon />
           </button>
         )}
-        {items.map((item, index) => (
-          <>
-            <BreadcrumbNavItem item={item} />
-            {index < items.length - 1 && (
-              <span className={styles.breadcrumbNavSeparator}>/</span>
-            )}
-          </>
-        ))}
+        <Breadcrumbs
+          items={itemsWithIds}
+          className={styles.breadcrumbNavList ?? ""}
+        >
+          {(item) => (
+            <Breadcrumb>
+              {({ isCurrent }) => (
+                <>
+                  <BreadcrumbNavItem item={item} />
+                  {!isCurrent && (
+                    <span className={styles.breadcrumbNavSeparator}>/</span>
+                  )}
+                </>
+              )}
+            </Breadcrumb>
+          )}
+        </Breadcrumbs>
         <div className={styles.breadcrumbNavAction}>{action}</div>
       </div>
     </div>

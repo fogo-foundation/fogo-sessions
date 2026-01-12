@@ -7,7 +7,7 @@ type ListHeaderProps =
       title: string;
       count?: number;
       action?: React.ReactNode;
-      isLoading?: false;
+      isLoading?: boolean | undefined;
     }
   | {
       isLoading: true;
