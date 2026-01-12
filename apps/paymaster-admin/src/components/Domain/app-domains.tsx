@@ -4,8 +4,8 @@ import { useCallback } from "react";
 import { GridList, GridListItem } from "react-aria-components";
 import type { App } from "../../db-schema";
 import BreadcrumbNav from "../BreadcrumbNav";
-import { Container } from "../Container";
 import { ListHeader } from "../ListHeader";
+import styles from "./app-domains.module.scss";
 import { DomainCard } from "./domain-card";
 
 type AppDomainsProps =
@@ -37,7 +37,7 @@ export const AppDomains = (props: AppDomainsProps) => {
           </Button>
         }
       />
-      <Container>
+      <div className={styles.container}>
         {props.isLoading ? (
           <ListHeader isLoading />
         ) : (
@@ -62,7 +62,7 @@ export const AppDomains = (props: AppDomainsProps) => {
             )}
           </GridList>
         )}
-      </Container>
+      </div>
     </>
   );
 };

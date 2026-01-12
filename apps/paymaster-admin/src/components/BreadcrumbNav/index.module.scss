@@ -8,26 +8,31 @@
     padding: theme.spacing(8) 0;
   }
 
+  .breadcrumbNavAction {
+    margin-left: auto;
+  }
+
   .breadcrumbNavContainer {
     @include theme.max-width;
+    position: relative;
     display: flex;
     align-items: center;
-    gap: theme.spacing(4);
-    position: relative;
-
+    justify-content: space-between;
     .breadcrumbNavArrow {
       all: unset;
       @include theme.text('xl', 'normal');
       color: theme.color('foreground');
       position: absolute;
-      left: -#{theme.spacing(4)};
-      top: 50%;
-      transform: translateY(-30%);
+      transform: translateX(-#{theme.spacing(12)});
       cursor: pointer;
     }
 
-    .breadcrumbNavAction {
-      margin-left: auto;
+    .breadcrumbNavList {
+      display: flex;
+      align-items: center;
+      gap: theme.spacing(4);
+      list-style-type: none;
+      padding: 0;
     }
   }
 }
@@ -56,4 +61,5 @@
   font-size: 1em;
   color: theme.color('foreground');
   opacity: 0.2;
+  margin-left: theme.spacing(4);
 }

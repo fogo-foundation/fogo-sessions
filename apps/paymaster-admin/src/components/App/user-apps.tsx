@@ -5,7 +5,6 @@ import { AppWindowIcon } from "@phosphor-icons/react/dist/ssr/AppWindow";
 import { useDateFormatter } from "react-aria";
 import { GridList, GridListItem } from "react-aria-components";
 import type { App, User } from "../../db-schema";
-import { Container } from "../Container";
 import { ListHeader } from "../ListHeader";
 import styles from "./user-apps.module.scss";
 
@@ -50,20 +49,20 @@ type UserAppsProps =
     };
 
 export const UserApps = (props: UserAppsProps) => (
-  <Container>
-    {props.isLoading ? (
-      <ListHeader isLoading />
-    ) : (
-      <ListHeader
-        title="Apps"
-        count={props.user.apps.length}
-        action={
+  <div className={styles.userAppsContainer}>
+    <ListHeader
+      title="Apps"
+      isLoading={props.isLoading}
+      {...(!props.isLoading && {
+        count: props.user.apps.length,
+        action: (
           <Button variant="secondary">
             Request App <AppWindowIcon />
           </Button>
-        }
-      />
-    )}
+        ),
+      })}
+    />
+
     {props.isLoading ? (
       <div className={styles.userApps}>
         <AppCard isLoading />
@@ -85,5 +84,5 @@ export const UserApps = (props: UserAppsProps) => (
         )}
       </GridList>
     )}
-  </Container>
+  </div>
 );

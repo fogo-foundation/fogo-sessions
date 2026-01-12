@@ -1,28 +1,30 @@
 @use '@fogo/component-library/theme';
+.userAppsContainer {
+  @include theme.max-width;
+  .userApps {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: theme.spacing(4);
 
-.userApps {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: theme.spacing(4);
+    @include theme.breakpoint('md') {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
-  @include theme.breakpoint('md') {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .appCard {
-    height: theme.spacing(50);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    .appCardContent {
-      .appCardTitle {
-        @include theme.text('2xl', 'normal');
-        margin-bottom: theme.spacing(4);
-      }
-      .appCardDescription {
-        @include theme.text('sm', 'normal');
-        opacity: 0.6;
-        margin-top: theme.spacing(2);
+    .appCard {
+      height: theme.spacing(50);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      .appCardContent {
+        .appCardTitle {
+          @include theme.text('2xl', 'normal');
+          margin-bottom: theme.spacing(4);
+        }
+        .appCardDescription {
+          @include theme.text('sm', 'normal');
+          opacity: 0.6;
+          margin-top: theme.spacing(2);
+        }
       }
     }
   }
