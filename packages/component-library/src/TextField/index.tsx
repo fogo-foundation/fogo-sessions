@@ -21,6 +21,7 @@ export const TextField = ({
   inputGroupClassName,
   labelLineClassName,
   isPending,
+  rightExtra,
   ...props
 }: ComponentProps<typeof TextFieldImpl> & {
   label?: ReactNode | undefined;
@@ -30,6 +31,7 @@ export const TextField = ({
   labelLineClassName?: string | undefined;
   isPending?: boolean | undefined;
   double?: boolean | undefined;
+  rightExtra?: ReactNode;
 }) => (
   <TextFieldImpl
     className={clsx(styles.textField, className)}
@@ -38,24 +40,29 @@ export const TextField = ({
     isDisabled={isPending ?? props.isDisabled ?? false}
     {...props}
   >
-    <div className={clsx(styles.labelLine, labelLineClassName)}>
-      {label && <Label className={styles.label ?? ""}>{label}</Label>}
-      {labelExtra && <div className={styles.labelExtra}>{labelExtra}</div>}
-    </div>
+    {(label || labelExtra) && (
+      <div className={clsx(styles.labelLine, labelLineClassName)}>
+        {label && <Label className={styles.label ?? ""}>{label}</Label>}
+        {labelExtra && <div className={styles.labelExtra}>{labelExtra}</div>}
+      </div>
+    )}
     <Group className={clsx(styles.inputGroup, inputGroupClassName)}>
       {props.double ? (
         <TextArea
           data-1p-ignore
           placeholder={placeholder}
           className={styles.input ?? ""}
+          data-has-right-extra={rightExtra ? "" : undefined}
         />
       ) : (
         <Input
           data-1p-ignore
           placeholder={placeholder}
           className={styles.input ?? ""}
+          data-has-right-extra={rightExtra ? "" : undefined}
         />
       )}
+      {rightExtra && <div className={styles.rightExtra}>{rightExtra}</div>}
       <FieldError className={styles.error ?? ""}>
         {({ defaultChildren }) => (
           <>

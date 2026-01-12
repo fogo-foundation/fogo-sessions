@@ -1,5 +1,5 @@
+import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr";
 import * as React from "react";
-
 import { TextField as TextFieldComponent } from "./index.jsx";
 
 const meta = {
@@ -68,6 +68,26 @@ export const TextField = {
     double: false,
     isDisabled: false,
     isPending: false,
+  },
+  render: (args: React.ComponentProps<typeof TextFieldComponent>) => (
+    <TextFieldComponent {...args} />
+  ),
+};
+
+export const Textarea = {
+  args: {
+    ...TextField.args,
+    double: true,
+  },
+  render: (args: React.ComponentProps<typeof TextFieldComponent>) => (
+    <TextFieldComponent {...args} />
+  ),
+};
+
+export const TextFieldWithRightExtra = {
+  args: {
+    ...TextField.args,
+    rightExtra: <GasPumpIcon />,
   },
   render: (args: React.ComponentProps<typeof TextFieldComponent>) => (
     <TextFieldComponent {...args} />

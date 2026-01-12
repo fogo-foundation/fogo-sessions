@@ -52,6 +52,20 @@
           border-color: theme.color("accent");
           outline-color: theme.color("accent-opaque");
         }
+
+        &[data-has-right-extra] {
+          padding-right: theme.spacing(10);
+        }
+      }
+
+      .rightExtra {
+        color: theme.color("foreground");
+        position: absolute;
+        right: theme.spacing(4);
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1em;
+        height: 1em;
       }
 
       .error {
