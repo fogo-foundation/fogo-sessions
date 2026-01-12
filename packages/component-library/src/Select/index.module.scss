@@ -1,5 +1,6 @@
 @use '../theme';
 @use '../reset';
+@use '../layer';
 
 .select {
   @include reset.reset {
@@ -73,6 +74,7 @@
     outline: none;
     padding: theme.spacing(1) 0;
     min-width: var(--trigger-width);
+    z-index: layer.layer("select") !important;
 
     .selectItem {
       @include theme.text('sm', 'normal');

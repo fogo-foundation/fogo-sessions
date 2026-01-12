@@ -68,7 +68,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Cargo packages
-        run: cargo release publish -p chain-id -p intent-transfer -p fogo-paymaster -p fogo-sessions-sdk -p solana-intents -p tollbooth --execute --no-confirm
+        run: |
+          set +e
+          cargo release publish -p chain-id -p intent-transfer -p fogo-paymaster -p fogo-sessions-sdk -p solana-intents -p tollbooth --execute --no-confirm
+          # cargo release will exit with error code 2 if there are no packages
+          # to be published, but we don't want that to fail the pipeline
+          EXIT_CODE=$?
+          if [[ "$EXIT_CODE" != "2" ]]; then
+            echo "exitcode=$EXIT_CODE" >> $GITHUB_OUTPUT
+          fi
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.FOGO_SESSIONS_CARGO_REGISTRY_TOKEN }}
 

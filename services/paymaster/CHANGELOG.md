@@ -1,3 +1,9 @@
+## 0.6.0 (2026-01-11)
+
+### Breaking Changes
+
+- Multiple toll recipients for better svm parallelization
+
 ## 0.5.10 (2026-01-08)
 
 ### Fixes

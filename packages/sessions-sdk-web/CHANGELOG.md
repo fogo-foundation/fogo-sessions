@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk-web
 
+## 0.1.0 (2026-01-11)
+
+### Breaking Changes
+
+- Cut 0.1.x versions of typescript sdks to avoid versioning issues with transitive dependencies
+
 ## 0.0.20 (2025-12-10)
 
 ### Fixes
