@@ -60,6 +60,7 @@
 
       .rightExtra {
         color: theme.color("foreground");
+        opacity: 0.5;
         position: absolute;
         right: theme.spacing(4);
         top: 50%;
