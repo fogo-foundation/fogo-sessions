@@ -77,6 +77,11 @@ export {
   type SendTransactionOptions,
   type SessionContext,
 } from "./context.js";
+export {
+  createSessionUnwrapInstruction,
+  createSessionWrapInstructions,
+  createSystemProgramSessionWrapInstruction,
+} from "./instructions.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
