@@ -2,6 +2,9 @@ export {
   Network,
   type TransactionResult,
   TransactionResultType,
+  createSessionUnwrapInstruction,
+  createSessionWrapInstructions,
+  createSystemProgramSessionWrapInstruction,
 } from "@fogo/sessions-sdk";
 export { SessionButton } from "./components/session-button.js";
 export { SessionPanel } from "./components/session-panel.js";
