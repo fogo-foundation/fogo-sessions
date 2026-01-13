@@ -211,7 +211,10 @@ fn get_domains_for_validation(
                 let parsed_transaction_variations = Domain::into_parsed_transaction_variations(
                     tx_variations,
                     enable_session_management,
-                )?.into_iter().filter(|(_, v)| variation.as_ref().map_or(true, |name| v.name() == name)).collect();
+                )?
+                .into_iter()
+                .filter(|(_, v)| variation.as_ref().map_or(true, |name| v.name() == name))
+                .collect();
                 Ok((domain, parsed_transaction_variations))
             },
         )
