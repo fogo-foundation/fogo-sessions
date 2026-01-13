@@ -18,6 +18,7 @@ export const Variation = () => {
     domainId: string;
   }>();
   const sessionState = useSession();
+  // todo move this to sdk
   const isWalletLoading = [
     SessionStateType.Initializing,
     SessionStateType.CheckingStoredSession,

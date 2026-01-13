@@ -110,7 +110,12 @@ export const BreadcrumbNavItems = ({
             <>
               <BreadcrumbNavItem item={item} isSmall={isSmall} />
               {!isCurrent && (
-                <span className={styles.breadcrumbNavSeparator}>/</span>
+                <span
+                  className={styles.breadcrumbNavSeparator}
+                  data-small={isSmall}
+                >
+                  /
+                </span>
               )}
             </>
           )}

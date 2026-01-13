@@ -1,6 +1,7 @@
-.ace_gutter {
-  background-color: #303038 !important;
-}
-.ace_content {
-  background-color: #303038 !important;
+@use '@fogo/component-library/theme';
+
+/* This changes some of the styles for the Ace editor classes */
+
+.ace_gutter, .ace_content {
+  background-color: theme.color('card-muted') !important;
 }

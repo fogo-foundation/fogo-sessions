@@ -43,6 +43,7 @@ export const VariationListItem = (props: VariationListItemProps) => {
           <TextField
             value={props.variation.max_gas_spend.toString()}
             rightExtra={<GasPumpIcon />}
+            className={styles.fieldMaxGasSpend ?? ""}
           />
           <Button variant="outline" onClick={handleExpand}>
             <CodeBlockIcon />

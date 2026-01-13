@@ -5,7 +5,7 @@
   gap: theme.spacing(2);
 
   .variationListCard {
-    background-color: #303038;
+    background-color: theme.color('card-muted');
     border-radius: theme.border-radius('lg');
     padding: 0 theme.spacing(3);
     flex: 1;
@@ -14,7 +14,7 @@
     gap: theme.spacing(3);
     height: theme.spacing(12);
     transition: border-radius 0.3s ease-in-out;
-    
+
     &[data-is-expanded] {
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
@@ -30,4 +30,12 @@
 
 .fieldVariationName {
   flex: 1;
+}
+
+.fieldMaxGasSpend {
+  width: theme.spacing(28);
+
+  @include theme.breakpoint('sm') {
+    width: theme.spacing(34);
+  }
 }
