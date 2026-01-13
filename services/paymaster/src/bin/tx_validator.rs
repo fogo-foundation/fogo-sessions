@@ -213,7 +213,7 @@ fn get_domains_for_validation(
                     enable_session_management,
                 )?
                 .into_iter()
-                .filter(|(_, v)| variation.as_ref().map_or(true, |name| v.name() == name))
+                .filter(|(_, v)| variation.as_ref().is_none_or(|name| v.name() == name))
                 .collect();
                 Ok((domain, parsed_transaction_variations))
             },
