@@ -122,4 +122,4 @@ cargo run --bin paymaster-tx-validator validate -c <CONFIG_PATH> --network <test
 
 Note that in this case, you must specify the domain you wish to match against and pull recent transactions for, unless your config only has 1 domain.
 
-You can optionally provide the name of the domain you wish to match against via `--domain`. The tool will print out the set of transaction variations that the provided transaction matches against.
+You can optionally provide the name of the domain you wish to match against via `--domain`. The tool will print out the set of transaction variations that the provided transaction matches against. If `--domain` is provided, you can optionally provide the name of a particular variation you wish to match against via `--variation`. Te tool will then print out additional logging showing the exact errors in each case that a transaction does not match against this domain and variation combination.

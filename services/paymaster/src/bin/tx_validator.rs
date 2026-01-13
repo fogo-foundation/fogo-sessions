@@ -207,19 +207,15 @@ fn get_domains_for_validation(
                  tx_variations,
                  enable_session_management,
                  ..
-             }|
-             -> Result<(String, HashMap<String, ParsedTransactionVariation>)> {
-                let mut parsed_transaction_variations = Domain::into_parsed_transaction_variations(
+             }| {
+                let parsed_transaction_variations = Domain::into_parsed_transaction_variations(
                     tx_variations,
                     enable_session_management,
-                )?;
-                if let Some(variation_name) = variation {
-                    parsed_transaction_variations.retain(|_, v| v.name() == variation_name);
-                }
+                )?.into_iter().filter(|(_, v)| variation.as_ref().map_or(true, |name| v.name() == name)).collect();
                 Ok((domain, parsed_transaction_variations))
             },
         )
-        .collect::<Result<Domains>>()
+        .collect()
 }
 
 #[allow(clippy::too_many_arguments)]
