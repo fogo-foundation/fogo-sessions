@@ -54,7 +54,7 @@
         }
 
         &[data-has-right-extra] {
-          padding-right: theme.spacing(10);
+          padding-right: theme.spacing(8);
         }
       }
 
@@ -62,11 +62,12 @@
         color: theme.color("foreground");
         opacity: 0.5;
         position: absolute;
-        right: theme.spacing(4);
-        top: 50%;
-        transform: translateY(-50%);
-        width: 1em;
-        height: 1em;
+        right:  theme.spacing(1);
+        top: 0;
+        display: grid;
+        place-items: center;
+        width: calc(1em + theme.spacing(4));
+        height: calc(1em + theme.spacing(4));
       }
 
       .error {
