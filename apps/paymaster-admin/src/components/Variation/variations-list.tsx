@@ -6,7 +6,7 @@ import { VariationListItem } from "./variations-list-item";
 type VariationsListProps =
   | {
       domainConfig: DomainConfig;
-      isLoading?: false;
+      isLoading?: false | undefined;
     }
   | {
       isLoading: true;

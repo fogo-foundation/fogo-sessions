@@ -45,10 +45,11 @@ export const AppVariation = (props: AppVariationProps) => {
             })}
           />
         )}
-        <VariationsList
-          isLoading={props.isLoading}
-          {...(!props.isLoading && { domainConfig: props.domainConfig })}
-        />
+        {props.isLoading ? (
+          <VariationsList isLoading />
+        ) : (
+          <VariationsList domainConfig={props.domainConfig} />
+        )}
       </div>
     </>
   );

@@ -9,7 +9,6 @@ import {
 import { useParams } from "next/navigation";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
-import { PaymasterLoading } from "../loading";
 import { UserNotFound } from "../UserNotFound";
 import { AppVariation } from "./app-variations";
 

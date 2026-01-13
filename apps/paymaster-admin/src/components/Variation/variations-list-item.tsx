@@ -4,7 +4,6 @@ import { Skeleton } from "@fogo/component-library/Skeleton";
 import { TextField } from "@fogo/component-library/TextField";
 import { CodeBlockIcon } from "@phosphor-icons/react/dist/ssr";
 import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr/GasPump";
-import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useState } from "react";
 import type { Variation } from "../../db-schema";
 import { DeleteVariationButton } from "./delete-variation-button";
