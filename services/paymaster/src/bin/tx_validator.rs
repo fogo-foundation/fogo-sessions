@@ -21,6 +21,7 @@ use solana_client::{
     nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config,
     rpc_config::RpcTransactionConfig,
 };
+use solana_hash::Hash;
 use solana_pubkey::Pubkey;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
@@ -45,6 +46,10 @@ enum Commands {
         /// Domain name to check against (if not provided, checks all domains)
         #[arg(short, long)]
         domain: Option<String>,
+
+        /// Transaction variation to check against (if not provided, checks all variations in scope)
+        #[arg(short, long, requires = "domain")]
+        variation: Option<String>,
 
         /// Fogo network to target, this determines the paymaster instance and the default RPC endpoint to use.
         #[arg(long, value_enum, default_value_t = Network::Testnet)]
@@ -116,6 +121,7 @@ async fn main() -> Result<()> {
         Commands::Validate {
             config,
             domain,
+            variation,
             network,
             sponsor,
             transaction_hash,
@@ -125,7 +131,7 @@ async fn main() -> Result<()> {
             rpc_url_http,
         } => {
             let config = load_file_config(&config)?;
-            let domains = get_domains_for_validation(&config, &domain);
+            let domains = get_domains_for_validation(&config, &domain, &variation);
             let rpc_url_http =
                 rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
@@ -175,16 +181,32 @@ async fn main() -> Result<()> {
 fn get_domains_for_validation<'a>(
     config: &'a fogo_paymaster::config_manager::config::Config,
     domain: &Option<String>,
+    variation: &Option<String>,
 ) -> Vec<&'a Domain> {
     if let Some(domain_name) = domain {
-        vec![config
+        let domain_unfiltered = config
             .domains
             .iter()
             .find(|d| d.domain == *domain_name)
-            .expect("Specified domain not found in config")]
+            .expect("Specified domain not found in config");
+        let domain_filtered = if let Some(variation_name) = variation {
+            filter_variations(domain_unfiltered, variation_name)
+        } else {
+            domain_unfiltered
+        };
+        vec![domain_filtered]
     } else {
         config.domains.iter().collect()
     }
+}
+
+fn filter_variations<'a>(
+    domain: &'a Domain,
+    variation_name: &String,
+) -> &'a Domain {
+    let tx_variations = domain.tx_variations.values().filter(move |v| v.name() == variation_name).collect::<HashMap<_, _>>();
+    domain.tx_variations = tx_variations;
+    domain
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -444,6 +466,7 @@ async fn get_matching_variations<'a>(
     domain: &'a Domain,
     chain_index: &ChainIndex,
     contextual_keys_cache: &ContextualKeysCache,
+    verbose: bool,
 ) -> Result<Vec<&'a TransactionVariation>> {
     let mut matching_variations = Vec::new();
 
@@ -453,21 +476,35 @@ async fn get_matching_variations<'a>(
             TransactionToValidate::parse(transaction, chain_index, &HashMap::new()).await
         {
             match variation {
-                TransactionVariation::V0(v0_variation) => v0_variation
-                    .validate_transaction(&paymaster_transaction)
-                    .is_ok(),
+                TransactionVariation::V0(v0_variation) => {
+                    let validation = v0_variation.validate_transaction(&paymaster_transaction);
+                    if verbose {
+                        match validation {
+                            Ok(()) => println!("Validation against v0 variation {}: ✅", v0_variation.name),
+                            Err((status_code, ref details)) => println!("Validation against v0 variation {}: ❌ ({}) {}", v0_variation.name, status_code, details),
+                        }
+                    }
+                    validation.is_ok()
+                },
                 TransactionVariation::V1(v1_variation) => {
-                    v1_variation
-                        .validate_compute_units(&paymaster_transaction)
-                        .is_ok()
-                        && (v1_variation
-                            .validate_instruction_constraints(
-                                &paymaster_transaction,
-                                &contextual_keys,
-                                chain_index,
+                    let validation_compute_units = v1_variation
+                        .validate_compute_units(&paymaster_transaction);
+                    let validation_instruction_constraints = v1_variation
+                        .validate_instruction_constraints(
+                            &paymaster_transaction,
+                            &contextual_keys,
+                            chain_index,
                             )
-                            .await
-                            .is_ok())
+                            .await;
+                    if verbose {
+                        match (&validation_compute_units, &validation_instruction_constraints) {
+                            (Err((status_code, ref details_cu)), Ok(())) => println!("Validation against v1 variation {}: ❌ (Compute Units: {}) {}", v1_variation.name, status_code, details_cu),
+                            (Ok(()), Err((status_code, ref details_ic))) => println!("Validation against v1 variation {}: ❌ (Instruction Constraints: {}) {}", v1_variation.name, status_code, details_ic),
+                            (Err((status_code_cu, ref details_cu)), Err((status_code_ic, ref details_ic))) => println!("Validation against v1 variation {}: ❌ \n -(Compute Units: {}) {} \n -(Instruction Constraints: {}) {}", v1_variation.name, status_code_cu, details_cu, status_code_ic, details_ic),
+                            _ => println!("Validation against v1 variation {}: ✅", v1_variation.name),
+                        }
+                    }
+                    validation_compute_units.is_ok() && validation_instruction_constraints.is_ok()
                 } // TODO: make the tx validator fetch the paymaster fee coefficients so we can use validate_transaction here
             }
         } else {
