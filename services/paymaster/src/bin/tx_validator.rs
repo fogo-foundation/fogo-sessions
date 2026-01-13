@@ -181,8 +181,9 @@ async fn main() -> Result<()> {
 
 type Domains = HashMap<String, HashMap<String, ParsedTransactionVariation>>;
 
-/// Extracts from the config the domains to use in validation. If `domain` is specified, only returns that
-/// domain's variations. If `variation` is specified, filters out all other variations.
+/// Extracts from the config the domains to use in validation.
+/// If `domain` is specified, only returns that domain's variations.
+/// If `variation` is specified, filters out all other variations.
 fn get_domains_for_validation(
     config: fogo_paymaster::config_manager::config::Config,
     domain: &Option<String>,
