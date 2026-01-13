@@ -113,8 +113,6 @@ pub fn load_file_config(config_path: &str) -> Result<Config> {
     Ok(config)
 }
 
-type Domains = HashMap<String, HashMap<String, ParsedTransactionVariation>>;
-
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -133,14 +131,7 @@ async fn main() -> Result<()> {
             rpc_url_http,
         } => {
             let config = load_file_config(&config)?;
-            let domains: Domains = get_domains_for_validation(config, &domain, &variation)
-                .into_iter()
-                .map(
-                    |Domain { domain, tx_variations, enable_session_management, .. }| -> Result<(String, HashMap<String, ParsedTransactionVariation>)> {
-                        Ok((domain, Domain::into_parsed_transaction_variations(tx_variations, enable_session_management)?))
-                    },
-                )
-                .collect::<Result<Domains>>()?;
+            let domains = get_domains_for_validation(config, &domain, &variation)?;
             let rpc_url_http =
                 rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
@@ -188,31 +179,46 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+type Domains = HashMap<String, HashMap<String, ParsedTransactionVariation>>;
+
+/// Extracts from the config the domains to use in validation. If `domain` is specified, only returns that
+/// domain's variations. If `variation` is specified, filters out all other variations.
 fn get_domains_for_validation(
     config: fogo_paymaster::config_manager::config::Config,
     domain: &Option<String>,
     variation: &Option<String>,
-) -> Vec<Domain> {
-    if let Some(domain_name) = domain {
-        let mut domain_filtered = config
+) -> Result<Domains> {
+    let domains = if let Some(domain_name) = domain {
+        vec![config
             .domains
             .into_iter()
             .find(|d| d.domain == *domain_name)
-            .expect("Specified domain not found in config");
-        if let Some(variation_name) = variation {
-            filter_variations(&mut domain_filtered, variation_name)
-        };
-        vec![domain_filtered]
+            .expect("Specified domain not found in config")]
     } else {
         config.domains
-    }
-}
+    };
 
-fn filter_variations(
-    domain: &mut Domain,
-    variation_name: &str,
-) {
-    domain.tx_variations.retain(|_, v| v.name() == variation_name);
+    domains
+        .into_iter()
+        .map(
+            |Domain {
+                 domain,
+                 tx_variations,
+                 enable_session_management,
+                 ..
+             }|
+             -> Result<(String, HashMap<String, ParsedTransactionVariation>)> {
+                let mut parsed_transaction_variations = Domain::into_parsed_transaction_variations(
+                    tx_variations,
+                    enable_session_management,
+                )?;
+                if let Some(variation_name) = variation {
+                    parsed_transaction_variations.retain(|_, v| v.name() == variation_name);
+                }
+                Ok((domain, parsed_transaction_variations))
+            },
+        )
+        .collect::<Result<Domains>>()
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -495,26 +501,31 @@ async fn get_matching_variations<'a>(
         {
             match variation {
                 ParsedTransactionVariation::V0(v0_variation) => {
-                    let validation = v0_variation
-                        .validate_transaction(&paymaster_transaction);
+                    let validation = v0_variation.validate_transaction(&paymaster_transaction);
                     if show_validation_details {
                         match validation {
-                            Ok(()) => println!("Validation against v0 variation {}: ✅", v0_variation.name),
-                            Err((status_code, ref details)) => println!("Validation against v0 variation {}: ❌ ({}) {}", v0_variation.name, status_code, details),
+                            Ok(()) => println!(
+                                "Validation against v0 variation {}: ✅",
+                                v0_variation.name
+                            ),
+                            Err((status_code, ref details)) => println!(
+                                "Validation against v0 variation {}: ❌ ({}) {}",
+                                v0_variation.name, status_code, details
+                            ),
                         }
                     }
                     validation.is_ok()
                 }
                 ParsedTransactionVariation::V1(v1_variation) => {
-                    let validation_compute_units = v1_variation
-                        .validate_compute_units(&paymaster_transaction);
+                    let validation_compute_units =
+                        v1_variation.validate_compute_units(&paymaster_transaction);
                     let validation_instruction_constraints = v1_variation
                         .validate_instruction_constraints(
                             &paymaster_transaction,
-                                &contextual_keys,
-                                chain_index,
-                            )
-                            .await;
+                            &contextual_keys,
+                            chain_index,
+                        )
+                        .await;
                     if show_validation_details {
                         match (&validation_compute_units, &validation_instruction_constraints) {
                             (Err((status_code, ref details_cu)), Ok(())) => println!("Validation against v1 variation {}: ❌ (Compute Units: {}) {}", v1_variation.name, status_code, details_cu),
