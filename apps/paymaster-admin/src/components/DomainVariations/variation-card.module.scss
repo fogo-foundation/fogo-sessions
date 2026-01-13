@@ -1,0 +1,25 @@
+@use '@fogo/component-library/theme';
+
+.variationCard {
+  display: flex;
+  gap: theme.spacing(4);
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+
+  .variationCardHeader {
+    display: flex;
+    align-items: center;
+    gap: theme.spacing(4);
+
+    .variationCardTitle {
+      @include theme.text('base', 'light');
+    }
+  }
+}
+
+.variationCardSkeleton {
+  height: theme.spacing(16.5);
+  display: block;
+  margin-bottom: theme.spacing(4);
+}

@@ -94,6 +94,8 @@ export const VariationSchema = z.discriminatedUnion("version", [
   VariationV1Schema,
 ]);
 
+export const VariationVersionSchema = z.enum(["v0", "v1"]);
+
 export const NetworkEnvironmentSchema = z.enum([
   "mainnet",
   "testnet",
@@ -130,3 +132,4 @@ export const UserSchema = z.object({
 
 export type User = z.infer<typeof UserSchema>;
 export type App = z.infer<typeof AppWithDomainConfigsSchema>;
+export type DomainWithVariations = z.infer<typeof DomainConfigWithVariationsSchema>;

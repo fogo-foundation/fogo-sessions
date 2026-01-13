@@ -43,7 +43,7 @@ export const DomainCard = (props: DomainCardProps) =>
         </Badge>
       </div>
       <Button variant="outline" href={`/domains/${props.domain.id}`}>
-        Edit
+        View
       </Button>
     </Card>
   );
