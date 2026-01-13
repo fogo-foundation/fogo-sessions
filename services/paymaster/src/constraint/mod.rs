@@ -12,13 +12,14 @@ use std::str::FromStr;
 
 use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
-pub use templates::insert_session_management_variations;
 use transaction::{InstructionWithIndex, TransactionToValidate};
 
-pub mod config;
 mod fee;
 mod gas;
 mod templates;
+
+pub mod config;
+pub use templates::insert_session_management_variations;
 pub mod transaction;
 
 pub enum ParsedTransactionVariation {
