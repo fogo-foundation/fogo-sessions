@@ -64,6 +64,7 @@ catalog:
   "@wormhole-foundation/sdk-solana-core": ^3.10.0
   "@wormhole-foundation/sdk-solana-ntt": ^4.0.1
   "@yudiel/react-qr-scanner": ^2.3.1
+  ace-builds: ^1.43.5
   autoprefixer: ^10.4.20
   babel-plugin-react-compiler: 19.1.0-rc.1
   bn.js: ^5.1.2
@@ -88,6 +89,7 @@ catalog:
   puppeteer: ^24.10.1
   qrcode.react: ^4.2.0
   react: ^19.1.4
+  react-ace: ^14.0.1
   react-aria: ^3.41.1
   react-aria-components: ^1.10.1
   react-dom: ^19.1.4
@@ -128,7 +130,7 @@ onlyBuiltDependencies:
 
 packageManagerStrict: true
 
-packageManagerStrictVersion: true
+packageManagerStrictVersion: false
 
 strictDepBuilds: true
 

@@ -3,15 +3,24 @@
 .variationListItem {
   display: flex;
   gap: theme.spacing(2);
+
   .variationListCard {
     background-color: #303038;
     border-radius: theme.border-radius('lg');
-    padding: 0 theme.spacing(4);
+    padding: 0 theme.spacing(3);
     flex: 1;
     display: flex;
     align-items: center;
     gap: theme.spacing(3);
     height: theme.spacing(12);
+    transition: border-radius 0.3s ease-in-out;
+    
+    &[data-is-expanded] {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-top-left-radius: theme.border-radius('lg');
+      border-top-right-radius: theme.border-radius('lg');
+    }
   }
 }
 
