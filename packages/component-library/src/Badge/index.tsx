@@ -3,7 +3,7 @@ import type { ComponentProps } from "react";
 
 import styles from "./index.module.css";
 
-export const VARIANTS = ["neutral", "error", "success"] as const;
+export const VARIANTS = ["neutral", "error", "success", "info"] as const;
 export const STYLES = ["filled", "outline"] as const;
 export const SIZES = ["xs", "md", "lg"] as const;
 
