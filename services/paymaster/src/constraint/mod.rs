@@ -14,22 +14,24 @@ use crate::rpc::ChainIndex;
 use crate::serde::{deserialize_pubkey_vec, serialize_pubkey_vec};
 use transaction::{InstructionWithIndex, TransactionToValidate};
 
-pub mod config;
 mod fee;
 mod gas;
 mod templates;
+
+pub mod config;
+pub use templates::insert_session_management_variations;
 pub mod transaction;
 
-pub enum TransactionVariation {
+pub enum ParsedTransactionVariation {
     V0(VariationProgramWhitelist),
-    V1(VariationOrderedInstructionConstraints),
+    V1(ParsedVariationOrderedInstructionConstraints),
 }
 
-impl TransactionVariation {
+impl ParsedTransactionVariation {
     pub fn name(&self) -> &str {
         match self {
-            TransactionVariation::V0(v) => &v.name,
-            TransactionVariation::V1(v) => &v.name,
+            ParsedTransactionVariation::V0(v) => &v.name,
+            ParsedTransactionVariation::V1(v) => &v.name,
         }
     }
 }
@@ -67,9 +69,9 @@ impl VariationProgramWhitelist {
     }
 }
 
-pub struct VariationOrderedInstructionConstraints {
+pub struct ParsedVariationOrderedInstructionConstraints {
     pub name: String,
-    pub instructions: Vec<InstructionConstraint>,
+    pub instructions: Vec<ParsedInstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,
 }
@@ -80,7 +82,7 @@ pub struct ContextualDomainKeys {
     pub sponsor: Pubkey,
 }
 
-impl VariationOrderedInstructionConstraints {
+impl ParsedVariationOrderedInstructionConstraints {
     pub async fn validate_transaction(
         &self,
         transaction: &TransactionToValidate<'_>,
@@ -244,7 +246,7 @@ impl FromStr for SubstantiveProgramId {
 
 #[serde_as]
 #[derive(Serialize)]
-pub struct InstructionConstraint {
+pub struct ParsedInstructionConstraint {
     #[serde_as(as = "DisplayFromStr")]
     pub program: SubstantiveProgramId,
     #[serde(default)]
@@ -254,7 +256,7 @@ pub struct InstructionConstraint {
     pub required: bool,
 }
 
-impl InstructionConstraint {
+impl ParsedInstructionConstraint {
     async fn validate_instruction(
         &self,
         transaction: &TransactionToValidate<'_>,
