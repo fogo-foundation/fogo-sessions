@@ -1,7 +1,8 @@
 use crate::config_manager::config::{default_one, Config, Domain};
 use crate::constraint::config::InstructionConstraint;
 use crate::constraint::{
-    TransactionVariation, VariationOrderedInstructionConstraints, VariationProgramWhitelist,
+    config::TransactionVariation, config::VariationOrderedInstructionConstraints,
+    VariationProgramWhitelist,
 };
 use serde_json::Value;
 use solana_pubkey::Pubkey;
@@ -80,7 +81,7 @@ fn handle_transaction_variation_v1(
     Ok(TransactionVariation::V1(
         VariationOrderedInstructionConstraints {
             name,
-            instructions: instructions.into_iter().map(|c| c.into()).collect(),
+            instructions,
             max_gas_spend,
             paymaster_fee_lamports: None, // TODO: This should be added to the DB
         },

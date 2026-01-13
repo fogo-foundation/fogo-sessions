@@ -2,7 +2,8 @@ use serde::{Deserialize, Deserializer};
 use std::collections::{hash_map::Entry, HashMap};
 use std::num::NonZeroU8;
 
-use crate::constraint::{self, config};
+use crate::constraint::config::TransactionVariation;
+use crate::constraint::{insert_session_management_variations, ParsedTransactionVariation};
 
 fn default_true() -> bool {
     true
@@ -30,13 +31,28 @@ pub struct Domain {
 
     /// The list of transaction types that the paymaster should sponsor.
     #[serde(deserialize_with = "deserialize_transaction_variations")]
-    pub tx_variations: HashMap<String, constraint::TransactionVariation>,
+    pub tx_variations: HashMap<String, TransactionVariation>,
+}
+
+impl Domain {
+    pub fn into_parsed_transaction_variations(
+        tx_variations: HashMap<String, TransactionVariation>,
+        enable_session_management: bool,
+    ) -> anyhow::Result<HashMap<String, ParsedTransactionVariation>> {
+        let mut tx_variations = tx_variations
+            .into_iter()
+            .map(|(name, variation)| (name, variation.into()))
+            .collect();
+        if enable_session_management {
+            insert_session_management_variations(&mut tx_variations)?;
+        }
+        Ok(tx_variations)
+    }
 }
 
 fn insert_variation(
-    tx_variations: &mut HashMap<String, constraint::TransactionVariation>,
-    variation: constraint::TransactionVariation,
-    templated: bool,
+    tx_variations: &mut HashMap<String, TransactionVariation>,
+    variation: TransactionVariation,
 ) -> anyhow::Result<()> {
     let key = variation.name().to_string();
     match tx_variations.entry(key.clone()) {
@@ -44,14 +60,9 @@ fn insert_variation(
             entry.insert(variation);
         }
         Entry::Occupied(_) => {
-            let error_msg = if templated {
-                format!(
-                    "Template transaction variation '{key}' conflicts with user-defined variation"
-                )
-            } else {
-                format!("Duplicate transaction variation '{key}'")
-            };
-            Err(anyhow::anyhow!(error_msg))?
+            return Err(anyhow::anyhow!(format!(
+                "Duplicate transaction variation '{key}'"
+            )))
         }
     }
     Ok(())
@@ -59,17 +70,15 @@ fn insert_variation(
 
 fn deserialize_transaction_variations<'de, D>(
     deserializer: D,
-) -> Result<HashMap<String, constraint::TransactionVariation>, D::Error>
+) -> Result<HashMap<String, TransactionVariation>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let variations: Vec<config::TransactionVariation> = Vec::deserialize(deserializer)?;
+    let variations: Vec<TransactionVariation> = Vec::deserialize(deserializer)?;
     variations
         .into_iter()
-        // TODO: this does not align with the principle of converting outside of deserializers. Deserialize without converting, and convert later.
-        .map(|config| config.into())
         .try_fold(HashMap::new(), |mut map, variation| {
-            insert_variation(&mut map, variation, false).map_err(serde::de::Error::custom)?;
+            insert_variation(&mut map, variation).map_err(serde::de::Error::custom)?;
             Ok(map)
         })
 }
@@ -77,32 +86,4 @@ where
 #[derive(Deserialize, Default)]
 pub struct Config {
     pub domains: Vec<Domain>,
-}
-pub const DEFAULT_TEMPLATE_MAX_GAS_SPEND: u64 = 15_000;
-
-impl Config {
-    /// Populate default tx variations for each domain.
-    /// Call this after loading from file/DB to ensure required variations exist.
-    pub fn assign_defaults(&mut self) -> anyhow::Result<()> {
-        for domain in &mut self.domains {
-            if domain.enable_session_management {
-                insert_variation(
-                    &mut domain.tx_variations,
-                    constraint::TransactionVariation::session_establishment_variation(
-                        DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-                    ),
-                    true,
-                )?;
-
-                insert_variation(
-                    &mut domain.tx_variations,
-                    constraint::TransactionVariation::session_revocation_variation(
-                        DEFAULT_TEMPLATE_MAX_GAS_SPEND,
-                    ),
-                    true,
-                )?;
-            }
-        }
-        Ok(())
-    }
 }
