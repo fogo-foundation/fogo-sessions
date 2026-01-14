@@ -1,3 +1,4 @@
+import { GearIcon, StackIcon } from "@phosphor-icons/react/dist/ssr";
 import type { App, DomainConfig } from "../../db-schema";
 import BreadcrumbNav from "../BreadcrumbNav";
 import { DomainSettings } from "../DomainSettings";
@@ -5,7 +6,6 @@ import { ListHeader } from "../ListHeader";
 import { AddVariationButton } from "./add-variation-button";
 import styles from "./app-variations.module.scss";
 import VariationsList from "./variations-list";
-import { GearIcon, StackIcon } from "@phosphor-icons/react/dist/ssr";
 
 type AppVariationProps =
   | {
