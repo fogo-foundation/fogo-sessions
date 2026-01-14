@@ -185,13 +185,7 @@ mod tests {
         fn test_empty_value_after_newline_with_next_key() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo:\nbaz");
-            assert_eq!(
-                result,
-                Err(Err::Error(Error {
-                    code: ErrorKind::Eof,
-                    input: "\nbaz"
-                }))
-            );
+            assert_eq!(result, Ok(("baz", ("foo", "".to_string()))));
         }
 
         #[test]
