@@ -1,8 +1,10 @@
+import { TransactionResultType } from "@fogo/sessions-sdk";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
+import { NATIVE_MINT } from "@solana/spl-token";
 import { motion } from "motion/react";
+import { type ComponentProps, useCallback } from "react";
 import { GridList, GridListItem } from "react-aria-components";
-
 import { amountToString } from "../amount-to-string.js";
 import { usePrice } from "../hooks/use-price.js";
 import type { Token } from "../hooks/use-token-account-data.js";
@@ -15,10 +17,20 @@ import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
 import { CopyButton } from "./component-library/CopyButton/index.js";
 import { Link } from "./component-library/Link/index.js";
+import {
+  StateType as AsyncStateType,
+  useAsync,
+} from "./component-library/useAsync/index.js";
 import { FetchError } from "./fetch-error.js";
 import { NotionalAmount } from "./notional-amount.js";
 import styles from "./token-list.module.css";
 import { TruncateKey } from "./truncate-key.js";
+import { useToast } from "./component-library/Toast/index.js";
+import { ExplorerLink } from "./explorer-link.js";
+import { useSessionContext } from "../hooks/use-session.js";
+import { errorToString } from "../error-to-string.js";
+
+export const SESSIONS_INTERNAL_PAYMASTER_DOMAIN = "sessions";
 
 const MotionGridListItem = motion.create(GridListItem<Token>);
 
@@ -68,13 +80,15 @@ export const TokenList = ({
         >
           {(item) => (
             <TokenItem
+              sessionState={sessionState}
               {...item}
-              {...("onPressSend" in props && {
-                onPressSend: props.onPressSend,
-              })}
-              {...("onPressToken" in props && {
-                onPressToken: props.onPressToken,
-              })}
+              {...("onPressToken" in props
+                ? {
+                    onPressToken: props.onPressToken,
+                  }
+                : {
+                    onPressSend: props.onPressSend,
+                  })}
             />
           )}
         </GridList>
@@ -94,16 +108,13 @@ export const TokenList = ({
 type TokenItemProps = {
   id: string;
   token: Token;
-  onPressSend?: (token: Token) => void;
-  onPressToken?: (token: Token) => void;
-};
+  sessionState: EstablishedSessionState;
+} & (
+  | { onPressToken: (token: Token) => void }
+  | { onPressSend: (token: Token) => void }
+);
 
-const TokenItem = ({
-  id,
-  token,
-  onPressSend,
-  onPressToken,
-}: TokenItemProps) => {
+const TokenItem = ({ id, token, sessionState, ...props }: TokenItemProps) => {
   const { amountInWallet, decimals, image } = token;
   const amountAsString = amountToString(amountInWallet, decimals);
   const price = usePrice(id);
@@ -130,7 +141,12 @@ const TokenItem = ({
           )}
         </div>
       </div>
-      <div className={styles.amountAndActions}>
+      <div
+        className={styles.amountAndActions}
+        data-is-native={
+          "mint" in token && token.mint.equals(NATIVE_MINT) ? "" : undefined
+        }
+      >
         <div className={styles.amountAndDetails}>
           <span className={styles.amount}>{amountAsString}</span>
           {price.type === PriceDataStateType.Loaded && (
@@ -142,18 +158,29 @@ const TokenItem = ({
             />
           )}
         </div>
-        {onPressSend && (
+        {"onPressSend" in props && (
           <div className={styles.actions}>
-            <Button
-              variant="secondary"
-              size="sm"
-              className={styles.sendButton ?? ""}
-              onPress={() => {
-                onPressSend(token);
-              }}
-            >
-              <PaperPlaneTiltIcon />
-            </Button>
+            {"mint" in token && token.mint.equals(NATIVE_MINT) ? (
+              <UnwrapButton
+                variant="secondary"
+                size="sm"
+                className={styles.unwrapButton ?? ""}
+                sessionState={sessionState}
+              >
+                Unwrap
+              </UnwrapButton>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                className={styles.sendButton ?? ""}
+                onPress={() => {
+                  props.onPressSend(token);
+                }}
+              >
+                <PaperPlaneTiltIcon />
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -167,10 +194,10 @@ const TokenItem = ({
       textValue={name}
       key={id}
       className={styles.token ?? ""}
-      data-is-button={onPressToken === undefined ? undefined : ""}
-      {...(onPressToken && {
+      data-is-button={"onPressToken" in props ? "" : undefined}
+      {...("onPressToken" in props && {
         onAction: () => {
-          onPressToken(token);
+          props.onPressToken(token);
         },
       })}
     >
@@ -196,3 +223,53 @@ const LoadingToken = () => (
     </div>
   </div>
 );
+
+const UnwrapButton = ({
+  sessionState,
+  ...props
+}: ComponentProps<typeof Button> & {
+  sessionState: EstablishedSessionState;
+}) => {
+  const toast = useToast();
+  const { network } = useSessionContext();
+  const doUnwrap = useCallback(
+    async () => {
+      try {
+        const result = await sessionState.sendTransaction(
+          sessionState.getSessionUnwrapInstructions(),
+          {
+            variation: "Unwrap",
+            paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+          },
+        );
+        if (result.type === TransactionResultType.Success) {
+          toast.success(
+            "Successfuly unwrapped!",
+            <ExplorerLink network={network} txHash={result.signature} />,
+          );
+        } else {
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
+          toast.error("Failed to unwrap", errorToString(result.error));
+        }
+      } catch (error: unknown) {
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
+          console.error(error);
+          toast.error("Failed to unwrap", errorToString(error));
+      }
+    },
+    [sessionState, toast, network],
+  );
+  const { execute, state } = useAsync(doUnwrap);
+
+  return (
+    <Button
+      isDisabled={state.type === AsyncStateType.Running}
+      isPending={state.type === AsyncStateType.Running}
+      hideLoadingSpinner
+      onPress={execute}
+      {...props}
+    >
+      Unwrap
+    </Button>
+  );
+};

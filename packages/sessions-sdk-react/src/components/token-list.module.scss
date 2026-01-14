@@ -208,6 +208,14 @@
           background: theme.color("card-opaque");
           height: 100%;
         }
+
+        &[data-is-native] {
+          transform: translateX(calc(theme.spacing(24) + 1px));
+
+          .unwrapButton {
+            width: theme.spacing(16);
+          }
+        }
       }
 
       &:hover,

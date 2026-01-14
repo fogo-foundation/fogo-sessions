@@ -15,6 +15,7 @@ type Props = (
 ) & {
   variant?: Variant | undefined;
   size?: Size | undefined;
+  hideLoadingSpinner?: boolean | undefined;
 };
 
 export const Button = (props: Props) =>
@@ -28,14 +29,17 @@ const mkProps = ({
   className,
   variant = "primary",
   size = "md",
+  hideLoadingSpinner,
   ...otherProps
 }: {
   className?: Parameters<typeof clsx>[0];
   variant?: Variant | undefined;
   size?: Size | undefined;
+  hideLoadingSpinner?: boolean | undefined;
 }) => ({
   ...otherProps,
   className: clsx(styles.button, className),
   "data-variant": variant,
   "data-size": size,
+  "data-enable-loading-spinner": hideLoadingSpinner ? undefined : "",
 });
