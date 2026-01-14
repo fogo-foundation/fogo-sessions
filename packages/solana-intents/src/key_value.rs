@@ -1,5 +1,12 @@
 use nom::{
-    AsChar, Compare, IResult, Input, Offset, ParseTo, Parser, branch::alt, bytes::complete::{tag, take_while1}, character::complete::{char, line_ending, not_line_ending}, combinator::{eof, map, map_opt, opt, recognize}, error::ParseError, multi::many0, sequence::{delimited, preceded, separated_pair}
+    branch::alt,
+    bytes::complete::{tag, take_while1},
+    character::complete::{char, line_ending, not_line_ending},
+    combinator::{eof, map, map_opt, opt, recognize},
+    error::ParseError,
+    multi::many0,
+    sequence::{delimited, preceded, separated_pair},
+    AsChar, Compare, IResult, Input, Offset, ParseTo, Parser,
 };
 
 pub fn tag_key_value<I, O, E, T>(key: T) -> impl Parser<I, Output = O, Error = E>
@@ -55,7 +62,7 @@ where
                         tag("-"),
                         not_line_ending,
                         alt((line_ending, eof)),
-                    )))
+                    ))),
                 ),
                 eof,
             )),
