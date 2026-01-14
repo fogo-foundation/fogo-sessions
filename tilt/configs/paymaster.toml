@@ -214,3 +214,19 @@ constraint = { EqualTo = [ {U8 = 1} ] }
 start_byte = 1
 data_type = "NttSignedQuote"
 constraint = { EqualTo = [ {NttSignedQuoter = "0x5241c9276698439fef2780dbab76fec90b633fbd"} ] }
+
+
+
+[[domains.tx_variations]]
+version = "v1"
+name = "Unwrap"
+max_gas_spend = 10000
+
+[[domains.tx_variations.instructions]]
+program = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+required = true
+
+[[domains.tx_variations.instructions.data]]
+start_byte = 0
+data_type = "U8"
+constraint = { EqualTo = [ {U8 = 9} ] }

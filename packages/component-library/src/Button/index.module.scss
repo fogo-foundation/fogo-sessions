@@ -96,7 +96,7 @@
     &[data-pending] {
       cursor: wait;
 
-      &::after {
+      &[data-enable-loading-spinner]::after {
         content: "";
         display: block;
         width: theme.spacing(4);
@@ -107,6 +107,7 @@
         animation: spin 1s linear infinite;
         transition: opacity linear 100ms;
         margin-left: theme.spacing(1);
+        flex-shrink: 0;
 
         @keyframes spin {
           0% {
