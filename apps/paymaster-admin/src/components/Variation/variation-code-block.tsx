@@ -15,15 +15,18 @@ import { Badge } from "@fogo/component-library/Badge";
 import { useToast } from "@fogo/component-library/Toast";
 
 export const VariationCodeBlock = ({
+  value,
+  onChange,
   isExpanded,
   variation,
 }: {
+  value: string;
+  onChange: (value: string) => void;
   isExpanded: boolean;
   variation: Variation;
 }) => {
   const toast = useToast();
 
-  const [code, setCode] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -45,11 +48,6 @@ export const VariationCodeBlock = ({
         toast.error(`Error enabling fullscreen: ${err.message}`);
       });
   }, [isFullscreen, toast.error]);
-
-  const handleSave = useCallback(() => {
-    // todo
-    toast.success("Saved successfully!");
-  }, [toast.success]);
 
   const handleUpdate = useCallback(() => {
     setEditorHeight(contentRef.current?.clientHeight ?? 0);
@@ -79,9 +77,9 @@ export const VariationCodeBlock = ({
             {contentRef.current && (
               <AceEditor
                 name={variation.id}
+                value={value}
+                onChange={onChange}
                 className={styles.variationCodeBlockEditor}
-                value={code}
-                onChange={setCode}
                 mode="javascript"
                 theme="monokai"
                 width="100%"
@@ -97,9 +95,7 @@ export const VariationCodeBlock = ({
               </Badge>
             </div>
             <div className={styles.variationCodeBlockFooterButtons}>
-              <Button variant="secondary" onClick={handleSave}>
-                Save
-              </Button>
+              <Button variant="secondary">Save</Button>
             </div>
           </div>
         </motion.div>

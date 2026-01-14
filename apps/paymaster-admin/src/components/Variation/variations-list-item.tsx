@@ -5,6 +5,7 @@ import { TextField } from "@fogo/component-library/TextField";
 import { CodeBlockIcon } from "@phosphor-icons/react/dist/ssr";
 import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr/GasPump";
 import { useCallback, useState } from "react";
+import { Form } from "react-aria-components";
 import type { Variation } from "../../db-schema";
 import { DeleteVariationButton } from "./delete-variation-button";
 import { VariationCodeBlock } from "./variation-code-block";
@@ -20,28 +21,41 @@ type VariationListItemProps =
     };
 
 export const VariationListItem = (props: VariationListItemProps) => {
+  return props.isLoading ? (
+    <Skeleton className={styles.variationListItemSkeleton} />
+  ) : (
+    <VariationForm variation={props.variation} />
+  );
+};
+
+const VariationForm = ({ variation }: { variation: Variation }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [name, setName] = useState(variation.name);
+  const [code, setCode] = useState("");
+  const [maxGasSpend, setMaxGasSpend] = useState(
+    variation.max_gas_spend.toString(),
+  );
 
   const handleExpand = useCallback(() => {
     setIsExpanded((value) => !value);
   }, []);
 
-  return props.isLoading ? (
-    <Skeleton className={styles.variationListItemSkeleton} />
-  ) : (
-    <div>
+  return (
+    <Form>
       <div className={styles.variationListItem}>
         <div
           className={styles.variationListCard}
           data-is-expanded={isExpanded ? "" : undefined}
         >
-          <VariationVersionBadge version={props.variation.version} />
+          <VariationVersionBadge version={variation.version} />
           <TextField
-            value={props.variation.name}
+            value={name}
             className={styles.fieldVariationName ?? ""}
+            onChange={setName}
           />
           <TextField
-            value={props.variation.max_gas_spend.toString()}
+            value={maxGasSpend}
+            onChange={setMaxGasSpend}
             rightExtra={<GasPumpIcon />}
             className={styles.fieldMaxGasSpend ?? ""}
           />
@@ -51,8 +65,13 @@ export const VariationListItem = (props: VariationListItemProps) => {
         </div>
         <DeleteVariationButton />
       </div>
-      <VariationCodeBlock isExpanded={isExpanded} variation={props.variation} />
-    </div>
+      <VariationCodeBlock
+        isExpanded={isExpanded}
+        variation={variation}
+        value={code}
+        onChange={setCode}
+      />
+    </Form>
   );
 };
 
