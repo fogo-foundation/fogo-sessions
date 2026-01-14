@@ -33,11 +33,14 @@ export const AppVariation = (props: AppVariationProps) => {
         titleLoading={props.isLoading}
       />
       <div className={styles.container}>
-        <DomainSettings
-          {...(props.isLoading
-            ? { isLoading: true }
-            : { domainConfig: props.domainConfig, icon: <GearIcon size={24} weight="duotone" /> })}
-        />
+        {props.isLoading ? (
+          <DomainSettings isLoading />
+        ) : (
+          <DomainSettings
+            domainConfig={props.domainConfig}
+            icon={<GearIcon size={24} weight="duotone" />}
+          />
+        )}
         {props.isLoading ? (
           <ListHeader isLoading />
         ) : (
