@@ -1,5 +1,7 @@
 @use "./component-library/theme";
 @use "./component-library/reset";
+@use "./component-library/layer";
+
 .sessionButton {
   @include reset.reset {
   width: theme.spacing(48);
@@ -152,6 +154,7 @@
   transition:
     transform 400ms ease-in-out,
     opacity 200ms;
+  z-index: layer.layer("session-panel") !important;
 
   @media (max-width: theme.map-get-strict(theme.$breakpoints, "sm")) {
     position: fixed !important;

@@ -1,5 +1,18 @@
 # @fogo/sessions-sdk
 
+## 0.1.1 (2026-01-12)
+
+### Fixes
+
+- Add support for paymaster fees
+- Expose createSessionUnwrapInstruction, createSessionWrapInstructions and createSystemProgramSessionWrapInstruction for users hand rolling transactions.
+
+## 0.1.0 (2026-01-11)
+
+### Breaking Changes
+
+- Cut 0.1.x versions of typescript sdks to avoid versioning issues with transitive dependencies
+
 ## 0.0.32 (2026-01-08)
 
 ### Fixes

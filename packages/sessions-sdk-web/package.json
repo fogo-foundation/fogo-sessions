@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk-web",
-  "version": "0.0.20",
+  "version": "0.1.0",
   "private": true,
   "description": "A set of framework-agnostic utilities for integrating with Fogo sessions on web",
   "repository": {

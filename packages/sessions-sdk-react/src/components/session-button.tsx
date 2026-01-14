@@ -3,7 +3,6 @@
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { LockIcon } from "@phosphor-icons/react/dist/ssr/Lock";
 import { PublicKey } from "@solana/web3.js";
-import clsx from "clsx";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
@@ -12,13 +11,12 @@ import {
 } from "react-aria-components";
 
 import { deserializePublicKeyMap } from "../deserialize-public-key.js";
-import { DisplayAddress } from "./display-address.js";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
-import layerStyles from "../layer.module.css";
 import {
   isEstablished,
   StateType as SessionStateType,
 } from "../session-state.js";
+import { DisplayAddress } from "./display-address.js";
 import { FogoLogo } from "./fogo-logo.js";
 import styles from "./session-button.module.css";
 import { SessionPanel } from "./session-panel.js";
@@ -140,10 +138,7 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
         </div>
       </UnstyledButton>
       <Popover
-        className={clsx(
-          styles.sessionPanelPopover,
-          layerStyles.layerSessionPanel,
-        )}
+        className={styles.sessionPanelPopover ?? ""}
         offset={1}
         isOpen={sessionPanelOpen && isEstablished(sessionState)}
         triggerRef={triggerRef}

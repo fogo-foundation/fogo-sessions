@@ -37,7 +37,7 @@
       font-weight: theme.font-weight('semibold');
     }
 
-    @each $variant in ('error', 'success') {
+    @each $variant in ('error', 'success', 'info') {
       &[data-variant='#{$variant}'] {
         border-color: theme.color('states', $variant, 'background');
 

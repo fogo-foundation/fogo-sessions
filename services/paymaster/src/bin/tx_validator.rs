@@ -5,8 +5,9 @@ use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
     config_manager::config::{Config, Domain},
-    constraint::transaction::TransactionToValidate,
-    constraint::{ContextualDomainKeys, TransactionVariation},
+    constraint::{
+        transaction::TransactionToValidate, ContextualDomainKeys, ParsedTransactionVariation,
+    },
     rpc::ChainIndex,
 };
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
@@ -101,13 +102,15 @@ impl Network {
 }
 
 pub fn load_file_config(config_path: &str) -> Result<Config> {
-    let mut config: Config = config::Config::builder()
+    let config: Config = config::Config::builder()
         .add_source(File::with_name(config_path))
         .build()?
         .try_deserialize()?;
-    config.assign_defaults()?;
     Ok(config)
 }
+
+type Domains = HashMap<String, HashMap<String, ParsedTransactionVariation>>;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -125,7 +128,14 @@ async fn main() -> Result<()> {
             rpc_url_http,
         } => {
             let config = load_file_config(&config)?;
-            let domains = get_domains_for_validation(&config, &domain);
+            let domains: Domains = get_domains_for_validation(config, &domain)
+                .into_iter()
+                .map(
+                    |Domain { domain, tx_variations, enable_session_management, .. }| -> Result<(String, HashMap<String, ParsedTransactionVariation>)> {
+                        Ok((domain, Domain::into_parsed_transaction_variations(tx_variations, enable_session_management)?))
+                    },
+                )
+                .collect::<Result<Domains>>()?;
             let rpc_url_http =
                 rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
@@ -172,18 +182,18 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn get_domains_for_validation<'a>(
-    config: &'a fogo_paymaster::config_manager::config::Config,
+fn get_domains_for_validation(
+    config: fogo_paymaster::config_manager::config::Config,
     domain: &Option<String>,
-) -> Vec<&'a Domain> {
+) -> Vec<Domain> {
     if let Some(domain_name) = domain {
         vec![config
             .domains
-            .iter()
+            .into_iter()
             .find(|d| d.domain == *domain_name)
             .expect("Specified domain not found in config")]
     } else {
-        config.domains.iter().collect()
+        config.domains
     }
 }
 
@@ -193,7 +203,7 @@ async fn fetch_transactions(
     transaction_hash: Option<String>,
     transaction: Option<String>,
     domain: &Option<String>,
-    domains: &[&Domain],
+    domains: &Domains,
     chain_index: &ChainIndex,
     rpc_limiter: &RpcRateLimiter,
     contextual_keys_cache: &ContextualKeysCache,
@@ -202,7 +212,10 @@ async fn fetch_transactions(
         let domain_for_sponsor = if let Some(domain_name) = domain {
             domain_name.as_str()
         } else if domains.len() == 1 {
-            &domains[0].domain
+            domains
+                .keys()
+                .next()
+                .expect("Length is 1, should not panic")
         } else if domains.is_empty() {
             return Err(anyhow!("No domains found in config"));
         } else {
@@ -236,7 +249,7 @@ async fn fetch_transactions(
 
 async fn validate_transactions(
     transactions: &[VersionedTransaction],
-    domains: &[&Domain],
+    domains: &Domains,
     chain_index: &ChainIndex,
     contextual_keys_cache: &ContextualKeysCache,
     is_batch: bool,
@@ -246,20 +259,26 @@ async fn validate_transactions(
         .iter()
         .enumerate()
         .map(|(idx, tx)| async move {
-            let results = futures::future::join_all(domains.iter().map(|domain| async {
-                let variations =
-                    get_matching_variations(tx, domain, chain_index, contextual_keys_cache)
-                        .await
-                        .unwrap_or_default();
-                variations
-                    .into_iter()
-                    .map(|v| (domain.domain.as_str(), v))
-                    .collect::<Vec<_>>()
-            }))
-            .await
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>();
+            let results =
+                futures::future::join_all(domains.iter().map(|(domain, tx_variations)| async {
+                    let variations = get_matching_variations(
+                        tx,
+                        domain,
+                        tx_variations,
+                        chain_index,
+                        contextual_keys_cache,
+                    )
+                    .await
+                    .unwrap_or_default();
+                    variations
+                        .into_iter()
+                        .map(|v| (domain.as_str(), v))
+                        .collect::<Vec<_>>()
+                }))
+                .await
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>();
 
             (idx, tx, results)
         })
@@ -441,22 +460,23 @@ fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransactio
 
 async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
-    domain: &'a Domain,
+    domain: &str,
+    tx_variations: &'a HashMap<String, ParsedTransactionVariation>,
     chain_index: &ChainIndex,
     contextual_keys_cache: &ContextualKeysCache,
-) -> Result<Vec<&'a TransactionVariation>> {
+) -> Result<Vec<&'a ParsedTransactionVariation>> {
     let mut matching_variations = Vec::new();
 
-    let contextual_keys = contextual_keys_cache.get(&domain.domain).await?;
-    for variation in domain.tx_variations.values() {
+    let contextual_keys = contextual_keys_cache.get(domain).await?;
+    for variation in tx_variations.values() {
         let matches = if let Ok(paymaster_transaction) =
             TransactionToValidate::parse(transaction, chain_index, &HashMap::new()).await
         {
             match variation {
-                TransactionVariation::V0(v0_variation) => v0_variation
+                ParsedTransactionVariation::V0(v0_variation) => v0_variation
                     .validate_transaction(&paymaster_transaction)
                     .is_ok(),
-                TransactionVariation::V1(v1_variation) => {
+                ParsedTransactionVariation::V1(v1_variation) => {
                     v1_variation
                         .validate_compute_units(&paymaster_transaction)
                         .is_ok()
@@ -519,15 +539,14 @@ struct ContextualKeysCache {
 
 impl ContextualKeysCache {
     pub async fn new(
-        domains: &[&Domain],
+        domains: &Domains,
         network: Network,
         sponsor_override: Option<Pubkey>,
     ) -> Result<Self> {
         Ok(Self {
-            cache: futures::future::try_join_all(domains.iter().map(|domain| async {
-                let keys =
-                    compute_contextual_keys(&domain.domain, network, sponsor_override).await?;
-                Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
+            cache: futures::future::try_join_all(domains.keys().map(|domain| async {
+                let keys = compute_contextual_keys(domain, network, sponsor_override).await?;
+                Ok::<_, anyhow::Error>((domain.clone(), keys))
             }))
             .await?
             .into_iter()

@@ -425,6 +425,7 @@ $color: (
   "muted": rgb(from pallette-color("white") r g b / 65%),
   "image-placeholder": rgb(from pallette-color("white") r g b / 30%),
   "skeleton": rgb(from pallette-color("white") r g b / 10%),
+  "brand": #ff3d00,
   "button": (
     "primary": (
       "foreground": pallette-color("white"),
@@ -482,6 +483,10 @@ $color: (
       "foreground": #38e97c,
       "background": rgb(from #38e97c r g b / 15%),
     ),
+    "info": (
+      "background": #4F57E8,
+      "foreground": #fff,
+    )
   ),
 );
 
@@ -500,6 +505,26 @@ $breakpoints: (
 @mixin breakpoint($point) {
   @media (min-width: map-get-strict($breakpoints, $point)) {
     @content;
+  }
+}
+
+$max-width: spacing(372);
+$max-width-padding: var(--max-width-padding);
+
+@mixin max-width {
+  & {
+    --max-width-padding: #{spacing(4)};
+
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: $max-width-padding;
+    padding-right: $max-width-padding;
+    width: 100%;
+    max-width: $max-width;
+  }
+
+  @include breakpoint("sm") {
+    --max-width-padding: #{spacing(6)};
   }
 }
 
@@ -546,4 +571,36 @@ $shadow: (
       opacity: 0.5;
     }
   }
+}
+
+$elevations: (
+  primary: (
+    3: (
+      0 1122px 250px 0 rgba(0, 0, 0, 0.00), 
+      0 718px 250px 0 rgba(0, 0, 0, 0.01), 
+      0 404px 242px 0 rgba(0, 0, 0, 0.05), 
+      0 180px 180px 0 rgba(0, 0, 0, 0.09), 
+      0 45px 99px 0 rgba(0, 0, 0, 0.10),
+    ),
+  ),
+  default: (
+    1: (
+      0px 4px 6px -4px rgb(from black r g b / 10%),
+      0px 10px 15px -3px rgb(from black r g b / 10%),
+    ),
+    2: (
+      0px 29px 12px 0px
+        light-dark(rgb(from #564848 r g b / 2%), rgb(from black r g b / 8%)),
+      0px 16px 10px 0px
+        light-dark(rgb(from #564848 r g b / 6%), rgb(from black r g b / 12%)),
+      0px 7px 7px 0px
+        light-dark(rgb(from #564848 r g b / 12%), rgb(from black r g b / 20%)),
+      0px 2px 4px 0px
+        light-dark(rgb(from #564848 r g b / 14%), rgb(from black r g b / 30%)),
+    ),
+  ),
+);
+
+@mixin elevation($elevation...) {
+  box-shadow: map-get-strict($elevations, $elevation...);
 }

@@ -1,6 +1,6 @@
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
-use crate::constraint::{ContextualDomainKeys, TransactionVariation};
+use crate::constraint::{ContextualDomainKeys, ParsedTransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
@@ -52,7 +52,7 @@ pub struct DomainState {
     pub sponsors: NonEmpty<Keypair>,
     pub next_autoassigned_sponsor_index: Arc<AtomicUsize>,
     pub enable_preflight_simulation: bool,
-    pub tx_variations: HashMap<String, TransactionVariation>,
+    pub tx_variations: HashMap<String, ParsedTransactionVariation>,
 }
 
 pub struct PubsubClientWithReconnect {
@@ -124,7 +124,7 @@ impl DomainState {
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
         variation_name: Option<String>,
-    ) -> Result<&TransactionVariation, (StatusCode, String)> {
+    ) -> Result<&ParsedTransactionVariation, (StatusCode, String)> {
         let message_bytes = transaction.message.serialize();
         transaction
             .signatures
@@ -205,13 +205,15 @@ impl DomainState {
     pub async fn validate_transaction_against_variation(
         &self,
         transaction: &TransactionToValidate<'_>,
-        tx_variation: &TransactionVariation,
+        tx_variation: &ParsedTransactionVariation,
         chain_index: &ChainIndex,
         sponsor: &Pubkey,
     ) -> Result<(), (StatusCode, String)> {
         match tx_variation {
-            TransactionVariation::V0(variation) => variation.validate_transaction(transaction),
-            TransactionVariation::V1(variation) => {
+            ParsedTransactionVariation::V0(variation) => {
+                variation.validate_transaction(transaction)
+            }
+            ParsedTransactionVariation::V1(variation) => {
                 variation
                     .validate_transaction(
                         transaction,
@@ -554,8 +556,67 @@ async fn sponsor_pubkey_handler(
     };
     Ok(sponsors[sponsor_index].pubkey().to_string())
 }
+#[serde_as]
+#[derive(serde::Deserialize, utoipa::IntoParams)]
+#[serde(deny_unknown_fields)]
+#[into_params(parameter_in = Query)]
+struct FeeQuery {
+    #[serde(default)]
+    /// Domain to request the fee for
+    domain: Option<String>,
 
-pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<String, DomainState> {
+    /// Variation name to request the fee for
+    variation: String,
+
+    #[serde_as(as = "DisplayFromStr")]
+    #[param(value_type = String)]
+    /// Token mint to pay the fee in
+    mint: Pubkey,
+}
+
+#[utoipa::path(get, path = "/fee", params(FeeQuery))]
+async fn fee_handler(
+    State(state): State<Arc<ServerState>>,
+    origin: Option<TypedHeader<Origin>>,
+    Query(FeeQuery {
+        domain,
+        variation,
+        mint,
+    }): Query<FeeQuery>,
+) -> Result<Json<u64>, ErrorResponse> {
+    let domain = get_domain_name(domain, origin)?;
+    let domains_guard = state.domains.load();
+    let domain_state = get_domain_state(&domains_guard, &domain)?;
+    let DomainState { tx_variations, .. } = domain_state;
+
+    let variation = tx_variations.get(&variation).ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            format!("Variation {variation} not found for domain {domain}"),
+        )
+    })?;
+
+    let fee_coefficient = state.fee_coefficients.get(&mint).ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            format!("Paying paymaster fees in mint {mint} are not supported"),
+        )
+    })?;
+
+    let paymaster_fee_lamports = match variation {
+        ParsedTransactionVariation::V0(_) => 0,
+        ParsedTransactionVariation::V1(v1_variation) => {
+            v1_variation.paymaster_fee_lamports.unwrap_or(0)
+        }
+    };
+
+    Ok(Json(paymaster_fee_lamports.div_ceil(*fee_coefficient)))
+}
+
+pub fn get_domain_state_map(
+    domains: Vec<Domain>,
+    mnemonic: &str,
+) -> anyhow::Result<HashMap<String, DomainState>> {
     domains
         .into_iter()
         .map(
@@ -564,7 +625,7 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                  enable_preflight_simulation,
                  tx_variations,
                  number_of_signers,
-                 ..
+                 enable_session_management,
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
                 let sponsors = NonEmpty::collect((0u8..number_of_signers.into()).map(|i| {
@@ -578,19 +639,22 @@ pub fn get_domain_state_map(domains: Vec<Domain>, mnemonic: &str) -> HashMap<Str
                 }))
                 .expect("number_of_signers in NonZero so this should never be empty");
 
-                (
+                Ok((
                     domain,
                     DomainState {
                         domain_registry_key,
                         sponsors,
                         enable_preflight_simulation,
-                        tx_variations,
+                        tx_variations: Domain::into_parsed_transaction_variations(
+                            tx_variations,
+                            enable_session_management,
+                        )?,
                         next_autoassigned_sponsor_index: Arc::new(AtomicUsize::new(0)),
                     },
-                )
+                ))
             },
         )
-        .collect::<HashMap<_, _>>()
+        .collect::<Result<HashMap<_, _>, _>>()
 }
 
 /// How many RPC clients to create for both FTL and the regular RPC client for read operations
@@ -628,6 +692,7 @@ pub async fn run_server(
 
     let (router, _) = OpenApiRouter::new()
         .routes(routes!(sponsor_and_send_handler, sponsor_pubkey_handler))
+        .routes(routes!(fee_handler))
         .split_for_parts();
 
     let handle = PrometheusBuilder::new()

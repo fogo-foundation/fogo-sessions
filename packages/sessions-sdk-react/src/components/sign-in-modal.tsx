@@ -9,7 +9,6 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { Heading } from "react-aria-components";
 
 import { useSession, useSessionContext } from "../hooks/use-session.js";
-import layerStyles from "../layer.module.css";
 import type { SessionStates } from "../session-state.js";
 import { isCancelable, StateType } from "../session-state.js";
 import type { SolanaWallet } from "../solana-wallet.js";
@@ -55,12 +54,7 @@ export const SignInModal = ({
     sessionState.type === StateType.SettingLimits;
 
   return (
-    <ModalDialog
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
-      overlayClassName={layerStyles.layerModalDialog ?? ""}
-      {...props}
-    >
+    <ModalDialog isOpen={isOpen} onOpenChange={onOpenChange} {...props}>
       {isOpen && (
         <motion.div
           className={styles.selectWalletAnimationContainer}

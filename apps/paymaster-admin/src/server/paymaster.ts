@@ -20,6 +20,7 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
                     SELECT
                       dc.id,
                       dc.domain,
+                      dc.network_environment,
                       dc.enable_session_management,
                       dc.enable_preflight_simulation,
                       dc.created_at,
@@ -45,8 +46,7 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
                   ) AS dc_row
                 ) AS domain_configs
               FROM app a
-              INNER JOIN app_user au ON au.app_id = a.id
-              WHERE au.user_id = u.id
+              WHERE a.user_id = u.id
             ) AS app_row
           ) AS apps,
           u.id,
@@ -60,6 +60,5 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
   if (!user) {
     return;
   }
-
   return UserSchema.parse(user);
 };

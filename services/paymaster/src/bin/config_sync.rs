@@ -4,7 +4,7 @@ use config::File;
 use fogo_paymaster::cli::NetworkEnvironment as CliNetworkEnvironment;
 use fogo_paymaster::config_manager::config::Config;
 use fogo_paymaster::config_manager::config::Domain;
-use fogo_paymaster::constraint::TransactionVariation;
+use fogo_paymaster::constraint::config::TransactionVariation;
 use fogo_paymaster::db::config::NetworkEnvironment;
 use fogo_paymaster::db::pool::pool;
 use serde::{Deserialize, Serialize};

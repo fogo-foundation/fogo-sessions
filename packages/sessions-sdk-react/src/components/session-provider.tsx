@@ -64,7 +64,6 @@ import {
 import { errorToString } from "../error-to-string.js";
 import { SessionContext as SessionReactContext } from "../hooks/use-session.js";
 import { getCacheKey } from "../hooks/use-token-account-data.js";
-import layerStyles from "../layer.module.css";
 import type { EstablishedOptions, StateType } from "../session-state.js";
 import { SessionState } from "../session-state.js";
 import type { SolanaMobileWallet, SolanaWallet } from "../solana-wallet.js";
@@ -173,7 +172,7 @@ export const FogoSessionProvider = ({
   );
 
   return (
-    <ToastProvider toastRegionClassName={layerStyles.layerToast ?? ""}>
+    <ToastProvider>
       <SessionProvider
         tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
         defaultRequestedLimits={
