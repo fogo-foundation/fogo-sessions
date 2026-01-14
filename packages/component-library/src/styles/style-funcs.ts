@@ -1,8 +1,12 @@
-import { makeCssFuncs, type SimpleStyleRegistry } from "simplestyle-js";
+import { makeCssFuncs, SimpleStyleRegistry, setSeed } from "simplestyle-js";
 import { Theme } from "./theme.js";
 
+// ensures the classnames are deterministically
+// computed in the same manner on each run
+setSeed(123_123_123);
+
 const Singleton: { registry: SimpleStyleRegistry | undefined } = {
-  registry: undefined,
+  registry: new SimpleStyleRegistry(),
 };
 
 /**
@@ -14,9 +18,15 @@ const Singleton: { registry: SimpleStyleRegistry | undefined } = {
  * If it's not available, CSS-in-JS will function
  * "like the old days" and just automatically append
  * themselves to <style /> tags in the DOM (which
- * is what will happen in Storybook or other SPAs)
+ * is what will happen in Storybook or other SPAs).
+ *
+ * If you are running a traditional SPA,
+ * you should call this and set the value to "undefined"
+ * before any of your components are imported.
  */
-export function setCssRegistrySingleton(registry: SimpleStyleRegistry) {
+export function setCssRegistrySingleton(
+  registry: SimpleStyleRegistry | undefined,
+) {
   Singleton.registry = registry;
 }
 
@@ -28,13 +38,6 @@ export function getCssRegistrySingleton() {
   return Singleton.registry;
 }
 
-// we create an object here so the pointer is maintained
-// to the makeCssFuncs call. This will allow the registry pointer
-// to be updated properly
-const makeCssFuncsOpts = {
-  registry: Singleton.registry,
-  variables: Theme,
-};
-
-export const { createStyles, imports, keyframes, rawStyles } =
-  makeCssFuncs(makeCssFuncsOpts);
+export const { createStyles, imports, keyframes, rawStyles } = makeCssFuncs(
+  () => ({ registry: Singleton.registry, variables: Theme }),
+);

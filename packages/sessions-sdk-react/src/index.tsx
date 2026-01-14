@@ -4,6 +4,7 @@ export {
   TransactionResultType,
 } from "@fogo/sessions-sdk";
 export * from "./components/component-library/styles/index.js";
+export * from "./components/component-library/styles/index.js";
 export { SessionButton } from "./components/session-button.js";
 export { SessionPanel } from "./components/session-panel.js";
 export { FogoSessionProvider } from "./components/session-provider.js";
