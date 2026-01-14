@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
     character::complete::{char, line_ending, not_line_ending},
-    combinator::{eof, map, map_opt, opt, recognize},
+    combinator::{eof, map, map_opt, recognize},
     error::ParseError,
     multi::many0,
     sequence::{delimited, preceded, separated_pair},
