@@ -95,6 +95,7 @@ catalog:
   react-dom: ^19.1.4
   sass: ^1.89.2
   sass-loader: ^16.0.5
+  smol-toml: ^1.6.0
   storybook: ^10.1.2
   stylelint: ^16.21.0
   style-loader: ^4.0.0

@@ -3,28 +3,30 @@ import {
   ArrowsInIcon,
   ArrowsOutIcon,
   ChecksIcon,
+  SpinnerIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import AceEditor from "react-ace";
-import type { Variation } from "../../db-schema";
 import styles from "./variation-code-block.module.scss";
 import "ace-builds/src-noconflict/theme-monokai";
 import "./ace-theme.scss";
 import { Badge } from "@fogo/component-library/Badge";
 import { useToast } from "@fogo/component-library/Toast";
 
+type VariationCodeBlockProps = {
+  value: string;
+  onChange: (value: string) => void;
+  isExpanded: boolean;
+  footer: React.ReactNode;
+};
+
 export const VariationCodeBlock = ({
   value,
   onChange,
   isExpanded,
-  variation,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  isExpanded: boolean;
-  variation: Variation;
-}) => {
+  footer,
+}: VariationCodeBlockProps) => {
   const toast = useToast();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -47,7 +49,7 @@ export const VariationCodeBlock = ({
       .catch((err) => {
         toast.error(`Error enabling fullscreen: ${err.message}`);
       });
-  }, [isFullscreen, toast.error]);
+  }, [toast.error]);
 
   const handleUpdate = useCallback(() => {
     setEditorHeight(contentRef.current?.clientHeight ?? 0);
@@ -64,6 +66,7 @@ export const VariationCodeBlock = ({
           ref={cardRef}
           onUpdate={handleUpdate}
         >
+          <input type="hidden" name="code" value={value} />
           <div className={styles.variationCodeBlockHeader}>
             <h2 className={styles.variationCodeBlockHeaderTitle}>
               Edit Configuration
@@ -76,11 +79,10 @@ export const VariationCodeBlock = ({
           <div className={styles.variationCodeBlockContent} ref={contentRef}>
             {contentRef.current && (
               <AceEditor
-                name={variation.id}
                 value={value}
                 onChange={onChange}
                 className={styles.variationCodeBlockEditor}
-                mode="javascript"
+                mode="toml"
                 theme="monokai"
                 width="100%"
                 height={`${editorHeight}px`}
@@ -88,16 +90,7 @@ export const VariationCodeBlock = ({
               />
             )}
           </div>
-          <div className={styles.variationCodeBlockFooter}>
-            <div className={styles.variationCodeBlockFooterInfo}>
-              <Badge variant="success" size="xs">
-                All passed <ChecksIcon />
-              </Badge>
-            </div>
-            <div className={styles.variationCodeBlockFooterButtons}>
-              <Button variant="secondary">Save</Button>
-            </div>
-          </div>
+          <div className={styles.variationCodeBlockFooter}>{footer}</div>
         </motion.div>
       )}
     </AnimatePresence>

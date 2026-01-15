@@ -30,6 +30,7 @@
     "react-aria": "catalog:",
     "react-aria-components": "catalog:",
     "react-dom": "catalog:",
+    "smol-toml": "catalog:",
     "swr": "catalog:",
     "zod": "catalog:"
   },

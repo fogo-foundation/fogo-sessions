@@ -255,6 +255,9 @@ catalogs:
     sass-loader:
       specifier: ^16.0.5
       version: 16.0.6
+    smol-toml:
+      specifier: ^1.6.0
+      version: 1.6.0
     storybook:
       specifier: ^10.1.2
       version: 10.1.2
@@ -362,6 +365,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
+      smol-toml:
+        specifier: 'catalog:'
+        version: 1.6.0
       swr:
         specifier: 'catalog:'
         version: 2.3.3(react@19.2.1)
@@ -11877,6 +11883,10 @@ packages:
   smart-buffer@4.2.0:
     resolution: {integrity: sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==}
     engines: {node: '>= 6.0.0', npm: '>= 3.0.0'}
+
+  smol-toml@1.6.0:
+    resolution: {integrity: sha512-4zemZi0HvTnYwLfrpk/CF9LOd9Lt87kAt50GnqhMpyF9U3poDAP2+iukq2bZsO/ufegbYehBkqINbsWxj4l4cw==}
+    engines: {node: '>= 18'}
 
   snake-case@3.0.4:
     resolution: {integrity: sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==}
@@ -28930,6 +28940,8 @@ snapshots:
       is-fullwidth-code-point: 3.0.0
 
   smart-buffer@4.2.0: {}
+
+  smol-toml@1.6.0: {}
 
   snake-case@3.0.4:
     dependencies:
