@@ -1,10 +1,17 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import type { AnchorProvider } from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
 
 import ChainIdIdlImpl from "./idl/chain-id.json" with { type: "json" };
-import DomainRegistryIdlImpl from "./idl/domain-registry.json" with { type: "json" };
+import DomainRegistryIdlImpl from "./idl/domain-registry.json" with {
+  type: "json",
+};
 import ExampleIdlImpl from "./idl/example.json" with { type: "json" };
-import IntentTransferIdlImpl from "./idl/intent-transfer.json" with { type: "json" };
-import SessionManagerIdlImpl from "./idl/session-manager.json" with { type: "json" };
+import IntentTransferIdlImpl from "./idl/intent-transfer.json" with {
+  type: "json",
+};
+import SessionManagerIdlImpl from "./idl/session-manager.json" with {
+  type: "json",
+};
 import TollboothIdlImpl from "./idl/tollbooth.json" with { type: "json" };
 import type { ChainId } from "./types/chain-id.js";
 import type { DomainRegistry } from "./types/domain-registry.js";

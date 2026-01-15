@@ -3,10 +3,13 @@ import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTil
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
 import { NATIVE_MINT } from "@solana/spl-token";
 import { motion } from "motion/react";
-import { type ComponentProps, useCallback } from "react";
+import type { ComponentProps } from "react";
+import { useCallback } from "react";
 import { GridList, GridListItem } from "react-aria-components";
 import { amountToString } from "../amount-to-string.js";
+import { errorToString } from "../error-to-string.js";
 import { usePrice } from "../hooks/use-price.js";
+import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
   StateType as PriceDataStateType,
@@ -17,18 +20,16 @@ import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
 import { CopyButton } from "./component-library/CopyButton/index.js";
 import { Link } from "./component-library/Link/index.js";
+import { useToast } from "./component-library/Toast/index.js";
 import {
   StateType as AsyncStateType,
   useAsync,
 } from "./component-library/useAsync/index.js";
+import { ExplorerLink } from "./explorer-link.js";
 import { FetchError } from "./fetch-error.js";
 import { NotionalAmount } from "./notional-amount.js";
 import styles from "./token-list.module.css";
 import { TruncateKey } from "./truncate-key.js";
-import { useToast } from "./component-library/Toast/index.js";
-import { ExplorerLink } from "./explorer-link.js";
-import { useSessionContext } from "../hooks/use-session.js";
-import { errorToString } from "../error-to-string.js";
 
 export const SESSIONS_INTERNAL_PAYMASTER_DOMAIN = "sessions";
 
@@ -232,33 +233,30 @@ const UnwrapButton = ({
 }) => {
   const toast = useToast();
   const { network } = useSessionContext();
-  const doUnwrap = useCallback(
-    async () => {
-      try {
-        const result = await sessionState.sendTransaction(
-          sessionState.getSessionUnwrapInstructions(),
-          {
-            variation: "Unwrap",
-            paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
-          },
+  const doUnwrap = useCallback(async () => {
+    try {
+      const result = await sessionState.sendTransaction(
+        sessionState.getSessionUnwrapInstructions(),
+        {
+          variation: "Unwrap",
+          paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+        },
+      );
+      if (result.type === TransactionResultType.Success) {
+        toast.success(
+          "Successfuly unwrapped!",
+          <ExplorerLink network={network} txHash={result.signature} />,
         );
-        if (result.type === TransactionResultType.Success) {
-          toast.success(
-            "Successfuly unwrapped!",
-            <ExplorerLink network={network} txHash={result.signature} />,
-          );
-        } else {
-          // biome-ignore lint/suspicious/noConsole: we want to log the error
-          toast.error("Failed to unwrap", errorToString(result.error));
-        }
-      } catch (error: unknown) {
-          // biome-ignore lint/suspicious/noConsole: we want to log the error
-          console.error(error);
-          toast.error("Failed to unwrap", errorToString(error));
+      } else {
+        // biome-ignore lint/suspicious/noConsole: we want to log the error
+        toast.error("Failed to unwrap", errorToString(result.error));
       }
-    },
-    [sessionState, toast, network],
-  );
+    } catch (error: unknown) {
+      // biome-ignore lint/suspicious/noConsole: we want to log the error
+      console.error(error);
+      toast.error("Failed to unwrap", errorToString(error));
+    }
+  }, [sessionState, toast, network]);
   const { execute, state } = useAsync(doUnwrap);
 
   return (

@@ -1,4 +1,5 @@
-import { Badge, type BadgeProps } from "@fogo/component-library/Badge";
+import type { BadgeProps } from "@fogo/component-library/Badge";
+import { Badge } from "@fogo/component-library/Badge";
 import { Button } from "@fogo/component-library/Button";
 import { Card } from "@fogo/component-library/Card";
 import { Skeleton } from "@fogo/component-library/Skeleton";

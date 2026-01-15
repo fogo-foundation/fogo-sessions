@@ -1,5 +1,5 @@
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr/Check";
-import { PublicKey } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "motion/react";
 import type { FormEvent, ReactNode } from "react";

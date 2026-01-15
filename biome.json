@@ -129,7 +129,12 @@
         "useThrowNewError": "error",
         "useTrimStartEnd": "error",
         "useExportType": "error",
-        "useImportType": "error",
+        "useImportType": {
+          "level": "error",
+          "options": {
+            "style": "separatedType"
+          }
+        },
         "useConst": "error",
         "noCommonJs": "error",
         "noNamespace": "error",

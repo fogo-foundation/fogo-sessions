@@ -22,13 +22,13 @@ import {
 } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type {
+  Connection,
   TransactionError,
   TransactionInstruction,
   VersionedTransaction,
 } from "@solana/web3.js";
 import {
   ComputeBudgetProgram,
-  Connection,
   Ed25519Program,
   Keypair,
   PublicKey,

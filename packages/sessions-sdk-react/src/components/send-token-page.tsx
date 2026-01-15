@@ -20,10 +20,8 @@ import { amountToString, stringToAmount } from "../amount-to-string.js";
 import { errorToString } from "../error-to-string.js";
 import { usePrice } from "../hooks/use-price.js";
 import { useSessionContext } from "../hooks/use-session.js";
-import {
-  type Token,
-  useTokenAccountData,
-} from "../hooks/use-token-account-data.js";
+import type { Token } from "../hooks/use-token-account-data.js";
+import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { signWithWallet } from "../solana-wallet.js";
 import { Button } from "./component-library/Button/index.js";

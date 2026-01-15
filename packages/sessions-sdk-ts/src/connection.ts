@@ -1,4 +1,5 @@
-import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
+import type { Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider, BN } from "@coral-xyz/anchor";
 import { TollboothIdl, TollboothProgram } from "@fogo/sessions-idls";
 import { sha256 } from "@noble/hashes/sha2";
 import {

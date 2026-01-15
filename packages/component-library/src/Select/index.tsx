@@ -3,9 +3,9 @@
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import clsx from "clsx";
 import type { ReactNode } from "react";
+import type { SelectProps as AriaSelectProps } from "react-aria-components";
 import {
   Select as AriaSelect,
-  type SelectProps as AriaSelectProps,
   Button,
   Label,
   ListBox,

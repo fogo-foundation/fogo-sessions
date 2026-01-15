@@ -1,4 +1,5 @@
-import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
+import type { Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider, BN } from "@coral-xyz/anchor";
 import { ExampleProgram } from "@fogo/sessions-idls";
 import { TransactionResultType } from "@fogo/sessions-sdk";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
@@ -8,7 +9,7 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { useAsync } from "../../hooks/use-async";
 import type { Transaction } from "./use-transaction-log";
