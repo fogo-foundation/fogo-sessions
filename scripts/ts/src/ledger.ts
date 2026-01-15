@@ -150,7 +150,7 @@ export class LedgerNodeWallet {
       derivationChange,
     );
     const publicKey = await getPublicKey(transport, derivationPath);
-    // eslint-disable-next-line no-console
+    // biome-ignore lint/suspicious/noConsole: need to print a diagnostic message
     console.log(
       "Loaded Ledger hardware wallet with public key: " + publicKey.toBase58(),
     );
@@ -162,7 +162,7 @@ export class LedgerNodeWallet {
   ): Promise<T> {
     const transport = this._transport;
     const publicKey = this.publicKey;
-    // eslint-disable-next-line no-console
+    // biome-ignore lint/suspicious/noConsole: need to print a diagnostic message
     console.log(
       `Waiting for your approval on Ledger hardware wallet usb://ledger/${this.publicKey.toBase58()}`,
     );
