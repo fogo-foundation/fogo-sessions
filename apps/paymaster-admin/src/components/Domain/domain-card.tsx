@@ -2,9 +2,9 @@ import { Badge, type BadgeProps } from "@fogo/component-library/Badge";
 import { Button } from "@fogo/component-library/Button";
 import { Card } from "@fogo/component-library/Card";
 import { Skeleton } from "@fogo/component-library/Skeleton";
-import z from "zod";
-import {
-  type DomainConfigWithVariationsSchema,
+import type z from "zod";
+import type {
+  DomainConfigWithVariationsSchema,
   NetworkEnvironmentSchema,
 } from "../../db-schema";
 import styles from "./domain-card.module.scss";

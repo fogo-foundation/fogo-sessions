@@ -128,6 +128,8 @@
         "useNumericSeparators": "error",
         "useThrowNewError": "error",
         "useTrimStartEnd": "error",
+        "useExportType": "error",
+        "useImportType": "error",
         "useConst": "error",
         "noCommonJs": "error",
         "noNamespace": "error",
