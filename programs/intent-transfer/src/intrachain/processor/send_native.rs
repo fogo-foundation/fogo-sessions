@@ -1,7 +1,6 @@
 use crate::{
     config::state::fee_config::{FeeConfig, FEE_CONFIG_SEED},
     error::IntentTransferError,
-    fees::{PaidInstruction, VerifyAndCollectAccounts},
     intrachain::message::Message,
     nonce::{self, Nonce},
     verify::{verify_and_update_nonce, verify_signer_matches_source},
@@ -18,7 +17,7 @@ use anchor_lang::{
 };
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{spl_token::try_ui_amount_into_amount, Mint, Token, TokenAccount},
+    token::{spl_token::try_ui_amount_into_amount, Mint, Token},
 };
 use chain_id::ChainId;
 use solana_intents::{Intent, SymbolOrMint};
@@ -98,8 +97,8 @@ impl<'info> SendNative<'info> {
                     symbol_or_mint,
                     nonce: new_nonce,
                     version: _,
-                    fee_amount,
-                    fee_symbol_or_mint,
+                    fee_amount: _,
+                    fee_symbol_or_mint: _,
                 },
             signer,
         } = Intent::load(sysvar_instructions.as_ref())
