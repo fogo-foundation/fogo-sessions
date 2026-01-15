@@ -2,6 +2,7 @@ import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider, BorshAccountsCoder } from "@coral-xyz/anchor";
 import {
   DomainRegistryIdl,
+  IntentTransferIdl,
   IntentTransferProgram,
   SessionManagerIdl,
   SessionManagerProgram,
@@ -942,6 +943,7 @@ export const sendNativeTransfer = async (
             options.feeConfig.mint,
             options.walletPublicKey,
           ),
+          feeDestination: IntentTransferIdl.address,
           source: options.walletPublicKey,
           destination: options.recipient,
           sponsor: options.context.internalPayer,

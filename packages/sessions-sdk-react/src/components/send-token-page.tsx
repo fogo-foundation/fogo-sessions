@@ -68,6 +68,7 @@ export const SendTokenPage = (props: Props) => {
       return (
         <SendTokenWithFeeConfig
           feeConfig={feeConfig.data}
+          isNative={props.token.isNative}
           {...props}
           price={price}
         />
@@ -92,6 +93,7 @@ const useFeeConfig = () => {
 const SendTokenWithFeeConfig = (
   props: Props & {
     sessionState: EstablishedSessionState;
+    isNative: boolean;
     feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
     price: number | undefined;
   },
@@ -113,7 +115,8 @@ const SendTokenWithFeeConfig = (
       );
     }
     case StateType.Loaded: {
-      return feeTokenAccountBalance.data < props.feeConfig.fee ? (
+      return !props.isNative &&
+        feeTokenAccountBalance.data < props.feeConfig.fee ? (
         <FetchError
           headline={`Not enough ${props.feeConfig.symbolOrMint}`}
           error={`You need at least ${amountToString(
@@ -462,18 +465,20 @@ const SendTokenPageImpl = ({
         >
           Send
         </Button>
-        <div
-          className={styles.fee}
-          data-is-loading={props.isLoading ? "" : undefined}
-        >
-          {!props.isLoading && (
-            <>
-              Fee:{" "}
-              {amountToString(props.feeConfig.fee, props.feeConfig.decimals)}{" "}
-              {props.feeConfig.symbolOrMint}
-            </>
-          )}
-        </div>
+        {!token.isNative && (
+          <div
+            className={styles.fee}
+            data-is-loading={props.isLoading ? "" : undefined}
+          >
+            {!props.isLoading && (
+              <>
+                Fee:{" "}
+                {amountToString(props.feeConfig.fee, props.feeConfig.decimals)}{" "}
+                {props.feeConfig.symbolOrMint}
+              </>
+            )}
+          </div>
+        )}
       </Form>
       {!props.isLoading && props.scanner}
     </div>
