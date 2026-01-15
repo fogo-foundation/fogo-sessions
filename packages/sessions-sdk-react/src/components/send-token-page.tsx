@@ -464,18 +464,20 @@ const SendTokenPageImpl = ({
         >
           Send
         </Button>
-        <div
-          className={styles.fee}
-          data-is-loading={props.isLoading ? "" : undefined}
-        >
-          {!props.isLoading && (
-            <>
-              Fee:{" "}
-              {amountToString(props.feeConfig.fee, props.feeConfig.decimals)}{" "}
-              {props.feeConfig.symbolOrMint}
-            </>
-          )}
-        </div>
+        {!token.isNative && (
+          <div
+            className={styles.fee}
+            data-is-loading={props.isLoading ? "" : undefined}
+          >
+            {!props.isLoading && (
+              <>
+                Fee:{" "}
+                {amountToString(props.feeConfig.fee, props.feeConfig.decimals)}{" "}
+                {props.feeConfig.symbolOrMint}
+              </>
+            )}
+          </div>
+        )}
       </Form>
       {!props.isLoading && props.scanner}
     </div>
