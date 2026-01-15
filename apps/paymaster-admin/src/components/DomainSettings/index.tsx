@@ -3,9 +3,10 @@ import { Switch } from "@fogo/component-library/Switch";
 import { useState } from "react";
 import type { DomainConfig } from "../../db-schema";
 import styles from "./index.module.scss";
+import { GearIcon } from "@phosphor-icons/react/dist/ssr";
 
 type DomainSettingsSwitchProps = {
-  switchName: string;
+  label: string;
   isEnabled: boolean;
 };
 
@@ -18,7 +19,7 @@ export const DomainSettingsSwitch = (props: DomainSettingsSwitchProps) => {
 
   return (
     <Switch isSelected={isEnabled} onChange={handleToggle}>
-      {props.switchName}
+      {props.label}
     </Switch>
   );
 };
@@ -26,7 +27,6 @@ export const DomainSettingsSwitch = (props: DomainSettingsSwitchProps) => {
 type DomainSettingsProps =
   | {
       domainConfig: DomainConfig;
-      icon: React.ReactNode;
       isLoading?: false;
     }
   | {
@@ -41,16 +41,16 @@ export const DomainSettings = (props: DomainSettingsProps) => {
   return (
     <div className={styles.domainSettings}>
       <h2 className={styles.domainSettingsTitle}>
-        {props.icon}
+        {<GearIcon size={24} weight="duotone" />}
         Domain Settings
       </h2>
       <div className={styles.domainSettingsCheckboxes}>
         <DomainSettingsSwitch
-          switchName="Enable Session Management"
+          label="Enable Session Management"
           isEnabled={props.domainConfig.enable_session_management}
         />
         <DomainSettingsSwitch
-          switchName="Enable Preflight Simulation"
+          label="Enable Preflight Simulation"
           isEnabled={props.domainConfig.enable_preflight_simulation}
         />
       </div>
