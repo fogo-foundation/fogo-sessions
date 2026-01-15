@@ -1,0 +1,5 @@
+@use '@fogo/component-library/theme';
+
+.container {
+  @include theme.max-width;
+}

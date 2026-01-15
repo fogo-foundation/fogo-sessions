@@ -8,7 +8,6 @@ import {
 } from "@fogo/sessions-sdk-react";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
-import { PaymasterLoading } from "../loading";
 import { UserNotFound } from "../UserNotFound";
 import { UserApps } from "./user-apps";
 
@@ -44,7 +43,7 @@ type AppsContentsProps =
 
 const AppsContents = (props: AppsContentsProps) => {
   if (props.isLoading) {
-    return <PaymasterLoading />;
+    return <UserApps isLoading />;
   }
   return <AppData sessionState={props.sessionState} />;
 };

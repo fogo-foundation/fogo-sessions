@@ -1,0 +1,7 @@
+@use '@fogo/component-library/theme';
+
+.variationsList {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+}

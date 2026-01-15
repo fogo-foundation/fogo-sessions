@@ -409,6 +409,7 @@ $color: (
   "paragraph": rgb(from pallette-color("white") r g b / 80%),
   "card": #1f1f24,
   "card-opaque": rgb(from #1f1f24 r g b / 60%),
+  "card-muted": #303038,
   "widget-border": #33333d,
   "utils-widget-shadow": rgb(from pallette-color("black") r g b / 50%),
   "modal-overlay": rgb(from pallette-color("black") r g b / 40%),
