@@ -4,6 +4,7 @@ import { Skeleton } from "@fogo/component-library/Skeleton";
 import { TextField } from "@fogo/component-library/TextField";
 import { isEstablished, useSession } from "@fogo/sessions-sdk-react";
 import {
+  CheckIcon,
   ChecksIcon,
   CodeBlockIcon,
   SpinnerIcon,
@@ -44,6 +45,19 @@ export const VariationListItem = (props: VariationListItemProps) => {
 
 const VariationForm = ({ variation }: { variation: Variation }) => {
   const sessions = useSession();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditable, setIsEditable] = useState(false);
+  const [name, setName] = useState(variation.name);
+  const [code, setCode] = useState(generateEditableToml(variation));
+  const [maxGasSpend, setMaxGasSpend] = useState(
+    variation.max_gas_spend.toString(),
+  );
+
+  const baselineRef = useRef<{
+    name: string;
+    maxGasSpend: string;
+    code: string;
+  } | null>(null);
 
   const wrappedSaveVariation = useCallback(
     async (...args: [unknown, FormData]) => {
@@ -62,19 +76,6 @@ const VariationForm = ({ variation }: { variation: Variation }) => {
     wrappedSaveVariation,
     null,
   );
-
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [name, setName] = useState(variation.name);
-  const [code, setCode] = useState(generateEditableToml(variation));
-  const [maxGasSpend, setMaxGasSpend] = useState(
-    variation.max_gas_spend.toString(),
-  );
-
-  const baselineRef = useRef<{
-    name: string;
-    maxGasSpend: string;
-    code: string;
-  } | null>(null);
 
   useEffect(() => {
     baselineRef.current = {
@@ -118,6 +119,7 @@ const VariationForm = ({ variation }: { variation: Variation }) => {
         <div
           className={styles.variationListCard}
           data-is-expanded={isExpanded ? "" : undefined}
+          data-is-editable={isEditable ? "" : undefined}
         >
           <VariationVersionBadge version={variation.version} />
           <TextField
@@ -140,9 +142,15 @@ const VariationForm = ({ variation }: { variation: Variation }) => {
             rightExtra={<GasPumpIcon />}
             className={styles.fieldMaxGasSpend ?? ""}
           />
-          <Button variant="outline" onClick={handleExpand}>
-            <CodeBlockIcon />
-          </Button>
+          {isDirty ? (
+            <Button variant="secondary">
+              <CheckIcon />
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={handleExpand}>
+              <CodeBlockIcon />
+            </Button>
+          )}
         </div>
         <DeleteVariationButton />
       </div>
@@ -152,7 +160,6 @@ const VariationForm = ({ variation }: { variation: Variation }) => {
         onChange={setCode}
         footer={
           <>
-            {isDirty ? "aaa" : "bbb"}
             <Badge variant="success" size="xs">
               All passed <ChecksIcon />
             </Badge>
