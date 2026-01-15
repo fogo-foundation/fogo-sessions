@@ -1,9 +1,10 @@
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import { Switch } from "@fogo/component-library/Switch";
+import { GearIcon } from "@phosphor-icons/react/dist/ssr";
 import { useState } from "react";
 import type { DomainConfig } from "../../db-schema";
+import { ListHeader } from "../ListHeader";
 import styles from "./index.module.scss";
-import { GearIcon } from "@phosphor-icons/react/dist/ssr";
 
 type DomainSettingsSwitchProps = {
   label: string;
@@ -40,10 +41,11 @@ export const DomainSettings = (props: DomainSettingsProps) => {
 
   return (
     <div className={styles.domainSettings}>
-      <h2 className={styles.domainSettingsTitle}>
-        {<GearIcon size={24} weight="duotone" />}
-        Domain Settings
-      </h2>
+      <ListHeader
+        title="Domain Settings"
+        icon={<GearIcon size={24} weight="duotone" />}
+        count={2}
+      />
       <div className={styles.domainSettingsCheckboxes}>
         <DomainSettingsSwitch
           label="Enable Session Management"

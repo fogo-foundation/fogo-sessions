@@ -36,9 +36,7 @@ export const DomainVariation = (props: DomainVariationProps) => {
         {props.isLoading ? (
           <DomainSettings isLoading />
         ) : (
-          <DomainSettings
-            domainConfig={props.domainConfig}
-          />
+          <DomainSettings domainConfig={props.domainConfig} />
         )}
         {props.isLoading ? (
           <ListHeader isLoading />

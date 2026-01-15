@@ -65,7 +65,7 @@ export const BreadcrumbBackArrow = ({ items }: { items: Item[] }) => {
 
   const hasBackLink =
     itemWithHref && !itemWithHref.isLoading && itemWithHref.href;
-  
+
   const handleBackClick = useCallback(() => {
     if (hasBackLink && itemWithHref?.href) {
       router.push(itemWithHref.href);
