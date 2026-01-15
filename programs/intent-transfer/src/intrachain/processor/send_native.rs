@@ -59,11 +59,11 @@ pub struct SendNative<'info> {
     #[account(mut)]
     pub sponsor: Signer<'info>,
 
-    #[account(mut, token::mint = fee_mint, token::authority = source)]
-    pub fee_source: Account<'info, TokenAccount>,
+    /// CHECK: unused
+    pub fee_source: UncheckedAccount<'info>,
 
-    #[account(init_if_needed, payer = sponsor, associated_token::mint = fee_mint, associated_token::authority = sponsor)]
-    pub fee_destination: Account<'info, TokenAccount>,
+    /// CHECK: unused
+    pub fee_destination: UncheckedAccount<'info>,
 
     pub fee_mint: Account<'info, Mint>,
 
@@ -75,32 +75,6 @@ pub struct SendNative<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
-}
-
-impl<'info> PaidInstruction<'info> for SendNative<'info> {
-    fn fee_amount(&self) -> u64 {
-        self.fee_config.intrachain_transfer_fee
-    }
-
-    fn verify_and_collect_accounts<'a>(&'a self) -> VerifyAndCollectAccounts<'a, 'info> {
-        let Self {
-            fee_source,
-            fee_destination,
-            fee_mint,
-            fee_metadata,
-            intent_transfer_setter,
-            token_program,
-            ..
-        } = self;
-        VerifyAndCollectAccounts {
-            fee_source,
-            fee_destination,
-            fee_mint,
-            fee_metadata,
-            intent_transfer_setter,
-            token_program,
-        }
-    }
 }
 
 impl<'info> SendNative<'info> {
@@ -170,7 +144,6 @@ impl<'info> SendNative<'info> {
             ],
             signer_seeds,
         )?;
-
-        self.verify_and_collect_fee(fee_amount, fee_symbol_or_mint, signer_seeds)
+        Ok(())
     }
 }

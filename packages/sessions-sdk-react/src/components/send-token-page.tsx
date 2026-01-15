@@ -68,6 +68,7 @@ export const SendTokenPage = (props: Props) => {
       return (
         <SendTokenWithFeeConfig
           feeConfig={feeConfig.data}
+          isNative={props.token.isNative}
           {...props}
           price={price}
         />
@@ -92,6 +93,7 @@ const useFeeConfig = () => {
 const SendTokenWithFeeConfig = (
   props: Props & {
     sessionState: EstablishedSessionState;
+    isNative: boolean;
     feeConfig: Awaited<ReturnType<typeof getTransferFee>>;
     price: number | undefined;
   },
@@ -113,7 +115,7 @@ const SendTokenWithFeeConfig = (
       );
     }
     case StateType.Loaded: {
-      return feeTokenAccountBalance.data < props.feeConfig.fee ? (
+      return !props.isNative && feeTokenAccountBalance.data < props.feeConfig.fee ? (
         <FetchError
           headline={`Not enough ${props.feeConfig.symbolOrMint}`}
           error={`You need at least ${amountToString(
