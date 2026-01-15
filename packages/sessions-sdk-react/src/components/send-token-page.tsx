@@ -115,7 +115,8 @@ const SendTokenWithFeeConfig = (
       );
     }
     case StateType.Loaded: {
-      return !props.isNative && feeTokenAccountBalance.data < props.feeConfig.fee ? (
+      return !props.isNative &&
+        feeTokenAccountBalance.data < props.feeConfig.fee ? (
         <FetchError
           headline={`Not enough ${props.feeConfig.symbolOrMint}`}
           error={`You need at least ${amountToString(
