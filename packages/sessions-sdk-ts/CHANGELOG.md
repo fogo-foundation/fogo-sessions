@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.1.2 (2026-01-15)
+
+### Fixes
+
+- Make native FOGO transfers fee exempt
+
 ## 0.1.1 (2026-01-12)
 
 ### Fixes

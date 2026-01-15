@@ -1,5 +1,12 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.13 (2026-01-15)
+
+### Fixes
+
+- Add unwrap button to native mint
+- Make native FOGO transfers fee exempt
+
 ## 0.1.12 (2026-01-11)
 
 ### Features
