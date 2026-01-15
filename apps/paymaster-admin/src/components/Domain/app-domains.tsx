@@ -57,7 +57,7 @@ export const AppDomains = (props: AppDomainsProps) => {
           >
             {(item) => (
               <GridListItem key={item.id}>
-                <DomainCard app={props.app} domain={item} />
+                <DomainCard appId={props.app.id} domain={item} />
               </GridListItem>
             )}
           </GridList>

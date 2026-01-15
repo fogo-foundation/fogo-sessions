@@ -12,7 +12,7 @@ import styles from "./domain-card.module.scss";
 
 type DomainCardProps =
   | {
-      app: App;
+      appId: App["id"];
       domain: DomainConfig;
       isLoading?: false;
     }
@@ -46,7 +46,7 @@ export const DomainCard = (props: DomainCardProps) =>
       </div>
       <Button
         variant="outline"
-        href={`/apps/${props.app.id}/domains/${props.domain.id}`}
+        href={`/apps/${props.appId}/domains/${props.domain.id}`}
       >
         Edit
       </Button>

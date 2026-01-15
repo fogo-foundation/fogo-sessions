@@ -10,7 +10,7 @@ import { useParams } from "next/navigation";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
 import { UserNotFound } from "../UserNotFound";
-import { AppVariation } from "./app-variations";
+import { DomainVariation } from "./domain-variations";
 
 export const Variation = () => {
   const { appId, domainId: domainConfigId } = useParams<{
@@ -56,7 +56,7 @@ type VariationContentsProps =
 
 const VariationContents = (props: VariationContentsProps) => {
   if (props.isLoading) {
-    return <AppVariation isLoading />;
+    return <DomainVariation isLoading />;
   }
   return (
     <VariationData
@@ -79,7 +79,7 @@ const VariationData = ({
   const userData = useUserData(sessionState);
   switch (userData.type) {
     case StateType.Loading: {
-      return <AppVariation isLoading />;
+      return <DomainVariation isLoading />;
     }
     case StateType.Error: {
       return <div>Error loading user data: {userData.error.message}</div>;
@@ -98,7 +98,7 @@ const VariationData = ({
       if (!domainConfig) {
         return <div>Domain config not found</div>;
       }
-      return <AppVariation app={app} domainConfig={domainConfig} />;
+      return <DomainVariation app={app} domainConfig={domainConfig} />;
     }
     default: {
       return;

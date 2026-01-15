@@ -3,11 +3,10 @@ import type { App, DomainConfig } from "../../db-schema";
 import BreadcrumbNav from "../BreadcrumbNav";
 import { DomainSettings } from "../DomainSettings";
 import { ListHeader } from "../ListHeader";
-import { AddVariationButton } from "./add-variation-button";
-import styles from "./app-variations.module.scss";
+import styles from "./domain-variations.module.scss";
 import VariationsList from "./variations-list";
 
-type AppVariationProps =
+type DomainVariationProps =
   | {
       app: App;
       domainConfig: DomainConfig;
@@ -17,11 +16,12 @@ type AppVariationProps =
       isLoading: true;
     };
 
-export const AppVariation = (props: AppVariationProps) => {
+export const DomainVariation = (props: DomainVariationProps) => {
   return (
     <>
       <BreadcrumbNav
         items={[
+          { label: "Apps", href: "/" },
           props.isLoading
             ? { isLoading: true }
             : { label: props.app.name, href: `/apps/${props.app.id}` },
@@ -49,7 +49,6 @@ export const AppVariation = (props: AppVariationProps) => {
             isLoading={props.isLoading}
             {...(!props.isLoading && {
               count: props.domainConfig.variations.length,
-              action: <AddVariationButton />,
             })}
           />
         )}
