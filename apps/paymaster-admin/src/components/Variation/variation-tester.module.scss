@@ -1,0 +1,24 @@
+@use '@fogo/component-library/theme';
+
+.variationTester {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2);
+  width: 100%;
+
+  .variationTesterInput {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tooltip {
+    background-color: theme.color('foreground');
+    color: theme.color('background');
+    padding: theme.spacing(2) theme.spacing(3);
+    border-radius: theme.border-radius('md');
+    font-size: theme.font-size('xs');
+    max-width: 300px;
+    word-wrap: break-word;
+    @include theme.elevation('primary', 3);
+  }
+}

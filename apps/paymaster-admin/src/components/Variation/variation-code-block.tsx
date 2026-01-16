@@ -13,16 +13,19 @@ import "ace-builds/src-noconflict/theme-monokai";
 import "./ace-theme.scss";
 import { Badge } from "@fogo/component-library/Badge";
 import { useToast } from "@fogo/component-library/Toast";
+import { VariationTester } from "./variation-tester";
 
 export const VariationCodeBlock = ({
   value,
   onChange,
   isExpanded,
+  domain,
   variation,
 }: {
   value: string;
   onChange: (value: string) => void;
   isExpanded: boolean;
+  domain: string;
   variation: Variation;
 }) => {
   const toast = useToast();
@@ -93,6 +96,9 @@ export const VariationCodeBlock = ({
               <Badge variant="success" size="xs">
                 All passed <ChecksIcon />
               </Badge>
+            </div>
+            <div className={styles.variationCodeBlockFooterTest}>
+              <VariationTester domain={domain} variation={variation} />
             </div>
             <div className={styles.variationCodeBlockFooterButtons}>
               <Button variant="secondary">Save</Button>

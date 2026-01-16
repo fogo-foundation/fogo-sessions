@@ -29,7 +29,7 @@ export const PrimitiveDataValueSchema = z.union([
 ]);
 
 export const PrimitiveDataTypeSchema = z.union([
-  z.enum(["U8", "U16", "U32", "U64", "Bool", "pubkey"]),
+  z.enum(["U8", "U16", "U32", "U64", "Bool", "Pubkey"]),
   z.object({ Bytes: z.object({ length: z.number().int().min(0) }) }),
 ]);
 export const DataConstraintSpecificationSchema = z.union([
@@ -132,3 +132,10 @@ export type User = z.infer<typeof UserSchema>;
 export type App = z.infer<typeof AppWithDomainConfigsSchema>;
 export type DomainConfig = z.infer<typeof DomainConfigWithVariationsSchema>;
 export type Variation = z.infer<typeof VariationSchema>;
+export type InstructionConstraint = z.infer<typeof InstructionConstraintSchema>;
+export type AccountConstraint = z.infer<typeof AccountConstraintSchema>;
+export type DataConstraint = z.infer<typeof DataConstraintSchema>;
+export type ContextualPubkey = z.infer<typeof ContextualPubkeySchema>;
+export type PrimitiveDataType = z.infer<typeof PrimitiveDataTypeSchema>;
+export type DataConstraintSpecification = z.infer<typeof DataConstraintSpecificationSchema>;
+export type PrimitiveDataValue = z.infer<typeof PrimitiveDataValueSchema>;
