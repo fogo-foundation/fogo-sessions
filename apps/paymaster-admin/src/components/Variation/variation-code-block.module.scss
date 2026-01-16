@@ -30,6 +30,12 @@
     }
   }
 
+  .variationCodeBlockTester {
+    padding: theme.spacing(3);
+    border-top: 1px solid theme.color('border');
+    border-bottom: 1px solid theme.color('border');
+  }
+
   .variationCodeBlockContent {
     flex: 1;
   }

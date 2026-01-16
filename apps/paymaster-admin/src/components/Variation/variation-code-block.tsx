@@ -94,16 +94,16 @@ export const VariationCodeBlock = ({
           <div className={styles.variationCodeBlockFooter}>
             <div className={styles.variationCodeBlockFooterInfo}>
               <Badge variant="success" size="xs">
-                All passed <ChecksIcon />
+                Valid format <ChecksIcon />
               </Badge>
-            </div>
-            <div className={styles.variationCodeBlockFooterTest}>
-              {/* TODO: currently the variation input is disconnected from the code editor. We should figure out the right way to connect these. */}
-              <VariationTester domain={domain} variation={variation} />
             </div>
             <div className={styles.variationCodeBlockFooterButtons}>
               <Button variant="secondary">Save</Button>
             </div>
+          </div>
+          <div className={styles.variationCodeBlockTester}>
+            {/* TODO: currently the variation input is disconnected from the code editor. We should figure out the right way to connect these. */}
+            <VariationTester domain={domain} variation={variation} />
           </div>
         </motion.div>
       )}

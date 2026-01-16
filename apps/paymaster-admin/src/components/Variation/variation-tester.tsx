@@ -56,38 +56,46 @@ export const VariationTester = (props: VariationTesterProps) => {
 
   return (
     <div className={styles.variationTester ?? ""}>
-      <TextField
-        value={transaction}
-        onChange={setTransaction}
-        placeholder="Enter serialized tx or tx hash"
-        className={styles.variationTesterInput ?? ""}
-      />
-      <AnimatePresence>
-        {validationResult && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-          >
-            <span title={validationMessage}>
-              <Badge
-                variant={validationResult === 'valid' ? 'success' : 'error'}
-                size="xs"
-              >
-                {validationResult === 'valid' ? (
+      <div className={styles.variationTesterInputRow ?? ""}>
+        <TextField
+          value={transaction}
+          onChange={setTransaction}
+          placeholder="Enter serialized tx or tx hash"
+          double={true}
+          className={styles.variationTesterInput ?? ""}
+        />
+        <AnimatePresence>
+          {validationResult && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <span title={validationMessage}>
+                <Badge
+                  variant={validationResult === 'valid' ? 'success' : 'error'}
+                  size="xs"
+                >
+                  {validationResult === 'valid' ? (
                 <CheckCircleIcon weight="duotone" />
-                ) : (
-                <XCircleIcon weight="duotone" />
-                )}
-              </Badge>
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <Button variant="secondary" onClick={handleTest}>
-        Test
-      </Button>
+                  ) : (
+                  <XCircleIcon weight="duotone" />
+                  )}
+                </Badge>
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <Button variant="secondary" onClick={handleTest}>
+          Test
+        </Button>
+      </div>
+      {validationResult && validationMessage && (
+        <span className={styles.variationTesterOutputMessage ?? ""}>
+          {validationMessage}
+        </span>
+      )}
     </div>
   )
 }
