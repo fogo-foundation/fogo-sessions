@@ -619,8 +619,14 @@ async fn compute_contextual_keys(
     network: Network,
     sponsor_override: Option<Pubkey>,
 ) -> Result<ContextualDomainKeys> {
+    let sponsor = if let Some(sponsor) = sponsor_override {
+        sponsor
+    } else {
+        fetch_sponsor_pubkey(domain, network).await?
+    };
+
     Ok(ContextualDomainKeys {
         domain_registry: get_domain_record_address(domain),
-        sponsor: sponsor_override.unwrap_or(fetch_sponsor_pubkey(domain, network).await?),
+        sponsor,
     })
 }
