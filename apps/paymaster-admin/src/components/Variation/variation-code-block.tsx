@@ -98,6 +98,7 @@ export const VariationCodeBlock = ({
               </Badge>
             </div>
             <div className={styles.variationCodeBlockFooterTest}>
+              {/* TODO: currently the variation input is disconnected from the code editor. We should figure out the right way to connect these. */}
               <VariationTester domain={domain} variation={variation} />
             </div>
             <div className={styles.variationCodeBlockFooterButtons}>

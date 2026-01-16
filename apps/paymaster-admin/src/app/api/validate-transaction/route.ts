@@ -15,11 +15,12 @@ export async function POST(req: NextRequest) {
   await writeFile(tempPath, generateConfigToml(domain, variation));
 
   try {
+    // TODO: need to figure out how to fix the sponsor issue, handling both registered and unregistered domains
     const command = `paymaster-tx-validator validate --config ${tempPath} --transaction "${transaction}" --domain ${domain} --variation ${variation.name} --sponsor 11111111111111111111111111111111`;
-    const { stdout, stderr } = await execAsync(command);
+    const { stdout } = await execAsync(command);
 
     const success = stdout.includes('✅ Matches');
-    const message = JSON.parse(stdout).message;
+    const message = stdout;
 
     if (success) {
       return NextResponse.json({ success: true, message });
@@ -29,8 +30,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     return NextResponse.json({ success: false, message: `Error validating transaction: ${(error as Error).message}` });
   } finally {
-    console.log("DONE");
-    // await unlink(tempPath);
+    await unlink(tempPath);
   }
 }
 
