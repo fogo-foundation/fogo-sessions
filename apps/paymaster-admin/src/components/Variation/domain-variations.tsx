@@ -1,6 +1,7 @@
+import { StackIcon } from "@phosphor-icons/react/dist/ssr";
 import type { App, DomainConfig } from "../../db-schema";
 import BreadcrumbNav from "../BreadcrumbNav";
-import { DomainSettingsButton } from "../Domain/domain-settings-modal";
+import { DomainSettings } from "../DomainSettings";
 import { ListHeader } from "../ListHeader";
 import styles from "./domain-variations.module.scss";
 import VariationsList from "./variations-list";
@@ -30,16 +31,25 @@ export const DomainVariation = (props: DomainVariationProps) => {
         ]}
         title={props.isLoading ? undefined : props.domainConfig.domain}
         titleLoading={props.isLoading}
-        action={<DomainSettingsButton />}
       />
       <div className={styles.container}>
-        <ListHeader
-          title="Variation"
-          isLoading={props.isLoading}
-          {...(!props.isLoading && {
-            count: props.domainConfig.variations.length,
-          })}
-        />
+        {props.isLoading ? (
+          <DomainSettings isLoading />
+        ) : (
+          <DomainSettings domainConfig={props.domainConfig} />
+        )}
+        {props.isLoading ? (
+          <ListHeader isLoading />
+        ) : (
+          <ListHeader
+            title="Variations"
+            icon={<StackIcon size={24} weight="duotone" />}
+            isLoading={props.isLoading}
+            {...(!props.isLoading && {
+              count: props.domainConfig.variations.length,
+            })}
+          />
+        )}
         {props.isLoading ? (
           <VariationsList isLoading />
         ) : (
