@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@fogo/component-library/Button";
 import { Badge } from "@fogo/component-library/Badge";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
-import { AnimatePresence, motion } from "motion/react";
 import styles from "./variation-tester.module.scss";
 
 type VariationTesterProps = {
@@ -64,37 +63,28 @@ export const VariationTester = (props: VariationTesterProps) => {
           double={true}
           className={styles.variationTesterInput ?? ""}
         />
-        <AnimatePresence>
-          {validationResult && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <span title={validationMessage}>
-                <Badge
-                  variant={validationResult === 'valid' ? 'success' : 'error'}
-                  size="xs"
-                >
-                  {validationResult === 'valid' ? (
-                <CheckCircleIcon weight="duotone" />
-                  ) : (
-                  <XCircleIcon weight="duotone" />
-                  )}
-                </Badge>
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
         <Button variant="secondary" onClick={handleTest}>
           Test
         </Button>
       </div>
       {validationResult && validationMessage && (
-        <span className={styles.variationTesterOutputMessage ?? ""}>
-          {validationMessage}
-        </span>
+        <div
+          className={styles.variationTesterOutput ?? ""}
+        >
+          <Badge
+            variant={validationResult === 'valid' ? 'success' : 'error'}
+            size="xs"
+          >
+            {validationResult === 'valid' ? (
+              <CheckCircleIcon weight="duotone" />
+            ) : (
+              <XCircleIcon weight="duotone" />
+            )}
+          </Badge>
+          <span className={styles.variationTesterOutputMessage ?? ""}>
+            {validationMessage}
+          </span>
+        </div>
       )}
     </div>
   )

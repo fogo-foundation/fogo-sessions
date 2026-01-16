@@ -23,33 +23,20 @@
     word-wrap: break-word;
     white-space: pre-wrap;
   }
+}
 
-  .tooltip {
-    background-color: theme.color('foreground');
-    color: theme.color('background');
-    padding: theme.spacing(2) theme.spacing(3);
-    border-radius: theme.border-radius('md');
-    font-size: theme.font-size('xs');
-    max-width: 300px;
-    word-wrap: break-word;
-    @include theme.elevation('primary', 3);
-  }
+.variationTesterOutput {
+  display: flex;
+  align-items: flex-start;
+  gap: theme.spacing(2);
+  padding: theme.spacing(3);
 
-  .variationTesterOutput {
-    display: flex;
-    align-items: center;
-    gap: theme.spacing(2);
-    margin-top: theme.spacing(3);
-    padding: theme.spacing(3);
-    background-color: theme.color('card-muted');
-    border-radius: theme.border-radius('md');
-    overflow: hidden;
-
-    .variationTesterOutputMessage {
-      @include theme.text('sm', 'normal');
-      color: theme.color('foreground');
-      word-break: break-word;
-      flex: 1;
-    }
+  .variationTesterOutputMessage {
+    @include theme.text('sm', 'normal');
+    color: theme.color('foreground');
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.4;
+    flex: 1;
   }
 }
