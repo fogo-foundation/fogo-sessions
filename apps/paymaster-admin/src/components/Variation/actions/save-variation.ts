@@ -1,45 +1,107 @@
 "use server";
 
-import { headers } from "next/headers";
+import { verifyLogInToken } from "@fogo/sessions-sdk";
+import { revalidateTag } from "next/cache";
 import { parse } from "smol-toml";
 import { z } from "zod";
-import { sql } from "../../../config/neon";
+import { TransactionVariations } from "../../../db-schema";
+import { connection } from "../../../fogo-connection";
+import {
+  createVariation as createVariationPaymaster,
+  updateVariation as updateVariationPaymaster,
+} from "../../../server/paymaster";
 
-const schema = z.object({
-  variationId: z.string().uuid({ message: "Invalid variation ID" }),
-  domainConfigId: z.string().uuid({ message: "Invalid domain config ID" }),
+const variationSchema = z.object({
+  isEditingJson: z.boolean(),
   name: z.string().min(1, { message: "Name is required" }),
-  maxGasSpend: z
-    .string()
-    .min(1, { message: "Max gas spend is required" })
-    .transform((val) => {
-      const num = Number(val);
-      if (Number.isNaN(num) || num < 0) {
-        throw new Error("Max gas spend must be a valid non-negative number");
-      }
-      return num;
-    }),
-  code: z.string().min(1, { message: "Code is required" }),
+  maxGasSpend: z.coerce
+    .number()
+    .min(1, { message: "Max gas spend is required" }),
+  code: z.string(),
 });
 
-export const saveVariation = async (
-  { variationId, sessionToken }: { variationId: string; sessionToken: string },
+export const updateVariation = async (
+  {
+    variationId,
+    sessionToken,
+    isEditingJson,
+  }: { variationId: string; sessionToken: string; isEditingJson: boolean },
   _prevState: unknown,
   formData: FormData,
 ) => {
   "use server";
-  console.log(_prevState, formData);
-  // const validatedFields = schema.safeParse({
-  //   variationId: formData.get("variationId"),
-  //   domainConfigId: formData.get("domainConfigId"),
-  //   name: formData.get("name"),
-  //   maxGasSpend: formData.get("maxGasSpend"),
-  //   code: formData.get("code"),
-  // });
-  // console.log(validatedFields, formData);
-  // if (!validatedFields.success) {
-  //   return {
-  //     errors: validatedFields.error.flatten().fieldErrors,
-  //   };
-  // }
+  const sessionAccount = await verifyLogInToken(sessionToken, connection);
+  const userAddress = sessionAccount?.user.toString();
+  if (!userAddress) {
+    throw new Error("User not found");
+  }
+  const validatedFields = variationSchema.parse({
+    name: formData.get("name"),
+    maxGasSpend: formData.get("maxGasSpend"),
+    code: formData.get("code"),
+    isEditingJson,
+  });
+
+  const code = isEditingJson
+    ? JSON.parse(validatedFields.code)
+    : (
+        parse(validatedFields.code) as {
+          domains: {
+            tx_variations: { instructions: TransactionVariations };
+          };
+        }
+      ).domains.tx_variations.instructions;
+
+  await updateVariationPaymaster(userAddress, variationId, {
+    name: validatedFields.name,
+    maxGasSpend: validatedFields.maxGasSpend,
+    transactionVariation: TransactionVariations.parse(code),
+  });
+
+  revalidateTag("user-data", "max");
+
+  return { success: true };
+};
+
+export const createVariation = async (
+  {
+    domainConfigId,
+    sessionToken,
+    isEditingJson,
+  }: { domainConfigId: string; sessionToken: string; isEditingJson: boolean },
+  _prevState: unknown,
+  formData: FormData,
+) => {
+  "use server";
+  const sessionAccount = await verifyLogInToken(sessionToken, connection);
+  const userAddress = sessionAccount?.user.toString();
+  if (!userAddress) {
+    throw new Error("User not found");
+  }
+  const validatedFields = variationSchema.parse({
+    name: formData.get("name"),
+    maxGasSpend: formData.get("maxGasSpend"),
+    code: formData.get("code"),
+    isEditingJson,
+  });
+
+  const code = isEditingJson
+    ? JSON.parse(validatedFields.code)
+    : (
+        parse(validatedFields.code) as {
+          domains: {
+            tx_variations: { instructions: TransactionVariations };
+          };
+        }
+      ).domains.tx_variations.instructions;
+
+  await createVariationPaymaster(userAddress, domainConfigId, {
+    name: validatedFields.name,
+    maxGasSpend: validatedFields.maxGasSpend,
+    transactionVariation: TransactionVariations.parse(code),
+  });
+
+  revalidateTag("user-data", "max");
+
+  return { success: true };
 };

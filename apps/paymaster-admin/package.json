@@ -32,6 +32,7 @@
     "react-dom": "catalog:",
     "smol-toml": "catalog:",
     "swr": "catalog:",
+    "uuid": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

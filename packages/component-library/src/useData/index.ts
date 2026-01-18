@@ -2,6 +2,8 @@ import { useCallback } from "react";
 import type { KeyedMutator } from "swr";
 import useSWR from "swr";
 
+export { useSWRConfig as useDataConfig } from "swr";
+
 export const useData = <T>(...args: Parameters<typeof useSWR<T>>) => {
   const { data, isLoading, mutate, ...rest } = useSWR(...args);
 

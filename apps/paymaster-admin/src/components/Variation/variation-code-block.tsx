@@ -1,24 +1,19 @@
 import { Button } from "@fogo/component-library/Button";
-import {
-  ArrowsInIcon,
-  ArrowsOutIcon,
-  ChecksIcon,
-  SpinnerIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { useToast } from "@fogo/component-library/Toast";
+import { ArrowsInIcon, ArrowsOutIcon } from "@phosphor-icons/react/dist/ssr";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import AceEditor from "react-ace";
+import "./ace-theme.scss";
 import styles from "./variation-code-block.module.scss";
 import "ace-builds/src-noconflict/theme-monokai";
-import "./ace-theme.scss";
-import { Badge } from "@fogo/component-library/Badge";
-import { useToast } from "@fogo/component-library/Toast";
 
 type VariationCodeBlockProps = {
   value: string;
   onChange: (value: string) => void;
   isExpanded: boolean;
   footer: React.ReactNode;
+  mode: "toml" | "json";
 };
 
 export const VariationCodeBlock = ({
@@ -26,6 +21,7 @@ export const VariationCodeBlock = ({
   onChange,
   isExpanded,
   footer,
+  mode,
 }: VariationCodeBlockProps) => {
   const toast = useToast();
 
@@ -82,11 +78,12 @@ export const VariationCodeBlock = ({
                 value={value}
                 onChange={onChange}
                 className={styles.variationCodeBlockEditor}
-                mode="toml"
+                mode={mode}
                 theme="monokai"
                 width="100%"
                 height={`${editorHeight}px`}
                 showPrintMargin={false}
+                aria-label="Variation code"
               />
             )}
           </div>
