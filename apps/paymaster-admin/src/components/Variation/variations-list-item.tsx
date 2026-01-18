@@ -13,6 +13,7 @@ import styles from "./variations-list-item.module.scss";
 
 type VariationListItemProps =
   | {
+      domain: string;
       variation: Variation;
       isLoading?: false;
     }
@@ -24,11 +25,11 @@ export const VariationListItem = (props: VariationListItemProps) => {
   return props.isLoading ? (
     <Skeleton className={styles.variationListItemSkeleton} />
   ) : (
-    <VariationForm variation={props.variation} />
+    <VariationForm domain={props.domain} variation={props.variation} />
   );
 };
 
-const VariationForm = ({ variation }: { variation: Variation }) => {
+const VariationForm = ({ domain, variation }: { domain: string; variation: Variation }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [name, setName] = useState(variation.name);
   const [code, setCode] = useState("");
@@ -67,6 +68,7 @@ const VariationForm = ({ variation }: { variation: Variation }) => {
       </div>
       <VariationCodeBlock
         isExpanded={isExpanded}
+        domain={domain}
         variation={variation}
         value={code}
         onChange={setCode}
