@@ -65,6 +65,8 @@ export const InstructionConstraintSchema = z.object({
   required: z.boolean(),
 });
 
+export const TransactionVariations = z.array(InstructionConstraintSchema);
+
 // Database variation schemas (version, name, max_gas_spend are separate columns)
 // The transaction_variation JSONB field contains different data based on version:
 // - v0: array of program pubkeys (whitelisted_programs)
@@ -83,7 +85,7 @@ export const VariationV1Schema = z.object({
   id: UUID,
   version: z.literal("v1"),
   name: z.string(),
-  transaction_variation: z.array(InstructionConstraintSchema),
+  transaction_variation: TransactionVariations,
   max_gas_spend: u64,
   created_at: TimeStr,
   updated_at: TimeStr,
@@ -132,3 +134,4 @@ export type User = z.infer<typeof UserSchema>;
 export type App = z.infer<typeof AppWithDomainConfigsSchema>;
 export type DomainConfig = z.infer<typeof DomainConfigWithVariationsSchema>;
 export type Variation = z.infer<typeof VariationSchema>;
+export type TransactionVariations = z.infer<typeof TransactionVariations>;

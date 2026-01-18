@@ -20,18 +20,24 @@ const VariationsList = (props: VariationsListProps) => {
       <VariationListItem isLoading />
     </div>
   ) : (
-    <GridList
-      className={styles.variationsList ?? ""}
-      aria-label="Variations"
-      layout="grid"
-      items={props.domainConfig.variations}
-    >
-      {(variation) => (
-        <GridListItem key={variation.id}>
-          <VariationListItem variation={variation} />
-        </GridListItem>
-      )}
-    </GridList>
+    <>
+      <GridList
+        className={styles.variationsList ?? ""}
+        aria-label="Variations"
+        layout="grid"
+        items={props.domainConfig.variations}
+      >
+        {(variation) => (
+          <GridListItem key={variation.id}>
+            <VariationListItem
+              variation={variation}
+              domainConfigId={props.domainConfig.id}
+            />
+          </GridListItem>
+        )}
+      </GridList>
+      <VariationListItem domainConfigId={props.domainConfig.id} />
+    </>
   );
 };
 

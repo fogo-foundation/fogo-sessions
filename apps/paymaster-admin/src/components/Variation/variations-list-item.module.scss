@@ -1,10 +1,12 @@
 @use '@fogo/component-library/theme';
 
 .variationListItem {
+  margin-top: theme.spacing(2);
   display: flex;
   gap: theme.spacing(2);
 
   .variationListCard {
+    all: unset;
     background-color: theme.color('card-muted');
     border-radius: theme.border-radius('lg');
     padding: 0 theme.spacing(3);
@@ -14,6 +16,11 @@
     gap: theme.spacing(3);
     height: theme.spacing(12);
     transition: border-radius 0.3s ease-in-out;
+    cursor: pointer;
+
+    & * {
+      pointer-events: none;
+    }
 
     &[data-is-expanded] {
       border-bottom-left-radius: 0;
@@ -21,11 +28,18 @@
       border-top-left-radius: theme.border-radius('lg');
       border-top-right-radius: theme.border-radius('lg');
     }
+    &[data-is-editable] {
+      cursor: auto;
+      & * {
+        pointer-events: auto;
+      }
+    }
   }
 }
 
 .variationListItemSkeleton {
   height: theme.spacing(12);
+  margin-top: theme.spacing(2);
 }
 
 .fieldVariationName {
@@ -38,4 +52,15 @@
   @include theme.breakpoint('sm') {
     width: theme.spacing(34);
   }
+}
+
+.variationFormFooterActions {
+  display: flex;
+  gap: theme.spacing(2);
+  align-items: center;
+}
+
+.variationFormFooterError {
+  @include theme.text('sm', 'normal');
+  color: theme.color('states', 'error', 'foreground');
 }

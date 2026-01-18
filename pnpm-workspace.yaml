@@ -95,6 +95,7 @@ catalog:
   react-dom: ^19.1.4
   sass: ^1.89.2
   sass-loader: ^16.0.5
+  smol-toml: ^1.6.0
   storybook: ^10.1.2
   stylelint: ^16.21.0
   style-loader: ^4.0.0
@@ -103,6 +104,7 @@ catalog:
   thread-stream: ^3.1.0
   turbo: ^2.5.4
   typescript: ^5.8.3
+  uuid: ^13.0.0
   vercel: ^50.1.5
   yargs: ^18.0.0
   zod: 3.25.67
