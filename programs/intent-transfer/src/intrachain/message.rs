@@ -102,7 +102,7 @@ mod tests {
             Signing this intent will transfer the tokens as described below.
 
             version: 0.2
-            chain_id: fogo
+            chain_id: foo
             token: FOGO
             amount: 42.676
             recipient: Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ
