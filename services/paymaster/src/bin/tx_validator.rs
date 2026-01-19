@@ -327,7 +327,13 @@ async fn validate_transactions(
 
         if show_validation_outcomes {
             if is_batch {
-                println!("Transaction {} ({})", idx + 1, tx.signatures.first().expect("Failed to access fee-payer signature"));
+                println!(
+                    "Transaction {} ({})",
+                    idx + 1,
+                    tx.signatures
+                        .first()
+                        .expect("Failed to access fee-payer signature")
+                );
             }
 
             if validations.is_empty() {

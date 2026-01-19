@@ -51,7 +51,12 @@ fn parse_pay_toll_instruction(instruction: &CompiledInstruction) -> anyhow::Resu
     let PayToll {
         amount,
         _recipient_id: _,
-    } = tollbooth::instruction::PayToll::try_from_slice(instruction.data.get(1..).expect("This branch only gets visited if instruction.data is not empty"))
-        .map_err(|_| anyhow::anyhow!("Failed to deserialize PayToll instruction"))?;
+    } = tollbooth::instruction::PayToll::try_from_slice(
+        instruction
+            .data
+            .get(1..)
+            .expect("This branch only gets visited if instruction.data is not empty"),
+    )
+    .map_err(|_| anyhow::anyhow!("Failed to deserialize PayToll instruction"))?;
     Ok(amount)
 }
