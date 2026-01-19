@@ -60,7 +60,8 @@ mod resizable_account_array {
             let new = bytemuck::from_bytes_mut(
                 data.get_mut(data_len - size_of::<T>()..)
                     .expect("data_len >= size_of::<T>() after extend"),
-            ) * new = value;
+            );
+            *new = value;
             Ok(())
         }
 
