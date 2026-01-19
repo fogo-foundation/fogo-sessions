@@ -347,10 +347,11 @@ async fn sponsor_and_send_handler(
         bincode::serde::decode_from_slice(&transaction_bytes, bincode::config::standard())
             .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
+    let fee_payer = transaction.message.static_account_keys().get(0).ok_or_else(|| (StatusCode::BAD_REQUEST, "The transaction must have a fee payer"))?;
     let transaction_sponsor: &Keypair = domain_state
         .sponsors
         .iter()
-        .find(|sponsor| sponsor.pubkey() == transaction.message.static_account_keys()[0])
+        .find(|sponsor| sponsor.pubkey() == *fee_payer)
         .ok_or_else(|| -> (StatusCode, String) {
             let status_code = StatusCode::BAD_REQUEST;
             obs_validation(domain.clone(), None, status_code.to_string());
@@ -364,7 +365,7 @@ async fn sponsor_and_send_handler(
                         .map(|sponsor| sponsor.pubkey().to_string())
                         .collect::<Vec<_>>()
                         .join(","),
-                    transaction.message.static_account_keys()[0],
+                    fee_payer,
                 ),
             )
         })?;
