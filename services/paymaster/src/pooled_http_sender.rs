@@ -55,7 +55,7 @@ impl PooledHttpSender {
                             .timeout(timeout)
                             .pool_idle_timeout(timeout)
                             .build()
-                            .expect("build rpc client"),
+                            .expect("Failed to create RPC client"),
                     )
                     .build(),
                 )

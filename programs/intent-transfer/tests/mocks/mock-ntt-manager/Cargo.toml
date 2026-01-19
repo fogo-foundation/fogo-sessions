@@ -13,6 +13,3 @@ spl-token = {workspace = true}
 
 [features]
 no-entrypoint = []
-
-[lints]
-workspace = true
