@@ -1,5 +1,8 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
-#![allow(clippy::used_underscore_binding, reason = "_recipient_id is not used in the program logic")]
+#![allow(
+    clippy::used_underscore_binding,
+    reason = "_recipient_id is not used in the program logic"
+)]
 
 use crate::error::TollboothError;
 use anchor_lang::prelude::*;
