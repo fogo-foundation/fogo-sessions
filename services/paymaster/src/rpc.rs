@@ -75,10 +75,8 @@ impl From<ConfirmationResultInternal> for ConfirmationResult {
     }
 }
 
-/// A wrapper around `VersionedTransaction` that guarantees the transaction has been signed.
-pub struct SignedVersionedTransaction {
-    transaction: VersionedTransaction,
-}
+/// A wrapper around `VersionedTransaction` that guarantees the transaction has been signed by its fee payer (first signature slot).
+pub struct SignedVersionedTransaction(VersionedTransaction);
 
 impl SignedVersionedTransaction {
     /// Creates a new SignedVersionedTransaction by adding the signature to the transaction.
@@ -90,21 +88,21 @@ impl SignedVersionedTransaction {
         *transaction.signatures.get_mut(0).ok_or_else(|| {
             anyhow::anyhow!("Transaction must have at least one signature slot")
         })? = signature;
-        Ok(Self { transaction })
+        Ok(Self(transaction))
     }
 
-    /// Returns the primary signature of the transaction.
+    /// Returns the fee-payer signature of the transaction.
     pub fn signature(&self) -> &Signature {
-        self.transaction
+        self.0
             .signatures
             .get(0)
-            .expect("SignedVersionedTransaction is guaranteed to have at least one signature")
+            .expect("SignedVersionedTransaction is guaranteed to have at least one signature slot")
     }
 }
 
 impl AsRef<VersionedTransaction> for SignedVersionedTransaction {
     fn as_ref(&self) -> &VersionedTransaction {
-        &self.transaction
+        &self.0
     }
 }
 
