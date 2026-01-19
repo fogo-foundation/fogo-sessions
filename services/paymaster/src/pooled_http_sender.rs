@@ -74,12 +74,13 @@ impl PooledHttpSender {
         let mut default_headers = header::HeaderMap::new();
         default_headers.append(
             header::HeaderName::from_static("solana-client"),
-            header::HeaderValue::from_str("paymaster").unwrap(),
+            header::HeaderValue::from_static("paymaster"),
         );
         default_headers
     }
 }
 
+#[allow(clippy::unwrap_used)]
 #[async_trait]
 impl RpcSender for PooledHttpSender {
     async fn send(
