@@ -23,7 +23,7 @@ import { Form } from "react-aria-components";
 import { parse, stringify } from "smol-toml";
 import { ZodError } from "zod";
 import { TransactionVariations, type Variation } from "../../db-schema";
-import { createVariation, updateVariation } from "./actions/save-variation";
+import { createVariation, updateVariation } from './actions/variation';
 import { DeleteVariationButton } from "./delete-variation-button";
 import { VariationCodeBlock } from "./variation-code-block";
 import styles from "./variations-list-item.module.scss";
@@ -66,48 +66,54 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
     variation?.max_gas_spend?.toString() ?? "",
   );
 
-
   const baselineRef = useRef<{
     name: string;
     maxGasSpend: string;
     code: string;
   } | null>({
     name,
-    maxGasSpend: variation?.max_gas_spend?.toString() ?? "",
+    maxGasSpend: variation?.max_gas_spend?.toString() ?? '',
     code,
   });
-  
+
   useEffect(() => {
     if (variation?.id) {
-      setName(variation?.name ?? "");
-      setMaxGasSpend(variation?.max_gas_spend?.toString() ?? "");
+      setName(variation?.name ?? '');
+      setMaxGasSpend(variation?.max_gas_spend?.toString() ?? '');
       setCode(
-        variation?.version === "v0" || isEditingJson
+        variation?.version === 'v0' || isEditingJson
           ? JSON.stringify(variation?.transaction_variation, null, 2)
-          : generateEditableToml(variation?.transaction_variation),
+          : generateEditableToml(variation?.transaction_variation)
       );
       baselineRef.current = {
-        name: variation?.name ?? "",
-        maxGasSpend: variation?.max_gas_spend?.toString() ?? "",
+        name: variation?.name ?? '',
+        maxGasSpend: variation?.max_gas_spend?.toString() ?? '',
         code:
-          variation?.version === "v0" || isEditingJson
+          variation?.version === 'v0' || isEditingJson
             ? JSON.stringify(variation?.transaction_variation, null, 2)
             : generateEditableToml(variation?.transaction_variation),
       };
     }
-  }, [variation, isEditingJson]);
+  }, [
+    variation?.id,
+    variation?.name,
+    variation?.max_gas_spend,
+    variation?.transaction_variation,
+    isEditingJson,
+  ]);
+
   const wrappedUpdateVariation = useCallback(
     async (...args: [unknown, FormData]) => {
       if (isEstablished(sessions)) {
         const sessionToken = await sessions.createLogInToken();
         return updateVariation
           .bind(null, {
-            variationId: variation?.id ?? "",
+            variationId: variation?.id ?? '',
             isEditingJson,
             sessionToken,
           })(...args)
           .then((result) => {
-            mutate(["user-data", sessions.walletPublicKey.toBase58()]);
+            mutate(['user-data', sessions.walletPublicKey.toBase58()]);
             toast.success(`Variation ${name} updated!`);
             setIsExpanded(false);
             return result;
@@ -116,7 +122,7 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
         return;
       }
     },
-    [sessions, isEditingJson, variation?.id, name, mutate, toast.success],
+    [sessions, isEditingJson, variation?.id, name, mutate, toast.success]
   );
 
   const wrappedCreateVariation = useCallback(
@@ -129,8 +135,10 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
             isEditingJson,
             sessionToken,
           })(...args)
+          .then(() =>
+            mutate(['user-data', sessions.walletPublicKey.toBase58()])
+          )
           .then((result) => {
-            mutate(["user-data", sessions.walletPublicKey.toBase58()]);
             toast.success(`Variation ${name} created!`);
             setIsExpanded(false);
             return result;
@@ -139,7 +147,7 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
         return;
       }
     },
-    [sessions, domainConfigId, isEditingJson, name, mutate, toast.success],
+    [sessions, domainConfigId, isEditingJson, name, mutate, toast.success]
   );
 
   const [, formAction, isSubmitting] = useActionState(

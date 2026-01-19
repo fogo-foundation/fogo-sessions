@@ -1,0 +1,19 @@
+@use '@fogo/component-library/theme';
+
+.confirmModal {
+  background-color: theme.color('card');
+  .confirmModalHeader {
+
+    .confirmModalHeaderAltText {
+
+    }
+
+    .confirmModalHeaderTitle {
+
+    }
+
+    .confirmModalHeaderSubtitle {
+
+    }
+  }
+}

@@ -134,3 +134,25 @@ export const createVariation = async (
 
   return true;
 };
+
+export const deleteVariation = async (
+  walletAddress: string,
+  variationId: string
+) => {
+  const [variation] = await sql`
+    DELETE FROM variation v
+    JOIN domain_config dc ON dc.id = v.domain_config_id
+    JOIN app a ON a.id = dc.app_id
+    JOIN "user" u ON u.id = a.user_id
+    WHERE v.id = ${variationId}
+    AND dc.app_id = a.id
+    AND a.user_id = u.id
+    AND u.wallet_address = ${walletAddress}
+  `;
+
+  if (!variation) {
+    throw new Error('Not found or not authorized');
+  }
+
+  return true;
+};

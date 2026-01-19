@@ -1,22 +1,23 @@
-"use server";
+'use server';
 
-import { verifyLogInToken } from "@fogo/sessions-sdk";
-import { revalidateTag } from "next/cache";
-import { parse } from "smol-toml";
-import { z } from "zod";
-import { TransactionVariations } from "../../../db-schema";
-import { connection } from "../../../fogo-connection";
+import { verifyLogInToken } from '@fogo/sessions-sdk';
+import { revalidateTag } from 'next/cache';
+import { parse } from 'smol-toml';
+import { z } from 'zod';
+import { TransactionVariations } from '../../../db-schema';
+import { connection } from '../../../fogo-connection';
 import {
   createVariation as createVariationPaymaster,
+  deleteVariation as deleteVariationPaymaster,
   updateVariation as updateVariationPaymaster,
-} from "../../../server/paymaster";
+} from '../../../server/paymaster';
 
 const variationSchema = z.object({
   isEditingJson: z.boolean(),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().min(1, { message: 'Name is required' }),
   maxGasSpend: z.coerce
     .number()
-    .min(1, { message: "Max gas spend is required" }),
+    .min(1, { message: 'Max gas spend is required' }),
   code: z.string(),
 });
 
@@ -27,18 +28,18 @@ export const updateVariation = async (
     isEditingJson,
   }: { variationId: string; sessionToken: string; isEditingJson: boolean },
   _prevState: unknown,
-  formData: FormData,
+  formData: FormData
 ) => {
-  "use server";
+  'use server';
   const sessionAccount = await verifyLogInToken(sessionToken, connection);
   const userAddress = sessionAccount?.user.toString();
   if (!userAddress) {
-    throw new Error("User not found");
+    throw new Error('User not found');
   }
   const validatedFields = variationSchema.parse({
-    name: formData.get("name"),
-    maxGasSpend: formData.get("maxGasSpend"),
-    code: formData.get("code"),
+    name: formData.get('name'),
+    maxGasSpend: formData.get('maxGasSpend'),
+    code: formData.get('code'),
     isEditingJson,
   });
 
@@ -58,7 +59,7 @@ export const updateVariation = async (
     transactionVariation: TransactionVariations.parse(code),
   });
 
-  revalidateTag("user-data", "max");
+  revalidateTag('user-data', 'max');
 
   return { success: true };
 };
@@ -70,18 +71,18 @@ export const createVariation = async (
     isEditingJson,
   }: { domainConfigId: string; sessionToken: string; isEditingJson: boolean },
   _prevState: unknown,
-  formData: FormData,
+  formData: FormData
 ) => {
-  "use server";
+  'use server';
   const sessionAccount = await verifyLogInToken(sessionToken, connection);
   const userAddress = sessionAccount?.user.toString();
   if (!userAddress) {
-    throw new Error("User not found");
+    throw new Error('User not found');
   }
   const validatedFields = variationSchema.parse({
-    name: formData.get("name"),
-    maxGasSpend: formData.get("maxGasSpend"),
-    code: formData.get("code"),
+    name: formData.get('name'),
+    maxGasSpend: formData.get('maxGasSpend'),
+    code: formData.get('code'),
     isEditingJson,
   });
 
@@ -101,7 +102,24 @@ export const createVariation = async (
     transactionVariation: TransactionVariations.parse(code),
   });
 
-  revalidateTag("user-data", "max");
+  revalidateTag('user-data', 'max');
+
+  return { success: true };
+};
+
+export const deleteVariation = async (
+  { variationId, sessionToken }: { variationId: string; sessionToken: string },
+  _prevState: unknown
+) => {
+  'use server';
+  const sessionAccount = await verifyLogInToken(sessionToken, connection);
+  const userAddress = sessionAccount?.user.toString();
+  if (!userAddress) {
+    throw new Error('User not found');
+  }
+  await deleteVariationPaymaster(userAddress, variationId);
+
+  revalidateTag('user-data', 'max');
 
   return { success: true };
 };

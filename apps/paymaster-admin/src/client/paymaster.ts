@@ -1,6 +1,6 @@
 import { useData } from "@fogo/component-library/useData";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
-import { useCallback } from "react";
+import { useCallback, useMemo } from 'react';
 
 import type { User } from "../db-schema";
 import { UserSchema } from "../db-schema";
