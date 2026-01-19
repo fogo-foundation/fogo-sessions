@@ -80,6 +80,10 @@ impl PooledHttpSender {
     }
 }
 
+#[allow(
+    clippy::indexing_slicing,
+    reason = "This is based on solana_rpc_client::http_sender"
+)]
 #[async_trait]
 impl RpcSender for PooledHttpSender {
     async fn send(
