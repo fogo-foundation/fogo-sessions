@@ -1,7 +1,7 @@
+import type { Network } from "@fogo/sessions-sdk";
 import {
   bridgeOut,
   getBridgeOutFee,
-  Network,
   TransactionResultType,
 } from "@fogo/sessions-sdk";
 import type { FormEvent, FormEventHandler } from "react";

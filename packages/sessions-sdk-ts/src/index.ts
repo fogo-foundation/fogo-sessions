@@ -2,6 +2,7 @@ import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider, BorshAccountsCoder } from "@coral-xyz/anchor";
 import {
   DomainRegistryIdl,
+  IntentTransferIdl,
   IntentTransferProgram,
   SessionManagerIdl,
   SessionManagerProgram,
@@ -21,13 +22,13 @@ import {
 } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type {
+  Connection,
   TransactionError,
   TransactionInstruction,
   VersionedTransaction,
 } from "@solana/web3.js";
 import {
   ComputeBudgetProgram,
-  Connection,
   Ed25519Program,
   Keypair,
   PublicKey,
@@ -942,6 +943,7 @@ export const sendNativeTransfer = async (
             options.feeConfig.mint,
             options.walletPublicKey,
           ),
+          feeDestination: IntentTransferIdl.address,
           source: options.walletPublicKey,
           destination: options.recipient,
           sponsor: options.context.internalPayer,

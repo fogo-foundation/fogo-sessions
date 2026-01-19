@@ -47,6 +47,10 @@ enum Commands {
         #[arg(short, long)]
         domain: Option<String>,
 
+        /// Transaction variation to check against (if not provided, checks all variations in scope)
+        #[arg(short, long, requires = "domain")]
+        variation: Option<String>,
+
         /// Fogo network to target, this determines the paymaster instance and the default RPC endpoint to use.
         #[arg(long, value_enum, default_value_t = Network::Testnet)]
         network: Network,
@@ -109,8 +113,6 @@ pub fn load_file_config(config_path: &str) -> Result<Config> {
     Ok(config)
 }
 
-type Domains = HashMap<String, HashMap<String, ParsedTransactionVariation>>;
-
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -119,6 +121,7 @@ async fn main() -> Result<()> {
         Commands::Validate {
             config,
             domain,
+            variation,
             network,
             sponsor,
             transaction_hash,
@@ -128,14 +131,7 @@ async fn main() -> Result<()> {
             rpc_url_http,
         } => {
             let config = load_file_config(&config)?;
-            let domains: Domains = get_domains_for_validation(config, &domain)
-                .into_iter()
-                .map(
-                    |Domain { domain, tx_variations, enable_session_management, .. }| -> Result<(String, HashMap<String, ParsedTransactionVariation>)> {
-                        Ok((domain, Domain::into_parsed_transaction_variations(tx_variations, enable_session_management)?))
-                    },
-                )
-                .collect::<Result<Domains>>()?;
+            let domains = get_domains_for_validation(config, &domain, &variation)?;
             let rpc_url_http =
                 rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
@@ -169,6 +165,7 @@ async fn main() -> Result<()> {
                 &chain_index,
                 &contextual_keys_cache,
                 is_batch,
+                variation.is_some(),
                 true,
             )
             .await;
@@ -182,11 +179,17 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+type Domains = HashMap<String, HashMap<String, ParsedTransactionVariation>>;
+
+/// Extracts from the config the domains to use in validation.
+/// If `domain` is specified, only returns that domain's variations.
+/// If `variation` is specified, filters out all other variations.
 fn get_domains_for_validation(
     config: fogo_paymaster::config_manager::config::Config,
     domain: &Option<String>,
-) -> Vec<Domain> {
-    if let Some(domain_name) = domain {
+    variation: &Option<String>,
+) -> Result<Domains> {
+    let domains = if let Some(domain_name) = domain {
         vec![config
             .domains
             .into_iter()
@@ -194,7 +197,28 @@ fn get_domains_for_validation(
             .expect("Specified domain not found in config")]
     } else {
         config.domains
-    }
+    };
+
+    domains
+        .into_iter()
+        .map(
+            |Domain {
+                 domain,
+                 tx_variations,
+                 enable_session_management,
+                 ..
+             }| {
+                let parsed_transaction_variations = Domain::into_parsed_transaction_variations(
+                    tx_variations,
+                    enable_session_management,
+                )?
+                .into_iter()
+                .filter(|(_, v)| variation.as_ref().is_none_or(|name| v.name() == name))
+                .collect();
+                Ok((domain, parsed_transaction_variations))
+            },
+        )
+        .collect()
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -253,7 +277,8 @@ async fn validate_transactions(
     chain_index: &ChainIndex,
     contextual_keys_cache: &ContextualKeysCache,
     is_batch: bool,
-    verbose: bool,
+    show_validation_details: bool,
+    show_validation_outcomes: bool,
 ) -> (HashMap<(String, String), usize>, usize) {
     let mut validation_stream = transactions
         .iter()
@@ -267,6 +292,7 @@ async fn validate_transactions(
                         tx_variations,
                         chain_index,
                         contextual_keys_cache,
+                        show_validation_details,
                     )
                     .await
                     .unwrap_or_default();
@@ -299,7 +325,7 @@ async fn validate_transactions(
             }
         }
 
-        if verbose {
+        if show_validation_outcomes {
             if is_batch {
                 println!("Transaction {} ({})", idx + 1, tx.signatures[0]);
             }
@@ -464,6 +490,7 @@ async fn get_matching_variations<'a>(
     tx_variations: &'a HashMap<String, ParsedTransactionVariation>,
     chain_index: &ChainIndex,
     contextual_keys_cache: &ContextualKeysCache,
+    show_validation_details: bool,
 ) -> Result<Vec<&'a ParsedTransactionVariation>> {
     let mut matching_variations = Vec::new();
 
@@ -473,21 +500,41 @@ async fn get_matching_variations<'a>(
             TransactionToValidate::parse(transaction, chain_index, &HashMap::new()).await
         {
             match variation {
-                ParsedTransactionVariation::V0(v0_variation) => v0_variation
-                    .validate_transaction(&paymaster_transaction)
-                    .is_ok(),
+                ParsedTransactionVariation::V0(v0_variation) => {
+                    let validation = v0_variation.validate_transaction(&paymaster_transaction);
+                    if show_validation_details {
+                        match validation {
+                            Ok(()) => println!(
+                                "Validation against v0 variation {}: ✅",
+                                v0_variation.name
+                            ),
+                            Err((status_code, ref details)) => println!(
+                                "Validation against v0 variation {}: ❌ ({}) {}",
+                                v0_variation.name, status_code, details
+                            ),
+                        }
+                    }
+                    validation.is_ok()
+                }
                 ParsedTransactionVariation::V1(v1_variation) => {
-                    v1_variation
-                        .validate_compute_units(&paymaster_transaction)
-                        .is_ok()
-                        && (v1_variation
-                            .validate_instruction_constraints(
-                                &paymaster_transaction,
-                                &contextual_keys,
-                                chain_index,
-                            )
-                            .await
-                            .is_ok())
+                    let validation_compute_units =
+                        v1_variation.validate_compute_units(&paymaster_transaction);
+                    let validation_instruction_constraints = v1_variation
+                        .validate_instruction_constraints(
+                            &paymaster_transaction,
+                            &contextual_keys,
+                            chain_index,
+                        )
+                        .await;
+                    if show_validation_details {
+                        match (&validation_compute_units, &validation_instruction_constraints) {
+                            (Err((status_code, ref details_cu)), Ok(())) => println!("Validation against v1 variation {}: ❌ (Compute Units: {}) {}", v1_variation.name, status_code, details_cu),
+                            (Ok(()), Err((status_code, ref details_ic))) => println!("Validation against v1 variation {}: ❌ (Instruction Constraints: {}) {}", v1_variation.name, status_code, details_ic),
+                            (Err((status_code_cu, ref details_cu)), Err((status_code_ic, ref details_ic))) => println!("Validation against v1 variation {}: ❌ \n -(Compute Units: {}) {} \n -(Instruction Constraints: {}) {}", v1_variation.name, status_code_cu, details_cu, status_code_ic, details_ic),
+                            _ => println!("Validation against v1 variation {}: ✅", v1_variation.name),
+                        }
+                    }
+                    validation_compute_units.is_ok() && validation_instruction_constraints.is_ok()
                 } // TODO: make the tx validator fetch the paymaster fee coefficients so we can use validate_transaction here
             }
         } else {
@@ -572,8 +619,14 @@ async fn compute_contextual_keys(
     network: Network,
     sponsor_override: Option<Pubkey>,
 ) -> Result<ContextualDomainKeys> {
+    let sponsor = if let Some(sponsor) = sponsor_override {
+        sponsor
+    } else {
+        fetch_sponsor_pubkey(domain, network).await?
+    };
+
     Ok(ContextualDomainKeys {
         domain_registry: get_domain_record_address(domain),
-        sponsor: sponsor_override.unwrap_or(fetch_sponsor_pubkey(domain, network).await?),
+        sponsor,
     })
 }

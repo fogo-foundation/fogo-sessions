@@ -5,11 +5,8 @@ import {
   getAssociatedTokenAddressSync,
   NATIVE_MINT,
 } from "@solana/spl-token";
-import {
-  type PublicKey,
-  SystemProgram,
-  TransactionInstruction,
-} from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
+import { SystemProgram, TransactionInstruction } from "@solana/web3.js";
 
 const SESSION_WRAP_DISCRIMINATOR = 4_000_000;
 

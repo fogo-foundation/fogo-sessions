@@ -1,5 +1,17 @@
 # @fogo/sessions-idls
 
+## 0.1.2 (2026-01-15)
+
+### Fixes
+
+- separated typing-only imports from code imports to improve compatibility with certain bundlers and build systems
+
+## 0.1.1 (2026-01-15)
+
+### Fixes
+
+- Make native FOGO transfers fee exempt
+
 ## 0.1.0 (2026-01-11)
 
 ### Breaking Changes

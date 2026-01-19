@@ -1,5 +1,18 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.14 (2026-01-15)
+
+### Fixes
+
+- separated typing-only imports from code imports to improve compatibility with certain bundlers and build systems
+
+## 0.1.13 (2026-01-15)
+
+### Fixes
+
+- Add unwrap button to native mint
+- Make native FOGO transfers fee exempt
+
 ## 0.1.12 (2026-01-11)
 
 ### Features

@@ -1,4 +1,5 @@
-import { bridgeIn, Network } from "@fogo/sessions-sdk";
+import type { Network } from "@fogo/sessions-sdk";
+import { bridgeIn } from "@fogo/sessions-sdk";
 import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import type { Connection, PublicKey, TokenAmount } from "@solana/web3.js";
 import { SolanaJSONRPCError } from "@solana/web3.js";

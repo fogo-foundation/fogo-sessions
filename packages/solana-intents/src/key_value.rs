@@ -1,10 +1,10 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
-    character::complete::{anychar, char, line_ending, not_line_ending},
-    combinator::{eof, map, map_opt, opt, peek, recognize},
+    character::complete::{char, line_ending, not_line_ending},
+    combinator::{eof, map, map_opt, recognize},
     error::ParseError,
-    multi::many_till,
+    multi::many0,
     sequence::{delimited, preceded, separated_pair},
     AsChar, Compare, IResult, Input, Offset, ParseTo, Parser,
 };
@@ -56,19 +56,13 @@ where
             char(':'),
             alt((
                 delimited(tag(" "), not_line_ending, alt((line_ending, eof))),
-                delimited(
+                preceded(
                     line_ending,
-                    recognize(many_till(
-                        anychar,
-                        peek(alt((
-                            preceded(
-                                line_ending,
-                                take_while1(|c: <I as Input>::Item| c.as_char() != '-'),
-                            ),
-                            eof,
-                        ))),
-                    )),
-                    opt(line_ending),
+                    recognize(many0(delimited(
+                        tag("-"),
+                        not_line_ending,
+                        alt((line_ending, eof)),
+                    ))),
                 ),
                 eof,
             )),
@@ -190,14 +184,14 @@ mod tests {
         fn test_empty_value_after_newline_with_next_key() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo:\nbaz");
-            assert!(result.is_ok());
+            assert_eq!(result, Ok(("baz", ("foo", "".to_string()))));
         }
 
         #[test]
         fn test_value_after_newline_with_next_key() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo:\n-baz\nbaz");
-            assert_eq!(result, Ok(("baz", ("foo", "-baz".to_string()))))
+            assert_eq!(result, Ok(("baz", ("foo", "-baz\n".to_string()))))
         }
 
         #[test]
@@ -211,14 +205,14 @@ mod tests {
         fn test_multiline_value_with_next_key() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo:\n-baz\n-qux\nbaz");
-            assert_eq!(result, Ok(("baz", ("foo", "-baz\n-qux".to_string()))))
+            assert_eq!(result, Ok(("baz", ("foo", "-baz\n-qux\n".to_string()))))
         }
 
         #[test]
         fn test_multiline_value_stops_at_next_line_without_dash() {
             let result = key_value_with_key_type::<_, String, Error<&str>, _, _>(alphanumeric1)
                 .parse("foo:\n-baz\n-qux\n\nbaz");
-            assert_eq!(result, Ok(("\nbaz", ("foo", "-baz\n-qux".to_string()))))
+            assert_eq!(result, Ok(("\nbaz", ("foo", "-baz\n-qux\n".to_string()))))
         }
     }
 
