@@ -87,11 +87,9 @@ impl SignedVersionedTransaction {
         mut transaction: VersionedTransaction,
         signature: Signature,
     ) -> anyhow::Result<Self> {
-        *transaction
-            .signatures
-            .get_mut(0)
-            .ok_or_else(|| anyhow::anyhow!("Transaction must have at least one signature slot"))? =
-            signature;
+        *transaction.signatures.get_mut(0).ok_or_else(|| {
+            anyhow::anyhow!("Transaction must have at least one signature slot")
+        })? = signature;
         Ok(Self { transaction })
     }
 
@@ -262,7 +260,10 @@ pub async fn send_and_confirm_transaction(
     transaction: &SignedVersionedTransaction,
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
-    let signature = match rpc.send_transaction_with_config(transaction.as_ref(), config).await {
+    let signature = match rpc
+        .send_transaction_with_config(transaction.as_ref(), config)
+        .await
+    {
         Ok(sig) => {
             tracing::Span::current().record("result", "sent");
             sig
