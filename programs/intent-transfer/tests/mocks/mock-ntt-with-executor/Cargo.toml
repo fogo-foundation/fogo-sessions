@@ -12,3 +12,6 @@ anchor-lang = { workspace = true, features = ["init-if-needed"] }
 
 [features]
 no-entrypoint = []
+
+[lints]
+workspace = true

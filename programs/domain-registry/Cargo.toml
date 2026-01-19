@@ -19,3 +19,6 @@ idl-build = ["anchor-lang/idl-build"]
 anchor-lang = { workspace = true }
 bytemuck = { workspace = true, features = ["derive"] }
 fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs" }
+
+[lints]
+workspace = true
