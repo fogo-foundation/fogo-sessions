@@ -57,8 +57,10 @@ mod resizable_account_array {
 
             let data_len = self.acc_info.data_len();
             let mut data = self.acc_info.try_borrow_mut_data()?;
-            let new: &mut T = bytemuck::from_bytes_mut(&mut data[data_len - size_of::<T>()..]);
-            *new = value;
+            *bytemuck::from_bytes_mut(
+                data.get_mut(data_len - size_of::<T>()..)
+                    .expect("We just extended the account by size_of::<T>() so data_len should be at least size_of::<T>()"),
+            ) = value;
             Ok(())
         }
 

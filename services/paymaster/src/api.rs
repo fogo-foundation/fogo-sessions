@@ -350,8 +350,8 @@ async fn sponsor_and_send_handler(
     let fee_payer = transaction
         .message
         .static_account_keys()
-        .get(0)
-        .ok_or_else(|| {
+        .first()
+        .ok_or({
             (
                 StatusCode::BAD_REQUEST,
                 "The transaction must have a fee payer",

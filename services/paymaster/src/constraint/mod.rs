@@ -466,10 +466,10 @@ impl DataConstraint {
             );
         }
 
-        let mut data_to_analyze = &instruction.data[usize::from(self.start_byte)..end_byte];
+        let mut data_to_analyze = instruction.data.get(usize::from(self.start_byte)..end_byte).expect("We checked instruction.data.length is greater than end_byte");
         let data_to_analyze_deserialized = match self.data_type {
-            DataType::Bool => DataValue::Bool(data_to_analyze[0] != 0),
-            DataType::U8 => DataValue::U8(data_to_analyze[0]),
+            DataType::Bool => DataValue::Bool(*data_to_analyze.first().expect("data_to_analyze has length 1 if data_type is Bool") != 0),
+            DataType::U8 => DataValue::U8(*data_to_analyze.first().expect("data_to_analyze has length 1 if data_type is U8")),
             DataType::U16 => {
                 let data_u16 = u16::from_le_bytes(data_to_analyze.try_into().map_err(|_| {
                     anyhow::anyhow!("Instruction {instruction_index}: Data constraint expects 2 bytes for U16, found {} bytes", data_to_analyze.len())

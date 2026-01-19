@@ -95,7 +95,7 @@ impl SignedVersionedTransaction {
     pub fn signature(&self) -> &Signature {
         self.0
             .signatures
-            .get(0)
+            .first()
             .expect("SignedVersionedTransaction is guaranteed to have at least one signature slot")
     }
 }
