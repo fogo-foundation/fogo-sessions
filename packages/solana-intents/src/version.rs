@@ -68,9 +68,7 @@ mod tests {
         fn test_major_only() {
             assert_eq!(
                 "5".parse::<Version>().unwrap_err(),
-                Err::Incomplete(nom::Needed::Size(
-                    NonZero::new(1).expect("1 is a valid non-zero usize")
-                ))
+                Err::Incomplete(nom::Needed::Size(unsafe { NonZero::new_unchecked(1) }))
             );
         }
 
