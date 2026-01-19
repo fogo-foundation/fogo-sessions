@@ -13,9 +13,9 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2025-06-12
+          toolchain: 1.87.0
           components: clippy
       - name: Clippy
         env:
           SQLX_OFFLINE: true
-        run: cargo +nightly-2025-06-12 clippy --tests -- -D warnings
+        run: cargo clippy --tests -- -D warnings

@@ -16,3 +16,6 @@ itertools.workspace = true
 nom = { workspace = true }
 solana-offchain-message = { workspace = true }
 solana-program = { workspace = true }
+
+[lints]
+workspace = true

@@ -120,16 +120,16 @@ impl Ed25519InstructionHeader {
 #[derive(Debug, PartialEq)]
 enum Message {
     Raw(Vec<u8>),
-    LegacyOffchainMessage(LegacyOffchainMessage),
-    OffchainMessage(OffchainMessage),
+    LegacyOffchain(LegacyOffchainMessage),
+    Offchain(OffchainMessage),
 }
 
 impl From<Message> for Vec<u8> {
     fn from(message: Message) -> Self {
         match message {
             Message::Raw(message) => message,
-            Message::LegacyOffchainMessage(message) => message.get_message().to_vec(),
-            Message::OffchainMessage(message) => message.get_message().as_bytes().to_owned(),
+            Message::LegacyOffchain(message) => message.get_message().to_vec(),
+            Message::Offchain(message) => message.get_message().as_bytes().to_owned(),
         }
     }
 }
@@ -145,7 +145,7 @@ fn get_length_with_header(message: &LegacyOffchainMessage) -> usize {
 impl Message {
     fn deserialize(data: &[u8]) -> std::io::Result<Self> {
         match data.try_into() {
-            Ok(message) => Ok(Self::OffchainMessage(message)),
+            Ok(message) => Ok(Self::Offchain(message)),
             _ => {
                 if LegacyOffchainMessage::SIGNING_DOMAIN.len() <= data.len()
                     && data[0..LegacyOffchainMessage::SIGNING_DOMAIN.len()]
@@ -163,7 +163,7 @@ impl Message {
                             "Not all bytes read",
                         )); // make it behave like try_from_slice, so it fails if all bytes are not read
                     }
-                    Ok(Self::LegacyOffchainMessage(message))
+                    Ok(Self::LegacyOffchain(message))
                 } else {
                     Ok(Self::Raw(data.to_vec()))
                 }
@@ -202,7 +202,7 @@ mod tests {
         let offchain_message = LegacyOffchainMessage::new(0, "Fogo Sessions".as_bytes()).unwrap();
         assert_eq!(
             Message::deserialize(&offchain_message.serialize().unwrap()).unwrap(),
-            Message::LegacyOffchainMessage(offchain_message.clone())
+            Message::LegacyOffchain(offchain_message.clone())
         );
     }
 

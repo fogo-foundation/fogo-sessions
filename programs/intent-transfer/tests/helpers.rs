@@ -157,16 +157,17 @@ impl Token {
         }
     }
 
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn get_amount_with_decimals(&self, amount: f64) -> u64 {
-        (amount * 10f64.powi(self.decimals as i32)).floor() as u64
+        (amount * 10f64.powi(i32::from(self.decimals))).floor() as u64
     }
+}
 
-    pub fn get_balance(&self, svm: &LiteSVM, token_account: &Pubkey) -> u64 {
-        let account = svm
-            .get_account(token_account)
-            .expect("Token account not found");
-        let account_data = spl_token::state::Account::unpack(&account.data)
-            .expect("Failed to unpack token account");
-        account_data.amount
-    }
+pub fn get_token_balance(svm: &LiteSVM, token_account: &Pubkey) -> u64 {
+    let account = svm
+        .get_account(token_account)
+        .expect("Token account not found");
+    let account_data =
+        spl_token::state::Account::unpack(&account.data).expect("Failed to unpack token account");
+    account_data.amount
 }

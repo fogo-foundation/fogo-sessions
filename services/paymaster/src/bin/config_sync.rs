@@ -45,8 +45,10 @@ fn registrable_domain(host: &str) -> Result<String, anyhow::Error> {
     if parts.len() >= 2 {
         Ok(format!(
             "{}.{}",
-            parts[parts.len() - 2],
-            parts[parts.len() - 1]
+            parts
+                .get(parts.len() - 2)
+                .expect("parts.len() >= 2 in this branch"),
+            parts.last().expect("parts.len() >= 2 in this branch")
         ))
     } else {
         Ok(host.to_string())
@@ -175,7 +177,10 @@ async fn insert_or_update_variation(
 
     let max_gas_spend = match variation {
         TransactionVariation::V0(_) => None,
-        TransactionVariation::V1(v) => Some(v.max_gas_spend as i64),
+        TransactionVariation::V1(v) => Some(
+            i64::try_from(v.max_gas_spend)
+                .map_err(|_| anyhow::anyhow!("failed to convert max_gas_spend to i64"))?,
+        ),
     };
 
     let row = sqlx::query!(

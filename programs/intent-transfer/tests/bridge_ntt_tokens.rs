@@ -24,6 +24,8 @@ use intent_transfer::{
     },
 };
 
+use crate::helpers::get_token_balance;
+
 mod helpers;
 
 struct SymbolAndAmount<'a> {
@@ -79,7 +81,11 @@ fn create_ed25519_signature_instruction(signer: &Keypair, message: &str) -> Inst
     instruction_data.extend_from_slice(&u16::MAX.to_le_bytes()); // pubkey instruction index
 
     instruction_data.extend_from_slice(&112u16.to_le_bytes()); // message data offset (byte 112)
-    instruction_data.extend_from_slice(&(message.len() as u16).to_le_bytes()); // message data size
+    instruction_data.extend_from_slice(
+        &u16::try_from(message.len())
+            .expect("failed to convert message length to u16")
+            .to_le_bytes(),
+    ); // message data size
     instruction_data.extend_from_slice(&u16::MAX.to_le_bytes()); // message instruction index
 
     instruction_data.extend_from_slice(&pubkey_bytes);
@@ -373,10 +379,10 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
 
     let transfer_amount = token.get_amount_with_decimals(amount_str.parse::<f64>().unwrap());
     let fee_amount = fee_token.get_amount_with_decimals(fee_amount_str.parse::<f64>().unwrap());
-    let source_balance_before = token.get_balance(&svm, &source_token_account);
-    let custody_balance_before = token.get_balance(&svm, &ntt_custody);
+    let source_balance_before = get_token_balance(&svm, &source_token_account);
+    let custody_balance_before = get_token_balance(&svm, &ntt_custody);
 
-    let fee_source_balance_before = fee_token.get_balance(&svm, &fee_source);
+    let fee_source_balance_before = get_token_balance(&svm, &fee_source);
     assert!(
         svm.get_account(&fee_destination).is_none(),
         "Fee destination account should not exist before the transaction"
@@ -419,8 +425,8 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         if has_relay_message { "✓" } else { "✗" }
     );
 
-    let source_balance_after = token.get_balance(&svm, &source_token_account);
-    let custody_balance_after = token.get_balance(&svm, &ntt_custody);
+    let source_balance_after = get_token_balance(&svm, &source_token_account);
+    let custody_balance_after = get_token_balance(&svm, &ntt_custody);
 
     let intermediate_native_balance = svm.get_balance(&intermediate_token_account).unwrap_or(0);
 
@@ -442,8 +448,8 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
         "Custody balance should increase by transfer amount. Expected: {transfer_amount}, Got: {custody_delta}",
     );
 
-    let fee_source_balance_after = fee_token.get_balance(&svm, &fee_source);
-    let fee_destination_balance_after = fee_token.get_balance(&svm, &fee_destination);
+    let fee_source_balance_after = get_token_balance(&svm, &fee_source);
+    let fee_destination_balance_after = get_token_balance(&svm, &fee_destination);
 
     let fee_source_delta = fee_source_balance_before.saturating_sub(fee_source_balance_after);
     let fee_destination_delta = fee_destination_balance_after;
