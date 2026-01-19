@@ -89,11 +89,8 @@ string_slice = "warn"
 todo = "warn"
 unchecked_duration_subtraction = "warn"
 unreachable = "warn"
-<<<<<<< HEAD
 unwrap_in_result = "warn"
 unwrap_used = "warn"
-=======
->>>>>>> main
 
 # Correctness
 cast_lossless = "warn"
