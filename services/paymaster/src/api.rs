@@ -400,7 +400,8 @@ async fn sponsor_and_send_handler(
     let gas_spend = transaction_to_validate.gas_spend;
 
     let signature = transaction_sponsor.sign_message(&transaction.message.serialize());
-    let signed_transaction = SignedVersionedTransaction::new(transaction, signature);
+    let signed_transaction = SignedVersionedTransaction::new(transaction, signature)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     tracing::Span::current().record("tx_hash", signed_transaction.signature().to_string());
 
     let rpc_config = RpcSendTransactionConfig {

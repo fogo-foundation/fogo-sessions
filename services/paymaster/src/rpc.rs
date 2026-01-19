@@ -76,23 +76,31 @@ impl From<ConfirmationResultInternal> for ConfirmationResult {
 }
 
 /// A wrapper around `VersionedTransaction` that guarantees the transaction has been signed.
-/// The signature is stored separately for safe, panic-free access.
 pub struct SignedVersionedTransaction {
     transaction: VersionedTransaction,
-    signature: Signature,
 }
 
 impl SignedVersionedTransaction {
     /// Creates a new SignedVersionedTransaction by adding the signature to the transaction.
-    /// Adds the signature to transaction.signatures[0].
-    pub fn new(mut transaction: VersionedTransaction, signature: Signature) -> Self {
-        transaction.signatures[0] = signature;
-        Self { transaction, signature }
+    /// Returns an error if the transaction has no signature slots.
+    pub fn new(
+        mut transaction: VersionedTransaction,
+        signature: Signature,
+    ) -> anyhow::Result<Self> {
+        *transaction
+            .signatures
+            .get_mut(0)
+            .ok_or_else(|| anyhow::anyhow!("Transaction must have at least one signature slot"))? =
+            signature;
+        Ok(Self { transaction })
     }
 
     /// Returns the primary signature of the transaction.
     pub fn signature(&self) -> &Signature {
-        &self.signature
+        self.transaction
+            .signatures
+            .get(0)
+            .expect("SignedVersionedTransaction is guaranteed to have at least one signature")
     }
 }
 
