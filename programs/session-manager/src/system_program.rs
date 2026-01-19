@@ -18,14 +18,14 @@ pub fn initialize_account<'a, 'info>(
                     to: new_account.to_account_info(),
                 },
             ),
-            rent.minimum_balance(space as usize),
+            rent.minimum_balance(space.try_into().expect("usize is u64 in sbf programs")),
             space,
             program_owner,
         )
     } else {
         // Handle the case where the account has received some lamports and is therefore already "created"
         let required_lamports = rent
-            .minimum_balance(space as usize)
+            .minimum_balance(space.try_into().expect("usize is u64 in sbf programs"))
             .max(1)
             .saturating_sub(current_lamports);
         if required_lamports > 0 {
