@@ -1,11 +1,10 @@
 use anchor_lang::AnchorDeserialize;
-use intent_transfer::bridge::processor::bridge_ntt_tokens::SignedQuote;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use solana_pubkey::Pubkey;
 
 use crate::constraint::{
-    AccountConstraint, BytesConstraint, IntegerConstraint, NttSignedQuoter, ParsedDataConstraint, ParsedDataConstraintSpecification, ParsedInstructionConstraint, ParsedTransactionVariation, ParsedVariationOrderedInstructionConstraints, ScalarConstraint, SubstantiveProgramId, VariationProgramWhitelist, check_bytes_constraint, check_integer_constraint, check_scalar_constraint, recover_signer_pubkey
+    AccountConstraint, BytesConstraint, IntegerConstraint, NttSignedQuoter, ParsedDataConstraint, ParsedDataConstraintSpecification, ParsedInstructionConstraint, ParsedTransactionVariation, ParsedVariationOrderedInstructionConstraints, ScalarConstraint, SubstantiveProgramId, VariationProgramWhitelist
 };
 
 #[derive(Deserialize)]
@@ -330,7 +329,7 @@ impl TryFrom<InstructionConstraint> for ParsedInstructionConstraint {
     ) -> Result<Self, Self::Error> {
         let parsed_data = data
             .into_iter()
-            .map(|constraint| ParsedDataConstraint::try_from(constraint))
+            .map(ParsedDataConstraint::try_from)
             .collect::<Result<_, _>>()
             .map_err(|err| anyhow::anyhow!(err))?;
 
