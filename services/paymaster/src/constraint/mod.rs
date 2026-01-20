@@ -440,40 +440,10 @@ impl ContextualPubkey {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub struct NttSignedQuoter(pub(crate) [u8; 20]);
-
-impl Serialize for NttSignedQuoter {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&format!("0x{}", hex::encode(self.0)))
-    }
-}
-
-impl<'de> Deserialize<'de> for NttSignedQuoter {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = <String as serde::Deserialize>::deserialize(deserializer)?;
-        let hex_part = s.strip_prefix("0x").unwrap_or(&s);
-        let bytes = hex::decode(hex_part)
-            .map_err(|e| serde::de::Error::custom(format!("Invalid hex string {hex_part}: {e}")))?;
-        let arr: [u8; 20] = bytes.try_into().map_err(|_| {
-            serde::de::Error::custom(
-                "Failed to convert bytes to H160 address: invalid byte array length",
-            )
-        })?;
-        Ok(NttSignedQuoter(arr))
-    }
-}
-
 #[derive(Serialize)]
 pub struct ParsedDataConstraint {
     pub start_byte: u16,
-    pub kind: ParsedDataConstraintSpecification,
+    pub constraint: ParsedDataConstraintSpecification,
 }
 
 #[derive(Serialize)]
@@ -595,7 +565,7 @@ impl ParsedDataConstraint {
             instruction,
         }: &InstructionWithIndex<'_>,
     ) -> anyhow::Result<()> {
-        let length = self.kind.byte_length();
+        let length = self.constraint.byte_length();
         let end_byte = length + usize::from(self.start_byte);
         if end_byte > instruction.data.len() {
             anyhow::bail!(
@@ -610,13 +580,14 @@ impl ParsedDataConstraint {
             .data
             .get(usize::from(self.start_byte)..end_byte)
             .expect("We checked instruction.data.length is greater than end_byte");
-        self.kind.check_bytes(&mut data_to_analyze).map_err(|err| {
+        self.constraint.check_bytes(&mut data_to_analyze).map_err(|err| {
             anyhow::anyhow!("Instruction {instruction_index}: Data constraint not satisfied: {err}")
         })?;
 
         Ok(())
     }
 }
+
 
 fn recover_signer_pubkey(signed_quote: SignedQuote) -> anyhow::Result<H160> {
     let message_body = signed_quote
@@ -653,6 +624,36 @@ fn recover_signer_pubkey(signed_quote: SignedQuote) -> anyhow::Result<H160> {
     };
 
     Ok(evm_address)
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct NttSignedQuoter(pub(crate) [u8; 20]);
+
+impl Serialize for NttSignedQuoter {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&format!("0x{}", hex::encode(self.0)))
+    }
+}
+
+impl<'de> Deserialize<'de> for NttSignedQuoter {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = <String as serde::Deserialize>::deserialize(deserializer)?;
+        let hex_part = s.strip_prefix("0x").unwrap_or(&s);
+        let bytes = hex::decode(hex_part)
+            .map_err(|e| serde::de::Error::custom(format!("Invalid hex string {hex_part}: {e}")))?;
+        let arr: [u8; 20] = bytes.try_into().map_err(|_| {
+            serde::de::Error::custom(
+                "Failed to convert bytes to H160 address: invalid byte array length",
+            )
+        })?;
+        Ok(NttSignedQuoter(arr))
+    }
 }
 
 fn check_integer_constraint<T: PartialOrd + PartialEq>(

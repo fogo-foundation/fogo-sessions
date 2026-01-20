@@ -57,7 +57,7 @@ impl TryFrom<DataConstraint> for ParsedDataConstraint {
         let kind = ParsedDataConstraintSpecification::try_from(data_constraint.constraint)?;
         Ok(Self {
             start_byte: data_constraint.start_byte,
-            kind,
+            constraint: kind,
         })
     }
 }
