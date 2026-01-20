@@ -246,9 +246,7 @@ fn extract_bytes(
                 let bytes = decode_hex_bytes(&value)?;
                 if bytes.len() != expected_length {
                     anyhow::bail!(
-                        "Multiple bytes values in a EqualTo/Neq con
-            straint must all have the same length.
-             Expected {expected_length} bytes, got {}",
+                        "Multiple bytes values in a EqualTo/Neq constraint must all have the same length.Expected {expected_length} bytes, got {}",
                         bytes.len()
                     );
                 }
