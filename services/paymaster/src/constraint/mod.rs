@@ -469,7 +469,68 @@ impl ParsedDataConstraint {
             .data
             .get(usize::from(self.start_byte)..end_byte)
             .expect("We checked instruction.data.length is greater than end_byte");
-        self.constraint.check_bytes(&mut data_to_analyze).map_err(|err| {
+        let check_result = match &self.constraint {
+            ParsedDataConstraintSpecification::U8(constraint) => {
+                let value = *data_to_analyze
+                    .first()
+                    .ok_or_else(|| anyhow::anyhow!("Expected 1 byte for U8"))?;
+                check_integer_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::U16(constraint) => {
+                let value = u16::from_le_bytes((*data_to_analyze).try_into().map_err(|_| {
+                    anyhow::anyhow!(
+                        "Data constraint expects 2 bytes for U16, found {} bytes",
+                        data_to_analyze.len()
+                    )
+                })?);
+                check_integer_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::U32(constraint) => {
+                let value = u32::from_le_bytes((*data_to_analyze).try_into().map_err(|_| {
+                    anyhow::anyhow!(
+                        "Data constraint expects 4 bytes for U32, found {} bytes",
+                        data_to_analyze.len()
+                    )
+                })?);
+                check_integer_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::U64(constraint) => {
+                let value = u64::from_le_bytes((*data_to_analyze).try_into().map_err(|_| {
+                    anyhow::anyhow!(
+                        "Data constraint expects 8 bytes for U64, found {} bytes",
+                        data_to_analyze.len()
+                    )
+                })?);
+                check_integer_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::Bool(constraint) => {
+                let value = *data_to_analyze
+                    .first()
+                    .ok_or_else(|| anyhow::anyhow!("Expected 1 byte for bool"))?
+                    != 0;
+                check_scalar_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::Pubkey(constraint) => {
+                let value =
+                    Pubkey::new_from_array((*data_to_analyze).try_into().map_err(|_| {
+                        anyhow::anyhow!(
+                            "Data constraint expects 32 bytes for Pubkey, found {} bytes",
+                            data_to_analyze.len()
+                        )
+                    })?);
+                check_scalar_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::Bytes(constraint) => {
+                check_bytes_constraint(data_to_analyze, constraint)
+            }
+            ParsedDataConstraintSpecification::NttSignedQuoter(constraint) => {
+                let signed_quote = SignedQuote::deserialize(&mut data_to_analyze)
+                    .map_err(|e| anyhow::anyhow!("Failed to deserialize NTT SignedQuote: {e}"))?;
+                let recovered_quoter = recover_signer_pubkey(signed_quote)?;
+                check_scalar_constraint(NttSignedQuoter(recovered_quoter), constraint)
+            }
+        };
+        check_result.map_err(|err| {
             anyhow::anyhow!("Instruction {instruction_index}: Data constraint not satisfied: {err}")
         })?;
 
@@ -505,67 +566,6 @@ impl ParsedDataConstraintSpecification {
         }
     }
 
-    fn check_bytes(&self, data: &mut &[u8]) -> Result<(), String> {
-        match self {
-            ParsedDataConstraintSpecification::U8(constraint) => {
-                let value = *data
-                    .first()
-                    .ok_or_else(|| "Expected 1 byte for U8".to_string())?;
-                check_integer_constraint(value, constraint)
-            }
-            ParsedDataConstraintSpecification::U16(constraint) => {
-                let value = u16::from_le_bytes((*data).try_into().map_err(|_| {
-                    format!(
-                        "Data constraint expects 2 bytes for U16, found {} bytes",
-                        data.len()
-                    )
-                })?);
-                check_integer_constraint(value, constraint)
-            }
-            ParsedDataConstraintSpecification::U32(constraint) => {
-                let value = u32::from_le_bytes((*data).try_into().map_err(|_| {
-                    format!(
-                        "Data constraint expects 4 bytes for U32, found {} bytes",
-                        data.len()
-                    )
-                })?);
-                check_integer_constraint(value, constraint)
-            }
-            ParsedDataConstraintSpecification::U64(constraint) => {
-                let value = u64::from_le_bytes((*data).try_into().map_err(|_| {
-                    format!(
-                        "Data constraint expects 8 bytes for U64, found {} bytes",
-                        data.len()
-                    )
-                })?);
-                check_integer_constraint(value, constraint)
-            }
-            ParsedDataConstraintSpecification::Bool(constraint) => {
-                let value = *data
-                    .first()
-                    .ok_or_else(|| "Expected 1 byte for bool".to_string())?
-                    != 0;
-                check_scalar_constraint(value, constraint)
-            }
-            ParsedDataConstraintSpecification::Pubkey(constraint) => {
-                let value = Pubkey::new_from_array((*data).try_into().map_err(|_| {
-                    format!(
-                        "Data constraint expects 32 bytes for Pubkey, found {} bytes",
-                        data.len()
-                    )
-                })?);
-                check_scalar_constraint(value, constraint)
-            }
-            ParsedDataConstraintSpecification::Bytes(constraint) => check_bytes_constraint(data, constraint),
-            ParsedDataConstraintSpecification::NttSignedQuoter(constraint) => {
-                let signed_quote = SignedQuote::deserialize(data)
-                    .map_err(|e| format!("Failed to deserialize NTT SignedQuote: {e}"))?;
-                let recovered_quoter =
-                    recover_signer_pubkey(signed_quote).map_err(|e| e.to_string())?;
-                check_scalar_constraint(NttSignedQuoter(recovered_quoter), constraint)
-            }
-        }
-    }
 }
 
 #[derive(Serialize)]
