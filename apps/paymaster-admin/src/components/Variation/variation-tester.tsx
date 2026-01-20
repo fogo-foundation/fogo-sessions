@@ -1,9 +1,9 @@
-import type { Variation } from "../../db-schema"
-import { TextField } from "@fogo/component-library/TextField";
-import { useCallback, useEffect, useState } from "react";
-import { Button } from "@fogo/component-library/Button";
 import { Badge } from "@fogo/component-library/Badge";
+import { Button } from "@fogo/component-library/Button";
+import { TextField } from "@fogo/component-library/TextField";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
+import { useCallback, useEffect, useState } from "react";
+import type { Variation } from "../../db-schema";
 import styles from "./variation-tester.module.scss";
 
 type VariationTesterProps = {
@@ -13,7 +13,9 @@ type VariationTesterProps = {
 
 export const VariationTester = (props: VariationTesterProps) => {
   const [transaction, setTransaction] = useState("");
-  const [validationResult, setValidationResult] = useState<'valid' | 'invalid' | null>(null);
+  const [validationResult, setValidationResult] = useState<
+    "valid" | "invalid" | null
+  >(null);
   const [validationMessage, setValidationMessage] = useState<string>("");
 
   useEffect(() => {
@@ -24,32 +26,34 @@ export const VariationTester = (props: VariationTesterProps) => {
   useEffect(() => {
     setValidationResult(null);
     setValidationMessage("");
-  }, [props.variation.transaction_variation]);
+  }, [props.variation.transaction_variation, props.domain]);
 
   const handleTest = useCallback(async () => {
     try {
-      const response = await fetch('/api/validate-transaction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/validate-transaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           transaction,
           domain: props.domain,
           variation: props.variation,
-        })
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setValidationResult('valid');
+        setValidationResult("valid");
         setValidationMessage(data.message);
       } else {
-        setValidationResult('invalid');
+        setValidationResult("invalid");
         setValidationMessage(data.message);
       }
     } catch (error) {
-      setValidationResult('invalid');
-      setValidationMessage(`Error validating transaction: ${(error as Error).message}`);
+      setValidationResult("invalid");
+      setValidationMessage(
+        `Error validating transaction: ${(error as Error).message}`,
+      );
     }
   }, [props.variation, transaction]);
 
@@ -68,14 +72,12 @@ export const VariationTester = (props: VariationTesterProps) => {
         </Button>
       </div>
       {validationResult && validationMessage && (
-        <div
-          className={styles.variationTesterOutput ?? ""}
-        >
+        <div className={styles.variationTesterOutput ?? ""}>
           <Badge
-            variant={validationResult === 'valid' ? 'success' : 'error'}
+            variant={validationResult === "valid" ? "success" : "error"}
             size="xs"
           >
-            {validationResult === 'valid' ? (
+            {validationResult === "valid" ? (
               <CheckCircleIcon weight="duotone" />
             ) : (
               <XCircleIcon weight="duotone" />
@@ -87,5 +89,5 @@ export const VariationTester = (props: VariationTesterProps) => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};

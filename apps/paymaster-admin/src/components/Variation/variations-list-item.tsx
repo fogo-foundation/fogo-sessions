@@ -29,7 +29,13 @@ export const VariationListItem = (props: VariationListItemProps) => {
   );
 };
 
-const VariationForm = ({ domain, variation }: { domain: string; variation: Variation }) => {
+const VariationForm = ({
+  domain,
+  variation,
+}: {
+  domain: string;
+  variation: Variation;
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [name, setName] = useState(variation.name);
   const [code, setCode] = useState("");

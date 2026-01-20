@@ -137,5 +137,7 @@ export type AccountConstraint = z.infer<typeof AccountConstraintSchema>;
 export type DataConstraint = z.infer<typeof DataConstraintSchema>;
 export type ContextualPubkey = z.infer<typeof ContextualPubkeySchema>;
 export type PrimitiveDataType = z.infer<typeof PrimitiveDataTypeSchema>;
-export type DataConstraintSpecification = z.infer<typeof DataConstraintSpecificationSchema>;
+export type DataConstraintSpecification = z.infer<
+  typeof DataConstraintSpecificationSchema
+>;
 export type PrimitiveDataValue = z.infer<typeof PrimitiveDataValueSchema>;

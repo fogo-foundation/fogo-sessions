@@ -28,7 +28,10 @@ const VariationsList = (props: VariationsListProps) => {
     >
       {(variation) => (
         <GridListItem key={variation.id}>
-          <VariationListItem domain={props.domainConfig.domain} variation={variation} />
+          <VariationListItem
+            domain={props.domainConfig.domain}
+            variation={variation}
+          />
         </GridListItem>
       )}
     </GridList>
