@@ -244,14 +244,9 @@ impl FromStr for SubstantiveProgramId {
     }
 }
 
-#[serde_as]
-#[derive(Serialize)]
 pub struct ParsedInstructionConstraint {
-    #[serde_as(as = "DisplayFromStr")]
     pub program: SubstantiveProgramId,
-    #[serde(default)]
     pub accounts: Vec<AccountConstraint>,
-    #[serde(default)]
     pub data: Vec<ParsedDataConstraint>,
     pub required: bool,
 }
@@ -440,7 +435,6 @@ impl ContextualPubkey {
     }
 }
 
-#[derive(Serialize)]
 pub struct ParsedDataConstraint {
     pub start_byte: u16,
     pub constraint: ParsedDataConstraintSpecification,
@@ -538,7 +532,6 @@ impl ParsedDataConstraint {
     }
 }
 
-#[derive(Serialize)]
 pub enum ParsedDataConstraintSpecification {
     U8(IntegerConstraint<u8>),
     U16(IntegerConstraint<u16>),
@@ -570,7 +563,6 @@ impl ParsedDataConstraintSpecification {
     }
 }
 
-#[derive(Serialize)]
 pub enum IntegerConstraint<T> {
     LessThan(T),
     GreaterThan(T),
@@ -578,13 +570,11 @@ pub enum IntegerConstraint<T> {
     Neq(Vec<T>),
 }
 
-#[derive(Serialize)]
 pub enum ScalarConstraint<T> {
     EqualTo(Vec<T>),
     Neq(Vec<T>),
 }
 
-#[derive(Serialize)]
 pub enum BytesConstraint {
     EqualTo { length: usize, values: Vec<Vec<u8>> },
     Neq { length: usize, values: Vec<Vec<u8>> },
@@ -628,7 +618,7 @@ fn recover_signer_pubkey(signed_quote: SignedQuote) -> anyhow::Result<H160> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct NttSignedQuoter(pub(crate) [u8; 20]);
+pub struct NttSignedQuoter([u8; 20]);
 
 impl Serialize for NttSignedQuoter {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
