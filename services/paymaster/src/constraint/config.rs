@@ -56,10 +56,10 @@ pub enum DataValue {
 impl TryFrom<DataConstraint> for ParsedDataConstraint {
     type Error = anyhow::Error;
     fn try_from(data_constraint: DataConstraint) -> Result<Self, Self::Error> {
-        let kind = ParsedDataConstraintSpecification::try_from(data_constraint.constraint)?;
+        let constraint = ParsedDataConstraintSpecification::try_from(data_constraint.constraint)?;
         Ok(Self {
             start_byte: data_constraint.start_byte,
-            constraint: kind,
+            constraint,
         })
     }
 }
@@ -239,14 +239,24 @@ fn extract_bytes(
     values: Vec<DataValue>,
     expected_length: usize,
 ) -> Result<Vec<Vec<u8>>, anyhow::Error> {
-    values.into_iter().map(|value| match value {
-        DataValue::Bytes(value) => {let bytes = decode_hex_bytes(&value)?;
-        if bytes.len() != expected_length {
-            anyhow::bail!("Multiple bytes values in a EqualTo/Neq constraint must all have the same length. Expected {expected_length} bytes, got {}", bytes.len());
-        }
-        Ok(bytes)},
-        _ => anyhow::bail!("EqualTo/Neq constraint contains elements of different types"),
-    }).collect::<Result<Vec<Vec<u8>>, anyhow::Error>>()
+    values
+        .into_iter()
+        .map(|value| match value {
+            DataValue::Bytes(value) => {
+                let bytes = decode_hex_bytes(&value)?;
+                if bytes.len() != expected_length {
+                    anyhow::bail!(
+                        "Multiple bytes values in a EqualTo/Neq con
+            straint must all have the same length.
+             Expected {expected_length} bytes, got {}",
+                        bytes.len()
+                    );
+                }
+                Ok(bytes)
+            }
+            _ => anyhow::bail!("EqualTo/Neq constraint contains elements of different types"),
+        })
+        .collect::<Result<Vec<Vec<u8>>, anyhow::Error>>()
 }
 
 fn decode_hex_bytes(value: &str) -> Result<Vec<u8>, anyhow::Error> {
@@ -289,9 +299,7 @@ impl TryFrom<InstructionConstraint> for ParsedInstructionConstraint {
         let parsed_data = data
             .into_iter()
             .map(ParsedDataConstraint::try_from)
-            .collect::<Result<_, _>>()
-            .map_err(|err| anyhow::anyhow!(err))?;
-
+            .collect::<Result<_, _>>()?;
         Ok(ParsedInstructionConstraint {
             program,
             accounts,
