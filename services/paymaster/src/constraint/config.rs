@@ -65,7 +65,9 @@ impl TryFrom<InstructionConstraint> for ParsedInstructionConstraint {
     ) -> Result<Self, Self::Error> {
         let parsed_data = data
             .into_iter()
-            .map(|constraint| ParsedDataConstraint::from_spec(constraint.start_byte, constraint.constraint))
+            .map(|constraint| {
+                ParsedDataConstraint::from_spec(constraint.start_byte, constraint.constraint)
+            })
             .collect::<Result<_, _>>()
             .map_err(|err| anyhow::anyhow!(err))?;
 
@@ -103,9 +105,11 @@ impl TryFrom<VariationOrderedInstructionConstraints>
         let mut constraints = Vec::new();
         for base in instructions {
             if base.requires_wrapped_native_tokens {
-                constraints.push(ParsedInstructionConstraint::session_wrap_instruction_constraint());
                 constraints
-                    .push(ParsedInstructionConstraint::create_ata_idempotent_instruction_constraint());
+                    .push(ParsedInstructionConstraint::session_wrap_instruction_constraint());
+                constraints.push(
+                    ParsedInstructionConstraint::create_ata_idempotent_instruction_constraint(),
+                );
                 constraints.push(ParsedInstructionConstraint::sync_native_instruction_constraint());
                 constraints.push(base.try_into()?);
                 constraints.push(ParsedInstructionConstraint::close_token_account_constraint());

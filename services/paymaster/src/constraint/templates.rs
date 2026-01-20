@@ -4,8 +4,7 @@ use std::collections::HashMap;
 use crate::constraint::SubstantiveProgramId;
 use crate::constraint::{
     AccountConstraint, ContextualPubkey, DataConstraintSpecification, DataValue,
-    ParsedDataConstraint,
-    ParsedInstructionConstraint, ParsedTransactionVariation,
+    ParsedDataConstraint, ParsedInstructionConstraint, ParsedTransactionVariation,
     ParsedVariationOrderedInstructionConstraints,
 };
 
@@ -25,34 +24,44 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // numSignatures = 1
-                parsed_data_constraint(0, DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)])
+                parsed_data_constraint(
+                    0,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
                 ),
                 // padding = 0
-                parsed_data_constraint(1, DataConstraintSpecification::EqualTo(vec![DataValue::U8(0)])
+                parsed_data_constraint(
+                    1,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(0)]),
                 ),
                 // signatureOffset = 16 + 32 = 48
-                parsed_data_constraint(2, DataConstraintSpecification::EqualTo(vec![DataValue::U16(48)])
+                parsed_data_constraint(
+                    2,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(48)]),
                 ),
                 // signatureInstructionIndex = 0xffff
-                parsed_data_constraint(4, DataConstraintSpecification::EqualTo(vec![DataValue::U16(
-                        u16::MAX,
-                    )])
+                parsed_data_constraint(
+                    4,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(u16::MAX)]),
                 ),
                 // publicKeyOffset = 16
-                parsed_data_constraint(6, DataConstraintSpecification::EqualTo(vec![DataValue::U16(16)])
+                parsed_data_constraint(
+                    6,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(16)]),
                 ),
                 // publicKeyInstructionIndex = 0xffff
-                parsed_data_constraint(8, DataConstraintSpecification::EqualTo(vec![DataValue::U16(
-                        u16::MAX,
-                    )])
+                parsed_data_constraint(
+                    8,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(u16::MAX)]),
                 ),
                 // messageOffset = 16 + 32 + 64 = 112
-                parsed_data_constraint(10, DataConstraintSpecification::EqualTo(vec![DataValue::U16(112)])
+                parsed_data_constraint(
+                    10,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(112)]),
                 ),
                 // messageInstructionIndex = 0xffff
-                parsed_data_constraint(14, DataConstraintSpecification::EqualTo(vec![DataValue::U16(
-                        u16::MAX,
-                    )])
+                parsed_data_constraint(
+                    14,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(u16::MAX)]),
                 ),
             ],
             required: true,
@@ -82,7 +91,9 @@ impl ParsedInstructionConstraint {
             ],
             data: vec![
                 // instruction = 0 (StartSession)
-                parsed_data_constraint(0, DataConstraintSpecification::EqualTo(vec![DataValue::U8(0)])
+                parsed_data_constraint(
+                    0,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(0)]),
                 ),
             ],
             required: true,
@@ -100,7 +111,9 @@ impl ParsedInstructionConstraint {
             }],
             data: vec![
                 // instruction = 1 (RevokeSession)
-                parsed_data_constraint(0, DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)])
+                parsed_data_constraint(
+                    0,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
                 ),
             ],
             required: true,
@@ -114,9 +127,9 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // instruction = 4_000_000 (SessionWrap)
-                parsed_data_constraint(0, DataConstraintSpecification::EqualTo(vec![DataValue::U32(
-                        4_000_000,
-                    )])
+                parsed_data_constraint(
+                    0,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U32(4_000_000)]),
                 ),
             ],
             required: false,
@@ -134,7 +147,9 @@ impl ParsedInstructionConstraint {
             }],
             data: vec![
                 // instruction = 1 (CreateIdempotent)
-                parsed_data_constraint(0, DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)])
+                parsed_data_constraint(
+                    0,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
                 ),
             ],
             required: false,
@@ -148,7 +163,9 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // instruction = 17 (SyncNative)
-                parsed_data_constraint(0, DataConstraintSpecification::EqualTo(vec![DataValue::U8(17)])
+                parsed_data_constraint(
+                    0,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(17)]),
                 ),
             ],
             required: false,
@@ -162,7 +179,9 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // instruction = 9 (CloseAccount)
-                parsed_data_constraint(0, DataConstraintSpecification::EqualTo(vec![DataValue::U8(9)])
+                parsed_data_constraint(
+                    0,
+                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(9)]),
                 ),
             ],
             required: false,

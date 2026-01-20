@@ -515,13 +515,9 @@ impl ParsedDataConstraint {
             .data
             .get(usize::from(self.start_byte)..end_byte)
             .expect("We checked instruction.data.length is greater than end_byte");
-        self.kind
-            .check_bytes(&mut data_to_analyze)
-            .map_err(|err| {
-                anyhow::anyhow!(
-                    "Instruction {instruction_index}: Data constraint not satisfied: {err}"
-                )
-            })?;
+        self.kind.check_bytes(&mut data_to_analyze).map_err(|err| {
+            anyhow::anyhow!("Instruction {instruction_index}: Data constraint not satisfied: {err}")
+        })?;
 
         Ok(())
     }
@@ -620,17 +616,33 @@ impl ParsedDataConstraintKind {
     fn from_spec(spec: DataConstraintSpecification) -> Result<Self, String> {
         match spec {
             DataConstraintSpecification::LessThan(value) => match value {
-                DataValue::U8(v) => Ok(ParsedDataConstraintKind::U8(IntegerConstraint::LessThan(v))),
-                DataValue::U16(v) => Ok(ParsedDataConstraintKind::U16(IntegerConstraint::LessThan(v))),
-                DataValue::U32(v) => Ok(ParsedDataConstraintKind::U32(IntegerConstraint::LessThan(v))),
-                DataValue::U64(v) => Ok(ParsedDataConstraintKind::U64(IntegerConstraint::LessThan(v))),
+                DataValue::U8(v) => {
+                    Ok(ParsedDataConstraintKind::U8(IntegerConstraint::LessThan(v)))
+                }
+                DataValue::U16(v) => Ok(ParsedDataConstraintKind::U16(
+                    IntegerConstraint::LessThan(v),
+                )),
+                DataValue::U32(v) => Ok(ParsedDataConstraintKind::U32(
+                    IntegerConstraint::LessThan(v),
+                )),
+                DataValue::U64(v) => Ok(ParsedDataConstraintKind::U64(
+                    IntegerConstraint::LessThan(v),
+                )),
                 _ => Err("LessThan constraints only support unsigned integer types".into()),
             },
             DataConstraintSpecification::GreaterThan(value) => match value {
-                DataValue::U8(v) => Ok(ParsedDataConstraintKind::U8(IntegerConstraint::GreaterThan(v))),
-                DataValue::U16(v) => Ok(ParsedDataConstraintKind::U16(IntegerConstraint::GreaterThan(v))),
-                DataValue::U32(v) => Ok(ParsedDataConstraintKind::U32(IntegerConstraint::GreaterThan(v))),
-                DataValue::U64(v) => Ok(ParsedDataConstraintKind::U64(IntegerConstraint::GreaterThan(v))),
+                DataValue::U8(v) => Ok(ParsedDataConstraintKind::U8(
+                    IntegerConstraint::GreaterThan(v),
+                )),
+                DataValue::U16(v) => Ok(ParsedDataConstraintKind::U16(
+                    IntegerConstraint::GreaterThan(v),
+                )),
+                DataValue::U32(v) => Ok(ParsedDataConstraintKind::U32(
+                    IntegerConstraint::GreaterThan(v),
+                )),
+                DataValue::U64(v) => Ok(ParsedDataConstraintKind::U64(
+                    IntegerConstraint::GreaterThan(v),
+                )),
                 _ => Err("GreaterThan constraints only support unsigned integer types".into()),
             },
             DataConstraintSpecification::EqualTo(values) => parse_equal_values(values, true),
@@ -655,7 +667,9 @@ impl ParsedDataConstraintKind {
     fn check_bytes(&self, data: &mut &[u8]) -> Result<(), String> {
         match self {
             ParsedDataConstraintKind::U8(constraint) => {
-                let value = *data.first().ok_or_else(|| "Expected 1 byte for U8".to_string())?;
+                let value = *data
+                    .first()
+                    .ok_or_else(|| "Expected 1 byte for U8".to_string())?;
                 check_integer_constraint(value, constraint)
             }
             ParsedDataConstraintKind::U16(constraint) => {
@@ -686,7 +700,10 @@ impl ParsedDataConstraintKind {
                 check_integer_constraint(value, constraint)
             }
             ParsedDataConstraintKind::Bool(constraint) => {
-                let value = *data.first().ok_or_else(|| "Expected 1 byte for bool".to_string())? != 0;
+                let value = *data
+                    .first()
+                    .ok_or_else(|| "Expected 1 byte for bool".to_string())?
+                    != 0;
                 check_scalar_constraint(value, constraint)
             }
             ParsedDataConstraintKind::Pubkey(constraint) => {
@@ -710,7 +727,10 @@ impl ParsedDataConstraintKind {
     }
 }
 
-fn parse_equal_values(values: Vec<DataValue>, is_equal: bool) -> Result<ParsedDataConstraintKind, String> {
+fn parse_equal_values(
+    values: Vec<DataValue>,
+    is_equal: bool,
+) -> Result<ParsedDataConstraintKind, String> {
     let first = values
         .first()
         .ok_or_else(|| "EqualTo/Neq constraints must include at least one value".to_string())?;
@@ -766,9 +786,15 @@ fn parse_equal_values(values: Vec<DataValue>, is_equal: bool) -> Result<ParsedDa
         DataValue::Bytes(_) => {
             let (length, parsed) = into_bytes(values)?;
             Ok(ParsedDataConstraintKind::Bytes(if is_equal {
-                BytesConstraint::EqualTo { length, values: parsed }
+                BytesConstraint::EqualTo {
+                    length,
+                    values: parsed,
+                }
             } else {
-                BytesConstraint::Neq { length, values: parsed }
+                BytesConstraint::Neq {
+                    length,
+                    values: parsed,
+                }
             }))
         }
         DataValue::NttSignedQuoter(_) => {
@@ -884,8 +910,7 @@ fn decode_hex_bytes(value: &str) -> Result<Vec<u8>, String> {
     if hex_part.len() % 2 != 0 {
         return Err("Bytes constraints must use an even-length hex string".into());
     }
-    hex::decode(hex_part)
-        .map_err(|e| format!("Invalid hex string {hex_part}: {e}"))
+    hex::decode(hex_part).map_err(|e| format!("Invalid hex string {hex_part}: {e}"))
 }
 
 fn check_integer_constraint<T: PartialOrd + PartialEq>(
