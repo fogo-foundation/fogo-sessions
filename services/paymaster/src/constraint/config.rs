@@ -103,12 +103,11 @@ impl TryFrom<VariationOrderedInstructionConstraints>
         let mut constraints = Vec::new();
         for base in instructions {
             if base.requires_wrapped_native_tokens {
-                constraints
-                    .push(ParsedInstructionConstraint::session_wrap_instruction_constraint());
-                constraints.push(
+                constraints.extend(vec![
+                    ParsedInstructionConstraint::session_wrap_instruction_constraint(),
                     ParsedInstructionConstraint::create_ata_idempotent_instruction_constraint(),
-                );
-                constraints.push(ParsedInstructionConstraint::sync_native_instruction_constraint());
+                    ParsedInstructionConstraint::sync_native_instruction_constraint(),
+                ]);
                 constraints.push(base.try_into()?);
                 constraints.push(ParsedInstructionConstraint::close_token_account_constraint());
             } else {
