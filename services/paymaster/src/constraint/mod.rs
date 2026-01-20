@@ -484,15 +484,18 @@ pub enum BytesConstraint {
     Neq { length: usize, values: Vec<Vec<u8>> },
 }
 
-impl ParsedDataConstraint {
-    pub fn from_spec(
-        start_byte: u16,
-        constraint: DataConstraintSpecification,
-    ) -> Result<Self, String> {
-        let kind = ParsedDataConstraintKind::from_spec(constraint)?;
-        Ok(Self { start_byte, kind })
+impl TryFrom<DataConstraint> for ParsedDataConstraint {
+    type Error = anyhow::Error;
+    fn try_from(data_constraint: DataConstraint) -> Result<Self, Self::Error> {
+        let kind = ParsedDataConstraintKind::try_from(data_constraint.constraint)?;
+        Ok(Self {
+            start_byte: data_constraint.start_byte,
+            kind,
+        })
     }
+}
 
+impl ParsedDataConstraint {
     fn check_data(
         &self,
         InstructionWithIndex {
@@ -612,8 +615,9 @@ pub enum DataConstraintSpecification {
     Neq(Vec<DataValue>),
 }
 
-impl ParsedDataConstraintKind {
-    fn from_spec(spec: DataConstraintSpecification) -> Result<Self, String> {
+impl TryFrom<DataConstraintSpecification> for ParsedDataConstraintKind {
+    type Error = anyhow::Error;
+    fn try_from(spec: DataConstraintSpecification) -> Result<Self, Self::Error> {
         match spec {
             DataConstraintSpecification::LessThan(value) => match value {
                 DataValue::U8(v) => {
@@ -628,7 +632,7 @@ impl ParsedDataConstraintKind {
                 DataValue::U64(v) => Ok(ParsedDataConstraintKind::U64(
                     IntegerConstraint::LessThan(v),
                 )),
-                _ => Err("LessThan constraints only support unsigned integer types".into()),
+                _ => anyhow::bail!("LessThan constraints only support unsigned integer types"),
             },
             DataConstraintSpecification::GreaterThan(value) => match value {
                 DataValue::U8(v) => Ok(ParsedDataConstraintKind::U8(
@@ -643,13 +647,15 @@ impl ParsedDataConstraintKind {
                 DataValue::U64(v) => Ok(ParsedDataConstraintKind::U64(
                     IntegerConstraint::GreaterThan(v),
                 )),
-                _ => Err("GreaterThan constraints only support unsigned integer types".into()),
+                _ => anyhow::bail!("GreaterThan constraints only support unsigned integer types"),
             },
             DataConstraintSpecification::EqualTo(values) => parse_equal_values(values, true),
             DataConstraintSpecification::Neq(values) => parse_equal_values(values, false),
         }
     }
+}
 
+impl ParsedDataConstraintKind {
     fn byte_length(&self) -> usize {
         match self {
             ParsedDataConstraintKind::U8(_) => 1,
@@ -730,10 +736,10 @@ impl ParsedDataConstraintKind {
 fn parse_equal_values(
     values: Vec<DataValue>,
     is_equal: bool,
-) -> Result<ParsedDataConstraintKind, String> {
-    let first = values
-        .first()
-        .ok_or_else(|| "EqualTo/Neq constraints must include at least one value".to_string())?;
+) -> Result<ParsedDataConstraintKind, anyhow::Error> {
+    let first = values.first().ok_or_else(|| {
+        anyhow::anyhow!("EqualTo/Neq constraints must include at least one value")
+    })?;
     match first {
         DataValue::U8(_) => {
             let parsed = into_u8s(values)?;
@@ -808,109 +814,106 @@ fn parse_equal_values(
     }
 }
 
-fn into_u8s(values: Vec<DataValue>) -> Result<Vec<u8>, String> {
+fn into_u8s(values: Vec<DataValue>) -> Result<Vec<u8>, anyhow::Error> {
     values
         .into_iter()
         .map(|value| match value {
             DataValue::U8(v) => Ok(v),
-            _ => Err("Incompatible primitive data types".into()),
+            _ => anyhow::bail!("Incompatible primitive data types"),
         })
         .collect()
 }
 
-fn into_u16s(values: Vec<DataValue>) -> Result<Vec<u16>, String> {
+fn into_u16s(values: Vec<DataValue>) -> Result<Vec<u16>, anyhow::Error> {
     values
         .into_iter()
         .map(|value| match value {
             DataValue::U16(v) => Ok(v),
-            _ => Err("Incompatible primitive data types".into()),
+            _ => anyhow::bail!("Incompatible primitive data types"),
         })
         .collect()
 }
 
-fn into_u32s(values: Vec<DataValue>) -> Result<Vec<u32>, String> {
+fn into_u32s(values: Vec<DataValue>) -> Result<Vec<u32>, anyhow::Error> {
     values
         .into_iter()
         .map(|value| match value {
             DataValue::U32(v) => Ok(v),
-            _ => Err("Incompatible primitive data types".into()),
+            _ => anyhow::bail!("Incompatible primitive data types"),
         })
         .collect()
 }
 
-fn into_u64s(values: Vec<DataValue>) -> Result<Vec<u64>, String> {
+fn into_u64s(values: Vec<DataValue>) -> Result<Vec<u64>, anyhow::Error> {
     values
         .into_iter()
         .map(|value| match value {
             DataValue::U64(v) => Ok(v),
-            _ => Err("Incompatible primitive data types".into()),
+            _ => anyhow::bail!("Incompatible primitive data types"),
         })
         .collect()
 }
 
-fn into_bools(values: Vec<DataValue>) -> Result<Vec<bool>, String> {
+fn into_bools(values: Vec<DataValue>) -> Result<Vec<bool>, anyhow::Error> {
     values
         .into_iter()
         .map(|value| match value {
             DataValue::Bool(v) => Ok(v),
-            _ => Err("Incompatible primitive data types".into()),
+            _ => anyhow::bail!("Incompatible primitive data types"),
         })
         .collect()
 }
 
-fn into_pubkeys(values: Vec<DataValue>) -> Result<Vec<Pubkey>, String> {
+fn into_pubkeys(values: Vec<DataValue>) -> Result<Vec<Pubkey>, anyhow::Error> {
     values
         .into_iter()
         .map(|value| match value {
             DataValue::Pubkey(v) => Ok(v),
-            _ => Err("Incompatible primitive data types".into()),
+            _ => anyhow::bail!("Incompatible primitive data types"),
         })
         .collect()
 }
 
-fn into_ntt_signed_quoters(values: Vec<DataValue>) -> Result<Vec<NttSignedQuoter>, String> {
+fn into_ntt_signed_quoters(values: Vec<DataValue>) -> Result<Vec<NttSignedQuoter>, anyhow::Error> {
     values
         .into_iter()
         .map(|value| match value {
             DataValue::NttSignedQuoter(v) => Ok(v),
-            _ => Err("Incompatible primitive data types".into()),
+            _ => anyhow::bail!("Incompatible primitive data types"),
         })
         .collect()
 }
 
-fn into_bytes(values: Vec<DataValue>) -> Result<(usize, Vec<Vec<u8>>), String> {
+fn into_bytes(values: Vec<DataValue>) -> Result<(usize, Vec<Vec<u8>>), anyhow::Error> {
     let mut iter = values.into_iter();
-    let first = iter
-        .next()
-        .ok_or_else(|| "EqualTo/Neq constraints must include at least one value".to_string())?;
+    let first = iter.next().ok_or_else(|| {
+        anyhow::anyhow!("EqualTo/Neq constraints must include at least one value")
+    })?;
     let first_bytes = match first {
         DataValue::Bytes(value) => decode_hex_bytes(&value)?,
-        _ => return Err("Incompatible primitive data types".into()),
+        _ => anyhow::bail!("Incompatible primitive data types"),
     };
     let expected_length = first_bytes.len();
     let mut parsed = vec![first_bytes];
     for value in iter {
         let bytes = match value {
             DataValue::Bytes(value) => decode_hex_bytes(&value)?,
-            _ => return Err("Incompatible primitive data types".into()),
+            _ => anyhow::bail!("Incompatible primitive data types"),
         };
         if bytes.len() != expected_length {
-            return Err(format!(
-                "Bytes constraints must use values with matching lengths (expected {expected_length}, got {})",
-                bytes.len()
-            ));
+            anyhow::bail!("Bytes constraints must use values with matching lengths (expected {expected_length}, got {})", bytes.len());
         }
         parsed.push(bytes);
     }
     Ok((expected_length, parsed))
 }
 
-fn decode_hex_bytes(value: &str) -> Result<Vec<u8>, String> {
+fn decode_hex_bytes(value: &str) -> Result<Vec<u8>, anyhow::Error> {
     let hex_part = value.strip_prefix("0x").unwrap_or(value);
     if hex_part.len() % 2 != 0 {
-        return Err("Bytes constraints must use an even-length hex string".into());
+        anyhow::bail!("Bytes constraints must use an even-length hex string");
     }
-    hex::decode(hex_part).map_err(|e| format!("Invalid hex string {hex_part}: {e}"))
+    hex::decode(hex_part).map_err(|e| anyhow::anyhow!("Invalid hex string {hex_part}: {e}"))
 }
 
 fn check_integer_constraint<T: PartialOrd + PartialEq>(

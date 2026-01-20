@@ -1,19 +1,22 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
-use crate::constraint::SubstantiveProgramId;
 use crate::constraint::{
     AccountConstraint, ContextualPubkey, DataConstraintSpecification, DataValue,
     ParsedDataConstraint, ParsedInstructionConstraint, ParsedTransactionVariation,
     ParsedVariationOrderedInstructionConstraints,
 };
+use crate::constraint::{DataConstraint, SubstantiveProgramId};
 
 fn parsed_data_constraint(
     start_byte: u16,
     constraint: DataConstraintSpecification,
 ) -> ParsedDataConstraint {
-    ParsedDataConstraint::from_spec(start_byte, constraint)
-        .expect("template data constraints must be valid")
+    ParsedDataConstraint::try_from(DataConstraint {
+        start_byte,
+        constraint,
+    })
+    .expect("template data constraints must be valid")
 }
 
 impl ParsedInstructionConstraint {

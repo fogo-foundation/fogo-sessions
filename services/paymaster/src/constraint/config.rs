@@ -65,9 +65,7 @@ impl TryFrom<InstructionConstraint> for ParsedInstructionConstraint {
     ) -> Result<Self, Self::Error> {
         let parsed_data = data
             .into_iter()
-            .map(|constraint| {
-                ParsedDataConstraint::from_spec(constraint.start_byte, constraint.constraint)
-            })
+            .map(|constraint| ParsedDataConstraint::try_from(constraint))
             .collect::<Result<_, _>>()
             .map_err(|err| anyhow::anyhow!(err))?;
 
