@@ -668,6 +668,7 @@ pub fn get_domain_state_map(
 /// How many RPC clients to create for both FTL and the regular RPC client for read operations
 const RPC_POOL_SIZE: usize = 6;
 
+#[allow(clippy::unwrap_used, reason = "It's fine to panic at startup")]
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,

@@ -74,13 +74,14 @@ impl PooledHttpSender {
         let mut default_headers = header::HeaderMap::new();
         default_headers.append(
             header::HeaderName::from_static("solana-client"),
-            header::HeaderValue::from_str("paymaster").unwrap(),
+            header::HeaderValue::from_static("paymaster"),
         );
         default_headers
     }
 }
 
 #[allow(
+    clippy::unwrap_used,
     clippy::indexing_slicing,
     reason = "This is based on solana_rpc_client::http_sender"
 )]
