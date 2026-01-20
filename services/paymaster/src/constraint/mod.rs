@@ -446,6 +446,37 @@ pub struct ParsedDataConstraint {
     pub constraint: ParsedDataConstraintSpecification,
 }
 
+impl ParsedDataConstraint {
+    fn check_data(
+        &self,
+        InstructionWithIndex {
+            index: instruction_index,
+            instruction,
+        }: &InstructionWithIndex<'_>,
+    ) -> anyhow::Result<()> {
+        let length = self.constraint.byte_length();
+        let end_byte = length + usize::from(self.start_byte);
+        if end_byte > instruction.data.len() {
+            anyhow::bail!(
+                "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
+                self.start_byte,
+                end_byte - 1,
+                instruction.data.len()
+            );
+        }
+
+        let mut data_to_analyze = instruction
+            .data
+            .get(usize::from(self.start_byte)..end_byte)
+            .expect("We checked instruction.data.length is greater than end_byte");
+        self.constraint.check_bytes(&mut data_to_analyze).map_err(|err| {
+            anyhow::anyhow!("Instruction {instruction_index}: Data constraint not satisfied: {err}")
+        })?;
+
+        Ok(())
+    }
+}
+
 #[derive(Serialize)]
 pub enum ParsedDataConstraintSpecification {
     U8(IntegerConstraint<u8>),
@@ -556,38 +587,6 @@ pub enum BytesConstraint {
     EqualTo { length: usize, values: Vec<Vec<u8>> },
     Neq { length: usize, values: Vec<Vec<u8>> },
 }
-
-impl ParsedDataConstraint {
-    fn check_data(
-        &self,
-        InstructionWithIndex {
-            index: instruction_index,
-            instruction,
-        }: &InstructionWithIndex<'_>,
-    ) -> anyhow::Result<()> {
-        let length = self.constraint.byte_length();
-        let end_byte = length + usize::from(self.start_byte);
-        if end_byte > instruction.data.len() {
-            anyhow::bail!(
-                "Instruction {instruction_index}: Data constraint byte range {}-{} is out of bounds for data length {}",
-                self.start_byte,
-                end_byte - 1,
-                instruction.data.len()
-            );
-        }
-
-        let mut data_to_analyze = instruction
-            .data
-            .get(usize::from(self.start_byte)..end_byte)
-            .expect("We checked instruction.data.length is greater than end_byte");
-        self.constraint.check_bytes(&mut data_to_analyze).map_err(|err| {
-            anyhow::anyhow!("Instruction {instruction_index}: Data constraint not satisfied: {err}")
-        })?;
-
-        Ok(())
-    }
-}
-
 
 fn recover_signer_pubkey(signed_quote: SignedQuote) -> anyhow::Result<H160> {
     let message_body = signed_quote
