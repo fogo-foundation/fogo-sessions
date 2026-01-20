@@ -2,12 +2,11 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use crate::constraint::config::{DataConstraint, DataConstraintSpecification, DataValue};
+use crate::constraint::SubstantiveProgramId;
 use crate::constraint::{
-    AccountConstraint, ContextualPubkey,
-    ParsedDataConstraint, ParsedInstructionConstraint, ParsedTransactionVariation,
-    ParsedVariationOrderedInstructionConstraints,
+    AccountConstraint, ContextualPubkey, ParsedDataConstraint, ParsedInstructionConstraint,
+    ParsedTransactionVariation, ParsedVariationOrderedInstructionConstraints,
 };
-use crate::constraint::{SubstantiveProgramId};
 
 fn parsed_data_constraint(
     start_byte: u16,

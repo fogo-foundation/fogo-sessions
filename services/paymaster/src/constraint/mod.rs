@@ -550,7 +550,6 @@ pub enum ParsedDataConstraintSpecification {
     NttSignedQuoter(ScalarConstraint<NttSignedQuoter>),
 }
 
-
 impl ParsedDataConstraintSpecification {
     fn byte_length(&self) -> usize {
         match self {
@@ -560,12 +559,15 @@ impl ParsedDataConstraintSpecification {
             ParsedDataConstraintSpecification::U64(_) => 8,
             ParsedDataConstraintSpecification::Bool(_) => 1,
             ParsedDataConstraintSpecification::Pubkey(_) => 32,
-            ParsedDataConstraintSpecification::Bytes(BytesConstraint::EqualTo { length, .. })
-            | ParsedDataConstraintSpecification::Bytes(BytesConstraint::Neq { length, .. }) => *length,
+            ParsedDataConstraintSpecification::Bytes(BytesConstraint::EqualTo {
+                length, ..
+            })
+            | ParsedDataConstraintSpecification::Bytes(BytesConstraint::Neq { length, .. }) => {
+                *length
+            }
             ParsedDataConstraintSpecification::NttSignedQuoter(_) => 165,
         }
     }
-
 }
 
 #[derive(Serialize)]

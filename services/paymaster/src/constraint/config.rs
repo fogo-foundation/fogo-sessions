@@ -3,7 +3,10 @@ use serde_with::{serde_as, DisplayFromStr};
 use solana_pubkey::Pubkey;
 
 use crate::constraint::{
-    AccountConstraint, BytesConstraint, IntegerConstraint, NttSignedQuoter, ParsedDataConstraint, ParsedDataConstraintSpecification, ParsedInstructionConstraint, ParsedTransactionVariation, ParsedVariationOrderedInstructionConstraints, ScalarConstraint, SubstantiveProgramId, VariationProgramWhitelist
+    AccountConstraint, BytesConstraint, IntegerConstraint, NttSignedQuoter, ParsedDataConstraint,
+    ParsedDataConstraintSpecification, ParsedInstructionConstraint, ParsedTransactionVariation,
+    ParsedVariationOrderedInstructionConstraints, ScalarConstraint, SubstantiveProgramId,
+    VariationProgramWhitelist,
 };
 
 #[derive(Deserialize)]
@@ -61,7 +64,6 @@ impl TryFrom<DataConstraint> for ParsedDataConstraint {
     }
 }
 
-
 #[derive(Serialize, Deserialize)]
 pub enum DataConstraintSpecification {
     LessThan(DataValue),
@@ -75,9 +77,9 @@ impl TryFrom<DataConstraintSpecification> for ParsedDataConstraintSpecification 
     fn try_from(spec: DataConstraintSpecification) -> Result<Self, Self::Error> {
         match spec {
             DataConstraintSpecification::LessThan(value) => match value {
-                DataValue::U8(v) => {
-                    Ok(ParsedDataConstraintSpecification::U8(IntegerConstraint::LessThan(v)))
-                }
+                DataValue::U8(v) => Ok(ParsedDataConstraintSpecification::U8(
+                    IntegerConstraint::LessThan(v),
+                )),
                 DataValue::U16(v) => Ok(ParsedDataConstraintSpecification::U16(
                     IntegerConstraint::LessThan(v),
                 )),
@@ -87,7 +89,9 @@ impl TryFrom<DataConstraintSpecification> for ParsedDataConstraintSpecification 
                 DataValue::U64(v) => Ok(ParsedDataConstraintSpecification::U64(
                     IntegerConstraint::LessThan(v),
                 )),
-                _ => anyhow::bail!("LessThan constraints only support unsigned integer types"),
+                _ => anyhow::bail!(
+                    "LessThan constraints are only supported for unsigned integer types"
+                ),
             },
             DataConstraintSpecification::GreaterThan(value) => match value {
                 DataValue::U8(v) => Ok(ParsedDataConstraintSpecification::U8(
@@ -102,7 +106,9 @@ impl TryFrom<DataConstraintSpecification> for ParsedDataConstraintSpecification 
                 DataValue::U64(v) => Ok(ParsedDataConstraintSpecification::U64(
                     IntegerConstraint::GreaterThan(v),
                 )),
-                _ => anyhow::bail!("GreaterThan constraints only support unsigned integer types"),
+                _ => anyhow::bail!(
+                    "GreaterThan constraints are only supported for unsigned integer types"
+                ),
             },
             DataConstraintSpecification::EqualTo(values) => parse_equal_values(values, true),
             DataConstraintSpecification::Neq(values) => parse_equal_values(values, false),
@@ -184,17 +190,18 @@ fn parse_equal_values(
                 ScalarConstraint::Neq(parsed)
             }))
         }
-        DataValue::Bytes(_) => {
-            let (length, parsed) = into_bytes(values)?;
+        DataValue::Bytes(value) => {
+            let first_value = decode_hex_bytes(&value)?;
+            let bytes = extract_bytes(values, first_value.len())?;
             Ok(ParsedDataConstraintSpecification::Bytes(if is_equal {
                 BytesConstraint::EqualTo {
-                    length,
-                    values: parsed,
+                    length: bytes.len(),
+                    values: bytes,
                 }
             } else {
                 BytesConstraint::Neq {
-                    length,
-                    values: parsed,
+                    length: bytes.len(),
+                    values: bytes,
                 }
             }))
         }
@@ -203,63 +210,49 @@ fn parse_equal_values(
                 DataValue::NttSignedQuoter(v) => Some(v),
                 _ => None,
             })?;
-            Ok(ParsedDataConstraintSpecification::NttSignedQuoter(if is_equal {
-                ScalarConstraint::EqualTo(parsed)
-            } else {
-                ScalarConstraint::Neq(parsed)
-            }))
+            Ok(ParsedDataConstraintSpecification::NttSignedQuoter(
+                if is_equal {
+                    ScalarConstraint::EqualTo(parsed)
+                } else {
+                    ScalarConstraint::Neq(parsed)
+                },
+            ))
         }
     }
 }
 
-fn extract_values<T, F>(
-    values: Vec<DataValue>,
-    mapper: F,
-) -> Result<Vec<T>, anyhow::Error>
+fn extract_values<T, F>(values: Vec<DataValue>, mapper: F) -> Result<Vec<T>, anyhow::Error>
 where
     F: Fn(DataValue) -> Option<T>,
 {
     values
         .into_iter()
         .map(|value| {
-            mapper(value)
-                .ok_or_else(|| anyhow::anyhow!("Equal/Neq constraint contains elements of different types"))
+            mapper(value).ok_or_else(|| {
+                anyhow::anyhow!("EqualTo/Neq constraint contains elements of different types")
+            })
         })
         .collect()
 }
 
-fn into_bytes(values: Vec<DataValue>) -> Result<(usize, Vec<Vec<u8>>), anyhow::Error> {
-    let mut iter = values.into_iter();
-    let first = iter.next().ok_or_else(|| {
-        anyhow::anyhow!("EqualTo/Neq constraints must include at least one value")
-    })?;
-    let first_bytes = match first {
-        DataValue::Bytes(value) => decode_hex_bytes(&value)?,
-        _ => anyhow::bail!("Incompatible primitive data types"),
-    };
-    let expected_length = first_bytes.len();
-    let mut parsed = vec![first_bytes];
-    for value in iter {
-        let bytes = match value {
-            DataValue::Bytes(value) => decode_hex_bytes(&value)?,
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        };
+fn extract_bytes(
+    values: Vec<DataValue>,
+    expected_length: usize,
+) -> Result<Vec<Vec<u8>>, anyhow::Error> {
+    values.into_iter().map(|value| match value {
+        DataValue::Bytes(value) => {let bytes = decode_hex_bytes(&value)?;
         if bytes.len() != expected_length {
-            anyhow::bail!("Bytes constraints must use values with matching lengths (expected {expected_length}, got {})", bytes.len());
+            anyhow::bail!("Multiple bytes values in a EqualTo/Neq constraint must all have the same length. Expected {expected_length} bytes, got {}", bytes.len());
         }
-        parsed.push(bytes);
-    }
-    Ok((expected_length, parsed))
+        Ok(bytes)},
+        _ => anyhow::bail!("EqualTo/Neq constraint contains elements of different types"),
+    }).collect::<Result<Vec<Vec<u8>>, anyhow::Error>>()
 }
 
 fn decode_hex_bytes(value: &str) -> Result<Vec<u8>, anyhow::Error> {
     let hex_part = value.strip_prefix("0x").unwrap_or(value);
-    if hex_part.len() % 2 != 0 {
-        anyhow::bail!("Bytes constraints must use an even-length hex string");
-    }
     hex::decode(hex_part).map_err(|e| anyhow::anyhow!("Invalid hex string {hex_part}: {e}"))
 }
-
 
 #[derive(Serialize, Deserialize)]
 pub struct DataConstraint {
