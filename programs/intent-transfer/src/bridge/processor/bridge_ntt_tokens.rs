@@ -446,7 +446,10 @@ fn parse_recipient_address(address_str: &str) -> Result<[u8; 32]> {
     // left-pad with zeros to make it 32 bytes
     let mut result = [0u8; 32];
     let start_idx = 32 - bytes.len();
-    result[start_idx..].copy_from_slice(&bytes);
+    result
+        .get_mut(start_idx..)
+        .expect("We checked start_idx is within bounds")
+        .copy_from_slice(&bytes);
 
     Ok(result)
 }
