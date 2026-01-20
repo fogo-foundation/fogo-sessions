@@ -49,7 +49,7 @@ export const VariationCodeBlock = ({
       .catch((err) => {
         toast.error(`Error enabling fullscreen: ${err.message}`);
       });
-  }, [isFullscreen, toast.error]);
+  }, [toast.error]);
 
   return (
     <AnimatePresence>

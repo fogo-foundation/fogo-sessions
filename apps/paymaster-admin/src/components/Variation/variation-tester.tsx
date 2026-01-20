@@ -2,7 +2,7 @@ import { Badge } from "@fogo/component-library/Badge";
 import { Button } from "@fogo/component-library/Button";
 import { TextField } from "@fogo/component-library/TextField";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { Variation } from "../../db-schema";
 import styles from "./variation-tester.module.scss";
 
@@ -17,16 +17,11 @@ export const VariationTester = (props: VariationTesterProps) => {
     "valid" | "invalid" | null
   >(null);
   const [validationMessage, setValidationMessage] = useState<string>("");
-
-  useEffect(() => {
+  const handleTransactionChange = useCallback((value: string) => {
+    setTransaction(value);
     setValidationResult(null);
     setValidationMessage("");
-  }, [transaction]);
-
-  useEffect(() => {
-    setValidationResult(null);
-    setValidationMessage("");
-  }, [props.variation.transaction_variation, props.domain]);
+  }, []);
 
   const handleTest = useCallback(async () => {
     try {
@@ -55,14 +50,14 @@ export const VariationTester = (props: VariationTesterProps) => {
         `Error validating transaction: ${(error as Error).message}`,
       );
     }
-  }, [props.variation, transaction]);
+  }, [props.variation, props.domain, transaction]);
 
   return (
     <div className={styles.variationTester ?? ""}>
       <div className={styles.variationTesterInputRow ?? ""}>
         <TextField
           value={transaction}
-          onChange={setTransaction}
+          onChange={handleTransactionChange}
           placeholder="Enter serialized tx or tx hash"
           double={true}
           className={styles.variationTesterInput ?? ""}
