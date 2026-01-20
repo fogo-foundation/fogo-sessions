@@ -74,7 +74,10 @@ pub struct ParsedVariationOrderedInstructionConstraints {
     pub instructions: Vec<ParsedInstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,
+    pub swap_into_fogo: Vec<MintSwapRate>,
 }
+
+pub type MintSwapRate = (Pubkey, u64);
 
 #[derive(Clone)]
 pub struct ContextualDomainKeys {

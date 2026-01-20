@@ -84,6 +84,7 @@ fn handle_transaction_variation_v1(
             instructions,
             max_gas_spend,
             paymaster_fee_lamports: None, // TODO: This should be added to the DB
+            swap_into_fogo: vec![], // TODO: This should be added to the DB
         },
     ))
 }
