@@ -1,23 +1,12 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
-use crate::constraint::config::{DataConstraint, DataConstraintSpecification, DataValue};
 use crate::constraint::SubstantiveProgramId;
 use crate::constraint::{
-    AccountConstraint, ContextualPubkey, ParsedDataConstraint, ParsedInstructionConstraint,
-    ParsedTransactionVariation, ParsedVariationOrderedInstructionConstraints,
+    AccountConstraint, ContextualPubkey, IntegerConstraint, ParsedDataConstraint,
+    ParsedDataConstraintSpecification, ParsedInstructionConstraint, ParsedTransactionVariation,
+    ParsedVariationOrderedInstructionConstraints,
 };
-
-fn parsed_data_constraint(
-    start_byte: u16,
-    constraint: DataConstraintSpecification,
-) -> ParsedDataConstraint {
-    ParsedDataConstraint::try_from(DataConstraint {
-        start_byte,
-        constraint,
-    })
-    .expect("template data constraints must be valid")
-}
 
 impl ParsedInstructionConstraint {
     /// The template for the constraint for the ed25519_program instruction used to verify a single intent signature.
@@ -27,45 +16,61 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // numSignatures = 1
-                parsed_data_constraint(
-                    0,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 0,
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![1],
+                    )),
+                },
                 // padding = 0
-                parsed_data_constraint(
-                    1,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(0)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 1,
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![0],
+                    )),
+                },
                 // signatureOffset = 16 + 32 = 48
-                parsed_data_constraint(
-                    2,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(48)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 2,
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![48],
+                    )),
+                },
                 // signatureInstructionIndex = 0xffff
-                parsed_data_constraint(
-                    4,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(u16::MAX)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 4,
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![u16::MAX],
+                    )),
+                },
                 // publicKeyOffset = 16
-                parsed_data_constraint(
-                    6,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(16)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 6,
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![16],
+                    )),
+                },
                 // publicKeyInstructionIndex = 0xffff
-                parsed_data_constraint(
-                    8,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(u16::MAX)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 8,
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![u16::MAX],
+                    )),
+                },
                 // messageOffset = 16 + 32 + 64 = 112
-                parsed_data_constraint(
-                    10,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(112)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 10,
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![112],
+                    )),
+                },
                 // messageInstructionIndex = 0xffff
-                parsed_data_constraint(
-                    14,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U16(u16::MAX)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 14,
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![u16::MAX],
+                    )),
+                },
             ],
             required: true,
         }
@@ -94,10 +99,12 @@ impl ParsedInstructionConstraint {
             ],
             data: vec![
                 // instruction = 0 (StartSession)
-                parsed_data_constraint(
-                    0,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(0)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 0,
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![0],
+                    )),
+                },
             ],
             required: true,
         }
@@ -114,10 +121,12 @@ impl ParsedInstructionConstraint {
             }],
             data: vec![
                 // instruction = 1 (RevokeSession)
-                parsed_data_constraint(
-                    0,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 0,
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![1],
+                    )),
+                },
             ],
             required: true,
         }
@@ -130,10 +139,12 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // instruction = 4_000_000 (SessionWrap)
-                parsed_data_constraint(
-                    0,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U32(4_000_000)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 0,
+                    constraint: ParsedDataConstraintSpecification::U32(IntegerConstraint::EqualTo(
+                        vec![4_000_000],
+                    )),
+                },
             ],
             required: false,
         }
@@ -150,10 +161,12 @@ impl ParsedInstructionConstraint {
             }],
             data: vec![
                 // instruction = 1 (CreateIdempotent)
-                parsed_data_constraint(
-                    0,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 0,
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![1],
+                    )),
+                },
             ],
             required: false,
         }
@@ -166,10 +179,12 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // instruction = 17 (SyncNative)
-                parsed_data_constraint(
-                    0,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(17)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 0,
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![17],
+                    )),
+                },
             ],
             required: false,
         }
@@ -182,10 +197,12 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // instruction = 9 (CloseAccount)
-                parsed_data_constraint(
-                    0,
-                    DataConstraintSpecification::EqualTo(vec![DataValue::U8(9)]),
-                ),
+                ParsedDataConstraint {
+                    start_byte: 0,
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![9],
+                    )),
+                },
             ],
             required: false,
         }
