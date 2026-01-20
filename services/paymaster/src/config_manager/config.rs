@@ -41,8 +41,8 @@ impl Domain {
     ) -> anyhow::Result<HashMap<String, ParsedTransactionVariation>> {
         let mut tx_variations = tx_variations
             .into_iter()
-            .map(|(name, variation)| (name, variation.into()))
-            .collect();
+            .map(|(name, variation)| Ok((name, variation.try_into()?)))
+            .collect::<anyhow::Result<HashMap<_, _>>>()?;
         if enable_session_management {
             insert_session_management_variations(&mut tx_variations)?;
         }
