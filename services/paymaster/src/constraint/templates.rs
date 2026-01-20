@@ -1,12 +1,13 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
+use crate::constraint::config::{DataConstraint, DataConstraintSpecification, DataValue};
 use crate::constraint::{
-    AccountConstraint, ContextualPubkey, DataConstraintSpecification, DataValue,
+    AccountConstraint, ContextualPubkey,
     ParsedDataConstraint, ParsedInstructionConstraint, ParsedTransactionVariation,
     ParsedVariationOrderedInstructionConstraints,
 };
-use crate::constraint::{DataConstraint, SubstantiveProgramId};
+use crate::constraint::{SubstantiveProgramId};
 
 fn parsed_data_constraint(
     start_byte: u16,

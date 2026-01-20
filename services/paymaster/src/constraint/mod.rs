@@ -440,20 +440,44 @@ impl ContextualPubkey {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct DataConstraint {
-    pub start_byte: u16,
-    pub constraint: DataConstraintSpecification,
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct NttSignedQuoter(pub(crate) [u8; 20]);
+
+impl Serialize for NttSignedQuoter {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&format!("0x{}", hex::encode(self.0)))
+    }
+}
+
+impl<'de> Deserialize<'de> for NttSignedQuoter {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = <String as serde::Deserialize>::deserialize(deserializer)?;
+        let hex_part = s.strip_prefix("0x").unwrap_or(&s);
+        let bytes = hex::decode(hex_part)
+            .map_err(|e| serde::de::Error::custom(format!("Invalid hex string {hex_part}: {e}")))?;
+        let arr: [u8; 20] = bytes.try_into().map_err(|_| {
+            serde::de::Error::custom(
+                "Failed to convert bytes to H160 address: invalid byte array length",
+            )
+        })?;
+        Ok(NttSignedQuoter(arr))
+    }
 }
 
 #[derive(Serialize)]
 pub struct ParsedDataConstraint {
     pub start_byte: u16,
-    pub kind: ParsedDataConstraintKind,
+    pub kind: ParsedDataConstraintSpecification,
 }
 
 #[derive(Serialize)]
-pub enum ParsedDataConstraintKind {
+pub enum ParsedDataConstraintSpecification {
     U8(IntegerConstraint<u8>),
     U16(IntegerConstraint<u16>),
     U32(IntegerConstraint<u32>),
@@ -462,6 +486,85 @@ pub enum ParsedDataConstraintKind {
     Pubkey(ScalarConstraint<Pubkey>),
     Bytes(BytesConstraint),
     NttSignedQuoter(ScalarConstraint<NttSignedQuoter>),
+}
+
+
+impl ParsedDataConstraintSpecification {
+    fn byte_length(&self) -> usize {
+        match self {
+            ParsedDataConstraintSpecification::U8(_) => 1,
+            ParsedDataConstraintSpecification::U16(_) => 2,
+            ParsedDataConstraintSpecification::U32(_) => 4,
+            ParsedDataConstraintSpecification::U64(_) => 8,
+            ParsedDataConstraintSpecification::Bool(_) => 1,
+            ParsedDataConstraintSpecification::Pubkey(_) => 32,
+            ParsedDataConstraintSpecification::Bytes(BytesConstraint::EqualTo { length, .. })
+            | ParsedDataConstraintSpecification::Bytes(BytesConstraint::Neq { length, .. }) => *length,
+            ParsedDataConstraintSpecification::NttSignedQuoter(_) => 165,
+        }
+    }
+
+    fn check_bytes(&self, data: &mut &[u8]) -> Result<(), String> {
+        match self {
+            ParsedDataConstraintSpecification::U8(constraint) => {
+                let value = *data
+                    .first()
+                    .ok_or_else(|| "Expected 1 byte for U8".to_string())?;
+                check_integer_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::U16(constraint) => {
+                let value = u16::from_le_bytes((*data).try_into().map_err(|_| {
+                    format!(
+                        "Data constraint expects 2 bytes for U16, found {} bytes",
+                        data.len()
+                    )
+                })?);
+                check_integer_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::U32(constraint) => {
+                let value = u32::from_le_bytes((*data).try_into().map_err(|_| {
+                    format!(
+                        "Data constraint expects 4 bytes for U32, found {} bytes",
+                        data.len()
+                    )
+                })?);
+                check_integer_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::U64(constraint) => {
+                let value = u64::from_le_bytes((*data).try_into().map_err(|_| {
+                    format!(
+                        "Data constraint expects 8 bytes for U64, found {} bytes",
+                        data.len()
+                    )
+                })?);
+                check_integer_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::Bool(constraint) => {
+                let value = *data
+                    .first()
+                    .ok_or_else(|| "Expected 1 byte for bool".to_string())?
+                    != 0;
+                check_scalar_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::Pubkey(constraint) => {
+                let value = Pubkey::new_from_array((*data).try_into().map_err(|_| {
+                    format!(
+                        "Data constraint expects 32 bytes for Pubkey, found {} bytes",
+                        data.len()
+                    )
+                })?);
+                check_scalar_constraint(value, constraint)
+            }
+            ParsedDataConstraintSpecification::Bytes(constraint) => check_bytes_constraint(data, constraint),
+            ParsedDataConstraintSpecification::NttSignedQuoter(constraint) => {
+                let signed_quote = SignedQuote::deserialize(data)
+                    .map_err(|e| format!("Failed to deserialize NTT SignedQuote: {e}"))?;
+                let recovered_quoter =
+                    recover_signer_pubkey(signed_quote).map_err(|e| e.to_string())?;
+                check_scalar_constraint(NttSignedQuoter(recovered_quoter), constraint)
+            }
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -482,17 +585,6 @@ pub enum ScalarConstraint<T> {
 pub enum BytesConstraint {
     EqualTo { length: usize, values: Vec<Vec<u8>> },
     Neq { length: usize, values: Vec<Vec<u8>> },
-}
-
-impl TryFrom<DataConstraint> for ParsedDataConstraint {
-    type Error = anyhow::Error;
-    fn try_from(data_constraint: DataConstraint) -> Result<Self, Self::Error> {
-        let kind = ParsedDataConstraintKind::try_from(data_constraint.constraint)?;
-        Ok(Self {
-            start_byte: data_constraint.start_byte,
-            kind,
-        })
-    }
 }
 
 impl ParsedDataConstraint {
@@ -561,359 +653,6 @@ fn recover_signer_pubkey(signed_quote: SignedQuote) -> anyhow::Result<H160> {
     };
 
     Ok(evm_address)
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub struct NttSignedQuoter([u8; 20]);
-
-impl Serialize for NttSignedQuoter {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&format!("0x{}", hex::encode(self.0)))
-    }
-}
-
-impl<'de> Deserialize<'de> for NttSignedQuoter {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = <String as serde::Deserialize>::deserialize(deserializer)?;
-        let hex_part = s.strip_prefix("0x").unwrap_or(&s);
-        let bytes = hex::decode(hex_part)
-            .map_err(|e| serde::de::Error::custom(format!("Invalid hex string {hex_part}: {e}")))?;
-        let arr: [u8; 20] = bytes.try_into().map_err(|_| {
-            serde::de::Error::custom(
-                "Failed to convert bytes to H160 address: invalid byte array length",
-            )
-        })?;
-        Ok(NttSignedQuoter(arr))
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub enum DataValue {
-    U8(u8),
-    U16(u16),
-    U32(u32),
-    U64(u64),
-    Bool(bool),
-    Pubkey(Pubkey),
-    /// Fixed-size byte array specified as hex-encoded string
-    Bytes(String),
-    /// NTT quoter
-    NttSignedQuoter(NttSignedQuoter),
-}
-
-#[derive(Serialize, Deserialize)]
-pub enum DataConstraintSpecification {
-    LessThan(DataValue),
-    GreaterThan(DataValue),
-    EqualTo(Vec<DataValue>),
-    Neq(Vec<DataValue>),
-}
-
-impl TryFrom<DataConstraintSpecification> for ParsedDataConstraintKind {
-    type Error = anyhow::Error;
-    fn try_from(spec: DataConstraintSpecification) -> Result<Self, Self::Error> {
-        match spec {
-            DataConstraintSpecification::LessThan(value) => match value {
-                DataValue::U8(v) => {
-                    Ok(ParsedDataConstraintKind::U8(IntegerConstraint::LessThan(v)))
-                }
-                DataValue::U16(v) => Ok(ParsedDataConstraintKind::U16(
-                    IntegerConstraint::LessThan(v),
-                )),
-                DataValue::U32(v) => Ok(ParsedDataConstraintKind::U32(
-                    IntegerConstraint::LessThan(v),
-                )),
-                DataValue::U64(v) => Ok(ParsedDataConstraintKind::U64(
-                    IntegerConstraint::LessThan(v),
-                )),
-                _ => anyhow::bail!("LessThan constraints only support unsigned integer types"),
-            },
-            DataConstraintSpecification::GreaterThan(value) => match value {
-                DataValue::U8(v) => Ok(ParsedDataConstraintKind::U8(
-                    IntegerConstraint::GreaterThan(v),
-                )),
-                DataValue::U16(v) => Ok(ParsedDataConstraintKind::U16(
-                    IntegerConstraint::GreaterThan(v),
-                )),
-                DataValue::U32(v) => Ok(ParsedDataConstraintKind::U32(
-                    IntegerConstraint::GreaterThan(v),
-                )),
-                DataValue::U64(v) => Ok(ParsedDataConstraintKind::U64(
-                    IntegerConstraint::GreaterThan(v),
-                )),
-                _ => anyhow::bail!("GreaterThan constraints only support unsigned integer types"),
-            },
-            DataConstraintSpecification::EqualTo(values) => parse_equal_values(values, true),
-            DataConstraintSpecification::Neq(values) => parse_equal_values(values, false),
-        }
-    }
-}
-
-impl ParsedDataConstraintKind {
-    fn byte_length(&self) -> usize {
-        match self {
-            ParsedDataConstraintKind::U8(_) => 1,
-            ParsedDataConstraintKind::U16(_) => 2,
-            ParsedDataConstraintKind::U32(_) => 4,
-            ParsedDataConstraintKind::U64(_) => 8,
-            ParsedDataConstraintKind::Bool(_) => 1,
-            ParsedDataConstraintKind::Pubkey(_) => 32,
-            ParsedDataConstraintKind::Bytes(BytesConstraint::EqualTo { length, .. })
-            | ParsedDataConstraintKind::Bytes(BytesConstraint::Neq { length, .. }) => *length,
-            ParsedDataConstraintKind::NttSignedQuoter(_) => 165,
-        }
-    }
-
-    fn check_bytes(&self, data: &mut &[u8]) -> Result<(), String> {
-        match self {
-            ParsedDataConstraintKind::U8(constraint) => {
-                let value = *data
-                    .first()
-                    .ok_or_else(|| "Expected 1 byte for U8".to_string())?;
-                check_integer_constraint(value, constraint)
-            }
-            ParsedDataConstraintKind::U16(constraint) => {
-                let value = u16::from_le_bytes((*data).try_into().map_err(|_| {
-                    format!(
-                        "Data constraint expects 2 bytes for U16, found {} bytes",
-                        data.len()
-                    )
-                })?);
-                check_integer_constraint(value, constraint)
-            }
-            ParsedDataConstraintKind::U32(constraint) => {
-                let value = u32::from_le_bytes((*data).try_into().map_err(|_| {
-                    format!(
-                        "Data constraint expects 4 bytes for U32, found {} bytes",
-                        data.len()
-                    )
-                })?);
-                check_integer_constraint(value, constraint)
-            }
-            ParsedDataConstraintKind::U64(constraint) => {
-                let value = u64::from_le_bytes((*data).try_into().map_err(|_| {
-                    format!(
-                        "Data constraint expects 8 bytes for U64, found {} bytes",
-                        data.len()
-                    )
-                })?);
-                check_integer_constraint(value, constraint)
-            }
-            ParsedDataConstraintKind::Bool(constraint) => {
-                let value = *data
-                    .first()
-                    .ok_or_else(|| "Expected 1 byte for bool".to_string())?
-                    != 0;
-                check_scalar_constraint(value, constraint)
-            }
-            ParsedDataConstraintKind::Pubkey(constraint) => {
-                let value = Pubkey::new_from_array((*data).try_into().map_err(|_| {
-                    format!(
-                        "Data constraint expects 32 bytes for Pubkey, found {} bytes",
-                        data.len()
-                    )
-                })?);
-                check_scalar_constraint(value, constraint)
-            }
-            ParsedDataConstraintKind::Bytes(constraint) => check_bytes_constraint(data, constraint),
-            ParsedDataConstraintKind::NttSignedQuoter(constraint) => {
-                let signed_quote = SignedQuote::deserialize(data)
-                    .map_err(|e| format!("Failed to deserialize NTT SignedQuote: {e}"))?;
-                let recovered_quoter =
-                    recover_signer_pubkey(signed_quote).map_err(|e| e.to_string())?;
-                check_scalar_constraint(NttSignedQuoter(recovered_quoter), constraint)
-            }
-        }
-    }
-}
-
-fn parse_equal_values(
-    values: Vec<DataValue>,
-    is_equal: bool,
-) -> Result<ParsedDataConstraintKind, anyhow::Error> {
-    let first = values.first().ok_or_else(|| {
-        anyhow::anyhow!("EqualTo/Neq constraints must include at least one value")
-    })?;
-    match first {
-        DataValue::U8(_) => {
-            let parsed = into_u8s(values)?;
-            Ok(ParsedDataConstraintKind::U8(if is_equal {
-                IntegerConstraint::EqualTo(parsed)
-            } else {
-                IntegerConstraint::Neq(parsed)
-            }))
-        }
-        DataValue::U16(_) => {
-            let parsed = into_u16s(values)?;
-            Ok(ParsedDataConstraintKind::U16(if is_equal {
-                IntegerConstraint::EqualTo(parsed)
-            } else {
-                IntegerConstraint::Neq(parsed)
-            }))
-        }
-        DataValue::U32(_) => {
-            let parsed = into_u32s(values)?;
-            Ok(ParsedDataConstraintKind::U32(if is_equal {
-                IntegerConstraint::EqualTo(parsed)
-            } else {
-                IntegerConstraint::Neq(parsed)
-            }))
-        }
-        DataValue::U64(_) => {
-            let parsed = into_u64s(values)?;
-            Ok(ParsedDataConstraintKind::U64(if is_equal {
-                IntegerConstraint::EqualTo(parsed)
-            } else {
-                IntegerConstraint::Neq(parsed)
-            }))
-        }
-        DataValue::Bool(_) => {
-            let parsed = into_bools(values)?;
-            Ok(ParsedDataConstraintKind::Bool(if is_equal {
-                ScalarConstraint::EqualTo(parsed)
-            } else {
-                ScalarConstraint::Neq(parsed)
-            }))
-        }
-        DataValue::Pubkey(_) => {
-            let parsed = into_pubkeys(values)?;
-            Ok(ParsedDataConstraintKind::Pubkey(if is_equal {
-                ScalarConstraint::EqualTo(parsed)
-            } else {
-                ScalarConstraint::Neq(parsed)
-            }))
-        }
-        DataValue::Bytes(_) => {
-            let (length, parsed) = into_bytes(values)?;
-            Ok(ParsedDataConstraintKind::Bytes(if is_equal {
-                BytesConstraint::EqualTo {
-                    length,
-                    values: parsed,
-                }
-            } else {
-                BytesConstraint::Neq {
-                    length,
-                    values: parsed,
-                }
-            }))
-        }
-        DataValue::NttSignedQuoter(_) => {
-            let parsed = into_ntt_signed_quoters(values)?;
-            Ok(ParsedDataConstraintKind::NttSignedQuoter(if is_equal {
-                ScalarConstraint::EqualTo(parsed)
-            } else {
-                ScalarConstraint::Neq(parsed)
-            }))
-        }
-    }
-}
-
-fn into_u8s(values: Vec<DataValue>) -> Result<Vec<u8>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::U8(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_u16s(values: Vec<DataValue>) -> Result<Vec<u16>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::U16(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_u32s(values: Vec<DataValue>) -> Result<Vec<u32>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::U32(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_u64s(values: Vec<DataValue>) -> Result<Vec<u64>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::U64(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_bools(values: Vec<DataValue>) -> Result<Vec<bool>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::Bool(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_pubkeys(values: Vec<DataValue>) -> Result<Vec<Pubkey>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::Pubkey(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_ntt_signed_quoters(values: Vec<DataValue>) -> Result<Vec<NttSignedQuoter>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::NttSignedQuoter(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_bytes(values: Vec<DataValue>) -> Result<(usize, Vec<Vec<u8>>), anyhow::Error> {
-    let mut iter = values.into_iter();
-    let first = iter.next().ok_or_else(|| {
-        anyhow::anyhow!("EqualTo/Neq constraints must include at least one value")
-    })?;
-    let first_bytes = match first {
-        DataValue::Bytes(value) => decode_hex_bytes(&value)?,
-        _ => anyhow::bail!("Incompatible primitive data types"),
-    };
-    let expected_length = first_bytes.len();
-    let mut parsed = vec![first_bytes];
-    for value in iter {
-        let bytes = match value {
-            DataValue::Bytes(value) => decode_hex_bytes(&value)?,
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        };
-        if bytes.len() != expected_length {
-            anyhow::bail!("Bytes constraints must use values with matching lengths (expected {expected_length}, got {})", bytes.len());
-        }
-        parsed.push(bytes);
-    }
-    Ok((expected_length, parsed))
-}
-
-fn decode_hex_bytes(value: &str) -> Result<Vec<u8>, anyhow::Error> {
-    let hex_part = value.strip_prefix("0x").unwrap_or(value);
-    if hex_part.len() % 2 != 0 {
-        anyhow::bail!("Bytes constraints must use an even-length hex string");
-    }
-    hex::decode(hex_part).map_err(|e| anyhow::anyhow!("Invalid hex string {hex_part}: {e}"))
 }
 
 fn check_integer_constraint<T: PartialOrd + PartialEq>(
