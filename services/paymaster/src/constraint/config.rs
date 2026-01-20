@@ -120,7 +120,10 @@ fn parse_equal_values(
     })?;
     match first {
         DataValue::U8(_) => {
-            let parsed = into_u8s(values)?;
+            let parsed = extract_values(values, |value| match value {
+                DataValue::U8(v) => Some(v),
+                _ => None,
+            })?;
             Ok(ParsedDataConstraintSpecification::U8(if is_equal {
                 IntegerConstraint::EqualTo(parsed)
             } else {
@@ -128,7 +131,10 @@ fn parse_equal_values(
             }))
         }
         DataValue::U16(_) => {
-            let parsed = into_u16s(values)?;
+            let parsed = extract_values(values, |value| match value {
+                DataValue::U16(v) => Some(v),
+                _ => None,
+            })?;
             Ok(ParsedDataConstraintSpecification::U16(if is_equal {
                 IntegerConstraint::EqualTo(parsed)
             } else {
@@ -136,7 +142,10 @@ fn parse_equal_values(
             }))
         }
         DataValue::U32(_) => {
-            let parsed = into_u32s(values)?;
+            let parsed = extract_values(values, |value| match value {
+                DataValue::U32(v) => Some(v),
+                _ => None,
+            })?;
             Ok(ParsedDataConstraintSpecification::U32(if is_equal {
                 IntegerConstraint::EqualTo(parsed)
             } else {
@@ -144,7 +153,10 @@ fn parse_equal_values(
             }))
         }
         DataValue::U64(_) => {
-            let parsed = into_u64s(values)?;
+            let parsed = extract_values(values, |value| match value {
+                DataValue::U64(v) => Some(v),
+                _ => None,
+            })?;
             Ok(ParsedDataConstraintSpecification::U64(if is_equal {
                 IntegerConstraint::EqualTo(parsed)
             } else {
@@ -152,7 +164,10 @@ fn parse_equal_values(
             }))
         }
         DataValue::Bool(_) => {
-            let parsed = into_bools(values)?;
+            let parsed = extract_values(values, |value| match value {
+                DataValue::Bool(v) => Some(v),
+                _ => None,
+            })?;
             Ok(ParsedDataConstraintSpecification::Bool(if is_equal {
                 ScalarConstraint::EqualTo(parsed)
             } else {
@@ -160,7 +175,10 @@ fn parse_equal_values(
             }))
         }
         DataValue::Pubkey(_) => {
-            let parsed = into_pubkeys(values)?;
+            let parsed = extract_values(values, |value| match value {
+                DataValue::Pubkey(v) => Some(v),
+                _ => None,
+            })?;
             Ok(ParsedDataConstraintSpecification::Pubkey(if is_equal {
                 ScalarConstraint::EqualTo(parsed)
             } else {
@@ -182,7 +200,10 @@ fn parse_equal_values(
             }))
         }
         DataValue::NttSignedQuoter(_) => {
-            let parsed = into_ntt_signed_quoters(values)?;
+            let parsed = extract_values(values, |value| match value {
+                DataValue::NttSignedQuoter(v) => Some(v),
+                _ => None,
+            })?;
             Ok(ParsedDataConstraintSpecification::NttSignedQuoter(if is_equal {
                 ScalarConstraint::EqualTo(parsed)
             } else {
@@ -192,72 +213,18 @@ fn parse_equal_values(
     }
 }
 
-fn into_u8s(values: Vec<DataValue>) -> Result<Vec<u8>, anyhow::Error> {
+fn extract_values<T, F>(
+    values: Vec<DataValue>,
+    mapper: F,
+) -> Result<Vec<T>, anyhow::Error>
+where
+    F: Fn(DataValue) -> Option<T>,
+{
     values
         .into_iter()
-        .map(|value| match value {
-            DataValue::U8(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_u16s(values: Vec<DataValue>) -> Result<Vec<u16>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::U16(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_u32s(values: Vec<DataValue>) -> Result<Vec<u32>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::U32(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_u64s(values: Vec<DataValue>) -> Result<Vec<u64>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::U64(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_bools(values: Vec<DataValue>) -> Result<Vec<bool>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::Bool(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_pubkeys(values: Vec<DataValue>) -> Result<Vec<Pubkey>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::Pubkey(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
-        })
-        .collect()
-}
-
-fn into_ntt_signed_quoters(values: Vec<DataValue>) -> Result<Vec<NttSignedQuoter>, anyhow::Error> {
-    values
-        .into_iter()
-        .map(|value| match value {
-            DataValue::NttSignedQuoter(v) => Ok(v),
-            _ => anyhow::bail!("Incompatible primitive data types"),
+        .map(|value| {
+            mapper(value)
+                .ok_or_else(|| anyhow::anyhow!("Equal/Neq constraint contains elements of different types"))
         })
         .collect()
 }
