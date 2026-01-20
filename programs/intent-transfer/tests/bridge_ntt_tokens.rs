@@ -202,7 +202,10 @@ fn test_bridge_ntt_tokens_with_mock_wh() {
     let recipient_bytes_vec = hex::decode(recipient_hex).unwrap();
     let mut recipient_address_bytes = [0u8; 32];
     let start_idx = 32 - recipient_bytes_vec.len();
-    recipient_address_bytes[start_idx..].copy_from_slice(&recipient_bytes_vec);
+    recipient_address_bytes
+        .get_mut(start_idx..)
+        .expect("Index out of bounds in recipient address bytes")
+        .copy_from_slice(&recipient_bytes_vec);
 
     let args_hash = keccak::hashv(&[
         &amount.to_be_bytes(),

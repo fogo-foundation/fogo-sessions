@@ -148,8 +148,10 @@ impl Message {
             Ok(message) => Ok(Self::Offchain(message)),
             _ => {
                 if LegacyOffchainMessage::SIGNING_DOMAIN.len() <= data.len()
-                    && data[0..LegacyOffchainMessage::SIGNING_DOMAIN.len()]
-                        == *LegacyOffchainMessage::SIGNING_DOMAIN
+                    && data
+                        .get(0..LegacyOffchainMessage::SIGNING_DOMAIN.len())
+                        .expect("data.len() >= LegacyOffchainMessage::SIGNING_DOMAIN.len()")
+                        == LegacyOffchainMessage::SIGNING_DOMAIN
                 {
                     let message = LegacyOffchainMessage::deserialize(data).map_err(|_| {
                         std::io::Error::new(

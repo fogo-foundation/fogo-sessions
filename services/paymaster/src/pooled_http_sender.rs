@@ -82,6 +82,7 @@ impl PooledHttpSender {
 
 #[allow(
     clippy::unwrap_used,
+    clippy::indexing_slicing,
     reason = "This is based on solana_rpc_client::http_sender"
 )]
 #[async_trait]
