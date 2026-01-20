@@ -191,7 +191,7 @@ fn parse_equal_values(
             }))
         }
         DataValue::Bytes(value) => {
-            let first_value = decode_hex_bytes(&value)?;
+            let first_value = decode_hex_bytes(value)?;
             let bytes = extract_bytes(values, first_value.len())?;
             Ok(ParsedDataConstraintSpecification::Bytes(if is_equal {
                 BytesConstraint::EqualTo {

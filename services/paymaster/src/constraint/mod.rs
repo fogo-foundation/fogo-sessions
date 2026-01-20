@@ -468,7 +468,7 @@ impl ParsedDataConstraint {
                 let value = *data_to_analyze
                     .first()
                     .ok_or_else(|| anyhow::anyhow!("Expected 1 byte for U8"))?;
-                check_integer_constraint(value, constraint)
+                constraint.check(value)
             }
             ParsedDataConstraintSpecification::U16(constraint) => {
                 let value = u16::from_le_bytes((*data_to_analyze).try_into().map_err(|_| {
@@ -477,7 +477,7 @@ impl ParsedDataConstraint {
                         data_to_analyze.len()
                     )
                 })?);
-                check_integer_constraint(value, constraint)
+                constraint.check(value)
             }
             ParsedDataConstraintSpecification::U32(constraint) => {
                 let value = u32::from_le_bytes((*data_to_analyze).try_into().map_err(|_| {
@@ -486,7 +486,7 @@ impl ParsedDataConstraint {
                         data_to_analyze.len()
                     )
                 })?);
-                check_integer_constraint(value, constraint)
+                constraint.check(value)
             }
             ParsedDataConstraintSpecification::U64(constraint) => {
                 let value = u64::from_le_bytes((*data_to_analyze).try_into().map_err(|_| {
@@ -495,14 +495,14 @@ impl ParsedDataConstraint {
                         data_to_analyze.len()
                     )
                 })?);
-                check_integer_constraint(value, constraint)
+                constraint.check(value)
             }
             ParsedDataConstraintSpecification::Bool(constraint) => {
                 let value = *data_to_analyze
                     .first()
                     .ok_or_else(|| anyhow::anyhow!("Expected 1 byte for bool"))?
                     != 0;
-                check_scalar_constraint(value, constraint)
+                constraint.check(value)
             }
             ParsedDataConstraintSpecification::Pubkey(constraint) => {
                 let value =
@@ -512,16 +512,16 @@ impl ParsedDataConstraint {
                             data_to_analyze.len()
                         )
                     })?);
-                check_scalar_constraint(value, constraint)
+                constraint.check(value)
             }
             ParsedDataConstraintSpecification::Bytes(constraint) => {
-                check_bytes_constraint(data_to_analyze, constraint)
+                constraint.check(data_to_analyze)
             }
             ParsedDataConstraintSpecification::NttSignedQuoter(constraint) => {
                 let signed_quote = SignedQuote::deserialize(&mut data_to_analyze)
                     .map_err(|e| anyhow::anyhow!("Failed to deserialize NTT SignedQuote: {e}"))?;
                 let recovered_quoter = recover_signer_pubkey(signed_quote)?;
-                check_scalar_constraint(NttSignedQuoter(recovered_quoter), constraint)
+                constraint.check(NttSignedQuoter(recovered_quoter))
             }
         };
         check_result.map_err(|err| {
@@ -647,78 +647,78 @@ impl<'de> Deserialize<'de> for NttSignedQuoter {
     }
 }
 
-fn check_integer_constraint<T: PartialOrd + PartialEq>(
-    value: T,
-    constraint: &IntegerConstraint<T>,
-) -> Result<(), String> {
-    match constraint {
-        IntegerConstraint::LessThan(expected) => {
-            if value < *expected {
-                Ok(())
-            } else {
-                Err("Constraint not met".into())
+impl<T: PartialOrd + PartialEq> IntegerConstraint<T> {
+    fn check(&self, value: T) -> Result<(), String> {
+        match self {
+            IntegerConstraint::LessThan(expected) => {
+                if value < *expected {
+                    Ok(())
+                } else {
+                    Err("Constraint not met".into())
+                }
             }
-        }
-        IntegerConstraint::GreaterThan(expected) => {
-            if value > *expected {
-                Ok(())
-            } else {
-                Err("Constraint not met".into())
+            IntegerConstraint::GreaterThan(expected) => {
+                if value > *expected {
+                    Ok(())
+                } else {
+                    Err("Constraint not met".into())
+                }
             }
-        }
-        IntegerConstraint::EqualTo(values) => {
-            if values.iter().any(|v| v == &value) {
-                Ok(())
-            } else {
-                Err("No matching value found".into())
+            IntegerConstraint::EqualTo(values) => {
+                if values.iter().any(|v| v == &value) {
+                    Ok(())
+                } else {
+                    Err("No matching value found".into())
+                }
             }
-        }
-        IntegerConstraint::Neq(values) => {
-            if values.iter().any(|v| v == &value) {
-                Err("Value matches an excluded value".into())
-            } else {
-                Ok(())
-            }
-        }
-    }
-}
-
-fn check_scalar_constraint<T: PartialEq>(
-    value: T,
-    constraint: &ScalarConstraint<T>,
-) -> Result<(), String> {
-    match constraint {
-        ScalarConstraint::EqualTo(values) => {
-            if values.iter().any(|v| v == &value) {
-                Ok(())
-            } else {
-                Err("No matching value found".into())
-            }
-        }
-        ScalarConstraint::Neq(values) => {
-            if values.iter().any(|v| v == &value) {
-                Err("Value matches an excluded value".into())
-            } else {
-                Ok(())
+            IntegerConstraint::Neq(values) => {
+                if values.iter().any(|v| v == &value) {
+                    Err("Value matches an excluded value".into())
+                } else {
+                    Ok(())
+                }
             }
         }
     }
 }
 
-fn check_bytes_constraint(value: &[u8], constraint: &BytesConstraint) -> Result<(), String> {
-    match constraint {
-        BytesConstraint::EqualTo { values, .. } => {
-            if values.iter().any(|v| v.as_slice() == value) {
-                Ok(())
-            } else {
-                Err("No matching value found".into())
+impl<T: PartialEq> ScalarConstraint<T> {
+    fn check(&self, value: T) -> Result<(), String> {
+        match self {
+            ScalarConstraint::EqualTo(values) => {
+                if values.iter().any(|v| v == &value) {
+                    Ok(())
+                } else {
+                    Err("No matching value found".into())
+                }
+            }
+            ScalarConstraint::Neq(values) => {
+                if values.iter().any(|v| v == &value) {
+                    Err("Value matches an excluded value".into())
+                } else {
+                    Ok(())
+                }
             }
         }
-        BytesConstraint::Neq { values, .. } => {
-            if values.iter().any(|v| v.as_slice() == value) {
-                Err("Value matches an excluded value".into())
-            } else {
-                Ok(())
+    }
+}
+
+impl BytesConstraint {
+    fn check(&self, value: &[u8]) -> Result<(), String> {
+        match self {
+            BytesConstraint::EqualTo { values, .. } => {
+                if values.iter().any(|v| v.as_slice() == value) {
+                    Ok(())
+                } else {
+                    Err("No matching value found".into())
+                }
+            }
+            BytesConstraint::Neq { values, .. } => {
+                if values.iter().any(|v| v.as_slice() == value) {
+                    Err("Value matches an excluded value".into())
+                } else {
+                    Ok(())
+                }
             }
         }
     }
