@@ -22,7 +22,11 @@ export const stringToAmount = (str: string, decimals: number): bigint => {
   }
 };
 
-export const amountToString = (amount: bigint, decimals: number): string => {
+export const amountToString = (
+  amount: bigint,
+  decimals: number,
+  grouping = true,
+): string => {
   const asStr = amount.toString();
   const whole =
     asStr.length > decimals ? asStr.slice(0, asStr.length - decimals) : "0";
@@ -32,7 +36,10 @@ export const amountToString = (amount: bigint, decimals: number): string => {
   const decimalTruncated = decimalPadded.replace(/0+$/, "");
 
   return [
-    whole,
+    // Always use en-US formatting until we roll out localization more
+    // holistically, because it's more confusing to have the UI be only
+    // partially localized.
+    grouping ? BigInt(whole).toLocaleString("en-US") : whole,
     ...(decimalTruncated === "" ? [] : [".", decimalTruncated]),
   ].join("");
 };

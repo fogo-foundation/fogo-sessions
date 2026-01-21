@@ -426,7 +426,11 @@ const SendTokenPageImpl = ({
                 : {
                     onPress: () => {
                       props.onChangeAmount(
-                        amountToString(props.maxSendAmount, token.decimals),
+                        amountToString(
+                          props.maxSendAmount,
+                          token.decimals,
+                          false,
+                        ),
                       );
                     },
                   })}

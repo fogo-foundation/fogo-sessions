@@ -309,7 +309,11 @@ const WithdrawFormImpl = (
               : {
                   onPress: () => {
                     props.onChangeAmount(
-                      amountToString(props.maxWithdrawAmount, USDC.decimals),
+                      amountToString(
+                        props.maxWithdrawAmount,
+                        USDC.decimals,
+                        false,
+                      ),
                     );
                   },
                 })}
