@@ -109,7 +109,6 @@ export const createVariation = async (
 
 export const deleteVariation = async (
   { variationId, sessionToken }: { variationId: string; sessionToken: string },
-  _prevState: unknown
 ) => {
   'use server';
   const sessionAccount = await verifyLogInToken(sessionToken, connection);

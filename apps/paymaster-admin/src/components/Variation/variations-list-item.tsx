@@ -4,7 +4,11 @@ import { Skeleton } from "@fogo/component-library/Skeleton";
 import { TextField } from "@fogo/component-library/TextField";
 import { useToast } from "@fogo/component-library/Toast";
 import { useDataConfig } from "@fogo/component-library/useData";
-import { isEstablished, useSession } from "@fogo/sessions-sdk-react";
+import {
+  type EstablishedSessionState,
+  isEstablished,
+  useSession,
+} from "@fogo/sessions-sdk-react";
 import {
   ChecksIcon,
   CodeBlockIcon,
@@ -23,13 +27,14 @@ import { Form } from "react-aria-components";
 import { parse, stringify } from "smol-toml";
 import { ZodError } from "zod";
 import { TransactionVariations, type Variation } from "../../db-schema";
-import { createVariation, updateVariation } from './actions/variation';
+import { createVariation, updateVariation } from "./actions/variation";
 import { DeleteVariationButton } from "./delete-variation-button";
 import { VariationCodeBlock } from "./variation-code-block";
 import styles from "./variations-list-item.module.scss";
 
 type VariationListItemProps =
   | {
+      sessionState: EstablishedSessionState;
       domainConfigId: string;
       variation?: Variation;
       isLoading?: false;
@@ -46,9 +51,17 @@ export const VariationListItem = (props: VariationListItemProps) => {
   );
 };
 
-type VariationFormProps = { domainConfigId: string; variation?: Variation };
+type VariationFormProps = {
+  sessionState: EstablishedSessionState;
+  domainConfigId: string;
+  variation?: Variation;
+};
 
-const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
+const VariationForm = ({
+  sessionState,
+  variation,
+  domainConfigId,
+}: VariationFormProps) => {
   const { mutate } = useDataConfig();
   const toast = useToast();
   const sessions = useSession();
@@ -72,24 +85,24 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
     code: string;
   } | null>({
     name,
-    maxGasSpend: variation?.max_gas_spend?.toString() ?? '',
+    maxGasSpend: variation?.max_gas_spend?.toString() ?? "",
     code,
   });
 
   useEffect(() => {
     if (variation?.id) {
-      setName(variation?.name ?? '');
-      setMaxGasSpend(variation?.max_gas_spend?.toString() ?? '');
+      setName(variation?.name ?? "");
+      setMaxGasSpend(variation?.max_gas_spend?.toString() ?? "");
       setCode(
-        variation?.version === 'v0' || isEditingJson
+        variation?.version === "v0" || isEditingJson
           ? JSON.stringify(variation?.transaction_variation, null, 2)
-          : generateEditableToml(variation?.transaction_variation)
+          : generateEditableToml(variation?.transaction_variation),
       );
       baselineRef.current = {
-        name: variation?.name ?? '',
-        maxGasSpend: variation?.max_gas_spend?.toString() ?? '',
+        name: variation?.name ?? "",
+        maxGasSpend: variation?.max_gas_spend?.toString() ?? "",
         code:
-          variation?.version === 'v0' || isEditingJson
+          variation?.version === "v0" || isEditingJson
             ? JSON.stringify(variation?.transaction_variation, null, 2)
             : generateEditableToml(variation?.transaction_variation),
       };
@@ -108,12 +121,12 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
         const sessionToken = await sessions.createLogInToken();
         return updateVariation
           .bind(null, {
-            variationId: variation?.id ?? '',
+            variationId: variation?.id ?? "",
             isEditingJson,
             sessionToken,
           })(...args)
           .then((result) => {
-            mutate(['user-data', sessions.walletPublicKey.toBase58()]);
+            mutate(["user-data", sessions.walletPublicKey.toBase58()]);
             toast.success(`Variation ${name} updated!`);
             setIsExpanded(false);
             return result;
@@ -122,7 +135,7 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
         return;
       }
     },
-    [sessions, isEditingJson, variation?.id, name, mutate, toast.success]
+    [sessions, isEditingJson, variation?.id, name, mutate, toast.success],
   );
 
   const wrappedCreateVariation = useCallback(
@@ -136,7 +149,7 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
             sessionToken,
           })(...args)
           .then(() =>
-            mutate(['user-data', sessions.walletPublicKey.toBase58()])
+            mutate(["user-data", sessions.walletPublicKey.toBase58()]),
           )
           .then((result) => {
             toast.success(`Variation ${name} created!`);
@@ -147,7 +160,7 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
         return;
       }
     },
-    [sessions, domainConfigId, isEditingJson, name, mutate, toast.success]
+    [sessions, domainConfigId, isEditingJson, name, mutate, toast.success],
   );
 
   const [, formAction, isSubmitting] = useActionState(
@@ -250,7 +263,7 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
     },
     [validateCode],
   );
-  
+
   const footerActions = useMemo(() => {
     if (isDirty) {
       return (
@@ -269,7 +282,7 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
       </Button>
     );
   }, [isDirty, isSubmitting, codeError, handleCloseClick]);
-// console.log("name", { name, varName: variation?.name });
+  // console.log("name", { name, varName: variation?.name });
   return (
     <Form action={formAction} validationBehavior="aria">
       <div className={styles.variationListItem}>
@@ -317,7 +330,18 @@ const VariationForm = ({ variation, domainConfigId }: VariationFormProps) => {
             </Button>
           )}
         </button>
-        <DeleteVariationButton />
+        <DeleteVariationButton
+          {...(variation?.id
+            ? {
+                sessionState,
+                variationId: variation.id,
+                isDisabled: false,
+              }
+            : {
+                sessionState,
+                isDisabled: true,
+              })}
+        />
       </div>
       <VariationCodeBlock
         mode={isEditingJson ? "json" : "toml"}

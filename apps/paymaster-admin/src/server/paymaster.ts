@@ -139,6 +139,7 @@ export const deleteVariation = async (
   walletAddress: string,
   variationId: string
 ) => {
+
   const [variation] = await sql`
     DELETE FROM variation v
     JOIN domain_config dc ON dc.id = v.domain_config_id
@@ -149,7 +150,7 @@ export const deleteVariation = async (
     AND a.user_id = u.id
     AND u.wallet_address = ${walletAddress}
   `;
-
+console.log(variation, 'aaa');
   if (!variation) {
     throw new Error('Not found or not authorized');
   }

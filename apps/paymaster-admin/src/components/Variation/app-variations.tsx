@@ -1,3 +1,4 @@
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import type { App, DomainConfig } from "../../db-schema";
 import BreadcrumbNav from "../BreadcrumbNav";
 import { DomainSettingsButton } from "../Domain/domain-settings-modal";
@@ -10,6 +11,7 @@ type AppVariationProps =
   | {
       app: App;
       domainConfig: DomainConfig;
+      sessionState: EstablishedSessionState;
       isLoading?: false;
     }
   | {
@@ -48,7 +50,7 @@ export const AppVariation = (props: AppVariationProps) => {
         {props.isLoading ? (
           <VariationsList isLoading />
         ) : (
-          <VariationsList domainConfig={props.domainConfig} />
+          <VariationsList sessionState={props.sessionState} domainConfig={props.domainConfig} />
         )}
       </div>
     </>

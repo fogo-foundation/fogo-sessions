@@ -77,15 +77,6 @@ const VariationData = ({
   appId: string;
 }) => {
   const userData = useUserData(sessionState);
-  console.log(
-    'userData',
-    userData.data?.user?.apps
-      ?.find((app) => app.id === appId)
-      ?.domain_configs?.find(
-        (domainConfig) => domainConfig.id === domainConfigId
-      ),
-    userData
-  );
   switch (userData.type) {
     case StateType.Loading: {
       return <AppVariation isLoading />;
@@ -107,7 +98,7 @@ const VariationData = ({
       if (!domainConfig) {
         return <div>Domain config not found</div>;
       }
-      return <AppVariation app={app} domainConfig={domainConfig} />;
+      return <AppVariation sessionState={sessionState} app={app} domainConfig={domainConfig} />;
     }
     default: {
       return;
