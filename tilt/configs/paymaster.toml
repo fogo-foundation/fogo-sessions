@@ -58,6 +58,9 @@ constraint = { EqualTo = [ {U8 = 4}, {U8 = 5} ] }
 version = "v1"
 name = "Example v1 Variation"
 max_gas_spend = 1000000
+swap_into_fogo = [
+    { mint = "ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND", rate = 0.5 }
+]
 
 # Instruction 0
 [[domains.tx_variations.instructions]]

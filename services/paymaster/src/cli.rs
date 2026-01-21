@@ -85,6 +85,12 @@ pub struct RunOptions {
 
     #[arg(long, env = "DB_REFRESH_INTERVAL_SECONDS", default_value = "10")]
     pub db_refresh_interval_seconds: u64,
+
+    #[arg(long, env = "VALIANT_API_KEY")]
+    pub valiant_api_key: Option<String>,
+
+    #[arg(long)]
+    pub valiant_override_url: Option<String>,
 }
 
 #[derive(Args, Debug, Clone)]

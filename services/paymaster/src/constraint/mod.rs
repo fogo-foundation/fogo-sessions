@@ -34,6 +34,13 @@ impl ParsedTransactionVariation {
             ParsedTransactionVariation::V1(v) => &v.name,
         }
     }
+
+    pub fn swap_into_fogo(&self) -> &[MintSwapRate] {
+        match self {
+            ParsedTransactionVariation::V0(_) => &[],
+            ParsedTransactionVariation::V1(v) => &v.swap_into_fogo,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -77,7 +84,13 @@ pub struct ParsedVariationOrderedInstructionConstraints {
     pub swap_into_fogo: Vec<MintSwapRate>,
 }
 
-pub type MintSwapRate = (Pubkey, u64);
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MintSwapRate {
+    #[serde_as(as = "DisplayFromStr")]
+    pub mint: Pubkey,
+    pub rate: f64,
+}
 
 #[derive(Clone)]
 pub struct ContextualDomainKeys {
