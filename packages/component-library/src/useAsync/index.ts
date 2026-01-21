@@ -1,14 +1,14 @@
 import { useCallback, useState } from "react";
 
-export const useAsync = <T>(fn: () => Promise<T>) => {
+export const useAsync = <T, Args extends unknown[]>(fn: (...args: Args) => Promise<T>) => {
   const [state, setState] = useState<State<T>>(State.Base());
 
-  const execute = useCallback(() => {
+  const execute = useCallback((...args: Args) => {
     if (state.type === StateType.Running) {
       throw new AlreadyInProgressError();
     }
     setState(State.Running());
-    fn()
+    fn(...args)
       .then((result) => {
         setState(State.Complete(result));
       })
