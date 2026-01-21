@@ -1,5 +1,6 @@
-import { ModalDialog } from '@fogo/component-library/ModalDialog';
-import styles from './index.module.scss';
+import { Button } from "@fogo/component-library/Button";
+import { ModalDialog } from "@fogo/component-library/ModalDialog";
+import styles from "./index.module.scss";
 
 export type ConfirmModalProps = {
   isOpen: boolean;
@@ -21,7 +22,7 @@ export const ConfirmModal = ({
 }: ConfirmModalProps) => {
   return (
     <ModalDialog
-      className={styles.confirmModal}
+      modalClassName={styles.confirmModal ?? ""}
       isOpen={isOpen}
       onOpenChange={onOpenChange}
     >
@@ -30,7 +31,15 @@ export const ConfirmModal = ({
         <div className={styles.confirmModalHeaderTitle}>{title}</div>
         <div className={styles.confirmModalHeaderSubtitle}>{subtitle}</div>
       </div>
-      {children}
+      <div className={styles.confirmModalContent}>{children}</div>
+      <div className={styles.confirmModalFooter}>
+        <Button variant="outline" size="lg" onClick={()=> onOpenChange(false)}>
+          Cancel
+        </Button>
+        <Button variant="solid" size="lg" onClick={onConfirm}>
+          Confirm
+        </Button>
+      </div>
     </ModalDialog>
   );
 };
