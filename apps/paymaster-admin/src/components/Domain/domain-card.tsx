@@ -1,18 +1,19 @@
-import { Badge, type BadgeProps } from "@fogo/component-library/Badge";
+import type { BadgeProps } from "@fogo/component-library/Badge";
+import { Badge } from "@fogo/component-library/Badge";
 import { Button } from "@fogo/component-library/Button";
 import { Card } from "@fogo/component-library/Card";
 import { Skeleton } from "@fogo/component-library/Skeleton";
-import z from "zod";
-import {
-  type App,
-  type DomainConfig,
+import type z from "zod";
+import type {
+  App,
+  DomainConfig,
   NetworkEnvironmentSchema,
 } from "../../db-schema";
 import styles from "./domain-card.module.scss";
 
 type DomainCardProps =
   | {
-      app: App;
+      appId: App["id"];
       domain: DomainConfig;
       isLoading?: false;
     }
@@ -46,7 +47,7 @@ export const DomainCard = (props: DomainCardProps) =>
       </div>
       <Button
         variant="outline"
-        href={`/apps/${props.app.id}/domains/${props.domain.id}`}
+        href={`/apps/${props.appId}/domains/${props.domain.id}`}
       >
         Edit
       </Button>

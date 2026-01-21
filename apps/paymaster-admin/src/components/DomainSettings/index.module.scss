@@ -1,0 +1,18 @@
+@use '@fogo/component-library/theme';
+
+.domainSettings {
+    margin-top: theme.spacing(6);
+    margin-bottom: theme.spacing(8);
+
+  .domainSettingsCheckboxes {
+    display: flex;
+    flex-direction: column;
+    gap: theme.spacing(4);
+  }
+
+  .domainSettingsSkeleton {
+    height: theme.spacing(32);
+    display: block;
+    margin-bottom: theme.spacing(8);
+  }
+}

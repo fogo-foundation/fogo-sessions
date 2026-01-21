@@ -5,7 +5,7 @@ use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
     fetch_transaction_cost_details, send_and_confirm_transaction, send_and_confirm_transaction_ftl,
-    ChainIndex, ConfirmationResultInternal, RetryConfig,
+    ChainIndex, ConfirmationResultInternal, RetryConfig, SignedVersionedTransaction,
 };
 use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
@@ -343,14 +343,20 @@ async fn sponsor_and_send_handler(
         ))?;
     }
 
-    let (mut transaction, _): (VersionedTransaction, _) =
+    let (transaction, _): (VersionedTransaction, _) =
         bincode::serde::decode_from_slice(&transaction_bytes, bincode::config::standard())
             .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
+    let fee_payer = transaction.message.static_account_keys().first().ok_or({
+        (
+            StatusCode::BAD_REQUEST,
+            "The transaction must have a fee payer",
+        )
+    })?;
     let transaction_sponsor: &Keypair = domain_state
         .sponsors
         .iter()
-        .find(|sponsor| sponsor.pubkey() == transaction.message.static_account_keys()[0])
+        .find(|sponsor| sponsor.pubkey() == *fee_payer)
         .ok_or_else(|| -> (StatusCode, String) {
             let status_code = StatusCode::BAD_REQUEST;
             obs_validation(domain.clone(), None, status_code.to_string());
@@ -364,7 +370,7 @@ async fn sponsor_and_send_handler(
                         .map(|sponsor| sponsor.pubkey().to_string())
                         .collect::<Vec<_>>()
                         .join(","),
-                    transaction.message.static_account_keys()[0],
+                    fee_payer,
                 ),
             )
         })?;
@@ -398,8 +404,10 @@ async fn sponsor_and_send_handler(
     .to_owned();
     let gas_spend = transaction_to_validate.gas_spend;
 
-    transaction.signatures[0] = transaction_sponsor.sign_message(&transaction.message.serialize());
-    tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
+    let signature = transaction_sponsor.sign_message(&transaction.message.serialize());
+    let signed_transaction = SignedVersionedTransaction::new(transaction, signature)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    tracing::Span::current().record("tx_hash", signed_transaction.signature().to_string());
 
     let rpc_config = RpcSendTransactionConfig {
         skip_preflight: !domain_state.enable_preflight_simulation,
@@ -409,13 +417,13 @@ async fn sponsor_and_send_handler(
 
     let confirmation_result = if let Some(ref ftl_rpc) = state.ftl_rpc {
         // Use FTL service for sending and confirmation
-        send_and_confirm_transaction_ftl(ftl_rpc, &transaction, rpc_config).await?
+        send_and_confirm_transaction_ftl(ftl_rpc, &signed_transaction, rpc_config).await?
     } else {
         // Use standard RPC method
         send_and_confirm_transaction(
             &state.chain_index.rpc,
             &state.rpc_sub,
-            &transaction,
+            &signed_transaction,
             rpc_config,
         )
         .await?
@@ -660,6 +668,7 @@ pub fn get_domain_state_map(
 /// How many RPC clients to create for both FTL and the regular RPC client for read operations
 const RPC_POOL_SIZE: usize = 6;
 
+#[allow(clippy::unwrap_used, reason = "It's fine to panic at startup")]
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,

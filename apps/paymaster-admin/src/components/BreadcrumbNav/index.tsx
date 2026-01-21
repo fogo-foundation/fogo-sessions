@@ -17,7 +17,7 @@ type TitleProps = {
   titleLoading?: boolean | undefined;
 };
 
-type BreadcrumbNav = TitleProps & {
+type BreadcrumbNavProps = TitleProps & {
   items: Item[];
   action?: React.ReactNode;
 };
@@ -27,7 +27,7 @@ const BreadcrumbNav = ({
   action,
   title,
   titleLoading,
-}: BreadcrumbNav) => {
+}: BreadcrumbNavProps) => {
   return (
     <div className={styles.breadcrumbNav}>
       <div className={styles.breadcrumbNavContainer}>
@@ -61,21 +61,19 @@ const BreadcrumbNavTitle = ({ title, titleLoading }: TitleProps) => {
 
 export const BreadcrumbBackArrow = ({ items }: { items: Item[] }) => {
   const router = useRouter();
+  const itemWithHref = items.at(-2);
+
+  const hasBackLink =
+    itemWithHref && !itemWithHref.isLoading && itemWithHref.href;
+
   const handleBackClick = useCallback(() => {
-    const lastItemWithHref = items.findLast(
-      (item) => !item.isLoading && item.href,
-    );
-    if (
-      lastItemWithHref &&
-      !lastItemWithHref.isLoading &&
-      lastItemWithHref.href
-    ) {
-      router.push(lastItemWithHref.href);
+    if (hasBackLink && itemWithHref?.href) {
+      router.push(itemWithHref.href);
     }
-  }, [items, router]);
+  }, [hasBackLink, itemWithHref, router]);
 
   return (
-    items.length > 1 && (
+    hasBackLink && (
       <button className={styles.breadcrumbNavArrow} onClick={handleBackClick}>
         <ArrowLeftIcon />
       </button>
