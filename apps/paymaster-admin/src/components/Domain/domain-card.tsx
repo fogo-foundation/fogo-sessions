@@ -5,6 +5,8 @@ import { Card } from "@fogo/component-library/Card";
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import type z from "zod";
 import type {
+  App,
+  DomainConfig,
   NetworkEnvironmentSchema,
 } from "../../db-schema";
 import styles from "./domain-card.module.scss";
