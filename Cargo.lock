@@ -5697,7 +5697,7 @@ dependencies = [
 
 [[package]]
 name = "solana-intents"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "borsh 1.5.7",
  "itertools 0.14.0",
