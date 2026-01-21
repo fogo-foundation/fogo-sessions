@@ -1,6 +1,15 @@
 import { useCallback, useState } from "react";
 
-export const useAsync = <T>(fn: () => Promise<T>, { onSuccess, onError }: { onSuccess?: (result: T) => void, onError?: (error: unknown) => void } = {}) => {
+export const useAsync = <T>(
+  fn: () => Promise<T>,
+  {
+    onSuccess,
+    onError,
+  }: {
+    onSuccess?: (result: T) => void;
+    onError?: (error: unknown) => void;
+  } = {},
+) => {
   const [state, setState] = useState<State<T>>(State.Base());
 
   const execute = useCallback(() => {
