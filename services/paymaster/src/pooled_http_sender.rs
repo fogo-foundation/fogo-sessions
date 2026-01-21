@@ -55,7 +55,7 @@ impl PooledHttpSender {
                             .timeout(timeout)
                             .pool_idle_timeout(timeout)
                             .build()
-                            .expect("build rpc client"),
+                            .expect("Failed to create RPC client"),
                     )
                     .build(),
                 )
@@ -74,12 +74,17 @@ impl PooledHttpSender {
         let mut default_headers = header::HeaderMap::new();
         default_headers.append(
             header::HeaderName::from_static("solana-client"),
-            header::HeaderValue::from_str("paymaster").unwrap(),
+            header::HeaderValue::from_static("paymaster"),
         );
         default_headers
     }
 }
 
+#[allow(
+    clippy::unwrap_used,
+    clippy::indexing_slicing,
+    reason = "This is based on solana_rpc_client::http_sender"
+)]
 #[async_trait]
 impl RpcSender for PooledHttpSender {
     async fn send(
@@ -90,7 +95,10 @@ impl RpcSender for PooledHttpSender {
         let request_id = self.request_id.fetch_add(1, Ordering::Relaxed);
         let request_json = request.build_request_json(request_id, params).to_string();
 
-        let client = self.clients[(request_id as usize) % self.clients.len()].clone();
+        let client = self.clients[usize::try_from(request_id)
+            .expect("usize is u64 in modern platforms")
+            % self.clients.len()]
+        .clone();
         let mut too_many_requests_retries = 5;
         loop {
             let response = {

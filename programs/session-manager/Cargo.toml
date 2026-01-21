@@ -29,3 +29,6 @@ nom = { workspace = true }
 [dev-dependencies]
 fogo-sessions-sdk = { path = "../../packages/sessions-sdk-rs", features = ["token-program"] }
 indoc = "2.0.6"
+
+[lints]
+workspace = true

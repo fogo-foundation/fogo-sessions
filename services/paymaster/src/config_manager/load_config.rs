@@ -8,14 +8,20 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::interval;
-#[allow(dead_code)] // TODO: This module is unused until we bring back the DB
+#[allow(
+    dead_code,
+    reason = "TODO: This module is unused until we bring back the DB"
+)]
 pub async fn load_db_config(network_environment: NetworkEnvironment) -> Result<Config> {
     let config = db::config::load_config(network_environment.into()).await?;
     // config.assign_defaults(); TODO: we need to load ntt_quoter from db
     Ok(config)
 }
 
-#[allow(dead_code)] // TODO: This module is unused until we bring back the DB
+#[allow(
+    dead_code,
+    reason = "TODO: This module is unused until we bring back the DB"
+)]
 /// Spawn a background task to refresh the config every 10 seconds.
 pub fn spawn_config_refresher(
     network_environment: NetworkEnvironment,

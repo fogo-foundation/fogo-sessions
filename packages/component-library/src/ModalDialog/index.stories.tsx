@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import * as React from "react";
+import type * as React from "react";
 import { useState } from "react";
 import { Button } from "../Button/index.jsx";
 import { ModalDialog as ModalDialogComponent } from "./index.jsx";

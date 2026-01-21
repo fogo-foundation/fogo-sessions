@@ -1,3 +1,15 @@
+## 0.7.1 (2026-01-16)
+
+### Fixes
+
+- fix eager evaluation of sponsor pubkey fetch
+
+## 0.7.0 (2026-01-15)
+
+### Breaking Changes
+
+- Add variation name cli arg and validation logs
+
 ## 0.6.0 (2026-01-11)
 
 ### Breaking Changes

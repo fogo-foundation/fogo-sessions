@@ -247,6 +247,7 @@ impl From<HashMap<String, String>> for Extra {
 
 impl Session {
     #[cfg(feature = "anchor")]
+    #[allow(clippy::same_name_method)]
     /// Tries to deserialize a session account. This should only be used after checking that the account is owned by the session manager program.
     pub fn try_deserialize(data: &mut &[u8]) -> Result<Self, SessionError> {
         AccountDeserialize::try_deserialize(data).map_err(|_| SessionError::InvalidAccountData)

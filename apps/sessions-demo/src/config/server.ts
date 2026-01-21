@@ -1,7 +1,9 @@
 /* eslint-disable n/no-process-env */
+/** biome-ignore-all lint/style/noProcessEnv: we need to access env variables in here */
 
 import "server-only";
-import { FogoSessionProvider, Network } from "@fogo/sessions-sdk-react";
+import type { FogoSessionProvider } from "@fogo/sessions-sdk-react";
+import { Network } from "@fogo/sessions-sdk-react";
 import type { ComponentProps } from "react";
 
 const getNetwork = () => {

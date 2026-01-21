@@ -24,14 +24,14 @@ pub fn create_pda<'a, 'info>(
                     .collect::<Vec<&[u8]>>()
                     .as_slice()],
             ),
-            rent.minimum_balance(space as usize),
+            rent.minimum_balance(usize::try_from(space).expect("usize is u64 in sbf programs")),
             space,
             program_owner,
         )
     } else {
         // Handle the case where the account has received some lamports and is therefore already "created"
         let required_lamports = rent
-            .minimum_balance(space as usize)
+            .minimum_balance(usize::try_from(space).expect("usize is u64 in sbf programs"))
             .max(1)
             .saturating_sub(current_lamports);
         if required_lamports > 0 {

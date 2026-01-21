@@ -75,6 +75,37 @@ impl From<ConfirmationResultInternal> for ConfirmationResult {
     }
 }
 
+/// A wrapper around `VersionedTransaction` that guarantees the transaction has been signed by its fee payer (first signature slot).
+pub struct SignedVersionedTransaction(VersionedTransaction);
+
+impl SignedVersionedTransaction {
+    /// Creates a new SignedVersionedTransaction by adding the signature to the transaction.
+    /// Returns an error if the transaction has no signature slots.
+    pub fn new(
+        mut transaction: VersionedTransaction,
+        signature: Signature,
+    ) -> anyhow::Result<Self> {
+        *transaction.signatures.get_mut(0).ok_or_else(|| {
+            anyhow::anyhow!("Transaction must have at least one signature slot")
+        })? = signature;
+        Ok(Self(transaction))
+    }
+
+    /// Returns the fee-payer signature of the transaction.
+    pub fn signature(&self) -> &Signature {
+        self.0
+            .signatures
+            .first()
+            .expect("SignedVersionedTransaction is guaranteed to have at least one signature slot")
+    }
+}
+
+impl AsRef<VersionedTransaction> for SignedVersionedTransaction {
+    fn as_ref(&self) -> &VersionedTransaction {
+        &self.0
+    }
+}
+
 fn to_error_response(err: Error) -> ErrorResponse {
     (
         StatusCode::BAD_GATEWAY,
@@ -217,17 +248,20 @@ impl ChainIndex {
 #[tracing::instrument(
     skip_all,
     fields(
-        tx_hash = %transaction.signatures[0],
+        tx_hash = %transaction.signature(),
         result
     )
 )]
 pub async fn send_and_confirm_transaction(
     rpc: &RpcClient,
     pubsub: &PubsubClientWithReconnect,
-    transaction: &VersionedTransaction,
+    transaction: &SignedVersionedTransaction,
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
-    let signature = match rpc.send_transaction_with_config(transaction, config).await {
+    let signature = match rpc
+        .send_transaction_with_config(transaction.as_ref(), config)
+        .await
+    {
         Ok(sig) => {
             tracing::Span::current().record("result", "sent");
             sig
@@ -237,17 +271,17 @@ pub async fn send_and_confirm_transaction(
                 tracing::Span::current().record("result", "preflight_failure");
                 tracing::warn!(
                     "Transaction {} failed preflight: {error}",
-                    transaction.signatures[0]
+                    transaction.signature()
                 );
                 return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
-                    signature: transaction.signatures[0],
+                    signature: *transaction.signature(),
                     error,
                 });
             }
             tracing::Span::current().record("result", "send_failed");
             tracing::error!(
                 "Failed to send transaction {}: {err}",
-                transaction.signatures[0]
+                transaction.signature()
             );
             return Err(to_error_response(err));
         }
@@ -261,16 +295,16 @@ pub async fn send_and_confirm_transaction(
 #[tracing::instrument(
     skip_all,
     fields(
-        tx_hash = %transaction.signatures[0],
+        tx_hash = %transaction.signature(),
         result
     )
 )]
 pub async fn send_and_confirm_transaction_ftl(
     ftl_rpc: &RpcClient,
-    transaction: &VersionedTransaction,
+    transaction: &SignedVersionedTransaction,
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
-    let tx_bytes = bincode::serde::encode_to_vec(transaction, bincode::config::standard())
+    let tx_bytes = bincode::serde::encode_to_vec(transaction.as_ref(), bincode::config::standard())
         .map_err(|e| {
             tracing::error!("Failed to serialize transaction: {e}");
             ErrorResponse::from((
@@ -317,17 +351,17 @@ pub async fn send_and_confirm_transaction_ftl(
                     tracing::Span::current().record("result", "preflight_failure");
                     tracing::warn!(
                         "Transaction {} failed preflight: {error}",
-                        transaction.signatures[0]
+                        transaction.signature()
                     );
                     return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
-                        signature: transaction.signatures[0],
+                        signature: *transaction.signature(),
                         error,
                     });
                 } else {
                     // confirmed failed
                     tracing::Span::current().record("result", "failed");
                     return Ok(ConfirmationResultInternal::Failed {
-                        signature: transaction.signatures[0],
+                        signature: *transaction.signature(),
                         error,
                     });
                 }
@@ -336,7 +370,7 @@ pub async fn send_and_confirm_transaction_ftl(
             tracing::Span::current().record("result", "send_failed");
             tracing::error!(
                 "Failed to send transaction {}: {err}",
-                transaction.signatures[0]
+                transaction.signature()
             );
             return Err(to_error_response(err));
         }

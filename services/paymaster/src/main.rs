@@ -60,7 +60,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         )
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".parse().unwrap()),
+                .unwrap_or_else(|_| "info".parse().expect("info is a valid env filter")),
         )
         .with(telemetry)
         .init();
