@@ -4,7 +4,7 @@ description = "A set of utilities for loading & validating intent-based transact
 edition = { workspace = true }
 license = { workspace = true }
 repository = "https://github.com/fogo-foundation/fogo-sessions"
-version = "0.1.1"
+version = "0.1.2"
 
 [lib]
 crate-type = ["rlib"]
