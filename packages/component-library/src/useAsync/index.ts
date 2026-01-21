@@ -1,24 +1,26 @@
 import { useCallback, useState } from "react";
 
-export const useAsync = <T, Args extends unknown[]>(fn: (...args: Args) => Promise<T>) => {
+export const useAsync = <T>(fn: () => Promise<T>, { onSuccess, onError }: { onSuccess?: (result: T) => void, onError?: (error: unknown) => void } = {}) => {
   const [state, setState] = useState<State<T>>(State.Base());
 
-  const execute = useCallback((...args: Args) => {
+  const execute = useCallback(() => {
     if (state.type === StateType.Running) {
       throw new AlreadyInProgressError();
     }
     setState(State.Running());
-    fn(...args)
+    fn()
       .then((result) => {
         setState(State.Complete(result));
+        onSuccess?.(result);
       })
       .catch((error: unknown) => {
         // biome-ignore lint/suspicious/noConsole: we want to log the error
         console.error(error);
         setState(State.ErrorState(error));
+        onError?.(error);
         throw error;
       });
-  }, [state, fn]);
+  }, [state, fn, onSuccess, onError]);
 
   return { state, execute };
 };
