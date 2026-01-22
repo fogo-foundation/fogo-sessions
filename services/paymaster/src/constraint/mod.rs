@@ -464,10 +464,17 @@ impl ParsedDataConstraint {
             .get(usize::from(self.start_byte)..end_byte)
             .expect("We checked instruction.data.length is greater than end_byte");
         let check_result = match &self.constraint {
+            ParsedDataConstraintSpecification::Bool(constraint) => {
+                let value = *data_to_analyze
+                    .first()
+                    .expect("data_to_analyze has length 1 if data_type is Bool")
+                    != 0;
+                constraint.check(value)
+            }
             ParsedDataConstraintSpecification::U8(constraint) => {
                 let value = *data_to_analyze
                     .first()
-                    .ok_or_else(|| anyhow::anyhow!("Expected 1 byte for U8"))?;
+                    .expect("data_to_analyze has length 1 if data_type is U8");
                 constraint.check(value)
             }
             ParsedDataConstraintSpecification::U16(constraint) => {
@@ -495,13 +502,6 @@ impl ParsedDataConstraint {
                         data_to_analyze.len()
                     )
                 })?);
-                constraint.check(value)
-            }
-            ParsedDataConstraintSpecification::Bool(constraint) => {
-                let value = *data_to_analyze
-                    .first()
-                    .ok_or_else(|| anyhow::anyhow!("Expected 1 byte for bool"))?
-                    != 0;
                 constraint.check(value)
             }
             ParsedDataConstraintSpecification::Pubkey(constraint) => {
@@ -648,78 +648,66 @@ impl<'de> Deserialize<'de> for NttSignedQuoter {
 }
 
 impl<T: PartialOrd + PartialEq> IntegerConstraint<T> {
-    fn check(&self, value: T) -> Result<(), String> {
+    fn check(&self, value: T) -> anyhow::Result<()> {
         match self {
             IntegerConstraint::LessThan(expected) => {
                 if value < *expected {
                     Ok(())
                 } else {
-                    Err("Constraint not met".into())
+                    anyhow::bail!("Constraint not met")
                 }
             }
             IntegerConstraint::GreaterThan(expected) => {
                 if value > *expected {
                     Ok(())
                 } else {
-                    Err("Constraint not met".into())
+                    anyhow::bail!("Constraint not met")
                 }
             }
-            IntegerConstraint::EqualTo(values) => {
-                if values.iter().any(|v| v == &value) {
-                    Ok(())
-                } else {
-                    Err("No matching value found".into())
-                }
-            }
-            IntegerConstraint::Neq(values) => {
-                if values.iter().any(|v| v == &value) {
-                    Err("Value matches an excluded value".into())
-                } else {
-                    Ok(())
-                }
-            }
+            IntegerConstraint::EqualTo(values) => check_equal_to(values, |v| v == &value),
+            IntegerConstraint::Neq(values) => check_neq(values, |v| v == &value),
         }
     }
 }
 
 impl<T: PartialEq> ScalarConstraint<T> {
-    fn check(&self, value: T) -> Result<(), String> {
+    fn check(&self, value: T) -> anyhow::Result<()> {
         match self {
-            ScalarConstraint::EqualTo(values) => {
-                if values.iter().any(|v| v == &value) {
-                    Ok(())
-                } else {
-                    Err("No matching value found".into())
-                }
-            }
-            ScalarConstraint::Neq(values) => {
-                if values.iter().any(|v| v == &value) {
-                    Err("Value matches an excluded value".into())
-                } else {
-                    Ok(())
-                }
-            }
+            ScalarConstraint::EqualTo(values) => check_equal_to(values, |v| v == &value),
+            ScalarConstraint::Neq(values) => check_neq(values, |v| v == &value),
         }
     }
 }
 
 impl BytesConstraint {
-    fn check(&self, value: &[u8]) -> Result<(), String> {
+    fn check(&self, value: &[u8]) -> anyhow::Result<()> {
         match self {
             BytesConstraint::EqualTo { values, .. } => {
-                if values.iter().any(|v| v.as_slice() == value) {
-                    Ok(())
-                } else {
-                    Err("No matching value found".into())
-                }
+                check_equal_to(values, |v| v.as_slice() == value)
             }
-            BytesConstraint::Neq { values, .. } => {
-                if values.iter().any(|v| v.as_slice() == value) {
-                    Err("Value matches an excluded value".into())
-                } else {
-                    Ok(())
-                }
-            }
+            BytesConstraint::Neq { values, .. } => check_neq(values, |v| v.as_slice() == value),
         }
+    }
+}
+
+fn check_equal_to<T, F>(values: &[T], matches: F) -> anyhow::Result<()>
+where
+    F: Fn(&T) -> bool,
+{
+    if values.iter().any(|v| matches(v)) {
+        Ok(())
+    } else {
+        anyhow::bail!("No matching value found")
+    }
+}
+
+fn check_neq<T, F>(values: &[T], matches: F) -> anyhow::Result<()>
+where
+    F: Fn(&T) -> bool,
+{
+    if values.iter().any(|v| matches(v)) {
+        anyhow::bail!("Value matches an excluded value")
+    } else {
+        Ok(())
     }
 }
