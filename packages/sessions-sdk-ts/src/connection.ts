@@ -1,5 +1,6 @@
 import type { Wallet } from "@coral-xyz/anchor";
-import { AnchorProvider, BN } from "@coral-xyz/anchor";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { TollboothIdl, TollboothProgram } from "@fogo/sessions-idls";
 import { sha256 } from "@noble/hashes/sha2";
 import {
