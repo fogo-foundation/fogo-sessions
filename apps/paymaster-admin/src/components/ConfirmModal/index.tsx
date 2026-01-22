@@ -13,6 +13,7 @@ export type ConfirmModalProps = {
   action: React.ReactNode;
 };
 
+// todo potentially move this to the component library
 export const ConfirmModal = ({
   isOpen,
   onOpenChange,
@@ -22,22 +23,25 @@ export const ConfirmModal = ({
   subtitle,
   action,
 }: ConfirmModalProps) => (
-    <ModalDialog
-      modalClassName={styles.confirmModal ?? ""}
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
+  <ModalDialog
+    modalClassName={styles.confirmModal ?? ""}
+    isOpen={isOpen}
+    onOpenChange={onOpenChange}
+  >
+    <div
+      className={styles.confirmModalHeader}
+      data-no-children={children ? undefined : "true"}
     >
-      <div className={styles.confirmModalHeader} data-no-children={children ? undefined : "true"}>
-        <div className={styles.confirmModalHeaderAltText}>{altText}</div>
-        <div className={styles.confirmModalHeaderTitle}>{title}</div>
-        <div className={styles.confirmModalHeaderSubtitle}>{subtitle}</div>
-      </div>
-      {children && <div className={styles.confirmModalContent}>{children}</div>}
-      <div className={styles.confirmModalFooter}>
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
-          Cancel
-        </Button>
-        <div>{action}</div>
-      </div>
-    </ModalDialog>
-  );
+      <div className={styles.confirmModalHeaderAltText}>{altText}</div>
+      <div className={styles.confirmModalHeaderTitle}>{title}</div>
+      <div className={styles.confirmModalHeaderSubtitle}>{subtitle}</div>
+    </div>
+    {children && <div className={styles.confirmModalContent}>{children}</div>}
+    <div className={styles.confirmModalFooter}>
+      <Button variant="outline" onClick={() => onOpenChange(false)}>
+        Cancel
+      </Button>
+      <div>{action}</div>
+    </div>
+  </ModalDialog>
+);

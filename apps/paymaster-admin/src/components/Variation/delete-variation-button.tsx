@@ -1,40 +1,57 @@
 import { Button } from "@fogo/component-library/Button";
 import { useToast } from "@fogo/component-library/Toast";
 import { StateType, useAsync } from "@fogo/component-library/useAsync";
-import { type EstablishedSessionState } from "@fogo/sessions-sdk-react";
+import { useDataConfig } from "@fogo/component-library/useData";
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { TrashIcon } from "@phosphor-icons/react/dist/ssr";
 import { useCallback, useState } from "react";
 import { ConfirmModal } from "../ConfirmModal";
 import { deleteVariation as deleteVariationPaymaster } from "./actions/variation";
 import styles from "./delete-variation-button.module.scss";
 
-const useDeleteVariation = (sessionState: EstablishedSessionState) => {
+const useDeleteVariation = (
+  sessionState: EstablishedSessionState,
+  variationId: string,
+  { onSuccess, onError }: { onSuccess?: () => void; onError?: () => void } = {},
+) => {
+  const { mutate } = useDataConfig();
+
   const toast = useToast();
-  const deleteVariation = useCallback(
-    async ({ variationId }: { variationId: string }) => {
-      const sessionToken = await sessionState.createLogInToken();
-      await deleteVariationPaymaster({ variationId, sessionToken });
-      toast.success("Variation deleted");
-    },
-    [sessionState, toast.success],
-  );
-  return useAsync(deleteVariation);
+  const deleteVariation = useCallback(async () => {
+    const sessionToken = await sessionState.createLogInToken();
+    await deleteVariationPaymaster({ variationId, sessionToken });
+    mutate(["user-data", sessionState.walletPublicKey.toBase58()]);
+  }, [sessionState, variationId, mutate]);
+
+  const onSuccessCallback = useCallback(() => {
+    toast.success("Variation deleted");
+    onSuccess?.();
+  }, [toast.success, onSuccess]);
+
+  const onErrorCallback = useCallback(() => {
+    toast.error("Failed to delete variation");
+    onError?.();
+  }, [toast.error, onError]);
+
+  return useAsync(deleteVariation, {
+    onSuccess: onSuccessCallback,
+    onError: onErrorCallback,
+  });
 };
 
-type DeleteVariationButtonProps =
-  | {
-      sessionState: EstablishedSessionState;
-      variationId: string;
-      isDisabled: false;
-    }
-  | {
-      sessionState: EstablishedSessionState;
-      isDisabled: true;
-    };
-
-export const DeleteVariationButton = (props: DeleteVariationButtonProps) => {
+const DeleteVariationButtonWithModal = ({
+  sessionState,
+  variationId,
+}: {
+  sessionState: EstablishedSessionState;
+  variationId: string;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { execute, state } = useDeleteVariation(props.sessionState);
+  const { execute, state } = useDeleteVariation(sessionState, variationId, {
+    onSuccess: () => {
+      setIsOpen(false);
+    },
+  });
   const onOpenChange = useCallback((isOpen: boolean) => {
     setIsOpen(isOpen);
   }, []);
@@ -42,11 +59,6 @@ export const DeleteVariationButton = (props: DeleteVariationButtonProps) => {
   const handleDeleteClick = useCallback(() => {
     setIsOpen(true);
   }, []);
-
-  const handleDeleteConfirm = useCallback(() => {
-    execute();
-    setIsOpen(false);
-  }, [execute]);
 
   return (
     <>
@@ -58,7 +70,7 @@ export const DeleteVariationButton = (props: DeleteVariationButtonProps) => {
         subtitle="This action cannot be undone. Proceed with caution."
         action={
           <Button
-            onClick={handleDeleteConfirm}
+            onClick={execute}
             isDisabled={state.type === StateType.Running}
           >
             Delete
@@ -76,5 +88,33 @@ export const DeleteVariationButton = (props: DeleteVariationButtonProps) => {
         <TrashIcon />
       </Button>
     </>
+  );
+};
+
+const DisabledDeleteVariationButton = () => (
+  <Button
+    variant="ghost"
+    className={styles.deleteVariationButton ?? ""}
+    size="lg"
+    isDisabled={true}
+  >
+    <TrashIcon />
+  </Button>
+);
+
+export const DeleteVariationButton = ({
+  sessionState,
+  variationId,
+}: {
+  sessionState: EstablishedSessionState;
+  variationId?: string;
+}) => {
+  return variationId ? (
+    <DeleteVariationButtonWithModal
+      sessionState={sessionState}
+      variationId={variationId}
+    />
+  ) : (
+    <DisabledDeleteVariationButton />
   );
 };

@@ -2,7 +2,8 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { sql } from "../config/neon";
-import { type TransactionVariations, UserSchema } from "../db-schema";
+import type { TransactionVariations } from "../db-schema";
+import { UserSchema } from "../db-schema";
 
 export const fetchUserPaymasterData = async (walletAddress: string) => {
   const [user] = await sql`
@@ -73,7 +74,7 @@ export const updateVariation = async (
   data: {
     name: string;
     maxGasSpend: number;
-    transactionVariation: TransactionVariations;
+    variation: TransactionVariations;
   },
 ) => {
   const [variation] = await sql`
@@ -81,7 +82,7 @@ export const updateVariation = async (
     SET
       name = ${data.name},
       max_gas_spend = ${data.maxGasSpend},
-      transaction_variation = ${JSON.stringify(data.transactionVariation)}::jsonb,
+      transaction_variation = ${JSON.stringify(data.variation)}::jsonb,
       updated_at = now()
     FROM domain_config dc
     JOIN app a ON a.id = dc.app_id
@@ -106,7 +107,7 @@ export const createVariation = async (
   data: {
     name: string;
     maxGasSpend: number;
-    transactionVariation: TransactionVariations;
+    variation: TransactionVariations;
   },
 ) => {
   const [domainConfig] = await sql`
@@ -124,7 +125,7 @@ export const createVariation = async (
 
   const [variation] = await sql`
     INSERT INTO variation (id, domain_config_id, name, max_gas_spend, transaction_variation, version, created_at, updated_at)
-    VALUES (${uuidv4()}, ${domainConfigId}, ${data.name}, ${data.maxGasSpend}, ${JSON.stringify(data.transactionVariation)}::jsonb, 'v1', now(), now())
+    VALUES (${uuidv4()}, ${domainConfigId}, ${data.name}, ${data.maxGasSpend}, ${JSON.stringify(data.variation)}::jsonb, 'v1', now(), now())
     RETURNING id
   `;
 
@@ -137,22 +138,20 @@ export const createVariation = async (
 
 export const deleteVariation = async (
   walletAddress: string,
-  variationId: string
+  variationId: string,
 ) => {
-
   const [variation] = await sql`
     DELETE FROM variation v
-    JOIN domain_config dc ON dc.id = v.domain_config_id
-    JOIN app a ON a.id = dc.app_id
-    JOIN "user" u ON u.id = a.user_id
-    WHERE v.id = ${variationId}
+    USING domain_config dc, app a, "user" u
+    WHERE v.domain_config_id = dc.id
     AND dc.app_id = a.id
     AND a.user_id = u.id
+    AND v.id = ${variationId}
     AND u.wallet_address = ${walletAddress}
+    RETURNING v.*
   `;
-console.log(variation, 'aaa');
   if (!variation) {
-    throw new Error('Not found or not authorized');
+    throw new Error("Not found or not authorized");
   }
 
   return true;

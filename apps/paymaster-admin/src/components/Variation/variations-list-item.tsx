@@ -3,31 +3,22 @@ import { Button } from "@fogo/component-library/Button";
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import { TextField } from "@fogo/component-library/TextField";
 import { useToast } from "@fogo/component-library/Toast";
+import { StateType, useAsync } from "@fogo/component-library/useAsync";
 import { useDataConfig } from "@fogo/component-library/useData";
-import {
-  type EstablishedSessionState,
-  isEstablished,
-  useSession,
-} from "@fogo/sessions-sdk-react";
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import {
   ChecksIcon,
   CodeBlockIcon,
   XIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr/GasPump";
-import {
-  useActionState,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Form } from "react-aria-components";
 import { parse, stringify } from "smol-toml";
 import { ZodError } from "zod";
-import { TransactionVariations, type Variation } from "../../db-schema";
-import { createVariation, updateVariation } from "./actions/variation";
+import type { Variation } from "../../db-schema";
+import { TransactionVariations } from "../../db-schema";
+import { createOrUpdateVariation } from "./actions/variation";
 import { DeleteVariationButton } from "./delete-variation-button";
 import { VariationCodeBlock } from "./variation-code-block";
 import styles from "./variations-list-item.module.scss";
@@ -64,7 +55,6 @@ const VariationForm = ({
 }: VariationFormProps) => {
   const { mutate } = useDataConfig();
   const toast = useToast();
-  const sessions = useSession();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
   const [name, setName] = useState(variation?.name ?? "");
@@ -113,60 +103,8 @@ const VariationForm = ({
     variation?.max_gas_spend,
     variation?.transaction_variation,
     isEditingJson,
+    variation?.version,
   ]);
-
-  const wrappedUpdateVariation = useCallback(
-    async (...args: [unknown, FormData]) => {
-      if (isEstablished(sessions)) {
-        const sessionToken = await sessions.createLogInToken();
-        return updateVariation
-          .bind(null, {
-            variationId: variation?.id ?? "",
-            isEditingJson,
-            sessionToken,
-          })(...args)
-          .then((result) => {
-            mutate(["user-data", sessions.walletPublicKey.toBase58()]);
-            toast.success(`Variation ${name} updated!`);
-            setIsExpanded(false);
-            return result;
-          });
-      } else {
-        return;
-      }
-    },
-    [sessions, isEditingJson, variation?.id, name, mutate, toast.success],
-  );
-
-  const wrappedCreateVariation = useCallback(
-    async (...args: [unknown, FormData]) => {
-      if (isEstablished(sessions)) {
-        const sessionToken = await sessions.createLogInToken();
-        return createVariation
-          .bind(null, {
-            domainConfigId,
-            isEditingJson,
-            sessionToken,
-          })(...args)
-          .then(() =>
-            mutate(["user-data", sessions.walletPublicKey.toBase58()]),
-          )
-          .then((result) => {
-            toast.success(`Variation ${name} created!`);
-            setIsExpanded(false);
-            return result;
-          });
-      } else {
-        return;
-      }
-    },
-    [sessions, domainConfigId, isEditingJson, name, mutate, toast.success],
-  );
-
-  const [, formAction, isSubmitting] = useActionState(
-    variation ? wrappedUpdateVariation : wrappedCreateVariation,
-    null,
-  );
 
   const validateCode = useCallback(
     (value: string) => {
@@ -196,31 +134,44 @@ const VariationForm = ({
     [isEditingJson],
   );
 
-  // useEffect(() => {
-  //   if (variation?.id) {
-  //     const code =
-  //       ;
+  const wrappedCreateOrUpdateVariation = useCallback(async () => {
+    const sessionToken = await sessionState.createLogInToken();
+    const variationObject = validateCode(code);
+    if (!variationObject) {
+      throw new Error("Invalid variation");
+    }
+    return createOrUpdateVariation({
+      variationId: variation?.id,
+      domainConfigId,
+      name,
+      maxGasSpend,
+      variation: variationObject,
+      sessionToken,
+    });
+  }, [
+    sessionState,
+    domainConfigId,
+    name,
+    maxGasSpend,
+    code,
+    variation?.id,
+    validateCode,
+  ]);
 
-  //     baselineRef.current = {
-  //       name: variation.name,
-  //       maxGasSpend: String(variation.max_gas_spend),
-  //       code,
-  //     };
-  //   } else {
-  //     baselineRef.current = {
-  //       name: "",
-  //       maxGasSpend: "",
-  //       code: "",
-  //     };
-  //   }
-  // }, [
-  //   variation?.name,
-  //   variation?.max_gas_spend,
-  //   variation?.transaction_variation,
-  //   isEditingJson,
-  //   variation?.version,
-  //   variation?.id,
-  // ]);
+  const { execute, state } = useAsync(wrappedCreateOrUpdateVariation, {
+    onSuccess: () => {
+      mutate(["user-data", sessionState.walletPublicKey.toBase58()]);
+      toast.success(
+        variation ? `Variation ${name} updated!` : `Variation ${name} created!`,
+      );
+      setIsExpanded(false);
+    },
+    onError: (error) => {
+      toast.error(
+        `Failed to update variation ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    },
+  });
 
   const current = useMemo(() => {
     return { name, maxGasSpend, code };
@@ -264,27 +215,8 @@ const VariationForm = ({
     [validateCode],
   );
 
-  const footerActions = useMemo(() => {
-    if (isDirty) {
-      return (
-        <Button
-          variant="secondary"
-          type="submit"
-          isDisabled={!!isSubmitting || !!codeError}
-        >
-          {isSubmitting ? "Saving..." : "Save"}
-        </Button>
-      );
-    }
-    return (
-      <Button variant="ghost" onClick={handleCloseClick}>
-        Dismiss
-      </Button>
-    );
-  }, [isDirty, isSubmitting, codeError, handleCloseClick]);
-  // console.log("name", { name, varName: variation?.name });
   return (
-    <Form action={formAction} validationBehavior="aria">
+    <Form action={execute} validationBehavior="aria">
       <div className={styles.variationListItem}>
         <button
           type="button"
@@ -362,7 +294,19 @@ const VariationForm = ({
                 </Badge>
               )}
             </div>
-            {footerActions}
+            {isDirty ? (
+              <Button
+                variant="secondary"
+                type="submit"
+                isDisabled={state.type === StateType.Running || !!codeError}
+              >
+                {state.type === StateType.Running ? "Saving..." : "Save"}
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={handleCloseClick}>
+                Dismiss
+              </Button>
+            )}
           </>
         }
       />

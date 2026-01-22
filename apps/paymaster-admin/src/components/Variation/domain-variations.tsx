@@ -55,7 +55,10 @@ export const DomainVariation = (props: DomainVariationProps) => {
         {props.isLoading ? (
           <VariationsList isLoading />
         ) : (
-          <VariationsList sessionState={props.sessionState} domainConfig={props.domainConfig} />
+          <VariationsList
+            sessionState={props.sessionState}
+            domainConfig={props.domainConfig}
+          />
         )}
       </div>
     </>
