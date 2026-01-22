@@ -61,13 +61,13 @@ import {
   deserializePublicKeyList,
   deserializePublicKeyMap,
 } from "../deserialize-public-key.js";
-import { errorToString } from "../error-to-string.js";
 import { SessionContext as SessionReactContext } from "../hooks/use-session.js";
 import { getCacheKey } from "../hooks/use-token-account-data.js";
 import type { EstablishedOptions, StateType } from "../session-state.js";
 import { SessionState } from "../session-state.js";
 import type { SolanaMobileWallet, SolanaWallet } from "../solana-wallet.js";
 import { signWithWallet } from "../solana-wallet.js";
+import { errorToString } from "./component-library/error-to-string/index.js";
 import { ToastProvider, useToast } from "./component-library/Toast/index.js";
 import { RenewSessionModal } from "./renew-session-modal.js";
 import { SignInModal } from "./sign-in-modal.js";
