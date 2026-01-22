@@ -694,7 +694,7 @@ fn check_equal_to<T, F>(values: &[T], matches: F) -> anyhow::Result<()>
 where
     F: Fn(&T) -> bool,
 {
-    if values.iter().any(|v| matches(v)) {
+    if values.iter().any(matches) {
         Ok(())
     } else {
         anyhow::bail!("No matching value found")
@@ -705,7 +705,7 @@ fn check_neq<T, F>(values: &[T], matches: F) -> anyhow::Result<()>
 where
     F: Fn(&T) -> bool,
 {
-    if values.iter().any(|v| matches(v)) {
+    if values.iter().any(matches) {
         anyhow::bail!("Value matches an excluded value")
     } else {
         Ok(())
