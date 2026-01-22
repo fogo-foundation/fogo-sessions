@@ -41,13 +41,13 @@ use solana_signature::Signature;
 use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
-use url::Url;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
+use url::Url;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
@@ -403,7 +403,10 @@ async fn sponsor_and_send_handler(
                 Some(variation.name().to_owned()),
                 "success".to_string(),
             );
-            (variation.name().to_owned(), variation.swap_into_fogo().to_owned())
+            (
+                variation.name().to_owned(),
+                variation.swap_into_fogo().to_owned(),
+            )
         }
         Err(e) => {
             obs_validation(domain.clone(), None, "invalid".to_string());
@@ -493,18 +496,17 @@ async fn sponsor_and_send_handler(
 
         let transaction_sponsor_clone = transaction_sponsor.clone();
 
-        tokio::spawn(
-            async move {
-                if let Some(valiant_client) = &state_clone.valiant_client {
-                    valiant_client.swap_tokens_probabilistic(
+        tokio::spawn(async move {
+            if let Some(valiant_client) = &state_clone.valiant_client {
+                valiant_client
+                    .swap_tokens_probabilistic(
                         &swap_into_fogo,
                         &transaction_sponsor_clone,
                         &state_clone.chain_index.rpc,
                     )
                     .await;
-                }
             }
-        );
+        });
     }
 
     Ok(Json(confirmation_result.into()))
@@ -668,7 +670,7 @@ pub fn get_domain_state_map(
                             ),
                             Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
                         )
-                        .expect("Failed to derive keypair from mnemonic_file")
+                        .expect("Failed to derive keypair from mnemonic_file"),
                     )
                 }))
                 .expect("number_of_signers in NonZero so this should never be empty");
@@ -695,6 +697,7 @@ pub fn get_domain_state_map(
 const RPC_POOL_SIZE: usize = 6;
 
 #[allow(clippy::unwrap_used, reason = "It's fine to panic at startup")]
+#[allow(clippy::too_many_arguments)]
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
@@ -755,7 +758,8 @@ pub async fn run_server(
     let prometheus_layer = PrometheusMetricLayer::new();
 
     let valiant_client = valiant_api_key.map(|key| {
-        ValiantClient::from_params(&key, network_environment, valiant_url_override).expect("Should create Valiant client")
+        ValiantClient::from_params(&key, network_environment, valiant_url_override)
+            .expect("Should create Valiant client")
     });
 
     let app = Router::new()

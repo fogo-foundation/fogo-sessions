@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 
 use crate::constraint::{
-    AccountConstraint, DataConstraint, MintSwapRate, ParsedInstructionConstraint, ParsedTransactionVariation, ParsedVariationOrderedInstructionConstraints, SubstantiveProgramId, VariationProgramWhitelist
+    AccountConstraint, DataConstraint, MintSwapRate, ParsedInstructionConstraint,
+    ParsedTransactionVariation, ParsedVariationOrderedInstructionConstraints, SubstantiveProgramId,
+    VariationProgramWhitelist,
 };
 
 #[derive(Deserialize)]

@@ -3,9 +3,12 @@ use clap::{Parser, Subcommand, ValueEnum};
 use config::File;
 use dashmap::DashMap;
 use fogo_paymaster::{
-    config_manager::config::{Config, Domain}, constraint::{
-        ContextualDomainKeys, ParsedTransactionVariation, transaction::TransactionToValidate
-    }, parse::parse_transaction_from_base64, rpc::ChainIndex
+    config_manager::config::{Config, Domain},
+    constraint::{
+        transaction::TransactionToValidate, ContextualDomainKeys, ParsedTransactionVariation,
+    },
+    parse::parse_transaction_from_base64,
+    rpc::ChainIndex,
 };
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use futures::stream::{FuturesOrdered, StreamExt};

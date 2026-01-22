@@ -577,13 +577,13 @@ pub async fn fetch_transaction_cost_details(
 }
 
 pub async fn get_spl_ata_balance(
-    owner: &Pubkey, 
+    owner: &Pubkey,
     mint: &Pubkey,
-    rpc: &RpcClient, 
+    rpc: &RpcClient,
 ) -> anyhow::Result<u64> {
     let ata = spl_associated_token_account::get_associated_token_address(owner, mint);
     let account = rpc.get_account(&ata).await?;
-    Ok(spl_token::state::Account::unpack(&account.data)
+    spl_token::state::Account::unpack(&account.data)
         .map(|token_account| token_account.amount)
-        .map_err(|e| anyhow::anyhow!("Failed to unpack token account: {}", e))?)
+        .map_err(|e| anyhow::anyhow!("Failed to unpack token account: {}", e))
 }

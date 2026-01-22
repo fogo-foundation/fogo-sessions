@@ -8,6 +8,7 @@ pub struct Cli {
     pub command: Command,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Run the paymaster service (uses DB + env vars, no TOML)
