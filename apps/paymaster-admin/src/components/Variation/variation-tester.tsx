@@ -1,60 +1,51 @@
 import { Badge } from "@fogo/component-library/Badge";
 import { Button } from "@fogo/component-library/Button";
 import { TextField } from "@fogo/component-library/TextField";
+import { StateType, useAsync } from "@fogo/component-library/useAsync";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useCallback, useState } from "react";
 import type { Variation } from "../../db-schema";
 import styles from "./variation-tester.module.scss";
+
+type ValidationResult = { success: boolean; message: string };
 
 type VariationTesterProps = {
   domain: string;
   variation: Variation;
 };
 
-export const VariationTester = (props: VariationTesterProps) => {
+export const VariationTester = ({
+  domain,
+  variation,
+}: VariationTesterProps) => {
   const [transaction, setTransaction] = useState("");
-  const [validationResult, setValidationResult] = useState<
-    "valid" | "invalid" | null
-  >(null);
-  const [validationMessage, setValidationMessage] = useState<string>("");
-  const handleTransactionChange = useCallback((value: string) => {
-    setTransaction(value);
-    setValidationResult(null);
-    setValidationMessage("");
-  }, []);
 
-  const handleTest = useCallback(async () => {
-    try {
+  const { state, execute } = useAsync<ValidationResult>(
+    useCallback(async () => {
       const response = await fetch("/api/validate-transaction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           transaction,
-          domain: props.domain,
-          variation: props.variation,
+          domain,
+          variation,
         }),
       });
+      return response.json();
+    }, [transaction, domain, variation]),
+  );
 
-      const data = await response.json();
+  const handleTransactionChange = useCallback((value: string) => {
+    setTransaction(value);
+  }, []);
 
-      if (data.success) {
-        setValidationResult("valid");
-        setValidationMessage(data.message);
-      } else {
-        setValidationResult("invalid");
-        setValidationMessage(data.message);
-      }
-    } catch (error) {
-      setValidationResult("invalid");
-      setValidationMessage(
-        `Error validating transaction: ${(error as Error).message}`,
-      );
-    }
-  }, [props.variation, props.domain, transaction]);
+  const isComplete = state.type === StateType.Complete;
+  const isError = state.type === StateType.Error;
+  const isLoading = state.type === StateType.Running;
 
   return (
-    <div className={styles.variationTester ?? ""}>
-      <div className={styles.variationTesterInputRow ?? ""}>
+    <div>
+      <div className={styles.variationTesterInputRow}>
         <TextField
           value={transaction}
           onChange={handleTransactionChange}
@@ -62,24 +53,33 @@ export const VariationTester = (props: VariationTesterProps) => {
           double={true}
           className={styles.variationTesterInput ?? ""}
         />
-        <Button variant="secondary" onClick={handleTest}>
+        <Button variant="secondary" onClick={execute} isDisabled={isLoading}>
           Test
         </Button>
       </div>
-      {validationResult && validationMessage && (
-        <div className={styles.variationTesterOutput ?? ""}>
-          <Badge
-            variant={validationResult === "valid" ? "success" : "error"}
-            size="xs"
-          >
-            {validationResult === "valid" ? (
+      {isComplete && (
+        <div className={styles.variationTesterOutput}>
+          <Badge variant={state.result.success ? "success" : "error"} size="xs">
+            {state.result.success ? (
               <CheckCircleIcon weight="duotone" />
             ) : (
               <XCircleIcon weight="duotone" />
             )}
           </Badge>
-          <span className={styles.variationTesterOutputMessage ?? ""}>
-            {validationMessage}
+          <span className={styles.variationTesterOutputMessage}>
+            {state.result.message}
+          </span>
+        </div>
+      )}
+      {isError && (
+        <div className={styles.variationTesterOutput}>
+          <Badge variant="error" size="xs">
+            <XCircleIcon weight="duotone" />
+          </Badge>
+          <span className={styles.variationTesterOutputMessage}>
+            {state.error instanceof Error
+              ? state.error.message
+              : "Unknown error"}
           </span>
         </div>
       )}

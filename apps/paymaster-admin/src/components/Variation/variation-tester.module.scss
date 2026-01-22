@@ -1,9 +1,5 @@
 @use '@fogo/component-library/theme';
 
-.variationTester {
-  width: 100%;
-}
-
 .variationTesterInputRow {
   display: flex;
   align-items: start;
@@ -13,16 +9,6 @@
 
 .variationTesterInput {
   flex: 1;
-  min-width: 0;
-
-  textarea {
-    resize: vertical;
-    min-height: theme.spacing(10);
-    max-height: theme.spacing(40);
-    overflow-y: auto;
-    word-wrap: break-word;
-    white-space: pre-wrap;
-  }
 }
 
 .variationTesterOutput {
@@ -35,7 +21,6 @@
     @include theme.text('sm', 'normal');
     color: theme.color('foreground');
     white-space: pre-wrap;
-    word-break: break-word;
     line-height: 1.4;
     flex: 1;
   }

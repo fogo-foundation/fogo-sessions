@@ -3,8 +3,10 @@ import { unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { VersionedTransaction } from "@solana/web3.js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import type {
   AccountConstraint,
   ContextualPubkey,
@@ -15,11 +17,41 @@ import type {
   PrimitiveDataValue,
   Variation,
 } from "../../../db-schema";
+import { VariationSchema } from "../../../db-schema";
 
 const execAsync = promisify(exec);
 
+const Base64TransactionSchema = z.string().transform((val, ctx) => {
+  try {
+    const buffer = Buffer.from(val, "base64");
+    const tx = VersionedTransaction.deserialize(new Uint8Array(buffer));
+    return Buffer.from(tx.serialize()).toString("base64");
+  } catch (e) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `Invalid base64 transaction: ${(e as Error).message}`,
+    });
+  }
+  return z.NEVER;
+});
+
+const RequestBodySchema = z.object({
+  transaction: Base64TransactionSchema,
+  domain: z.string().min(1),
+  variation: VariationSchema,
+});
+
 export async function POST(req: NextRequest) {
-  const { transaction, domain, variation } = await req.json();
+  const parsed = RequestBodySchema.safeParse(await req.json());
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { success: false, message: parsed.error.message },
+      { status: 400 },
+    );
+  }
+
+  const { transaction, domain, variation } = parsed.data;
 
   const tempPath = join(tmpdir(), `config-${Date.now()}.toml`);
   await writeFile(tempPath, generateConfigToml(domain, variation));
