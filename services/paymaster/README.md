@@ -89,6 +89,8 @@ Optional flags:
 - `--listen-address` (default `0.0.0.0:4000`)
 - `--otlp-endpoint` for exporting OpenTelemetry traces (default `http://localhost:4317`)
 - `--db-refresh-interval-seconds` for how frequently domain config is refreshed (default `10` secs)
+- `--valiant-api-key` to enable swapping of accrued fee tokens into FOGO as per specifications in the config
+- `--valiant-override-url` to override the default Valiant endpoint used by the paymaster. The default behavior is determined according to the `--network-environment` flag; this override flag is handy particularly in the case of localnet testing.
 
 You can also rely on the `.env`(see `.env.example`) values and simply run `cargo run --bin fogo-paymaster run`.
 

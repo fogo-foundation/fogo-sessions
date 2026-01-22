@@ -131,12 +131,11 @@ impl ValiantClient {
         let mut headers = reqwest::header::HeaderMap::new();
         headers.insert(
             "X-API-KEY",
-            reqwest::header::HeaderValue::from_str(&api_key).expect("Invalid API key"),
+            reqwest::header::HeaderValue::from_str(&api_key)?,
         );
         let client = Client::builder()
             .default_headers(headers)
-            .build()
-            .expect("Failed to build Valiant client");
+            .build()?;
         let base_url = if let Some(override_url) = valiant_url_override {
             Url::from_str(&override_url)
         } else {
@@ -156,6 +155,8 @@ impl ValiantClient {
 
     /// Swaps tokens into FOGO based on sampling using the provided mint swap rates.
     /// If the sample is successful, constructs and submits a swap transaction.
+    /// Returns a vector of confirmation results, one per attempted swap.
+    /// Note this could return a smaller vector than the number of input mint swap rates.
     pub async fn swap_tokens_probabilistic(
         &self,
         mint_swap_rates: &[MintSwapRate],
@@ -195,7 +196,7 @@ impl ValiantClient {
             preflight_commitment: Some(CommitmentLevel::Processed),
             ..RpcSendTransactionConfig::default()
         };
-        let confirmation_result = send_and_confirm_transaction_ftl(rpc, &signed_transaction, rpc_config).await.map_err(|e| anyhow::anyhow!("Failed to send swap transaction: {:?}", e))?;
+        let confirmation_result = send_and_confirm_transaction_ftl(rpc, &signed_transaction, rpc_config).await.map_err(|e| anyhow::anyhow!("Failed to send and confirm swap transaction: {:?}", e))?;
         Ok(confirmation_result)
     }
 
@@ -228,7 +229,7 @@ impl ValiantClient {
             direct_only: false,
         };
 
-        let response: TwoHopQuoteResponse = self.client
+        let response = self.client
             .get(self.base_url.join("/dex/twoHopQuote")?)
             .query(&params)
             .send()
@@ -240,7 +241,7 @@ impl ValiantClient {
         Ok(response)
     }
 
-    /// Queries the /dex/txs/twoHopSwap endpoint to retrieve a constructed swap transaction.
+    /// Queries the /dex/txs/twoHopSwap endpoint to retrieve a swap transaction.
     async fn get_two_hop_swap(
         &self,
         pubkey: &Pubkey,
@@ -265,7 +266,7 @@ impl ValiantClient {
         let mut url = self.base_url.join("/dex/txs/twoHopSwap")?;
         url.set_query(Some(&query_string));
 
-        let response: TwoHopSwapResponse = self.client.get(url)
+        let response = self.client.get(url)
             .send()
             .await?
             .error_for_status()?
