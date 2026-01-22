@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.1.4 (2026-01-22)
+
+### Fixes
+
+- Import BN from bn.js instead of anchor
+
 ## 0.1.3 (2026-01-15)
 
 ### Fixes

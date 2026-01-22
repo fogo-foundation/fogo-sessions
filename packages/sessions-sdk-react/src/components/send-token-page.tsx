@@ -17,7 +17,6 @@ import { useCallback, useMemo, useState } from "react";
 import { Form } from "react-aria-components";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
-import { errorToString } from "../error-to-string.js";
 import { usePrice } from "../hooks/use-price.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
@@ -25,6 +24,7 @@ import { useTokenAccountData } from "../hooks/use-token-account-data.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { signWithWallet } from "../solana-wallet.js";
 import { Button } from "./component-library/Button/index.js";
+import { errorToString } from "./component-library/error-to-string/index.js";
 import { Link } from "./component-library/Link/index.js";
 import { TextField } from "./component-library/TextField/index.js";
 import { useToast } from "./component-library/Toast/index.js";
@@ -426,7 +426,11 @@ const SendTokenPageImpl = ({
                 : {
                     onPress: () => {
                       props.onChangeAmount(
-                        amountToString(props.maxSendAmount, token.decimals),
+                        amountToString(
+                          props.maxSendAmount,
+                          token.decimals,
+                          false,
+                        ),
                       );
                     },
                   })}

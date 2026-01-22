@@ -3,6 +3,7 @@
 .depositPage {
   height: 100%;
   position: relative;
+  overflow: auto;
 
   .backButton {
     position: absolute;
