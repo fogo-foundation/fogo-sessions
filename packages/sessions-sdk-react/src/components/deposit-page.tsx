@@ -8,13 +8,12 @@ import type { FormEvent } from "react";
 import { useCallback, useState } from "react";
 import { Form } from "react-aria-components";
 import type { KeyedMutator } from "swr";
-
 import { stringToAmount } from "../amount-to-string.js";
-import { errorToString } from "../error-to-string.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { EstablishedSessionState } from "../session-state.js";
 import { USDC } from "../wormhole-routes.js";
 import { Button } from "./component-library/Button/index.js";
+import { errorToString } from "./component-library/error-to-string/index.js";
 import { Link } from "./component-library/Link/index.js";
 import { useToast } from "./component-library/Toast/index.js";
 import { StateType, useData } from "./component-library/useData/index.js";

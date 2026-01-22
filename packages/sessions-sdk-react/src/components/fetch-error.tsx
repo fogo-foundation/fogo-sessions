@@ -1,9 +1,8 @@
 import { WarningCircleIcon } from "@phosphor-icons/react/dist/ssr/WarningCircle";
 import clsx from "clsx";
 import type { ComponentProps, ReactNode } from "react";
-
-import { errorToString } from "../error-to-string.js";
 import { Button } from "./component-library/Button/index.js";
+import { errorToString } from "./component-library/error-to-string/index.js";
 import styles from "./fetch-error.module.css";
 
 type Props = {

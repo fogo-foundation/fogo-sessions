@@ -7,7 +7,6 @@ import type { ComponentProps } from "react";
 import { useCallback } from "react";
 import { GridList, GridListItem } from "react-aria-components";
 import { amountToString } from "../amount-to-string.js";
-import { errorToString } from "../error-to-string.js";
 import { usePrice } from "../hooks/use-price.js";
 import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
@@ -19,6 +18,7 @@ import {
 import type { EstablishedSessionState } from "../session-state.js";
 import { Button } from "./component-library/Button/index.js";
 import { CopyButton } from "./component-library/CopyButton/index.js";
+import { errorToString } from "./component-library/error-to-string/index.js";
 import { Link } from "./component-library/Link/index.js";
 import { useToast } from "./component-library/Toast/index.js";
 import {
