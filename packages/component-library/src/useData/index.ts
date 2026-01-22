@@ -6,6 +6,7 @@ export const useData = <T>(...args: Parameters<typeof useSWR<T>>) => {
   const { data, isLoading, mutate, ...rest } = useSWR(...args);
 
   const error = rest.error as unknown;
+
   const reset = useCallback(() => {
     mutate(undefined).catch((error: unknown) => {
       // biome-ignore lint/suspicious/noConsole: we want to log the error
