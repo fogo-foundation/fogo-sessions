@@ -17,8 +17,8 @@
     "@fogo/component-library": "workspace:*",
     "@fogo/sessions-sdk": "workspace:",
     "@fogo/sessions-sdk-react": "workspace:*",
-    "@phosphor-icons/react": "catalog:",
     "@neondatabase/serverless": "catalog:",
+    "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana/web3.js": "catalog:",
     "ace-builds": "catalog:",
@@ -30,6 +30,7 @@
     "react-aria": "catalog:",
     "react-aria-components": "catalog:",
     "react-dom": "catalog:",
+    "smol-toml": "^1.6.0",
     "swr": "catalog:",
     "zod": "catalog:"
   },
@@ -39,8 +40,8 @@
     "@types/pg": "catalog:",
     "@types/react": "catalog:",
     "autoprefixer": "catalog:",
-    "postcss": "catalog:",
     "modern-normalize": "catalog:",
+    "postcss": "catalog:",
     "typescript": "catalog:",
     "vercel": "catalog:"
   }

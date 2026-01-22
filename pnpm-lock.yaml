@@ -362,6 +362,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
+      smol-toml:
+        specifier: ^1.6.0
+        version: 1.6.0
       swr:
         specifier: 'catalog:'
         version: 2.3.3(react@19.2.1)
@@ -407,7 +410,7 @@ importers:
         version: link:../../packages/sessions-sdk-react
       '@next/third-parties':
         specifier: 'catalog:'
-        version: 16.0.7(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)
+        version: 16.0.7(next@16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)
       '@phosphor-icons/react':
         specifier: 'catalog:'
         version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -416,10 +419,10 @@ importers:
         version: 2.1.1
       next:
         specifier: 'catalog:'
-        version: 16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+        version: 16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
       nuqs:
         specifier: ^2.8.0
-        version: 2.8.0(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)
+        version: 2.8.0(next@16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)
       pino:
         specifier: 'catalog:'
         version: 9.7.0
@@ -444,7 +447,7 @@ importers:
         version: 4.10.2
       '@cprussin/jest-config':
         specifier: 'catalog:'
-        version: 3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.8.3)))(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
+        version: 3.1.2(@babel/core@7.28.5)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.28.5))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.8.3)))(next@16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@cprussin/tsconfig':
         specifier: 'catalog:'
         version: 4.0.1(typescript@5.8.3)
@@ -11878,6 +11881,10 @@ packages:
     resolution: {integrity: sha512-94hK0Hh8rPqQl2xXc3HsaBoOXKV20MToPkcXvwbISWLEs+64sBq5kFgn2kJDHb1Pry9yrP0dxrCI9RRci7RXKg==}
     engines: {node: '>= 6.0.0', npm: '>= 3.0.0'}
 
+  smol-toml@1.6.0:
+    resolution: {integrity: sha512-4zemZi0HvTnYwLfrpk/CF9LOd9Lt87kAt50GnqhMpyF9U3poDAP2+iukq2bZsO/ufegbYehBkqINbsWxj4l4cw==}
+    engines: {node: '>= 18'}
+
   snake-case@3.0.4:
     resolution: {integrity: sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==}
 
@@ -15194,33 +15201,6 @@ snapshots:
 
   '@cosmjs/utils@0.33.1': {}
 
-  '@cprussin/jest-config@3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.8.3)))(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.8.3)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@cprussin/jest-runner-eslint': 0.0.4(@jest/test-result@29.7.0)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.8.3)))
-      '@cprussin/jest-runner-prettier': 1.0.0(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.8.3)))(prettier@3.5.3)
-      '@testing-library/jest-dom': 6.6.3
-      jest: 29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.8.3))
-      jest-environment-jsdom: 30.0.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      prettier: 3.5.3
-      ts-jest: 29.4.0(@babel/core@7.27.4)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.8.3)))(typescript@5.8.3)
-      typescript: 5.8.3
-    optionalDependencies:
-      next: 16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@jest/test-result'
-      - '@jest/transform'
-      - '@jest/types'
-      - babel-jest
-      - bufferutil
-      - canvas
-      - esbuild
-      - eslint
-      - jest-runner
-      - jest-util
-      - supports-color
-      - utf-8-validate
-
   '@cprussin/jest-config@3.1.2(@babel/core@7.27.4)(@jest/test-result@29.7.0)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(bufferutil@4.0.9)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.9.3)))(next@15.5.7(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(prettier@3.5.3)(typescript@5.9.3)(utf-8-validate@5.0.10)':
     dependencies:
       '@cprussin/jest-runner-eslint': 0.0.4(@jest/test-result@29.7.0)(eslint@9.29.0(jiti@2.6.1))(jest-runner@29.7.0)(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.9.3)))
@@ -17056,9 +17036,9 @@ snapshots:
   '@next/swc-win32-x64-msvc@16.0.10':
     optional: true
 
-  '@next/third-parties@16.0.7(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)':
+  '@next/third-parties@16.0.7(next@16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1)':
     dependencies:
-      next: 16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+      next: 16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
       react: 19.2.1
       third-party-capital: 1.0.20
 
@@ -27247,30 +27227,6 @@ snapshots:
       - babel-plugin-macros
     optional: true
 
-  next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2):
-    dependencies:
-      '@next/env': 16.0.10
-      '@swc/helpers': 0.5.15
-      caniuse-lite: 1.0.30001723
-      postcss: 8.4.31
-      react: 19.2.1
-      react-dom: 19.2.1(react@19.2.1)
-      styled-jsx: 5.1.6(@babel/core@7.27.4)(react@19.2.1)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 16.0.10
-      '@next/swc-darwin-x64': 16.0.10
-      '@next/swc-linux-arm64-gnu': 16.0.10
-      '@next/swc-linux-arm64-musl': 16.0.10
-      '@next/swc-linux-x64-gnu': 16.0.10
-      '@next/swc-linux-x64-musl': 16.0.10
-      '@next/swc-win32-arm64-msvc': 16.0.10
-      '@next/swc-win32-x64-msvc': 16.0.10
-      sass: 1.89.2
-      sharp: 0.34.5
-    transitivePeerDependencies:
-      - '@babel/core'
-      - babel-plugin-macros
-
   next@16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2):
     dependencies:
       '@next/env': 16.0.10
@@ -27394,12 +27350,12 @@ snapshots:
 
   nullthrows@1.1.1: {}
 
-  nuqs@2.8.0(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1):
+  nuqs@2.8.0(next@16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1):
     dependencies:
       '@standard-schema/spec': 1.0.0
       react: 19.2.1
     optionalDependencies:
-      next: 16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
+      next: 16.0.10(@babel/core@7.28.5)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2)
 
   nwsapi@2.2.20: {}
 
@@ -28931,6 +28887,8 @@ snapshots:
 
   smart-buffer@4.2.0: {}
 
+  smol-toml@1.6.0: {}
+
   snake-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
@@ -29194,6 +29152,7 @@ snapshots:
       react: 19.2.1
     optionalDependencies:
       '@babel/core': 7.27.4
+    optional: true
 
   styled-jsx@5.1.6(@babel/core@7.28.5)(react@19.2.1):
     dependencies:
@@ -29521,26 +29480,6 @@ snapshots:
   ts-invariant@0.10.3:
     dependencies:
       tslib: 2.8.1
-
-  ts-jest@29.4.0(@babel/core@7.27.4)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.8.3)))(typescript@5.8.3):
-    dependencies:
-      bs-logger: 0.2.6
-      ejs: 3.1.10
-      fast-json-stable-stringify: 2.1.0
-      jest: 29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.8.3))
-      json5: 2.2.3
-      lodash.memoize: 4.1.2
-      make-error: 1.3.6
-      semver: 7.7.3
-      type-fest: 4.41.0
-      typescript: 5.8.3
-      yargs-parser: 21.1.1
-    optionalDependencies:
-      '@babel/core': 7.27.4
-      '@jest/transform': 29.7.0
-      '@jest/types': 30.0.0
-      babel-jest: 29.7.0(@babel/core@7.27.4)
-      jest-util: 30.0.0
 
   ts-jest@29.4.0(@babel/core@7.27.4)(@jest/transform@29.7.0)(@jest/types@30.0.0)(babel-jest@29.7.0(@babel/core@7.27.4))(jest-util@30.0.0)(jest@29.7.0(@types/node@24.0.3)(ts-node@10.9.1(@swc/core@1.12.7(@swc/helpers@0.5.17))(@types/node@24.0.3)(typescript@5.9.3)))(typescript@5.9.3):
     dependencies:
