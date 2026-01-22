@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { useCallback, useMemo } from "react";
 
 import { amountToString, stringToAmount } from "../amount-to-string.js";
-import { errorToString } from "../error-to-string.js";
+import { errorToString } from "./component-library/error-to-string/index.js";
 import { TextField } from "./component-library/TextField/index.js";
 
 export const TokenAmountInput = ({

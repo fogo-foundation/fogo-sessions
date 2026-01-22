@@ -4,6 +4,8 @@
   display: flex;
   flex-flow: column nowrap;
   height: 100%;
+  overflow: auto;
+  padding-bottom: theme.spacing(10);
 
   .header {
     padding: theme.spacing(2);
