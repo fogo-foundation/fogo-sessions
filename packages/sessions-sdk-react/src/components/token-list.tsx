@@ -248,7 +248,6 @@ const UnwrapButton = ({
           <ExplorerLink network={network} txHash={result.signature} />,
         );
       } else {
-        // biome-ignore lint/suspicious/noConsole: we want to log the error
         toast.error("Failed to unwrap", errorToString(result.error));
       }
     } catch (error: unknown) {
