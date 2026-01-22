@@ -1,4 +1,4 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -11,7 +11,7 @@ import { z } from "zod";
 import type { Variation } from "../../../db-schema";
 import { VariationSchema } from "../../../db-schema";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const Base64TransactionSchema = z.string().transform((val, ctx) => {
   try {
@@ -50,8 +50,19 @@ export async function POST(req: NextRequest) {
 
   try {
     // TODO: need to figure out how to fix the sponsor issue, handling both registered and unregistered domains
-    const command = `paymaster-tx-validator validate --config ${tempPath} --transaction "${transaction}" --domain ${domain} --variation ${variation.name} --sponsor 11111111111111111111111111111111`;
-    const { stdout } = await execAsync(command);
+    const { stdout } = await execFileAsync("paymaster-tx-validator", [
+      "validate",
+      "--config",
+      tempPath,
+      "--transaction",
+      transaction,
+      "--domain",
+      domain,
+      "--variation",
+      variation.name,
+      "--sponsor",
+      "11111111111111111111111111111111",
+    ]);
 
     // TODO: clean up the paymaster tx validator tool to have more standard success/error return format
     const success = stdout.includes("✅ Matches");
