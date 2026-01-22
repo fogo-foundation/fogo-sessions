@@ -8,10 +8,11 @@ import { connection } from "../../../fogo-connection";
 import {
   createVariation as createVariationPaymaster,
   deleteVariation as deleteVariationPaymaster,
+  fetchUserPaymasterData,
   updateVariation as updateVariationPaymaster,
 } from "../../../server/paymaster";
 
-const variationSchema = z.object({
+const createOrUpdateVariationSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
   maxGasSpend: z.coerce
     .number()
@@ -41,7 +42,7 @@ export const createOrUpdateVariation = async ({
     throw new Error("User not found");
   }
   try {
-    const validatedFields = variationSchema.parse({
+    const validatedFields = createOrUpdateVariationSchema.parse({
       name,
       maxGasSpend,
       variation,
@@ -68,7 +69,7 @@ export const createOrUpdateVariation = async ({
     }
   }
 
-  return true;
+  return fetchUserPaymasterData(userAddress);
 };
 
 export const deleteVariation = async ({

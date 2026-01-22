@@ -1,10 +1,10 @@
 import { Button } from "@fogo/component-library/Button";
 import { useToast } from "@fogo/component-library/Toast";
 import { StateType, useAsync } from "@fogo/component-library/useAsync";
-import { useDataConfig } from "@fogo/component-library/useData";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { TrashIcon } from "@phosphor-icons/react/dist/ssr";
 import { useCallback, useState } from "react";
+import { useUserData } from "../../client/paymaster";
 import { ConfirmModal } from "../ConfirmModal";
 import { deleteVariation as deleteVariationPaymaster } from "./actions/variation";
 import styles from "./delete-variation-button.module.scss";
@@ -14,14 +14,16 @@ const useDeleteVariation = (
   variationId: string,
   { onSuccess, onError }: { onSuccess?: () => void; onError?: () => void } = {},
 ) => {
-  const { mutate } = useDataConfig();
+  const userData = useUserData(sessionState);
 
   const toast = useToast();
   const deleteVariation = useCallback(async () => {
     const sessionToken = await sessionState.createLogInToken();
     await deleteVariationPaymaster({ variationId, sessionToken });
-    mutate(["user-data", sessionState.walletPublicKey.toBase58()]);
-  }, [sessionState, variationId, mutate]);
+    if ("mutate" in userData) {
+      await userData.mutate();
+    }
+  }, [sessionState, variationId, userData]);
 
   const onSuccessCallback = useCallback(() => {
     toast.success("Variation deleted");

@@ -5,7 +5,6 @@ import { Skeleton } from "@fogo/component-library/Skeleton";
 import { TextField } from "@fogo/component-library/TextField";
 import { useToast } from "@fogo/component-library/Toast";
 import { StateType, useAsync } from "@fogo/component-library/useAsync";
-import { useDataConfig } from "@fogo/component-library/useData";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import {
   ChecksIcon,
@@ -17,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Form } from "react-aria-components";
 import { parse, stringify } from "smol-toml";
 import { ZodError } from "zod";
+import { useUserData } from "../../client/paymaster";
 import type { Variation } from "../../db-schema";
 import { TransactionVariations } from "../../db-schema";
 import { createOrUpdateVariation } from "./actions/variation";
@@ -54,7 +54,7 @@ const VariationForm = ({
   variation,
   domainConfigId,
 }: VariationFormProps) => {
-  const { mutate } = useDataConfig();
+  const userData = useUserData(sessionState);
   const toast = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
@@ -82,20 +82,14 @@ const VariationForm = ({
 
   useEffect(() => {
     if (variation?.id) {
-      setName(variation?.name ?? "");
-      setMaxGasSpend(variation?.max_gas_spend?.toString() ?? "");
-      setCode(
+      const variationCode =
         variation?.version === "v0" || isEditingJson
           ? JSON.stringify(variation?.transaction_variation, null, 2)
-          : generateEditableToml(variation?.transaction_variation),
-      );
+          : generateEditableToml(variation?.transaction_variation ?? []);
       baselineRef.current = {
         name: variation?.name ?? "",
         maxGasSpend: variation?.max_gas_spend?.toString() ?? "",
-        code:
-          variation?.version === "v0" || isEditingJson
-            ? JSON.stringify(variation?.transaction_variation, null, 2)
-            : generateEditableToml(variation?.transaction_variation),
+        code: variationCode,
       };
     }
   }, [
@@ -106,6 +100,13 @@ const VariationForm = ({
     isEditingJson,
     variation?.version,
   ]);
+
+  const resetForm = useCallback(() => {
+    setName("");
+    setMaxGasSpend("");
+    setCode("");
+    setCodeError(undefined);
+  }, []);
 
   const validateCode = useCallback(
     (value: string) => {
@@ -161,10 +162,16 @@ const VariationForm = ({
 
   const { execute, state } = useAsync(wrappedCreateOrUpdateVariation, {
     onSuccess: () => {
-      mutate(["user-data", sessionState.walletPublicKey.toBase58()]);
       toast.success(
         variation ? `Variation ${name} updated!` : `Variation ${name} created!`,
       );
+      if ("mutate" in userData) {
+        userData.mutate();
+        // reset the empty component that was used to create the variation
+        if (!variation) {
+          resetForm();
+        }
+      }
       setIsExpanded(false);
     },
     onError: (error) => {
@@ -216,8 +223,16 @@ const VariationForm = ({
     [validateCode],
   );
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      execute();
+    },
+    [execute],
+  );
+
   return (
-    <Form action={execute} validationBehavior="aria">
+    <Form validationBehavior="aria" onSubmit={handleSubmit}>
       <div className={styles.variationListItem}>
         <button
           type="button"
