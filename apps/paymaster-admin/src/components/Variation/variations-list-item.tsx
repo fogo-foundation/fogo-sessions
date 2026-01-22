@@ -1,5 +1,6 @@
 import { Badge } from "@fogo/component-library/Badge";
 import { Button } from "@fogo/component-library/Button";
+import { errorToString } from "@fogo/component-library/error-to-string";
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import { TextField } from "@fogo/component-library/TextField";
 import { useToast } from "@fogo/component-library/Toast";
@@ -168,7 +169,7 @@ const VariationForm = ({
     },
     onError: (error) => {
       toast.error(
-        `Failed to update variation ${name}: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to update variation ${name}: ${errorToString(error)}`,
       );
     },
   });
@@ -286,8 +287,12 @@ const VariationForm = ({
               <Button variant="ghost" onClick={handleEditJsonClick} size="sm">
                 {isEditingJson ? "TOML" : "JSON"}
               </Button>
-              {codeError ? (
-                <p className={styles.variationFormFooterError}>{codeError}</p>
+              {codeError || state.type === StateType.Error ? (
+                <p className={styles.variationFormFooterError}>
+                  {state.type === StateType.Error
+                    ? errorToString(state.error)
+                    : codeError}
+                </p>
               ) : (
                 <Badge variant="success" size="xs">
                   All passed <ChecksIcon />

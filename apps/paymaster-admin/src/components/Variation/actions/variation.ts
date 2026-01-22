@@ -2,7 +2,7 @@
 
 import { verifyLogInToken } from "@fogo/sessions-sdk";
 import { revalidateTag } from "next/cache";
-import { z } from "zod";
+import { ZodError, z } from "zod";
 import { TransactionVariations } from "../../../db-schema";
 import { connection } from "../../../fogo-connection";
 import {
@@ -40,28 +40,35 @@ export const createOrUpdateVariation = async ({
   if (!userAddress) {
     throw new Error("User not found");
   }
-  const validatedFields = variationSchema.parse({
-    name,
-    maxGasSpend,
-    variation,
-  });
-  if (variationId) {
-    await updateVariationPaymaster(userAddress, variationId, {
-      name: validatedFields.name,
-      maxGasSpend: validatedFields.maxGasSpend,
-      variation: validatedFields.variation,
+  try {
+    const validatedFields = variationSchema.parse({
+      name,
+      maxGasSpend,
+      variation,
     });
-  } else {
-    await createVariationPaymaster(userAddress, domainConfigId, {
-      name: validatedFields.name,
-      maxGasSpend: validatedFields.maxGasSpend,
-      variation: validatedFields.variation,
-    });
+    if (variationId) {
+      await updateVariationPaymaster(userAddress, variationId, {
+        name: validatedFields.name,
+        maxGasSpend: validatedFields.maxGasSpend,
+        variation: validatedFields.variation,
+      });
+    } else {
+      await createVariationPaymaster(userAddress, domainConfigId, {
+        name: validatedFields.name,
+        maxGasSpend: validatedFields.maxGasSpend,
+        variation: validatedFields.variation,
+      });
+    }
+    revalidateTag("user-data", "max");
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      throw new Error(error.errors.map((error) => error.message).join(", "));
+    } else {
+      throw new Error(String(error));
+    }
   }
 
-  revalidateTag("user-data", "max");
-
-  return { success: true };
+  return true;
 };
 
 export const deleteVariation = async ({
@@ -81,5 +88,5 @@ export const deleteVariation = async ({
 
   revalidateTag("user-data", "max");
 
-  return { success: true };
+  return true;
 };
