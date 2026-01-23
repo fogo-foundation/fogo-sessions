@@ -1,7 +1,7 @@
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import { Switch } from "@fogo/component-library/Switch";
 import { GearIcon } from "@phosphor-icons/react/dist/ssr";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { DomainConfig } from "../../db-schema";
 import { ListHeader } from "../ListHeader";
 import styles from "./index.module.scss";
@@ -9,13 +9,20 @@ import styles from "./index.module.scss";
 type DomainSettingsSwitchProps = {
   label: string;
   isEnabled: boolean;
+  onChange?: (isEnabled: boolean) => void;
 };
 
 export const DomainSettingsSwitch = (props: DomainSettingsSwitchProps) => {
   const [isEnabled, setIsEnabled] = useState(props.isEnabled);
 
+  useEffect(() => {
+    setIsEnabled(props.isEnabled);
+  }, [props.isEnabled]);
+
   const handleToggle = () => {
-    setIsEnabled(!isEnabled);
+    const newValue = !isEnabled;
+    setIsEnabled(newValue);
+    props.onChange?.(newValue);
   };
 
   return (
@@ -50,10 +57,16 @@ export const DomainSettings = (props: DomainSettingsProps) => {
         <DomainSettingsSwitch
           label="Enable Session Management"
           isEnabled={props.domainConfig.enable_session_management}
+          onChange={() => {
+            // No-op for now
+          }}
         />
         <DomainSettingsSwitch
           label="Enable Preflight Simulation"
           isEnabled={props.domainConfig.enable_preflight_simulation}
+          onChange={() => {
+            // No-op for now
+          }}
         />
       </div>
     </div>
