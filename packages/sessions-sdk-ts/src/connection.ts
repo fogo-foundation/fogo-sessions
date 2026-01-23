@@ -293,7 +293,7 @@ const buildTransaction = async (
         ),
       (tx) =>
         tollboothInstruction === undefined ||
-        tx.instructions.map(
+        tx.instructions.some(
           (instruction) => instruction.programAddress == TollboothIdl.address,
         )
           ? tx
