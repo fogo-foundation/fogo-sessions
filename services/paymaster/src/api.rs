@@ -527,8 +527,7 @@ async fn sponsor_and_send_handler(
                                                     &state.chain_index.rpc,
                                                     signature,
                                                     &transaction_sponsor.pubkey(),
-                                                    *mint,
-                                                    RetryConfig {
+                                                    *mint,                                                    RetryConfig {
                                                         max_tries: 3,
                                                         sleep_ms: 2000,
                                                     }
