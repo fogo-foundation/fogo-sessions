@@ -110,16 +110,16 @@ impl TryFrom<DataConstraintSpecification> for ParsedDataConstraintSpecification 
                     "GreaterThan constraints are only supported for unsigned integer types"
                 ),
             },
-            DataConstraintSpecification::EqualTo(values) => parse_equal_values(values, true),
-            DataConstraintSpecification::Neq(values) => parse_equal_values(values, false),
+            DataConstraintSpecification::EqualTo(values) => parse_exact_match_values(values, true),
+            DataConstraintSpecification::Neq(values) => parse_exact_match_values(values, false),
         }
     }
 }
 
-fn parse_equal_values(
+fn parse_exact_match_values(
     values: Vec<DataValue>,
     is_equal: bool,
-) -> Result<ParsedDataConstraintSpecification, anyhow::Error> {
+) -> anyhow::Result<ParsedDataConstraintSpecification> {
     let first = values.first().ok_or_else(|| {
         anyhow::anyhow!("EqualTo/Neq constraints must include at least one value")
     })?;
@@ -221,7 +221,7 @@ fn parse_equal_values(
     }
 }
 
-fn extract_values<T, F>(values: Vec<DataValue>, mapper: F) -> Result<Vec<T>, anyhow::Error>
+fn extract_values<T, F>(values: Vec<DataValue>, mapper: F) -> anyhow::Result<Vec<T>>
 where
     F: Fn(DataValue) -> Option<T>,
 {
@@ -238,7 +238,7 @@ where
 fn extract_bytes(
     values: Vec<DataValue>,
     expected_length: usize,
-) -> Result<Vec<Vec<u8>>, anyhow::Error> {
+) -> anyhow::Result<Vec<Vec<u8>>> {
     values
         .into_iter()
         .map(|value| match value {
@@ -254,10 +254,10 @@ fn extract_bytes(
             }
             _ => anyhow::bail!("EqualTo/Neq constraint contains elements of different types"),
         })
-        .collect::<Result<Vec<Vec<u8>>, anyhow::Error>>()
+        .collect::<anyhow::Result<Vec<Vec<u8>>>>()
 }
 
-fn decode_hex_bytes(value: &str) -> Result<Vec<u8>, anyhow::Error> {
+fn decode_hex_bytes(value: &str) -> anyhow::Result<Vec<u8>> {
     let hex_part = value.strip_prefix("0x").unwrap_or(value);
     hex::decode(hex_part).map_err(|e| anyhow::anyhow!("Invalid hex string {hex_part}: {e}"))
 }
