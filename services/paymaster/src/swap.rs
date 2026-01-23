@@ -159,8 +159,7 @@ impl ValiantClient {
                 None
             }
         });
-        let swap_results = join_all(futures).await;
-        swap_results
+        join_all(futures).await
     }
 
     async fn swap_token(
