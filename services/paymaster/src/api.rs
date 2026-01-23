@@ -532,8 +532,14 @@ async fn sponsor_and_send_handler(
                                                     }).await
                                             })
                                         }
-                                        _ => {
-                                            tracing::warn!("Failed to fetch swap balance changes");
+
+                                        ConfirmationResultInternal::Failed { signature, error, } => {
+                                            tracing::warn!("Failed to fetch swap balance changes due to failure to confirm transaction for {signature}: {:?}", error);
+                                            None
+                                        }
+
+                                        ConfirmationResultInternal::UnconfirmedPreflightFailure { signature, error, } => {
+                                            tracing::warn!("Failed to fetch swap balance changes due to transaction preflight failure for {signature}: {:?}", error);
                                             None
                                         }
                                     }
@@ -547,12 +553,17 @@ async fn sponsor_and_send_handler(
                         let swap_balance_changes = join_all(swap_balance_change_futures).await;
 
                         swap_balance_changes.iter().for_each(|balance_change_result| {
-                            if let Ok(balance_change) = balance_change_result {
-                                obs_swap(
-                                    domain.clone(),
-                                    matched_variation_name.clone(),
-                                    balance_change,
-                                );
+                            match balance_change_result {
+                                Ok(balance_change) => {
+                                    obs_swap(
+                                        domain.clone(),
+                                        matched_variation_name.clone(),
+                                        balance_change,
+                                    );
+                                }
+                                Err(e) => {
+                                    tracing::warn!("Failed to fetch swap balance changes: {:?}", e);
+                                }
                             }
                         });
                     }
