@@ -109,6 +109,11 @@ fn build_swap_query_string(params: &TwoHopSwapParams) -> String {
     serializer.finish()
 }
 
+pub struct SwapConfirmationResult {
+    pub mint: Pubkey,
+    pub confirmation: ConfirmationResultInternal,
+}
+
 impl ValiantClient {
     /// Creates a new ValiantClient from the given parameters.
     pub fn from_params(
@@ -146,7 +151,7 @@ impl ValiantClient {
         transaction_sponsor: &Keypair,
         rpc: &RpcClient,
         pubsub: &PubsubClientWithReconnect,
-    ) -> Vec<anyhow::Result<ConfirmationResultInternal>> {
+    ) -> Vec<anyhow::Result<SwapConfirmationResult>> {
         let futures = mint_swap_rates.iter().filter_map(|mint_swap_rate| {
             if mint_swap_rate.sample() {
                 Some(self.swap_token(mint_swap_rate.mint, transaction_sponsor, rpc, pubsub))
@@ -164,7 +169,7 @@ impl ValiantClient {
         transaction_sponsor: &Keypair,
         rpc: &RpcClient,
         pubsub: &PubsubClientWithReconnect,
-    ) -> anyhow::Result<ConfirmationResultInternal> {
+    ) -> anyhow::Result<SwapConfirmationResult> {
         let paymaster_wallet_key = transaction_sponsor.pubkey();
         let swap_transaction = self
             .get_valiant_swap_transaction(
@@ -193,7 +198,10 @@ impl ValiantClient {
                         e
                     )
                 })?;
-        Ok(confirmation_result)
+        Ok(SwapConfirmationResult {
+            mint,
+            confirmation: confirmation_result,
+        })
     }
 
     async fn get_valiant_swap_transaction(

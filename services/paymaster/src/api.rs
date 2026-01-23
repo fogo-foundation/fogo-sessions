@@ -2,12 +2,12 @@ use crate::cli::NetworkEnvironment;
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
 use crate::constraint::{ContextualDomainKeys, ParsedTransactionVariation};
-use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
+use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_swap, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
-    fetch_transaction_cost_details, send_and_confirm_transaction, send_and_confirm_transaction_ftl,
-    ChainIndex, ConfirmationResultInternal, RetryConfig, SignedVersionedTransaction,
+    ChainIndex, ConfirmationResultInternal, RetryConfig, SignedVersionedTransaction, fetch_swap_balance_changes, fetch_transaction_cost_details, send_and_confirm_transaction, send_and_confirm_transaction_ftl
 };
+use crate::swap::SwapConfirmationResult;
 use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -24,6 +24,7 @@ use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
+use futures::future::join_all;
 use nonempty::NonEmpty;
 use reqwest::Client;
 use serde_with::{serde_as, DisplayFromStr};
@@ -464,6 +465,8 @@ async fn sponsor_and_send_handler(
 
         tokio::spawn({
             let state = Arc::clone(&state);
+            let domain = domain.clone();
+            let matched_variation_name = matched_variation_name.clone();
             async move {
                 match fetch_transaction_cost_details(
                     &state.chain_index.rpc,
@@ -494,19 +497,65 @@ async fn sponsor_and_send_handler(
             .instrument(span)
         });
 
-        let transaction_sponsor_clone = transaction_sponsor.clone();
-
         if !swap_into_fogo.is_empty() {
-            tokio::spawn(async move {
-                if let Some(valiant_client) = &state.valiant_client {
-                    valiant_client
-                        .swap_tokens_probabilistic(
-                            &swap_into_fogo,
-                            &transaction_sponsor_clone,
-                            &state.chain_index.rpc,
-                            &state.rpc_sub,
-                        )
-                        .await;
+            tokio::spawn({
+                let transaction_sponsor = Arc::clone(&transaction_sponsor);
+                let domain = domain.clone();
+                let matched_variation_name = matched_variation_name.clone();
+                async move {
+                    if let Some(valiant_client) = &state.valiant_client {
+                        let swap_results = valiant_client
+                            .swap_tokens_probabilistic(
+                                &swap_into_fogo,
+                                &transaction_sponsor,
+                                &state.chain_index.rpc,
+                                &state.rpc_sub,
+                            )
+                            .await;
+
+                        let swap_balance_change_futures = swap_results.iter().filter_map(|swap_result| {
+                            match swap_result {
+                                Ok(SwapConfirmationResult { mint, confirmation }) => {
+                                    match confirmation {
+                                        ConfirmationResultInternal::Success { signature } => {
+                                            let state = Arc::clone(&state);
+                                            let transaction_sponsor = Arc::clone(&transaction_sponsor);
+                                            Some(async move {
+                                                fetch_swap_balance_changes(
+                                                    &state.chain_index.rpc, 
+                                                    &signature, 
+                                                    &transaction_sponsor.pubkey(), 
+                                                    *mint, 
+                                                    RetryConfig {
+                                                        max_tries: 3,
+                                                        sleep_ms: 2000,
+                                                    }).await
+                                            })
+                                        }
+                                        _ => {
+                                            tracing::warn!("Failed to fetch swap balance changes");
+                                            None
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    tracing::warn!("Failed to send and confirm swap: {:?}", e);
+                                    None
+                                }
+                            }
+                        }).collect::<Vec<_>>();
+                        let swap_balance_changes = join_all(swap_balance_change_futures).await;
+
+                        swap_balance_changes.iter().for_each(|balance_change_result| {
+                            if let Ok(balance_change) = balance_change_result {
+                                obs_swap(
+                                    domain.clone(),
+                                    matched_variation_name.clone(),
+                                    balance_change,
+                                );
+                            }
+                        });
+                    }
                 }
             });
         }
@@ -753,6 +802,16 @@ pub async fn run_server(
         .set_buckets_for_metric(
             Matcher::Full(crate::metrics::TOTAL_SPEND_HISTOGRAM.to_string()),
             crate::metrics::TRANSACTION_COST_BUCKETS,
+        )
+        .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::SWAP_SPL_SIZE_HISTOGRAM.to_string()),
+            crate::metrics::SWAP_SPL_SIZE_BUCKETS,
+        )
+        .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::SWAP_FOGO_SIZE_HISTOGRAM.to_string()),
+            crate::metrics::SWAP_FOGO_SIZE_BUCKETS,
         )
         .unwrap()
         .install_recorder()

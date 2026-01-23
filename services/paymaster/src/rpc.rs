@@ -18,6 +18,7 @@ use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use solana_transaction_status_client_types::UiTransactionEncoding;
+use spl_token::amount_to_ui_amount;
 use std::time::Duration;
 use tokio::time::timeout;
 
@@ -586,4 +587,107 @@ pub async fn get_spl_ata_balance(
     spl_token::state::Account::unpack(&account.data)
         .map(|token_account| token_account.amount)
         .map_err(|e| anyhow::anyhow!("Failed to unpack token account: {}", e))
+}
+
+pub struct SwapBalanceChange {
+    pub mint: Pubkey,
+    pub token_spent: f64,
+    pub fogo_received: f64,
+}
+
+#[tracing::instrument(skip_all, fields(mint = %mint_in, tx_hash = %signature))]
+pub async fn fetch_swap_balance_changes(
+    rpc: &RpcClient,
+    signature: &Signature,
+    owner: &Pubkey,
+    mint_in: Pubkey,
+    retry_config: RetryConfig,
+) -> anyhow::Result<SwapBalanceChange> {
+    let config = RpcTransactionConfig {
+        encoding: Some(UiTransactionEncoding::Base64),
+        max_supported_transaction_version: Some(0),
+        // this method does not support any commitment below confirmed
+        commitment: Some(CommitmentConfig::confirmed()),
+    };
+
+    let mut last_error = None;
+
+    for attempt in 0..retry_config.max_tries {
+        if attempt > 0 {
+            tokio::time::sleep(Duration::from_millis(retry_config.sleep_ms)).await;
+        }
+
+        match rpc.get_transaction_with_config(signature, config).await {
+            Ok(tx_response) => {
+                let meta = tx_response
+                    .transaction
+                    .meta
+                    .as_ref()
+                    .ok_or_else(|| anyhow::anyhow!("Transaction metadata not available"))?;
+
+                let pre_token_balances: Option<&Vec<_>> = meta.pre_token_balances.as_ref().into();
+                let post_token_balances: Option<&Vec<_>> = meta.post_token_balances.as_ref().into();
+
+                let (token_spent, fogo_received) = pre_token_balances
+                    .zip(post_token_balances)
+                    .and_then(|(pre_balances, post_balances)| {
+                        let token_spent = pre_balances.iter().find_map(|pre| {
+                            if pre.mint.to_string() == mint_in.to_string()
+                                && pre.owner.as_ref().map(|o| o.to_string())
+                                    == Some(owner.to_string())
+                            {
+                                let post = post_balances
+                                    .iter()
+                                    .find(|p| p.account_index == pre.account_index)?;
+                                let pre_amount =
+                                    pre.ui_token_amount.amount.parse::<u64>().ok()?;
+                                let post_amount =
+                                    post.ui_token_amount.amount.parse::<u64>().ok()?;
+                                Some(amount_to_ui_amount(pre_amount.saturating_sub(post_amount), post.ui_token_amount.decimals))
+                            } else {
+                                None
+                            }
+                        })?;
+
+                        let fogo_received = pre_balances.iter().find_map(|pre| {
+                            if pre.mint.to_string() == spl_token::native_mint::id().to_string()
+                                && pre.owner.as_ref().map(|o| o.to_string())
+                                    == Some(owner.to_string())
+                            {
+                                let post = post_balances
+                                    .iter()
+                                    .find(|p| p.account_index == pre.account_index)?;
+                                let pre_amount =
+                                    pre.ui_token_amount.amount.parse::<u64>().ok()?;
+                                let post_amount =
+                                    post.ui_token_amount.amount.parse::<u64>().ok()?;
+                                Some(amount_to_ui_amount(post_amount.saturating_sub(pre_amount), post.ui_token_amount.decimals))
+                            } else {
+                                None
+                            }
+                        })?;
+
+                        Some((token_spent, fogo_received))
+                    })
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("Failed to compute swap balance changes from transaction metadata")
+                    })?;
+
+                return Ok(SwapBalanceChange {
+                    mint: mint_in,
+                    token_spent,
+                    fogo_received,
+                });
+            }
+            Err(e) => {
+                last_error = Some(e);
+            }
+        }
+    }
+
+    Err(anyhow::anyhow!(
+        "Failed to fetch transaction from RPC after {} attempts: {:?}",
+        retry_config.max_tries,
+        last_error
+    ))
 }

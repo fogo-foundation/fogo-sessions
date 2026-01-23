@@ -1,6 +1,6 @@
 use axum_prometheus::metrics;
 
-use crate::rpc::TransactionCostDetails;
+use crate::rpc::{SwapBalanceChange, TransactionCostDetails};
 
 pub const TRANSACTION_VALIDATION_COUNT: &str = "paymaster_transaction_validation_total";
 pub fn obs_validation(domain: String, variation: Option<String>, result_validation: String) {
@@ -70,4 +70,48 @@ pub fn obs_actual_transaction_costs(
             "No balance change information available, skipping transfer and total spend metrics"
         );
     }
+}
+
+pub const SWAP_COUNT: &str = "paymaster_swap_total";
+pub const SWAP_SPL_SIZE_HISTOGRAM: &str = "paymaster_swap_spl_size";
+pub const SWAP_FOGO_SIZE_HISTOGRAM: &str = "paymaster_swap_fogo_size";
+
+pub const SWAP_SPL_SIZE_BUCKETS: &[f64] = &[
+    10.0,
+    100.0,
+    1000.0,
+    10_000.0,
+    100_000.0,
+    1_000_000.0,
+    10_000_000.0,
+    100_000_000.0,
+    1_000_000_000.0,
+];
+
+pub const SWAP_FOGO_SIZE_BUCKETS: &[f64] = &[
+    10.0,
+    100.0,
+    1000.0,
+    10_000.0,
+    100_000.0,
+    1_000_000.0,
+    10_000_000.0,
+    100_000_000.0,
+    1_000_000_000.0,
+];
+
+pub fn obs_swap(
+    domain: String,
+    variation: String,
+    balance_change: &SwapBalanceChange
+) {
+    let labels = vec![
+        ("domain", domain),
+        ("variation", variation),
+        ("mint", balance_change.mint.to_string()),
+    ];
+
+    metrics::counter!(SWAP_COUNT, &labels).increment(1);
+    metrics::histogram!(SWAP_SPL_SIZE_HISTOGRAM, &labels).record(balance_change.token_spent);
+    metrics::histogram!(SWAP_FOGO_SIZE_HISTOGRAM, &labels).record(balance_change.fogo_received);
 }
