@@ -49,7 +49,11 @@ export const createOrUpdateVariation = async ({
     if (variationId) {
       await updateVariationPaymaster(userAddress, variationId, validatedFields);
     } else {
-      await createVariationPaymaster(userAddress, domainConfigId, validatedFields);
+      await createVariationPaymaster(
+        userAddress,
+        domainConfigId,
+        validatedFields,
+      );
     }
     revalidateTag("user-data", "max");
   } catch (error: unknown) {
