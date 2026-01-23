@@ -577,9 +577,9 @@ pub async fn fetch_transaction_cost_details(
 }
 
 pub async fn get_spl_ata_balance(
+    rpc: &RpcClient,
     owner: &Pubkey,
     mint: &Pubkey,
-    rpc: &RpcClient,
 ) -> anyhow::Result<u64> {
     let ata = spl_associated_token_account::get_associated_token_address(owner, mint);
     let account = rpc.get_account(&ata).await?;

@@ -14,12 +14,12 @@ use std::str::FromStr;
 use url::{form_urlencoded, Url};
 
 use crate::{
-    api::ValiantClient,
+    api::{PubsubClientWithReconnect, ValiantClient},
     cli::NetworkEnvironment,
     constraint::MintSwapRate,
     parse::parse_transaction_from_base64,
     rpc::{
-        get_spl_ata_balance, send_and_confirm_transaction_ftl, ConfirmationResultInternal,
+        get_spl_ata_balance, send_and_confirm_transaction, ConfirmationResultInternal,
         SignedVersionedTransaction,
     },
     serde::{deserialize_pubkey_vec, serialize_pubkey_vec},
@@ -28,6 +28,11 @@ use crate::{
 pub const VALIANT_URL_MAINNET: &str = "https://mainnet-pro-api.valiant.trade";
 pub const VALIANT_URL_TESTNET: &str = "https://api.valiant.trade";
 pub const MAX_SLIPPAGE_BPS: u64 = 50;
+
+// NOTE: the params and response types below are manually defined for an external API.
+// This external API could change in the future, which could break our integration.
+// Additionally note that we leave out certain fields that are not relevant to our use case.
+// For reference, please see the Valiant API docs at https://mainnet-api.valiant.trade/docs.
 
 #[serde_as]
 #[derive(Serialize)]
@@ -45,47 +50,20 @@ struct TwoHopQuoteParams {
 #[serde_as]
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
 struct TwoHopQuoteResponse {
     #[serde_as(as = "DisplayFromStr")]
-    token_in: u64,
-    #[serde_as(as = "DisplayFromStr")]
     token_est_out: u64,
-    #[serde_as(as = "DisplayFromStr")]
-    price_impact: f64,
     quote: TwoHopQuote,
-    token_metadatas: Vec<TokenMetadata>,
 }
 
 #[serde_as]
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
 struct TwoHopQuote {
     #[serde(deserialize_with = "deserialize_pubkey_vec")]
     route: Vec<Pubkey>,
     #[serde(deserialize_with = "deserialize_pubkey_vec")]
     pools: Vec<Pubkey>,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    amounts: Vec<u64>,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    virtual_amounts_without_slippage: Vec<u64>,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    fees: Vec<u64>,
-}
-
-#[serde_as]
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[allow(dead_code)]
-struct TokenMetadata {
-    #[serde_as(as = "DisplayFromStr")]
-    address: Pubkey,
-    name: String,
-    symbol: String,
-    decimals: u8,
-    image: String,
-    price_usd: f64,
 }
 
 #[serde_as]
@@ -167,10 +145,11 @@ impl ValiantClient {
         mint_swap_rates: &[MintSwapRate],
         transaction_sponsor: &Keypair,
         rpc: &RpcClient,
+        pubsub: &PubsubClientWithReconnect,
     ) -> Vec<anyhow::Result<ConfirmationResultInternal>> {
         let futures = mint_swap_rates.iter().filter_map(|mint_swap_rate| {
             if mint_swap_rate.sample() {
-                Some(self.swap_token(mint_swap_rate.mint, transaction_sponsor, rpc))
+                Some(self.swap_token(mint_swap_rate.mint, transaction_sponsor, rpc, pubsub))
             } else {
                 None
             }
@@ -184,12 +163,13 @@ impl ValiantClient {
         mint: Pubkey,
         transaction_sponsor: &Keypair,
         rpc: &RpcClient,
+        pubsub: &PubsubClientWithReconnect,
     ) -> anyhow::Result<ConfirmationResultInternal> {
         let paymaster_wallet_key = transaction_sponsor.pubkey();
         let swap_transaction = self
             .get_valiant_swap_transaction(
                 mint,
-                get_spl_ata_balance(&paymaster_wallet_key, &mint, rpc).await?,
+                get_spl_ata_balance(rpc, &paymaster_wallet_key, &mint).await?,
                 &paymaster_wallet_key,
             )
             .await?;
@@ -204,10 +184,14 @@ impl ValiantClient {
             ..RpcSendTransactionConfig::default()
         };
         let confirmation_result =
-            send_and_confirm_transaction_ftl(rpc, &signed_transaction, rpc_config)
+            send_and_confirm_transaction(rpc, pubsub, &signed_transaction, rpc_config)
                 .await
                 .map_err(|e| {
-                    anyhow::anyhow!("Failed to send and confirm swap transaction: {:?}", e)
+                    anyhow::anyhow!(
+                        "Failed to send and confirm swap transaction for mint {}: {:?}",
+                        mint,
+                        e
+                    )
                 })?;
         Ok(confirmation_result)
     }
@@ -306,9 +290,8 @@ impl ValiantClient {
 
 impl MintSwapRate {
     fn sample(&self) -> bool {
-        let p = self.rate.clamp(0.0, 1.0);
-        let rv = Bernoulli::new(p);
-        // this should always be okay, since 0 <= p <= 1
+        let rv = Bernoulli::new(self.rate);
+        // this should always be okay, since 0 <= rate <= 1
         if let Ok(bern) = rv {
             return bern.sample(&mut rand::rng());
         }

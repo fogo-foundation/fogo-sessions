@@ -105,12 +105,23 @@ impl From<VariationOrderedInstructionConstraints> for ParsedVariationOrderedInst
                 }
             })
             .collect();
+        let parsed_swap_into_fogo = swap_into_fogo
+            .into_iter()
+            .filter_map(|MintSwapRate { mint, rate }| {
+                let rate = rate.clamp(0.0, 1.0);
+                if rate == 0.0 {
+                    None
+                } else {
+                    Some(MintSwapRate { mint, rate })
+                }
+            })
+            .collect();
         Self {
             name,
             instructions: constraints,
             max_gas_spend,
             paymaster_fee_lamports,
-            swap_into_fogo,
+            swap_into_fogo: parsed_swap_into_fogo,
         }
     }
 }

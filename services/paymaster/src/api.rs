@@ -462,8 +462,8 @@ async fn sponsor_and_send_handler(
         // This ensures that any logs/traces from the spawned task are associated with the original request.
         let span = tracing::Span::current();
 
-        let state_clone = Arc::clone(&state);
-        tokio::spawn(
+        tokio::spawn({
+            let state = Arc::clone(&state);
             async move {
                 match fetch_transaction_cost_details(
                     &state.chain_index.rpc,
@@ -491,22 +491,25 @@ async fn sponsor_and_send_handler(
                     }
                 }
             }
-            .instrument(span),
-        );
+            .instrument(span)
+        });
 
         let transaction_sponsor_clone = transaction_sponsor.clone();
 
-        tokio::spawn(async move {
-            if let Some(valiant_client) = &state_clone.valiant_client {
-                valiant_client
-                    .swap_tokens_probabilistic(
-                        &swap_into_fogo,
-                        &transaction_sponsor_clone,
-                        &state_clone.chain_index.rpc,
-                    )
-                    .await;
-            }
-        });
+        if !swap_into_fogo.is_empty() {
+            tokio::spawn(async move {
+                if let Some(valiant_client) = &state.valiant_client {
+                    valiant_client
+                        .swap_tokens_probabilistic(
+                            &swap_into_fogo,
+                            &transaction_sponsor_clone,
+                            &state.chain_index.rpc,
+                            &state.rpc_sub,
+                        )
+                        .await;
+                }
+            });
+        }
     }
 
     Ok(Json(confirmation_result.into()))

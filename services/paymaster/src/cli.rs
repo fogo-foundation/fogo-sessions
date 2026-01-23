@@ -90,7 +90,7 @@ pub struct RunOptions {
     #[arg(long, env = "VALIANT_API_KEY")]
     pub valiant_api_key: Option<String>,
 
-    #[arg(long)]
+    #[arg(long, env = "VALIANT_OVERRIDE_URL")]
     pub valiant_override_url: Option<String>,
 }
 
