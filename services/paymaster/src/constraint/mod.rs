@@ -84,12 +84,45 @@ pub struct ParsedVariationOrderedInstructionConstraints {
     pub swap_into_fogo: Vec<MintSwapRate>,
 }
 
-#[serde_as]
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Clone)]
 pub struct MintSwapRate {
+    mint: Pubkey,
+    rate: f64,
+}
+
+impl MintSwapRate {
+    pub fn new(mint: Pubkey, rate: f64) -> Self {
+        Self {
+            mint,
+            rate: rate.clamp(0.0, 1.0),
+        }
+    }
+
+    pub fn mint(&self) -> Pubkey {
+        self.mint
+    }
+
+    pub fn rate(&self) -> f64 {
+        self.rate
+    }
+}
+
+#[serde_as]
+#[derive(Deserialize)]
+struct MintSwapRateRaw {
     #[serde_as(as = "DisplayFromStr")]
-    pub mint: Pubkey,
-    pub rate: f64,
+    mint: Pubkey,
+    rate: f64,
+}
+
+impl<'de> serde::Deserialize<'de> for MintSwapRate {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw = MintSwapRateRaw::deserialize(deserializer)?;
+        Ok(MintSwapRate::new(raw.mint, raw.rate))
+    }
 }
 
 #[derive(Clone)]
