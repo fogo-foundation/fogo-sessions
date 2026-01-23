@@ -195,12 +195,12 @@ fn parse_exact_match_values(
             let bytes = extract_bytes(values, first_value.len())?;
             Ok(ParsedDataConstraintSpecification::Bytes(if is_equal {
                 BytesConstraint::EqualTo {
-                    length: bytes.len(),
+                    length: first_value.len(),
                     values: bytes,
                 }
             } else {
                 BytesConstraint::Neq {
-                    length: bytes.len(),
+                    length: first_value.len(),
                     values: bytes,
                 }
             }))
