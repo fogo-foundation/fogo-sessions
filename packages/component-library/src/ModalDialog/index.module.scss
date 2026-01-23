@@ -29,6 +29,10 @@
       width: theme.spacing(94);
       max-width: 90dvw;
 
+      &[data-no-padding] {
+        padding: 0;
+      }
+
       .dialog {
         outline: none;
       }

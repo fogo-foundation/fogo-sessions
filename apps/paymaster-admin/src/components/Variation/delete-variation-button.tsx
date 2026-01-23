@@ -41,6 +41,17 @@ const useDeleteVariation = (
   });
 };
 
+const getDeleteButtonProps = (additionalProps?: {
+  onClick?: () => void;
+  isDisabled?: boolean;
+}) => ({
+  variant: "ghost" as const,
+  className: styles.deleteVariationButton ?? "",
+  size: "lg" as const,
+  children: <TrashIcon />,
+  ...additionalProps,
+});
+
 const DeleteVariationButtonWithModal = ({
   sessionState,
   variationId,
@@ -81,27 +92,13 @@ const DeleteVariationButtonWithModal = ({
       >
         <span>Are you sure you want to delete this variation?</span>
       </ConfirmModal>
-      <Button
-        variant="ghost"
-        onClick={handleDeleteClick}
-        className={styles.deleteVariationButton ?? ""}
-        size="lg"
-      >
-        <TrashIcon />
-      </Button>
+      <Button {...getDeleteButtonProps({ onClick: handleDeleteClick })} />
     </>
   );
 };
 
 const DisabledDeleteVariationButton = () => (
-  <Button
-    variant="ghost"
-    className={styles.deleteVariationButton ?? ""}
-    size="lg"
-    isDisabled={true}
-  >
-    <TrashIcon />
-  </Button>
+  <Button {...getDeleteButtonProps({ isDisabled: true })} />
 );
 
 export const DeleteVariationButton = ({

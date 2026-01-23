@@ -1,46 +1,42 @@
 @use '@fogo/component-library/theme';
 
-.confirmModal {
-  padding: 0 !important;
+.confirmModalHeader {
+  background-color: theme.color('background');
+  padding: theme.spacing(6);
+  border-bottom: 1px solid theme.color('border');
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(4);
 
-  .confirmModalHeader {
-    background-color: theme.color('background');
-    padding: theme.spacing(6);
-    border-bottom: 1px solid theme.color('border');
-    display: flex;
-    flex-direction: column;
-    gap: theme.spacing(4);
-
-    .confirmModalHeaderAltText {
-      @include theme.text('sm', 'normal');
-      color: theme.color('muted');
-    }
-
-    .confirmModalHeaderTitle {
-      @include theme.text('3xl', 'normal');
-      color: theme.color('foreground');
-    }
-
-    .confirmModalHeaderSubtitle {
-      @include theme.text('base', 'normal');
-      color: theme.color('muted');
-    }
-
-    &[data-no-children="true"] {
-      border-bottom: none;
-    }
+  .confirmModalHeaderAltText {
+    @include theme.text('sm', 'normal');
+    color: theme.color('muted');
   }
 
-  .confirmModalContent {
-    padding: theme.spacing(4);
+  .confirmModalHeaderTitle {
+    @include theme.text('3xl', 'normal');
     color: theme.color('foreground');
   }
 
-  .confirmModalFooter {
-    padding: theme.spacing(4);
-    border-top: 1px solid theme.color('border');
-    display: flex;
-    justify-content: space-between;
-    gap: theme.spacing(4);
+  .confirmModalHeaderSubtitle {
+    @include theme.text('base', 'normal');
+    color: theme.color('muted');
   }
+
+  &[data-no-children] {
+    border-bottom: none;
+  }
+}
+
+.confirmModalContent {
+  padding: theme.spacing(4);
+  color: theme.color('foreground');
+}
+
+.confirmModalFooter {
+  padding: theme.spacing(4);
+  border-top: 1px solid theme.color('border');
+  display: flex;
+  justify-content: space-between;
+  gap: theme.spacing(4);
 }

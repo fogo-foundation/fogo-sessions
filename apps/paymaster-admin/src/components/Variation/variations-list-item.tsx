@@ -12,10 +12,10 @@ import {
   XIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr/GasPump";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Form } from "react-aria-components";
 import { parse, stringify } from "smol-toml";
-import { ZodError } from "zod";
+import z, { ZodError } from "zod";
 import { useUserData } from "../../client/paymaster";
 import type { Variation } from "../../db-schema";
 import { TransactionVariations } from "../../db-schema";
@@ -70,28 +70,24 @@ const VariationForm = ({
     variation?.max_gas_spend?.toString() ?? "",
   );
 
-  const baselineRef = useRef<{
-    name: string;
-    maxGasSpend: string;
-    code: string;
-  } | null>({
-    name,
-    maxGasSpend: variation?.max_gas_spend?.toString() ?? "",
-    code,
-  });
-
-  useEffect(() => {
-    if (variation?.id) {
-      const variationCode =
-        variation?.version === "v0" || isEditingJson
-          ? JSON.stringify(variation?.transaction_variation, null, 2)
-          : generateEditableToml(variation?.transaction_variation ?? []);
-      baselineRef.current = {
-        name: variation?.name ?? "",
-        maxGasSpend: variation?.max_gas_spend?.toString() ?? "",
-        code: variationCode,
+  const baseline = useMemo(() => {
+    if (!variation?.id) {
+      // When creating a new variation, baseline is the initial empty state
+      return {
+        name: "",
+        maxGasSpend: "",
+        code: "",
       };
     }
+    const variationCode =
+      variation?.version === "v0" || isEditingJson
+        ? JSON.stringify(variation?.transaction_variation, null, 2)
+        : generateEditableToml(variation?.transaction_variation ?? []);
+    return {
+      name: variation?.name ?? "",
+      maxGasSpend: variation?.max_gas_spend?.toString() ?? "",
+      code: variationCode,
+    };
   }, [
     variation?.id,
     variation?.name,
@@ -113,22 +109,14 @@ const VariationForm = ({
       try {
         const data = isEditingJson
           ? JSON.parse(value)
-          : (
-              parse(value) as {
-                domains: {
-                  tx_variations: { instructions: TransactionVariations };
-                };
-              }
-            ).domains.tx_variations.instructions;
+          : parseTomlToObject(value).domains.tx_variations.instructions;
         setCodeError(undefined);
         return TransactionVariations.parse(data);
       } catch (error) {
         if (error instanceof ZodError) {
           setCodeError(error.errors.map((error) => error.message).join(", "));
-        } else if (error instanceof Error) {
-          setCodeError(error.message);
         } else {
-          setCodeError(String(error));
+          setCodeError(errorToString(error));
         }
         return false;
       }
@@ -186,13 +174,23 @@ const VariationForm = ({
   }, [name, maxGasSpend, code]);
 
   const isDirty =
-    current.name !== baselineRef.current?.name ||
-    current.maxGasSpend !== baselineRef.current?.maxGasSpend ||
-    current.code !== baselineRef.current?.code;
+    current.name !== baseline?.name ||
+    current.maxGasSpend !== baseline?.maxGasSpend ||
+    current.code !== baseline?.code;
 
   const handleEditClick = useCallback(() => {
     setIsExpanded(true);
   }, []);
+
+  const handleCardKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleEditClick();
+      }
+    },
+    [handleEditClick],
+  );
 
   const handleCloseClick = useCallback(() => {
     setIsExpanded(false);
@@ -234,12 +232,17 @@ const VariationForm = ({
   return (
     <Form validationBehavior="aria" onSubmit={handleSubmit}>
       <div className={styles.variationListItem}>
-        <button
-          type="button"
+        <div
+          {...(isExpanded
+            ? {}
+            : {
+                role: "button",
+                onClick: handleEditClick,
+                onKeyDown: handleCardKeyDown,
+              })}
           className={styles.variationListCard}
           data-is-expanded={isExpanded ? "" : undefined}
           data-is-editable={isExpanded ? "" : undefined}
-          onClick={handleEditClick}
         >
           <VariationVersionBadge version={variation?.version ?? "v1"} />
           <TextField
@@ -277,7 +280,7 @@ const VariationForm = ({
               <CodeBlockIcon />
             </Button>
           )}
-        </button>
+        </div>
         <DeleteVariationButton
           {...(variation?.id
             ? {
@@ -352,4 +355,16 @@ const generateEditableToml = (transaction_variation: TransactionVariations) => {
       tx_variations: { instructions: transaction_variation },
     },
   });
+};
+
+const parseTomlToObject = (value: string) => {
+  return z
+    .object({
+      domains: z.object({
+        tx_variations: z.object({
+          instructions: TransactionVariations,
+        }),
+      }),
+    })
+    .parse(parse(value));
 };

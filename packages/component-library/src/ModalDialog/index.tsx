@@ -13,6 +13,7 @@ type Props = Omit<ComponentProps<typeof MotionModalOverlay>, "children"> & {
   dialogClassName?: string | undefined;
   overlayClassName?: string | undefined;
   modalClassName?: string | undefined;
+  noPadding?: boolean;
 };
 
 export const ModalDialog = ({
@@ -21,6 +22,7 @@ export const ModalDialog = ({
   dialogClassName,
   overlayClassName,
   modalClassName,
+  noPadding,
   ...props
 }: Props) => (
   <AnimatePresence>
@@ -40,6 +42,7 @@ export const ModalDialog = ({
           animate={{ scale: 1 }}
           exit={{ scale: 1.1 }}
           className={clsx(styles.modal, modalClassName)}
+          data-no-padding={noPadding ? "true" : undefined}
         >
           {(args) => (
             <Dialog className={clsx(styles.dialog, dialogClassName)}>

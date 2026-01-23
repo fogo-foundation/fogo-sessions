@@ -1,6 +1,7 @@
 import { Button } from "@fogo/component-library/Button";
 import { ModalDialog } from "@fogo/component-library/ModalDialog";
 import type React from "react";
+import { Heading } from "react-aria-components";
 import styles from "./index.module.scss";
 
 export type ConfirmModalProps = {
@@ -23,18 +24,20 @@ export const ConfirmModal = ({
   subtitle,
   action,
 }: ConfirmModalProps) => (
-  <ModalDialog
-    modalClassName={styles.confirmModal ?? ""}
-    isOpen={isOpen}
-    onOpenChange={onOpenChange}
-  >
+  <ModalDialog isOpen={isOpen} onOpenChange={onOpenChange} noPadding>
     <div
       className={styles.confirmModalHeader}
       data-no-children={children ? undefined : "true"}
     >
-      <div className={styles.confirmModalHeaderAltText}>{altText}</div>
-      <div className={styles.confirmModalHeaderTitle}>{title}</div>
-      <div className={styles.confirmModalHeaderSubtitle}>{subtitle}</div>
+      {altText && (
+        <div className={styles.confirmModalHeaderAltText}>{altText}</div>
+      )}
+      {title && (
+        <Heading className={styles.confirmModalHeaderTitle}>{title}</Heading>
+      )}
+      {subtitle && (
+        <div className={styles.confirmModalHeaderSubtitle}>{subtitle}</div>
+      )}
     </div>
     {children && <div className={styles.confirmModalContent}>{children}</div>}
     <div className={styles.confirmModalFooter}>

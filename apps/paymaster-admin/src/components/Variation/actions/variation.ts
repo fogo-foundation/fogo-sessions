@@ -35,7 +35,6 @@ export const createOrUpdateVariation = async ({
   variation: TransactionVariations;
   sessionToken: string;
 }) => {
-  "use server";
   const sessionAccount = await verifyLogInToken(sessionToken, connection);
   const userAddress = sessionAccount?.user.toString();
   if (!userAddress) {
@@ -48,17 +47,9 @@ export const createOrUpdateVariation = async ({
       variation,
     });
     if (variationId) {
-      await updateVariationPaymaster(userAddress, variationId, {
-        name: validatedFields.name,
-        maxGasSpend: validatedFields.maxGasSpend,
-        variation: validatedFields.variation,
-      });
+      await updateVariationPaymaster(userAddress, variationId, validatedFields);
     } else {
-      await createVariationPaymaster(userAddress, domainConfigId, {
-        name: validatedFields.name,
-        maxGasSpend: validatedFields.maxGasSpend,
-        variation: validatedFields.variation,
-      });
+      await createVariationPaymaster(userAddress, domainConfigId, validatedFields);
     }
     revalidateTag("user-data", "max");
   } catch (error: unknown) {
@@ -79,7 +70,6 @@ export const deleteVariation = async ({
   variationId: string;
   sessionToken: string;
 }) => {
-  "use server";
   const sessionAccount = await verifyLogInToken(sessionToken, connection);
   const userAddress = sessionAccount?.user.toString();
   if (!userAddress) {
