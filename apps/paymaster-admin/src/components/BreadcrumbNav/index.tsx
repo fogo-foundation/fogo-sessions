@@ -12,24 +12,82 @@ type Item =
   | { label: string; href?: string; isLoading?: false }
   | { isLoading: true };
 
+type TitleProps = {
+  title?: string | undefined;
+  titleLoading?: boolean | undefined;
+};
+
+type BreadcrumbNavProps = TitleProps & {
+  items: Item[];
+  action?: React.ReactNode;
+};
+
 const BreadcrumbNav = ({
   items,
   action,
+  title,
+  titleLoading,
+}: BreadcrumbNavProps) => {
+  return (
+    <div className={styles.breadcrumbNav}>
+      <div className={styles.breadcrumbNavContainer}>
+        {title || titleLoading ? (
+          <div>
+            <BreadcrumbNavItems items={items} isSmall />
+            <div className={styles.breadcrumbNavTitleContainer}>
+              <BreadcrumbNavTitle title={title} titleLoading={titleLoading} />
+              <BreadcrumbBackArrow items={items} />
+            </div>
+          </div>
+        ) : (
+          <>
+            <BreadcrumbNavItems items={items} />
+            <BreadcrumbBackArrow items={items} />
+          </>
+        )}
+        <div className={styles.breadcrumbNavAction}>{action}</div>
+      </div>
+    </div>
+  );
+};
+
+const BreadcrumbNavTitle = ({ title, titleLoading }: TitleProps) => {
+  return titleLoading ? (
+    <Skeleton className={styles.breadcrumbNavTitleSkeleton} />
+  ) : (
+    <span className={styles.breadcrumbNavTitle}>{title}</span>
+  );
+};
+
+export const BreadcrumbBackArrow = ({ items }: { items: Item[] }) => {
+  const router = useRouter();
+  const itemWithHref = items.at(-2);
+
+  const hasBackLink =
+    itemWithHref && !itemWithHref.isLoading && itemWithHref.href;
+
+  const handleBackClick = useCallback(() => {
+    if (hasBackLink && itemWithHref?.href) {
+      router.push(itemWithHref.href);
+    }
+  }, [hasBackLink, itemWithHref, router]);
+
+  return (
+    hasBackLink && (
+      <button className={styles.breadcrumbNavArrow} onClick={handleBackClick}>
+        <ArrowLeftIcon />
+      </button>
+    )
+  );
+};
+
+export const BreadcrumbNavItems = ({
+  items,
+  isSmall,
 }: {
   items: Item[];
-  action?: React.ReactNode;
+  isSmall?: boolean | undefined;
 }) => {
-  const router = useRouter();
-  const handleBackClick = useCallback(() => {
-    const lastItem = items.at(-1);
-    if (!lastItem?.isLoading) {
-      const lastLink = lastItem?.href;
-      if (lastLink) {
-        router.push(lastLink);
-      }
-    }
-  }, [items, router]);
-
   const itemsWithIds = useMemo(
     () =>
       items.map((item, index) => ({
@@ -40,40 +98,38 @@ const BreadcrumbNav = ({
   );
 
   return (
-    <div className={styles.breadcrumbNav}>
-      <div className={styles.breadcrumbNavContainer}>
-        {items.length > 1 && (
-          <button
-            className={styles.breadcrumbNavArrow}
-            onClick={handleBackClick}
-          >
-            <ArrowLeftIcon />
-          </button>
-        )}
-        <Breadcrumbs
-          items={itemsWithIds}
-          className={styles.breadcrumbNavList ?? ""}
-        >
-          {(item) => (
-            <Breadcrumb>
-              {({ isCurrent }) => (
-                <>
-                  <BreadcrumbNavItem item={item} />
-                  {!isCurrent && (
-                    <span className={styles.breadcrumbNavSeparator}>/</span>
-                  )}
-                </>
+    <Breadcrumbs
+      items={itemsWithIds}
+      className={styles.breadcrumbNavList ?? ""}
+    >
+      {(item) => (
+        <Breadcrumb>
+          {({ isCurrent }) => (
+            <>
+              <BreadcrumbNavItem item={item} isSmall={isSmall} />
+              {!isCurrent && (
+                <span
+                  className={styles.breadcrumbNavSeparator}
+                  data-small={isSmall}
+                >
+                  /
+                </span>
               )}
-            </Breadcrumb>
+            </>
           )}
-        </Breadcrumbs>
-        <div className={styles.breadcrumbNavAction}>{action}</div>
-      </div>
-    </div>
+        </Breadcrumb>
+      )}
+    </Breadcrumbs>
   );
 };
 
-const BreadcrumbNavItem = ({ item }: { item: Item }) => {
+const BreadcrumbNavItem = ({
+  item,
+  isSmall,
+}: {
+  item: Item;
+  isSmall?: boolean | undefined;
+}) => {
   if (item.isLoading) {
     return <Skeleton className={styles.breadcrumbNavItemSkeleton} />;
   }
@@ -82,11 +138,16 @@ const BreadcrumbNavItem = ({ item }: { item: Item }) => {
       key={item.href}
       href={item.href}
       className={styles.breadcrumbNavItem ?? ""}
+      data-small={isSmall}
     >
       {item.label}
     </Link>
   ) : (
-    <span key={item.label} className={styles.breadcrumbNavItem}>
+    <span
+      key={item.label}
+      className={styles.breadcrumbNavItem}
+      data-small={isSmall}
+    >
       {item.label}
     </span>
   );

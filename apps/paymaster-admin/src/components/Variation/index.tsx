@@ -10,11 +10,15 @@ import { useParams } from "next/navigation";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
 import { UserNotFound } from "../UserNotFound";
-import { AppDomains } from "./app-domains";
+import { DomainVariation } from "./domain-variations";
 
-export const Domain = () => {
-  const { appId } = useParams<{ appId: string }>();
+export const Variation = () => {
+  const { appId, domainId: domainConfigId } = useParams<{
+    appId: string;
+    domainId: string;
+  }>();
   const sessionState = useSession();
+  // todo move this to sdk
   const isWalletLoading = [
     SessionStateType.Initializing,
     SessionStateType.CheckingStoredSession,
@@ -25,42 +29,57 @@ export const Domain = () => {
   ].includes(sessionState.type);
 
   if (isWalletLoading) {
-    return <DomainContents isLoading />;
+    return <VariationContents isLoading />;
   } else if (isEstablished(sessionState)) {
-    return <DomainContents sessionState={sessionState} appId={appId} />;
+    return (
+      <VariationContents
+        sessionState={sessionState}
+        domainConfigId={domainConfigId}
+        appId={appId}
+      />
+    );
   } else {
     return;
   }
 };
 
-type DomainContentsProps =
+type VariationContentsProps =
   | {
       isLoading?: false;
       sessionState: EstablishedSessionState;
       appId: string;
+      domainConfigId: string;
     }
   | {
       isLoading: true;
     };
 
-const DomainContents = (props: DomainContentsProps) => {
+const VariationContents = (props: VariationContentsProps) => {
   if (props.isLoading) {
-    return <AppDomains isLoading />;
+    return <DomainVariation isLoading />;
   }
-  return <DomainData sessionState={props.sessionState} appId={props.appId} />;
+  return (
+    <VariationData
+      sessionState={props.sessionState}
+      domainConfigId={props.domainConfigId}
+      appId={props.appId}
+    />
+  );
 };
 
-const DomainData = ({
+const VariationData = ({
   sessionState,
+  domainConfigId,
   appId,
 }: {
   sessionState: EstablishedSessionState;
+  domainConfigId: string;
   appId: string;
 }) => {
   const userData = useUserData(sessionState);
   switch (userData.type) {
     case StateType.Loading: {
-      return <AppDomains isLoading />;
+      return <DomainVariation isLoading />;
     }
     case StateType.Error: {
       return <div>Error loading user data: {userData.error.message}</div>;
@@ -73,7 +92,19 @@ const DomainData = ({
       if (!app) {
         return <div>App not found</div>;
       }
-      return <AppDomains app={app} />;
+      const domainConfig = app.domain_configs.find(
+        (domainConfig) => domainConfig.id === domainConfigId,
+      );
+      if (!domainConfig) {
+        return <div>Domain config not found</div>;
+      }
+      return (
+        <DomainVariation
+          sessionState={sessionState}
+          app={app}
+          domainConfig={domainConfig}
+        />
+      );
     }
     default: {
       return;
