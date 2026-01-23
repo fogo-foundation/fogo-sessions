@@ -2,8 +2,9 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 
 use crate::constraint::{
-    AccountConstraint, DataConstraint, ParsedInstructionConstraint, ParsedTransactionVariation,
-    ParsedVariationOrderedInstructionConstraints, SubstantiveProgramId, VariationProgramWhitelist,
+    AccountConstraint, DataConstraint, MintSwapRate, ParsedInstructionConstraint,
+    ParsedTransactionVariation, ParsedVariationOrderedInstructionConstraints, SubstantiveProgramId,
+    VariationProgramWhitelist,
 };
 
 #[derive(Deserialize)]
@@ -74,6 +75,8 @@ pub struct VariationOrderedInstructionConstraints {
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,
+    #[serde(default)]
+    pub swap_into_fogo: Vec<MintSwapRate>,
 }
 
 impl From<VariationOrderedInstructionConstraints> for ParsedVariationOrderedInstructionConstraints {
@@ -83,6 +86,7 @@ impl From<VariationOrderedInstructionConstraints> for ParsedVariationOrderedInst
             instructions,
             max_gas_spend,
             paymaster_fee_lamports,
+            swap_into_fogo,
         }: VariationOrderedInstructionConstraints,
     ) -> Self {
         let constraints = instructions
@@ -101,11 +105,23 @@ impl From<VariationOrderedInstructionConstraints> for ParsedVariationOrderedInst
                 }
             })
             .collect();
+        let parsed_swap_into_fogo = swap_into_fogo
+            .into_iter()
+            .filter_map(|MintSwapRate { mint, rate }| {
+                let rate = rate.clamp(0.0, 1.0);
+                if rate == 0.0 {
+                    None
+                } else {
+                    Some(MintSwapRate { mint, rate })
+                }
+            })
+            .collect();
         Self {
             name,
             instructions: constraints,
             max_gas_spend,
             paymaster_fee_lamports,
+            swap_into_fogo: parsed_swap_into_fogo,
         }
     }
 }

@@ -215,6 +215,7 @@ impl ParsedTransactionVariation {
             ],
             max_gas_spend,
             paymaster_fee_lamports: None,
+            swap_into_fogo: vec![],
         })
     }
 
@@ -227,6 +228,7 @@ impl ParsedTransactionVariation {
             ],
             max_gas_spend,
             paymaster_fee_lamports: None,
+            swap_into_fogo: vec![],
         })
     }
 }
