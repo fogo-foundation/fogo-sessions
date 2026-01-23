@@ -267,6 +267,45 @@ export const getSessionAccount = async (
       );
 };
 
+const getDomainRegistryAuthorizedPrograms = async (
+  connection: Connection,
+  domain: string,
+) => {
+  const result = await connection.getAccountInfo(
+    getDomainRecordAddress(domain),
+    "confirmed",
+  );
+  if (result === null) {
+    return [];
+  } else {
+    const programs = [];
+    for (let i = 0; i < result.data.length; i += 64) {
+      programs.push({
+        programId: new PublicKey(result.data.subarray(i, i + 32)),
+        signerPda: new PublicKey(result.data.subarray(i + 32, i + 64)),
+      });
+    }
+    return programs;
+  }
+};
+
+const authorizedProgramsMatchDomainRegistry = (
+  sessionAuthorizedPrograms: NonNullable<
+    z.infer<typeof sessionInfoSchema>
+  >["authorizedPrograms"],
+  domainAuthorizedPrograms: { programId: PublicKey; signerPda: PublicKey }[],
+) => {
+  if (sessionAuthorizedPrograms.type === AuthorizedProgramsType.All) {
+    return true;
+  }
+  return domainAuthorizedPrograms.every(
+    ({ programId: programIdFromRegistry }) =>
+      sessionAuthorizedPrograms.programs.some(({ programId }) =>
+        programId.equals(programIdFromRegistry),
+      ),
+  );
+};
+
 const createSession = async (
   context: SessionContext,
   walletPublicKey: PublicKey,
@@ -275,41 +314,50 @@ const createSession = async (
   const sessionPublicKey = new PublicKey(
     await getAddressFromPublicKey(sessionKey.publicKey),
   );
-  const sessionInfo = await getSessionAccount(
-    context.connection,
+
+  const [sessionInfo, domainRegistryAuthorizedPrograms] = await Promise.all([
+    getSessionAccount(context.connection, sessionPublicKey),
+    getDomainRegistryAuthorizedPrograms(context.connection, context.domain),
+  ]);
+
+  if (sessionInfo === undefined) {
+    return;
+  }
+
+  if (
+    !authorizedProgramsMatchDomainRegistry(
+      sessionInfo.authorizedPrograms,
+      domainRegistryAuthorizedPrograms,
+    )
+  ) {
+    return;
+  }
+
+  return {
     sessionPublicKey,
-  );
-  return sessionInfo === undefined
-    ? undefined
-    : {
+    walletPublicKey,
+    sessionKey,
+    payer: context.payer,
+    getSystemProgramSessionWrapInstruction: (amount: bigint) =>
+      createSystemProgramSessionWrapInstruction(
         sessionPublicKey,
         walletPublicKey,
+        amount,
+      ),
+    getSessionWrapInstructions: (amount: bigint) =>
+      createSessionWrapInstructions(sessionPublicKey, walletPublicKey, amount),
+    getSessionUnwrapInstructions: () => [
+      createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey),
+    ],
+    sendTransaction: (instructions, extraConfig) =>
+      context.sendTransaction(
         sessionKey,
-        payer: context.payer,
-        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
-          createSystemProgramSessionWrapInstruction(
-            sessionPublicKey,
-            walletPublicKey,
-            amount,
-          ),
-        getSessionWrapInstructions: (amount: bigint) =>
-          createSessionWrapInstructions(
-            sessionPublicKey,
-            walletPublicKey,
-            amount,
-          ),
-        getSessionUnwrapInstructions: () => [
-          createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey),
-        ],
-        sendTransaction: (instructions, extraConfig) =>
-          context.sendTransaction(
-            sessionKey,
-            instructions,
-            walletPublicKey,
-            extraConfig,
-          ),
-        sessionInfo,
-      };
+        instructions,
+        walletPublicKey,
+        extraConfig,
+      ),
+    sessionInfo,
+  };
 };
 
 const authorizedTokensSchema = z.union([
