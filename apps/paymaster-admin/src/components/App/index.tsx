@@ -3,7 +3,7 @@ import { StateType } from "@fogo/component-library/useData";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import {
   isEstablished,
-  SessionStateType,
+  isWalletLoading,
   useSession,
 } from "@fogo/sessions-sdk-react";
 
@@ -14,16 +14,7 @@ import { UserApps } from "./user-apps";
 export const Apps = () => {
   const sessionState = useSession();
 
-  const isWalletLoading = [
-    SessionStateType.Initializing,
-    SessionStateType.CheckingStoredSession,
-    SessionStateType.RequestingLimits,
-    SessionStateType.SettingLimits,
-    SessionStateType.WalletConnecting,
-    SessionStateType.SelectingWallet,
-  ].includes(sessionState.type);
-
-  if (isWalletLoading) {
+  if (isWalletLoading(sessionState)) {
     return <AppsContents isLoading />;
   } else if (isEstablished(sessionState)) {
     return <AppsContents sessionState={sessionState} />;

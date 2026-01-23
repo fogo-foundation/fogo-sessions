@@ -14,6 +14,7 @@ import { deserializePublicKeyMap } from "../deserialize-public-key.js";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
 import {
   isEstablished,
+  isWalletLoading,
   StateType as SessionStateType,
 } from "../session-state.js";
 import { DisplayAddress } from "./display-address.js";
@@ -74,14 +75,7 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
   const closeSessionPanel = useCallback(() => {
     setSessionPanelOpen(false);
   }, []);
-  const isLoading = [
-    SessionStateType.Initializing,
-    SessionStateType.CheckingStoredSession,
-    SessionStateType.RequestingLimits,
-    SessionStateType.SettingLimits,
-    SessionStateType.WalletConnecting,
-    SessionStateType.SelectingWallet,
-  ].includes(sessionState.type);
+  const isLoading = isWalletLoading(sessionState);
 
   useEffect(() => {
     if (sessionState.type !== prevSessionState.current.type) {
