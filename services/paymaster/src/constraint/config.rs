@@ -192,16 +192,16 @@ fn parse_exact_match_values(
         }
         DataValue::Bytes(value) => {
             let first_value = decode_hex_bytes(value)?;
-            let bytes = extract_bytes(values, first_value.len())?;
+            let values = extract_bytes(values, first_value.len())?;
             Ok(ParsedDataConstraintSpecification::Bytes(if is_equal {
                 BytesConstraint::EqualTo {
                     length: first_value.len(),
-                    values: bytes,
+                    values,
                 }
             } else {
                 BytesConstraint::Neq {
                     length: first_value.len(),
-                    values: bytes,
+                    values,
                 }
             }))
         }
