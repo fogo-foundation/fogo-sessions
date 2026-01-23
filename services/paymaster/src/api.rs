@@ -5,7 +5,9 @@ use crate::constraint::{ContextualDomainKeys, ParsedTransactionVariation};
 use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_swap, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
-    ChainIndex, ConfirmationResultInternal, RetryConfig, SignedVersionedTransaction, fetch_swap_balance_changes, fetch_transaction_cost_details, send_and_confirm_transaction, send_and_confirm_transaction_ftl
+    fetch_swap_balance_changes, fetch_transaction_cost_details, send_and_confirm_transaction,
+    send_and_confirm_transaction_ftl, ChainIndex, ConfirmationResultInternal, RetryConfig,
+    SignedVersionedTransaction,
 };
 use crate::swap::SwapConfirmationResult;
 use arc_swap::ArcSwap;
@@ -499,7 +501,7 @@ async fn sponsor_and_send_handler(
 
         if !swap_into_fogo.is_empty() {
             tokio::spawn({
-                let transaction_sponsor = Arc::clone(&transaction_sponsor);
+                let transaction_sponsor = Arc::clone(transaction_sponsor);
                 let domain = domain.clone();
                 let matched_variation_name = matched_variation_name.clone();
                 async move {
@@ -522,14 +524,15 @@ async fn sponsor_and_send_handler(
                                             let transaction_sponsor = Arc::clone(&transaction_sponsor);
                                             Some(async move {
                                                 fetch_swap_balance_changes(
-                                                    &state.chain_index.rpc, 
-                                                    &signature, 
-                                                    &transaction_sponsor.pubkey(), 
-                                                    *mint, 
+                                                    &state.chain_index.rpc,
+                                                    signature,
+                                                    &transaction_sponsor.pubkey(),
+                                                    *mint,
                                                     RetryConfig {
                                                         max_tries: 3,
                                                         sleep_ms: 2000,
-                                                    }).await
+                                                    }
+                                                ).await
                                             })
                                         }
 
@@ -552,8 +555,9 @@ async fn sponsor_and_send_handler(
                         }).collect::<Vec<_>>();
                         let swap_balance_changes = join_all(swap_balance_change_futures).await;
 
-                        swap_balance_changes.iter().for_each(|balance_change_result| {
-                            match balance_change_result {
+                        swap_balance_changes
+                            .iter()
+                            .for_each(|balance_change_result| match balance_change_result {
                                 Ok(balance_change) => {
                                     obs_swap(
                                         domain.clone(),
@@ -564,8 +568,7 @@ async fn sponsor_and_send_handler(
                                 Err(e) => {
                                     tracing::warn!("Failed to fetch swap balance changes: {:?}", e);
                                 }
-                            }
-                        });
+                            });
                     }
                 }
             });

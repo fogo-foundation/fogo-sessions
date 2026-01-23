@@ -100,11 +100,7 @@ pub const SWAP_FOGO_SIZE_BUCKETS: &[f64] = &[
     1_000_000_000.0,
 ];
 
-pub fn obs_swap(
-    domain: String,
-    variation: String,
-    balance_change: &SwapBalanceChange
-) {
+pub fn obs_swap(domain: String, variation: String, balance_change: &SwapBalanceChange) {
     let labels = vec![
         ("domain", domain),
         ("variation", variation),

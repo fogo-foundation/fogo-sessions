@@ -632,36 +632,44 @@ pub async fn fetch_swap_balance_changes(
                     .zip(post_token_balances)
                     .and_then(|(pre_balances, post_balances)| {
                         let token_spent = pre_balances.iter().find_map(|pre| {
-                            if pre.mint.to_string() == mint_in.to_string()
-                                && pre.owner.as_ref().map(|o| o.to_string())
-                                    == Some(owner.to_string())
+                            if pre.mint == mint_in.to_string()
+                                && pre
+                                    .owner
+                                    .as_ref()
+                                    .map_or(false, |o| *o == owner.to_string())
                             {
                                 let post = post_balances
                                     .iter()
                                     .find(|p| p.account_index == pre.account_index)?;
-                                let pre_amount =
-                                    pre.ui_token_amount.amount.parse::<u64>().ok()?;
+                                let pre_amount = pre.ui_token_amount.amount.parse::<u64>().ok()?;
                                 let post_amount =
                                     post.ui_token_amount.amount.parse::<u64>().ok()?;
-                                Some(amount_to_ui_amount(pre_amount.saturating_sub(post_amount), post.ui_token_amount.decimals))
+                                Some(amount_to_ui_amount(
+                                    pre_amount.saturating_sub(post_amount),
+                                    post.ui_token_amount.decimals,
+                                ))
                             } else {
                                 None
                             }
                         })?;
 
                         let fogo_received = pre_balances.iter().find_map(|pre| {
-                            if pre.mint.to_string() == spl_token::native_mint::id().to_string()
-                                && pre.owner.as_ref().map(|o| o.to_string())
-                                    == Some(owner.to_string())
+                            if pre.mint == spl_token::native_mint::id().to_string()
+                                && pre
+                                    .owner
+                                    .as_ref()
+                                    .map_or(false, |o| *o == owner.to_string())
                             {
                                 let post = post_balances
                                     .iter()
                                     .find(|p| p.account_index == pre.account_index)?;
-                                let pre_amount =
-                                    pre.ui_token_amount.amount.parse::<u64>().ok()?;
+                                let pre_amount = pre.ui_token_amount.amount.parse::<u64>().ok()?;
                                 let post_amount =
                                     post.ui_token_amount.amount.parse::<u64>().ok()?;
-                                Some(amount_to_ui_amount(post_amount.saturating_sub(pre_amount), post.ui_token_amount.decimals))
+                                Some(amount_to_ui_amount(
+                                    post_amount.saturating_sub(pre_amount),
+                                    post.ui_token_amount.decimals,
+                                ))
                             } else {
                                 None
                             }
@@ -670,7 +678,9 @@ pub async fn fetch_swap_balance_changes(
                         Some((token_spent, fogo_received))
                     })
                     .ok_or_else(|| {
-                        anyhow::anyhow!("Failed to compute swap balance changes from transaction metadata")
+                        anyhow::anyhow!(
+                            "Failed to compute swap balance changes from transaction metadata"
+                        )
                     })?;
 
                 return Ok(SwapBalanceChange {
