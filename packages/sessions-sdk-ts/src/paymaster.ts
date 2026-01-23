@@ -8,7 +8,6 @@ export class PaymasterResponseError extends Error {
   }
 }
 
-
 /**
  * Retrieves the paymaster fee amount from the paymaster server for a given transaction variation when paid in a given mint.
  */
@@ -30,4 +29,3 @@ export const getPaymasterFee = async (
     throw new PaymasterResponseError(response.status, await response.text());
   }
 };
-

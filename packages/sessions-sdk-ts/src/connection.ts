@@ -263,7 +263,14 @@ const buildTransaction = async (
           extraConfig.addressLookupTable,
         ),
     Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
-    getFee(connection, domain, extraConfig?.variation, feeMint),
+    extraConfig?.variation === undefined
+      ? Promise.resolve(new BN(0))
+      : getPaymasterFee(
+          connection.paymaster ?? DEFAULT_PAYMASTER[connection.network],
+          domain,
+          extraConfig.variation,
+          feeMint,
+        ),
     sessionKey === undefined
       ? Promise.resolve(undefined)
       : getAddressFromPublicKey(sessionKey.publicKey),
@@ -417,27 +424,6 @@ const getSponsor = async (
     }
   } else {
     return value;
-  }
-};
-
-const getFee = (
-  options: Pick<
-    Parameters<typeof createSessionConnection>[0],
-    "paymaster" | "network"
-  >,
-  domain: string,
-  variation: string | undefined,
-  mint: PublicKey,
-) => {
-  if (variation) {
-    return getPaymasterFee(
-      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
-      domain,
-      variation,
-      mint,
-    );
-  } else {
-    return new BN(0);
   }
 };
 

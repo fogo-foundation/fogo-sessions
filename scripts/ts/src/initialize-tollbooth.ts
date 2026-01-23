@@ -57,21 +57,19 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
 
   const domainRecord = getDomainRecordAddress(args.domain);
   const programId = new PublicKey(TollboothIdl.address);
-  const domainRecordInfo = await provider.connection.getAccountInfo(
-    domainRecord,
-  );
-  const programAlreadyAdded =
-    domainRecordInfo?.data
-      ? (() => {
-          for (let i = 0; i < domainRecordInfo.data.length; i += 64) {
-            const entry = domainRecordInfo.data.subarray(i, i + 32);
-            if (entry.length === 32 && new PublicKey(entry).equals(programId)) {
-              return true;
-            }
+  const domainRecordInfo =
+    await provider.connection.getAccountInfo(domainRecord);
+  const programAlreadyAdded = domainRecordInfo?.data
+    ? (() => {
+        for (let i = 0; i < domainRecordInfo.data.length; i += 64) {
+          const entry = domainRecordInfo.data.subarray(i, i + 32);
+          if (entry.length === 32 && new PublicKey(entry).equals(programId)) {
+            return true;
           }
-          return false;
-        })()
-      : false;
+        }
+        return false;
+      })()
+    : false;
 
   if (!programAlreadyAdded) {
     const { config: configPubkey } = await registryProgram.methods
@@ -88,11 +86,16 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
         domainRecord,
       })
       .preInstructions(
-        config ? [] : [await registryProgram.methods.initialize().instruction()],
+        config
+          ? []
+          : [await registryProgram.methods.initialize().instruction()],
       )
       .rpc();
   }
-  const mints = [...new Set(args.mints?.map((mint) => new PublicKey(mint))), ...resolveDefaultMints(provider.connection.rpcEndpoint)];
+  const mints = [
+    ...new Set(args.mints?.map((mint) => new PublicKey(mint))),
+    ...resolveDefaultMints(provider.connection.rpcEndpoint),
+  ];
 
   const recipient = getDomainTollRecipientAddress(args.domain);
   const payer = provider.wallet.publicKey;
