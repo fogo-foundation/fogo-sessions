@@ -274,7 +274,8 @@ impl ValiantClient {
             pools,
             is_exact_in: true,
             use_alt: true,
-            include_fee: false,
+            // TODO: roll this back to false once Valiant fixes their API
+            include_fee: true,
         };
 
         let query_string = build_swap_query_string(&params);
