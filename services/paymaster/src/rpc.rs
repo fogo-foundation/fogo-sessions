@@ -17,7 +17,10 @@ use solana_rpc_client_api::request::RpcRequest;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
-use solana_transaction_status_client_types::UiTransactionEncoding;
+use solana_transaction_status_client_types::{
+    EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding, UiTransactionTokenBalance,
+};
+use spl_token::amount_to_ui_amount;
 use std::time::Duration;
 use tokio::time::timeout;
 
@@ -511,17 +514,18 @@ pub struct RetryConfig {
     pub sleep_ms: u64,
 }
 
-/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
-/// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
+/// Fetches a transaction from RPC with retry logic, then applies a processing function to the response.
 /// retry_config configures the retries of the RPC call with sleep on failure. This is useful in cases where the
 /// transaction was sent with a lower commitment level, so it may not be confirmed yet.
-#[tracing::instrument(skip_all, fields(tx_hash = %signature))]
-pub async fn fetch_transaction_cost_details(
+async fn fetch_transaction_with_retry<T, F>(
     rpc: &RpcClient,
     signature: &Signature,
-    gas_spent: u64,
-    retry_config: RetryConfig,
-) -> anyhow::Result<TransactionCostDetails> {
+    retry_config: &RetryConfig,
+    process: F,
+) -> anyhow::Result<T>
+where
+    F: Fn(EncodedConfirmedTransactionWithStatusMeta) -> anyhow::Result<T>,
+{
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Base64),
         max_supported_transaction_version: Some(0),
@@ -538,30 +542,7 @@ pub async fn fetch_transaction_cost_details(
 
         match rpc.get_transaction_with_config(signature, config).await {
             Ok(tx_response) => {
-                // balance_spend is positive if balance decreased
-                let (fee, balance_spend) = tx_response
-                    .transaction
-                    .meta
-                    .map(|meta| {
-                        let balance_spend = meta
-                            .pre_balances
-                            .first()
-                            .and_then(|&before| {
-                                meta.post_balances.first().map(|&after| (before, after))
-                            })
-                            .and_then(|(before, after)| {
-                                i64::try_from(after)
-                                    .ok()
-                                    .zip(i64::try_from(before).ok())
-                                    .map(|(after_i64, before_i64)| {
-                                        before_i64.saturating_sub(after_i64)
-                                    })
-                            });
-                        (meta.fee, balance_spend)
-                    })
-                    .unwrap_or_else(|| (gas_spent, None));
-
-                return Ok(TransactionCostDetails { fee, balance_spend });
+                return process(tx_response);
             }
             Err(e) => {
                 last_error = Some(e);
@@ -576,6 +557,40 @@ pub async fn fetch_transaction_cost_details(
     ))
 }
 
+/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
+/// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
+#[tracing::instrument(skip_all, fields(tx_hash = %signature))]
+pub async fn fetch_transaction_cost_details(
+    rpc: &RpcClient,
+    signature: &Signature,
+    gas_spent: u64,
+    retry_config: RetryConfig,
+) -> anyhow::Result<TransactionCostDetails> {
+    fetch_transaction_with_retry(rpc, signature, &retry_config, |tx_response| {
+        // balance_spend is positive if balance decreased
+        let (fee, balance_spend) = tx_response
+            .transaction
+            .meta
+            .map(|meta| {
+                let balance_spend = meta
+                    .pre_balances
+                    .first()
+                    .and_then(|&before| meta.post_balances.first().map(|&after| (before, after)))
+                    .and_then(|(before, after)| {
+                        i64::try_from(after)
+                            .ok()
+                            .zip(i64::try_from(before).ok())
+                            .map(|(after_i64, before_i64)| before_i64.saturating_sub(after_i64))
+                    });
+                (meta.fee, balance_spend)
+            })
+            .unwrap_or_else(|| (gas_spent, None));
+
+        Ok(TransactionCostDetails { fee, balance_spend })
+    })
+    .await
+}
+
 pub async fn get_spl_ata_balance(
     rpc: &RpcClient,
     owner: &Pubkey,
@@ -586,4 +601,91 @@ pub async fn get_spl_ata_balance(
     spl_token::state::Account::unpack(&account.data)
         .map(|token_account| token_account.amount)
         .map_err(|e| anyhow::anyhow!("Failed to unpack token account: {}", e))
+}
+
+pub struct SwapBalanceChange {
+    pub mint: Pubkey,
+    pub token_spent: f64,
+    pub fogo_received: f64,
+}
+
+/// Fetches transaction details from RPC and extracts balance changes for the specified mint and WFOGO due to the swap.
+#[tracing::instrument(skip_all, fields(mint = %mint_in, tx_hash = %signature))]
+pub async fn fetch_swap_balance_changes(
+    rpc: &RpcClient,
+    signature: &Signature,
+    owner: &Pubkey,
+    mint_in: &Pubkey,
+    retry_config: RetryConfig,
+) -> anyhow::Result<SwapBalanceChange> {
+    fetch_transaction_with_retry(rpc, signature, &retry_config, |tx_response| {
+        let meta = tx_response
+            .transaction
+            .meta
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Transaction metadata not available"))?;
+
+        let pre_token_balances: Option<&Vec<_>> = meta.pre_token_balances.as_ref().into();
+        let post_token_balances: Option<&Vec<_>> = meta.post_token_balances.as_ref().into();
+
+        let (token_spent, fogo_received) = pre_token_balances
+            .zip(post_token_balances)
+            .and_then(|(pre_balances, post_balances)| {
+                let token_spent =
+                    compute_balance_change(pre_balances, post_balances, owner, mint_in, true)?;
+                let fogo_received = compute_balance_change(
+                    pre_balances,
+                    post_balances,
+                    owner,
+                    &spl_token::native_mint::id(),
+                    false,
+                )?;
+                Some((token_spent, fogo_received))
+            })
+            .ok_or_else(|| {
+                anyhow::anyhow!("Failed to compute swap balance changes from transaction metadata")
+            })?;
+
+        Ok(SwapBalanceChange {
+            mint: *mint_in,
+            token_spent,
+            fogo_received,
+        })
+    })
+    .await
+}
+
+/// Computes the balance change for a particular owner and mint combination.
+/// token_spent indicates whether to compute the amount spent (true) or received (false).
+fn compute_balance_change(
+    pre_balances: &[UiTransactionTokenBalance],
+    post_balances: &[UiTransactionTokenBalance],
+    owner: &Pubkey,
+    mint: &Pubkey,
+    token_spent: bool,
+) -> Option<f64> {
+    pre_balances.iter().find_map(|pre| {
+        if pre.mint == mint.to_string()
+            && pre
+                .owner
+                .as_ref()
+                .map_or(false, |o| *o == owner.to_string())
+        {
+            let post = post_balances
+                .iter()
+                .find(|p| p.account_index == pre.account_index)?;
+            let pre_amount = pre.ui_token_amount.amount.parse::<u64>().ok()?;
+            let post_amount = post.ui_token_amount.amount.parse::<u64>().ok()?;
+            Some(amount_to_ui_amount(
+                if token_spent {
+                    pre_amount.saturating_sub(post_amount)
+                } else {
+                    post_amount.saturating_sub(pre_amount)
+                },
+                post.ui_token_amount.decimals,
+            ))
+        } else {
+            None
+        }
+    })
 }
