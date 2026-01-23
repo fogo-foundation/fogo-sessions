@@ -235,10 +235,7 @@ where
         .collect()
 }
 
-fn extract_bytes(
-    values: Vec<DataValue>,
-    expected_length: usize,
-) -> anyhow::Result<Vec<Vec<u8>>> {
+fn extract_bytes(values: Vec<DataValue>, expected_length: usize) -> anyhow::Result<Vec<Vec<u8>>> {
     values
         .into_iter()
         .map(|value| match value {
