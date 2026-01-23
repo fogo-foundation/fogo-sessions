@@ -1,3 +1,4 @@
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { GridList, GridListItem } from "react-aria-components";
 import type { DomainConfig } from "../../db-schema";
 import styles from "./variations-list.module.scss";
@@ -6,6 +7,7 @@ import { VariationListItem } from "./variations-list-item";
 type VariationsListProps =
   | {
       domainConfig: DomainConfig;
+      sessionState: EstablishedSessionState;
       isLoading?: false | undefined;
     }
   | {
@@ -20,18 +22,28 @@ const VariationsList = (props: VariationsListProps) => {
       <VariationListItem isLoading />
     </div>
   ) : (
-    <GridList
-      className={styles.variationsList ?? ""}
-      aria-label="Variations"
-      layout="grid"
-      items={props.domainConfig.variations}
-    >
-      {(variation) => (
-        <GridListItem key={variation.id}>
-          <VariationListItem variation={variation} />
-        </GridListItem>
-      )}
-    </GridList>
+    <>
+      <GridList
+        className={styles.variationsList ?? ""}
+        aria-label="Variations"
+        layout="grid"
+        items={props.domainConfig.variations}
+      >
+        {(variation) => (
+          <GridListItem key={variation.id}>
+            <VariationListItem
+              sessionState={props.sessionState}
+              variation={variation}
+              domainConfigId={props.domainConfig.id}
+            />
+          </GridListItem>
+        )}
+      </GridList>
+      <VariationListItem
+        sessionState={props.sessionState}
+        domainConfigId={props.domainConfig.id}
+      />
+    </>
   );
 };
 

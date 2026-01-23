@@ -98,7 +98,13 @@ const VariationData = ({
       if (!domainConfig) {
         return <div>Domain config not found</div>;
       }
-      return <DomainVariation app={app} domainConfig={domainConfig} />;
+      return (
+        <DomainVariation
+          sessionState={sessionState}
+          app={app}
+          domainConfig={domainConfig}
+        />
+      );
     }
     default: {
       return;

@@ -1,3 +1,4 @@
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { StackIcon } from "@phosphor-icons/react/dist/ssr";
 import type { App, DomainConfig } from "../../db-schema";
 import BreadcrumbNav from "../BreadcrumbNav";
@@ -10,6 +11,7 @@ type DomainVariationProps =
   | {
       app: App;
       domainConfig: DomainConfig;
+      sessionState: EstablishedSessionState;
       isLoading?: false;
     }
   | {
@@ -53,7 +55,10 @@ export const DomainVariation = (props: DomainVariationProps) => {
         {props.isLoading ? (
           <VariationsList isLoading />
         ) : (
-          <VariationsList domainConfig={props.domainConfig} />
+          <VariationsList
+            sessionState={props.sessionState}
+            domainConfig={props.domainConfig}
+          />
         )}
       </div>
     </>
