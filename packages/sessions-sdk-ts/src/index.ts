@@ -320,44 +320,41 @@ const createSession = async (
     getDomainRegistryAuthorizedPrograms(context.connection, context.domain),
   ]);
 
-  if (sessionInfo === undefined) {
-    return;
-  }
-
-  if (
+  return sessionInfo === undefined ||
     !authorizedProgramsMatchDomainRegistry(
       sessionInfo.authorizedPrograms,
       domainRegistryAuthorizedPrograms,
     )
-  ) {
-    return;
-  }
-
-  return {
-    sessionPublicKey,
-    walletPublicKey,
-    sessionKey,
-    payer: context.payer,
-    getSystemProgramSessionWrapInstruction: (amount: bigint) =>
-      createSystemProgramSessionWrapInstruction(
+    ? undefined
+    : {
         sessionPublicKey,
         walletPublicKey,
-        amount,
-      ),
-    getSessionWrapInstructions: (amount: bigint) =>
-      createSessionWrapInstructions(sessionPublicKey, walletPublicKey, amount),
-    getSessionUnwrapInstructions: () => [
-      createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey),
-    ],
-    sendTransaction: (instructions, extraConfig) =>
-      context.sendTransaction(
         sessionKey,
-        instructions,
-        walletPublicKey,
-        extraConfig,
-      ),
-    sessionInfo,
-  };
+        payer: context.payer,
+        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
+          createSystemProgramSessionWrapInstruction(
+            sessionPublicKey,
+            walletPublicKey,
+            amount,
+          ),
+        getSessionWrapInstructions: (amount: bigint) =>
+          createSessionWrapInstructions(
+            sessionPublicKey,
+            walletPublicKey,
+            amount,
+          ),
+        getSessionUnwrapInstructions: () => [
+          createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey),
+        ],
+        sendTransaction: (instructions, extraConfig) =>
+          context.sendTransaction(
+            sessionKey,
+            instructions,
+            walletPublicKey,
+            extraConfig,
+          ),
+        sessionInfo,
+      };
 };
 
 const authorizedTokensSchema = z.union([
