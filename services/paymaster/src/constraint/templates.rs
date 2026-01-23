@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 use crate::constraint::SubstantiveProgramId;
 use crate::constraint::{
-    AccountConstraint, ContextualPubkey, DataConstraint, DataConstraintSpecification, DataType,
-    DataValue, ParsedInstructionConstraint, ParsedTransactionVariation,
+    AccountConstraint, ContextualPubkey, IntegerConstraint, ParsedDataConstraint,
+    ParsedDataConstraintSpecification, ParsedInstructionConstraint, ParsedTransactionVariation,
     ParsedVariationOrderedInstructionConstraints,
 };
 
@@ -16,58 +16,60 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // numSignatures = 1
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U8,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![1],
+                    )),
                 },
                 // padding = 0
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 1,
-                    data_type: DataType::U8,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(0)]),
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![0],
+                    )),
                 },
                 // signatureOffset = 16 + 32 = 48
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 2,
-                    data_type: DataType::U16,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U16(48)]),
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![48],
+                    )),
                 },
                 // signatureInstructionIndex = 0xffff
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 4,
-                    data_type: DataType::U16,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U16(
-                        u16::MAX,
-                    )]),
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![u16::MAX],
+                    )),
                 },
                 // publicKeyOffset = 16
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 6,
-                    data_type: DataType::U16,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U16(16)]),
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![16],
+                    )),
                 },
                 // publicKeyInstructionIndex = 0xffff
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 8,
-                    data_type: DataType::U16,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U16(
-                        u16::MAX,
-                    )]),
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![u16::MAX],
+                    )),
                 },
                 // messageOffset = 16 + 32 + 64 = 112
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 10,
-                    data_type: DataType::U16,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U16(112)]),
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![112],
+                    )),
                 },
                 // messageInstructionIndex = 0xffff
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 14,
-                    data_type: DataType::U16,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U16(
-                        u16::MAX,
-                    )]),
+                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
+                        vec![u16::MAX],
+                    )),
                 },
             ],
             required: true,
@@ -97,10 +99,11 @@ impl ParsedInstructionConstraint {
             ],
             data: vec![
                 // instruction = 0 (StartSession)
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U8,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(0)]),
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![0],
+                    )),
                 },
             ],
             required: true,
@@ -118,10 +121,11 @@ impl ParsedInstructionConstraint {
             }],
             data: vec![
                 // instruction = 1 (RevokeSession)
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U8,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![1],
+                    )),
                 },
             ],
             required: true,
@@ -135,12 +139,11 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // instruction = 4_000_000 (SessionWrap)
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U32,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U32(
-                        4_000_000,
-                    )]),
+                    constraint: ParsedDataConstraintSpecification::U32(IntegerConstraint::EqualTo(
+                        vec![4_000_000],
+                    )),
                 },
             ],
             required: false,
@@ -158,10 +161,11 @@ impl ParsedInstructionConstraint {
             }],
             data: vec![
                 // instruction = 1 (CreateIdempotent)
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U8,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(1)]),
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![1],
+                    )),
                 },
             ],
             required: false,
@@ -175,10 +179,11 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // instruction = 17 (SyncNative)
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U8,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(17)]),
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![17],
+                    )),
                 },
             ],
             required: false,
@@ -192,10 +197,11 @@ impl ParsedInstructionConstraint {
             accounts: vec![],
             data: vec![
                 // instruction = 9 (CloseAccount)
-                DataConstraint {
+                ParsedDataConstraint {
                     start_byte: 0,
-                    data_type: DataType::U8,
-                    constraint: DataConstraintSpecification::EqualTo(vec![DataValue::U8(9)]),
+                    constraint: ParsedDataConstraintSpecification::U8(IntegerConstraint::EqualTo(
+                        vec![9],
+                    )),
                 },
             ],
             required: false,
