@@ -274,6 +274,7 @@ impl ValiantClient {
             pools,
             is_exact_in: true,
             use_alt: true,
+            // TODO: roll this back to false once Valiant fixes their API
             include_fee: true,
         };
 
