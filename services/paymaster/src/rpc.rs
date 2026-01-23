@@ -515,6 +515,8 @@ pub struct RetryConfig {
 }
 
 /// Fetches a transaction from RPC with retry logic, then applies a processing function to the response.
+/// retry_config configures the retries of the RPC call with sleep on failure. This is useful in cases where the
+/// transaction was sent with a lower commitment level, so it may not be confirmed yet.
 async fn fetch_transaction_with_retry<T, F>(
     rpc: &RpcClient,
     signature: &Signature,
@@ -527,6 +529,7 @@ where
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Base64),
         max_supported_transaction_version: Some(0),
+        // this method does not support any commitment below confirmed
         commitment: Some(CommitmentConfig::confirmed()),
     };
 
@@ -556,8 +559,6 @@ where
 
 /// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
 /// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
-/// retry_config configures the retries of the RPC call with sleep on failure. This is useful in cases where the
-/// transaction was sent with a lower commitment level, so it may not be confirmed yet.
 #[tracing::instrument(skip_all, fields(tx_hash = %signature))]
 pub async fn fetch_transaction_cost_details(
     rpc: &RpcClient,
@@ -608,6 +609,7 @@ pub struct SwapBalanceChange {
     pub fogo_received: f64,
 }
 
+/// Fetches transaction details from RPC and extracts balance changes for the specified mint and WFOGO due to the swap.
 #[tracing::instrument(skip_all, fields(mint = %mint_in, tx_hash = %signature))]
 pub async fn fetch_swap_balance_changes(
     rpc: &RpcClient,
