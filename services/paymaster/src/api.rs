@@ -560,18 +560,19 @@ async fn sponsor_and_send_handler(
                             }
                         }
 
+                        let transaction_sponsor_pubkey = transaction_sponsor.pubkey();
+
                         let swap_balance_change_futures = swap_results.iter().filter_map(|swap_result| {
                             match swap_result {
                                 Ok(SwapConfirmationResult { mint, confirmation }) => {
                                     match confirmation {
                                         ConfirmationResultInternal::Success { signature } => {
                                             let state = Arc::clone(&state);
-                                            let transaction_sponsor = Arc::clone(&transaction_sponsor);
                                             Some(async move {
                                                 fetch_swap_balance_changes(
                                                     &state.chain_index.rpc,
                                                     signature,
-                                                    &transaction_sponsor.pubkey(),
+                                                    &transaction_sponsor_pubkey,
                                                     *mint,
                                                     RetryConfig {
                                                         max_tries: 3,
