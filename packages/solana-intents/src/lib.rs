@@ -118,7 +118,7 @@ impl Ed25519InstructionHeader {
 }
 
 #[derive(Debug, PartialEq)]
-enum Message {
+pub enum Message {
     Raw(Vec<u8>),
     LegacyOffchain(LegacyOffchainMessage),
     Offchain(OffchainMessage),
@@ -143,7 +143,7 @@ fn get_length_with_header(message: &LegacyOffchainMessage) -> usize {
 }
 
 impl Message {
-    fn deserialize(data: &[u8]) -> std::io::Result<Self> {
+    pub fn deserialize(data: &[u8]) -> std::io::Result<Self> {
         match data.try_into() {
             Ok(message) => Ok(Self::Offchain(message)),
             _ => {

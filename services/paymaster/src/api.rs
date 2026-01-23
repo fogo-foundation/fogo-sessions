@@ -1,3 +1,4 @@
+use crate::cli::NetworkEnvironment;
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
 use crate::constraint::{ContextualDomainKeys, ParsedTransactionVariation};
@@ -24,6 +25,7 @@ use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use nonempty::NonEmpty;
+use reqwest::Client;
 use serde_with::{serde_as, DisplayFromStr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
@@ -45,11 +47,12 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
+use url::Url;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
-    pub sponsors: NonEmpty<Keypair>,
+    pub sponsors: NonEmpty<Arc<Keypair>>,
     pub next_autoassigned_sponsor_index: Arc<AtomicUsize>,
     pub enable_preflight_simulation: bool,
     pub tx_variations: HashMap<String, ParsedTransactionVariation>,
@@ -100,12 +103,18 @@ impl PubsubClientWithReconnect {
     }
 }
 
+pub struct ValiantClient {
+    pub client: Client,
+    pub base_url: Url,
+}
+
 pub struct ServerState {
     pub domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
     pub ftl_rpc: Option<RpcClient>,
     pub fee_coefficients: HashMap<Pubkey, u64>,
+    pub valiant_client: Option<ValiantClient>,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -353,7 +362,7 @@ async fn sponsor_and_send_handler(
             "The transaction must have a fee payer",
         )
     })?;
-    let transaction_sponsor: &Keypair = domain_state
+    let transaction_sponsor = domain_state
         .sponsors
         .iter()
         .find(|sponsor| sponsor.pubkey() == *fee_payer)
@@ -378,7 +387,7 @@ async fn sponsor_and_send_handler(
     let transaction_to_validate =
         TransactionToValidate::parse(&transaction, &state.chain_index, &state.fee_coefficients)
             .await?;
-    let matched_variation_name = match domain_state
+    let (matched_variation_name, swap_into_fogo) = match domain_state
         .validate_transaction(
             &transaction_to_validate,
             &state.chain_index,
@@ -394,14 +403,16 @@ async fn sponsor_and_send_handler(
                 Some(variation.name().to_owned()),
                 "success".to_string(),
             );
-            variation.name()
+            (
+                variation.name().to_owned(),
+                variation.swap_into_fogo().to_owned(),
+            )
         }
         Err(e) => {
             obs_validation(domain.clone(), None, "invalid".to_string());
             return Err(e.into());
         }
-    }
-    .to_owned();
+    };
     let gas_spend = transaction_to_validate.gas_spend;
 
     let signature = transaction_sponsor.sign_message(&transaction.message.serialize());
@@ -451,7 +462,8 @@ async fn sponsor_and_send_handler(
         // This ensures that any logs/traces from the spawned task are associated with the original request.
         let span = tracing::Span::current();
 
-        tokio::spawn(
+        tokio::spawn({
+            let state = Arc::clone(&state);
             async move {
                 match fetch_transaction_cost_details(
                     &state.chain_index.rpc,
@@ -479,8 +491,25 @@ async fn sponsor_and_send_handler(
                     }
                 }
             }
-            .instrument(span),
-        );
+            .instrument(span)
+        });
+
+        let transaction_sponsor_clone = transaction_sponsor.clone();
+
+        if !swap_into_fogo.is_empty() {
+            tokio::spawn(async move {
+                if let Some(valiant_client) = &state.valiant_client {
+                    valiant_client
+                        .swap_tokens_probabilistic(
+                            &swap_into_fogo,
+                            &transaction_sponsor_clone,
+                            &state.chain_index.rpc,
+                            &state.rpc_sub,
+                        )
+                        .await;
+                }
+            });
+        }
     }
 
     Ok(Json(confirmation_result.into()))
@@ -637,13 +666,15 @@ pub fn get_domain_state_map(
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
                 let sponsors = NonEmpty::collect((0u8..number_of_signers.into()).map(|i| {
-                    Keypair::from_seed_and_derivation_path(
-                        &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
-                            mnemonic, &domain,
-                        ),
-                        Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
+                    Arc::new(
+                        Keypair::from_seed_and_derivation_path(
+                            &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
+                                mnemonic, &domain,
+                            ),
+                            Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
+                        )
+                        .expect("Failed to derive keypair from mnemonic_file"),
                     )
-                    .expect("Failed to derive keypair from mnemonic_file")
                 }))
                 .expect("number_of_signers in NonZero so this should never be empty");
 
@@ -669,6 +700,7 @@ pub fn get_domain_state_map(
 const RPC_POOL_SIZE: usize = 6;
 
 #[allow(clippy::unwrap_used, reason = "It's fine to panic at startup")]
+#[allow(clippy::too_many_arguments)]
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
@@ -676,6 +708,9 @@ pub async fn run_server(
     listen_address: String,
     domains_states: Arc<ArcSwap<HashMap<String, DomainState>>>,
     fee_coefficients: HashMap<Pubkey, u64>,
+    network_environment: NetworkEnvironment,
+    valiant_api_key: Option<String>,
+    valiant_url_override: Option<String>,
 ) {
     let rpc_http_sender = PooledHttpSender::new(rpc_url_http, RPC_POOL_SIZE);
 
@@ -725,6 +760,11 @@ pub async fn run_server(
 
     let prometheus_layer = PrometheusMetricLayer::new();
 
+    let valiant_client = valiant_api_key.map(|key| {
+        ValiantClient::from_params(&key, network_environment, valiant_url_override)
+            .expect("Should create Valiant client")
+    });
+
     let app = Router::new()
         .route("/ready", axum::routing::get(readiness_handler))
         .route(
@@ -750,6 +790,7 @@ pub async fn run_server(
             },
             rpc_sub,
             ftl_rpc,
+            valiant_client,
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     tracing::info!("Starting paymaster service...");

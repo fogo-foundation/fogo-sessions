@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Context, Result};
-use base64::prelude::*;
 use clap::{Parser, Subcommand, ValueEnum};
 use config::File;
 use dashmap::DashMap;
@@ -8,6 +7,7 @@ use fogo_paymaster::{
     constraint::{
         transaction::TransactionToValidate, ContextualDomainKeys, ParsedTransactionVariation,
     },
+    parse::parse_transaction_from_base64,
     rpc::ChainIndex,
 };
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
@@ -477,17 +477,6 @@ async fn fetch_recent_sponsor_transactions(
     let results = futures::future::join_all(transaction_futures).await;
 
     results.into_iter().collect::<Result<Vec<_>, _>>()
-}
-
-fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransaction> {
-    let tx_bytes = BASE64_STANDARD
-        .decode(encoded_tx)
-        .context("Failed to decode base64 transaction")?;
-
-    let (transaction, _) =
-        bincode::serde::decode_from_slice(&tx_bytes, bincode::config::standard())
-            .context("Failed to deserialize transaction")?;
-    Ok(transaction)
 }
 
 async fn get_matching_variations<'a>(

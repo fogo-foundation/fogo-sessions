@@ -8,6 +8,7 @@ pub struct Cli {
     pub command: Command,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Run the paymaster service (uses DB + env vars, no TOML)
@@ -85,6 +86,12 @@ pub struct RunOptions {
 
     #[arg(long, env = "DB_REFRESH_INTERVAL_SECONDS", default_value = "10")]
     pub db_refresh_interval_seconds: u64,
+
+    #[arg(long, env = "VALIANT_API_KEY")]
+    pub valiant_api_key: Option<String>,
+
+    #[arg(long, env = "VALIANT_OVERRIDE_URL")]
+    pub valiant_override_url: Option<String>,
 }
 
 #[derive(Args, Debug, Clone)]

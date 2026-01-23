@@ -34,6 +34,13 @@ impl ParsedTransactionVariation {
             ParsedTransactionVariation::V1(v) => &v.name,
         }
     }
+
+    pub fn swap_into_fogo(&self) -> &[MintSwapRate] {
+        match self {
+            ParsedTransactionVariation::V0(_) => &[],
+            ParsedTransactionVariation::V1(v) => &v.swap_into_fogo,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -74,6 +81,15 @@ pub struct ParsedVariationOrderedInstructionConstraints {
     pub instructions: Vec<ParsedInstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,
+    pub swap_into_fogo: Vec<MintSwapRate>,
+}
+
+#[serde_as]
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MintSwapRate {
+    #[serde_as(as = "DisplayFromStr")]
+    pub mint: Pubkey,
+    pub rate: f64,
 }
 
 #[derive(Clone)]

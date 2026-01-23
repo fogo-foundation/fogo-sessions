@@ -10,6 +10,7 @@ use solana_client::{
 };
 use solana_commitment_config::CommitmentConfig;
 use solana_message::VersionedMessage;
+use solana_program::program_pack::Pack;
 use solana_pubkey::Pubkey;
 use solana_rpc_client_api::client_error::{Error, ErrorKind};
 use solana_rpc_client_api::request::RpcRequest;
@@ -573,4 +574,16 @@ pub async fn fetch_transaction_cost_details(
         retry_config.max_tries,
         last_error
     ))
+}
+
+pub async fn get_spl_ata_balance(
+    rpc: &RpcClient,
+    owner: &Pubkey,
+    mint: &Pubkey,
+) -> anyhow::Result<u64> {
+    let ata = spl_associated_token_account::get_associated_token_address(owner, mint);
+    let account = rpc.get_account(&ata).await?;
+    spl_token::state::Account::unpack(&account.data)
+        .map(|token_account| token_account.amount)
+        .map_err(|e| anyhow::anyhow!("Failed to unpack token account: {}", e))
 }

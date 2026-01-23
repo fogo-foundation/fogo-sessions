@@ -1,5 +1,12 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.15 (2026-01-21)
+
+### Fixes
+
+- Add grouping to amount formatter
+- Fix overflow issues on some panels
+
 ## 0.1.14 (2026-01-15)
 
 ### Fixes

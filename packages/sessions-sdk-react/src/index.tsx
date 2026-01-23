@@ -10,6 +10,7 @@ export { useConnection, useRpc, useSession } from "./hooks/use-session.js";
 export {
   type EstablishedSessionState,
   isEstablished,
+  isWalletLoading,
   type SessionState,
   type SessionStates,
   StateType as SessionStateType,

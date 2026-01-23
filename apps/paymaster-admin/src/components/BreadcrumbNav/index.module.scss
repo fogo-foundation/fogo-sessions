@@ -1,7 +1,7 @@
 @use '@fogo/component-library/theme';
 
 .breadcrumbNav {
-  padding: 0 0 theme.spacing(2) 0;
+  padding-bottom: theme.spacing(3);
   border-bottom: 1px solid theme.color('border');
 
   @include theme.breakpoint('md') {
@@ -16,8 +16,22 @@
     @include theme.max-width;
     position: relative;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: space-between;
+
+    @include theme.breakpoint('sm') {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .breadcrumbNavTitleContainer {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
     .breadcrumbNavArrow {
       all: unset;
       @include theme.text('xl', 'normal');
@@ -26,15 +40,29 @@
       transform: translateX(-#{theme.spacing(12)});
       cursor: pointer;
     }
-
-    .breadcrumbNavList {
-      display: flex;
-      align-items: center;
-      gap: theme.spacing(4);
-      list-style-type: none;
-      padding: 0;
-    }
   }
+}
+
+.breadcrumbNavTitle {
+  @include theme.text('2xl', 'normal');
+
+  @include theme.breakpoint('sm') {
+    @include theme.text('3xl', 'normal');
+  }
+}
+
+.breadcrumbNavTitleSkeleton {
+  width: theme.spacing(80);
+  height: theme.spacing(6);
+  display: inline-block;
+}
+
+.breadcrumbNavList {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(4);
+  list-style-type: none;
+  padding: 0;
 }
 
 .breadcrumbNavItemSkeleton {
@@ -44,7 +72,14 @@
 }
 
 .breadcrumbNavItem {
-  @include theme.text('3xl', 'normal');
+  @include theme.text('2xl', 'normal');
+  &[data-small] {
+    @include theme.text('xl', 'normal');
+  }
+
+  @include theme.breakpoint('sm') {
+    @include theme.text('3xl', 'normal');
+  }
 }
 
 .breadcrumbNavSeparator {
@@ -52,4 +87,14 @@
   color: theme.color('foreground');
   opacity: 0.2;
   margin-left: theme.spacing(4);
+
+  &[data-small] {
+    @include theme.text('xl', 'normal');
+    margin-left: theme.spacing(4);
+  }
+
+  @include theme.breakpoint('sm') {
+    @include theme.text('3xl', 'normal');
+    margin-left: theme.spacing(4);
+  }
 }

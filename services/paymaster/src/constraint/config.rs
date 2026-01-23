@@ -3,10 +3,10 @@ use serde_with::{serde_as, DisplayFromStr};
 use solana_pubkey::Pubkey;
 
 use crate::constraint::{
-    AccountConstraint, BytesConstraint, IntegerConstraint, NttSignedQuoter, ParsedDataConstraint,
-    ParsedDataConstraintSpecification, ParsedInstructionConstraint, ParsedTransactionVariation,
-    ParsedVariationOrderedInstructionConstraints, ScalarConstraint, SubstantiveProgramId,
-    VariationProgramWhitelist,
+    AccountConstraint, BytesConstraint, IntegerConstraint, MintSwapRate, NttSignedQuoter,
+    ParsedDataConstraint, ParsedDataConstraintSpecification, ParsedInstructionConstraint,
+    ParsedTransactionVariation, ParsedVariationOrderedInstructionConstraints, ScalarConstraint,
+    SubstantiveProgramId, VariationProgramWhitelist,
 };
 
 #[derive(Deserialize)]
@@ -311,6 +311,8 @@ pub struct VariationOrderedInstructionConstraints {
     pub instructions: Vec<InstructionConstraint>,
     pub max_gas_spend: u64,
     pub paymaster_fee_lamports: Option<u64>,
+    #[serde(default)]
+    pub swap_into_fogo: Vec<MintSwapRate>,
 }
 
 impl TryFrom<VariationOrderedInstructionConstraints>
@@ -324,6 +326,7 @@ impl TryFrom<VariationOrderedInstructionConstraints>
             instructions,
             max_gas_spend,
             paymaster_fee_lamports,
+            swap_into_fogo,
         }: VariationOrderedInstructionConstraints,
     ) -> Result<Self, Self::Error> {
         let constraints = instructions
@@ -345,11 +348,23 @@ impl TryFrom<VariationOrderedInstructionConstraints>
             .into_iter()
             .flatten()
             .collect();
+        let parsed_swap_into_fogo = swap_into_fogo
+            .into_iter()
+            .filter_map(|MintSwapRate { mint, rate }| {
+                let rate = rate.clamp(0.0, 1.0);
+                if rate == 0.0 {
+                    None
+                } else {
+                    Some(MintSwapRate { mint, rate })
+                }
+            })
+            .collect();
         Ok(Self {
             name,
             instructions: constraints,
             max_gas_spend,
             paymaster_fee_lamports,
+            swap_into_fogo: parsed_swap_into_fogo,
         })
     }
 }

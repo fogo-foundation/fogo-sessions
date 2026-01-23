@@ -336,7 +336,11 @@ const Token = ({
             decimals={metadata.data.decimals}
             symbol={metadata.data.symbol}
             name={mint.toBase58()}
-            defaultValue={amountToString(initialAmount, metadata.data.decimals)}
+            defaultValue={amountToString(
+              initialAmount,
+              metadata.data.decimals,
+              false,
+            )}
             min={0n}
           />
         </>

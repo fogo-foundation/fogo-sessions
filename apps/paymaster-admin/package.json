@@ -21,13 +21,18 @@
     "@neondatabase/serverless": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana/web3.js": "catalog:",
+    "ace-builds": "catalog:",
     "clsx": "catalog:",
+    "motion": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
+    "react-ace": "catalog:",
     "react-aria": "catalog:",
     "react-aria-components": "catalog:",
     "react-dom": "catalog:",
+    "smol-toml": "catalog:",
     "swr": "catalog:",
+    "uuid": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

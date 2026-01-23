@@ -64,6 +64,7 @@ catalog:
   "@wormhole-foundation/sdk-solana-core": ^3.10.0
   "@wormhole-foundation/sdk-solana-ntt": ^4.0.1
   "@yudiel/react-qr-scanner": ^2.3.1
+  ace-builds: ^1.43.5
   autoprefixer: ^10.4.20
   babel-plugin-react-compiler: 19.1.0-rc.1
   bn.js: ^5.1.2
@@ -88,11 +89,13 @@ catalog:
   puppeteer: ^24.10.1
   qrcode.react: ^4.2.0
   react: ^19.1.4
+  react-ace: ^14.0.1
   react-aria: ^3.41.1
   react-aria-components: ^1.10.1
   react-dom: ^19.1.4
   sass: ^1.89.2
   sass-loader: ^16.0.5
+  smol-toml: ^1.6.0
   storybook: ^10.1.2
   stylelint: ^16.21.0
   style-loader: ^4.0.0
@@ -101,6 +104,7 @@ catalog:
   thread-stream: ^3.1.0
   turbo: ^2.5.4
   typescript: ^5.8.3
+  uuid: ^13.0.0
   vercel: ^50.1.5
   yargs: ^18.0.0
   zod: 3.25.67
