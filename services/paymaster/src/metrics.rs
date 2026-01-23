@@ -96,8 +96,6 @@ pub const SWAP_FOGO_SIZE_BUCKETS: &[f64] = &[
     100_000.0,
     1_000_000.0,
     10_000_000.0,
-    100_000_000.0,
-    1_000_000_000.0,
 ];
 
 pub fn obs_swap(domain: String, variation: String, balance_change: &SwapBalanceChange) {

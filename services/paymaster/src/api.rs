@@ -540,13 +540,13 @@ async fn sponsor_and_send_handler(
                             {
                                 Ok(confirmation) => match confirmation {
                                     ConfirmationResultInternal::Failed { signature, error } => {
-                                        tracing::warn!("Failed to unwrap WFOGO due to failure to confirm transaction for {signature}: {:?}", error);
+                                        tracing::warn!("Failed to unwrap due to failure to confirm transaction for {signature}: {:?}", error);
                                     }
                                     ConfirmationResultInternal::UnconfirmedPreflightFailure {
                                         signature,
                                         error,
                                     } => {
-                                        tracing::warn!("Failed to unwrap WFOGO due to transaction preflight failure for {signature}: {:?}", error);
+                                        tracing::warn!("Failed to unwrap due to transaction preflight failure for {signature}: {:?}", error);
                                     }
                                     _ => {}
                                 },
@@ -572,7 +572,8 @@ async fn sponsor_and_send_handler(
                                                     &state.chain_index.rpc,
                                                     signature,
                                                     &transaction_sponsor.pubkey(),
-                                                    *mint,                                                    RetryConfig {
+                                                    *mint,
+                                                    RetryConfig {
                                                         max_tries: 3,
                                                         sleep_ms: 2000,
                                                     }

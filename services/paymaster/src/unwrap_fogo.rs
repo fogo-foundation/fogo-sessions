@@ -10,7 +10,7 @@ use crate::{
     rpc::{send_and_confirm_transaction, ConfirmationResultInternal, SignedVersionedTransaction},
 };
 
-/// Submits a transaction to unwrap WFOGO tokens into FOGO.
+/// Submits a transaction to unwrap WFOGO SPL tokens into FOGO.
 pub async fn unwrap_fogo(
     owner: &Keypair,
     rpc: &RpcClient,
