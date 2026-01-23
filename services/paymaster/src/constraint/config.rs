@@ -107,14 +107,7 @@ impl From<VariationOrderedInstructionConstraints> for ParsedVariationOrderedInst
             .collect();
         let parsed_swap_into_fogo = swap_into_fogo
             .into_iter()
-            .filter_map(|MintSwapRate { mint, rate }| {
-                let rate = rate.clamp(0.0, 1.0);
-                if rate == 0.0 {
-                    None
-                } else {
-                    Some(MintSwapRate { mint, rate })
-                }
-            })
+            .filter(|MintSwapRate { rate, .. }| *rate != 0.0)
             .collect();
         Self {
             name,

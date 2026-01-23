@@ -548,7 +548,7 @@ async fn sponsor_and_send_handler(
                                     } => {
                                         tracing::warn!("Failed to unwrap due to transaction preflight failure for {signature}: {:?}", error);
                                     }
-                                    _ => {}
+                                    ConfirmationResultInternal::Success { .. } => {}
                                 },
 
                                 Err(e) => {
@@ -562,44 +562,42 @@ async fn sponsor_and_send_handler(
 
                         let transaction_sponsor_pubkey = transaction_sponsor.pubkey();
 
-                        let swap_balance_change_futures = swap_results.iter().filter_map(|swap_result| {
-                            match swap_result {
-                                Ok(SwapConfirmationResult { mint, confirmation }) => {
-                                    match confirmation {
-                                        ConfirmationResultInternal::Success { signature } => {
-                                            let state = Arc::clone(&state);
-                                            Some(async move {
-                                                fetch_swap_balance_changes(
+                        let swap_balance_changes = join_all(
+                            swap_results.iter().filter_map(|swap_result| {
+                                match swap_result {
+                                    Ok(SwapConfirmationResult { mint, confirmation }) => {
+                                        match confirmation {
+                                            ConfirmationResultInternal::Success { signature } => {
+                                                Some(fetch_swap_balance_changes(
                                                     &state.chain_index.rpc,
                                                     signature,
                                                     &transaction_sponsor_pubkey,
-                                                    *mint,
+                                                    mint,
                                                     RetryConfig {
                                                         max_tries: 3,
                                                         sleep_ms: 2000,
-                                                    }
-                                                ).await
-                                            })
-                                        }
+                                                    })
+                                                )
+                                            }
 
-                                        ConfirmationResultInternal::Failed { signature, error, } => {
-                                            tracing::warn!("Failed to fetch swap balance changes due to failure to confirm transaction for {signature}: {:?}", error);
-                                            None
-                                        }
+                                            ConfirmationResultInternal::Failed { signature, error, } => {
+                                                tracing::warn!("Failed to fetch swap balance changes due to failure to confirm transaction for {signature}: {:?}", error);
+                                                None
+                                            }
 
-                                        ConfirmationResultInternal::UnconfirmedPreflightFailure { signature, error, } => {
-                                            tracing::warn!("Failed to fetch swap balance changes due to transaction preflight failure for {signature}: {:?}", error);
-                                            None
+                                            ConfirmationResultInternal::UnconfirmedPreflightFailure { signature, error, } => {
+                                                tracing::warn!("Failed to fetch swap balance changes due to transaction preflight failure for {signature}: {:?}", error);
+                                                None
+                                            }
                                         }
                                     }
+                                    Err(e) => {
+                                        tracing::warn!("Failed to send and confirm swap: {:?}", e);
+                                        None
+                                    }
                                 }
-                                Err(e) => {
-                                    tracing::warn!("Failed to send and confirm swap: {:?}", e);
-                                    None
-                                }
-                            }
-                        }).collect::<Vec<_>>();
-                        let swap_balance_changes = join_all(swap_balance_change_futures).await;
+                            })
+                        ).await;
 
                         swap_balance_changes
                             .iter()

@@ -11,6 +11,7 @@ use crate::{
 };
 
 /// Submits a transaction to unwrap WFOGO SPL tokens into FOGO.
+/// TODO: we should implement the unwrapping within the swap tx.
 pub async fn unwrap_fogo(
     owner: &Keypair,
     rpc: &RpcClient,

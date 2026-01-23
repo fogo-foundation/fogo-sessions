@@ -18,7 +18,7 @@ use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use solana_transaction_status_client_types::{
-    EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding,
+    EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding, UiTransactionTokenBalance,
 };
 use spl_token::amount_to_ui_amount;
 use std::time::Duration;
@@ -615,12 +615,9 @@ pub async fn fetch_swap_balance_changes(
     rpc: &RpcClient,
     signature: &Signature,
     owner: &Pubkey,
-    mint_in: Pubkey,
+    mint_in: &Pubkey,
     retry_config: RetryConfig,
 ) -> anyhow::Result<SwapBalanceChange> {
-    let owner_str = owner.to_string();
-    let mint_in_str = mint_in.to_string();
-
     fetch_transaction_with_retry(rpc, signature, &retry_config, |tx_response| {
         let meta = tx_response
             .transaction
@@ -634,42 +631,15 @@ pub async fn fetch_swap_balance_changes(
         let (token_spent, fogo_received) = pre_token_balances
             .zip(post_token_balances)
             .and_then(|(pre_balances, post_balances)| {
-                let token_spent = pre_balances.iter().find_map(|pre| {
-                    if pre.mint == mint_in_str
-                        && pre.owner.as_ref().map_or(false, |o| *o == owner_str)
-                    {
-                        let post = post_balances
-                            .iter()
-                            .find(|p| p.account_index == pre.account_index)?;
-                        let pre_amount = pre.ui_token_amount.amount.parse::<u64>().ok()?;
-                        let post_amount = post.ui_token_amount.amount.parse::<u64>().ok()?;
-                        Some(amount_to_ui_amount(
-                            pre_amount.saturating_sub(post_amount),
-                            post.ui_token_amount.decimals,
-                        ))
-                    } else {
-                        None
-                    }
-                })?;
-
-                let fogo_received = pre_balances.iter().find_map(|pre| {
-                    if pre.mint == spl_token::native_mint::id().to_string()
-                        && pre.owner.as_ref().map_or(false, |o| *o == owner_str)
-                    {
-                        let post = post_balances
-                            .iter()
-                            .find(|p| p.account_index == pre.account_index)?;
-                        let pre_amount = pre.ui_token_amount.amount.parse::<u64>().ok()?;
-                        let post_amount = post.ui_token_amount.amount.parse::<u64>().ok()?;
-                        Some(amount_to_ui_amount(
-                            post_amount.saturating_sub(pre_amount),
-                            post.ui_token_amount.decimals,
-                        ))
-                    } else {
-                        None
-                    }
-                })?;
-
+                let token_spent =
+                    compute_balance_change(pre_balances, post_balances, owner, mint_in, true)?;
+                let fogo_received = compute_balance_change(
+                    pre_balances,
+                    post_balances,
+                    owner,
+                    &spl_token::native_mint::id(),
+                    false,
+                )?;
                 Some((token_spent, fogo_received))
             })
             .ok_or_else(|| {
@@ -677,10 +647,45 @@ pub async fn fetch_swap_balance_changes(
             })?;
 
         Ok(SwapBalanceChange {
-            mint: mint_in,
+            mint: *mint_in,
             token_spent,
             fogo_received,
         })
     })
     .await
+}
+
+/// Computes the balance change for a particular owner and mint combination.
+/// token_spent indicates whether to compute the amount spent (true) or received (false).
+fn compute_balance_change(
+    pre_balances: &[UiTransactionTokenBalance],
+    post_balances: &[UiTransactionTokenBalance],
+    owner: &Pubkey,
+    mint: &Pubkey,
+    token_spent: bool,
+) -> Option<f64> {
+    pre_balances.iter().find_map(|pre| {
+        if pre.mint == mint.to_string()
+            && pre
+                .owner
+                .as_ref()
+                .map_or(false, |o| *o == owner.to_string())
+        {
+            let post = post_balances
+                .iter()
+                .find(|p| p.account_index == pre.account_index)?;
+            let pre_amount = pre.ui_token_amount.amount.parse::<u64>().ok()?;
+            let post_amount = post.ui_token_amount.amount.parse::<u64>().ok()?;
+            Some(amount_to_ui_amount(
+                if token_spent {
+                    pre_amount.saturating_sub(post_amount)
+                } else {
+                    post_amount.saturating_sub(pre_amount)
+                },
+                post.ui_token_amount.decimals,
+            ))
+        } else {
+            None
+        }
+    })
 }

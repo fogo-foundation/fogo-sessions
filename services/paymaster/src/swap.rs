@@ -154,7 +154,7 @@ impl ValiantClient {
     ) -> Vec<anyhow::Result<SwapConfirmationResult>> {
         let futures = mint_swap_rates.iter().filter_map(|mint_swap_rate| {
             if mint_swap_rate.sample() {
-                Some(self.swap_token(mint_swap_rate.mint, transaction_sponsor, rpc, pubsub))
+                Some(self.swap_token(mint_swap_rate.mint(), transaction_sponsor, rpc, pubsub))
             } else {
                 None
             }
@@ -297,7 +297,7 @@ impl ValiantClient {
 
 impl MintSwapRate {
     fn sample(&self) -> bool {
-        let rv = Bernoulli::new(self.rate);
+        let rv = Bernoulli::new(self.rate());
         // this should always be okay, since 0 <= rate <= 1
         if let Ok(bern) = rv {
             return bern.sample(&mut rand::rng());
