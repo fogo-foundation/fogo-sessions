@@ -1,3 +1,9 @@
+## 0.7.2 (2026-01-23)
+
+### Fixes
+
+- Make the data_type field in data constraints optional
+
 ## 0.7.1 (2026-01-16)
 
 ### Fixes

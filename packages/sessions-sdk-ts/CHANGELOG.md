@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.1.5 (2026-01-23)
+
+### Fixes
+
+- Expose `getPaymasterFee` and `createPaymasterFeeInstruction`  to enable crafting instructions to charge end-users paymaster fees.
+
 ## 0.1.4 (2026-01-22)
 
 ### Fixes
