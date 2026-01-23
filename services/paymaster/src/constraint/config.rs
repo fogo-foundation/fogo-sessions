@@ -326,20 +326,25 @@ impl TryFrom<VariationOrderedInstructionConstraints>
             paymaster_fee_lamports,
         }: VariationOrderedInstructionConstraints,
     ) -> Result<Self, Self::Error> {
-        let mut constraints = Vec::new();
-        for base in instructions {
-            if base.requires_wrapped_native_tokens {
-                constraints.extend(vec![
-                    ParsedInstructionConstraint::session_wrap_instruction_constraint(),
-                    ParsedInstructionConstraint::create_ata_idempotent_instruction_constraint(),
-                    ParsedInstructionConstraint::sync_native_instruction_constraint(),
-                ]);
-                constraints.push(base.try_into()?);
-                constraints.push(ParsedInstructionConstraint::close_token_account_constraint());
-            } else {
-                constraints.push(base.try_into()?);
-            }
-        }
+        let constraints = instructions
+            .into_iter()
+            .map(|base| {
+                if base.requires_wrapped_native_tokens {
+                    Ok(vec![
+                        ParsedInstructionConstraint::session_wrap_instruction_constraint(),
+                        ParsedInstructionConstraint::create_ata_idempotent_instruction_constraint(),
+                        ParsedInstructionConstraint::sync_native_instruction_constraint(),
+                        base.try_into()?,
+                        ParsedInstructionConstraint::close_token_account_constraint(),
+                    ])
+                } else {
+                    Ok(vec![base.try_into()?])
+                }
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?
+            .into_iter()
+            .flatten()
+            .collect();
         Ok(Self {
             name,
             instructions: constraints,
