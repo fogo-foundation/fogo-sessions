@@ -156,3 +156,31 @@ export const deleteVariation = async (
 
   return true;
 };
+
+export const updateDomainSettings = async (
+  walletAddress: string,
+  domainConfigId: string,
+  enableSessionManagement: boolean,
+  enablePreflightSimulation: boolean,
+) => {
+  const [domainConfig] = await sql`
+    UPDATE domain_config dc
+    SET
+      enable_session_management = ${enableSessionManagement},
+      enable_preflight_simulation = ${enablePreflightSimulation},
+      updated_at = now()
+    FROM app a
+    JOIN "user" u ON u.id = a.user_id
+    WHERE
+      dc.id = ${domainConfigId}
+      AND dc.app_id = a.id
+      AND u.wallet_address = ${walletAddress}
+    RETURNING dc.*
+  `;
+
+  if (!domainConfig) {
+    throw new Error("Domain config not found or unauthorized");
+  }
+
+  return true;
+};
