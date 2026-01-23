@@ -1,3 +1,7 @@
+import type { Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import { TollboothIdl, TollboothProgram } from "@fogo/sessions-idls";
+import { sha256 } from "@noble/hashes/sha2";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createCloseAccountInstruction,
@@ -5,8 +9,13 @@ import {
   getAssociatedTokenAddressSync,
   NATIVE_MINT,
 } from "@solana/spl-token";
-import type { PublicKey } from "@solana/web3.js";
-import { SystemProgram, TransactionInstruction } from "@solana/web3.js";
+import type { Connection } from "@solana/web3.js";
+import {
+  PublicKey,
+  SystemProgram,
+  TransactionInstruction,
+} from "@solana/web3.js";
+import type BN from "bn.js";
 
 const SESSION_WRAP_DISCRIMINATOR = 4_000_000;
 
@@ -89,3 +98,43 @@ export function createSessionUnwrapInstruction(
     sessionKey,
   );
 }
+
+const getDomainTollRecipientAddress = (domain: string) => {
+  const hash = sha256(domain);
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("toll_recipient"), Buffer.from([0]), hash],
+    new PublicKey(TollboothIdl.address),
+  )[0];
+};
+
+/**
+ * Creates the instruction required to pay the paymaster fee for a transaction.
+ * This instruction is only required if the transaction variation has a fee and may be placed anywhere in the instruction list.
+ * The fee amount for a variation in a given token can be retrieved using the `getPaymasterFee` function.
+ */
+export const createPaymasterFeeInstruction = ({
+  sessionKey,
+  walletPublicKey,
+  domain,
+  feeMint,
+  feeAmount,
+}: {
+  sessionKey: PublicKey;
+  walletPublicKey: PublicKey;
+  domain: string;
+  feeMint: PublicKey;
+  feeAmount: BN;
+}): Promise<TransactionInstruction> => {
+  const recipient = getDomainTollRecipientAddress(domain);
+  return new TollboothProgram(
+    new AnchorProvider({} as Connection, {} as Wallet),
+  ).methods
+    .payToll(feeAmount, 0)
+    .accounts({
+      session: sessionKey,
+      source: getAssociatedTokenAddressSync(feeMint, walletPublicKey),
+      destination: getAssociatedTokenAddressSync(feeMint, recipient, true),
+      mint: feeMint,
+    })
+    .instruction();
+};
