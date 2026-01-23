@@ -80,11 +80,13 @@ export {
   type SessionContext,
 } from "./context.js";
 export {
+  createPaymasterFeeInstruction,
   createSessionUnwrapInstruction,
   createSessionWrapInstructions,
   createSystemProgramSessionWrapInstruction,
 } from "./instructions.js";
 export { Network } from "./network.js";
+export { getPaymasterFee } from "./paymaster.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.

@@ -35,6 +35,10 @@
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },
+    "//#run:initialize-tollbooth": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
     "//#run:register-ntt-manager": {
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
