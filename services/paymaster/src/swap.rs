@@ -358,11 +358,10 @@ fn add_create_idempotent_instructions(
                         .iter()
                         .map(|&idx| {
                             let idx = usize::from(idx);
-                            let pubkey = account_keys
-                                .get(idx)
-                                .ok_or_else(|| anyhow::anyhow!("Invalid account index"))?;
                             Ok(AccountMeta {
-                                pubkey: *pubkey,
+                                pubkey: *account_keys
+                                    .get(idx)
+                                    .ok_or_else(|| anyhow::anyhow!("Invalid account index"))?,
                                 is_signer: is_signer(idx),
                                 is_writable: message_v0.is_maybe_writable(idx, None),
                             })
