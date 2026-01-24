@@ -30,6 +30,7 @@ use crate::{
 pub const VALIANT_URL_MAINNET: &str = "https://mainnet-pro-api.valiant.trade";
 pub const VALIANT_URL_TESTNET: &str = "https://api.valiant.trade";
 pub const MAX_SLIPPAGE_BPS: u64 = 50;
+pub const PERCENTAGE_TO_SWAP_BPS: u64 = 9900;
 
 // NOTE: the params and response types below are manually defined for an external API.
 // This external API could change in the future, which could break our integration.
@@ -172,12 +173,14 @@ impl ValiantClient {
         pubsub: &PubsubClientWithReconnect,
     ) -> anyhow::Result<SwapConfirmationResult> {
         let paymaster_wallet_key = transaction_sponsor.pubkey();
+        let spl_balance = get_spl_ata_balance(rpc, &paymaster_wallet_key, &mint).await?;
+        // TODO: this is necessary for mainnet bc include_fee needs to be set to true for now
+        // As a result, the Valiant paymaster takes a small fee from the swap, in the input token for USDC/FISH/FOGO.
+        // Eventually, if we are supporting other tokens, the Valiant fee will be charged in WFOGO, so this patch
+        // WILL NOT WORK. But we expect the Valiant API to be fixed shortly.
+        let amount_to_swap = spl_balance * PERCENTAGE_TO_SWAP_BPS / 10_000;
         let swap_transaction = self
-            .get_valiant_swap_transaction(
-                mint,
-                get_spl_ata_balance(rpc, &paymaster_wallet_key, &mint).await?,
-                &paymaster_wallet_key,
-            )
+            .get_valiant_swap_transaction(mint, amount_to_swap, &paymaster_wallet_key)
             .await?;
 
         let signature = transaction_sponsor.sign_message(&swap_transaction.message.serialize());
@@ -281,10 +284,10 @@ impl ValiantClient {
             route,
             pools,
             is_exact_in: true,
-            // This is set to false while we are manually reconstructing the transaction to add createIdempotents.
-            // Once Valiant's API is fixed to include the right ixs, we can revert this to true.
-            use_alt: false,
-            include_fee: false,
+            use_alt: true,
+            // Valiant's API is being improved, once it returns a valid tx with all the createIdempotents necessary, we can disable this flag.
+            // We should also swap the full balance once this is reverted to false.
+            include_fee: true,
         };
 
         let query_string = build_swap_query_string(&params);
