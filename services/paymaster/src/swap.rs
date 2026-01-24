@@ -7,9 +7,11 @@ use serde_with::{serde_as, DisplayFromStr};
 use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcSendTransactionConfig};
 use solana_commitment_config::CommitmentLevel;
 use solana_keypair::Keypair;
+use solana_message::{legacy::Message, v0::Message as MessageV0, VersionedMessage};
+use solana_program::instruction::{AccountMeta, Instruction};
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
-use solana_transaction::versioned::VersionedTransaction;
+use solana_transaction::{versioned::VersionedTransaction, Transaction};
 use std::str::FromStr;
 use url::{form_urlencoded, Url};
 
@@ -207,7 +209,7 @@ impl ValiantClient {
         &self,
         mint_in: Pubkey,
         amount_in: u64,
-        pubkey: &Pubkey,
+        transaction_sponsor_pubkey: &Pubkey,
     ) -> anyhow::Result<VersionedTransaction> {
         let quote_response = self.get_two_hop_quote(mint_in, amount_in).await?;
         let amount_out_min = quote_response
@@ -218,15 +220,21 @@ impl ValiantClient {
 
         let swap_response = self
             .get_two_hop_swap(
-                pubkey,
+                transaction_sponsor_pubkey,
                 amount_in,
                 amount_out_min,
-                quote_response.quote.route,
+                quote_response.quote.route.clone(),
                 quote_response.quote.pools,
             )
             .await?;
 
-        parse_transaction_from_base64(&swap_response.serialized_tx)
+        let transaction = parse_transaction_from_base64(&swap_response.serialized_tx)?;
+
+        add_create_idempotent_instructions(
+            transaction,
+            quote_response.quote.route,
+            transaction_sponsor_pubkey,
+        )
     }
 
     /// Queries the /dex/twoHopQuote Valiant endpoint to retrieve quote details.
@@ -273,9 +281,10 @@ impl ValiantClient {
             route,
             pools,
             is_exact_in: true,
-            use_alt: true,
-            // TODO: roll this back to false once Valiant fixes their API
-            include_fee: true,
+            // This is set to false while we are manually reconstructing the transaction to add createIdempotents.
+            // Once Valiant's API is fixed to include the right ixs, we can revert this to true.
+            use_alt: false,
+            include_fee: false,
         };
 
         let query_string = build_swap_query_string(&params);
@@ -305,4 +314,134 @@ impl MintSwapRate {
         }
         false
     }
+}
+
+// We need to manually add create idempotents to ensure that ATAs for all of the tokens in the route exist.
+// We can just create for all the tokens except first and last in the route.
+// The first should already have a non-empty ATA since we are trying to swap those tokens.
+// The last should already have an ATA created via the API tx.
+fn add_create_idempotent_instructions(
+    transaction: VersionedTransaction,
+    route: Vec<Pubkey>,
+    transaction_sponsor_pubkey: &Pubkey,
+) -> anyhow::Result<VersionedTransaction> {
+    let create_ata_ixs: Vec<_> = route
+        .iter()
+        .skip(1)
+        .take(route.len().saturating_sub(2))
+        .map(|mint| {
+            spl_associated_token_account::instruction::create_associated_token_account_idempotent(
+                transaction_sponsor_pubkey,
+                transaction_sponsor_pubkey,
+                mint,
+                &spl_token::id(),
+            )
+        })
+        .collect();
+
+    match &transaction.message {
+        VersionedMessage::V0(message_v0) => {
+            add_instructions_to_v0(message_v0, create_ata_ixs, transaction_sponsor_pubkey)
+        }
+        VersionedMessage::Legacy(message) => {
+            add_instructions_to_legacy(message, create_ata_ixs, transaction_sponsor_pubkey)
+        }
+    }
+}
+
+fn add_instructions_to_v0(
+    message_v0: &MessageV0,
+    create_ata_ixs: Vec<Instruction>,
+    transaction_sponsor_pubkey: &Pubkey,
+) -> anyhow::Result<VersionedTransaction> {
+    let account_keys = &message_v0.account_keys;
+    let header = &message_v0.header;
+
+    let is_signer = |idx: usize| idx < usize::from(header.num_required_signatures);
+
+    let existing_ixs: anyhow::Result<Vec<_>> = message_v0
+        .instructions
+        .iter()
+        .map(|compiled_ix| {
+            let program_id = *account_keys
+                .get(usize::from(compiled_ix.program_id_index))
+                .ok_or_else(|| anyhow::anyhow!("Invalid program id index"))?;
+            let accounts: anyhow::Result<Vec<_>> = compiled_ix
+                .accounts
+                .iter()
+                .map(|&idx| {
+                    let idx = usize::from(idx);
+                    Ok(AccountMeta {
+                        pubkey: *account_keys
+                            .get(idx)
+                            .ok_or_else(|| anyhow::anyhow!("Invalid account index"))?,
+                        is_signer: is_signer(idx),
+                        is_writable: message_v0.is_maybe_writable(idx, None),
+                    })
+                })
+                .collect();
+            Ok(Instruction {
+                program_id,
+                accounts: accounts?,
+                data: compiled_ix.data.clone(),
+            })
+        })
+        .collect();
+
+    let all_ixs: Vec<_> = create_ata_ixs.into_iter().chain(existing_ixs?).collect();
+
+    let new_message = MessageV0::try_compile(
+        transaction_sponsor_pubkey,
+        &all_ixs,
+        &[],
+        message_v0.recent_blockhash,
+    )?;
+
+    Ok(VersionedTransaction {
+        signatures: vec![Default::default()],
+        message: VersionedMessage::V0(new_message),
+    })
+}
+
+fn add_instructions_to_legacy(
+    message: &Message,
+    create_ata_ixs: Vec<Instruction>,
+    transaction_sponsor_pubkey: &Pubkey,
+) -> anyhow::Result<VersionedTransaction> {
+    let account_keys = &message.account_keys;
+    let existing_ixs: anyhow::Result<Vec<_>> = message
+        .instructions
+        .iter()
+        .map(|compiled_ix| {
+            let program_id = *account_keys
+                .get(usize::from(compiled_ix.program_id_index))
+                .ok_or_else(|| anyhow::anyhow!("Invalid program id index"))?;
+            let accounts: anyhow::Result<Vec<_>> = compiled_ix
+                .accounts
+                .iter()
+                .map(|&idx| {
+                    let idx = usize::from(idx);
+                    Ok(AccountMeta {
+                        pubkey: *account_keys
+                            .get(idx)
+                            .ok_or_else(|| anyhow::anyhow!("Invalid account index"))?,
+                        is_signer: message.is_signer(idx),
+                        is_writable: message.is_maybe_writable(idx, None),
+                    })
+                })
+                .collect();
+            Ok(Instruction {
+                program_id,
+                accounts: accounts?,
+                data: compiled_ix.data.clone(),
+            })
+        })
+        .collect();
+
+    let all_ixs: Vec<_> = create_ata_ixs.into_iter().chain(existing_ixs?).collect();
+
+    let new_message = Message::new(&all_ixs, Some(transaction_sponsor_pubkey));
+    Ok(VersionedTransaction::from(Transaction::new_unsigned(
+        new_message,
+    )))
 }
