@@ -1,3 +1,9 @@
+## 0.7.3 (2026-01-24)
+
+### Fixes
+
+- Fix bug with Bytes contraints instroduced in 0.7.2.
+
 ## 0.7.2 (2026-01-23)
 
 ### Fixes

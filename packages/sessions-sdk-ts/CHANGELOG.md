@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.1.6 (2026-01-24)
+
+### Fixes
+
+- Discard sessions when they don't match the on-chain domain registry
+
 ## 0.1.5 (2026-01-23)
 
 ### Fixes
