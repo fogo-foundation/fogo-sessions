@@ -341,92 +341,107 @@ fn add_create_idempotent_instructions(
 
     match &transaction.message {
         VersionedMessage::V0(message_v0) => {
-            let account_keys = &message_v0.account_keys;
-            let header = &message_v0.header;
-
-            let is_signer = |idx: usize| idx < usize::from(header.num_required_signatures);
-
-            let existing_ixs: anyhow::Result<Vec<_>> = message_v0
-                .instructions
-                .iter()
-                .map(|compiled_ix| {
-                    let program_id = *account_keys
-                        .get(usize::from(compiled_ix.program_id_index))
-                        .ok_or_else(|| anyhow::anyhow!("Invalid program id index"))?;
-                    let accounts: anyhow::Result<Vec<_>> = compiled_ix
-                        .accounts
-                        .iter()
-                        .map(|&idx| {
-                            let idx = usize::from(idx);
-                            Ok(AccountMeta {
-                                pubkey: *account_keys
-                                    .get(idx)
-                                    .ok_or_else(|| anyhow::anyhow!("Invalid account index"))?,
-                                is_signer: is_signer(idx),
-                                is_writable: message_v0.is_maybe_writable(idx, None),
-                            })
-                        })
-                        .collect();
-                    Ok(Instruction {
-                        program_id,
-                        accounts: accounts?,
-                        data: compiled_ix.data.clone(),
-                    })
-                })
-                .collect();
-
-            let all_ixs: Vec<_> = create_ata_ixs.into_iter().chain(existing_ixs?).collect();
-
-            let new_message = MessageV0::try_compile(
-                transaction_sponsor_pubkey,
-                &all_ixs,
-                &[],
-                message_v0.recent_blockhash,
-            )?;
-
-            Ok(VersionedTransaction {
-                signatures: vec![Default::default()],
-                message: VersionedMessage::V0(new_message),
-            })
+            add_instructions_to_v0(message_v0, create_ata_ixs, transaction_sponsor_pubkey)
         }
-
         VersionedMessage::Legacy(message) => {
-            let account_keys = &message.account_keys;
-            let existing_ixs: anyhow::Result<Vec<_>> = message
-                .instructions
-                .iter()
-                .map(|compiled_ix| {
-                    let program_id = *account_keys
-                        .get(usize::from(compiled_ix.program_id_index))
-                        .ok_or_else(|| anyhow::anyhow!("Invalid program id index"))?;
-                    let accounts: anyhow::Result<Vec<_>> = compiled_ix
-                        .accounts
-                        .iter()
-                        .map(|&idx| {
-                            let idx = usize::from(idx);
-                            Ok(AccountMeta {
-                                pubkey: *account_keys
-                                    .get(idx)
-                                    .ok_or_else(|| anyhow::anyhow!("Invalid account index"))?,
-                                is_signer: message.is_signer(idx),
-                                is_writable: message.is_maybe_writable(idx, None),
-                            })
-                        })
-                        .collect();
-                    Ok(Instruction {
-                        program_id,
-                        accounts: accounts?,
-                        data: compiled_ix.data.clone(),
-                    })
-                })
-                .collect();
-
-            let all_ixs: Vec<_> = create_ata_ixs.into_iter().chain(existing_ixs?).collect();
-
-            let new_message = Message::new(&all_ixs, Some(transaction_sponsor_pubkey));
-            Ok(VersionedTransaction::from(Transaction::new_unsigned(
-                new_message,
-            )))
+            add_instructions_to_legacy(message, create_ata_ixs, transaction_sponsor_pubkey)
         }
     }
+}
+
+fn add_instructions_to_v0(
+    message_v0: &MessageV0,
+    create_ata_ixs: Vec<Instruction>,
+    transaction_sponsor_pubkey: &Pubkey,
+) -> anyhow::Result<VersionedTransaction> {
+    let account_keys = &message_v0.account_keys;
+    let header = &message_v0.header;
+
+    let is_signer = |idx: usize| idx < usize::from(header.num_required_signatures);
+
+    let existing_ixs: anyhow::Result<Vec<_>> = message_v0
+        .instructions
+        .iter()
+        .map(|compiled_ix| {
+            let program_id = *account_keys
+                .get(usize::from(compiled_ix.program_id_index))
+                .ok_or_else(|| anyhow::anyhow!("Invalid program id index"))?;
+            let accounts: anyhow::Result<Vec<_>> = compiled_ix
+                .accounts
+                .iter()
+                .map(|&idx| {
+                    let idx = usize::from(idx);
+                    Ok(AccountMeta {
+                        pubkey: *account_keys
+                            .get(idx)
+                            .ok_or_else(|| anyhow::anyhow!("Invalid account index"))?,
+                        is_signer: is_signer(idx),
+                        is_writable: message_v0.is_maybe_writable(idx, None),
+                    })
+                })
+                .collect();
+            Ok(Instruction {
+                program_id,
+                accounts: accounts?,
+                data: compiled_ix.data.clone(),
+            })
+        })
+        .collect();
+
+    let all_ixs: Vec<_> = create_ata_ixs.into_iter().chain(existing_ixs?).collect();
+
+    let new_message = MessageV0::try_compile(
+        transaction_sponsor_pubkey,
+        &all_ixs,
+        &[],
+        message_v0.recent_blockhash,
+    )?;
+
+    Ok(VersionedTransaction {
+        signatures: vec![Default::default()],
+        message: VersionedMessage::V0(new_message),
+    })
+}
+
+fn add_instructions_to_legacy(
+    message: &Message,
+    create_ata_ixs: Vec<Instruction>,
+    transaction_sponsor_pubkey: &Pubkey,
+) -> anyhow::Result<VersionedTransaction> {
+    let account_keys = &message.account_keys;
+    let existing_ixs: anyhow::Result<Vec<_>> = message
+        .instructions
+        .iter()
+        .map(|compiled_ix| {
+            let program_id = *account_keys
+                .get(usize::from(compiled_ix.program_id_index))
+                .ok_or_else(|| anyhow::anyhow!("Invalid program id index"))?;
+            let accounts: anyhow::Result<Vec<_>> = compiled_ix
+                .accounts
+                .iter()
+                .map(|&idx| {
+                    let idx = usize::from(idx);
+                    Ok(AccountMeta {
+                        pubkey: *account_keys
+                            .get(idx)
+                            .ok_or_else(|| anyhow::anyhow!("Invalid account index"))?,
+                        is_signer: message.is_signer(idx),
+                        is_writable: message.is_maybe_writable(idx, None),
+                    })
+                })
+                .collect();
+            Ok(Instruction {
+                program_id,
+                accounts: accounts?,
+                data: compiled_ix.data.clone(),
+            })
+        })
+        .collect();
+
+    let all_ixs: Vec<_> = create_ata_ixs.into_iter().chain(existing_ixs?).collect();
+
+    let new_message = Message::new(&all_ixs, Some(transaction_sponsor_pubkey));
+    Ok(VersionedTransaction::from(Transaction::new_unsigned(
+        new_message,
+    )))
 }
