@@ -15,9 +15,11 @@
   position: fixed;
   top: 0;
   left: 0;
-  padding: theme.spacing(14) theme.spacing(8);
+  padding: theme.spacing(14) theme.spacing(8) theme.spacing(0);
   bottom: 0;
-
+  display: flex;
+  flex-direction: column;
+  
   @include theme.breakpoint('md') {
     left: theme.spacing(10);
     width: theme.spacing(109);
@@ -86,6 +88,39 @@
       opacity: 0.6;
 
       margin: theme.spacing(4) 0 theme.spacing(4);
+    }
+  }
+
+  .authCardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: theme.spacing(8) 0;
+    margin-top: auto;
+    
+    .authCardFooterContent {
+      display: flex;
+      flex-direction: column;
+      gap: theme.spacing(2);
+      
+      &[data-align="right"] {
+        align-items: flex-end;
+      }
+    }
+
+    .authCardFooterTitle {
+      @include theme.text('xl', 'bold');
+      color: theme.color('heading');
+    }
+
+    .authCardFooterSubtitle {
+      @include theme.text('sm', 'normal');
+      color: theme.color('muted');
+      opacity: 0.7;
+    }
+
+    .authCardFooterLink {
+      @include theme.text('sm', 'normal');
     }
   }
 }

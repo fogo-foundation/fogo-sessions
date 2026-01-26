@@ -1,9 +1,11 @@
 "use client";
+import { Link } from "@fogo/component-library/Link";
 import { SessionButton } from "@fogo/sessions-sdk-react";
 import Image from "next/image";
 import fogoPaymasterLabelSvg from "./fogo-paymaster-label.svg";
 import styles from "./index.module.scss";
 import paymasterSvg from "./paymaster.svg";
+import paymasterLabelSvg from "./paymaster-label.svg";
 
 export const Auth = () => (
   <>
@@ -35,6 +37,30 @@ export const Auth = () => (
           Fogo Sessions enables seamless authorization.
         </p>
         <SessionButton />
+      </div>
+      <div className={styles.authCardFooter}>
+        <div className={styles.authCardFooterContent}>
+          <Image src={paymasterLabelSvg} alt="Paymaster" />
+          <p className={styles.authCardFooterSubtitle}>by Douro Labs</p>
+        </div>
+        <div className={styles.authCardFooterContent} data-align="right">
+          <Link
+            href="https://www.dourolabs.xyz/Paymaster-Terms-Of-Service.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.authCardFooterLink ?? ""}
+          >
+            Terms & Conditions
+          </Link>
+          <Link
+            href="https://www.dourolabs.xyz/Privacy-Notice.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.authCardFooterLink ?? ""}
+          >
+            Privacy Policy
+          </Link>
+        </div>
       </div>
     </div>
   </>
