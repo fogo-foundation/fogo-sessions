@@ -132,7 +132,7 @@ onlyBuiltDependencies:
 
 packageManagerStrict: true
 
-packageManagerStrictVersion: true
+packageManagerStrictVersion: false
 
 strictDepBuilds: true
 

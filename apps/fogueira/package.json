@@ -1,0 +1,46 @@
+{
+  "name": "@fogo/fogueira",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "next build",
+    "pull:env": "[ $CI ] || VERCEL_ORG_ID=team_M8yTQcRiKOduAwHNMhHQInWq VERCEL_PROJECT_ID=prj_0YVLB5TIHu7VXdMyib1Zmjq4iwtZ vercel env pull",
+    "start:dev": "next dev --port 3002",
+    "start:prod": "next start --port 3002",
+    "test:types": "tsc"
+  },
+  "dependencies": {
+    "@fogo/component-library": "workspace:*",
+    "@fogo/sessions-sdk": "workspace:",
+    "@fogo/sessions-sdk-react": "workspace:*",
+    "@phosphor-icons/react": "catalog:",
+    "@neondatabase/serverless": "catalog:",
+    "@react-hookz/web": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "clsx": "catalog:",
+    "motion": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-aria": "catalog:",
+    "react-aria-components": "catalog:",
+    "react-dom": "catalog:",
+    "swr": "catalog:",
+    "uuid": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@cprussin/jest-config": "catalog:",
+    "@cprussin/tsconfig": "catalog:",
+    "@types/pg": "catalog:",
+    "@types/react": "catalog:",
+    "autoprefixer": "catalog:",
+    "postcss": "catalog:",
+    "modern-normalize": "catalog:",
+    "typescript": "catalog:",
+    "vercel": "catalog:"
+  }
+}
