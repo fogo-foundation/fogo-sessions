@@ -2,6 +2,7 @@ import { FogoSessionProvider, Network } from "@fogo/sessions-sdk-react";
 import type { ReactNode } from "react";
 import { DOMAIN } from "../../config/server";
 import "./root.scss";
+import { AuthenticationLayout } from "./layout";
 import styles from "./layout.module.scss";
 
 type Props = {

@@ -1,0 +1,133 @@
+@use "@fogo/component-library/theme";
+
+.page {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: theme.color("foreground");
+  background-color: theme.color("background");
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: theme.spacing(4) theme.spacing(6);
+  border-bottom: 1px solid theme.color("border");
+  background-color: theme.color("card");
+}
+
+.title {
+  @include theme.text("xl", "semibold");
+  color: theme.color("heading");
+  margin: 0;
+}
+
+.subtitle {
+  @include theme.text("sm");
+  color: theme.color("muted");
+  margin: theme.spacing(1) 0 0 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(3);
+}
+
+.saving {
+  @include theme.text("sm");
+  color: theme.color("muted");
+}
+
+.unsaved {
+  @include theme.text("sm");
+  color: theme.color("states", "error", "foreground");
+}
+
+.saveButton {
+  @include theme.text("sm", "semibold");
+  padding: theme.spacing(2) theme.spacing(4);
+  border-radius: theme.border-radius("md");
+  border: 1px solid theme.color("border");
+  background-color: theme.color("button-base");
+  color: theme.color("paragraph");
+  cursor: pointer;
+  transition: background-color 0.1s;
+
+  &:hover:not(:disabled) {
+    background-color: theme.color("button-hover");
+    border-color: theme.color("border-hover");
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.viewButton,
+.publishButton,
+.unpublishButton {
+  @include theme.text("sm", "semibold");
+  padding: theme.spacing(2) theme.spacing(4);
+  border-radius: theme.border-radius("md");
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  text-decoration: none;
+}
+
+.viewButton {
+  display: inline-flex;
+  align-items: center;
+  gap: theme.spacing(1);
+  background-color: theme.color("button-base");
+  color: theme.color("paragraph");
+  border: 1px solid theme.color("border");
+
+  &:hover {
+    background-color: theme.color("button-hover");
+    border-color: theme.color("border-hover");
+  }
+}
+
+.publishButton {
+  background-color: theme.color("button", "primary", "background", "normal");
+  color: theme.color("button", "primary", "foreground");
+
+  &:hover {
+    background-color: theme.color("button", "primary", "background", "hover");
+  }
+
+  &:active {
+    background-color: theme.color("button", "primary", "background", "pressed");
+  }
+}
+
+.unpublishButton {
+  background-color: theme.color("button-base");
+  color: theme.color("paragraph");
+  border: 1px solid theme.color("border");
+
+  &:hover {
+    background-color: theme.color("button-hover");
+  }
+}
+
+.builder {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.dragPreview {
+  @include theme.text("sm");
+  padding: theme.spacing(2) theme.spacing(4);
+  background-color: theme.color("card");
+  border: 1px dashed theme.color("accent");
+  border-radius: theme.border-radius("md");
+  color: theme.color("accent");
+}
+

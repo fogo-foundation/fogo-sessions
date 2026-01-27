@@ -1,0 +1,47 @@
+@use "@fogo/component-library/theme";
+
+.canvas {
+  flex: 1;
+  overflow-y: auto;
+  background-color: theme.color("background");
+  position: relative;
+}
+
+.dropZone {
+  min-height: 100%;
+  padding: theme.spacing(6);
+  max-width: 800px;
+  margin: 0 auto;
+  transition: background-color 0.2s;
+
+  &.dropZoneActive {
+    background-color: theme.color("accent-opaque");
+    border-radius: theme.border-radius("lg");
+  }
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  gap: theme.spacing(2);
+}
+
+.emptyIcon {
+  color: theme.color("muted");
+  opacity: 0.5;
+}
+
+.emptyText {
+  @include theme.text("base");
+  color: theme.color("muted");
+  margin: 0;
+}
+
+.widgets {
+  display: flex;
+  flex-direction: column;
+}

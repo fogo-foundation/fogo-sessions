@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  walletAddress String   @unique @map("wallet_address")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  creator Creator?
+
+  @@map("users")
+}
+
+model Creator {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  username    String   @unique
+  displayName String   @map("display_name")
+  bio         String?
+  avatarBlobKey String? @map("avatar_blob_key")
+  bannerBlobKey String? @map("banner_blob_key")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membershipProducts MembershipProduct[]
+  pages             Page[]
+  gatingRules       GatingRule[]
+  assets            Asset[]
+
+  @@map("creators")
+}
+
+model MembershipProduct {
+  id          String   @id @default(uuid())
+  creatorId   String   @map("creator_id")
+  name        String
+  slug        String
+  description String?
+  imageBlobKey String? @map("image_blob_key")
+  nftCollectionMint String? @map("nft_collection_mint")
+  mintAddress String? @map("mint_address")
+  priceToken  String? @map("price_token")
+  priceAmount String? @map("price_amount")
+  treasuryAddress String? @map("treasury_address")
+  saleMode    String   @default("candy_machine") @map("sale_mode")
+  candyMachineAddress String? @map("candy_machine_address")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, slug])
+  @@map("membership_products")
+}
+
+model Page {
+  id        String   @id @default(uuid())
+  creatorId String   @map("creator_id")
+  title     String
+  slug      String
+  isHome    Boolean  @default(false) @map("is_home")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  creator    Creator        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  revisions  PageRevision[]
+  gatingRuleId String? @map("gating_rule_id")
+  gatingRule GatingRule? @relation(fields: [gatingRuleId], references: [id], onDelete: SetNull)
+
+  @@unique([creatorId, slug])
+  @@unique([creatorId, isHome], name: "unique_home_per_creator")
+  @@map("pages")
+}
+
+model PageRevision {
+  id        String   @id @default(uuid())
+  pageId    String   @map("page_id")
+  status    String   @default("draft") // 'draft' | 'published'
+  publishedAt DateTime? @map("published_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  page    Page            @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  widgets WidgetInstance[]
+
+  @@map("page_revisions")
+}
+
+model WidgetInstance {
+  id          String   @id @default(uuid())
+  revisionId  String   @map("revision_id")
+  widgetType  String   @map("widget_type")
+  config      Json
+  orderIndex  Int      @default(0) @map("order_index")
+  gatingRuleId String? @map("gating_rule_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  revision   PageRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  gatingRule GatingRule?  @relation(fields: [gatingRuleId], references: [id], onDelete: SetNull)
+
+  @@map("widget_instances")
+}
+
+model GatingRule {
+  id          String   @id @default(uuid())
+  creatorId   String   @map("creator_id")
+  name        String
+  expression  Json
+  previewMode String?  @default("none") @map("preview_mode") // 'none' | 'teaser'
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  creator       Creator         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  pages         Page[]
+  widgetInstances WidgetInstance[]
+
+  @@map("gating_rules")
+}
+
+model Asset {
+  id        String   @id @default(uuid())
+  creatorId String   @map("creator_id")
+  blobKey   String   @unique @map("blob_key")
+  mimeType  String   @map("mime_type")
+  sizeBytes Int      @map("size_bytes")
+  filename  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@map("assets")
+}
+
+model AccessCheck {
+  id        String   @id @default(uuid())
+  walletAddress String @map("wallet_address")
+  ruleId    String   @map("rule_id")
+  hasAccess Boolean  @map("has_access")
+  reason    String?
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([walletAddress, ruleId])
+  @@index([expiresAt])
+  @@map("access_checks")
+}
+

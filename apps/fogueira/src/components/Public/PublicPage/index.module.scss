@@ -1,0 +1,50 @@
+@use "@fogo/component-library/theme";
+
+.loading,
+.error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: theme.spacing(8);
+  background-color: theme.color("background");
+  color: theme.color("foreground");
+}
+
+.errorTitle {
+  @include theme.text("3xl", "bold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(4) 0;
+}
+
+.errorText {
+  @include theme.text("base");
+  color: theme.color("paragraph");
+  margin: 0;
+}
+
+.page {
+  min-height: 100vh;
+  background-color: theme.color("background");
+  color: theme.color("foreground");
+}
+
+.content {
+  padding: theme.spacing(8);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.empty {
+  text-align: center;
+  padding: theme.spacing(16);
+  color: theme.color("muted");
+}
+
+.widgets {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(6);
+}
+

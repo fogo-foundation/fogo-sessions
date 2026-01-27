@@ -50,3 +50,5 @@ export const DATABASE_URL = getEnvOrDefault(
   "DATABASE_URL",
   "postgres://paymaster:paymaster@localhost:5432/paymaster",
 );
+
+export const BLOB_READ_WRITE_TOKEN = demand("BLOB_READ_WRITE_TOKEN");

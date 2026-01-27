@@ -1,0 +1,69 @@
+@use '@fogo/component-library/theme';
+
+.howItWorks {
+  width: 100%;
+  padding: theme.spacing(20) theme.spacing(6);
+  background-color: theme.color('card');
+}
+
+.howItWorksContent {
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.howItWorksTitle {
+  @include theme.text('4xl', 'bold');
+  color: theme.color('heading');
+  margin-bottom: theme.spacing(4);
+}
+
+.howItWorksDescription {
+  @include theme.text('lg', 'normal');
+  color: theme.color('paragraph');
+  margin-bottom: theme.spacing(12);
+  opacity: 0.8;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: theme.spacing(8);
+
+  @include theme.breakpoint('md') {
+    grid-template-columns: repeat(3, 1fr);
+    gap: theme.spacing(6);
+  }
+}
+
+.step {
+  padding: theme.spacing(6);
+  position: relative;
+}
+
+.stepNumber {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: theme.color('brand');
+  color: theme.color('foreground');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  @include theme.text('xl', 'bold');
+  margin: 0 auto theme.spacing(4);
+}
+
+.stepTitle {
+  @include theme.text('2xl', 'bold');
+  color: theme.color('heading');
+  margin-bottom: theme.spacing(3);
+}
+
+.stepDescription {
+  @include theme.text('base', 'normal');
+  color: theme.color('paragraph');
+  opacity: 0.8;
+  line-height: 1.6;
+}
+

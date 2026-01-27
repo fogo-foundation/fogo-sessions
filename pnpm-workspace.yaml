@@ -5,65 +5,65 @@ packages:
   - scripts/ts
 
 catalog:
-  "@axe-core/react": ^4.10.2
-  "@changesets/cli": ^2.29.4
-  "@better-builds/ts-duality": ^0.1.2
-  "@babel/preset-typescript": ^7.27.1
-  "@biomejs/biome": ^2.3.11
-  "@coral-xyz/anchor": ^0.31.1
-  "@cprussin/jest-config": ^3.1.2
-  "@cprussin/prettier-config": ^3.0.0
-  "@cprussin/transform-package-json": ^2.1.0
-  "@cprussin/tsconfig": ^4.0.1
-  "@fogolend/fns-client": ^0.1.0
-  "@ledgerhq/hw-transport": ^6.31.12
-  "@ledgerhq/hw-transport-node-hid": ^6.29.13
-  "@metaplex-foundation/mpl-token-metadata": ^3.4.0
-  "@metaplex-foundation/umi": ^1.2.0
-  "@metaplex-foundation/umi-bundle-defaults": ^1.2.0
-  "@metaplex-foundation/umi-web3js-adapters": ^1.4.1
-  "@neondatabase/serverless": ^1.0.2
-  "@next/third-parties": ^16.0.7
-  "@noble/hashes": ^1.8.0
-  "@phosphor-icons/react": ^2.1.10
-  "@radix-ui/react-slot": ^1.1.1
-  "@react-hookz/web": 25.1.1
-  "@solana-mobile/wallet-adapter-mobile": ^2.2.4
-  "@solana-program/token": ^0.5.1
-  "@solana/compat": ^4.0.0
-  "@solana/kit": ^4.0.0
-  "@solana/spl-token": ^0.4.13
-  "@solana/wallet-adapter-backpack": 0.1.14
-  "@solana/wallet-adapter-base": 0.9.27
-  "@solana/wallet-adapter-ledger": ^0.9.29
-  "@solana/wallet-adapter-wallets": ^0.19.10
-  "@solana/wallet-standard-features": ^1.3.0
-  "@solana/wallet-standard-wallet-adapter-react": ^1.1.4
-  "@solana/web3.js": ^1.92.3
-  "@solana/webcrypto-ed25519-polyfill": ^2.3.0
-  "@storybook/addon-styling-webpack": ^3.0.0
-  "@storybook/addon-themes": ^10.1.2
-  "@storybook/nextjs": ^10.1.2
-  "@storybook/react": ^10.1.2
-  "@svgr/webpack": ^8.1.0
-  "@swc/cli": ^0.7.7
-  "@swc/core": ^1.12.7
-  "@testing-library/dom": ^10.4.0
-  "@testing-library/jest-dom": ^6.6.3
-  "@testing-library/react": ^16.3.0
-  "@types/bn.js": ^4.11.6
-  "@types/jest": ^29.5.14
-  "@types/node": ^24.0.1
-  "@types/pg": ^8.15.6
-  "@types/react": ^19.1.8
-  "@types/react-dom": ^19.1.6
-  "@types/yargs": ^17.0.33
-  "@wormhole-foundation/sdk": ^3.10.0
-  "@wormhole-foundation/sdk-base": ^3.11.0
-  "@wormhole-foundation/sdk-route-ntt": ^4.0.1
-  "@wormhole-foundation/sdk-solana-core": ^3.10.0
-  "@wormhole-foundation/sdk-solana-ntt": ^4.0.1
-  "@yudiel/react-qr-scanner": ^2.3.1
+  '@axe-core/react': ^4.10.2
+  '@babel/preset-typescript': ^7.27.1
+  '@better-builds/ts-duality': ^0.1.2
+  '@biomejs/biome': ^2.3.11
+  '@changesets/cli': ^2.29.4
+  '@coral-xyz/anchor': ^0.31.1
+  '@cprussin/jest-config': ^3.1.2
+  '@cprussin/prettier-config': ^3.0.0
+  '@cprussin/transform-package-json': ^2.1.0
+  '@cprussin/tsconfig': ^4.0.1
+  '@fogolend/fns-client': ^0.1.0
+  '@ledgerhq/hw-transport': ^6.31.12
+  '@ledgerhq/hw-transport-node-hid': ^6.29.13
+  '@metaplex-foundation/mpl-token-metadata': ^3.4.0
+  '@metaplex-foundation/umi': ^1.2.0
+  '@metaplex-foundation/umi-bundle-defaults': ^1.2.0
+  '@metaplex-foundation/umi-web3js-adapters': ^1.4.1
+  '@neondatabase/serverless': ^1.0.2
+  '@next/third-parties': ^16.0.7
+  '@noble/hashes': ^1.8.0
+  '@phosphor-icons/react': ^2.1.10
+  '@radix-ui/react-slot': ^1.1.1
+  '@react-hookz/web': 25.1.1
+  '@solana-mobile/wallet-adapter-mobile': ^2.2.4
+  '@solana-program/token': ^0.5.1
+  '@solana/compat': ^4.0.0
+  '@solana/kit': ^4.0.0
+  '@solana/spl-token': ^0.4.13
+  '@solana/wallet-adapter-backpack': 0.1.14
+  '@solana/wallet-adapter-base': 0.9.27
+  '@solana/wallet-adapter-ledger': ^0.9.29
+  '@solana/wallet-adapter-wallets': ^0.19.10
+  '@solana/wallet-standard-features': ^1.3.0
+  '@solana/wallet-standard-wallet-adapter-react': ^1.1.4
+  '@solana/web3.js': ^1.92.3
+  '@solana/webcrypto-ed25519-polyfill': ^2.3.0
+  '@storybook/addon-styling-webpack': ^3.0.0
+  '@storybook/addon-themes': ^10.1.2
+  '@storybook/nextjs': ^10.1.2
+  '@storybook/react': ^10.1.2
+  '@svgr/webpack': ^8.1.0
+  '@swc/cli': ^0.7.7
+  '@swc/core': ^1.12.7
+  '@testing-library/dom': ^10.4.0
+  '@testing-library/jest-dom': ^6.6.3
+  '@testing-library/react': ^16.3.0
+  '@types/bn.js': ^4.11.6
+  '@types/jest': ^29.5.14
+  '@types/node': ^24.0.1
+  '@types/pg': ^8.15.6
+  '@types/react': ^19.1.8
+  '@types/react-dom': ^19.1.6
+  '@types/yargs': ^17.0.33
+  '@wormhole-foundation/sdk': ^3.10.0
+  '@wormhole-foundation/sdk-base': ^3.11.0
+  '@wormhole-foundation/sdk-route-ntt': ^4.0.1
+  '@wormhole-foundation/sdk-solana-core': ^3.10.0
+  '@wormhole-foundation/sdk-solana-ntt': ^4.0.1
+  '@yudiel/react-qr-scanner': ^2.3.1
   ace-builds: ^1.43.5
   autoprefixer: ^10.4.20
   babel-plugin-react-compiler: 19.1.0-rc.1
@@ -97,8 +97,8 @@ catalog:
   sass-loader: ^16.0.5
   smol-toml: ^1.6.0
   storybook: ^10.1.2
-  stylelint: ^16.21.0
   style-loader: ^4.0.0
+  stylelint: ^16.21.0
   stylelint-config-standard-scss: ^15.0.1
   swr: ^2.3.3
   thread-stream: ^3.1.0
@@ -114,14 +114,16 @@ engineStrict: true
 managePackageManagerVersions: false
 
 onlyBuiltDependencies:
-  - "@parcel/watcher"
-  - "@swc/core"
+  - '@parcel/watcher'
+  - '@prisma/engines'
+  - '@swc/core'
   - bigint-buffer
   - blake-hash
   - bufferutil
   - core-js-pure
   - esbuild
   - node-hid
+  - prisma
   - protobufjs
   - puppeteer
   - secp256k1

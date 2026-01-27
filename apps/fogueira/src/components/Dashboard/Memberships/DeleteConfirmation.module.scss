@@ -1,0 +1,134 @@
+@use "@fogo/component-library/theme";
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: theme.color("modal-overlay");
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: theme.spacing(4);
+}
+
+.dialog {
+  background-color: theme.color("card");
+  border-radius: theme.border-radius("lg");
+  width: 100%;
+  max-width: theme.spacing(100);
+  box-shadow: theme.shadow("base");
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: theme.spacing(6);
+  border-bottom: 1px solid theme.color("border");
+}
+
+.title {
+  @include theme.text("xl", "semibold");
+  color: theme.color("heading");
+  margin: 0;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(8);
+  height: theme.spacing(8);
+  border-radius: theme.border-radius("md");
+  border: none;
+  background-color: transparent;
+  color: theme.color("paragraph");
+  cursor: pointer;
+  transition: background-color 0.1s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+  }
+
+  &:active {
+    background-color: theme.color("button-pressed");
+  }
+}
+
+.content {
+  padding: theme.spacing(6);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.message {
+  @include theme.text("base", "normal");
+  color: theme.color("paragraph");
+  margin: 0 0 theme.spacing(4) 0;
+
+  strong {
+    color: theme.color("heading");
+    font-weight: theme.font-weight("semibold");
+  }
+}
+
+.warning {
+  @include theme.text("sm", "normal");
+  color: theme.color("states", "error", "foreground");
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: theme.spacing(3);
+  padding: theme.spacing(6);
+  border-top: 1px solid theme.color("border");
+  justify-content: flex-end;
+}
+
+.cancelButton {
+  @include theme.text("sm", "semibold");
+  padding: theme.spacing(2) theme.spacing(4);
+  border-radius: theme.border-radius("md");
+  border: 1px solid theme.color("border");
+  background-color: transparent;
+  color: theme.color("paragraph");
+  cursor: pointer;
+  transition: background-color 0.1s, border-color 0.1s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+    border-color: theme.color("border-hover");
+  }
+
+  &:active {
+    background-color: theme.color("button-pressed");
+  }
+}
+
+.deleteButton {
+  @include theme.text("sm", "semibold");
+  padding: theme.spacing(2) theme.spacing(4);
+  border-radius: theme.border-radius("md");
+  border: none;
+  background-color: theme.color("states", "error", "foreground");
+  color: theme.color("foreground");
+  cursor: pointer;
+  transition: opacity 0.1s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+

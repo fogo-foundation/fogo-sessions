@@ -1,0 +1,71 @@
+@use "@fogo/component-library/theme";
+
+.palette {
+  width: 240px;
+  background-color: theme.color("card");
+  border-right: 1px solid theme.color("border");
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.header {
+  padding: theme.spacing(4);
+  border-bottom: 1px solid theme.color("border");
+}
+
+.title {
+  @include theme.text("sm", "semibold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(1) 0;
+}
+
+.subtitle {
+  @include theme.text("xs");
+  color: theme.color("muted");
+  margin: 0;
+}
+
+.widgets {
+  padding: theme.spacing(2);
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+}
+
+.widget {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(3);
+  background-color: theme.color("input-bg");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  cursor: grab;
+  transition: background-color 0.1s, border-color 0.1s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+    border-color: theme.color("border-hover");
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.dragging {
+    opacity: 0.5;
+  }
+}
+
+.widgetIcon {
+  display: flex;
+  align-items: center;
+  color: theme.color("accent");
+}
+
+.widgetName {
+  @include theme.text("sm");
+  color: theme.color("paragraph");
+}
+

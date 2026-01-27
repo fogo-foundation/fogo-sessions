@@ -1,0 +1,116 @@
+@use "@fogo/component-library/theme";
+
+.widget {
+  display: flex;
+  gap: var(--gap, 1rem);
+  align-items: var(--align, flex-start);
+  width: 100%;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+  min-height: theme.spacing(20);
+  padding: theme.spacing(2);
+  border-radius: theme.border-radius("md");
+  border: 1px dashed theme.color("border");
+  background-color: rgba(255, 255, 255, 0.01);
+  transition: border-color 0.15s, background-color 0.15s;
+
+  &:hover {
+    border-color: theme.color("border-hover");
+  }
+}
+
+.columnOver {
+  border-color: theme.color("accent");
+  background-color: theme.color("accent-opaque");
+}
+
+.emptyColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: theme.spacing(1);
+  flex: 1;
+  @include theme.text("sm");
+  color: theme.color("muted");
+
+  span {
+    opacity: 0.7;
+  }
+}
+
+.nestedWidget {
+  position: relative;
+  padding: theme.spacing(1);
+  border-radius: theme.border-radius("sm");
+  background-color: transparent;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+
+    .nestedControls {
+      opacity: 1;
+    }
+  }
+}
+
+.nestedControls {
+  position: absolute;
+  top: theme.spacing(0.5);
+  right: theme.spacing(0.5);
+  display: flex;
+  gap: theme.spacing(0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+
+.dragHandle,
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(5);
+  height: theme.spacing(5);
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("sm");
+  color: theme.color("muted");
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+
+  &:hover {
+    color: theme.color("foreground");
+    background-color: theme.color("button-hover");
+  }
+}
+
+.dragHandle {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.deleteButton:hover {
+  color: theme.color("states", "error", "foreground");
+  background-color: theme.color("states", "error", "background");
+  border-color: theme.color("states", "error", "foreground");
+}
+
+.nestedContent {
+  padding: theme.spacing(1);
+}
+
+.unknown {
+  @include theme.text("sm");
+  color: theme.color("muted");
+  padding: theme.spacing(2);
+  text-align: center;
+}

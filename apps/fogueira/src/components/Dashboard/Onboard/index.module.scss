@@ -1,0 +1,118 @@
+@use '@fogo/component-library/theme';
+
+.onboard {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: theme.spacing(6);
+  background-color: theme.color('background');
+}
+
+.onboardCard {
+  width: 100%;
+  max-width: 600px;
+  background-color: theme.color('card');
+  border: 1px solid theme.color('border');
+  border-radius: theme.border-radius('xl');
+  padding: theme.spacing(8);
+
+  .title {
+    @include theme.text('3xl', 'bold');
+    color: theme.color('heading');
+    margin-bottom: theme.spacing(2);
+  }
+
+  .description {
+    @include theme.text('base', 'normal');
+    color: theme.color('paragraph');
+    opacity: 0.8;
+    margin-bottom: theme.spacing(8);
+  }
+
+  .error {
+    @include theme.text('sm', 'normal');
+    color: theme.color('states', 'error', 'foreground');
+    background-color: theme.color('states', 'error', 'background');
+    padding: theme.spacing(3);
+    border-radius: theme.border-radius('md');
+    margin-bottom: theme.spacing(6);
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(6);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+}
+
+.label {
+  @include theme.text('sm', 'bold');
+  color: theme.color('heading');
+}
+
+.input,
+.textarea {
+  @include theme.text('base', 'normal');
+  padding: theme.spacing(3);
+  border: 1px solid theme.color('border');
+  border-radius: theme.border-radius('md');
+  background-color: theme.color('background');
+  color: theme.color('paragraph');
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: theme.color('brand');
+  }
+
+  &::placeholder {
+    color: theme.color('muted');
+    opacity: 0.6;
+  }
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.fieldError {
+  @include theme.text('sm', 'normal');
+  color: theme.color('states', 'error', 'foreground');
+}
+
+.helpText {
+  @include theme.text('xs', 'normal');
+  color: theme.color('muted');
+  margin-top: theme.spacing(1);
+}
+
+.submitButton {
+  @include theme.text('base', 'bold');
+  padding: theme.spacing(3) theme.spacing(6);
+  background-color: theme.color('brand');
+  color: theme.color('foreground');
+  border: none;
+  border-radius: theme.border-radius('lg');
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: theme.spacing(2);
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+

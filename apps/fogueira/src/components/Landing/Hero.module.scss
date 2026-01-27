@@ -1,0 +1,78 @@
+@use '@fogo/component-library/theme';
+
+.hero {
+  width: 100%;
+  padding: theme.spacing(20) theme.spacing(6);
+  background: linear-gradient(
+    135deg,
+    #{theme.color('background')} 0%,
+    #{theme.color('card')} 100%
+  );
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 600px;
+}
+
+.heroContent {
+  max-width: 800px;
+  text-align: center;
+}
+
+.heroTitle {
+  @include theme.text('5xl', 'bold');
+  color: theme.color('heading');
+  margin-bottom: theme.spacing(6);
+  line-height: 1.2;
+
+  @include theme.breakpoint('md') {
+    @include theme.text('6xl', 'bold');
+  }
+}
+
+.heroDescription {
+  @include theme.text('xl', 'normal');
+  color: theme.color('paragraph');
+  margin-bottom: theme.spacing(10);
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.heroActions {
+  display: flex;
+  gap: theme.spacing(4);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.primaryButton {
+  @include theme.text('base', 'bold');
+  padding: theme.spacing(3) theme.spacing(6);
+  background-color: theme.color('brand');
+  color: theme.color('foreground');
+  border-radius: theme.border-radius('lg');
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.secondaryButton {
+  @include theme.text('base', 'normal');
+  padding: theme.spacing(3) theme.spacing(6);
+  background-color: transparent;
+  color: theme.color('heading');
+  border: 1px solid theme.color('border');
+  border-radius: theme.border-radius('lg');
+  text-decoration: none;
+  display: inline-block;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: theme.color('background');
+  }
+}
+

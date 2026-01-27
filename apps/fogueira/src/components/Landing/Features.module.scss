@@ -1,0 +1,73 @@
+@use '@fogo/component-library/theme';
+
+.features {
+  width: 100%;
+  padding: theme.spacing(20) theme.spacing(6);
+  background-color: theme.color('background');
+}
+
+.featuresContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.featuresTitle {
+  @include theme.text('4xl', 'bold');
+  color: theme.color('heading');
+  margin-bottom: theme.spacing(4);
+}
+
+.featuresDescription {
+  @include theme.text('lg', 'normal');
+  color: theme.color('paragraph');
+  margin-bottom: theme.spacing(12);
+  opacity: 0.8;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: theme.spacing(6);
+
+  @include theme.breakpoint('md') {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include theme.breakpoint('lg') {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.featureCard {
+  padding: theme.spacing(6);
+  background-color: theme.color('card');
+  border: 1px solid theme.color('border');
+  border-radius: theme.border-radius('lg');
+  text-align: left;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.featureIcon {
+  font-size: 2.5rem;
+  margin-bottom: theme.spacing(4);
+}
+
+.featureTitle {
+  @include theme.text('xl', 'bold');
+  color: theme.color('heading');
+  margin-bottom: theme.spacing(2);
+}
+
+.featureDescription {
+  @include theme.text('base', 'normal');
+  color: theme.color('paragraph');
+  opacity: 0.8;
+  line-height: 1.6;
+}
+

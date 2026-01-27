@@ -1,0 +1,97 @@
+@use "@fogo/component-library/theme";
+
+.widget {
+  position: relative;
+  padding: theme.spacing(2) 0;
+  padding-left: theme.spacing(10);
+  min-height: theme.spacing(10);
+  border-radius: theme.border-radius("md");
+  transition: background-color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  &.selected {
+    background-color: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 0 0 1px theme.color("accent-opaque");
+  }
+
+  &.dragging {
+    background-color: theme.color("card");
+    border-radius: theme.border-radius("md");
+  }
+}
+
+.controls {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  &.visible {
+    opacity: 1;
+  }
+}
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(6);
+  height: theme.spacing(6);
+  background: none;
+  border: none;
+  color: theme.color("muted");
+  cursor: grab;
+  border-radius: theme.border-radius("sm");
+  transition: color 0.1s, background-color 0.1s;
+
+  &:hover {
+    color: theme.color("paragraph");
+    background-color: theme.color("button-hover");
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(6);
+  height: theme.spacing(6);
+  background: none;
+  border: none;
+  color: theme.color("muted");
+  cursor: pointer;
+  border-radius: theme.border-radius("sm");
+  transition: color 0.1s, background-color 0.1s;
+
+  &:hover {
+    color: theme.color("states", "error", "foreground");
+    background-color: theme.color("states", "error", "background");
+  }
+}
+
+.content {
+  width: 100%;
+}
+
+.placeholder {
+  @include theme.text("sm");
+  color: theme.color("muted");
+  padding: theme.spacing(4);
+  text-align: center;
+  background-color: theme.color("input-bg");
+  border-radius: theme.border-radius("md");
+  border: 1px dashed theme.color("border");
+}

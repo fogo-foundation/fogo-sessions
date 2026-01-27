@@ -1,0 +1,86 @@
+@use '@fogo/component-library/theme';
+
+.authVideoBackground {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+.authCard {
+  background-color: theme.color('card');
+  max-width: 90%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: theme.spacing(14) theme.spacing(8);
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  @include theme.breakpoint('md') {
+    left: theme.spacing(10);
+    width: theme.spacing(109);
+  }
+
+  .authCardTitle {
+    @include theme.text('4xl', 'bold');
+    color: theme.color('heading');
+    margin-top: theme.spacing(8);
+  }
+
+  .authCardDescription {
+    @include theme.text('2xl', 'light');
+    color: theme.color('muted');
+    margin-top: theme.spacing(4);
+
+    @include theme.breakpoint('md') {
+      width: 80%;
+    }
+  }
+
+  .connectWalletCard {
+    margin-top: theme.spacing(12);
+    padding: theme.spacing(6);
+    background-color: theme.color('background');
+    border-radius: theme.border-radius('xl');
+    border: 1px solid theme.color('border');
+    position: relative;
+
+    @include theme.breakpoint('md') {
+      width: 120%;
+    }
+
+    .connectWalletCardHighlightLine {
+      width: 204px;
+      height: 1px;
+      position: absolute;
+      top: 0;
+      left: theme.spacing(6);
+      background: linear-gradient(
+        90deg,
+        #{theme.color('border')} 0%,
+        #{theme.color('brand')} 47.46%,
+        #{theme.color('border')} 98.72%
+      );
+      filter: blur(1px);
+    }
+
+    .connectWalletCardTitle {
+      @include theme.text('2xl', 'normal');
+      color: theme.color('heading');
+    }
+
+    .connectWalletCardDescription {
+      @include theme.text('base', 'normal');
+      color: theme.color('paragraph');
+      opacity: 0.6;
+      margin: theme.spacing(4) 0 theme.spacing(4);
+    }
+  }
+}
+

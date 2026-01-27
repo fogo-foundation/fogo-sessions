@@ -1,0 +1,96 @@
+@use '@fogo/component-library/theme';
+
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+  background-color: theme.color('background');
+}
+
+.sidebar {
+  width: 240px;
+  background-color: theme.color('card');
+  border-right: 1px solid theme.color('border');
+  display: flex;
+  flex-direction: column;
+  padding: theme.spacing(6);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebarHeader {
+  margin-bottom: theme.spacing(8);
+  padding-bottom: theme.spacing(6);
+  border-bottom: 1px solid theme.color('border');
+}
+
+.sidebarTitle {
+  @include theme.text('xl', 'bold');
+  color: theme.color('heading');
+  margin-bottom: theme.spacing(1);
+}
+
+.sidebarSubtitle {
+  @include theme.text('sm', 'normal');
+  color: theme.color('muted');
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+  flex: 1;
+}
+
+.navLink {
+  @include theme.text('base', 'normal');
+  color: theme.color('paragraph');
+  text-decoration: none;
+  padding: theme.spacing(2) theme.spacing(3);
+  border-radius: theme.border-radius('md');
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: theme.color('background');
+  }
+
+  &:global(.active) {
+    background-color: theme.color('background');
+    color: theme.color('brand');
+  }
+}
+
+.sidebarFooter {
+  padding-top: theme.spacing(6);
+  border-top: 1px solid theme.color('border');
+}
+
+.previewLink {
+  @include theme.text('sm', 'normal');
+  color: theme.color('brand');
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.main {
+  flex: 1;
+  padding: 0;
+  width: 100%;
+  background-color: theme.color('background');
+  color: theme.color('foreground');
+  overflow-x: hidden;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  @include theme.text('base', 'normal');
+  color: theme.color('paragraph');
+}
+

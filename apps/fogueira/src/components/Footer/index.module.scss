@@ -1,0 +1,37 @@
+@use '@fogo/component-library/theme';
+
+.footer {
+  width: 100%;
+  border-top: 1px solid theme.color('border');
+  background-color: theme.color('card');
+  margin-top: auto;
+}
+
+.footerContent {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: theme.spacing(6) theme.spacing(6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: theme.spacing(4);
+
+  .footerText {
+    @include theme.text('sm', 'normal');
+    color: theme.color('paragraph');
+    margin: 0;
+  }
+
+  .footerSubtext {
+    @include theme.text('xs', 'normal');
+    color: theme.color('muted');
+    margin: theme.spacing(1) 0 0;
+  }
+
+  .footerLinks {
+    display: flex;
+    gap: theme.spacing(4);
+  }
+}
+

@@ -1,0 +1,112 @@
+@use '@fogo/component-library/theme';
+
+.dashboardHome {
+  width: 100%;
+  padding: theme.spacing(8);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: theme.spacing(8);
+}
+
+.title {
+  @include theme.text('3xl', 'bold');
+  color: theme.color('heading');
+  margin: 0 0 theme.spacing(2) 0;
+}
+
+.subtitle {
+  @include theme.text('base');
+  color: theme.color('paragraph');
+  margin: 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: theme.spacing(4);
+  margin-bottom: theme.spacing(8);
+}
+
+.statCard {
+  background-color: theme.color('card');
+  border: 1px solid theme.color('border');
+  border-radius: theme.border-radius('lg');
+  padding: theme.spacing(4);
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+}
+
+.statLabel {
+  @include theme.text('sm', 'medium');
+  color: theme.color('muted');
+  margin: 0;
+}
+
+.statValue {
+  @include theme.text('2xl', 'bold');
+  color: theme.color('heading');
+  margin: 0;
+}
+
+.statLink {
+  @include theme.text('sm');
+  color: theme.color('brand');
+  text-decoration: none;
+  margin-top: theme.spacing(2);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.statNote {
+  @include theme.text('xs');
+  color: theme.color('muted');
+  margin: 0;
+}
+
+.quickActions {
+  margin-top: theme.spacing(8);
+}
+
+.sectionTitle {
+  @include theme.text('xl', 'bold');
+  color: theme.color('heading');
+  margin: 0 0 theme.spacing(4) 0;
+}
+
+.actionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: theme.spacing(4);
+}
+
+.actionCard {
+  background-color: theme.color('card');
+  border: 1px solid theme.color('border');
+  border-radius: theme.border-radius('lg');
+  padding: theme.spacing(4);
+  text-decoration: none;
+  display: block;
+  transition: border-color 150ms;
+
+  &:hover {
+    border-color: theme.color('border-hover');
+  }
+}
+
+.actionTitle {
+  @include theme.text('lg', 'semibold');
+  color: theme.color('heading');
+  margin: 0 0 theme.spacing(2) 0;
+}
+
+.actionDescription {
+  @include theme.text('sm');
+  color: theme.color('paragraph');
+  margin: 0;
+}
