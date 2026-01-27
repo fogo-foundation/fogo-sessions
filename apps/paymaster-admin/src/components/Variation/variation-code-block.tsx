@@ -12,7 +12,7 @@ type VariationCodeBlockProps = {
   value: string;
   onChange: (value: string) => void;
   isExpanded: boolean;
-  footer: React.ReactNode;
+  footer?: React.ReactNode;
   mode: "toml" | "json";
 };
 
@@ -87,7 +87,7 @@ export const VariationCodeBlock = ({
               />
             )}
           </div>
-          <div className={styles.variationCodeBlockFooter}>{footer}</div>
+          {footer && <div className={styles.variationCodeBlockFooter}>{footer}</div>}
         </motion.div>
       )}
     </AnimatePresence>
