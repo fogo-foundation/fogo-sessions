@@ -6,17 +6,21 @@
 }
 
 .toolbar {
+  position: absolute;
+  top: -#{theme.spacing(12)};
+  left: 0;
   display: flex;
   align-items: center;
-  gap: theme.spacing(1);
-  padding: theme.spacing(1);
-  margin-bottom: theme.spacing(2);
+  gap: theme.spacing(0.5);
+  padding: theme.spacing(1) theme.spacing(1.5);
   background-color: theme.color("card");
   border: 1px solid theme.color("border");
-  border-radius: theme.border-radius("lg");
+  border-radius: theme.border-radius("md");
+  box-shadow: theme.shadow("base");
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.15s, visibility 0.15s;
+  z-index: 10;
 
   &.visible {
     opacity: 1;

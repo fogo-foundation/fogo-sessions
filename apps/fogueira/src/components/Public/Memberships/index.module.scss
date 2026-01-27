@@ -1,0 +1,141 @@
+@use "@fogo/component-library/theme";
+
+.page {
+  min-height: 100vh;
+  background-color: theme.color("background");
+  color: theme.color("foreground");
+}
+
+.loading,
+.error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: theme.spacing(8);
+}
+
+.errorTitle {
+  @include theme.text("2xl", "bold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(2) 0;
+}
+
+.errorText {
+  @include theme.text("base");
+  color: theme.color("muted");
+  margin: 0;
+}
+
+.header {
+  padding: theme.spacing(8) theme.spacing(6);
+  border-bottom: 1px solid theme.color("border");
+  text-align: center;
+}
+
+.backLink {
+  @include theme.text("sm");
+  color: theme.color("muted");
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: theme.spacing(4);
+  transition: color 0.15s;
+
+  &:hover {
+    color: theme.color("accent");
+  }
+}
+
+.title {
+  @include theme.text("3xl", "bold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(2) 0;
+}
+
+.subtitle {
+  @include theme.text("lg");
+  color: theme.color("muted");
+  margin: 0;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: theme.spacing(8) theme.spacing(6);
+}
+
+.empty {
+  text-align: center;
+  padding: theme.spacing(16);
+
+  p {
+    @include theme.text("base");
+    color: theme.color("muted");
+    margin: 0;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: theme.spacing(6);
+}
+
+.card {
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("lg");
+  overflow: hidden;
+  text-decoration: none;
+  transition:
+    transform 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: theme.color("accent");
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.cardImage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background-color: theme.color("input-bg");
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardContent {
+  padding: theme.spacing(5);
+}
+
+.cardTitle {
+  @include theme.text("xl", "semibold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(2) 0;
+}
+
+.cardDescription {
+  @include theme.text("sm");
+  color: theme.color("paragraph");
+  margin: 0 0 theme.spacing(4) 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardPrice {
+  @include theme.text("lg", "bold");
+  color: theme.color("accent");
+}
+

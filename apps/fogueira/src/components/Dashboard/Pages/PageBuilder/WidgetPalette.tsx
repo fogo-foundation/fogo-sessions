@@ -1,5 +1,5 @@
 "use client";
-import { Columns, Image, TextT, Video } from "@phosphor-icons/react";
+import { Code, Columns, Cursor, Image, Square, TextAa, TextT, Video } from "@phosphor-icons/react";
 import { useDraggable } from "@dnd-kit/core";
 import styles from "./WidgetPalette.module.scss";
 
@@ -16,6 +16,11 @@ const widgetTypes: WidgetType[] = [
     icon: <TextT weight="regular" />,
   },
   {
+    id: "header",
+    name: "Header",
+    icon: <TextAa weight="regular" />,
+  },
+  {
     id: "image",
     name: "Image",
     icon: <Image weight="regular" />,
@@ -26,9 +31,29 @@ const widgetTypes: WidgetType[] = [
     icon: <Video weight="regular" />,
   },
   {
+    id: "button",
+    name: "Button",
+    icon: <Cursor weight="regular" />,
+  },
+  {
+    id: "embed",
+    name: "Embed",
+    icon: <Code weight="regular" />,
+  },
+  {
+    id: "html",
+    name: "HTML",
+    icon: <Code weight="regular" />,
+  },
+  {
     id: "columns",
     name: "2 Columns",
     icon: <Columns weight="regular" />,
+  },
+  {
+    id: "container",
+    name: "Container",
+    icon: <Square weight="regular" />,
   },
 ];
 

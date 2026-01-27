@@ -1,0 +1,134 @@
+@use "@fogo/component-library/theme";
+
+.container {
+  border: 2px dashed theme.color("border");
+  border-radius: theme.border-radius("md");
+  background-color: rgba(theme.color("card"), 0.3);
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(2) theme.spacing(3);
+  background-color: theme.color("background");
+  border-bottom: 1px solid theme.color("border");
+}
+
+.label {
+  @include theme.text("xs", "semibold");
+  color: theme.color("muted");
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.maxWidth {
+  @include theme.text("xs");
+  color: theme.color("muted");
+}
+
+.content {
+  position: relative;
+  margin: theme.spacing(3);
+  border: 2px dashed theme.color("border");
+  border-radius: theme.border-radius("md");
+  transition: border-color 0.2s, background-color 0.2s;
+  min-height: 100px;
+
+  &.dragOver {
+    border-color: theme.color("accent");
+    background-color: rgba(theme.color("accent"), 0.05);
+  }
+}
+
+.placeholder {
+  padding: theme.spacing(8);
+  text-align: center;
+  color: theme.color("muted");
+  @include theme.text("sm");
+}
+
+.children {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(3);
+}
+
+.nestedWidget {
+  position: relative;
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("sm");
+  background-color: theme.color("card");
+  overflow: hidden;
+
+  &:hover .nestedControls {
+    opacity: 1;
+  }
+}
+
+.nestedControls {
+  position: absolute;
+  top: theme.spacing(1);
+  right: theme.spacing(1);
+  z-index: 10;
+  display: flex;
+  gap: theme.spacing(1);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.dragHandle {
+  padding: theme.spacing(1);
+  background-color: theme.color("background");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("sm");
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: theme.color("paragraph");
+  transition: all 0.15s;
+
+  &:hover {
+    background-color: theme.color("card");
+    border-color: theme.color("border-hover");
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.deleteButton {
+  padding: theme.spacing(1);
+  background-color: theme.color("background");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("sm");
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: theme.color("muted");
+  transition: all 0.15s;
+
+  &:hover {
+    background-color: theme.color("states", "error", "background");
+    border-color: theme.color("states", "error", "foreground");
+    color: theme.color("states", "error", "foreground");
+  }
+}
+
+.nestedContent {
+  // Child widgets render here
+}
+
+.unsupported,
+.unknown {
+  padding: theme.spacing(3);
+  text-align: center;
+  color: theme.color("muted");
+  @include theme.text("xs");
+  font-style: italic;
+}

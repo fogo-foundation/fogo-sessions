@@ -52,15 +52,34 @@ model MembershipProduct {
   priceToken  String? @map("price_token")
   priceAmount String? @map("price_amount")
   treasuryAddress String? @map("treasury_address")
-  saleMode    String   @default("candy_machine") @map("sale_mode")
+  saleMode    String   @default("direct") @map("sale_mode")
   candyMachineAddress String? @map("candy_machine_address")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator   Creator              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  purchases MembershipPurchase[]
 
   @@unique([creatorId, slug])
   @@map("membership_products")
+}
+
+model MembershipPurchase {
+  id                  String   @id @default(uuid())
+  membershipProductId String   @map("membership_product_id")
+  walletAddress       String   @map("wallet_address")
+  transactionSignature String? @map("transaction_signature")
+  amountPaid          String?  @map("amount_paid")
+  tokenMint           String?  @map("token_mint")
+  status              String   @default("completed") // 'pending' | 'completed' | 'failed'
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  membershipProduct MembershipProduct @relation(fields: [membershipProductId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipProductId, walletAddress])
+  @@index([walletAddress])
+  @@map("membership_purchases")
 }
 
 model Page {
@@ -71,6 +90,12 @@ model Page {
   isHome    Boolean  @default(false) @map("is_home")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Page settings
+  bgImage       String?  @map("bg_image")      // Background image URL
+  bgColor       String?  @map("bg_color")      // Background color
+  overlayColor  String?  @map("overlay_color") // Overlay color with opacity
+  fullWidth     Boolean  @default(false) @map("full_width") // Full width content
 
   creator    Creator        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   revisions  PageRevision[]

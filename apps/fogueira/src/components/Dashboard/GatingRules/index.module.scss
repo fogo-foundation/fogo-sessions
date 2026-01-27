@@ -1,0 +1,275 @@
+@use "@fogo/component-library/theme";
+
+.page {
+  padding: theme.spacing(8);
+  max-width: 800px;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: theme.spacing(8);
+}
+
+.title {
+  @include theme.text("2xl", "bold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(1) 0;
+}
+
+.subtitle {
+  @include theme.text("sm");
+  color: theme.color("muted");
+  margin: 0;
+}
+
+.createButton {
+  @include theme.text("sm", "medium");
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(2) theme.spacing(4);
+  background-color: theme.color("accent");
+  border: none;
+  border-radius: theme.border-radius("md");
+  color: theme.color("foreground");
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: theme.spacing(16);
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("lg");
+
+  p {
+    @include theme.text("base");
+    color: theme.color("paragraph");
+    margin: 0;
+  }
+}
+
+.emptyHint {
+  @include theme.text("sm");
+  color: theme.color("muted") !important;
+  margin-top: theme.spacing(2) !important;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(3);
+}
+
+.ruleCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: theme.spacing(4);
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("lg");
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: theme.color("border-hover");
+  }
+}
+
+.ruleInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.ruleName {
+  @include theme.text("base", "semibold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(1) 0;
+}
+
+.ruleDescription {
+  @include theme.text("sm");
+  color: theme.color("muted");
+  margin: 0;
+}
+
+.previewBadge {
+  @include theme.text("xs");
+  display: inline-block;
+  margin-top: theme.spacing(2);
+  padding: theme.spacing(0.5) theme.spacing(2);
+  background-color: theme.color("accent-opaque");
+  color: theme.color("accent");
+  border-radius: theme.border-radius("sm");
+}
+
+.ruleActions {
+  display: flex;
+  gap: theme.spacing(1);
+  margin-left: theme.spacing(4);
+}
+
+.editButton,
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(8);
+  height: theme.spacing(8);
+  background: none;
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("muted");
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: theme.color("paragraph");
+    background-color: theme.color("button-hover");
+  }
+}
+
+.deleteButton:hover {
+  color: theme.color("states", "error", "foreground");
+  background-color: theme.color("states", "error", "background");
+  border-color: theme.color("states", "error", "foreground");
+}
+
+// Modal
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("lg");
+  padding: theme.spacing(6);
+}
+
+.modalTitle {
+  @include theme.text("xl", "bold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(6) 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(4);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(1);
+}
+
+.formLabel {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+
+  span {
+    @include theme.text("sm");
+    color: theme.color("paragraph");
+  }
+}
+
+.input,
+.select {
+  @include theme.text("sm");
+  width: 100%;
+  padding: theme.spacing(2) theme.spacing(3);
+  background-color: theme.color("input-bg");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("foreground");
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: theme.color("accent");
+  }
+
+  &::placeholder {
+    color: theme.color("muted");
+  }
+}
+
+.select {
+  cursor: pointer;
+}
+
+.hint {
+  @include theme.text("xs");
+  color: theme.color("muted");
+  margin: theme.spacing(1) 0 0 0;
+}
+
+.error {
+  @include theme.text("sm");
+  color: theme.color("states", "error", "foreground");
+  margin: 0;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: theme.spacing(3);
+  margin-top: theme.spacing(4);
+}
+
+.cancelButton {
+  @include theme.text("sm", "medium");
+  padding: theme.spacing(2) theme.spacing(4);
+  background: none;
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("paragraph");
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+  }
+}
+
+.saveButton {
+  @include theme.text("sm", "medium");
+  padding: theme.spacing(2) theme.spacing(4);
+  background-color: theme.color("accent");
+  border: none;
+  border-radius: theme.border-radius("md");
+  color: theme.color("foreground");
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+

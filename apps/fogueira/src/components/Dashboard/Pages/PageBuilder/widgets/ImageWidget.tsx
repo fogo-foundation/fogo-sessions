@@ -15,7 +15,7 @@ export const ImageWidget = ({ config }: Props) => {
     return (
       <div className={styles.placeholder}>
         <ImageIcon size={32} weight="light" />
-        <span>Click the gear icon to add an image</span>
+        <span>Select this widget to add an image</span>
       </div>
     );
   }
@@ -27,4 +27,3 @@ export const ImageWidget = ({ config }: Props) => {
     </div>
   );
 };
-

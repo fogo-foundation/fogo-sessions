@@ -9,6 +9,8 @@ export const config = {
     "/api/auth/:path*",
     "/api/creator/:path*",
     "/api/creator/membership-products/:path*",
+    "/api/public/memberships/purchase",
+    "/api/public/memberships/build-transfer",
   ],
 };
 

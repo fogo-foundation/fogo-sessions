@@ -25,15 +25,71 @@
 }
 
 .page {
+  position: relative;
   min-height: 100vh;
   background-color: theme.color("background");
   color: theme.color("foreground");
 }
 
+.overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pageGatingBanner {
+  position: relative;
+  z-index: 1;
+  background-color: theme.color("card");
+  border-bottom: 1px solid theme.color("border");
+  padding: theme.spacing(4) theme.spacing(6);
+}
+
+.bannerContent {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(4);
+  flex-wrap: wrap;
+}
+
+.bannerText {
+  flex: 1;
+  min-width: 200px;
+}
+
+.bannerTitle {
+  @include theme.text("sm", "semibold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(0.5) 0;
+}
+
+.bannerSubtitle {
+  @include theme.text("xs");
+  color: theme.color("muted");
+  margin: 0;
+}
+
+.bannerHint {
+  @include theme.text("xs");
+  color: theme.color("muted");
+  margin: 0;
+}
+
 .content {
+  position: relative;
+  z-index: 1;
   padding: theme.spacing(8);
   max-width: 800px;
   margin: 0 auto;
+
+  &.fullWidth {
+    max-width: none;
+    padding-left: theme.spacing(4);
+    padding-right: theme.spacing(4);
+  }
 }
 
 .empty {
@@ -46,5 +102,161 @@
   display: flex;
   flex-direction: column;
   gap: theme.spacing(6);
+}
+
+// Gated page state
+.gated {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: theme.spacing(8);
+  background-color: theme.color("background");
+}
+
+.gatedContent {
+  text-align: center;
+  max-width: 400px;
+}
+
+.gatedIcon {
+  color: theme.color("muted");
+  margin-bottom: theme.spacing(4);
+}
+
+.gatedTitle {
+  @include theme.text("2xl", "bold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(2) 0;
+}
+
+.gatedText {
+  @include theme.text("base");
+  color: theme.color("paragraph");
+  margin: 0 0 theme.spacing(4) 0;
+}
+
+.gatedHint {
+  @include theme.text("sm");
+  color: theme.color("muted");
+  margin: theme.spacing(4) 0 0 0;
+}
+
+.membershipCard {
+  margin: theme.spacing(6) 0;
+  padding: theme.spacing(6);
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("lg");
+  text-align: center;
+}
+
+.membershipName {
+  @include theme.text("lg", "semibold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(2) 0;
+}
+
+.membershipPrice {
+  @include theme.text("2xl", "bold");
+  color: theme.color("accent");
+  margin: 0 0 theme.spacing(4) 0;
+}
+
+.buyButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(3) theme.spacing(6);
+  background-color: theme.color("button", "primary", "background", "normal");
+  color: theme.color("button", "primary", "foreground");
+  border: none;
+  border-radius: theme.border-radius("md");
+  @include theme.text("base", "semibold");
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: theme.color("button", "primary", "background", "hover");
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.connectButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(2.5) theme.spacing(5);
+  background-color: transparent;
+  color: theme.color("paragraph");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  @include theme.text("sm", "medium");
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+    border-color: theme.color("border-hover");
+  }
+}
+
+// Locked widget state
+.lockedWidget {
+  position: relative;
+  
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      theme.color("background") 70%
+    );
+    pointer-events: none;
+  }
+}
+
+.lockedOverlay {
+  position: absolute;
+  bottom: theme.spacing(4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(3) theme.spacing(4);
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  @include theme.text("sm");
+  color: theme.color("muted");
+}
+
+.connectButtonSmall {
+  @include theme.text("xs", "medium");
+  padding: theme.spacing(1.5) theme.spacing(3);
+  background-color: transparent;
+  color: theme.color("paragraph");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("sm");
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+    border-color: theme.color("border-hover");
+  }
 }
 

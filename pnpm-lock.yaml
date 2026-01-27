@@ -37,13 +37,13 @@ catalogs:
       specifier: ^6.29.13
       version: 6.29.13
     '@metaplex-foundation/mpl-token-metadata':
-      specifier: ^3.4.0
+      specifier: 3.4.0
       version: 3.4.0
     '@metaplex-foundation/umi':
-      specifier: ^1.2.0
+      specifier: 1.2.0
       version: 1.2.0
     '@metaplex-foundation/umi-bundle-defaults':
-      specifier: ^1.2.0
+      specifier: 1.2.0
       version: 1.2.0
     '@metaplex-foundation/umi-web3js-adapters':
       specifier: ^1.4.1
@@ -79,7 +79,7 @@ catalogs:
       specifier: ^4.0.0
       version: 4.0.0
     '@solana/spl-token':
-      specifier: ^0.4.13
+      specifier: 0.4.13
       version: 0.4.13
     '@solana/wallet-adapter-backpack':
       specifier: 0.1.14
@@ -100,7 +100,7 @@ catalogs:
       specifier: ^1.1.4
       version: 1.1.4
     '@solana/web3.js':
-      specifier: ^1.92.3
+      specifier: 1.98.2
       version: 1.98.2
     '@solana/webcrypto-ed25519-polyfill':
       specifier: ^2.3.0
@@ -338,6 +338,21 @@ importers:
       '@fogo/sessions-sdk-react':
         specifier: workspace:*
         version: link:../../packages/sessions-sdk-react
+      '@metaplex-foundation/mpl-candy-machine':
+        specifier: ^6.1.0
+        version: 6.1.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/mpl-token-metadata':
+        specifier: 'catalog:'
+        version: 3.4.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/mpl-toolbox':
+        specifier: ^0.10.0
+        version: 0.10.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi':
+        specifier: 'catalog:'
+        version: 1.2.0
+      '@metaplex-foundation/umi-bundle-defaults':
+        specifier: 'catalog:'
+        version: 1.2.0(@metaplex-foundation/umi@1.2.0)(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
       '@neondatabase/serverless':
         specifier: 'catalog:'
         version: 1.0.2
@@ -353,6 +368,9 @@ importers:
       '@react-hookz/web':
         specifier: 'catalog:'
         version: 25.1.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@solana/spl-token':
+        specifier: 'catalog:'
+        version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@solana/web3.js':
         specifier: 'catalog:'
         version: 1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -2864,6 +2882,11 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  '@ethereumjs/rlp@4.0.1':
+    resolution: {integrity: sha512-tqsQiBQDQdmPWE1xkkBq4rlSW5QZpLOUJ5RJh2/9fug+q9tnUhuZoVLk7s0scUIKTOzEtR72DFBXI4WiZcMpvw==}
+    engines: {node: '>=14'}
+    hasBin: true
+
   '@ethereumjs/rlp@5.0.2':
     resolution: {integrity: sha512-DziebCdg4JpGlEqEdGgXmjqcFoJi+JGulUXwEjsZGAscAQ7MyD/7LE/GVCP29vEQxKc7AAwjT3A2ywHp2xfoCA==}
     engines: {node: '>=18'}
@@ -2876,6 +2899,10 @@ packages:
   '@ethereumjs/util@10.0.0':
     resolution: {integrity: sha512-lO23alM4uQsv8dp6/yEm4Xw4328+wIRjSeuBO1mRTToUWRcByEMTk87yzBpXgpixpgHrl+9LTn9KB2vvKKtOQQ==}
     engines: {node: '>=18'}
+
+  '@ethereumjs/util@8.1.0':
+    resolution: {integrity: sha512-zQ0IqbdX8FZ9aw11vP+dZkKDkS+kgIvQPHnSAXzP9pLu+Rfu3D3XEeLbicvoXJTYnhZiPmsZUxgdzXwNKxRPbA==}
+    engines: {node: '>=14'}
 
   '@ethereumjs/util@9.1.0':
     resolution: {integrity: sha512-XBEKsYqLGXLah9PNJbgdkigthkG7TAGvlD/sH12beMXEyHDyigfcbdvHhmLyDWgDyOJn4QwiQUaF7yeuhnjdog==}
@@ -3526,6 +3553,16 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  '@metaplex-foundation/mpl-candy-machine@6.1.0':
+    resolution: {integrity: sha512-Y58wVkK9kU3ur22xnmYG/IOzJfo450dlUMl8FSuSRThV82IJte11ggtw5fEWIQQO/jhLWsjlkRHn4vd5RGmeGg==}
+    peerDependencies:
+      '@metaplex-foundation/umi': '>= 0.8.2 <= 1'
+
+  '@metaplex-foundation/mpl-token-metadata@3.0.0-alpha.27':
+    resolution: {integrity: sha512-MSERz5HB2XZ/K+FOMh0tPeqcZZEpGVzdy7e+Cy3MHg7x52JtbGBDtWIoxBJn1OBZayCBfX9gytEoqrXe2YRGqQ==}
+    peerDependencies:
+      '@metaplex-foundation/umi': ^0.8.2
+
   '@metaplex-foundation/mpl-token-metadata@3.4.0':
     resolution: {integrity: sha512-AxBAYCK73JWxY3g9//z/C9krkR0t1orXZDknUPS4+GjwGH2vgPfsk04yfZ31Htka2AdS9YE/3wH7sMUBHKn9Rg==}
     peerDependencies:
@@ -3535,6 +3572,11 @@ packages:
     resolution: {integrity: sha512-84KD1L5cFyw5xnntHwL4uPwfcrkKSiwuDeypiVr92qCUFuF3ZENa2zlFVPu+pQcjTlod2LmEX3MhBmNjRMpdKg==}
     peerDependencies:
       '@metaplex-foundation/umi': '>= 0.8.2 <= 1'
+
+  '@metaplex-foundation/mpl-toolbox@0.9.4':
+    resolution: {integrity: sha512-fd6JxfoLbj/MM8FG2x91KYVy1U6AjBQw4qjt7+Da3trzQaWnSaYHDcYRG/53xqfvZ9qofY1T2t53GXPlD87lnQ==}
+    peerDependencies:
+      '@metaplex-foundation/umi': '>= 0.8.2 < 1'
 
   '@metaplex-foundation/umi-bundle-defaults@1.2.0':
     resolution: {integrity: sha512-xbBxnvsADoC/L40HOvWWnrfE1q+7FCSwZ+LsYi3dWn8A93FhcI2gpxZ+Uqy+LzHDmGmuipdECbTRFdSBLMulBA==}
@@ -8149,6 +8191,9 @@ packages:
   blakejs@1.2.1:
     resolution: {integrity: sha512-QXUSXI3QVc/gJME0dBpXrag1kbzOqCjCX8/b54ntNyW6sjtoqxqRk3LTmXzaJoh71zMsDCjM+47jS7XiwN/+fQ==}
 
+  bn.js@4.11.6:
+    resolution: {integrity: sha512-XWwnNNFCuuSQ0m3r3C4LE3EiORltHd9M05pq6FOlVeiophzRbMo50Sbz1ehl8K3Z+jw9+vmgnXefY1hz8X+2wA==}
+
   bn.js@4.12.2:
     resolution: {integrity: sha512-n4DSx829VRTRByMRGdjQ9iqsN0Bh4OolPsFnaZBLcbi8iXcB+kJ9s7EnRt4wILZNV3kPLHkRVfOc/HvhC3ovDw==}
 
@@ -8239,6 +8284,9 @@ packages:
   buffer-layout@1.2.2:
     resolution: {integrity: sha512-kWSuLN694+KTk8SrYvCqwP2WcgQjoRCiF5b4QDvkkz8EmgD+aWAIceGFKMIAdmF/pH+vpgNV3d3kAKorcdAmWA==}
     engines: {node: '>=4.5'}
+
+  buffer-reverse@1.0.1:
+    resolution: {integrity: sha512-M87YIUBsZ6N924W57vDwT/aOu8hw7ZgdByz6ijksLjmHJELBASmYTTlNHRgjE+pTsT9oJXGaDSgqqwfdHotDUg==}
 
   buffer-xor@1.0.3:
     resolution: {integrity: sha512-571s0T7nZWK6vB67HI5dyUF7wXiNcfaPPPTl6zYCNApANjIvYJTg7hlud/+cJpdAhS7dVzqMLmfhfHR3rAcOjQ==}
@@ -9427,6 +9475,9 @@ packages:
   eth-rpc-errors@4.0.3:
     resolution: {integrity: sha512-Z3ymjopaoft7JDoxZcEb3pwdGh7yiYMhOwm2doUt6ASXlMavpNlK6Cre0+IMl2VSGyEU9rkiperQhp5iRxn5Pg==}
 
+  ethereum-bloom-filters@1.2.0:
+    resolution: {integrity: sha512-28hyiE7HVsWubqhpVLVmZXFd4ITeHi+BUu05o9isf0GUpMtzBUi+8/gFrGaGYzvGAJQmJ3JKj77Mk9G98T84rA==}
+
   ethereum-cryptography@2.2.1:
     resolution: {integrity: sha512-r/W8lkHSiTLxUxW8Rf3u4HGB0xQweG2RyETjywylKZSzLWoWAijRz8WCuOtJ6wah+avllXBqZuk29HCCvhEIRg==}
 
@@ -9437,6 +9488,10 @@ packages:
   ethers@6.15.0:
     resolution: {integrity: sha512-Kf/3ZW54L4UT0pZtsY/rf+EkBU7Qi5nnhonjUb8yTXcxH3cdcWrV2cRyk0Xk/4jK6OoHhxxZHriyhje20If2hQ==}
     engines: {node: '>=14.0.0'}
+
+  ethjs-unit@0.1.6:
+    resolution: {integrity: sha512-/Sn9Y0oKl0uqQuvgFk/zQgR7aw1g36qX/jzSQ5lSwlO0GigPymk4eGQfeNTD03w1dPOqfz8V77Cy43jH56pagw==}
+    engines: {node: '>=6.5.0', npm: '>=3'}
 
   ev-emitter@2.1.2:
     resolution: {integrity: sha512-jQ5Ql18hdCQ4qS+RCrbLfz1n+Pags27q5TwMKvZyhp5hh2UULUYZUy1keqj6k6SYsdqIYjnmz7xyyEY0V67B8Q==}
@@ -10227,6 +10282,10 @@ packages:
     resolution: {integrity: sha512-xelSayHH36ZgE7ZWhli7pW34hNbNl8Ojv5KVmkJD4hBdD3th8Tfk9vYasLM+mXWOZhFkgZfxhLSnrwRr4elSSg==}
     engines: {node: '>=0.10.0'}
 
+  is-hex-prefixed@1.0.0:
+    resolution: {integrity: sha512-WvtOiug1VFrE9v1Cydwm+FnXd3+w9GaeVUss5W4v/SLy3UW00vP+6iNF2SdnfiBoLy4bTqVdkftNGTUeOFVsbA==}
+    engines: {node: '>=6.5.0', npm: '>=3'}
+
   is-nan@1.3.2:
     resolution: {integrity: sha512-E+zBKpQ2t6MEo1VsonYmluk9NxGrbzpeeLC2xIViuO2EjU2xsXsBPwTr3Ykv9l08UYEVEdWeRZNouaZqF6RN0w==}
     engines: {node: '>= 0.4'}
@@ -10898,6 +10957,10 @@ packages:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
 
+  merkletreejs@0.3.11:
+    resolution: {integrity: sha512-LJKTl4iVNTndhL+3Uz/tfkjD0klIWsHlUzgtuNnNrsf7bAlXR30m+xYB7lHr5Z/l6e/yAIsr26Dabx6Buo4VGQ==}
+    engines: {node: '>= 7.6.0'}
+
   metro-babel-transformer@0.82.5:
     resolution: {integrity: sha512-W/scFDnwJXSccJYnOFdGiYr9srhbHPdxX9TvvACOFsIXdLilh3XuxQl/wXW6jEJfgIb0jTvoTlwwrqvuwymr6Q==}
     engines: {node: '>=18.18'}
@@ -10955,6 +11018,9 @@ packages:
     resolution: {integrity: sha512-8oAXxL7do8QckID/WZEKaIFuQJFUTLzfVcC48ghkHhNK2RGuQq8Xvf4AVd+TUA0SZtX0q8TGNXZ/eba1ckeGCg==}
     engines: {node: '>=18.18'}
     hasBin: true
+
+  micro-ftch@0.3.1:
+    resolution: {integrity: sha512-/0LLxhzP0tfiR5hcQebtudP56gUurs2CLkGarnCiB/OqEyUFQ6U3paQi/tgLv0hBJYt2rnr9MNpxz4fiiugstg==}
 
   micro@9.3.5-canary.3:
     resolution: {integrity: sha512-viYIo9PefV+w9dvoIBh1gI44Mvx1BOk67B4BpC2QK77qdY0xZF0Q+vWLt/BII6cLkIc8rLmSIcJaB/OrXXKe1g==}
@@ -11300,6 +11366,10 @@ packages:
 
   nullthrows@1.1.1:
     resolution: {integrity: sha512-2vPPEi+Z7WqML2jZYddDIfy5Dqb0r2fze2zTxNNknZaFpVHU3mFB3R+DWeJWGVx0ecvttSGlJTI+WG+8Z4cDWw==}
+
+  number-to-bn@1.7.0:
+    resolution: {integrity: sha512-wsJ9gfSz1/s4ZsJN01lyonwuxA1tml6X1yBDnfpMglypcBRFZZkus26EdPSlqS5GJfYddVZa22p3VNb3z5m5Ig==}
+    engines: {node: '>=6.5.0', npm: '>=3'}
 
   nuqs@2.8.0:
     resolution: {integrity: sha512-JnVUUNR5hRtt8ZX131KmiGL6IlbyqgXKifL3oYYuDcJ+Kb8fT+WiaMPY7HmfgrECl0FeQBf7H59KfIfbq2DNdw==}
@@ -12799,6 +12869,10 @@ packages:
     resolution: {integrity: sha512-BrpvfNAE3dcvq7ll3xVumzjKjZQ5tI1sEUIKr3Uoks0XUl45St3FlatVqef9prk4jRDzhW6WZg+3bk93y6pLjA==}
     engines: {node: '>=6'}
 
+  strip-hex-prefix@1.0.0:
+    resolution: {integrity: sha512-q8d4ue7JGEiVcypji1bALTos+0pWtyGlivAWyPuTkHzuTCJqrK9sWxYQZUq6Nq3cuyv3bm734IhHvHtGGURU6A==}
+    engines: {node: '>=6.5.0', npm: '>=3'}
+
   strip-indent@3.0.0:
     resolution: {integrity: sha512-laJTa3Jb+VQpaC6DseHhF7dXVqHTfJPCRDaEbid/drOhgitgYku/letMUqOXFoWV0zIIUbjpdH2t+tYj4bQMRQ==}
     engines: {node: '>=8'}
@@ -13105,6 +13179,10 @@ packages:
   tree-kill@1.2.2:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
+
+  treeify@1.1.0:
+    resolution: {integrity: sha512-1m4RA7xVAJrSGrrXGs0L3YTwyvBs2S8PbRHaLZAkFw7JR8oIFwYtysxlBZhYIa7xSyiYJKZ3iGrrk55cGA3i9A==}
+    engines: {node: '>=0.6'}
 
   ts-dedent@2.2.0:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
@@ -13466,6 +13544,9 @@ packages:
     resolution: {integrity: sha512-Z6czzLq4u8fPOyx7TU6X3dvUZVvoJmxSQ+IcrlmagKhilxlhZgxPK6C5Jqbkw1IDUmFTM+cz9QDnnLTwDz/2gQ==}
     engines: {node: '>=6.14.2'}
 
+  utf8@3.0.0:
+    resolution: {integrity: sha512-E8VjFIQ/TyQgp+TZfS6l8yp/xWppSAHzidGiRrqe4bK4XP9pTRyKFgGJpO3SN7zdX4DeomTrwaseCHovfpFcqQ==}
+
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
@@ -13577,6 +13658,10 @@ packages:
 
   web-vitals@0.2.4:
     resolution: {integrity: sha512-6BjspCO9VriYy12z356nL6JBS0GYeEcA457YyRzD+dD6XYCQ75NKhcOHUMHentOE7OcVCIXXDvOm0jKFfQG2Gg==}
+
+  web3-utils@1.10.4:
+    resolution: {integrity: sha512-tsu8FiKJLk2PzhDl9fXbGUWTkkVXYhtTA+SmEFkKft+9BgwLxfCRpU96sWv7ICC8zixBNd3JURVoiR3dUXgP8A==}
+    engines: {node: '>=8.0.0'}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -16613,6 +16698,8 @@ snapshots:
 
   '@ethereumjs/rlp@10.0.0': {}
 
+  '@ethereumjs/rlp@4.0.1': {}
+
   '@ethereumjs/rlp@5.0.2': {}
 
   '@ethereumjs/tx@10.0.0':
@@ -16626,6 +16713,12 @@ snapshots:
     dependencies:
       '@ethereumjs/rlp': 10.0.0
       ethereum-cryptography: 3.2.0
+
+  '@ethereumjs/util@8.1.0':
+    dependencies:
+      '@ethereumjs/rlp': 4.0.1
+      ethereum-cryptography: 2.2.1
+      micro-ftch: 0.3.1
 
   '@ethereumjs/util@9.1.0':
     dependencies:
@@ -17588,12 +17681,29 @@ snapshots:
       - encoding
       - supports-color
 
+  '@metaplex-foundation/mpl-candy-machine@6.1.0(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/mpl-token-metadata': 3.0.0-alpha.27(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/mpl-toolbox': 0.10.0(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi': 1.2.0
+      '@noble/hashes': 1.8.0
+      merkletreejs: 0.3.11
+
+  '@metaplex-foundation/mpl-token-metadata@3.0.0-alpha.27(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/mpl-toolbox': 0.9.4(@metaplex-foundation/umi@1.2.0)
+      '@metaplex-foundation/umi': 1.2.0
+
   '@metaplex-foundation/mpl-token-metadata@3.4.0(@metaplex-foundation/umi@1.2.0)':
     dependencies:
       '@metaplex-foundation/mpl-toolbox': 0.10.0(@metaplex-foundation/umi@1.2.0)
       '@metaplex-foundation/umi': 1.2.0
 
   '@metaplex-foundation/mpl-toolbox@0.10.0(@metaplex-foundation/umi@1.2.0)':
+    dependencies:
+      '@metaplex-foundation/umi': 1.2.0
+
+  '@metaplex-foundation/mpl-toolbox@0.9.4(@metaplex-foundation/umi@1.2.0)':
     dependencies:
       '@metaplex-foundation/umi': 1.2.0
 
@@ -24868,6 +24978,8 @@ snapshots:
 
   blakejs@1.2.1: {}
 
+  bn.js@4.11.6: {}
+
   bn.js@4.12.2: {}
 
   bn.js@5.2.1: {}
@@ -24989,6 +25101,8 @@ snapshots:
   buffer-from@1.1.2: {}
 
   buffer-layout@1.2.2: {}
+
+  buffer-reverse@1.0.1: {}
 
   buffer-xor@1.0.3: {}
 
@@ -26274,6 +26388,10 @@ snapshots:
     dependencies:
       fast-safe-stringify: 2.1.1
 
+  ethereum-bloom-filters@1.2.0:
+    dependencies:
+      '@noble/hashes': 1.8.0
+
   ethereum-cryptography@2.2.1:
     dependencies:
       '@noble/curves': 1.4.2
@@ -26301,6 +26419,11 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  ethjs-unit@0.1.6:
+    dependencies:
+      bn.js: 4.11.6
+      number-to-bn: 1.7.0
 
   ev-emitter@2.1.2: {}
 
@@ -27117,6 +27240,8 @@ snapshots:
   is-glob@4.0.3:
     dependencies:
       is-extglob: 2.1.1
+
+  is-hex-prefixed@1.0.0: {}
 
   is-nan@1.3.2:
     dependencies:
@@ -28209,6 +28334,14 @@ snapshots:
 
   merge2@1.4.1: {}
 
+  merkletreejs@0.3.11:
+    dependencies:
+      bignumber.js: 9.3.0
+      buffer-reverse: 1.0.1
+      crypto-js: 4.2.0
+      treeify: 1.1.0
+      web3-utils: 1.10.4
+
   metro-babel-transformer@0.82.5:
     dependencies:
       '@babel/core': 7.28.5
@@ -28383,6 +28516,8 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  micro-ftch@0.3.1: {}
 
   micro@9.3.5-canary.3:
     dependencies:
@@ -28739,6 +28874,11 @@ snapshots:
       boolbase: 1.0.0
 
   nullthrows@1.1.1: {}
+
+  number-to-bn@1.7.0:
+    dependencies:
+      bn.js: 4.11.6
+      strip-hex-prefix: 1.0.0
 
   nuqs@2.8.0(next@16.0.10(@babel/core@7.27.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.89.2))(react@19.2.1):
     dependencies:
@@ -30674,6 +30814,10 @@ snapshots:
 
   strip-final-newline@2.0.0: {}
 
+  strip-hex-prefix@1.0.0:
+    dependencies:
+      is-hex-prefixed: 1.0.0
+
   strip-indent@3.0.0:
     dependencies:
       min-indent: 1.0.1
@@ -31037,6 +31181,8 @@ snapshots:
       punycode: 2.3.1
 
   tree-kill@1.2.2: {}
+
+  treeify@1.1.0: {}
 
   ts-dedent@2.2.0: {}
 
@@ -31474,6 +31620,8 @@ snapshots:
       node-gyp-build: 4.8.4
     optional: true
 
+  utf8@3.0.0: {}
+
   util-deprecate@1.0.2: {}
 
   util@0.12.5:
@@ -31638,6 +31786,17 @@ snapshots:
       graceful-fs: 4.2.11
 
   web-vitals@0.2.4: {}
+
+  web3-utils@1.10.4:
+    dependencies:
+      '@ethereumjs/util': 8.1.0
+      bn.js: 5.2.2
+      ethereum-bloom-filters: 1.2.0
+      ethereum-cryptography: 2.2.1
+      ethjs-unit: 0.1.6
+      number-to-bn: 1.7.0
+      randombytes: 2.1.0
+      utf8: 3.0.0
 
   webidl-conversions@3.0.1: {}
 

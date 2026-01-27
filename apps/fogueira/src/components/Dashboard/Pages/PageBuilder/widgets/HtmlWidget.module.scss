@@ -1,0 +1,37 @@
+@use "@fogo/component-library/theme";
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(8);
+  background-color: theme.color("input-bg");
+  border: 1px dashed theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("muted");
+
+  span {
+    @include theme.text("sm");
+  }
+}
+
+.container {
+  width: 100%;
+
+  // Reset some default styles for embedded HTML
+  & > * {
+    max-width: 100%;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  iframe {
+    max-width: 100%;
+  }
+}
+

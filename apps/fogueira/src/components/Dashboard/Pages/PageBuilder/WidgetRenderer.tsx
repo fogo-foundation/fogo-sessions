@@ -3,7 +3,12 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DotsSixVertical, Trash } from "@phosphor-icons/react";
 import { useState } from "react";
+import { ButtonWidget } from "./widgets/ButtonWidget";
 import { ColumnsWidget } from "./widgets/ColumnsWidget";
+import { ContainerWidget } from "./widgets/ContainerWidget";
+import { EmbedWidget } from "./widgets/EmbedWidget";
+import { HeaderWidget } from "./widgets/HeaderWidget";
+import { HtmlWidget } from "./widgets/HtmlWidget";
 import { ImageWidget } from "./widgets/ImageWidget";
 import { TextWidget } from "./widgets/TextWidget";
 import { VideoWidget } from "./widgets/VideoWidget";
@@ -32,6 +37,7 @@ export const WidgetRenderer = ({
   onUpdate,
   onDelete,
 }: Props) => {
+  // Widget renderer component
   const [isHovered, setIsHovered] = useState(false);
 
   const {
@@ -63,6 +69,13 @@ export const WidgetRenderer = ({
             onUpdate={(config) => onUpdate(widget.id, config)}
           />
         );
+      case "header":
+        return (
+          <HeaderWidget
+            config={widget.config}
+            onUpdate={(config) => onUpdate(widget.id, config)}
+          />
+        );
       case "image":
         return (
           <ImageWidget
@@ -77,9 +90,38 @@ export const WidgetRenderer = ({
             onUpdate={(config) => onUpdate(widget.id, config)}
           />
         );
+      case "button":
+        return (
+          <ButtonWidget
+            config={widget.config}
+            onUpdate={(config) => onUpdate(widget.id, config)}
+          />
+        );
+      case "embed":
+        return (
+          <EmbedWidget
+            config={widget.config}
+            onUpdate={(config) => onUpdate(widget.id, config)}
+          />
+        );
+      case "html":
+        return (
+          <HtmlWidget
+            config={widget.config}
+            onUpdate={(config) => onUpdate(widget.id, config)}
+          />
+        );
       case "columns":
         return (
           <ColumnsWidget
+            widgetId={widget.id}
+            config={widget.config}
+            onUpdate={(config) => onUpdate(widget.id, config)}
+          />
+        );
+      case "container":
+        return (
+          <ContainerWidget
             widgetId={widget.id}
             config={widget.config}
             onUpdate={(config) => onUpdate(widget.id, config)}
@@ -102,18 +144,15 @@ export const WidgetRenderer = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
+      {...attributes}
+      {...listeners}
     >
       <div
         className={`${styles.controls} ${isHovered || isSelected ? styles.visible : ""}`}
       >
-        <button
-          className={styles.dragHandle}
-          {...attributes}
-          {...listeners}
-          title="Drag to reorder"
-        >
+        <div className={styles.dragHandle} title="Drag to reorder">
           <DotsSixVertical weight="bold" />
-        </button>
+        </div>
         <button
           className={styles.deleteButton}
           onClick={(e) => {

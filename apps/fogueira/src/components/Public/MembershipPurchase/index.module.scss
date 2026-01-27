@@ -1,0 +1,313 @@
+@use "@fogo/component-library/theme";
+
+.page {
+  min-height: 100vh;
+  background-color: theme.color("background");
+  color: theme.color("foreground");
+}
+
+.loading,
+.error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: theme.spacing(8);
+  gap: theme.spacing(4);
+}
+
+.spinner {
+  font-size: 2rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorTitle {
+  @include theme.text("2xl", "bold");
+  color: theme.color("heading");
+  margin: 0;
+}
+
+.errorText {
+  @include theme.text("base");
+  color: theme.color("muted");
+  margin: 0;
+}
+
+.backButton {
+  @include theme.text("sm", "medium");
+  color: theme.color("accent");
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.header {
+  padding: theme.spacing(6);
+  border-bottom: 1px solid theme.color("border");
+}
+
+.backLink {
+  @include theme.text("sm");
+  display: inline-flex;
+  align-items: center;
+  gap: theme.spacing(2);
+  color: theme.color("muted");
+  text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: theme.color("accent");
+  }
+}
+
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: theme.spacing(8) theme.spacing(6);
+}
+
+.productCard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: theme.spacing(8);
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("xl");
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.imageContainer {
+  aspect-ratio: 1;
+  background-color: theme.color("input-bg");
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.details {
+  padding: theme.spacing(8);
+  display: flex;
+  flex-direction: column;
+}
+
+.creatorName {
+  @include theme.text("sm");
+  color: theme.color("muted");
+  margin-bottom: theme.spacing(2);
+}
+
+.title {
+  @include theme.text("2xl", "bold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(4) 0;
+}
+
+.description {
+  @include theme.text("base");
+  color: theme.color("paragraph");
+  margin: 0 0 theme.spacing(6) 0;
+  line-height: 1.6;
+}
+
+.price {
+  @include theme.text("3xl", "bold");
+  color: theme.color("accent");
+  margin-bottom: theme.spacing(6);
+}
+
+.purchaseSection {
+  margin-bottom: theme.spacing(8);
+}
+
+.purchaseButton {
+  @include theme.text("base", "semibold");
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(4) theme.spacing(6);
+  background-color: theme.color("button", "primary", "background", "normal");
+  color: theme.color("button", "primary", "foreground");
+  border: none;
+  border-radius: theme.border-radius("lg");
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    transform 0.1s;
+
+  &:hover:not(:disabled) {
+    background-color: theme.color("button", "primary", "background", "hover");
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.buttonSpinner {
+  animation: spin 1s linear infinite;
+}
+
+.successMessage {
+  text-align: center;
+  padding: theme.spacing(6);
+  background-color: theme.color("states", "success", "background");
+  border: 1px solid theme.color("states", "success", "foreground");
+  border-radius: theme.border-radius("lg");
+
+  h3 {
+    @include theme.text("lg", "semibold");
+    color: theme.color("states", "success", "foreground");
+    margin: theme.spacing(2) 0;
+  }
+
+  p {
+    @include theme.text("sm");
+    color: theme.color("paragraph");
+    margin: 0 0 theme.spacing(4) 0;
+  }
+}
+
+.successIcon {
+  font-size: 2rem;
+  color: theme.color("states", "success", "foreground");
+}
+
+.txLink {
+  @include theme.text("sm");
+  display: block;
+  color: theme.color("accent");
+  margin-bottom: theme.spacing(4);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.continueButton {
+  @include theme.text("sm", "medium");
+  display: inline-block;
+  padding: theme.spacing(2) theme.spacing(4);
+  background-color: theme.color("button-base");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("paragraph");
+  text-decoration: none;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+  }
+}
+
+.errorMessage {
+  text-align: center;
+  padding: theme.spacing(4);
+  background-color: theme.color("states", "error", "background");
+  border: 1px solid theme.color("states", "error", "foreground");
+  border-radius: theme.border-radius("lg");
+
+  p {
+    @include theme.text("sm");
+    color: theme.color("states", "error", "foreground");
+    margin: 0 0 theme.spacing(3) 0;
+  }
+}
+
+.retryButton {
+  @include theme.text("sm", "medium");
+  padding: theme.spacing(2) theme.spacing(4);
+  background-color: transparent;
+  border: 1px solid theme.color("states", "error", "foreground");
+  border-radius: theme.border-radius("md");
+  color: theme.color("states", "error", "foreground");
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: theme.color("states", "error", "background");
+  }
+}
+
+.notAvailable {
+  text-align: center;
+  padding: theme.spacing(4);
+  background-color: theme.color("input-bg");
+  border-radius: theme.border-radius("lg");
+
+  p {
+    @include theme.text("sm");
+    color: theme.color("muted");
+    margin: 0;
+  }
+}
+
+.features {
+  margin-top: auto;
+  padding-top: theme.spacing(6);
+  border-top: 1px solid theme.color("border");
+}
+
+.featuresTitle {
+  @include theme.text("sm", "semibold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(3) 0;
+}
+
+.featuresList {
+  @include theme.text("sm");
+  color: theme.color("paragraph");
+  margin: 0;
+  padding-left: theme.spacing(5);
+
+  li {
+    margin-bottom: theme.spacing(2);
+  }
+}
+
+.paymentInfo {
+  margin-top: theme.spacing(4);
+  padding-top: theme.spacing(4);
+  border-top: 1px solid theme.color("border");
+}
+
+.paymentNote {
+  @include theme.text("xs");
+  color: theme.color("muted");
+  margin: 0;
+
+  code {
+    @include theme.text("xs");
+    background-color: theme.color("input-bg");
+    padding: theme.spacing(0.5) theme.spacing(1);
+    border-radius: theme.border-radius("sm");
+    font-family: monospace;
+  }
+}
+

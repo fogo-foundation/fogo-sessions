@@ -4,15 +4,20 @@ import { z } from "zod";
 import { prisma } from "../../../../../lib/prisma";
 
 const gatingRuleExpressionSchema = z.object({
-  type: z.enum(["and", "or", "token_holding"]),
+  type: z.enum(["and", "or", "token_holding", "token", "nft", "membership"]),
   tokenMint: z.string().optional(),
+  mintAddress: z.string().optional(),
   minAmount: z.string().optional(),
+  collectionMint: z.string().optional(),
+  minCount: z.number().optional(),
+  membershipProductId: z.string().optional(),
   conditions: z.array(z.any()).optional(),
 });
 
 const updateGatingRuleSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   expression: gatingRuleExpressionSchema.optional(),
+  previewMode: z.string().nullable().optional(),
 });
 
 export const GET = async (
@@ -56,8 +61,7 @@ export const GET = async (
     }
 
     return NextResponse.json({ rule });
-  } catch (error) {
-    console.error("Error fetching gating rule:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch gating rule" },
       { status: 500 },
@@ -113,6 +117,7 @@ export const PUT = async (
       data: {
         ...(data.name && { name: data.name }),
         ...(data.expression && { expression: data.expression as object }),
+        ...(data.previewMode !== undefined && { previewMode: data.previewMode }),
       },
     });
 
@@ -125,7 +130,6 @@ export const PUT = async (
       );
     }
 
-    console.error("Error updating gating rule:", error);
     return NextResponse.json(
       { error: "Failed to update gating rule" },
       { status: 500 },
@@ -178,8 +182,7 @@ export const DELETE = async (
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting gating rule:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to delete gating rule" },
       { status: 500 },

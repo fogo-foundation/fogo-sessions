@@ -9,11 +9,12 @@ import {
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { SessionStateType, useSession } from "@fogo/sessions-sdk-react";
-import { ArrowSquareOut } from "@phosphor-icons/react";
+import { ArrowSquareOut, GearSix } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { PageCanvas } from "./PageCanvas";
+import { PageSettings } from "./PageSettings";
 import { SettingsPanel } from "./SettingsPanel";
 import { WidgetPalette } from "./WidgetPalette";
 import styles from "./index.module.scss";
@@ -23,6 +24,11 @@ type Page = {
   title: string;
   slug: string;
   isHome: boolean;
+  gatingRuleId: string | null;
+  bgImage: string | null;
+  bgColor: string | null;
+  overlayColor: string | null;
+  fullWidth: boolean;
   creator: {
     username: string;
   };
@@ -53,6 +59,7 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isDraggingFromPalette, setIsDraggingFromPalette] = useState(false);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
+  const [showPageSettings, setShowPageSettings] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -240,7 +247,7 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
       const widgetType = (active.data.current as { widgetType?: string })
         ?.widgetType;
       const isFromPalette = active.id.toString().startsWith("palette-");
-      const overData = over.data.current as { type?: string; columnId?: string } | undefined;
+      const overData = over.data.current as { type?: string; columnId?: string; containerId?: string } | undefined;
 
       // Check if dropping into a column
       if (overData?.type === "column" && overData.columnId) {
@@ -267,6 +274,38 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
                   ...widget.config,
                   leftWidgets: column === "left" ? [...leftWidgets, newNestedWidget] : leftWidgets,
                   rightWidgets: column === "right" ? [...rightWidgets, newNestedWidget] : rightWidgets,
+                },
+              };
+            }
+            return widget;
+          });
+
+          setRevision((prev) => (prev ? { ...prev, widgets: updated } : null));
+          setHasUnsavedChanges(true);
+          return;
+        }
+      }
+
+      // Check if dropping into a container
+      if (overData?.type === "container" && overData.containerId) {
+        const containerId = overData.containerId;
+
+        if (isFromPalette && widgetType) {
+          // Add new widget to container
+          const newNestedWidget = {
+            id: uuidv4(),
+            widgetType,
+            config: getDefaultConfig(widgetType),
+          };
+
+          const updated = revision.widgets.map((widget) => {
+            if (widget.id === containerId && widget.widgetType === "container") {
+              const containerWidgets = (widget.config.widgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+              return {
+                ...widget,
+                config: {
+                  ...widget.config,
+                  widgets: [...containerWidgets, newNestedWidget],
                 },
               };
             }
@@ -372,6 +411,13 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
             <span className={styles.unsaved}>Unsaved changes</span>
           )}
           <button
+            onClick={() => setShowPageSettings(true)}
+            className={styles.settingsButton}
+            title="Page Settings"
+          >
+            <GearSix weight="bold" />
+          </button>
+          <button
             onClick={handleManualSave}
             className={styles.saveButton}
             disabled={saving || !hasUnsavedChanges}
@@ -416,6 +462,12 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
             selectedWidgetId={selectedWidgetId}
             onWidgetsChange={handleWidgetsChange}
             onWidgetSelect={handleWidgetSelect}
+            pageSettings={{
+              bgImage: page.bgImage,
+              bgColor: page.bgColor,
+              overlayColor: page.overlayColor,
+              fullWidth: page.fullWidth,
+            }}
           />
           {selectedWidget && (
             <SettingsPanel
@@ -431,6 +483,26 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {showPageSettings && (
+        <PageSettings
+          page={page}
+          onClose={() => setShowPageSettings(false)}
+          onUpdate={() => {
+            fetchPage();
+            setShowPageSettings(false);
+          }}
+          onSettingsChange={(settings) => {
+            // Update page state immediately for preview
+            if (page) {
+              setPage({
+                ...page,
+                ...settings,
+              });
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -439,12 +511,22 @@ function getDefaultConfig(widgetType: string): Record<string, unknown> {
   switch (widgetType) {
     case "text":
       return { content: "", alignment: "left" };
+    case "header":
+      return { content: "", level: 1 };
     case "image":
       return { url: "", alt: "", width: "100%" };
     case "video":
       return { url: "", width: "100%" };
+    case "button":
+      return { text: "Click me", url: "", variant: "primary", size: "md", alignment: "left" };
+    case "embed":
+      return { url: "", aspectRatio: "16/9" };
+    case "html":
+      return { html: "" };
     case "columns":
       return { leftWidgets: [], rightWidgets: [], ratio: "50-50", gap: "md", verticalAlign: "top" };
+    case "container":
+      return { children: [], maxWidth: "800", bgColor: "transparent", padding: "md", alignment: "center" };
     default:
       return {};
   }

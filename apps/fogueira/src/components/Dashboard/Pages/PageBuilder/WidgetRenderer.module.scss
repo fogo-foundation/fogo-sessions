@@ -6,21 +6,30 @@
   padding-left: theme.spacing(10);
   min-height: theme.spacing(10);
   border-radius: theme.border-radius("md");
-  transition: background-color 0.15s, box-shadow 0.15s;
-  cursor: pointer;
+  transition: background-color 0.15s, box-shadow 0.15s, border-color 0.15s;
+  cursor: grab;
+  border: 2px solid transparent;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.02);
+    border-color: theme.color("border");
   }
 
   &.selected {
     background-color: rgba(255, 255, 255, 0.03);
     box-shadow: inset 0 0 0 1px theme.color("accent-opaque");
+    border-color: theme.color("accent-opaque");
   }
 
   &.dragging {
     background-color: theme.color("card");
     border-radius: theme.border-radius("md");
+    cursor: grabbing;
+    opacity: 0.5;
+  }
+
+  &:active {
+    cursor: grabbing;
   }
 }
 
@@ -46,20 +55,13 @@
   justify-content: center;
   width: theme.spacing(6);
   height: theme.spacing(6);
-  background: none;
-  border: none;
   color: theme.color("muted");
-  cursor: grab;
+  pointer-events: none; // Prevent handle from interfering with drag
   border-radius: theme.border-radius("sm");
-  transition: color 0.1s, background-color 0.1s;
+  transition: color 0.1s;
 
-  &:hover {
+  .widget:hover & {
     color: theme.color("paragraph");
-    background-color: theme.color("button-hover");
-  }
-
-  &:active {
-    cursor: grabbing;
   }
 }
 

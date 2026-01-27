@@ -17,11 +17,19 @@ type Widget = {
   gatingRuleId: string | null;
 };
 
+type PageSettings = {
+  bgImage: string | null;
+  bgColor: string | null;
+  overlayColor: string | null;
+  fullWidth: boolean;
+};
+
 type Props = {
   widgets: Widget[];
   selectedWidgetId: string | null;
   onWidgetsChange: (widgets: Widget[]) => void;
   onWidgetSelect: (widgetId: string | null) => void;
+  pageSettings: PageSettings;
 };
 
 export const PageCanvas = ({
@@ -29,6 +37,7 @@ export const PageCanvas = ({
   selectedWidgetId,
   onWidgetsChange,
   onWidgetSelect,
+  pageSettings,
 }: Props) => {
   const handleWidgetUpdate = useCallback(
     (id: string, config: Record<string, unknown>) => {
@@ -65,7 +74,7 @@ export const PageCanvas = ({
   };
 
   return (
-    <CanvasDropZone onClick={handleCanvasClick}>
+    <CanvasDropZone onClick={handleCanvasClick} pageSettings={pageSettings}>
       {widgets.length === 0 ? (
         <div className={styles.empty}>
           <SquaresFour size={48} weight="light" className={styles.emptyIcon} />
@@ -99,18 +108,42 @@ export const PageCanvas = ({
 type CanvasDropZoneProps = {
   children: React.ReactNode;
   onClick: (e: React.MouseEvent) => void;
+  pageSettings: PageSettings;
 };
 
-const CanvasDropZone = ({ children, onClick }: CanvasDropZoneProps) => {
+const CanvasDropZone = ({
+  children,
+  onClick,
+  pageSettings,
+}: CanvasDropZoneProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: "canvas",
   });
 
+  // Build canvas styles from page settings
+  const canvasStyle: React.CSSProperties = {};
+  if (pageSettings.bgColor) {
+    canvasStyle.backgroundColor = pageSettings.bgColor;
+  }
+  if (pageSettings.bgImage) {
+    canvasStyle.backgroundImage = `url(${pageSettings.bgImage})`;
+    canvasStyle.backgroundSize = "cover";
+    canvasStyle.backgroundPosition = "center";
+    canvasStyle.backgroundAttachment = "fixed";
+  }
+
   return (
-    <div className={styles.canvas} onClick={onClick}>
+    <div className={styles.canvas} onClick={onClick} style={canvasStyle}>
+      {/* Background overlay */}
+      {pageSettings.overlayColor && (
+        <div
+          className={styles.overlay}
+          style={{ backgroundColor: pageSettings.overlayColor }}
+        />
+      )}
       <div
         ref={setNodeRef}
-        className={`${styles.dropZone} ${isOver ? styles.dropZoneActive : ""}`}
+        className={`${styles.dropZone} ${isOver ? styles.dropZoneActive : ""} ${pageSettings.fullWidth ? styles.fullWidth : ""}`}
       >
         {children}
       </div>

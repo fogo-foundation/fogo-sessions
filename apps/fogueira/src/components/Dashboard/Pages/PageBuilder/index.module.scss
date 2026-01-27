@@ -46,6 +46,26 @@
   color: theme.color("states", "error", "foreground");
 }
 
+.settingsButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(9);
+  height: theme.spacing(9);
+  padding: 0;
+  border-radius: theme.border-radius("md");
+  border: 1px solid theme.color("border");
+  background-color: theme.color("button-base");
+  color: theme.color("paragraph");
+  cursor: pointer;
+  transition: background-color 0.1s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+    border-color: theme.color("border-hover");
+  }
+}
+
 .saveButton {
   @include theme.text("sm", "semibold");
   padding: theme.spacing(2) theme.spacing(4);

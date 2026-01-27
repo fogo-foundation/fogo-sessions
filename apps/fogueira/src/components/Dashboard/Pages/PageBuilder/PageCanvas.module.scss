@@ -5,9 +5,19 @@
   overflow-y: auto;
   background-color: theme.color("background");
   position: relative;
+  min-height: 100%;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .dropZone {
+  position: relative;
+  z-index: 1;
   min-height: 100%;
   padding: theme.spacing(6);
   max-width: 800px;
@@ -17,6 +27,12 @@
   &.dropZoneActive {
     background-color: theme.color("accent-opaque");
     border-radius: theme.border-radius("lg");
+  }
+
+  &.fullWidth {
+    max-width: none;
+    padding-left: theme.spacing(4);
+    padding-right: theme.spacing(4);
   }
 }
 

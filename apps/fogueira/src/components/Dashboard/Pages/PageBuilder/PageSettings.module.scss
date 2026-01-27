@@ -1,0 +1,313 @@
+@use "@fogo/component-library/theme";
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("lg");
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: theme.spacing(4) theme.spacing(5);
+  border-bottom: 1px solid theme.color("border");
+}
+
+.title {
+  @include theme.text("lg", "semibold");
+  color: theme.color("heading");
+  margin: 0;
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(8);
+  height: theme.spacing(8);
+  background: none;
+  border: none;
+  color: theme.color("muted");
+  cursor: pointer;
+  border-radius: theme.border-radius("md");
+  transition: color 0.15s, background-color 0.15s;
+
+  &:hover {
+    color: theme.color("paragraph");
+    background-color: theme.color("button-hover");
+  }
+}
+
+.content {
+  padding: theme.spacing(5);
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(4);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(1);
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+
+  span {
+    @include theme.text("sm");
+    color: theme.color("paragraph");
+  }
+}
+
+.input,
+.select {
+  @include theme.text("sm");
+  width: 100%;
+  padding: theme.spacing(2) theme.spacing(3);
+  background-color: theme.color("input-bg");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("foreground");
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: theme.color("accent");
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &::placeholder {
+    color: theme.color("muted");
+  }
+}
+
+.select {
+  cursor: pointer;
+}
+
+.hint {
+  @include theme.text("xs");
+  color: theme.color("muted");
+  margin: theme.spacing(1) 0 0 0;
+}
+
+.link {
+  color: theme.color("accent");
+  text-decoration: underline;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.error {
+  @include theme.text("sm");
+  color: theme.color("states", "error", "foreground");
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: theme.spacing(3);
+  margin-top: theme.spacing(2);
+  padding-top: theme.spacing(4);
+  border-top: 1px solid theme.color("border");
+}
+
+.cancelButton {
+  @include theme.text("sm", "medium");
+  padding: theme.spacing(2) theme.spacing(4);
+  background: none;
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("paragraph");
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+  }
+}
+
+.saveButton {
+  @include theme.text("sm", "medium");
+  padding: theme.spacing(2) theme.spacing(4);
+  background-color: theme.color("accent");
+  border: none;
+  border-radius: theme.border-radius("md");
+  color: theme.color("foreground");
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.divider {
+  height: 1px;
+  background-color: theme.color("border");
+  margin: theme.spacing(2) 0;
+}
+
+.sectionTitle {
+  @include theme.text("sm", "semibold");
+  color: theme.color("heading");
+  margin: 0 0 theme.spacing(1) 0;
+}
+
+.imagePreview {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border-radius: theme.border-radius("md");
+  overflow: hidden;
+  border: 1px solid theme.color("border");
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.removeImageButton {
+  position: absolute;
+  top: theme.spacing(2);
+  right: theme.spacing(2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(7);
+  height: theme.spacing(7);
+  background-color: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: theme.border-radius("md");
+  color: theme.color("foreground");
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: theme.color("states", "error", "foreground");
+  }
+}
+
+.uploadArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(6);
+  border: 2px dashed theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("muted");
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: theme.color("accent");
+    color: theme.color("paragraph");
+  }
+
+  span {
+    @include theme.text("sm");
+  }
+}
+
+.fileInput {
+  display: none;
+}
+
+.colorInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2);
+}
+
+.colorPicker {
+  width: theme.spacing(10);
+  height: theme.spacing(10);
+  padding: 0;
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  cursor: pointer;
+  background: none;
+
+  &::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: theme.border-radius("sm");
+  }
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(8);
+  height: theme.spacing(8);
+  background: none;
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("muted");
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: theme.color("states", "error", "foreground");
+    border-color: theme.color("states", "error", "foreground");
+  }
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2);
+  cursor: pointer;
+
+  span {
+    @include theme.text("sm");
+    color: theme.color("paragraph");
+  }
+}
+
+.checkbox {
+  width: theme.spacing(4);
+  height: theme.spacing(4);
+  accent-color: theme.color("accent");
+  cursor: pointer;
+}
+

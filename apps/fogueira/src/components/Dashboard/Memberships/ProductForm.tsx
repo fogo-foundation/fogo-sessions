@@ -1,8 +1,12 @@
 "use client";
 import { SessionStateType, useSession } from "@fogo/sessions-sdk-react";
 import { X } from "@phosphor-icons/react";
+import { PublicKey } from "@solana/web3.js";
 import { useEffect, useState } from "react";
 import styles from "./ProductForm.module.scss";
+
+// FOGO token mint address on testnet
+const FOGO_TOKEN_MINT_TESTNET = "FoGoXGrdBN3M6YeSwLSLcQ6LoZJXAPn1aT5rYqYZxPJ3";
 
 type MembershipProduct = {
   id: string;
@@ -103,14 +107,20 @@ export const MembershipProductForm = ({
       if (formData.mintAddress) {
         payload.mintAddress = formData.mintAddress;
       }
-      if (formData.priceToken) {
-        payload.priceToken = formData.priceToken;
-      }
       if (formData.priceAmount) {
         payload.priceAmount = formData.priceAmount;
+        payload.priceToken = FOGO_TOKEN_MINT_TESTNET;
       }
       if (formData.treasuryAddress) {
-        payload.treasuryAddress = formData.treasuryAddress;
+        // Validate treasury address is a valid Solana public key
+        try {
+          new PublicKey(formData.treasuryAddress);
+          payload.treasuryAddress = formData.treasuryAddress;
+        } catch {
+          setErrors({ treasuryAddress: "Invalid Solana wallet address" });
+          setIsSubmitting(false);
+          return;
+        }
       }
       if (formData.candyMachineAddress) {
         payload.candyMachineAddress = formData.candyMachineAddress;
@@ -284,6 +294,50 @@ export const MembershipProductForm = ({
             </div>
           )}
 
+          <div className={styles.sectionHeader}>Pricing</div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>Price in FOGO Tokens</label>
+            <input
+              type="number"
+              className={styles.input}
+              value={formData.priceAmount}
+              onChange={(e) =>
+                setFormData({ ...formData, priceAmount: e.target.value })
+              }
+              placeholder="e.g., 100"
+              min="0"
+              step="any"
+            />
+            <p className={styles.helpText}>
+              Leave empty for free membership. Uses FOGO testnet tokens.
+            </p>
+            {errors.priceAmount && (
+              <div className={styles.fieldError}>{errors.priceAmount}</div>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>Treasury Address</label>
+            <input
+              type="text"
+              className={styles.input}
+              value={formData.treasuryAddress}
+              onChange={(e) =>
+                setFormData({ ...formData, treasuryAddress: e.target.value })
+              }
+              placeholder="Wallet to receive payments"
+            />
+            <p className={styles.helpText}>
+              Your wallet address where FOGO tokens will be sent.
+            </p>
+            {errors.treasuryAddress && (
+              <div className={styles.fieldError}>{errors.treasuryAddress}</div>
+            )}
+          </div>
+
+          <div className={styles.sectionHeader}>NFT Configuration</div>
+
           <div className={styles.field}>
             <label className={styles.label}>
               NFT Collection Mint (optional)
@@ -297,6 +351,9 @@ export const MembershipProductForm = ({
               }
               placeholder="Collection mint address"
             />
+            <p className={styles.helpText}>
+              Used to verify membership ownership for gated content.
+            </p>
             {errors.nftCollectionMint && (
               <div className={styles.fieldError}>
                 {errors.nftCollectionMint}

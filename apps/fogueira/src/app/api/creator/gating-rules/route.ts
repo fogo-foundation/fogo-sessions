@@ -3,17 +3,26 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "../../../../lib/prisma";
 
-// Gating rule expression schema - supports token holdings checks
+// Gating rule expression schema - supports various condition types
 const gatingRuleExpressionSchema = z.object({
-  type: z.enum(["and", "or", "token_holding"]),
+  type: z.enum(["and", "or", "token_holding", "token", "nft", "membership"]),
+  // For token_holding / token
   tokenMint: z.string().optional(),
+  mintAddress: z.string().optional(),
   minAmount: z.string().optional(),
+  // For nft
+  collectionMint: z.string().optional(),
+  minCount: z.number().optional(),
+  // For membership
+  membershipProductId: z.string().optional(),
+  // For and/or
   conditions: z.array(z.any()).optional(),
 });
 
 const gatingRuleSchema = z.object({
   name: z.string().min(1).max(100),
   expression: gatingRuleExpressionSchema,
+  previewMode: z.string().nullable().optional(),
 });
 
 export const GET = async (request: NextRequest) => {
@@ -82,6 +91,7 @@ export const POST = async (request: NextRequest) => {
         creatorId: user.creator.id,
         name: data.name,
         expression: data.expression as object,
+        previewMode: data.previewMode ?? null,
       },
     });
 

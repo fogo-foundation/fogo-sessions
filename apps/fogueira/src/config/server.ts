@@ -52,3 +52,8 @@ export const DATABASE_URL = getEnvOrDefault(
 );
 
 export const BLOB_READ_WRITE_TOKEN = demand("BLOB_READ_WRITE_TOKEN");
+
+export const SOLANA_RPC_URL = getEnvOrDefault(
+  "SOLANA_RPC_URL",
+  "https://api.mainnet-beta.solana.com",
+);

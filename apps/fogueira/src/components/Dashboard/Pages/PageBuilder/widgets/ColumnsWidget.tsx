@@ -1,5 +1,4 @@
 "use client";
-import { Trash, DotsSixVertical, SquaresFour } from "@phosphor-icons/react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -7,9 +6,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { DotsSixVertical, SquaresFour, Trash } from "@phosphor-icons/react";
+import { ButtonWidget } from "./ButtonWidget";
 import styles from "./ColumnsWidget.module.scss";
-import { TextWidget } from "./TextWidget";
+import { EmbedWidget } from "./EmbedWidget";
+import { HeaderWidget } from "./HeaderWidget";
+import { HtmlWidget } from "./HtmlWidget";
 import { ImageWidget } from "./ImageWidget";
+import { TextWidget } from "./TextWidget";
 import { VideoWidget } from "./VideoWidget";
 
 export type NestedWidget = {
@@ -214,10 +218,18 @@ const SortableNestedWidget = ({
     switch (widget.widgetType) {
       case "text":
         return <TextWidget config={widget.config} onUpdate={onUpdate} />;
+      case "header":
+        return <HeaderWidget config={widget.config} onUpdate={onUpdate} />;
       case "image":
         return <ImageWidget config={widget.config} onUpdate={onUpdate} />;
       case "video":
         return <VideoWidget config={widget.config} onUpdate={onUpdate} />;
+      case "button":
+        return <ButtonWidget config={widget.config} onUpdate={onUpdate} />;
+      case "embed":
+        return <EmbedWidget config={widget.config} onUpdate={onUpdate} />;
+      case "html":
+        return <HtmlWidget config={widget.config} onUpdate={onUpdate} />;
       case "columns":
         return (
           <ColumnsWidget
@@ -227,7 +239,9 @@ const SortableNestedWidget = ({
           />
         );
       default:
-        return <div className={styles.unknown}>Unknown: {widget.widgetType}</div>;
+        return (
+          <div className={styles.unknown}>Unknown: {widget.widgetType}</div>
+        );
     }
   };
 

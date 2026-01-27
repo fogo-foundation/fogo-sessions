@@ -18,9 +18,9 @@ catalog:
   '@fogolend/fns-client': ^0.1.0
   '@ledgerhq/hw-transport': ^6.31.12
   '@ledgerhq/hw-transport-node-hid': ^6.29.13
-  '@metaplex-foundation/mpl-token-metadata': ^3.4.0
-  '@metaplex-foundation/umi': ^1.2.0
-  '@metaplex-foundation/umi-bundle-defaults': ^1.2.0
+  '@metaplex-foundation/mpl-token-metadata': 3.4.0
+  '@metaplex-foundation/umi': 1.2.0
+  '@metaplex-foundation/umi-bundle-defaults': 1.2.0
   '@metaplex-foundation/umi-web3js-adapters': ^1.4.1
   '@neondatabase/serverless': ^1.0.2
   '@next/third-parties': ^16.0.7
@@ -32,14 +32,14 @@ catalog:
   '@solana-program/token': ^0.5.1
   '@solana/compat': ^4.0.0
   '@solana/kit': ^4.0.0
-  '@solana/spl-token': ^0.4.13
+  '@solana/spl-token': 0.4.13
   '@solana/wallet-adapter-backpack': 0.1.14
   '@solana/wallet-adapter-base': 0.9.27
   '@solana/wallet-adapter-ledger': ^0.9.29
   '@solana/wallet-adapter-wallets': ^0.19.10
   '@solana/wallet-standard-features': ^1.3.0
   '@solana/wallet-standard-wallet-adapter-react': ^1.1.4
-  '@solana/web3.js': ^1.92.3
+  '@solana/web3.js': 1.98.2
   '@solana/webcrypto-ed25519-polyfill': ^2.3.0
   '@storybook/addon-styling-webpack': ^3.0.0
   '@storybook/addon-themes': ^10.1.2

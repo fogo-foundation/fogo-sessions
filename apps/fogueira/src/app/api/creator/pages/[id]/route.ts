@@ -16,6 +16,11 @@ const pageUpdateSchema = z.object({
     .optional(),
   isHome: z.boolean().optional(),
   gatingRuleId: z.string().uuid().optional().nullable(),
+  // Page appearance settings
+  bgImage: z.string().url().optional().nullable(),
+  bgColor: z.string().max(50).optional().nullable(),
+  overlayColor: z.string().max(50).optional().nullable(),
+  fullWidth: z.boolean().optional(),
 });
 
 export const GET = async (
@@ -170,6 +175,10 @@ export const PUT = async (
     if (data.slug !== undefined) updateData.slug = data.slug;
     if (data.isHome !== undefined) updateData.isHome = data.isHome;
     if (data.gatingRuleId !== undefined) updateData.gatingRuleId = data.gatingRuleId ?? null;
+    if (data.bgImage !== undefined) updateData.bgImage = data.bgImage ?? null;
+    if (data.bgColor !== undefined) updateData.bgColor = data.bgColor ?? null;
+    if (data.overlayColor !== undefined) updateData.overlayColor = data.overlayColor ?? null;
+    if (data.fullWidth !== undefined) updateData.fullWidth = data.fullWidth;
 
     const updatedPage = await prisma.page.update({
       where: { id },

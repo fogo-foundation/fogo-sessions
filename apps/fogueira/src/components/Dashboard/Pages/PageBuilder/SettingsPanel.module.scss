@@ -97,9 +97,141 @@
   padding-right: theme.spacing(8);
 }
 
+.textarea {
+  @include theme.text("sm");
+  width: 100%;
+  padding: theme.spacing(2) theme.spacing(3);
+  background-color: theme.color("input-bg");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("foreground");
+  transition: border-color 0.15s;
+  resize: vertical;
+  min-height: 120px;
+  font-family: monospace;
+
+  &:focus {
+    outline: none;
+    border-color: theme.color("accent");
+  }
+
+  &::placeholder {
+    color: theme.color("muted");
+  }
+}
+
 .hint {
   @include theme.text("xs");
   color: theme.color("muted");
   margin: theme.spacing(2) 0 0 0;
+}
+
+// File upload styles
+.fileInput {
+  display: none;
+}
+
+.uploadButton {
+  @include theme.text("sm");
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: theme.spacing(2);
+  width: 100%;
+  padding: theme.spacing(3);
+  background-color: theme.color("input-bg");
+  border: 1px dashed theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("paragraph");
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: theme.color("accent");
+    background-color: theme.color("accent-opaque");
+    color: theme.color("accent");
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: theme.spacing(4) 0;
+  
+  span {
+    @include theme.text("xs");
+    color: theme.color("muted");
+    padding: 0 theme.spacing(2);
+  }
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-color: theme.color("border");
+  }
+}
+
+.preview {
+  margin-bottom: theme.spacing(4);
+  border-radius: theme.border-radius("md");
+  overflow: hidden;
+}
+
+.previewImage {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.error {
+  @include theme.text("xs");
+  color: theme.color("states", "error", "foreground");
+  margin: theme.spacing(2) 0 0 0;
+}
+
+.colorRow {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2);
+}
+
+.colorPicker {
+  width: theme.spacing(10);
+  height: theme.spacing(10);
+  padding: 0;
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  cursor: pointer;
+  background: none;
+  flex-shrink: 0;
+
+  &::-webkit-color-swatch-wrapper {
+    padding: 2px;
+  }
+
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: theme.border-radius("sm");
+  }
 }
 

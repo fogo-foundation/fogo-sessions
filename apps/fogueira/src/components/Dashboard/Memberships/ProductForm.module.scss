@@ -132,6 +132,16 @@
   color: theme.color("states", "error", "foreground");
 }
 
+.sectionHeader {
+  @include theme.text("sm", "semibold");
+  color: theme.color("muted");
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: theme.spacing(2);
+  padding-bottom: theme.spacing(2);
+  border-bottom: 1px solid theme.color("border");
+}
+
 .radioGroup {
   display: flex;
   gap: theme.spacing(4);

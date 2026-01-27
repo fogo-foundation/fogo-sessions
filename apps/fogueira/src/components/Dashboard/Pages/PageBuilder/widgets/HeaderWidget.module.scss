@@ -1,0 +1,183 @@
+@use "@fogo/component-library/theme";
+
+.widget {
+  width: 100%;
+  position: relative;
+}
+
+.toolbar {
+  position: absolute;
+  top: -#{theme.spacing(12)};
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(0.5);
+  padding: theme.spacing(1) theme.spacing(1.5);
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  box-shadow: theme.shadow("base");
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s;
+  z-index: 10;
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.levelSelector {
+  display: flex;
+  gap: theme.spacing(0.5);
+}
+
+.levelButton {
+  @include theme.text("xs", "semibold");
+  padding: theme.spacing(0.5) theme.spacing(1.5);
+  border: none;
+  border-radius: theme.border-radius("sm");
+  background-color: transparent;
+  color: theme.color("paragraph");
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+  }
+
+  &.active {
+    background-color: theme.color("accent-opaque");
+    color: theme.color("accent");
+  }
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(7);
+  height: theme.spacing(7);
+  border: none;
+  border-radius: theme.border-radius("md");
+  background-color: transparent;
+  color: theme.color("paragraph");
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s;
+
+  &:hover {
+    background-color: theme.color("button-hover");
+  }
+
+  &.active {
+    background-color: theme.color("accent-opaque");
+    color: theme.color("accent");
+  }
+}
+
+.separator {
+  width: 1px;
+  height: theme.spacing(5);
+  background-color: theme.color("border");
+  margin: 0 theme.spacing(1);
+}
+
+.colorPickerWrapper {
+  position: relative;
+}
+
+.colorPicker {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: theme.spacing(2);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: theme.spacing(1);
+  padding: theme.spacing(2);
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  box-shadow: theme.shadow("base");
+  z-index: 100;
+}
+
+.colorSwatch {
+  width: theme.spacing(6);
+  height: theme.spacing(6);
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("sm");
+  cursor: pointer;
+  transition: transform 0.1s;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.editor {
+  @include theme.text("base");
+  color: theme.color("foreground");
+  min-height: theme.spacing(8);
+  outline: none;
+  cursor: text;
+
+  :global(.ProseMirror) {
+    outline: none;
+    min-height: theme.spacing(8);
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin: theme.spacing(2) 0;
+      color: theme.color("heading");
+      font-weight: theme.font-weight("bold");
+
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    h1 {
+      @include theme.text("3xl", "bold");
+    }
+
+    h2 {
+      @include theme.text("2xl", "bold");
+    }
+
+    h3 {
+      @include theme.text("xl", "bold");
+    }
+
+    h4 {
+      @include theme.text("lg", "bold");
+    }
+
+    h5 {
+      @include theme.text("base", "bold");
+    }
+
+    h6 {
+      @include theme.text("sm", "bold");
+    }
+
+    strong {
+      font-weight: theme.font-weight("semibold");
+    }
+
+    em {
+      font-style: italic;
+    }
+
+    u {
+      text-decoration: underline;
+    }
+  }
+}
+
