@@ -67,9 +67,10 @@ const VariationForm = ({
   });
   const [codeError, setCodeError] = useState<string | undefined>();
   const [maxGasSpend, setMaxGasSpend] = useState(
-    variation?.max_gas_spend?.toString() ?? "",
+    variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: v0 doesn't have max_gas_spend
   const baseline = useMemo(() => {
     if (!variation?.id) {
       // When creating a new variation, baseline is the initial empty state
@@ -85,16 +86,17 @@ const VariationForm = ({
         : generateEditableToml(variation?.transaction_variation ?? []);
     return {
       name: variation?.name ?? "",
-      maxGasSpend: variation?.max_gas_spend?.toString() ?? "",
+      maxGasSpend:
+        variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
       code: variationCode,
     };
   }, [
     variation?.id,
     variation?.name,
-    variation?.max_gas_spend,
+    variation?.version,
     variation?.transaction_variation,
     isEditingJson,
-    variation?.version,
+    variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
   ]);
 
   const resetForm = useCallback(() => {
@@ -259,18 +261,20 @@ const VariationForm = ({
             onChange={setName}
             aria-label="Variation name"
           />
-          <TextField
-            type="number"
-            inputMode="numeric"
-            name="maxGasSpend"
-            placeholder="Max gas spend"
-            value={maxGasSpend}
-            isRequired
-            onChange={setMaxGasSpend}
-            rightExtra={<GasPumpIcon />}
-            className={styles.fieldMaxGasSpend ?? ""}
-            aria-label="Max gas spend"
-          />
+          {(!variation || variation?.version === "v1") && (
+            <TextField
+              type="number"
+              inputMode="numeric"
+              name="maxGasSpend"
+              placeholder="Max gas spend"
+              value={maxGasSpend}
+              isRequired
+              onChange={setMaxGasSpend}
+              rightExtra={<GasPumpIcon />}
+              className={styles.fieldMaxGasSpend ?? ""}
+              aria-label="Max gas spend"
+            />
+          )}
           {isExpanded ? (
             <Button variant="ghost" onClick={handleCloseClick}>
               <XIcon />
@@ -300,37 +304,39 @@ const VariationForm = ({
         value={code}
         onChange={handleCodeChange}
         footer={
-          <>
-            <div className={styles.variationFormFooterActions}>
-              <Button variant="ghost" onClick={handleEditJsonClick} size="sm">
-                {isEditingJson ? "TOML" : "JSON"}
-              </Button>
-              {codeError || state.type === StateType.Error ? (
-                <p className={styles.variationFormFooterError}>
-                  {state.type === StateType.Error
-                    ? errorToString(state.error)
-                    : codeError}
-                </p>
+          (!variation || variation?.version === "v1") && (
+            <>
+              <div className={styles.variationFormFooterActions}>
+                <Button variant="ghost" onClick={handleEditJsonClick} size="sm">
+                  {isEditingJson ? "TOML" : "JSON"}
+                </Button>
+                {codeError || state.type === StateType.Error ? (
+                  <p className={styles.variationFormFooterError}>
+                    {state.type === StateType.Error
+                      ? errorToString(state.error)
+                      : codeError}
+                  </p>
+                ) : (
+                  <Badge variant="success" size="xs">
+                    All passed <ChecksIcon />
+                  </Badge>
+                )}
+              </div>
+              {isDirty ? (
+                <Button
+                  variant="secondary"
+                  type="submit"
+                  isDisabled={state.type === StateType.Running || !!codeError}
+                >
+                  {state.type === StateType.Running ? "Saving..." : "Save"}
+                </Button>
               ) : (
-                <Badge variant="success" size="xs">
-                  All passed <ChecksIcon />
-                </Badge>
+                <Button variant="ghost" onClick={handleCloseClick}>
+                  Dismiss
+                </Button>
               )}
-            </div>
-            {isDirty ? (
-              <Button
-                variant="secondary"
-                type="submit"
-                isDisabled={state.type === StateType.Running || !!codeError}
-              >
-                {state.type === StateType.Running ? "Saving..." : "Save"}
-              </Button>
-            ) : (
-              <Button variant="ghost" onClick={handleCloseClick}>
-                Dismiss
-              </Button>
-            )}
-          </>
+            </>
+          )
         }
       />
     </Form>
