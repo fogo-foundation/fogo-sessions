@@ -76,7 +76,6 @@ export const VariationV0Schema = z.object({
   version: z.literal("v0"),
   name: z.string(),
   transaction_variation: z.array(Base58Pubkey),
-  max_gas_spend: z.null(),
   created_at: TimeStr,
   updated_at: TimeStr,
 });
