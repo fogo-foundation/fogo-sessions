@@ -87,7 +87,9 @@ export const VariationCodeBlock = ({
               />
             )}
           </div>
-          {footer && <div className={styles.variationCodeBlockFooter}>{footer}</div>}
+          {footer && (
+            <div className={styles.variationCodeBlockFooter}>{footer}</div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
