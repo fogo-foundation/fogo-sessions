@@ -28,6 +28,7 @@ use crate::{
 pub const VALIANT_URL_MAINNET: &str = "https://mainnet-pro-api.valiant.trade";
 pub const VALIANT_URL_TESTNET: &str = "https://api.valiant.trade";
 pub const MAX_SLIPPAGE_BPS: u64 = 50;
+pub const PERCENTAGE_TO_SWAP_BPS: u64 = 9900;
 
 // NOTE: the params and response types below are manually defined for an external API.
 // This external API could change in the future, which could break our integration.
@@ -109,6 +110,11 @@ fn build_swap_query_string(params: &TwoHopSwapParams) -> String {
     serializer.finish()
 }
 
+pub struct SwapConfirmationResult {
+    pub mint: Pubkey,
+    pub confirmation: ConfirmationResultInternal,
+}
+
 impl ValiantClient {
     /// Creates a new ValiantClient from the given parameters.
     pub fn from_params(
@@ -146,16 +152,15 @@ impl ValiantClient {
         transaction_sponsor: &Keypair,
         rpc: &RpcClient,
         pubsub: &PubsubClientWithReconnect,
-    ) -> Vec<anyhow::Result<ConfirmationResultInternal>> {
+    ) -> Vec<anyhow::Result<SwapConfirmationResult>> {
         let futures = mint_swap_rates.iter().filter_map(|mint_swap_rate| {
             if mint_swap_rate.sample() {
-                Some(self.swap_token(mint_swap_rate.mint, transaction_sponsor, rpc, pubsub))
+                Some(self.swap_token(mint_swap_rate.mint(), transaction_sponsor, rpc, pubsub))
             } else {
                 None
             }
         });
-        let swap_results = join_all(futures).await;
-        swap_results
+        join_all(futures).await
     }
 
     async fn swap_token(
@@ -164,14 +169,16 @@ impl ValiantClient {
         transaction_sponsor: &Keypair,
         rpc: &RpcClient,
         pubsub: &PubsubClientWithReconnect,
-    ) -> anyhow::Result<ConfirmationResultInternal> {
+    ) -> anyhow::Result<SwapConfirmationResult> {
         let paymaster_wallet_key = transaction_sponsor.pubkey();
+        let spl_balance = get_spl_ata_balance(rpc, &paymaster_wallet_key, &mint).await?;
+        // TODO: this is necessary for mainnet bc include_fee needs to be set to true for now
+        // As a result, the Valiant paymaster takes a small fee from the swap, in the input token for USDC/FISH/FOGO.
+        // Eventually, if we are supporting other tokens, the Valiant fee will be charged in WFOGO, so this patch
+        // WILL NOT WORK. But we expect the Valiant API to be fixed shortly.
+        let amount_to_swap = spl_balance * PERCENTAGE_TO_SWAP_BPS / 10_000;
         let swap_transaction = self
-            .get_valiant_swap_transaction(
-                mint,
-                get_spl_ata_balance(rpc, &paymaster_wallet_key, &mint).await?,
-                &paymaster_wallet_key,
-            )
+            .get_valiant_swap_transaction(mint, amount_to_swap, &paymaster_wallet_key)
             .await?;
 
         let signature = transaction_sponsor.sign_message(&swap_transaction.message.serialize());
@@ -193,14 +200,17 @@ impl ValiantClient {
                         e
                     )
                 })?;
-        Ok(confirmation_result)
+        Ok(SwapConfirmationResult {
+            mint,
+            confirmation: confirmation_result,
+        })
     }
 
     async fn get_valiant_swap_transaction(
         &self,
         mint_in: Pubkey,
         amount_in: u64,
-        pubkey: &Pubkey,
+        transaction_sponsor_pubkey: &Pubkey,
     ) -> anyhow::Result<VersionedTransaction> {
         let quote_response = self.get_two_hop_quote(mint_in, amount_in).await?;
         let amount_out_min = quote_response
@@ -211,10 +221,10 @@ impl ValiantClient {
 
         let swap_response = self
             .get_two_hop_swap(
-                pubkey,
+                transaction_sponsor_pubkey,
                 amount_in,
                 amount_out_min,
-                quote_response.quote.route,
+                quote_response.quote.route.clone(),
                 quote_response.quote.pools,
             )
             .await?;
@@ -267,7 +277,9 @@ impl ValiantClient {
             pools,
             is_exact_in: true,
             use_alt: true,
-            include_fee: false,
+            // Valiant's API is being improved, once it returns a valid tx with all the createIdempotents necessary, we can disable this flag.
+            // We should also swap the full balance once this is reverted to false.
+            include_fee: true,
         };
 
         let query_string = build_swap_query_string(&params);
@@ -290,7 +302,7 @@ impl ValiantClient {
 
 impl MintSwapRate {
     fn sample(&self) -> bool {
-        let rv = Bernoulli::new(self.rate);
+        let rv = Bernoulli::new(self.rate());
         // this should always be okay, since 0 <= rate <= 1
         if let Ok(bern) = rv {
             return bern.sample(&mut rand::rng());

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 const baseMeta = {
-  title: "Fogo | The fastest layer 1 blockchain",
+  title: "Fogo Portfolio",
   description:
     "Defying physics to achieve real-time experiences at scale. | SVM Layer 1 | Pure Firedancer Client | Institutional-Grade Finance",
 };
