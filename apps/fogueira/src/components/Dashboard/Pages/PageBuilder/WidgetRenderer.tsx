@@ -7,7 +7,9 @@ import { ButtonWidget } from "./widgets/ButtonWidget";
 import { ColumnsWidget } from "./widgets/ColumnsWidget";
 import { ContainerWidget } from "./widgets/ContainerWidget";
 import { EmbedWidget } from "./widgets/EmbedWidget";
+import { MembershipsWidget } from "./widgets/MembershipsWidget";
 import { HeaderWidget } from "./widgets/HeaderWidget";
+import { HeroWidget } from "./widgets/HeroWidget";
 import { HtmlWidget } from "./widgets/HtmlWidget";
 import { ImageWidget } from "./widgets/ImageWidget";
 import { TextWidget } from "./widgets/TextWidget";
@@ -25,17 +27,31 @@ type Widget = {
 type Props = {
   widget: Widget;
   isSelected: boolean;
+  selectedNestedWidget: {
+    parentId: string;
+    nestedId: string;
+    column: "left" | "right";
+  } | null;
   onSelect: () => void;
+  onNestedWidgetSelect: (
+    parentId: string,
+    nestedId: string,
+    column: "left" | "right",
+  ) => void;
   onUpdate: (id: string, config: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
+  creatorUsername: string;
 };
 
 export const WidgetRenderer = ({
   widget,
   isSelected,
+  selectedNestedWidget,
   onSelect,
+  onNestedWidgetSelect,
   onUpdate,
   onDelete,
+  creatorUsername,
 }: Props) => {
   // Widget renderer component
   const [isHovered, setIsHovered] = useState(false);
@@ -116,13 +132,30 @@ export const WidgetRenderer = ({
           <ColumnsWidget
             widgetId={widget.id}
             config={widget.config}
+            selectedNestedWidget={selectedNestedWidget}
             onUpdate={(config) => onUpdate(widget.id, config)}
+            onNestedWidgetSelect={onNestedWidgetSelect}
           />
         );
       case "container":
         return (
           <ContainerWidget
             widgetId={widget.id}
+            config={widget.config}
+            onUpdate={(config) => onUpdate(widget.id, config)}
+          />
+        );
+      case "memberships":
+        return (
+          <MembershipsWidget
+            config={widget.config}
+            onUpdate={(config) => onUpdate(widget.id, config)}
+            creatorUsername={creatorUsername}
+          />
+        );
+      case "hero":
+        return (
+          <HeroWidget
             config={widget.config}
             onUpdate={(config) => onUpdate(widget.id, config)}
           />

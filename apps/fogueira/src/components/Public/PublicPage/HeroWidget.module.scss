@@ -1,0 +1,72 @@
+@use "@fogo/component-library/theme";
+
+.widget {
+  width: 100%;
+  display: block;
+  position: relative;
+}
+
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: theme.color("input-bg");
+  // Height is set via inline style from config
+}
+
+.heroImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.heroOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  padding: theme.spacing(8);
+  max-width: 800px;
+  width: 100%;
+}
+
+.heroTitle {
+  @include theme.text("4xl", "bold");
+  color: theme.color("foreground");
+  margin: 0 0 theme.spacing(4) 0;
+  line-height: 1.2;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.heroSubtitle {
+  @include theme.text("xl");
+  color: theme.color("foreground");
+  margin: 0;
+  line-height: 1.6;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  opacity: 0.95;
+}
+

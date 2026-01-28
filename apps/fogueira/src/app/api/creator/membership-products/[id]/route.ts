@@ -7,6 +7,7 @@ const updateMembershipProductSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens").optional(),
   description: z.string().max(1000).optional(),
+  benefits: z.array(z.string()).optional(),
   imageBlobKey: z.string().optional(),
   nftCollectionMint: z.string().optional(),
   mintAddress: z.string().optional(),
@@ -131,10 +132,14 @@ export const PUT = async (
     }
 
     // Build update data, converting undefined to null for optional fields
-    const updateData: Record<string, string | null | undefined> = {};
+    const updateData: Record<string, unknown> = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.slug !== undefined) updateData.slug = data.slug;
     if (data.description !== undefined) updateData.description = data.description ?? null;
+    if (data.benefits !== undefined) {
+      // Filter out empty strings and ensure it's a clean array
+      updateData.benefits = (data.benefits ?? []).filter((b) => b.trim() !== "");
+    }
     if (data.imageBlobKey !== undefined) updateData.imageBlobKey = data.imageBlobKey ?? null;
     if (data.nftCollectionMint !== undefined) updateData.nftCollectionMint = data.nftCollectionMint ?? null;
     if (data.mintAddress !== undefined) updateData.mintAddress = data.mintAddress ?? null;

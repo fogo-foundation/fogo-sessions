@@ -34,10 +34,36 @@
   background-color: theme.color('card');
   border: 1px solid theme.color('border');
   border-radius: theme.border-radius('lg');
-  padding: theme.spacing(4);
+  padding: theme.spacing(5);
   display: flex;
   flex-direction: column;
   gap: theme.spacing(2);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    border-color: theme.color('accent-opaque');
+    transform: translateY(-2px);
+    box-shadow: theme.shadow('base');
+  }
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: theme.border-radius('md');
+  background-color: theme.color('accent-opaque');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: theme.color('accent');
+  margin-bottom: theme.spacing(2);
+  
+  svg {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 .statLabel {
@@ -89,13 +115,33 @@
   background-color: theme.color('card');
   border: 1px solid theme.color('border');
   border-radius: theme.border-radius('lg');
-  padding: theme.spacing(4);
+  padding: theme.spacing(5);
   text-decoration: none;
-  display: block;
-  transition: border-color 150ms;
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(3);
+  transition: all 0.2s ease;
 
   &:hover {
-    border-color: theme.color('border-hover');
+    border-color: theme.color('accent-opaque');
+    transform: translateY(-2px);
+    box-shadow: theme.shadow('base');
+  }
+}
+
+.actionIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: theme.border-radius('md');
+  background-color: theme.color('accent-opaque');
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: theme.color('accent');
+  
+  svg {
+    width: 24px;
+    height: 24px;
   }
 }
 

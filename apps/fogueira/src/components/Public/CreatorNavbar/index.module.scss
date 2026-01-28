@@ -1,0 +1,97 @@
+@use "@fogo/component-library/theme";
+
+.nav {
+  width: 100%;
+  background-color: theme.color("card");
+  border-bottom: 1px solid theme.color("border");
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navContent {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: theme.spacing(4) theme.spacing(8);
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(6);
+}
+
+.logo {
+  @include theme.text("lg", "bold");
+  color: theme.color("heading");
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s;
+
+  &:hover {
+    color: theme.color("accent");
+  }
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(1);
+  flex: 1;
+  overflow-x: auto;
+  
+  // Hide scrollbar but keep functionality
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.navLink {
+  @include theme.text("sm", "medium");
+  color: theme.color("paragraph");
+  text-decoration: none;
+  padding: theme.spacing(2) theme.spacing(4);
+  border-radius: theme.border-radius("md");
+  white-space: nowrap;
+  transition: all 0.15s;
+
+  &:hover {
+    color: theme.color("heading");
+    background-color: theme.color("input-bg");
+  }
+
+  &.active {
+    color: theme.color("accent");
+    background-color: theme.color("accent-opaque");
+  }
+}
+
+.loading {
+  @include theme.text("sm");
+  color: theme.color("muted");
+  padding: theme.spacing(2) theme.spacing(4);
+}
+
+.walletWidget {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .navContent {
+    padding: theme.spacing(3) theme.spacing(4);
+    gap: theme.spacing(4);
+  }
+
+  .navLinks {
+    gap: theme.spacing(0.5);
+  }
+
+  .navLink {
+    padding: theme.spacing(1.5) theme.spacing(3);
+    @include theme.text("xs", "medium");
+  }
+}
+

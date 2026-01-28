@@ -17,6 +17,19 @@
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  
+  @media (max-width: 1024px) {
+    width: 200px;
+    padding: theme.spacing(4);
+  }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    position: relative;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid theme.color('border');
+  }
 }
 
 .sidebarHeader {
@@ -47,17 +60,28 @@
   @include theme.text('base', 'normal');
   color: theme.color('paragraph');
   text-decoration: none;
-  padding: theme.spacing(2) theme.spacing(3);
+  padding: theme.spacing(2.5) theme.spacing(3);
   border-radius: theme.border-radius('md');
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: theme.color('background');
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2.5);
+  
+  svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
   }
 
-  &:global(.active) {
-    background-color: theme.color('background');
-    color: theme.color('brand');
+  &:hover {
+    background-color: theme.color('input-bg');
+    color: theme.color('heading');
+  }
+
+  &.active {
+    background-color: theme.color('accent-opaque');
+    color: theme.color('accent');
+    font-weight: theme.font-weight('semibold');
   }
 }
 
@@ -67,12 +91,25 @@
 }
 
 .previewLink {
-  @include theme.text('sm', 'normal');
-  color: theme.color('brand');
+  @include theme.text('sm', 'medium');
+  color: theme.color('accent');
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(2) theme.spacing(3);
+  border-radius: theme.border-radius('md');
+  transition: all 0.15s ease;
+  
+  svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
 
   &:hover {
-    text-decoration: underline;
+    background-color: theme.color('accent-opaque');
+    color: theme.color('accent');
   }
 }
 
@@ -83,14 +120,33 @@
   background-color: theme.color('background');
   color: theme.color('foreground');
   overflow-x: hidden;
+  min-width: 0; // Prevent flex overflow
 }
 
 .loading {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  gap: theme.spacing(4);
   @include theme.text('base', 'normal');
   color: theme.color('paragraph');
+  
+  &::before {
+    content: "";
+    width: 40px;
+    height: 40px;
+    border: 3px solid theme.color('border');
+    border-top-color: theme.color('accent');
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 

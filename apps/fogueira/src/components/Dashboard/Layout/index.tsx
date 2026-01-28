@@ -1,5 +1,13 @@
 "use client";
 import { SessionStateType, useSession } from "@fogo/sessions-sdk-react";
+import {
+  ArrowSquareOut,
+  Files,
+  House,
+  Image,
+  Lock,
+  Users,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -99,20 +107,60 @@ export const DashboardLayout = ({
           <p className={styles.sidebarSubtitle}>@{creator.username}</p>
         </div>
         <nav className={styles.nav}>
-          <Link href="/dashboard" className={styles.navLink}>
-            Overview
+          <Link
+            href="/dashboard"
+            className={`${styles.navLink} ${pathname === "/dashboard" ? styles.active : ""}`}
+          >
+            <House weight={pathname === "/dashboard" ? "fill" : "regular"} />
+            <span>Overview</span>
           </Link>
-          <Link href="/dashboard/pages" className={styles.navLink}>
-            Pages
+          <Link
+            href="/dashboard/pages"
+            className={`${styles.navLink} ${pathname.startsWith("/dashboard/pages") ? styles.active : ""}`}
+          >
+            <Files
+              weight={
+                pathname.startsWith("/dashboard/pages") ? "fill" : "regular"
+              }
+            />
+            <span>Pages</span>
           </Link>
-          <Link href="/dashboard/memberships" className={styles.navLink}>
-            Memberships
+          <Link
+            href="/dashboard/memberships"
+            className={`${styles.navLink} ${pathname.startsWith("/dashboard/memberships") ? styles.active : ""}`}
+          >
+            <Users
+              weight={
+                pathname.startsWith("/dashboard/memberships")
+                  ? "fill"
+                  : "regular"
+              }
+            />
+            <span>Memberships</span>
           </Link>
-          <Link href="/dashboard/gating-rules" className={styles.navLink}>
-            Gating Rules
+          <Link
+            href="/dashboard/gating-rules"
+            className={`${styles.navLink} ${pathname.startsWith("/dashboard/gating-rules") ? styles.active : ""}`}
+          >
+            <Lock
+              weight={
+                pathname.startsWith("/dashboard/gating-rules")
+                  ? "fill"
+                  : "regular"
+              }
+            />
+            <span>Gating Rules</span>
           </Link>
-          <Link href="/dashboard/assets" className={styles.navLink}>
-            Assets
+          <Link
+            href="/dashboard/assets"
+            className={`${styles.navLink} ${pathname.startsWith("/dashboard/assets") ? styles.active : ""}`}
+          >
+            <Image
+              weight={
+                pathname.startsWith("/dashboard/assets") ? "fill" : "regular"
+              }
+            />
+            <span>Assets</span>
           </Link>
         </nav>
         <div className={styles.sidebarFooter}>
@@ -121,7 +169,8 @@ export const DashboardLayout = ({
             target="_blank"
             className={styles.previewLink}
           >
-            View Public Page →
+            <ArrowSquareOut weight="regular" />
+            <span>View Public Page</span>
           </Link>
         </div>
       </aside>

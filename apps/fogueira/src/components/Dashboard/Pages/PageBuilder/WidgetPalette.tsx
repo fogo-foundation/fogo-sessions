@@ -1,5 +1,5 @@
 "use client";
-import { Code, Columns, Cursor, Image, Square, TextAa, TextT, Video } from "@phosphor-icons/react";
+import { Code, Columns, Cursor, Image, Square, TextAa, TextT, Video, Users, Rectangle } from "@phosphor-icons/react";
 import { useDraggable } from "@dnd-kit/core";
 import styles from "./WidgetPalette.module.scss";
 
@@ -54,6 +54,16 @@ const widgetTypes: WidgetType[] = [
     id: "container",
     name: "Container",
     icon: <Square weight="regular" />,
+  },
+  {
+    id: "memberships",
+    name: "Memberships",
+    icon: <Users weight="regular" />,
+  },
+  {
+    id: "hero",
+    name: "Hero",
+    icon: <Rectangle weight="regular" />,
   },
 ];
 

@@ -2,6 +2,7 @@
 import { SessionStateType, useSession } from "@fogo/sessions-sdk-react";
 import { Plus } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
+import { MembershipCardSkeleton } from "../Skeleton";
 import { DeleteConfirmation } from "./DeleteConfirmation";
 import styles from "./index.module.scss";
 import { MembershipProductForm } from "./ProductForm";
@@ -12,6 +13,7 @@ type MembershipProduct = {
   name: string;
   slug: string;
   description: string | null;
+  benefits: string[];
   imageBlobKey: string | null;
   nftCollectionMint: string | null;
   mintAddress: string | null;
@@ -158,11 +160,19 @@ export const MembershipsPage = () => {
         />
       )}
 
-      <MembershipProductList
-        products={products}
-        onEdit={handleEdit}
-        onDelete={handleDeleteClick}
-      />
+      {loading ? (
+        <div className={styles.skeletonList}>
+          <MembershipCardSkeleton />
+          <MembershipCardSkeleton />
+          <MembershipCardSkeleton />
+        </div>
+      ) : (
+        <MembershipProductList
+          products={products}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+        />
+      )}
     </div>
   );
 };

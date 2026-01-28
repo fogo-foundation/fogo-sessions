@@ -1,4 +1,6 @@
 "use client";
+import { MembershipsWidget } from "./MembershipsWidget";
+import { HeroWidget } from "./HeroWidget";
 import styles from "./WidgetRenderer.module.scss";
 
 type NestedWidget = {
@@ -16,9 +18,10 @@ type Widget = {
 
 type Props = {
   widget: Widget;
+  username: string;
 };
 
-export const WidgetRenderer = ({ widget }: Props) => {
+export const WidgetRenderer = ({ widget, username }: Props) => {
   switch (widget.widgetType) {
     case "text":
       return <TextWidget config={widget.config} />;
@@ -35,9 +38,13 @@ export const WidgetRenderer = ({ widget }: Props) => {
     case "html":
       return <HtmlWidget config={widget.config} />;
     case "columns":
-      return <ColumnsWidget config={widget.config} />;
+      return <ColumnsWidget config={widget.config} username={username} />;
     case "container":
-      return <ContainerWidget config={widget.config} />;
+      return <ContainerWidget config={widget.config} username={username} />;
+    case "memberships":
+      return <MembershipsWidget config={widget.config} username={username} />;
+    case "hero":
+      return <HeroWidget config={widget.config} />;
     default:
       return null;
   }
@@ -288,7 +295,7 @@ function getEmbedUrl(url: string): string | null {
   }
 }
 
-const ColumnsWidget = ({ config }: { config: Record<string, unknown> }) => {
+const ColumnsWidget = ({ config, username }: { config: Record<string, unknown>; username: string }) => {
   const leftWidgets = (config.leftWidgets as NestedWidget[]) || [];
   const rightWidgets = (config.rightWidgets as NestedWidget[]) || [];
   const gap = (config.gap as string) || "md";
@@ -336,7 +343,7 @@ const ColumnsWidget = ({ config }: { config: Record<string, unknown> }) => {
     }
   };
 
-  const renderNestedWidget = (widget: NestedWidget): React.ReactNode => {
+  const renderNestedWidget = (widget: NestedWidget, parentUsername: string): React.ReactNode => {
     switch (widget.widgetType) {
       case "text": {
         const content = (widget.config.content as string) || "";
@@ -464,7 +471,7 @@ const ColumnsWidget = ({ config }: { config: Record<string, unknown> }) => {
         // Recursive nested columns
         return (
           <div key={widget.id} className={styles.nestedColumns}>
-            <ColumnsWidget config={widget.config} />
+            <ColumnsWidget config={widget.config} username={parentUsername} />
           </div>
         );
       }
@@ -472,7 +479,14 @@ const ColumnsWidget = ({ config }: { config: Record<string, unknown> }) => {
         // Recursive nested container
         return (
           <div key={widget.id} className={styles.nestedContainer}>
-            <ContainerWidget config={widget.config} />
+            <ContainerWidget config={widget.config} username={parentUsername} />
+          </div>
+        );
+      }
+      case "memberships": {
+        return (
+          <div key={widget.id}>
+            <MembershipsWidget config={widget.config} username={parentUsername} />
           </div>
         );
       }
@@ -501,19 +515,19 @@ const ColumnsWidget = ({ config }: { config: Record<string, unknown> }) => {
         className={styles.column}
         style={{ width: `calc(${widths.left} - ${gapSize} / 2)` }}
       >
-        {leftWidgets.map(renderNestedWidget)}
+        {leftWidgets.map((w) => renderNestedWidget(w, username))}
       </div>
       <div
         className={styles.column}
         style={{ width: `calc(${widths.right} - ${gapSize} / 2)` }}
       >
-        {rightWidgets.map(renderNestedWidget)}
+        {rightWidgets.map((w) => renderNestedWidget(w, username))}
       </div>
     </div>
   );
 };
 
-const ContainerWidget = ({ config }: { config: Record<string, unknown> }) => {
+const ContainerWidget = ({ config, username }: { config: Record<string, unknown>; username: string }) => {
   const children = (config.children as NestedWidget[]) || [];
   const maxWidth = (config.maxWidth as string) || "800";
   const bgColor = (config.bgColor as string) || "transparent";
@@ -551,7 +565,7 @@ const ContainerWidget = ({ config }: { config: Record<string, unknown> }) => {
     return null;
   }
 
-  const renderNestedWidget = (widget: NestedWidget): React.ReactNode => {
+  const renderNestedWidget = (widget: NestedWidget, parentUsername: string): React.ReactNode => {
     switch (widget.widgetType) {
       case "text": {
         const content = (widget.config.content as string) || "";
@@ -680,14 +694,21 @@ const ContainerWidget = ({ config }: { config: Record<string, unknown> }) => {
       case "columns": {
         return (
           <div key={widget.id} className={styles.nestedColumns}>
-            <ColumnsWidget config={widget.config} />
+            <ColumnsWidget config={widget.config} username={parentUsername} />
           </div>
         );
       }
       case "container": {
         return (
           <div key={widget.id} className={styles.nestedContainer}>
-            <ContainerWidget config={widget.config} />
+            <ContainerWidget config={widget.config} username={parentUsername} />
+          </div>
+        );
+      }
+      case "memberships": {
+        return (
+          <div key={widget.id}>
+            <MembershipsWidget config={widget.config} username={parentUsername} />
           </div>
         );
       }
@@ -707,7 +728,7 @@ const ContainerWidget = ({ config }: { config: Record<string, unknown> }) => {
       }}
     >
       <div className={styles.containerChildren}>
-        {children.map(renderNestedWidget)}
+        {children.map((w) => renderNestedWidget(w, username))}
       </div>
     </div>
   );

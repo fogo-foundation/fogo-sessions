@@ -1,6 +1,6 @@
 "use client";
 import { SessionStateType, useSession } from "@fogo/sessions-sdk-react";
-import { X } from "@phosphor-icons/react";
+import { Plus, Trash, X } from "@phosphor-icons/react";
 import { PublicKey } from "@solana/web3.js";
 import { useEffect, useState } from "react";
 import styles from "./ProductForm.module.scss";
@@ -13,6 +13,7 @@ type MembershipProduct = {
   name: string;
   slug: string;
   description: string | null;
+  benefits: string[];
   imageBlobKey: string | null;
   nftCollectionMint: string | null;
   mintAddress: string | null;
@@ -39,6 +40,7 @@ export const MembershipProductForm = ({
     name: "",
     slug: "",
     description: "",
+    benefits: [] as string[],
     saleMode: "candy_machine" as "candy_machine" | "direct",
     nftCollectionMint: "",
     mintAddress: "",
@@ -56,6 +58,7 @@ export const MembershipProductForm = ({
         name: product.name,
         slug: product.slug,
         description: product.description || "",
+        benefits: product.benefits || [],
         saleMode: product.saleMode as "candy_machine" | "direct",
         nftCollectionMint: product.nftCollectionMint || "",
         mintAddress: product.mintAddress || "",
@@ -98,6 +101,7 @@ export const MembershipProductForm = ({
         name: formData.name,
         slug: formData.slug,
         description: formData.description || undefined,
+        benefits: formData.benefits.filter((b) => b.trim() !== ""),
         saleMode: formData.saleMode,
       };
 
@@ -235,6 +239,56 @@ export const MembershipProductForm = ({
               placeholder="Describe your membership product..."
               rows={4}
             />
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>Benefits</label>
+            <div className={styles.benefitsList}>
+              {formData.benefits.map((benefit, index) => (
+                <div key={index} className={styles.benefitItem}>
+                  <input
+                    type="text"
+                    className={styles.input}
+                    value={benefit}
+                    onChange={(e) => {
+                      const newBenefits = [...formData.benefits];
+                      newBenefits[index] = e.target.value;
+                      setFormData({ ...formData, benefits: newBenefits });
+                    }}
+                    placeholder="Enter a benefit..."
+                  />
+                  <button
+                    type="button"
+                    className={styles.removeButton}
+                    onClick={() => {
+                      const newBenefits = formData.benefits.filter(
+                        (_, i) => i !== index,
+                      );
+                      setFormData({ ...formData, benefits: newBenefits });
+                    }}
+                    title="Remove benefit"
+                  >
+                    <Trash weight="bold" />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className={styles.addButton}
+                onClick={() => {
+                  setFormData({
+                    ...formData,
+                    benefits: [...formData.benefits, ""],
+                  });
+                }}
+              >
+                <Plus weight="bold" />
+                Add Benefit
+              </button>
+            </div>
+            <p className={styles.helpText}>
+              List the key benefits members will receive with this membership.
+            </p>
           </div>
 
           <div className={styles.field}>

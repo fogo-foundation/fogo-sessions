@@ -217,3 +217,60 @@
   }
 }
 
+.benefitsList {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+}
+
+.benefitItem {
+  display: flex;
+  gap: theme.spacing(2);
+  align-items: center;
+
+  .input {
+    flex: 1;
+  }
+}
+
+.removeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: theme.spacing(8);
+  height: theme.spacing(8);
+  background-color: transparent;
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("md");
+  color: theme.color("states", "error", "foreground");
+  cursor: pointer;
+  transition: background-color 50ms linear, border-color 50ms linear;
+  flex-shrink: 0;
+
+  &:hover {
+    background-color: theme.color("states", "error", "background");
+    border-color: theme.color("states", "error", "foreground");
+  }
+}
+
+.addButton {
+  @include theme.text("sm", "medium");
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(2) theme.spacing(3);
+  background-color: transparent;
+  color: theme.color("accent");
+  border: 1px dashed theme.color("border");
+  border-radius: theme.border-radius("md");
+  cursor: pointer;
+  transition: background-color 50ms linear, border-color 50ms linear;
+
+  &:hover {
+    background-color: theme.color("accent-opaque");
+    border-color: theme.color("accent");
+    border-style: solid;
+  }
+}
+

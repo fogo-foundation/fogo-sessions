@@ -1,0 +1,117 @@
+@use "@fogo/component-library/theme";
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    theme.color("input-bg") 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    theme.color("input-bg") 100%
+  );
+  background-size: 200% 100%;
+  border-radius: theme.border-radius("md");
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.statCard {
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("lg");
+  padding: theme.spacing(4);
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+}
+
+.pageCard {
+  background-color: theme.color("card");
+  border-radius: theme.border-radius("lg");
+  padding: theme.spacing(6);
+  border: 1px solid theme.color("border");
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+}
+
+.pageCardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: theme.spacing(2);
+  flex-wrap: wrap;
+}
+
+.pageCardMeta {
+  margin-top: theme.spacing(2);
+  padding-top: theme.spacing(2);
+  border-top: 1px solid theme.color("border");
+}
+
+.membershipCard {
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("lg");
+  padding: theme.spacing(6);
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+}
+
+.membershipCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: theme.spacing(2);
+}
+
+.membershipCardMeta {
+  margin-top: theme.spacing(2);
+  padding-top: theme.spacing(2);
+  border-top: 1px solid theme.color("border");
+}
+
+.membershipWidgetCard {
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("xl");
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.imageSkeleton {
+  border-radius: 0;
+}
+
+.content {
+  padding: theme.spacing(5);
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(3);
+  flex: 1;
+}
+
+.benefitsSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(1.5);
+  margin: theme.spacing(2) 0;
+}
+
+.footerSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+  margin-top: auto;
+  padding-top: theme.spacing(3);
+  border-top: 1px solid theme.color("border");
+}
+

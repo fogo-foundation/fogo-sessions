@@ -104,6 +104,24 @@
   gap: theme.spacing(6);
 }
 
+.heroWrapper {
+  position: relative;
+  margin-left: calc(-1 * #{theme.spacing(8)});
+  margin-right: calc(-1 * #{theme.spacing(8)});
+  width: calc(100% + #{theme.spacing(8)} * 2);
+  max-width: 100vw;
+  
+  // For fullWidth pages, make it truly full width
+  .fullWidth & {
+    margin-left: calc(-1 * #{theme.spacing(4)});
+    margin-right: calc(-1 * #{theme.spacing(4)});
+    width: calc(100% + #{theme.spacing(4)} * 2);
+  }
+  
+  // Ensure hero is always visible
+  min-height: 400px;
+}
+
 // Gated page state
 .gated {
   min-height: 100vh;

@@ -1,0 +1,162 @@
+@use "@fogo/component-library/theme";
+
+.widget {
+  width: 100%;
+}
+
+.loading {
+  padding: theme.spacing(8);
+  text-align: center;
+  @include theme.text("base");
+  color: theme.color("muted");
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--columns, 3), 1fr);
+  gap: theme.spacing(4);
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: theme.spacing(3);
+  }
+  
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background-color: theme.color("card");
+  border: 1px solid theme.color("border");
+  border-radius: theme.border-radius("xl");
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  height: 100%;
+
+  &:hover {
+    border-color: theme.color("accent-opaque");
+    transform: translateY(-4px);
+  }
+}
+
+.cardImage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background-color: theme.color("input-bg");
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardContent {
+  padding: theme.spacing(5);
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(3);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cardTitle {
+  @include theme.text("xl", "bold");
+  color: theme.color("heading");
+  margin: 0;
+  line-height: 1.3;
+}
+
+.cardDescription {
+  @include theme.text("sm");
+  color: theme.color("paragraph");
+  margin: 0;
+  line-height: 1.6;
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.benefitsList {
+  list-style: none;
+  padding: 0;
+  margin: theme.spacing(2) 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(1.5);
+  overflow: hidden;
+  
+  // Limit to 3 items max, hide overflow
+  max-height: 4.5rem; // Approximately 3 items with gap
+}
+
+.benefitItem {
+  @include theme.text("sm");
+  color: theme.color("paragraph");
+  padding-left: theme.spacing(5);
+  position: relative;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: theme.color("accent");
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+}
+
+.cardFooter {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(2);
+  margin-top: auto;
+  padding-top: theme.spacing(3);
+  border-top: 1px solid theme.color("border");
+}
+
+.cardPrice {
+  @include theme.text("lg", "bold");
+  color: theme.color("accent");
+  margin: 0;
+}
+
+.buyButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: theme.spacing(1.5);
+  padding: theme.spacing(2.5) theme.spacing(4);
+  background-color: theme.color("button", "primary", "background", "normal");
+  color: theme.color("button", "primary", "foreground");
+  border: none;
+  border-radius: theme.border-radius("md");
+  @include theme.text("sm", "semibold");
+  text-decoration: none;
+  transition: background-color 0.15s, transform 0.1s;
+  white-space: nowrap;
+  width: 100%;
+
+  &:hover {
+    background-color: theme.color("button", "primary", "background", "hover");
+    transform: scale(1.02);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+

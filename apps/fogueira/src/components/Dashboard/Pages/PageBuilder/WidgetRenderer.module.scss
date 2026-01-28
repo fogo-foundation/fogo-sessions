@@ -31,6 +31,15 @@
   &:active {
     cursor: grabbing;
   }
+
+  &.fullWidth {
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: calc(-1 * #{theme.spacing(6)});
+    margin-right: calc(-1 * #{theme.spacing(6)});
+    width: calc(100% + #{theme.spacing(6)} * 2);
+    max-width: none;
+  }
 }
 
 .controls {

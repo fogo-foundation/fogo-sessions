@@ -235,3 +235,42 @@
   }
 }
 
+.range {
+  width: 100%;
+  height: 6px;
+  border-radius: theme.border-radius("full");
+  background: theme.color("input-bg");
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: theme.color("accent");
+    cursor: pointer;
+    border: 2px solid theme.color("background");
+    box-shadow: 0 0 0 1px theme.color("border");
+  }
+
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: theme.color("accent");
+    cursor: pointer;
+    border: 2px solid theme.color("background");
+    box-shadow: 0 0 0 1px theme.color("border");
+  }
+}
+
+.rangeValue {
+  @include theme.text("sm", "semibold");
+  color: theme.color("heading");
+  text-align: center;
+  margin-top: theme.spacing(1);
+}
+

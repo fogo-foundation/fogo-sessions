@@ -25,10 +25,26 @@ export type NestedWidget = {
 type Props = {
   widgetId: string;
   config: Record<string, unknown>;
+  selectedNestedWidget: {
+    parentId: string;
+    nestedId: string;
+    column: "left" | "right";
+  } | null;
   onUpdate: (config: Record<string, unknown>) => void;
+  onNestedWidgetSelect: (
+    parentId: string,
+    nestedId: string,
+    column: "left" | "right",
+  ) => void;
 };
 
-export const ColumnsWidget = ({ widgetId, config, onUpdate }: Props) => {
+export const ColumnsWidget = ({
+  widgetId,
+  config,
+  selectedNestedWidget,
+  onUpdate,
+  onNestedWidgetSelect,
+}: Props) => {
   const leftWidgets = (config.leftWidgets as NestedWidget[]) || [];
   const rightWidgets = (config.rightWidgets as NestedWidget[]) || [];
   const ratio = (config.ratio as string) || "50-50";
@@ -113,16 +129,22 @@ export const ColumnsWidget = ({ widgetId, config, onUpdate }: Props) => {
         columnId={`${widgetId}-left`}
         widgets={leftWidgets}
         width={widths.left}
+        column="left"
+        selectedNestedWidget={selectedNestedWidget}
         onUpdateWidget={(id, cfg) => updateNestedWidget("left", id, cfg)}
         onDeleteWidget={(id) => deleteNestedWidget("left", id)}
+        onSelectWidget={(id) => onNestedWidgetSelect(widgetId, id, "left")}
         parentWidgetId={widgetId}
       />
       <ColumnDropZone
         columnId={`${widgetId}-right`}
         widgets={rightWidgets}
         width={widths.right}
+        column="right"
+        selectedNestedWidget={selectedNestedWidget}
         onUpdateWidget={(id, cfg) => updateNestedWidget("right", id, cfg)}
         onDeleteWidget={(id) => deleteNestedWidget("right", id)}
+        onSelectWidget={(id) => onNestedWidgetSelect(widgetId, id, "right")}
         parentWidgetId={widgetId}
       />
     </div>
@@ -133,8 +155,15 @@ type ColumnDropZoneProps = {
   columnId: string;
   widgets: NestedWidget[];
   width: string;
+  column: "left" | "right";
+  selectedNestedWidget: {
+    parentId: string;
+    nestedId: string;
+    column: "left" | "right";
+  } | null;
   onUpdateWidget: (id: string, config: Record<string, unknown>) => void;
   onDeleteWidget: (id: string) => void;
+  onSelectWidget: (id: string) => void;
   parentWidgetId: string;
 };
 
@@ -142,8 +171,11 @@ const ColumnDropZone = ({
   columnId,
   widgets,
   width,
+  column,
+  selectedNestedWidget,
   onUpdateWidget,
   onDeleteWidget,
+  onSelectWidget,
 }: ColumnDropZoneProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: columnId,
@@ -163,14 +195,26 @@ const ColumnDropZone = ({
         items={widgets.map((w) => w.id)}
         strategy={verticalListSortingStrategy}
       >
-        {widgets.map((widget) => (
-          <SortableNestedWidget
-            key={widget.id}
-            widget={widget}
-            onUpdate={(cfg) => onUpdateWidget(widget.id, cfg)}
-            onDelete={() => onDeleteWidget(widget.id)}
-          />
-        ))}
+        {widgets.map((widget) => {
+          const parentId = columnId.split("-")[0];
+          if (!parentId) return null;
+          return (
+            <SortableNestedWidget
+              key={widget.id}
+              widget={widget}
+              parentWidgetId={parentId}
+              column={column}
+              isSelected={
+                selectedNestedWidget?.parentId === parentId &&
+                selectedNestedWidget?.nestedId === widget.id &&
+                selectedNestedWidget?.column === column
+              }
+              onSelect={() => onSelectWidget(widget.id)}
+              onUpdate={(cfg) => onUpdateWidget(widget.id, cfg)}
+              onDelete={() => onDeleteWidget(widget.id)}
+            />
+          );
+        })}
       </SortableContext>
       {widgets.length === 0 && (
         <div className={styles.emptyColumn}>
@@ -184,12 +228,18 @@ const ColumnDropZone = ({
 
 type SortableNestedWidgetProps = {
   widget: NestedWidget;
+  parentWidgetId: string;
+  column: "left" | "right";
+  isSelected: boolean;
+  onSelect: () => void;
   onUpdate: (config: Record<string, unknown>) => void;
   onDelete: () => void;
 };
 
 const SortableNestedWidget = ({
   widget,
+  isSelected,
+  onSelect,
   onUpdate,
   onDelete,
 }: SortableNestedWidgetProps) => {
@@ -231,11 +281,14 @@ const SortableNestedWidget = ({
       case "html":
         return <HtmlWidget config={widget.config} onUpdate={onUpdate} />;
       case "columns":
+        // Nested columns don't support nested selection for now
         return (
           <ColumnsWidget
             widgetId={widget.id}
             config={widget.config}
+            selectedNestedWidget={null}
             onUpdate={onUpdate}
+            onNestedWidgetSelect={() => {}}
           />
         );
       default:
@@ -246,16 +299,27 @@ const SortableNestedWidget = ({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className={styles.nestedWidget}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${styles.nestedWidget} ${isSelected ? styles.selected : ""}`}
+      onClick={(e) => {
+        // Stop drag from triggering selection
+        if (!isDragging) {
+          e.stopPropagation();
+          onSelect();
+        }
+      }}
+    >
       <div className={styles.nestedControls}>
-        <button
+        <div
           className={styles.dragHandle}
           {...attributes}
           {...listeners}
           title="Drag"
         >
           <DotsSixVertical weight="bold" size={14} />
-        </button>
+        </div>
         <button
           className={styles.deleteButton}
           onClick={(e) => {

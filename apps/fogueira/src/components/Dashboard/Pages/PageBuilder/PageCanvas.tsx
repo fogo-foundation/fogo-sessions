@@ -27,16 +27,30 @@ type PageSettings = {
 type Props = {
   widgets: Widget[];
   selectedWidgetId: string | null;
+  selectedNestedWidget: {
+    parentId: string;
+    nestedId: string;
+    column: "left" | "right";
+  } | null;
   onWidgetsChange: (widgets: Widget[]) => void;
   onWidgetSelect: (widgetId: string | null) => void;
+  onNestedWidgetSelect: (
+    parentId: string,
+    nestedId: string,
+    column: "left" | "right",
+  ) => void;
   pageSettings: PageSettings;
+  creatorUsername: string;
 };
 
 export const PageCanvas = ({
   widgets,
   selectedWidgetId,
+  selectedNestedWidget,
   onWidgetsChange,
   onWidgetSelect,
+  creatorUsername,
+  onNestedWidgetSelect,
   pageSettings,
 }: Props) => {
   const handleWidgetUpdate = useCallback(
@@ -93,9 +107,14 @@ export const PageCanvas = ({
                 key={widget.id}
                 widget={widget}
                 isSelected={selectedWidgetId === widget.id}
-                onSelect={() => onWidgetSelect(widget.id)}
+                selectedNestedWidget={selectedNestedWidget}
+                onSelect={() => {
+                  onWidgetSelect(widget.id);
+                }}
+                onNestedWidgetSelect={onNestedWidgetSelect}
                 onUpdate={handleWidgetUpdate}
                 onDelete={handleWidgetDelete}
+                creatorUsername={creatorUsername}
               />
             ))}
           </div>

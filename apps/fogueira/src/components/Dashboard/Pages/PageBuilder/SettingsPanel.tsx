@@ -1,5 +1,7 @@
 "use client";
-import { X } from "@phosphor-icons/react";
+import { Spinner, Upload, X } from "@phosphor-icons/react";
+import { useRef } from "react";
+import { useFileUpload } from "../../../../hooks/useFileUpload";
 import { ImageSettings } from "./ImageSettings";
 import styles from "./SettingsPanel.module.scss";
 
@@ -245,6 +247,111 @@ export const SettingsPanel = ({ widget, onUpdate, onClose }: Props) => {
           </>
         );
 
+      case "memberships":
+        return (
+          <>
+            <div className={styles.settingsGroup}>
+              <label className={styles.label}>
+                <span>Columns</span>
+                <select
+                  value={(config.columns as number) || 3}
+                  onChange={(e) =>
+                    onUpdate({ ...config, columns: Number(e.target.value) })
+                  }
+                  className={styles.select}
+                >
+                  <option value={1}>1 Column</option>
+                  <option value={2}>2 Columns</option>
+                  <option value={3}>3 Columns</option>
+                  <option value={4}>4 Columns</option>
+                </select>
+              </label>
+              <p className={styles.hint}>
+                Number of columns to display memberships in. Memberships will
+                automatically display for the page creator.
+              </p>
+            </div>
+          </>
+        );
+
+      case "hero":
+        return (
+          <>
+            <div className={styles.settingsGroup}>
+              <label className={styles.label}>
+                <span>Title</span>
+                <input
+                  type="text"
+                  value={(config.title as string) || ""}
+                  onChange={(e) =>
+                    onUpdate({ ...config, title: e.target.value })
+                  }
+                  placeholder="Hero title"
+                  className={styles.input}
+                />
+              </label>
+            </div>
+            <div className={styles.settingsGroup}>
+              <label className={styles.label}>
+                <span>Subtitle</span>
+                <input
+                  type="text"
+                  value={(config.subtitle as string) || ""}
+                  onChange={(e) =>
+                    onUpdate({ ...config, subtitle: e.target.value })
+                  }
+                  placeholder="Hero subtitle"
+                  className={styles.input}
+                />
+              </label>
+            </div>
+            <HeroImageSettings config={config} onUpdate={onUpdate} />
+            <div className={styles.settingsGroup}>
+              <label className={styles.label}>
+                <span>Overlay Opacity</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={(config.overlayOpacity as number) || 0}
+                  onChange={(e) =>
+                    onUpdate({
+                      ...config,
+                      overlayOpacity: Number(e.target.value),
+                    })
+                  }
+                  className={styles.range}
+                />
+                <div className={styles.rangeValue}>
+                  {(config.overlayOpacity as number) || 0}%
+                </div>
+              </label>
+              <p className={styles.hint}>
+                Adjust the overlay opacity to dim the background image. Higher
+                values make the image darker.
+              </p>
+            </div>
+            <div className={styles.settingsGroup}>
+              <label className={styles.label}>
+                <span>Height</span>
+                <input
+                  type="text"
+                  value={(config.height as string) || "100vh"}
+                  onChange={(e) =>
+                    onUpdate({ ...config, height: e.target.value })
+                  }
+                  placeholder="100vh"
+                  className={styles.input}
+                />
+              </label>
+              <p className={styles.hint}>
+                Set the hero height (e.g., "100vh", "500px", "50rem"). Default
+                is 100vh (full viewport height).
+              </p>
+            </div>
+          </>
+        );
+
       case "columns":
         return (
           <>
@@ -416,6 +523,10 @@ export const SettingsPanel = ({ widget, onUpdate, onClose }: Props) => {
         return "Columns Settings";
       case "container":
         return "Container Settings";
+      case "memberships":
+        return "Memberships Settings";
+      case "hero":
+        return "Hero Settings";
       default:
         return "Widget Settings";
     }
@@ -431,5 +542,97 @@ export const SettingsPanel = ({ widget, onUpdate, onClose }: Props) => {
       </div>
       <div className={styles.content}>{renderSettings()}</div>
     </div>
+  );
+};
+
+// Hero Image Settings Component
+const HeroImageSettings = ({
+  config,
+  onUpdate,
+}: {
+  config: Record<string, unknown>;
+  onUpdate: (config: Record<string, unknown>) => void;
+}) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { upload, uploading, error } = useFileUpload();
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const result = await upload(file);
+    if (result) {
+      onUpdate({ ...config, imageUrl: result.url });
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <>
+      <div className={styles.settingsGroup}>
+        <label className={styles.label}>
+          <span>Upload Background Image</span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            className={styles.fileInput}
+            disabled={uploading}
+          />
+          <button
+            type="button"
+            className={styles.uploadButton}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <>
+                <Spinner className={styles.spinner} />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload weight="bold" />
+                Choose File
+              </>
+            )}
+          </button>
+        </label>
+        {error && <p className={styles.error}>{error}</p>}
+      </div>
+
+      <div className={styles.divider}>
+        <span>or enter URL</span>
+      </div>
+
+      <div className={styles.settingsGroup}>
+        <label className={styles.label}>
+          <span>Image URL</span>
+          <input
+            type="url"
+            value={(config.imageUrl as string) || ""}
+            onChange={(e) => onUpdate({ ...config, imageUrl: e.target.value })}
+            placeholder="https://example.com/image.jpg"
+            className={styles.input}
+          />
+        </label>
+      </div>
+
+      {config.imageUrl && (
+        <div className={styles.preview}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={config.imageUrl as string}
+            alt="Preview"
+            className={styles.previewImage}
+          />
+        </div>
+      )}
+    </>
   );
 };

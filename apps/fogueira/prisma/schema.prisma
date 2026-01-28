@@ -46,6 +46,7 @@ model MembershipProduct {
   name        String
   slug        String
   description String?
+  benefits    String[] @default([]) // Array of benefit strings
   imageBlobKey String? @map("image_blob_key")
   nftCollectionMint String? @map("nft_collection_mint")
   mintAddress String? @map("mint_address")

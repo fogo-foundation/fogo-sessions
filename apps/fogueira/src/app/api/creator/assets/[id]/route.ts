@@ -1,25 +1,26 @@
-import { del } from "@vercel/blob";
+import { del as deleteBlob } from "@vercel/blob";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
 
 /**
  * DELETE /api/creator/assets/[id]
- *
- * Delete an asset from storage.
+ * Delete an asset
  */
-export async function DELETE(
+export const DELETE = async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
-) {
+) => {
+  const walletAddress = request.headers.get("x-authenticated-user");
+  if (!walletAddress) {
+    return NextResponse.json(
+      { error: "Unauthorized. Wallet address required." },
+      { status: 401 },
+    );
+  }
+
   try {
     const { id } = await params;
-    const walletAddress = request.headers.get("x-authenticated-user");
-
-    if (!walletAddress) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const user = await prisma.user.findUnique({
       where: { walletAddress },
       include: { creator: true },
@@ -32,24 +33,23 @@ export async function DELETE(
       );
     }
 
-    // Find the asset and verify ownership
-    const asset = await prisma.asset.findUnique({
-      where: { id },
+    const asset = await prisma.asset.findFirst({
+      where: {
+        id,
+        creatorId: user.creator.id,
+      },
     });
 
     if (!asset) {
       return NextResponse.json({ error: "Asset not found" }, { status: 404 });
     }
 
-    if (asset.creatorId !== user.creator.id) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // Delete from Vercel Blob
+    // Delete from blob storage
     try {
-      await del(asset.blobKey);
-    } catch {
-      // Continue even if blob deletion fails
+      await deleteBlob(asset.blobKey);
+    } catch (blobError) {
+      // Log but continue with database deletion
+      console.error("Failed to delete blob:", blobError);
     }
 
     // Delete from database
@@ -58,10 +58,11 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error("Error deleting asset:", error);
     return NextResponse.json(
       { error: "Failed to delete asset" },
       { status: 500 },
     );
   }
-}
+};

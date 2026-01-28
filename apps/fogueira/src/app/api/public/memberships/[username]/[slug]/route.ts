@@ -37,6 +37,7 @@ export const GET = async (
         name: true,
         slug: true,
         description: true,
+        benefits: true,
         imageBlobKey: true,
         priceToken: true,
         priceAmount: true,

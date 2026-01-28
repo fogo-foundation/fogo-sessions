@@ -1,8 +1,9 @@
 "use client";
 import { SessionStateType, useSession } from "@fogo/sessions-sdk-react";
-import { Plus } from "@phosphor-icons/react";
+import { Plus, FileText } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { PageCardSkeleton } from "../Skeleton";
 import styles from "./index.module.scss";
 
 type Page = {
@@ -80,12 +81,25 @@ export const PagesPage = () => {
         </Link>
       </div>
 
-      {pages.length === 0 ? (
+      {loading ? (
+        <div className={styles.list}>
+          <PageCardSkeleton />
+          <PageCardSkeleton />
+          <PageCardSkeleton />
+        </div>
+      ) : pages.length === 0 ? (
         <div className={styles.empty}>
+          <div className={styles.emptyIcon}>
+            <FileText weight="duotone" />
+          </div>
           <p className={styles.emptyText}>No pages yet</p>
           <p className={styles.emptySubtext}>
             Create your first page to get started
           </p>
+          <Link href="/dashboard/pages/new" className={styles.emptyAction}>
+            <Plus weight="bold" />
+            Create Your First Page
+          </Link>
         </div>
       ) : (
         <div className={styles.list}>

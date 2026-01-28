@@ -42,6 +42,12 @@ type Widget = {
   gatingRuleId: string | null;
 };
 
+type NestedWidget = {
+  id: string;
+  widgetType: string;
+  config: Record<string, unknown>;
+};
+
 type Revision = {
   id: string;
   status: string;
@@ -59,6 +65,11 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isDraggingFromPalette, setIsDraggingFromPalette] = useState(false);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
+  const [selectedNestedWidget, setSelectedNestedWidget] = useState<{
+    parentId: string;
+    nestedId: string;
+    column: "left" | "right";
+  } | null>(null);
   const [showPageSettings, setShowPageSettings] = useState(false);
 
   const sensors = useSensors(
@@ -253,7 +264,10 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
       if (overData?.type === "column" && overData.columnId) {
         const columnId = overData.columnId;
         // columnId format: "{parentWidgetId}-{left|right}"
-        const [parentWidgetId, side] = columnId.split(/-(?=[^-]+$)/);
+        const parts = columnId.split(/-(?=[^-]+$)/);
+        const parentWidgetId = parts[0];
+        const side = parts[1];
+        if (!parentWidgetId || !side) return;
         const column = side as "left" | "right";
 
         if (isFromPalette && widgetType) {
@@ -264,21 +278,150 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
             config: getDefaultConfig(widgetType),
           };
 
-          const updated = revision.widgets.map((widget) => {
-            if (widget.id === parentWidgetId && widget.widgetType === "columns") {
-              const leftWidgets = (widget.config.leftWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
-              const rightWidgets = (widget.config.rightWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+          // Recursive function to find and update columns widget at any nesting level
+          const updateColumnsWidget = (
+            widgets: Widget[],
+            targetId: string,
+            column: "left" | "right",
+            newWidget: { id: string; widgetType: string; config: Record<string, unknown> },
+          ): Widget[] => {
+            return widgets.map((widget) => {
+              // Check if this is the target columns widget
+              if (widget.id === targetId && widget.widgetType === "columns") {
+                const leftWidgets = (widget.config.leftWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+                const rightWidgets = (widget.config.rightWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+                return {
+                  ...widget,
+                  config: {
+                    ...widget.config,
+                    leftWidgets: column === "left" ? [...leftWidgets, newWidget] : leftWidgets,
+                    rightWidgets: column === "right" ? [...rightWidgets, newWidget] : rightWidgets,
+                  },
+                };
+              }
+
+              // Check nested columns in left widgets
+              if (widget.widgetType === "columns") {
+                const leftWidgets = (widget.config.leftWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+                const rightWidgets = (widget.config.rightWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+
+                // Recursively check nested columns widgets
+                const updatedLeftWidgets = leftWidgets.map((nestedWidget) => {
+                  if (nestedWidget.widgetType === "columns" && nestedWidget.id === targetId) {
+                    const nestedLeft = (nestedWidget.config.leftWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+                    const nestedRight = (nestedWidget.config.rightWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+                    return {
+                      ...nestedWidget,
+                      config: {
+                        ...nestedWidget.config,
+                        leftWidgets: column === "left" ? [...nestedLeft, newWidget] : nestedLeft,
+                        rightWidgets: column === "right" ? [...nestedRight, newWidget] : nestedRight,
+                      },
+                    };
+                  }
+                  // Recursively check deeper nesting
+                  if (nestedWidget.widgetType === "columns") {
+                    const result = updateNestedColumnsWidget(nestedWidget, targetId, column, newWidget);
+                    return result || nestedWidget;
+                  }
+                  return nestedWidget;
+                });
+
+                const updatedRightWidgets = rightWidgets.map((nestedWidget) => {
+                  if (nestedWidget.widgetType === "columns" && nestedWidget.id === targetId) {
+                    const nestedLeft = (nestedWidget.config.leftWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+                    const nestedRight = (nestedWidget.config.rightWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+                    return {
+                      ...nestedWidget,
+                      config: {
+                        ...nestedWidget.config,
+                        leftWidgets: column === "left" ? [...nestedLeft, newWidget] : nestedLeft,
+                        rightWidgets: column === "right" ? [...nestedRight, newWidget] : nestedRight,
+                      },
+                    };
+                  }
+                  // Recursively check deeper nesting
+                  if (nestedWidget.widgetType === "columns") {
+                    const result = updateNestedColumnsWidget(nestedWidget, targetId, column, newWidget);
+                    return result || nestedWidget;
+                  }
+                  return nestedWidget;
+                });
+
+                // Only update if something changed
+                if (JSON.stringify(updatedLeftWidgets) !== JSON.stringify(leftWidgets) ||
+                    JSON.stringify(updatedRightWidgets) !== JSON.stringify(rightWidgets)) {
+                  return {
+                    ...widget,
+                    config: {
+                      ...widget.config,
+                      leftWidgets: updatedLeftWidgets,
+                      rightWidgets: updatedRightWidgets,
+                    },
+                  };
+                }
+              }
+
+              return widget;
+            });
+          };
+
+          // Helper function to recursively update nested columns
+          const updateNestedColumnsWidget = (
+            nestedWidget: { id: string; widgetType: string; config: Record<string, unknown> },
+            targetId: string,
+            column: "left" | "right",
+            newWidget: { id: string; widgetType: string; config: Record<string, unknown> },
+          ): { id: string; widgetType: string; config: Record<string, unknown> } | null => {
+            if (nestedWidget.id === targetId) {
+              const nestedLeft = (nestedWidget.config.leftWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+              const nestedRight = (nestedWidget.config.rightWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
               return {
-                ...widget,
+                ...nestedWidget,
                 config: {
-                  ...widget.config,
-                  leftWidgets: column === "left" ? [...leftWidgets, newNestedWidget] : leftWidgets,
-                  rightWidgets: column === "right" ? [...rightWidgets, newNestedWidget] : rightWidgets,
+                  ...nestedWidget.config,
+                  leftWidgets: column === "left" ? [...nestedLeft, newWidget] : nestedLeft,
+                  rightWidgets: column === "right" ? [...nestedRight, newWidget] : nestedRight,
                 },
               };
             }
-            return widget;
-          });
+
+            // Check nested widgets
+            const leftWidgets = (nestedWidget.config.leftWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+            const rightWidgets = (nestedWidget.config.rightWidgets as Array<{ id: string; widgetType: string; config: Record<string, unknown> }>) || [];
+
+            const updatedLeft = leftWidgets.map((w) => {
+              if (w.widgetType === "columns") {
+                const result = updateNestedColumnsWidget(w, targetId, column, newWidget);
+                return result || w;
+              }
+              return w;
+            });
+
+            const updatedRight = rightWidgets.map((w) => {
+              if (w.widgetType === "columns") {
+                const result = updateNestedColumnsWidget(w, targetId, column, newWidget);
+                return result || w;
+              }
+              return w;
+            });
+
+            if (JSON.stringify(updatedLeft) !== JSON.stringify(leftWidgets) ||
+                JSON.stringify(updatedRight) !== JSON.stringify(rightWidgets)) {
+              return {
+                ...nestedWidget,
+                config: {
+                  ...nestedWidget.config,
+                  leftWidgets: updatedLeft,
+                  rightWidgets: updatedRight,
+                },
+              };
+            }
+
+            return null;
+          };
+
+          const updated = updateColumnsWidget(revision.widgets, parentWidgetId, column, newNestedWidget);
 
           setRevision((prev) => (prev ? { ...prev, widgets: updated } : null));
           setHasUnsavedChanges(true);
@@ -360,23 +503,82 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
 
   const handleWidgetSelect = useCallback((widgetId: string | null) => {
     setSelectedWidgetId(widgetId);
+    setSelectedNestedWidget(null); // Clear nested selection when selecting top-level widget
   }, []);
+
+  const handleNestedWidgetSelect = useCallback(
+    (parentId: string, nestedId: string, column: "left" | "right") => {
+      setSelectedWidgetId(null); // Clear top-level selection
+      setSelectedNestedWidget({ parentId, nestedId, column });
+    },
+    [],
+  );
 
   const handleWidgetConfigUpdate = useCallback(
     (config: Record<string, unknown>) => {
-      if (!selectedWidgetId || !revision) return;
+      if (!revision) return;
+
+      // Handle nested widget update
+      if (selectedNestedWidget) {
+        const parentWidget = revision.widgets.find(
+          (w) => w.id === selectedNestedWidget.parentId,
+        );
+        if (parentWidget && parentWidget.widgetType === "columns") {
+          const columnKey =
+            selectedNestedWidget.column === "left"
+              ? "leftWidgets"
+              : "rightWidgets";
+          const widgets = (parentWidget.config[columnKey] as NestedWidget[]) || [];
+          const updatedWidgets = widgets.map((w) =>
+            w.id === selectedNestedWidget.nestedId ? { ...w, config } : w,
+          );
+          const updatedConfig = {
+            ...parentWidget.config,
+            [columnKey]: updatedWidgets,
+          };
+          const updated = revision.widgets.map((widget) =>
+            widget.id === selectedNestedWidget.parentId
+              ? { ...widget, config: updatedConfig }
+              : widget,
+          );
+          setRevision((prev) => (prev ? { ...prev, widgets: updated } : null));
+          setHasUnsavedChanges(true);
+        }
+        return;
+      }
+
+      // Handle top-level widget update
+      if (!selectedWidgetId) return;
       const updated = revision.widgets.map((widget) =>
         widget.id === selectedWidgetId ? { ...widget, config } : widget,
       );
       setRevision((prev) => (prev ? { ...prev, widgets: updated } : null));
       setHasUnsavedChanges(true);
     },
-    [selectedWidgetId, revision],
+    [selectedWidgetId, selectedNestedWidget, revision],
   );
 
   const selectedWidget = revision?.widgets.find(
     (w) => w.id === selectedWidgetId,
   ) ?? null;
+
+  // Get selected nested widget data
+  const selectedNestedWidgetData = selectedNestedWidget
+    ? (() => {
+        const parentWidget = revision?.widgets.find(
+          (w) => w.id === selectedNestedWidget.parentId,
+        );
+        if (parentWidget?.widgetType === "columns") {
+          const columnKey =
+            selectedNestedWidget.column === "left"
+              ? "leftWidgets"
+              : "rightWidgets";
+          const widgets = (parentWidget.config[columnKey] as NestedWidget[]) || [];
+          return widgets.find((w) => w.id === selectedNestedWidget.nestedId);
+        }
+        return null;
+      })()
+    : null;
 
   if (loading) {
     return (
@@ -460,20 +662,36 @@ export const PageBuilderPage = ({ pageId }: { pageId: string }) => {
           <PageCanvas
             widgets={revision.widgets}
             selectedWidgetId={selectedWidgetId}
+            selectedNestedWidget={selectedNestedWidget}
             onWidgetsChange={handleWidgetsChange}
             onWidgetSelect={handleWidgetSelect}
+            onNestedWidgetSelect={handleNestedWidgetSelect}
             pageSettings={{
               bgImage: page.bgImage,
               bgColor: page.bgColor,
               overlayColor: page.overlayColor,
               fullWidth: page.fullWidth,
             }}
+            creatorUsername={page.creator.username}
           />
           {selectedWidget && (
             <SettingsPanel
               widget={selectedWidget}
               onUpdate={handleWidgetConfigUpdate}
               onClose={() => setSelectedWidgetId(null)}
+            />
+          )}
+          {selectedNestedWidgetData && selectedNestedWidget && (
+            <SettingsPanel
+              widget={{
+                id: selectedNestedWidget.nestedId,
+                widgetType: selectedNestedWidgetData.widgetType,
+                config: selectedNestedWidgetData.config,
+                orderIndex: 0,
+                gatingRuleId: null,
+              }}
+              onUpdate={handleWidgetConfigUpdate}
+              onClose={() => setSelectedNestedWidget(null)}
             />
           )}
         </div>
@@ -527,6 +745,10 @@ function getDefaultConfig(widgetType: string): Record<string, unknown> {
       return { leftWidgets: [], rightWidgets: [], ratio: "50-50", gap: "md", verticalAlign: "top" };
     case "container":
       return { children: [], maxWidth: "800", bgColor: "transparent", padding: "md", alignment: "center" };
+    case "memberships":
+      return { columns: 3 };
+    case "hero":
+      return { imageUrl: "", title: "", subtitle: "", overlayOpacity: 0 };
     default:
       return {};
   }

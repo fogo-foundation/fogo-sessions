@@ -260,11 +260,12 @@ export const PublicPage = ({ username, slug }: Props) => {
               const isLocked =
                 widget.gatingRule?.id &&
                 accessResults[widget.gatingRule.id] !== true;
+              const isHero = widget.widgetType === "hero";
 
               return (
                 <div
                   key={widget.id}
-                  className={isLocked ? styles.lockedWidget : undefined}
+                  className={`${isLocked ? styles.lockedWidget : ""} ${isHero ? styles.heroWrapper : ""}`}
                 >
                   {isLocked && (
                     <div className={styles.lockedOverlay}>
@@ -286,7 +287,7 @@ export const PublicPage = ({ username, slug }: Props) => {
                       )}
                     </div>
                   )}
-                  <WidgetRenderer widget={widget} />
+                  <WidgetRenderer widget={widget} username={username} />
                 </div>
               );
             })}

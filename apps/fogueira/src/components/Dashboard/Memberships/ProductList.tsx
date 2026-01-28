@@ -1,5 +1,5 @@
 "use client";
-import { Pencil, Trash } from "@phosphor-icons/react";
+import { Pencil, Trash, Users } from "@phosphor-icons/react";
 import styles from "./ProductList.module.scss";
 
 type MembershipProduct = {
@@ -7,6 +7,7 @@ type MembershipProduct = {
   name: string;
   slug: string;
   description: string | null;
+  benefits: string[];
   imageBlobKey: string | null;
   nftCollectionMint: string | null;
   mintAddress: string | null;
@@ -29,6 +30,9 @@ export const MembershipProductList = ({ products, onEdit, onDelete }: Props) => 
   if (products.length === 0) {
     return (
       <div className={styles.empty}>
+        <div className={styles.emptyIcon}>
+          <Users weight="duotone" />
+        </div>
         <p className={styles.emptyText}>No membership products yet</p>
         <p className={styles.emptySubtext}>
           Create your first product to get started
