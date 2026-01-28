@@ -110,27 +110,38 @@ export const createVariation = async (
     variation: TransactionVariations;
   },
 ) => {
-  const [domainConfig] = await sql`
-    SELECT dc.* FROM domain_config dc
+  const [row] = await sql`
+    INSERT INTO variation (
+      id,
+      domain_config_id,
+      name,
+      max_gas_spend,
+      transaction_variation,
+      version,
+      created_at,
+      updated_at
+    )
+    SELECT
+      ${uuidv4()},
+      dc.id,
+      ${data.name},
+      ${data.maxGasSpend},
+      ${JSON.stringify(data.variation)}::jsonb,
+      'v1',
+      now(),
+      now()
+    FROM domain_config dc
     JOIN app a ON a.id = dc.app_id
     JOIN "user" u ON u.id = a.user_id
     WHERE
       dc.id = ${domainConfigId}
       AND u.wallet_address = ${walletAddress}
-  `;
-
-  if (!domainConfig) {
-    throw new Error("Domain config not found or unauthorized");
-  }
-
-  const [variation] = await sql`
-    INSERT INTO variation (id, domain_config_id, name, max_gas_spend, transaction_variation, version, created_at, updated_at)
-    VALUES (${uuidv4()}, ${domainConfigId}, ${data.name}, ${data.maxGasSpend}, ${JSON.stringify(data.variation)}::jsonb, 'v1', now(), now())
     RETURNING id
   `;
 
-  if (!variation) {
-    throw new Error("Failed to create variation");
+  if (!row) {
+    // Either not found/unauthorised, or insert failed.
+    throw new Error("Domain config not found or unauthorized");
   }
 
   return true;
