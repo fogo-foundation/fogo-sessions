@@ -6,7 +6,7 @@ import { useToast } from "@fogo/component-library/Toast";
 import { StateType, useAsync } from "@fogo/component-library/useAsync";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { GearIcon } from "@phosphor-icons/react/dist/ssr";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { Form } from "react-aria-components";
 import { useUserData } from "../../client/paymaster";
 import type { DomainConfig } from "../../db-schema";
@@ -22,25 +22,28 @@ type DomainSettingsListProps = {
 export const DomainSettingsList = (props: DomainSettingsListProps) => {
   const toast = useToast();
   const userData = useUserData(props.sessionState);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const wrappedUpdateDomainSettings = useCallback(async () => {
-    const sessionToken = await props.sessionState.createLogInToken();
-    await updateDomainSettings({
-      domainConfigId: props.domainConfig.id,
-      enableSessionManagement: props.domainConfig.enable_session_management,
-      enablePreflightSimulation: props.domainConfig.enable_preflight_simulation,
-      sessionToken,
-    });
-    if ("mutate" in userData) {
-      await userData.mutate();
+    if (formRef.current) {
+      // using a form ref to get the uncontrolled input values since we can't use useActionState as it resets the form after submission
+      const formData = new FormData(formRef.current);
+      const enableSessionManagement =
+        formData.get("enableSessionManagement") === "on";
+      const enablePreflightSimulation =
+        formData.get("enablePreflightSimulation") === "on";
+      const sessionToken = await props.sessionState.createLogInToken();
+      await updateDomainSettings({
+        domainConfigId: props.domainConfig.id,
+        enableSessionManagement,
+        enablePreflightSimulation,
+        sessionToken,
+      });
+      if ("mutate" in userData) {
+        await userData.mutate();
+      }
     }
-  }, [
-    props.sessionState,
-    props.domainConfig.id,
-    props.domainConfig.enable_session_management,
-    props.domainConfig.enable_preflight_simulation,
-    userData,
-  ]);
+  }, [props.sessionState, props.domainConfig.id, userData]);
 
   const { execute, state } = useAsync(wrappedUpdateDomainSettings, {
     onSuccess: () => {
@@ -61,6 +64,7 @@ export const DomainSettingsList = (props: DomainSettingsListProps) => {
 
   return (
     <Form
+      ref={formRef}
       className={styles.domainSettingsCheckboxes ?? ""}
       onSubmit={handleSubmit}
     >
