@@ -35,10 +35,11 @@ export const DomainSettingsList = (props: DomainSettingsListProps) => {
       await userData.mutate();
     }
   }, [
-    props.sessionState, 
-    props.domainConfig.id, 
-    props.domainConfig.enable_session_management, 
-    props.domainConfig.enable_preflight_simulation, userData
+    props.sessionState,
+    props.domainConfig.id,
+    props.domainConfig.enable_session_management,
+    props.domainConfig.enable_preflight_simulation,
+    userData,
   ]);
 
   const { execute, state } = useAsync(wrappedUpdateDomainSettings, {
