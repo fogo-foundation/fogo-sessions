@@ -2,4 +2,6 @@
 
 set -e
 
-turbo run build --filter={apps/portfolio}...
+. "$HOME/.cargo/env"
+cd ../..
+turbo run build --filter={apps/paymaster-admin}...
