@@ -1,4 +1,8 @@
+"use server";
+
+import { v4 as uuidv4 } from "uuid";
 import { sql } from "../config/neon";
+import type { TransactionVariations } from "../db-schema";
 import { UserSchema } from "../db-schema";
 
 export const fetchUserPaymasterData = async (walletAddress: string) => {
@@ -39,6 +43,7 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
                             v.updated_at
                           FROM variation v
                           WHERE v.domain_config_id = dc.id
+                          ORDER BY v.created_at ASC, v.id ASC
                         ) AS v_row
                       ) AS variations
                     FROM domain_config dc
@@ -61,4 +66,132 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
     return;
   }
   return UserSchema.parse(user);
+};
+
+export const updateVariation = async (
+  walletAddress: string,
+  variationId: string,
+  data: {
+    name: string;
+    maxGasSpend: number;
+    variation: TransactionVariations;
+  },
+) => {
+  const [variation] = await sql`
+    UPDATE variation v
+    SET
+      name = ${data.name},
+      max_gas_spend = ${data.maxGasSpend},
+      transaction_variation = ${JSON.stringify(data.variation)}::jsonb,
+      updated_at = now()
+    FROM domain_config dc
+    JOIN app a ON a.id = dc.app_id
+    JOIN "user" u ON u.id = a.user_id
+    WHERE
+      v.id = ${variationId}
+      AND v.domain_config_id = dc.id
+      AND u.wallet_address = ${walletAddress}
+    RETURNING v.*
+  `;
+
+  if (!variation) {
+    throw new Error("Not found or not authorized");
+  }
+
+  return true;
+};
+
+export const createVariation = async (
+  walletAddress: string,
+  domainConfigId: string,
+  data: {
+    name: string;
+    maxGasSpend: number;
+    variation: TransactionVariations;
+  },
+) => {
+  const [row] = await sql`
+    INSERT INTO variation (
+      id,
+      domain_config_id,
+      name,
+      max_gas_spend,
+      transaction_variation,
+      version,
+      created_at,
+      updated_at
+    )
+    SELECT
+      ${uuidv4()},
+      dc.id,
+      ${data.name},
+      ${data.maxGasSpend},
+      ${JSON.stringify(data.variation)}::jsonb,
+      'v1',
+      now(),
+      now()
+    FROM domain_config dc
+    JOIN app a ON a.id = dc.app_id
+    JOIN "user" u ON u.id = a.user_id
+    WHERE
+      dc.id = ${domainConfigId}
+      AND u.wallet_address = ${walletAddress}
+    RETURNING id
+  `;
+
+  if (!row) {
+    // Either not found/unauthorised, or insert failed.
+    throw new Error("Domain config not found or unauthorized");
+  }
+
+  return true;
+};
+
+export const deleteVariation = async (
+  walletAddress: string,
+  variationId: string,
+) => {
+  const [variation] = await sql`
+    DELETE FROM variation v
+    USING domain_config dc, app a, "user" u
+    WHERE v.domain_config_id = dc.id
+    AND dc.app_id = a.id
+    AND a.user_id = u.id
+    AND v.id = ${variationId}
+    AND u.wallet_address = ${walletAddress}
+    RETURNING v.*
+  `;
+  if (!variation) {
+    throw new Error("Not found or not authorized");
+  }
+
+  return true;
+};
+
+export const updateDomainSettings = async (
+  walletAddress: string,
+  domainConfigId: string,
+  enableSessionManagement: boolean,
+  enablePreflightSimulation: boolean,
+) => {
+  const [domainConfig] = await sql`
+    UPDATE domain_config dc
+    SET
+      enable_session_management = ${enableSessionManagement},
+      enable_preflight_simulation = ${enablePreflightSimulation},
+      updated_at = now()
+    FROM app a
+    JOIN "user" u ON u.id = a.user_id
+    WHERE
+      dc.id = ${domainConfigId}
+      AND dc.app_id = a.id
+      AND u.wallet_address = ${walletAddress}
+    RETURNING dc.*
+  `;
+
+  if (!domainConfig) {
+    throw new Error("Domain config not found or unauthorized");
+  }
+
+  return true;
 };

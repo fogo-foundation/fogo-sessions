@@ -16,9 +16,12 @@ mod config_manager;
 mod constraint;
 mod db;
 mod metrics;
+mod parse;
 mod pooled_http_sender;
 mod rpc;
 mod serde;
+mod swap;
+mod unwrap_fogo;
 
 type DomainStateMap = HashMap<String, api::DomainState>;
 type SharedDomains = Arc<ArcSwap<DomainStateMap>>;
@@ -60,7 +63,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         )
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".parse().unwrap()),
+                .unwrap_or_else(|_| "info".parse().expect("info is a valid env filter")),
         )
         .with(telemetry)
         .init();
@@ -103,6 +106,9 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         opts.listen_address,
         domains,
         fee_coefficients,
+        opts.network_environment,
+        opts.valiant_api_key,
+        opts.valiant_override_url,
     )
     .await;
     Ok(())

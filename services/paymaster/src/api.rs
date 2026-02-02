@@ -1,12 +1,16 @@
+use crate::cli::NetworkEnvironment;
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
 use crate::constraint::{ContextualDomainKeys, ParsedTransactionVariation};
-use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_validation};
+use crate::metrics::{obs_actual_transaction_costs, obs_send, obs_swap, obs_validation};
 use crate::pooled_http_sender::PooledHttpSender;
 use crate::rpc::{
-    fetch_transaction_cost_details, send_and_confirm_transaction, send_and_confirm_transaction_ftl,
-    ChainIndex, ConfirmationResultInternal, RetryConfig,
+    fetch_swap_balance_changes, fetch_transaction_cost_details, send_and_confirm_transaction,
+    send_and_confirm_transaction_ftl, ChainIndex, ConfirmationResultInternal, RetryConfig,
+    SignedVersionedTransaction,
 };
+use crate::swap::SwapConfirmationResult;
+use crate::unwrap_fogo::unwrap_fogo;
 use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -23,7 +27,9 @@ use axum_prometheus::PrometheusMetricLayer;
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
+use futures::future::join_all;
 use nonempty::NonEmpty;
+use reqwest::Client;
 use serde_with::{serde_as, DisplayFromStr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
@@ -45,11 +51,12 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
 use tracing::Instrument;
+use url::Url;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 pub struct DomainState {
     pub domain_registry_key: Pubkey,
-    pub sponsors: NonEmpty<Keypair>,
+    pub sponsors: NonEmpty<Arc<Keypair>>,
     pub next_autoassigned_sponsor_index: Arc<AtomicUsize>,
     pub enable_preflight_simulation: bool,
     pub tx_variations: HashMap<String, ParsedTransactionVariation>,
@@ -100,12 +107,18 @@ impl PubsubClientWithReconnect {
     }
 }
 
+pub struct ValiantClient {
+    pub client: Client,
+    pub base_url: Url,
+}
+
 pub struct ServerState {
     pub domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
     pub ftl_rpc: Option<RpcClient>,
     pub fee_coefficients: HashMap<Pubkey, u64>,
+    pub valiant_client: Option<ValiantClient>,
 }
 
 #[derive(utoipa::ToSchema, serde::Deserialize)]
@@ -343,14 +356,20 @@ async fn sponsor_and_send_handler(
         ))?;
     }
 
-    let (mut transaction, _): (VersionedTransaction, _) =
+    let (transaction, _): (VersionedTransaction, _) =
         bincode::serde::decode_from_slice(&transaction_bytes, bincode::config::standard())
             .map_err(|_| (StatusCode::BAD_REQUEST, "Failed to deserialize transaction"))?;
 
-    let transaction_sponsor: &Keypair = domain_state
+    let fee_payer = transaction.message.static_account_keys().first().ok_or({
+        (
+            StatusCode::BAD_REQUEST,
+            "The transaction must have a fee payer",
+        )
+    })?;
+    let transaction_sponsor = domain_state
         .sponsors
         .iter()
-        .find(|sponsor| sponsor.pubkey() == transaction.message.static_account_keys()[0])
+        .find(|sponsor| sponsor.pubkey() == *fee_payer)
         .ok_or_else(|| -> (StatusCode, String) {
             let status_code = StatusCode::BAD_REQUEST;
             obs_validation(domain.clone(), None, status_code.to_string());
@@ -364,7 +383,7 @@ async fn sponsor_and_send_handler(
                         .map(|sponsor| sponsor.pubkey().to_string())
                         .collect::<Vec<_>>()
                         .join(","),
-                    transaction.message.static_account_keys()[0],
+                    fee_payer,
                 ),
             )
         })?;
@@ -372,7 +391,7 @@ async fn sponsor_and_send_handler(
     let transaction_to_validate =
         TransactionToValidate::parse(&transaction, &state.chain_index, &state.fee_coefficients)
             .await?;
-    let matched_variation_name = match domain_state
+    let (matched_variation_name, swap_into_fogo) = match domain_state
         .validate_transaction(
             &transaction_to_validate,
             &state.chain_index,
@@ -388,18 +407,22 @@ async fn sponsor_and_send_handler(
                 Some(variation.name().to_owned()),
                 "success".to_string(),
             );
-            variation.name()
+            (
+                variation.name().to_owned(),
+                variation.swap_into_fogo().to_owned(),
+            )
         }
         Err(e) => {
             obs_validation(domain.clone(), None, "invalid".to_string());
             return Err(e.into());
         }
-    }
-    .to_owned();
+    };
     let gas_spend = transaction_to_validate.gas_spend;
 
-    transaction.signatures[0] = transaction_sponsor.sign_message(&transaction.message.serialize());
-    tracing::Span::current().record("tx_hash", transaction.signatures[0].to_string());
+    let signature = transaction_sponsor.sign_message(&transaction.message.serialize());
+    let signed_transaction = SignedVersionedTransaction::new(transaction, signature)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    tracing::Span::current().record("tx_hash", signed_transaction.signature().to_string());
 
     let rpc_config = RpcSendTransactionConfig {
         skip_preflight: !domain_state.enable_preflight_simulation,
@@ -409,13 +432,13 @@ async fn sponsor_and_send_handler(
 
     let confirmation_result = if let Some(ref ftl_rpc) = state.ftl_rpc {
         // Use FTL service for sending and confirmation
-        send_and_confirm_transaction_ftl(ftl_rpc, &transaction, rpc_config).await?
+        send_and_confirm_transaction_ftl(ftl_rpc, &signed_transaction, rpc_config).await?
     } else {
         // Use standard RPC method
         send_and_confirm_transaction(
             &state.chain_index.rpc,
             &state.rpc_sub,
-            &transaction,
+            &signed_transaction,
             rpc_config,
         )
         .await?
@@ -443,7 +466,10 @@ async fn sponsor_and_send_handler(
         // This ensures that any logs/traces from the spawned task are associated with the original request.
         let span = tracing::Span::current();
 
-        tokio::spawn(
+        tokio::spawn({
+            let state = Arc::clone(&state);
+            let domain = domain.clone();
+            let matched_variation_name = matched_variation_name.clone();
             async move {
                 match fetch_transaction_cost_details(
                     &state.chain_index.rpc,
@@ -471,8 +497,126 @@ async fn sponsor_and_send_handler(
                     }
                 }
             }
-            .instrument(span),
-        );
+            .instrument(span)
+        });
+
+        if !swap_into_fogo.is_empty() {
+            tokio::spawn({
+                let transaction_sponsor = Arc::clone(transaction_sponsor);
+                let domain = domain.clone();
+                let matched_variation_name = matched_variation_name.clone();
+                async move {
+                    if let Some(valiant_client) = &state.valiant_client {
+                        let swap_results = valiant_client
+                            .swap_tokens_probabilistic(
+                                &swap_into_fogo,
+                                &transaction_sponsor,
+                                &state.chain_index.rpc,
+                                &state.rpc_sub,
+                            )
+                            .await;
+
+                        let n_successful_swaps = swap_results
+                            .iter()
+                            .filter(|result| {
+                                if let Ok(SwapConfirmationResult { confirmation, .. }) = result {
+                                    matches!(
+                                        confirmation,
+                                        ConfirmationResultInternal::Success { .. }
+                                    )
+                                } else {
+                                    false
+                                }
+                            })
+                            .count();
+
+                        if n_successful_swaps > 0 {
+                            match unwrap_fogo(
+                                &transaction_sponsor,
+                                &state.chain_index.rpc,
+                                &state.rpc_sub,
+                            )
+                            .await
+                            {
+                                Ok(confirmation) => match confirmation {
+                                    ConfirmationResultInternal::Failed { signature, error } => {
+                                        tracing::warn!("Failed to unwrap due to failure to confirm transaction for {signature}: {:?}", error);
+                                    }
+                                    ConfirmationResultInternal::UnconfirmedPreflightFailure {
+                                        signature,
+                                        error,
+                                    } => {
+                                        tracing::warn!("Failed to unwrap due to transaction preflight failure for {signature}: {:?}", error);
+                                    }
+                                    ConfirmationResultInternal::Success { .. } => {}
+                                },
+
+                                Err(e) => {
+                                    tracing::warn!(
+                                        "Failed to send and confirm unwrap transaction: {:?}",
+                                        e
+                                    );
+                                }
+                            }
+                        }
+
+                        let transaction_sponsor_pubkey = transaction_sponsor.pubkey();
+
+                        let swap_balance_changes = join_all(
+                            swap_results.iter().filter_map(|swap_result| {
+                                match swap_result {
+                                    Ok(SwapConfirmationResult { mint, confirmation }) => {
+                                        match confirmation {
+                                            ConfirmationResultInternal::Success { signature } => {
+                                                Some(fetch_swap_balance_changes(
+                                                    &state.chain_index.rpc,
+                                                    signature,
+                                                    &transaction_sponsor_pubkey,
+                                                    mint,
+                                                    RetryConfig {
+                                                        max_tries: 3,
+                                                        sleep_ms: 2000,
+                                                    })
+                                                )
+                                            }
+
+                                            ConfirmationResultInternal::Failed { signature, error, } => {
+                                                tracing::warn!("Failed to fetch swap balance changes due to failure to confirm transaction for {signature}: {:?}", error);
+                                                None
+                                            }
+
+                                            ConfirmationResultInternal::UnconfirmedPreflightFailure { signature, error, } => {
+                                                tracing::warn!("Failed to fetch swap balance changes due to transaction preflight failure for {signature}: {:?}", error);
+                                                None
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        tracing::warn!("Failed to send and confirm swap: {:?}", e);
+                                        None
+                                    }
+                                }
+                            })
+                        ).await;
+
+                        swap_balance_changes
+                            .iter()
+                            .for_each(|balance_change_result| match balance_change_result {
+                                Ok(balance_change) => {
+                                    obs_swap(
+                                        domain.clone(),
+                                        matched_variation_name.clone(),
+                                        balance_change,
+                                    );
+                                }
+                                Err(e) => {
+                                    tracing::warn!("Failed to fetch swap balance changes: {:?}", e);
+                                }
+                            });
+                    }
+                }
+            });
+        }
     }
 
     Ok(Json(confirmation_result.into()))
@@ -629,13 +773,15 @@ pub fn get_domain_state_map(
              }| {
                 let domain_registry_key = get_domain_record_address(&domain);
                 let sponsors = NonEmpty::collect((0u8..number_of_signers.into()).map(|i| {
-                    Keypair::from_seed_and_derivation_path(
-                        &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
-                            mnemonic, &domain,
-                        ),
-                        Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
+                    Arc::new(
+                        Keypair::from_seed_and_derivation_path(
+                            &solana_seed_phrase::generate_seed_from_seed_phrase_and_passphrase(
+                                mnemonic, &domain,
+                            ),
+                            Some(DerivationPath::new_bip44(Some(i.into()), Some(0))),
+                        )
+                        .expect("Failed to derive keypair from mnemonic_file"),
                     )
-                    .expect("Failed to derive keypair from mnemonic_file")
                 }))
                 .expect("number_of_signers in NonZero so this should never be empty");
 
@@ -660,6 +806,8 @@ pub fn get_domain_state_map(
 /// How many RPC clients to create for both FTL and the regular RPC client for read operations
 const RPC_POOL_SIZE: usize = 6;
 
+#[allow(clippy::unwrap_used, reason = "It's fine to panic at startup")]
+#[allow(clippy::too_many_arguments)]
 pub async fn run_server(
     rpc_url_http: String,
     rpc_url_ws: String,
@@ -667,6 +815,9 @@ pub async fn run_server(
     listen_address: String,
     domains_states: Arc<ArcSwap<HashMap<String, DomainState>>>,
     fee_coefficients: HashMap<Pubkey, u64>,
+    network_environment: NetworkEnvironment,
+    valiant_api_key: Option<String>,
+    valiant_url_override: Option<String>,
 ) {
     let rpc_http_sender = PooledHttpSender::new(rpc_url_http, RPC_POOL_SIZE);
 
@@ -711,10 +862,25 @@ pub async fn run_server(
             crate::metrics::TRANSACTION_COST_BUCKETS,
         )
         .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::SWAP_SPL_SIZE_HISTOGRAM.to_string()),
+            crate::metrics::SWAP_SPL_SIZE_BUCKETS,
+        )
+        .unwrap()
+        .set_buckets_for_metric(
+            Matcher::Full(crate::metrics::SWAP_FOGO_SIZE_HISTOGRAM.to_string()),
+            crate::metrics::SWAP_FOGO_SIZE_BUCKETS,
+        )
+        .unwrap()
         .install_recorder()
         .expect("install metrics recorder");
 
     let prometheus_layer = PrometheusMetricLayer::new();
+
+    let valiant_client = valiant_api_key.map(|key| {
+        ValiantClient::from_params(&key, network_environment, valiant_url_override)
+            .expect("Should create Valiant client")
+    });
 
     let app = Router::new()
         .route("/ready", axum::routing::get(readiness_handler))
@@ -741,6 +907,7 @@ pub async fn run_server(
             },
             rpc_sub,
             ftl_rpc,
+            valiant_client,
         }));
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     tracing::info!("Starting paymaster service...");

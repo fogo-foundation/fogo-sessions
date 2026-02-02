@@ -32,7 +32,6 @@ exclude = [
 
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
-data_type = "U64"
 constraint = { LessThan = { U64 = 1000 } }
 
 
@@ -48,7 +47,6 @@ exclude = []
 
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
-data_type = "U8"
 constraint = { EqualTo = [ {U8 = 4}, {U8 = 5} ] }
 
 
@@ -58,6 +56,9 @@ constraint = { EqualTo = [ {U8 = 4}, {U8 = 5} ] }
 version = "v1"
 name = "Example v1 Variation"
 max_gas_spend = 1000000
+swap_into_fogo = [
+    { mint = "ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND", rate = 0.5 }
+]
 
 # Instruction 0
 [[domains.tx_variations.instructions]]
@@ -86,49 +87,41 @@ required = true
 # numSignatures = 1
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
-data_type = "U8"
 constraint = { EqualTo = [ {U8 = 1} ] }
 
 # padding = 0
 [[domains.tx_variations.instructions.data]]
 start_byte = 1
-data_type = "U8"
 constraint = { EqualTo = [ {U8 = 0} ] }
 
 # signatureOffset = 16 + 32 = 48
 [[domains.tx_variations.instructions.data]]
 start_byte = 2
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 48} ] }
 
 # signatureInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 4
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
 
 # publicKeyOffset = 16
 [[domains.tx_variations.instructions.data]]
 start_byte = 6
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 16} ] }
 
 # publicKeyInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 8
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
 
 # messageOffset = 16 + 32 + 64 = 112
 [[domains.tx_variations.instructions.data]]
 start_byte = 10
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 112} ] }
 
 # messageInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 14
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
 
 [[domains.tx_variations.instructions]]
@@ -138,7 +131,6 @@ required = true
 # instruction = 0 (SendTokens) | 4 (SendNative)
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
-data_type = "U8"
 constraint = { EqualTo = [ {U8 = 0}, {U8 = 4} ] }
 
 
@@ -155,49 +147,41 @@ required = true
 # numSignatures = 1
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
-data_type = "U8"
 constraint = { EqualTo = [ {U8 = 1} ] }
 
 # padding = 0
 [[domains.tx_variations.instructions.data]]
 start_byte = 1
-data_type = "U8"
 constraint = { EqualTo = [ {U8 = 0} ] }
 
 # signatureOffset = 16 + 32 = 48
 [[domains.tx_variations.instructions.data]]
 start_byte = 2
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 48} ] }
 
 # signatureInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 4
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
 
 # publicKeyOffset = 16
 [[domains.tx_variations.instructions.data]]
 start_byte = 6
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 16} ] }
 
 # publicKeyInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 8
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
 
 # messageOffset = 16 + 32 + 64 = 112
 [[domains.tx_variations.instructions.data]]
 start_byte = 10
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 112} ] }
 
 # messageInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 14
-data_type = "U16"
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
 
 [[domains.tx_variations.instructions]]
@@ -207,12 +191,10 @@ required = true
 # instruction = 1 (BridgeNttTokens)
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
-data_type = "U8"
 constraint = { EqualTo = [ {U8 = 1} ] }
 
 [[domains.tx_variations.instructions.data]]
 start_byte = 1
-data_type = "NttSignedQuote"
 constraint = { EqualTo = [ {NttSignedQuoter = "0x5241c9276698439fef2780dbab76fec90b633fbd"} ] }
 
 
@@ -228,5 +210,4 @@ required = true
 
 [[domains.tx_variations.instructions.data]]
 start_byte = 0
-data_type = "U8"
 constraint = { EqualTo = [ {U8 = 9} ] }

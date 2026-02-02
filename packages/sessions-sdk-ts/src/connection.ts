@@ -1,7 +1,4 @@
-import type { Wallet } from "@coral-xyz/anchor";
-import { AnchorProvider, BN } from "@coral-xyz/anchor";
-import { TollboothIdl, TollboothProgram } from "@fogo/sessions-idls";
-import { sha256 } from "@noble/hashes/sha2";
+import { TollboothIdl } from "@fogo/sessions-idls";
 import {
   fromLegacyKeypair,
   fromLegacyPublicKey,
@@ -31,7 +28,6 @@ import {
   setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash,
 } from "@solana/kit";
-import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import type {
   AddressLookupTableAccount,
   TransactionError,
@@ -43,10 +39,12 @@ import {
   VersionedTransaction,
   Connection as Web3Connection,
 } from "@solana/web3.js";
+import BN from "bn.js";
 import { z } from "zod";
-
+import { createPaymasterFeeInstruction } from "./instructions.js";
 import { USDC_MINT } from "./mints.js";
 import { Network } from "./network.js";
+import { getPaymasterFee, PaymasterResponseError } from "./paymaster.js";
 
 const DEFAULT_RPC = {
   [Network.Testnet]: "https://testnet.fogo.io",
@@ -265,7 +263,14 @@ const buildTransaction = async (
           extraConfig.addressLookupTable,
         ),
     Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
-    getFee(connection, domain, extraConfig?.variation, feeMint),
+    extraConfig?.variation === undefined
+      ? Promise.resolve(new BN(0))
+      : getPaymasterFee(
+          connection.paymaster ?? DEFAULT_PAYMASTER[connection.network],
+          domain,
+          extraConfig.variation,
+          feeMint,
+        ),
     sessionKey === undefined
       ? Promise.resolve(undefined)
       : getAddressFromPublicKey(sessionKey.publicKey),
@@ -294,7 +299,10 @@ const buildTransaction = async (
           tx,
         ),
       (tx) =>
-        tollboothInstruction === undefined
+        tollboothInstruction === undefined ||
+        tx.instructions.some(
+          (instruction) => instruction.programAddress == TollboothIdl.address,
+        )
           ? tx
           : appendTransactionMessageInstructions([tollboothInstruction], tx),
       (tx) =>
@@ -311,15 +319,7 @@ const buildTransaction = async (
   );
 };
 
-const getDomainTollRecipientAddress = (domain: string) => {
-  const hash = sha256(domain);
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from("toll_recipient"), Buffer.from([0]), hash],
-    new PublicKey(TollboothIdl.address),
-  )[0];
-};
-
-const buildTollboothInstructionIfNeeded = async ({
+const buildTollboothInstructionIfNeeded = ({
   sessionKeyAddress,
   walletPublicKey,
   domain,
@@ -333,23 +333,13 @@ const buildTollboothInstructionIfNeeded = async ({
   feeAmount: BN;
 }) => {
   if (feeAmount.gt(new BN(0)) && sessionKeyAddress !== undefined) {
-    const userTokenAccount = getAssociatedTokenAddressSync(
-      feeMint,
+    return createPaymasterFeeInstruction({
+      sessionKey: new PublicKey(sessionKeyAddress),
       walletPublicKey,
-    );
-    const recipient = getDomainTollRecipientAddress(domain);
-    const instruction = await new TollboothProgram(
-      new AnchorProvider({} as Web3Connection, {} as Wallet),
-    ).methods
-      .payToll(feeAmount, 0)
-      .accounts({
-        session: new PublicKey(sessionKeyAddress),
-        source: userTokenAccount,
-        destination: getAssociatedTokenAddressSync(feeMint, recipient, true),
-        mint: feeMint,
-      })
-      .instruction();
-    return fromLegacyTransactionInstruction(instruction);
+      domain,
+      feeMint,
+      feeAmount,
+    }).then(fromLegacyTransactionInstruction);
   } else {
     return undefined;
   }
@@ -437,35 +427,6 @@ const getSponsor = async (
   }
 };
 
-const getFee = async (
-  options: Pick<
-    Parameters<typeof createSessionConnection>[0],
-    "paymaster" | "network"
-  >,
-  domain: string,
-  variation: string | undefined,
-  mint: PublicKey,
-) => {
-  if (variation) {
-    const url = new URL(
-      "/api/fee",
-      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
-    );
-    url.searchParams.set("domain", domain);
-    url.searchParams.set("variation", variation);
-    url.searchParams.set("mint", mint.toBase58());
-    const response = await fetch(url);
-
-    if (response.status === 200) {
-      return new BN(await response.text());
-    } else {
-      throw new PaymasterResponseError(response.status, await response.text());
-    }
-  } else {
-    return new BN(0);
-  }
-};
-
 const getAddressLookupTable = async (
   connection: Web3Connection,
   addressLookupTableCache: Map<string, AddressLookupTableAccount>,
@@ -486,10 +447,3 @@ const getAddressLookupTable = async (
     return value;
   }
 };
-
-class PaymasterResponseError extends Error {
-  constructor(statusCode: number, message: string) {
-    super(`Paymaster sent a ${statusCode.toString()} response: ${message}`);
-    this.name = "PaymasterResponseError";
-  }
-}

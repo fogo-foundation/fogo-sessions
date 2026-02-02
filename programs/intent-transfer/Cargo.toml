@@ -41,3 +41,6 @@ solana-signer = {workspace = true}
 solana-transaction = {workspace = true}
 spl-associated-token-account = {workspace = true}
 spl-token = {workspace = true}
+
+[lints]
+workspace = true

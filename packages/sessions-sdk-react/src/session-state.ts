@@ -130,6 +130,16 @@ export const isEstablished = (
   sessionState: SessionState,
 ): sessionState is EstablishedSessionState => "sessionKey" in sessionState;
 
+export const isWalletLoading = (sessionState: SessionState) =>
+  [
+    StateType.Initializing,
+    StateType.CheckingStoredSession,
+    StateType.RequestingLimits,
+    StateType.SettingLimits,
+    StateType.WalletConnecting,
+    StateType.SelectingWallet,
+  ].includes(sessionState.type);
+
 export type UpdatableSessionState = Extract<
   SessionState,
   {

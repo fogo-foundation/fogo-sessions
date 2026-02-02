@@ -1,5 +1,23 @@
 # @fogo/sessions-sdk
 
+## 0.1.6 (2026-01-24)
+
+### Fixes
+
+- Discard sessions when they don't match the on-chain domain registry
+
+## 0.1.5 (2026-01-23)
+
+### Fixes
+
+- Expose `getPaymasterFee` and `createPaymasterFeeInstruction`  to enable crafting instructions to charge end-users paymaster fees.
+
+## 0.1.4 (2026-01-22)
+
+### Fixes
+
+- Import BN from bn.js instead of anchor
+
 ## 0.1.3 (2026-01-15)
 
 ### Fixes

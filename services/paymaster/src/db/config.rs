@@ -47,7 +47,7 @@ pub enum NetworkEnvironment {
 fn handle_transaction_variation_v0(
     transaction_variation: Json<Value>,
     name: String,
-) -> Result<TransactionVariation, anyhow::Error> {
+) -> anyhow::Result<TransactionVariation> {
     // Extract the whitelisted_programs array as Vec<String>
     let strings: Vec<String> = match transaction_variation.0 {
         JsonValue::Array(arr) => arr
@@ -76,7 +76,7 @@ fn handle_transaction_variation_v1(
     transaction_variation: Json<Value>,
     name: String,
     max_gas_spend: u64,
-) -> Result<TransactionVariation, anyhow::Error> {
+) -> anyhow::Result<TransactionVariation> {
     let instructions: Vec<InstructionConstraint> = serde_json::from_value(transaction_variation.0)?;
     Ok(TransactionVariation::V1(
         VariationOrderedInstructionConstraints {
@@ -84,6 +84,7 @@ fn handle_transaction_variation_v1(
             instructions,
             max_gas_spend,
             paymaster_fee_lamports: None, // TODO: This should be added to the DB
+            swap_into_fogo: vec![],       // TODO: This should be added to the DB
         },
     ))
 }

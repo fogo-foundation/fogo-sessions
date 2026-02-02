@@ -3,7 +3,7 @@ import { StateType } from "@fogo/component-library/useData";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import {
   isEstablished,
-  SessionStateType,
+  isWalletLoading,
   useSession,
 } from "@fogo/sessions-sdk-react";
 import { useParams } from "next/navigation";
@@ -18,17 +18,8 @@ export const Variation = () => {
     domainId: string;
   }>();
   const sessionState = useSession();
-  // todo move this to sdk
-  const isWalletLoading = [
-    SessionStateType.Initializing,
-    SessionStateType.CheckingStoredSession,
-    SessionStateType.RequestingLimits,
-    SessionStateType.SettingLimits,
-    SessionStateType.WalletConnecting,
-    SessionStateType.SelectingWallet,
-  ].includes(sessionState.type);
 
-  if (isWalletLoading) {
+  if (isWalletLoading(sessionState)) {
     return <VariationContents isLoading />;
   } else if (isEstablished(sessionState)) {
     return (
@@ -98,7 +89,13 @@ const VariationData = ({
       if (!domainConfig) {
         return <div>Domain config not found</div>;
       }
-      return <DomainVariation app={app} domainConfig={domainConfig} />;
+      return (
+        <DomainVariation
+          sessionState={sessionState}
+          app={app}
+          domainConfig={domainConfig}
+        />
+      );
     }
     default: {
       return;

@@ -1,6 +1,6 @@
 [package]
 name = "fogo-paymaster"
-version = "0.7.1"
+version = "0.7.3"
 edition = { workspace = true }
 license = { workspace = true }
 description = "Fogo paymaster service and transaction validator CLI"
@@ -33,6 +33,7 @@ nonempty = "0.12.0"
 opentelemetry = "0.30.0"
 opentelemetry-otlp = {version = "0.30.0", features = ["grpc-tonic"]}
 opentelemetry_sdk = {version = "0.30.0", features = ["rt-tokio"]}
+rand = {workspace = true}
 reqwest = {workspace = true}
 reqwest-middleware = "0.4.2"
 serde = {workspace = true}
@@ -83,3 +84,6 @@ path = "src/bin/tx_validator.rs"
 [[bin]]
 name = "paymaster-config-sync"
 path = "src/bin/config_sync.rs"
+
+[lints]
+workspace = true

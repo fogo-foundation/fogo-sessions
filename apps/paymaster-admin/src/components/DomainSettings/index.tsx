@@ -1,33 +1,102 @@
+import { Button } from "@fogo/component-library/Button";
+import { errorToString } from "@fogo/component-library/error-to-string";
 import { Skeleton } from "@fogo/component-library/Skeleton";
 import { Switch } from "@fogo/component-library/Switch";
+import { useToast } from "@fogo/component-library/Toast";
+import { StateType, useAsync } from "@fogo/component-library/useAsync";
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { GearIcon } from "@phosphor-icons/react/dist/ssr";
-import { useState } from "react";
+import { useCallback, useRef } from "react";
+import { Form } from "react-aria-components";
+import { useUserData } from "../../client/paymaster";
 import type { DomainConfig } from "../../db-schema";
 import { ListHeader } from "../ListHeader";
+import { updateDomainSettings } from "./actions/domainSettings";
 import styles from "./index.module.scss";
 
-type DomainSettingsSwitchProps = {
-  label: string;
-  isEnabled: boolean;
+type DomainSettingsListProps = {
+  domainConfig: DomainConfig;
+  sessionState: EstablishedSessionState;
 };
 
-export const DomainSettingsSwitch = (props: DomainSettingsSwitchProps) => {
-  const [isEnabled, setIsEnabled] = useState(props.isEnabled);
+export const DomainSettingsList = (props: DomainSettingsListProps) => {
+  const toast = useToast();
+  const userData = useUserData(props.sessionState);
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const handleToggle = () => {
-    setIsEnabled(!isEnabled);
-  };
+  const wrappedUpdateDomainSettings = useCallback(async () => {
+    if (formRef.current) {
+      // using a form ref to get the uncontrolled input values since we can't use useActionState as it resets the form after submission
+      const formData = new FormData(formRef.current);
+      const enableSessionManagement =
+        formData.get("enableSessionManagement") === "on";
+      const enablePreflightSimulation =
+        formData.get("enablePreflightSimulation") === "on";
+      const sessionToken = await props.sessionState.createLogInToken();
+      await updateDomainSettings({
+        domainConfigId: props.domainConfig.id,
+        enableSessionManagement,
+        enablePreflightSimulation,
+        sessionToken,
+      });
+      if ("mutate" in userData) {
+        await userData.mutate();
+      }
+    }
+  }, [props.sessionState, props.domainConfig.id, userData]);
+
+  const { execute, state } = useAsync(wrappedUpdateDomainSettings, {
+    onSuccess: () => {
+      toast.success("Domain settings updated");
+    },
+    onError: (error) => {
+      toast.error(`Failed to update domain settings: ${errorToString(error)}`);
+    },
+  });
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      execute();
+    },
+    [execute],
+  );
 
   return (
-    <Switch isSelected={isEnabled} onChange={handleToggle}>
-      {props.label}
-    </Switch>
+    <Form
+      ref={formRef}
+      className={styles.domainSettingsCheckboxes ?? ""}
+      onSubmit={handleSubmit}
+    >
+      <Switch
+        name="enableSessionManagement"
+        defaultSelected={props.domainConfig.enable_session_management}
+      >
+        Enable Session Management
+      </Switch>
+      <Switch
+        name="enablePreflightSimulation"
+        defaultSelected={props.domainConfig.enable_preflight_simulation}
+      >
+        Enable Preflight Simulation
+      </Switch>
+      <div>
+        <Button
+          type="submit"
+          variant="secondary"
+          isDisabled={state.type === StateType.Running}
+        >
+          {state.type === StateType.Running ? "Saving..." : "Save"}
+        </Button>
+      </div>
+    </Form>
   );
 };
 
 type DomainSettingsProps =
   | {
       domainConfig: DomainConfig;
+      sessionState: EstablishedSessionState;
       isLoading?: false;
     }
   | {
@@ -35,27 +104,22 @@ type DomainSettingsProps =
     };
 
 export const DomainSettings = (props: DomainSettingsProps) => {
-  if (props.isLoading) {
-    return <Skeleton className={styles.domainSettingsSkeleton} />;
-  }
-
   return (
     <div className={styles.domainSettings}>
       <ListHeader
+        isLoading={props.isLoading}
         title="Domain Settings"
         icon={<GearIcon size={24} weight="duotone" />}
         count={2}
       />
-      <div className={styles.domainSettingsCheckboxes}>
-        <DomainSettingsSwitch
-          label="Enable Session Management"
-          isEnabled={props.domainConfig.enable_session_management}
+      {props.isLoading ? (
+        <Skeleton className={styles.domainSettingsSkeleton} />
+      ) : (
+        <DomainSettingsList
+          domainConfig={props.domainConfig}
+          sessionState={props.sessionState}
         />
-        <DomainSettingsSwitch
-          label="Enable Preflight Simulation"
-          isEnabled={props.domainConfig.enable_preflight_simulation}
-        />
-      </div>
+      )}
     </div>
   );
 };

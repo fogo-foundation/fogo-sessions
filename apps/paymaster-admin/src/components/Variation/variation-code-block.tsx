@@ -1,20 +1,28 @@
 import { Button } from "@fogo/component-library/Button";
-import {
-  ArrowsInIcon,
-  ArrowsOutIcon,
-  ChecksIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { useToast } from "@fogo/component-library/Toast";
+import { ArrowsInIcon, ArrowsOutIcon, ChecksIcon } from "@phosphor-icons/react/dist/ssr";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import AceEditor from "react-ace";
-import type { Variation } from "../../db-schema";
+import "./ace-theme.scss";
 import styles from "./variation-code-block.module.scss";
 import "ace-builds/src-noconflict/theme-monokai";
-import "./ace-theme.scss";
+import "ace-builds/src-noconflict/mode-json";
+import "ace-builds/src-noconflict/mode-toml";
+import type { Variation } from "../../db-schema";
 import { Badge } from "@fogo/component-library/Badge";
-import { useToast } from "@fogo/component-library/Toast";
 import { useResizeObserver } from "@react-hookz/web";
 import { VariationTester } from "./variation-tester";
+
+type VariationCodeBlockProps = {
+  value: string;
+  onChange: (value: string) => void;
+  isExpanded: boolean;
+  domain: string;
+  variation: Variation;
+  footer?: React.ReactNode;
+  mode: "toml" | "json";
+};
 
 export const VariationCodeBlock = ({
   value,
@@ -22,17 +30,15 @@ export const VariationCodeBlock = ({
   isExpanded,
   domain,
   variation,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  isExpanded: boolean;
-  domain: string;
-  variation: Variation;
-}) => {
+  footer,
+  mode,
+}: VariationCodeBlockProps) => {
   const toast = useToast();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [editorHeight, setEditorHeight] = useState(0);
 
   const handleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -51,6 +57,10 @@ export const VariationCodeBlock = ({
       });
   }, [toast.error]);
 
+  const handleUpdate = useCallback(() => {
+    setEditorHeight(contentRef.current?.clientHeight ?? 0);
+  }, []);
+
   return (
     <AnimatePresence>
       {isExpanded && (
@@ -60,7 +70,9 @@ export const VariationCodeBlock = ({
           exit={{ height: 0, scale: 0.95 }}
           className={styles.variationCodeBlock}
           ref={cardRef}
+          onUpdate={handleUpdate}
         >
+          <input type="hidden" name="code" value={value} />
           <div className={styles.variationCodeBlockHeader}>
             <h2 className={styles.variationCodeBlockHeaderTitle}>
               Edit Configuration
@@ -73,22 +85,26 @@ export const VariationCodeBlock = ({
           <Editor
             onChange={onChange}
             value={value}
-            variationId={variation.id}
+            mode={mode}
           />
-          <div className={styles.variationCodeBlockFooter}>
-            <div className={styles.variationCodeBlockFooterInfo}>
-              <Badge variant="success" size="xs">
-                Valid format <ChecksIcon />
-              </Badge>
-            </div>
-            <div className={styles.variationCodeBlockFooterButtons}>
-              <Button variant="secondary">Save</Button>
-            </div>
-          </div>
-          <div className={styles.variationCodeBlockTester}>
-            {/* TODO: currently the variation input is disconnected from the code editor. We should figure out the right way to connect these. */}
-            <VariationTester domain={domain} variation={variation} />
-          </div>
+          {footer && (
+            <>
+              <div className={styles.variationCodeBlockFooter}>
+                <div className={styles.variationCodeBlockFooterInfo}>
+                  <Badge variant="success" size="xs">
+                    Valid format <ChecksIcon />
+                  </Badge>
+                </div>
+                <div className={styles.variationCodeBlockFooterButtons}>
+                  <Button variant="secondary">Save</Button>
+                </div>
+              </div>
+              <div className={styles.variationCodeBlockTester}>
+                {/* TODO: currently the variation input is disconnected from the code editor. We should figure out the right way to connect these. */}
+                <VariationTester domain={domain} variation={variation} />
+              </div>
+            </>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
@@ -98,10 +114,10 @@ export const VariationCodeBlock = ({
 type EditorProps = {
   value: string;
   onChange: (value: string) => void;
-  variationId: string;
+  mode: "toml" | "json";
 };
 
-const Editor = ({ value, onChange, variationId }: EditorProps) => {
+const Editor = ({ value, onChange, mode }: EditorProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [editorHeight, setEditorHeight] = useState(0);
 
@@ -115,15 +131,15 @@ const Editor = ({ value, onChange, variationId }: EditorProps) => {
     <div className={styles.variationCodeBlockContent} ref={contentRef}>
       {contentRef.current && (
         <AceEditor
-          name={variationId}
           value={value}
           onChange={onChange}
           className={styles.variationCodeBlockEditor}
-          mode="javascript"
+          mode={mode}
           theme="monokai"
           width="100%"
           height={`${editorHeight}px`}
           showPrintMargin={false}
+          aria-label="Variation code"
         />
       )}
     </div>

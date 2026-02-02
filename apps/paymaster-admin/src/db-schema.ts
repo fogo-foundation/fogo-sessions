@@ -65,6 +65,8 @@ export const InstructionConstraintSchema = z.object({
   required: z.boolean(),
 });
 
+export const TransactionVariations = z.array(InstructionConstraintSchema);
+
 // Database variation schemas (version, name, max_gas_spend are separate columns)
 // The transaction_variation JSONB field contains different data based on version:
 // - v0: array of program pubkeys (whitelisted_programs)
@@ -74,7 +76,6 @@ export const VariationV0Schema = z.object({
   version: z.literal("v0"),
   name: z.string(),
   transaction_variation: z.array(Base58Pubkey),
-  max_gas_spend: u64,
   created_at: TimeStr,
   updated_at: TimeStr,
 });
@@ -83,7 +84,7 @@ export const VariationV1Schema = z.object({
   id: UUID,
   version: z.literal("v1"),
   name: z.string(),
-  transaction_variation: z.array(InstructionConstraintSchema),
+  transaction_variation: TransactionVariations,
   max_gas_spend: u64,
   created_at: TimeStr,
   updated_at: TimeStr,
@@ -132,12 +133,4 @@ export type User = z.infer<typeof UserSchema>;
 export type App = z.infer<typeof AppWithDomainConfigsSchema>;
 export type DomainConfig = z.infer<typeof DomainConfigWithVariationsSchema>;
 export type Variation = z.infer<typeof VariationSchema>;
-export type InstructionConstraint = z.infer<typeof InstructionConstraintSchema>;
-export type AccountConstraint = z.infer<typeof AccountConstraintSchema>;
-export type DataConstraint = z.infer<typeof DataConstraintSchema>;
-export type ContextualPubkey = z.infer<typeof ContextualPubkeySchema>;
-export type PrimitiveDataType = z.infer<typeof PrimitiveDataTypeSchema>;
-export type DataConstraintSpecification = z.infer<
-  typeof DataConstraintSpecificationSchema
->;
-export type PrimitiveDataValue = z.infer<typeof PrimitiveDataValueSchema>;
+export type TransactionVariations = z.infer<typeof TransactionVariations>;

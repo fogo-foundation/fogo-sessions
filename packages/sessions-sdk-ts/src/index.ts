@@ -80,11 +80,13 @@ export {
   type SessionContext,
 } from "./context.js";
 export {
+  createPaymasterFeeInstruction,
   createSessionUnwrapInstruction,
   createSessionWrapInstructions,
   createSystemProgramSessionWrapInstruction,
 } from "./instructions.js";
 export { Network } from "./network.js";
+export { getPaymasterFee } from "./paymaster.js";
 
 const MESSAGE_HEADER = `Fogo Sessions:
 Signing this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.
@@ -265,6 +267,45 @@ export const getSessionAccount = async (
       );
 };
 
+const getDomainRegistryAuthorizedPrograms = async (
+  connection: Connection,
+  domain: string,
+) => {
+  const result = await connection.getAccountInfo(
+    getDomainRecordAddress(domain),
+    "confirmed",
+  );
+  if (result === null) {
+    return [];
+  } else {
+    const programs = [];
+    for (let i = 0; i < result.data.length; i += 64) {
+      programs.push({
+        programId: new PublicKey(result.data.subarray(i, i + 32)),
+        signerPda: new PublicKey(result.data.subarray(i + 32, i + 64)),
+      });
+    }
+    return programs;
+  }
+};
+
+const authorizedProgramsMatchDomainRegistry = (
+  sessionAuthorizedPrograms: NonNullable<
+    z.infer<typeof sessionInfoSchema>
+  >["authorizedPrograms"],
+  domainAuthorizedPrograms: { programId: PublicKey; signerPda: PublicKey }[],
+) => {
+  if (sessionAuthorizedPrograms.type === AuthorizedProgramsType.All) {
+    return true;
+  }
+  return domainAuthorizedPrograms.every(
+    ({ programId: programIdFromRegistry }) =>
+      sessionAuthorizedPrograms.programs.some(({ programId }) =>
+        programId.equals(programIdFromRegistry),
+      ),
+  );
+};
+
 const createSession = async (
   context: SessionContext,
   walletPublicKey: PublicKey,
@@ -273,11 +314,17 @@ const createSession = async (
   const sessionPublicKey = new PublicKey(
     await getAddressFromPublicKey(sessionKey.publicKey),
   );
-  const sessionInfo = await getSessionAccount(
-    context.connection,
-    sessionPublicKey,
-  );
-  return sessionInfo === undefined
+
+  const [sessionInfo, domainRegistryAuthorizedPrograms] = await Promise.all([
+    getSessionAccount(context.connection, sessionPublicKey),
+    getDomainRegistryAuthorizedPrograms(context.connection, context.domain),
+  ]);
+
+  return sessionInfo === undefined ||
+    !authorizedProgramsMatchDomainRegistry(
+      sessionInfo.authorizedPrograms,
+      domainRegistryAuthorizedPrograms,
+    )
     ? undefined
     : {
         sessionPublicKey,

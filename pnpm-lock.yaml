@@ -255,6 +255,9 @@ catalogs:
     sass-loader:
       specifier: ^16.0.5
       version: 16.0.6
+    smol-toml:
+      specifier: ^1.6.0
+      version: 1.6.0
     storybook:
       specifier: ^10.1.2
       version: 10.1.2
@@ -279,6 +282,9 @@ catalogs:
     typescript:
       specifier: ^5.8.3
       version: 5.8.3
+    uuid:
+      specifier: ^13.0.0
+      version: 13.0.0
     vercel:
       specifier: ^50.1.5
       version: 50.1.5
@@ -363,11 +369,14 @@ importers:
         specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
       smol-toml:
-        specifier: ^1.6.0
+        specifier: 'catalog:'
         version: 1.6.0
       swr:
         specifier: 'catalog:'
         version: 2.3.3(react@19.2.1)
+      uuid:
+        specifier: 'catalog:'
+        version: 13.0.0
       zod:
         specifier: 'catalog:'
         version: 3.25.67
@@ -1046,6 +1055,9 @@ importers:
       '@noble/hashes':
         specifier: 'catalog:'
         version: 1.8.0
+      '@solana/spl-token':
+        specifier: 'catalog:'
+        version: 0.4.13(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.8.3)(utf-8-validate@5.0.10)
       '@solana/wallet-adapter-ledger':
         specifier: 'catalog:'
         version: 0.9.29(@solana/web3.js@1.98.2(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10))
@@ -12738,6 +12750,10 @@ packages:
   utils-merge@1.0.1:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
+
+  uuid@13.0.0:
+    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
+    hasBin: true
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
@@ -29900,6 +29916,8 @@ snapshots:
   utila@0.4.0: {}
 
   utils-merge@1.0.1: {}
+
+  uuid@13.0.0: {}
 
   uuid@8.3.2: {}
 

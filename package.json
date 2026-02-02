@@ -13,6 +13,7 @@
     "prepare": "./scripts/ci/npm-prepare.sh",
     "run:domain-registry": "domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
+    "run:initialize-tollbooth": "initialize-tollbooth",
     "run:register-ntt-manager": "register-ntt-manager",
     "run:register-fee-config": "register-fee-config",
     "run:update-metadata": "update-metadata",
