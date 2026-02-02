@@ -104,21 +104,22 @@ type DomainSettingsProps =
     };
 
 export const DomainSettings = (props: DomainSettingsProps) => {
-  if (props.isLoading) {
-    return <Skeleton className={styles.domainSettingsSkeleton} />;
-  }
-
   return (
     <div className={styles.domainSettings}>
       <ListHeader
+        isLoading={props.isLoading}
         title="Domain Settings"
         icon={<GearIcon size={24} weight="duotone" />}
         count={2}
       />
-      <DomainSettingsList
-        domainConfig={props.domainConfig}
-        sessionState={props.sessionState}
-      />
+      {props.isLoading ? (
+        <Skeleton className={styles.domainSettingsSkeleton} />
+      ) : (
+        <DomainSettingsList
+          domainConfig={props.domainConfig}
+          sessionState={props.sessionState}
+        />
+      )}
     </div>
   );
 };

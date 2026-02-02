@@ -43,18 +43,14 @@ export const DomainVariation = (props: DomainVariationProps) => {
             sessionState={props.sessionState}
           />
         )}
-        {props.isLoading ? (
-          <ListHeader isLoading />
-        ) : (
-          <ListHeader
-            title="Variations"
-            icon={<StackIcon size={24} weight="duotone" />}
-            isLoading={props.isLoading}
-            {...(!props.isLoading && {
-              count: props.domainConfig.variations.length,
-            })}
-          />
-        )}
+        <ListHeader
+          isLoading={props.isLoading}
+          title="Variations"
+          icon={<StackIcon size={24} weight="duotone" />}
+          {...(!props.isLoading && {
+            count: props.domainConfig.variations.length,
+          })}
+        />
         {props.isLoading ? (
           <VariationsList isLoading />
         ) : (

@@ -5,6 +5,7 @@ import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import { TrashIcon } from "@phosphor-icons/react/dist/ssr";
 import { useCallback, useState } from "react";
 import { useUserData } from "../../client/paymaster";
+import type { Variation } from "../../db-schema";
 import { ConfirmModal } from "../ConfirmModal";
 import { deleteVariation as deleteVariationPaymaster } from "./actions/variation";
 import styles from "./delete-variation-button.module.scss";
@@ -54,13 +55,13 @@ const getDeleteButtonProps = (additionalProps?: {
 
 const DeleteVariationButtonWithModal = ({
   sessionState,
-  variationId,
+  variation,
 }: {
   sessionState: EstablishedSessionState;
-  variationId: string;
+  variation: Variation;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { execute, state } = useDeleteVariation(sessionState, variationId, {
+  const { execute, state } = useDeleteVariation(sessionState, variation?.id, {
     onSuccess: () => {
       setIsOpen(false);
     },
@@ -103,15 +104,15 @@ const DisabledDeleteVariationButton = () => (
 
 export const DeleteVariationButton = ({
   sessionState,
-  variationId,
+  variation,
 }: {
   sessionState: EstablishedSessionState;
-  variationId?: string;
+  variation?: Variation;
 }) => {
-  return variationId ? (
+  return variation ? (
     <DeleteVariationButtonWithModal
       sessionState={sessionState}
-      variationId={variationId}
+      variation={variation}
     />
   ) : (
     <DisabledDeleteVariationButton />

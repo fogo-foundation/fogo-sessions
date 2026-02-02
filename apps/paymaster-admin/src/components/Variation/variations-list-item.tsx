@@ -289,7 +289,7 @@ const VariationForm = ({
           {...(variation?.id
             ? {
                 sessionState,
-                variationId: variation.id,
+                variation,
                 isDisabled: false,
               }
             : {
