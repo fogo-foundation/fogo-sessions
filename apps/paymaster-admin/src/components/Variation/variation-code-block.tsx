@@ -77,7 +77,6 @@ export const VariationCodeBlock = ({
           <div className={styles.variationCodeBlockContent} ref={contentRef}>
             {contentRef.current && (
               <AceEditor
-                name="variation-code"
                 value={value}
                 onChange={onChange}
                 className={styles.variationCodeBlockEditor}
