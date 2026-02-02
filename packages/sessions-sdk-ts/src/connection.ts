@@ -357,15 +357,16 @@ const addSignaturesToExistingTransaction = async (
           TransactionWithLifetime) // VersionedTransaction has a lifetime so it's fine to cast it so we can call partiallySignTransaction
       : transaction;
 
-  const filter = await Promise.all(
-    signerKeys.map(async (signer) => {
-      const address = await getAddressFromPublicKey(signer.publicKey);
-      return kitTransaction.signatures[address] !== undefined;
-    }),
+  const signerAddresses = await Promise.all(
+    signerKeys.map(
+      async (signer) =>
+        [signer, await getAddressFromPublicKey(signer.publicKey)] as const,
+    ),
   );
-  const filteredSignerKeys = signerKeys.filter((_, index) => {
-    return filter[index];
-  });
+  const filteredSignerKeys = signerAddresses
+    .filter(([, address]) => kitTransaction.signatures[address] !== undefined)
+    .map(([signer]) => signer);
+
   return partiallySignTransaction(filteredSignerKeys, kitTransaction);
 };
 
