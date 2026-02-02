@@ -4,14 +4,14 @@ import { TextField } from "@fogo/component-library/TextField";
 import { StateType, useAsync } from "@fogo/component-library/useAsync";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useCallback, useState } from "react";
-import type { Variation } from "../../db-schema";
 import styles from "./variation-tester.module.scss";
 
 type ValidationResult = { success: boolean; message: string };
 
 type VariationTesterProps = {
   domain: string;
-  variation: Variation;
+  // TODO: we should parse this earlier into a Variation type
+  variation: string;
 };
 
 export const VariationTester = ({
@@ -22,7 +22,7 @@ export const VariationTester = ({
 
   const { state, execute } = useAsync<ValidationResult>(
     useCallback(async () => {
-      const response = await fetch("/api/validate-transaction", {
+      const response = await fetch("/api/fake-validate-transaction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

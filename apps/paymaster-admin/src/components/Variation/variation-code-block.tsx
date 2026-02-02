@@ -19,7 +19,6 @@ type VariationCodeBlockProps = {
   onChange: (value: string) => void;
   isExpanded: boolean;
   domain: string;
-  variation: Variation;
   footer?: React.ReactNode;
   mode: "toml" | "json";
 };
@@ -29,7 +28,6 @@ export const VariationCodeBlock = ({
   onChange,
   isExpanded,
   domain,
-  variation,
   footer,
   mode,
 }: VariationCodeBlockProps) => {
@@ -101,7 +99,7 @@ export const VariationCodeBlock = ({
               </div>
               <div className={styles.variationCodeBlockTester}>
                 {/* TODO: currently the variation input is disconnected from the code editor. We should figure out the right way to connect these. */}
-                <VariationTester domain={domain} variation={variation} />
+                {value && <VariationTester domain={domain} variation={value} />}
               </div>
             </>
           )}
