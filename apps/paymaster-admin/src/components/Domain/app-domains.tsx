@@ -1,4 +1,5 @@
 import { Button } from "@fogo/component-library/Button";
+import { useToast } from "@fogo/component-library/Toast";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { GridList, GridListItem } from "react-aria-components";
@@ -19,10 +20,15 @@ type AppDomainsProps =
 
 export const AppDomains = (props: AppDomainsProps) => {
   const router = useRouter();
+  const toast = useToast();
 
   const handleClose = useCallback(() => {
     router.push("/");
   }, [router]);
+
+  const handleAddDomain = useCallback(() => {
+    toast.error("Coming Soon");
+  }, [toast]);
 
   return (
     <>
@@ -38,15 +44,18 @@ export const AppDomains = (props: AppDomainsProps) => {
         }
       />
       <div className={styles.container}>
-        {props.isLoading ? (
-          <ListHeader isLoading />
-        ) : (
-          <ListHeader
-            title="Domains"
-            count={props.app.domain_configs.length}
-            action={<Button variant="secondary">Add Domain</Button>}
-          />
-        )}
+        <ListHeader
+          title="Domains"
+          isLoading={props.isLoading}
+          action={
+            <Button variant="secondary" onClick={handleAddDomain}>
+              Add Domain
+            </Button>
+          }
+          {...(!props.isLoading && {
+            count: props.app.domain_configs.length,
+          })}
+        />
         {props.isLoading ? (
           <DomainCard isLoading />
         ) : (

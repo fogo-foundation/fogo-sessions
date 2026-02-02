@@ -7,6 +7,8 @@ import AceEditor from "react-ace";
 import "./ace-theme.scss";
 import styles from "./variation-code-block.module.scss";
 import "ace-builds/src-noconflict/theme-monokai";
+import "ace-builds/src-noconflict/mode-json";
+import "ace-builds/src-noconflict/mode-toml";
 
 type VariationCodeBlockProps = {
   value: string;
