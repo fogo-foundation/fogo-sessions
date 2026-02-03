@@ -1,4 +1,5 @@
 use crate::config_manager::config::{default_one, Config, Domain};
+use crate::constraint::MintSwapRate;
 use crate::constraint::config::InstructionConstraint;
 use crate::constraint::{
     config::TransactionVariation, config::VariationOrderedInstructionConstraints,
@@ -31,6 +32,8 @@ struct Variation {
     name: String,
     max_gas_spend: Option<i64>,
     transaction_variation: Json<Value>,
+    swap_into_fogo: Option<Json<Value>>,
+    paymaster_fee_lamports: Option<i64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Type, Eq, PartialOrd, Ord)]
@@ -76,15 +79,23 @@ fn handle_transaction_variation_v1(
     transaction_variation: Json<Value>,
     name: String,
     max_gas_spend: u64,
+    paymaster_fee_lamports: Option<u64>,
+    swap_into_fogo: Option<Json<Value>>,
 ) -> anyhow::Result<TransactionVariation> {
     let instructions: Vec<InstructionConstraint> = serde_json::from_value(transaction_variation.0)?;
+
+    let parsed_swap_into_fogo: Vec<MintSwapRate> = match swap_into_fogo {
+        Some(v) => serde_json::from_value(v.0)?,
+        None => vec![],
+    };
+    
     Ok(TransactionVariation::V1(
         VariationOrderedInstructionConstraints {
             name,
             instructions,
             max_gas_spend,
-            paymaster_fee_lamports: None, // TODO: This should be added to the DB
-            swap_into_fogo: vec![],       // TODO: This should be added to the DB
+            paymaster_fee_lamports,
+            swap_into_fogo: parsed_swap_into_fogo,
         },
     ))
 }
@@ -114,7 +125,9 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
           version::text AS "version!",
           name,
           max_gas_spend,
-          transaction_variation AS "transaction_variation: Json<Value>"
+          transaction_variation AS "transaction_variation: Json<Value>",
+          swap_into_fogo AS "swap_into_fogo?: Json<Value>",
+          paymaster_fee_lamports AS "paymaster_fee_lamports?: i64"
         FROM variation
         "#,
     )
@@ -148,6 +161,8 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
         name,
         max_gas_spend,
         transaction_variation,
+        swap_into_fogo,
+        paymaster_fee_lamports,
     } in variation_rows
     {
         if let Some(domain_ref) = domain_map.get_mut(&domain_config_id) {
@@ -168,11 +183,20 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
                         }
                     };
 
+
+                    let parsed_paymaster_fee_lamports = match paymaster_fee_lamports {
+                        Some(v) => Some(u64::try_from(v)
+                            .map_err(|e| anyhow::anyhow!("Invalid paymaster fee lamports: {e}"))?),
+                        None => None,
+                    };
+
                     handle_transaction_variation_v1(
                         transaction_variation,
                         name,
                         u64::try_from(max)
                             .map_err(|e| anyhow::anyhow!("Invalid max gas spend: {e}"))?,
+                        parsed_paymaster_fee_lamports,
+                        swap_into_fogo,
                     )?
                 }
                 _ => {
