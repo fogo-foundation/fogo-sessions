@@ -91,8 +91,23 @@ Optional flags:
 - `--db-refresh-interval-seconds` for how frequently domain config is refreshed (default `10` secs)
 - `--valiant-api-key` to enable swapping of accrued fee tokens into FOGO as per specifications in the config
 - `--valiant-override-url` to override the default Valiant endpoint used by the paymaster. The default behavior is determined according to the `--network-environment` flag; this override flag is handy particularly in the case of localnet testing.
-
+- `--fee-coefficients` to configure per-token fee multipliers, format is `{ "MINT_PUBKEY": "COEFFFICIENT" }` (example: `'{"So11111111111111111111111111111111111111112": "1", "uSd2czE61Evaf76RNbq4KPpXnkiL3irdzgLFUMe3NoG": "25000"}'`)
 You can also rely on the `.env`(see `.env.example`) values and simply run `cargo run --bin fogo-paymaster run`.
+
+### Making changes to the DB
+
+Create a new migration file:
+
+Update your code and queries accordingly.
+Run the sqlx prepare command:
+```bash
+# if you chanegd the code for paymaster-config-sync
+cargo sqlx prepare -- --bin paymaster-config-sync --workspace
+
+# if you changed the code for the fogo-paymaster
+cargo sqlx prepare -- --bin fogo-paymaster --workspace
+```
+
 
 ## Metrics and Logs
 

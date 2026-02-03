@@ -1,6 +1,7 @@
 use crate::db::config::NetworkEnvironment as DbNetworkEnvironment;
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use std::fmt::{self, Display};
+use solana_pubkey::Pubkey;
+use std::{collections::HashMap, fmt::{self, Display}, str::FromStr};
 #[derive(Debug, Parser)]
 #[command(version, about)]
 pub struct Cli {
@@ -44,6 +45,22 @@ impl From<NetworkEnvironment> for DbNetworkEnvironment {
             NetworkEnvironment::Localnet => DbNetworkEnvironment::Localnet,
         }
     }
+}
+
+fn parse_fee_coefficients(s: &str) -> Result<HashMap<Pubkey, u64>, String> {
+    let string_map = serde_json::from_str::<HashMap<String, String>>(s)
+        .map_err(|e| format!("Invalid JSON for fee coefficients: {e}"))?;
+    
+    let mut result = HashMap::new();
+    for (key, value) in string_map {
+        let pubkey = Pubkey::from_str(&key)
+            .map_err(|e| format!("Invalid Pubkey '{}': {}", key, e))?;
+        let coefficient = value.parse::<u64>()
+            .map_err(|e| format!("Invalid u64 value '{}': {}", value, e))?;
+        result.insert(pubkey, coefficient);
+    }
+    
+    Ok(result)
 }
 
 #[derive(Args, Debug, Clone)]
@@ -92,6 +109,9 @@ pub struct RunOptions {
 
     #[arg(long, env = "VALIANT_OVERRIDE_URL")]
     pub valiant_override_url: Option<String>,
+
+    #[arg(long, env = "FEE_COEFFICIENTS", value_parser = parse_fee_coefficients, default_value = "{}")]
+    pub fee_coefficients: HashMap<Pubkey, u64>,
 }
 
 #[derive(Args, Debug, Clone)]

@@ -1,6 +1,5 @@
 use crate::{
     cli::Cli,
-    config_manager::{config::Config, fee},
 };
 use arc_swap::ArcSwap;
 use clap::Parser;
@@ -70,22 +69,10 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
 
     db::pool::init_db_connection(&opts.db_url).await?;
     /* TODO Revert this once we have a good way of modifying the config from the DB. */
-    let mut config =
+    let config =
         config_manager::load_config::load_db_config(opts.network_environment).await?;
 
-    let file_config: Config = config::Config::builder()
-        .add_source(config::File::with_name(&opts.config_file))
-        .build()?
-        .try_deserialize()?;
-
-    let fee::Config { fee_coefficients }: fee::Config = config::Config::builder()
-        .add_source(config::File::with_name(&opts.config_file))
-        .build()?
-        .try_deserialize()?;
-
-    // print the length of the json stringified string
-    println!("{:?}", serde_json::to_string(&file_config).unwrap().len());
-    println!("{:?}", serde_json::to_string(&config).unwrap().len());
+    println!("{:?}", opts.fee_coefficients);
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
@@ -110,7 +97,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         opts.ftl_url,
         opts.listen_address,
         domains,
-        fee_coefficients,
+        opts.fee_coefficients,
         opts.network_environment,
         opts.valiant_api_key,
         opts.valiant_override_url,

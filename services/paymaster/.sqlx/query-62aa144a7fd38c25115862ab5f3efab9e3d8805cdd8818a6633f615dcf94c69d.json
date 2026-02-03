@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n          domain_config_id,\n          version::text AS \"version!\",\n          name,\n          max_gas_spend,\n          transaction_variation AS \"transaction_variation: Json<Value>\",\n          swap_into_fogo AS \"swap_into_fogo?: Json<Value>\",\n          paymaster_fee_lamports AS \"paymaster_fee_lamports?: i64\"\n        FROM variation\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "domain_config_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "version!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "max_gas_spend",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "transaction_variation: Json<Value>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 5,
+        "name": "swap_into_fogo?: Json<Value>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "paymaster_fee_lamports?: i64",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "62aa144a7fd38c25115862ab5f3efab9e3d8805cdd8818a6633f615dcf94c69d"
+}
