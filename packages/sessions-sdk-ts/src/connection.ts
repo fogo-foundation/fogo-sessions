@@ -345,19 +345,30 @@ const buildTollboothInstructionIfNeeded = ({
   }
 };
 
-const addSignaturesToExistingTransaction = (
+const addSignaturesToExistingTransaction = async (
   transaction: VersionedTransaction | (Transaction & TransactionWithLifetime),
   signerKeys: CryptoKeyPair[],
-) =>
-  partiallySignTransaction(
-    signerKeys,
+) => {
+  const kitTransaction =
     transaction instanceof VersionedTransaction
       ? (fromVersionedTransaction(transaction) as ReturnType<
           typeof fromVersionedTransaction
         > &
           TransactionWithLifetime) // VersionedTransaction has a lifetime so it's fine to cast it so we can call partiallySignTransaction
-      : transaction,
+      : transaction;
+
+  const signerAddresses = await Promise.all(
+    signerKeys.map(
+      async (signer) =>
+        [signer, await getAddressFromPublicKey(signer.publicKey)] as const,
+    ),
   );
+  const filteredSignerKeys = signerAddresses
+    .filter(([, address]) => kitTransaction.signatures[address] !== undefined)
+    .map(([signer]) => signer);
+
+  return partiallySignTransaction(filteredSignerKeys, kitTransaction);
+};
 
 const getSignerKeys = async (
   sessionKey: CryptoKeyPair | undefined,
