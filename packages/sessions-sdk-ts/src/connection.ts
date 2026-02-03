@@ -134,7 +134,7 @@ export type SendTransactionOptions = {
   variation?: string | undefined;
   addressLookupTable?: string | undefined;
   extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
-  feeMint?: PublicKey;
+  feeMint?: PublicKey | Address;
 };
 
 export type Connection = ReturnType<typeof createSessionConnection>;
@@ -240,9 +240,10 @@ const buildTransaction = async (
     addressLookupTable?: string | undefined;
     extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
     variation?: string | undefined;
-    feeMint?: PublicKey;
+    feeMint?: PublicKey | Address;
   },
 ) => {
+  const feeMint = extraConfig?.feeMint === undefined ? undefined : new PublicKey(extraConfig.feeMint);
   const [
     { value: latestBlockhash },
     sponsor,
@@ -263,13 +264,13 @@ const buildTransaction = async (
           extraConfig.addressLookupTable,
         ),
     Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
-    extraConfig?.variation === undefined || extraConfig.feeMint === undefined
+    extraConfig?.variation === undefined || feeMint === undefined
       ? Promise.resolve(new BN(0))
       : getPaymasterFee(
           connection.paymaster ?? DEFAULT_PAYMASTER[connection.network],
           domain,
           extraConfig.variation,
-          extraConfig.feeMint,
+          feeMint,
         ),
     sessionKey === undefined
       ? Promise.resolve(undefined)
@@ -280,7 +281,7 @@ const buildTransaction = async (
     sessionKeyAddress,
     walletPublicKey,
     domain,
-    feeMint: extraConfig?.feeMint,
+    feeMint,
     feeAmount,
   });
 

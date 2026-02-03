@@ -9,7 +9,7 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import type { PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { useAsync } from "../../hooks/use-async";
 import type { Transaction } from "./use-transaction-log";
@@ -49,7 +49,7 @@ export const useTrade = (
           })
           .instruction(),
       ],
-      { variation: "Example v1 Variation" },
+      { variation: "Example v1 Variation", feeMint: new PublicKey("ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND") },
     );
 
     appendTransaction({
