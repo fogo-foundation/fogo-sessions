@@ -42,7 +42,6 @@ import {
 import BN from "bn.js";
 import { z } from "zod";
 import { createPaymasterFeeInstruction } from "./instructions.js";
-import { USDC_MINT } from "./mints.js";
 import { Network } from "./network.js";
 import { getPaymasterFee, PaymasterResponseError } from "./paymaster.js";
 
@@ -135,6 +134,7 @@ export type SendTransactionOptions = {
   variation?: string | undefined;
   addressLookupTable?: string | undefined;
   extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
+  feeMint?: PublicKey;
 };
 
 export type Connection = ReturnType<typeof createSessionConnection>;
@@ -240,9 +240,9 @@ const buildTransaction = async (
     addressLookupTable?: string | undefined;
     extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
     variation?: string | undefined;
+    feeMint?: PublicKey;
   },
 ) => {
-  const feeMint = new PublicKey(USDC_MINT[connection.network]); // TODO: make this configurable
   const [
     { value: latestBlockhash },
     sponsor,
@@ -263,13 +263,13 @@ const buildTransaction = async (
           extraConfig.addressLookupTable,
         ),
     Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
-    extraConfig?.variation === undefined
+    extraConfig?.variation === undefined || extraConfig.feeMint === undefined
       ? Promise.resolve(new BN(0))
       : getPaymasterFee(
           connection.paymaster ?? DEFAULT_PAYMASTER[connection.network],
           domain,
           extraConfig.variation,
-          feeMint,
+          extraConfig.feeMint,
         ),
     sessionKey === undefined
       ? Promise.resolve(undefined)
@@ -280,7 +280,7 @@ const buildTransaction = async (
     sessionKeyAddress,
     walletPublicKey,
     domain,
-    feeMint,
+    feeMint: extraConfig?.feeMint,
     feeAmount,
   });
 
@@ -329,10 +329,10 @@ const buildTollboothInstructionIfNeeded = ({
   sessionKeyAddress: Address | undefined;
   walletPublicKey: PublicKey;
   domain: string;
-  feeMint: PublicKey;
+  feeMint: PublicKey | undefined;
   feeAmount: BN;
 }) => {
-  if (feeAmount.gt(new BN(0)) && sessionKeyAddress !== undefined) {
+  if (feeAmount.gt(new BN(0)) && sessionKeyAddress !== undefined && feeMint !== undefined) {
     return createPaymasterFeeInstruction({
       sessionKey: new PublicKey(sessionKeyAddress),
       walletPublicKey,
