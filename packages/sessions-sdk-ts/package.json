@@ -1,6 +1,6 @@
 {
   "name": "@fogo/sessions-sdk",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "description": "A set of utilities for integrating with Fogo sessions",
   "repository": {
