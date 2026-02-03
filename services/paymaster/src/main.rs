@@ -66,7 +66,6 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .init();
 
     db::pool::init_db_connection(&opts.db_url).await?;
-    /* TODO Revert this once we have a good way of modifying the config from the DB. */
     let config = config_manager::load_config::load_db_config(opts.network_environment).await?;
 
     let mnemonic =
@@ -75,7 +74,6 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         config.domains,
         &mnemonic,
     )?));
-    // TODO this is commented out as part of the temporary change to load the config from the file.
     config_manager::load_config::spawn_config_refresher(
         opts.network_environment,
         mnemonic,

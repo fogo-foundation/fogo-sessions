@@ -79,7 +79,7 @@ fn handle_transaction_variation_v1(
     transaction_variation: Json<Value>,
     name: String,
     max_gas_spend: u64,
-    paymaster_fee_lamports: Option<u64>,
+    paymaster_fee_lamports: Option<i64>,
     swap_into_fogo: Option<Json<Value>>,
 ) -> anyhow::Result<TransactionVariation> {
     let instructions: Vec<InstructionConstraint> = serde_json::from_value(transaction_variation.0)?;
@@ -89,12 +89,17 @@ fn handle_transaction_variation_v1(
         None => vec![],
     };
 
+    let parsed_paymaster_fee_lamports = match paymaster_fee_lamports {
+        Some(v) => Some(u64::try_from(v).map_err(|e| anyhow::anyhow!("Invalid paymaster fee lamports: {e}"))?),
+        None => None,
+    };
+
     Ok(TransactionVariation::V1(
         VariationOrderedInstructionConstraints {
             name,
             instructions,
             max_gas_spend,
-            paymaster_fee_lamports,
+            paymaster_fee_lamports: parsed_paymaster_fee_lamports,
             swap_into_fogo: parsed_swap_into_fogo,
         },
     ))
@@ -183,20 +188,13 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
                         }
                     };
 
-                    let parsed_paymaster_fee_lamports =
-                        match paymaster_fee_lamports {
-                            Some(v) => Some(u64::try_from(v).map_err(|e| {
-                                anyhow::anyhow!("Invalid paymaster fee lamports: {e}")
-                            })?),
-                            None => None,
-                        };
-
+                    
                     handle_transaction_variation_v1(
                         transaction_variation,
                         name,
                         u64::try_from(max)
                             .map_err(|e| anyhow::anyhow!("Invalid max gas spend: {e}"))?,
-                        parsed_paymaster_fee_lamports,
+                        paymaster_fee_lamports,
                         swap_into_fogo,
                     )?
                 }

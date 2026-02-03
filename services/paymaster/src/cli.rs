@@ -52,17 +52,14 @@ impl From<NetworkEnvironment> for DbNetworkEnvironment {
 }
 
 fn parse_fee_coefficients(s: &str) -> Result<HashMap<Pubkey, u64>, String> {
-    let string_map = serde_json::from_str::<HashMap<String, String>>(s)
+    let string_map = serde_json::from_str::<HashMap<String, u64>>(s)
         .map_err(|e| format!("Invalid JSON for fee coefficients: {e}"))?;
 
     let mut result = HashMap::new();
     for (key, value) in string_map {
         let pubkey =
             Pubkey::from_str(&key).map_err(|e| format!("Invalid Pubkey '{}': {}", key, e))?;
-        let coefficient = value
-            .parse::<u64>()
-            .map_err(|e| format!("Invalid u64 value '{}': {}", value, e))?;
-        result.insert(pubkey, coefficient);
+        result.insert(pubkey, value);
     }
 
     Ok(result)
