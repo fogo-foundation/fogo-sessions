@@ -568,6 +568,7 @@ fn normalize(amount: u128, decimals_from: u32, decimals_to: u32) -> Result<u128>
 
 /// Computes the estimated cost of initiating the relay based on the quote details and the expected gas spend on the destination chain.
 /// Based on the logic in https://github.com/wormholelabs-xyz/example-executor-ci-test/blob/6bf0e7156bf81d54f3ded707e53815a2ff62555e/src/utils.ts#L98.
+/// Adjusted to eliminate unnecessary conversions and mitigate chances of arithmetic overflow.
 fn compute_exec_amount(
     to_chain_id: WormholeChainId,
     quote: SignedQuote,
@@ -587,14 +588,10 @@ fn compute_exec_amount(
 
     let src_price_normalized = normalize(source_price, DECIMALS_QUOTE, DECIMALS_MAX)?;
     let dst_price_normalized = normalize(destination_price, DECIMALS_QUOTE, DECIMALS_MAX)?;
-    let scaled_conversion = dst_price_normalized
-        .checked_mul(10u128.pow(DECIMALS_MAX))
-        .ok_or(ProgramError::ArithmeticOverflow)?
-        .checked_div(src_price_normalized)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
 
-    // Note that for Fogo -> Solana, assuming gas_limit = 250_000, destination_gas_price = 10_000,
-    // the amount_gas computation will overflow when dest_price / src_price >= 136112947.
+    // Note that for Fogo -> Solana, assuming gas_limit = 250_000, destination_gas_price = 10_000, decimals_destination_gas = 15,
+    // the amount_gas computation will overflow when dest_price (18 decimals) >= 1_361_129_467_683_753_854 = 1.36e18.
+    // This implies a UI price (9 decimals) of approximately $1_361_129 per SOL.
     let gas_limit_cost = gas_limit
         .checked_mul(destination_gas_price)
         .ok_or(ProgramError::ArithmeticOverflow)?;
@@ -602,22 +599,25 @@ fn compute_exec_amount(
         normalize(gas_limit_cost, decimals_destination_gas, DECIMALS_MAX)?;
     let amount_gas = normalize(
         gas_limit_cost_normalized
-            .checked_mul(scaled_conversion)
+            .checked_mul(dst_price_normalized)
             .ok_or(ProgramError::ArithmeticOverflow)?
-            .checked_div(10u128.pow(DECIMALS_MAX))
+            .checked_div(src_price_normalized)
             .ok_or(ProgramError::ArithmeticOverflow)?,
         DECIMALS_MAX,
         decimals_source_native,
     )?;
 
-    // Note that for Fogo -> Solana, assuming msg_val = 11_744_280,
-    // the amount_msg_value computation will overflow when dest_price / src_price >= 28975.
+    // Note that for Fogo -> Solana, assuming msg_val = 11_744_280, decimals_destination_native = 9,
+    // the amount_msg_value computation will overflow when dest_price (18 decimals) >= 289_743_063_790_151 = 2.89e14.
+    // This implies a UI price (9 decimals) of approximately $289_743 per SOL.
+    // For context, we use the msg_val value of 11_744_280 because this appears in some historical NTT transactions.
+    // In practice, msg_val is expected to be lower, but we use this conservative bound to ensure overflow safety.
     let msg_value_normalized = normalize(msg_value, decimals_destination_native, DECIMALS_MAX)?;
     let amount_msg_value = normalize(
         msg_value_normalized
-            .checked_mul(scaled_conversion)
+            .checked_mul(dst_price_normalized)
             .ok_or(ProgramError::ArithmeticOverflow)?
-            .checked_div(10u128.pow(DECIMALS_MAX))
+            .checked_div(src_price_normalized)
             .ok_or(ProgramError::ArithmeticOverflow)?,
         DECIMALS_MAX,
         decimals_source_native,
@@ -660,5 +660,62 @@ mod tests {
         let result = compute_exec_amount(WormholeChainId::Solana, quote, gas_limit, msg_value);
 
         assert_eq!(result, Ok(7484974250));
+    }
+
+    const DESTINATION_PRICE_OVERFLOW_THRESHOLD_SOLANA: u64 = 289_743_063_790_151;
+
+    #[test]
+    fn test_compute_exec_amount_solana_below_overflow_threshold() {
+        // Use a destination price just below the overflow threshold noted in the comments
+        // to ensure compute_exec_amount remains safe.
+        let quote = SignedQuote {
+            header: SignedQuoteHeader {
+                prefix: *b"EQ01",
+                quoter_address: [0u8; 20],
+                payee_address: [0u8; 32],
+                source_chain: U16BE(0u16),
+                destination_chain: U16BE(1u16),
+                expiry_time: U64BE(0u64),
+            },
+            base_fee: U64BE(500_000_000),
+            destination_gas_price: U64BE(10_000),
+            source_price: U64BE(2_000_000_000),
+            destination_price: U64BE(DESTINATION_PRICE_OVERFLOW_THRESHOLD_SOLANA - 1),
+            signature: [0u8; 65],
+        };
+
+        let gas_limit = 250_000u128;
+        let msg_value = 11_744_280u128;
+
+        let result = compute_exec_amount(WormholeChainId::Solana, quote, gas_limit, msg_value);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_compute_exec_amount_solana_above_overflow_threshold() {
+        let quote = SignedQuote {
+            header: SignedQuoteHeader {
+                prefix: *b"EQ01",
+                quoter_address: [0u8; 20],
+                payee_address: [0u8; 32],
+                source_chain: U16BE(0u16),
+                destination_chain: U16BE(1u16),
+                expiry_time: U64BE(0u64),
+            },
+            base_fee: U64BE(500_000_000),
+            destination_gas_price: U64BE(10_000),
+            source_price: U64BE(2_000_000_000),
+            destination_price: U64BE(DESTINATION_PRICE_OVERFLOW_THRESHOLD_SOLANA),
+            signature: [0u8; 65],
+        };
+
+        let gas_limit = 250_000u128;
+        let msg_value = 11_744_280u128;
+
+        let result = compute_exec_amount(WormholeChainId::Solana, quote, gas_limit, msg_value);
+
+        let program_error: ProgramError = result.unwrap_err().into();
+        assert_eq!(program_error, ProgramError::ArithmeticOverflow);
     }
 }
