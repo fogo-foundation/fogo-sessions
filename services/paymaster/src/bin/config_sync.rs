@@ -188,16 +188,16 @@ async fn insert_or_update_variation(
         TransactionVariation::V1(v) => Some(serde_json::to_value(&v.swap_into_fogo)?),
     };
 
-    let paymaster_fee_lamports = match variation {
-        TransactionVariation::V0(_) => None,
-        TransactionVariation::V1(v) => match v.paymaster_fee_lamports {
-            Some(val) => Some(
-                i64::try_from(val)
-                    .map_err(|_| anyhow::anyhow!("failed to convert paymaster_fee_lamports to i64"))?,
-            ),
-            None => None,
-        },
-    };
+    let paymaster_fee_lamports =
+        match variation {
+            TransactionVariation::V0(_) => None,
+            TransactionVariation::V1(v) => match v.paymaster_fee_lamports {
+                Some(val) => Some(i64::try_from(val).map_err(|_| {
+                    anyhow::anyhow!("failed to convert paymaster_fee_lamports to i64")
+                })?),
+                None => None,
+            },
+        };
 
     let row = sqlx::query!(
         r#"

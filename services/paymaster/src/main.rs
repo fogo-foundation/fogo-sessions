@@ -1,6 +1,4 @@
-use crate::{
-    cli::Cli,
-};
+use crate::cli::Cli;
 use arc_swap::ArcSwap;
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
@@ -69,10 +67,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
 
     db::pool::init_db_connection(&opts.db_url).await?;
     /* TODO Revert this once we have a good way of modifying the config from the DB. */
-    let config =
-        config_manager::load_config::load_db_config(opts.network_environment).await?;
-
-    println!("{:?}", opts.fee_coefficients);
+    let config = config_manager::load_config::load_db_config(opts.network_environment).await?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");

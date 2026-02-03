@@ -1,7 +1,11 @@
 use crate::db::config::NetworkEnvironment as DbNetworkEnvironment;
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use solana_pubkey::Pubkey;
-use std::{collections::HashMap, fmt::{self, Display}, str::FromStr};
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    str::FromStr,
+};
 #[derive(Debug, Parser)]
 #[command(version, about)]
 pub struct Cli {
@@ -50,16 +54,17 @@ impl From<NetworkEnvironment> for DbNetworkEnvironment {
 fn parse_fee_coefficients(s: &str) -> Result<HashMap<Pubkey, u64>, String> {
     let string_map = serde_json::from_str::<HashMap<String, String>>(s)
         .map_err(|e| format!("Invalid JSON for fee coefficients: {e}"))?;
-    
+
     let mut result = HashMap::new();
     for (key, value) in string_map {
-        let pubkey = Pubkey::from_str(&key)
-            .map_err(|e| format!("Invalid Pubkey '{}': {}", key, e))?;
-        let coefficient = value.parse::<u64>()
+        let pubkey =
+            Pubkey::from_str(&key).map_err(|e| format!("Invalid Pubkey '{}': {}", key, e))?;
+        let coefficient = value
+            .parse::<u64>()
             .map_err(|e| format!("Invalid u64 value '{}': {}", value, e))?;
         result.insert(pubkey, coefficient);
     }
-    
+
     Ok(result)
 }
 

@@ -1,6 +1,6 @@
 use crate::config_manager::config::{default_one, Config, Domain};
-use crate::constraint::MintSwapRate;
 use crate::constraint::config::InstructionConstraint;
+use crate::constraint::MintSwapRate;
 use crate::constraint::{
     config::TransactionVariation, config::VariationOrderedInstructionConstraints,
     VariationProgramWhitelist,
@@ -88,7 +88,7 @@ fn handle_transaction_variation_v1(
         Some(v) => serde_json::from_value(v.0)?,
         None => vec![],
     };
-    
+
     Ok(TransactionVariation::V1(
         VariationOrderedInstructionConstraints {
             name,
@@ -183,12 +183,13 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
                         }
                     };
 
-
-                    let parsed_paymaster_fee_lamports = match paymaster_fee_lamports {
-                        Some(v) => Some(u64::try_from(v)
-                            .map_err(|e| anyhow::anyhow!("Invalid paymaster fee lamports: {e}"))?),
-                        None => None,
-                    };
+                    let parsed_paymaster_fee_lamports =
+                        match paymaster_fee_lamports {
+                            Some(v) => Some(u64::try_from(v).map_err(|e| {
+                                anyhow::anyhow!("Invalid paymaster fee lamports: {e}")
+                            })?),
+                            None => None,
+                        };
 
                     handle_transaction_variation_v1(
                         transaction_variation,
