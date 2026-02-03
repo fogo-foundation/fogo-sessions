@@ -90,7 +90,9 @@ fn handle_transaction_variation_v1(
     };
 
     let parsed_paymaster_fee_lamports = match paymaster_fee_lamports {
-        Some(v) => Some(u64::try_from(v).map_err(|e| anyhow::anyhow!("Invalid paymaster fee lamports: {e}"))?),
+        Some(v) => Some(
+            u64::try_from(v).map_err(|e| anyhow::anyhow!("Invalid paymaster fee lamports: {e}"))?,
+        ),
         None => None,
     };
 
@@ -188,7 +190,6 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
                         }
                     };
 
-                    
                     handle_transaction_variation_v1(
                         transaction_variation,
                         name,
