@@ -12,3 +12,4 @@ tilt/test-ledger/
 .DS_Store
 dist/
 .env
+storybook-static/

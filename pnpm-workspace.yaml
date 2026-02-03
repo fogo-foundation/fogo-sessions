@@ -42,9 +42,9 @@ catalog:
   "@solana/web3.js": ^1.92.3
   "@solana/webcrypto-ed25519-polyfill": ^2.3.0
   "@storybook/addon-styling-webpack": ^3.0.0
-  "@storybook/addon-themes": ^10.1.2
-  "@storybook/nextjs": ^10.2.3
-  "@storybook/react": ^10.2.3
+  "@storybook/addon-themes": ^10.2.4
+  "@storybook/nextjs": ^10.2.4
+  "@storybook/react": ^10.2.4
   "@svgr/webpack": ^8.1.0
   "@swc/cli": ^0.7.7
   "@swc/core": ^1.12.7
@@ -96,7 +96,7 @@ catalog:
   sass: ^1.89.2
   sass-loader: ^16.0.5
   smol-toml: ^1.6.0
-  storybook: ^10.1.2
+  storybook: ^10.2.4
   stylelint: ^16.21.0
   style-loader: ^4.0.0
   stylelint-config-standard-scss: ^15.0.1
