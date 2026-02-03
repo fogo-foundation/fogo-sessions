@@ -181,9 +181,8 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
                     "v0" => handle_transaction_variation_v0(transaction_variation, name.clone()),
                     "v1" => {
                         // v1 *requires* max_gas_spend
-                        let max = max_gas_spend.ok_or_else(|| {
-                            anyhow::anyhow!("v1 row missing max_gas_spend")
-                        })?;
+                        let max = max_gas_spend
+                            .ok_or_else(|| anyhow::anyhow!("v1 row missing max_gas_spend"))?;
 
                         handle_transaction_variation_v1(
                             transaction_variation,
