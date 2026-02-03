@@ -75,11 +75,6 @@ pub struct RunOptions {
     #[arg(long, env = "NETWORK_ENVIRONMENT")]
     pub network_environment: NetworkEnvironment,
 
-    // TODO this is part of the temporary change to load the config from the file. Should be removed.
-    /// Path to TOML config
-    #[arg(short = 'c', long = "config-file", env = "CONFIG_FILE")]
-    pub config_file: String,
-
     /// Path to mnemonic file (env/flag; optional)
     #[arg(long, env = "MNEMONIC_FILE", default_value = "./tilt/secrets/mnemonic")]
     pub mnemonic_file: String,
