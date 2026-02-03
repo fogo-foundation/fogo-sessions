@@ -243,7 +243,10 @@ const buildTransaction = async (
     feeMint?: PublicKey | Address;
   },
 ) => {
-  const feeMint = extraConfig?.feeMint === undefined ? undefined : new PublicKey(extraConfig.feeMint);
+  const feeMint =
+    extraConfig?.feeMint === undefined
+      ? undefined
+      : new PublicKey(extraConfig.feeMint);
   const [
     { value: latestBlockhash },
     sponsor,
@@ -333,7 +336,11 @@ const buildTollboothInstructionIfNeeded = ({
   feeMint: PublicKey | undefined;
   feeAmount: BN;
 }) => {
-  if (feeAmount.gt(new BN(0)) && sessionKeyAddress !== undefined && feeMint !== undefined) {
+  if (
+    feeAmount.gt(new BN(0)) &&
+    sessionKeyAddress !== undefined &&
+    feeMint !== undefined
+  ) {
     return createPaymasterFeeInstruction({
       sessionKey: new PublicKey(sessionKeyAddress),
       walletPublicKey,
