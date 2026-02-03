@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n          domain_config_id,\n          version::text AS \"version!\",\n          name,\n          max_gas_spend,\n          transaction_variation AS \"transaction_variation: Json<Value>\",\n          swap_into_fogo AS \"swap_into_fogo?: Json<Value>\",\n          paymaster_fee_lamports AS \"paymaster_fee_lamports?: i64\"\n        FROM variation\n        ",
+  "query": "\n        SELECT\n          v.domain_config_id,\n          v.version::text AS \"version!\",\n          v.name,\n          v.max_gas_spend,\n          v.transaction_variation AS \"transaction_variation: Json<Value>\",\n          v.swap_into_fogo AS \"swap_into_fogo?: Json<Value>\",\n          v.paymaster_fee_lamports AS \"paymaster_fee_lamports?: i64\"\n        FROM variation v\n        INNER JOIN domain_config dc ON v.domain_config_id = dc.id\n        WHERE dc.network_environment = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -40,7 +40,20 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        {
+          "Custom": {
+            "name": "network_environment",
+            "kind": {
+              "Enum": [
+                "mainnet",
+                "testnet",
+                "localnet"
+              ]
+            }
+          }
+        }
+      ]
     },
     "nullable": [
       false,
@@ -52,5 +65,5 @@
       true
     ]
   },
-  "hash": "62aa144a7fd38c25115862ab5f3efab9e3d8805cdd8818a6633f615dcf94c69d"
+  "hash": "bfd05a6c59d39166741c3a9f417f061eb75f5d5bb7098e2d1337b13dbdb8113c"
 }

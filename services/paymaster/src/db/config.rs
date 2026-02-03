@@ -128,15 +128,18 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
         Variation,
         r#"
         SELECT
-          domain_config_id,
-          version::text AS "version!",
-          name,
-          max_gas_spend,
-          transaction_variation AS "transaction_variation: Json<Value>",
-          swap_into_fogo AS "swap_into_fogo?: Json<Value>",
-          paymaster_fee_lamports AS "paymaster_fee_lamports?: i64"
-        FROM variation
+          v.domain_config_id,
+          v.version::text AS "version!",
+          v.name,
+          v.max_gas_spend,
+          v.transaction_variation AS "transaction_variation: Json<Value>",
+          v.swap_into_fogo AS "swap_into_fogo?: Json<Value>",
+          v.paymaster_fee_lamports AS "paymaster_fee_lamports?: i64"
+        FROM variation v
+        INNER JOIN domain_config dc ON v.domain_config_id = dc.id
+        WHERE dc.network_environment = $1
         "#,
+        network_environment as _,
     )
     .fetch_all(pool::pool())
     .await?;
@@ -173,42 +176,42 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
     } in variation_rows
     {
         if let Some(domain_ref) = domain_map.get_mut(&domain_config_id) {
-            let transaction_variation_fin = match version.as_str() {
-                "v0" => handle_transaction_variation_v0(transaction_variation, name)?,
-                "v1" => {
-                    // v1 *requires* max_gas_spend
-                    let max = match max_gas_spend {
-                        Some(v) => v,
-                        None => {
-                            tracing::warn!(
-                                domain_id = ?domain_config_id,
-                                ?version,
-                                ?name,
-                                "v1 row missing max_gas_spend, skipping",
-                            );
-                            continue;
-                        }
-                    };
+            let result = (|| -> anyhow::Result<TransactionVariation> {
+                match version.as_str() {
+                    "v0" => handle_transaction_variation_v0(transaction_variation, name.clone()),
+                    "v1" => {
+                        // v1 *requires* max_gas_spend
+                        let max = max_gas_spend.ok_or_else(|| {
+                            anyhow::anyhow!("v1 row missing max_gas_spend")
+                        })?;
 
-                    handle_transaction_variation_v1(
-                        transaction_variation,
-                        name,
-                        u64::try_from(max)
-                            .map_err(|e| anyhow::anyhow!("Invalid max gas spend: {e}"))?,
-                        paymaster_fee_lamports,
-                        swap_into_fogo,
-                    )?
+                        handle_transaction_variation_v1(
+                            transaction_variation,
+                            name.clone(),
+                            u64::try_from(max)
+                                .map_err(|e| anyhow::anyhow!("Invalid max gas spend: {e}"))?,
+                            paymaster_fee_lamports,
+                            swap_into_fogo,
+                        )
+                    }
+                    _ => Err(anyhow::anyhow!("Invalid transaction_variation version")),
                 }
-                _ => {
+            })();
+
+            let transaction_variation_fin = match result {
+                Ok(v) => v,
+                Err(e) => {
                     tracing::warn!(
                         domain_id = ?domain_config_id,
                         ?version,
                         ?name,
-                        "Skipping row with invalid transaction_variation",
+                        error = ?e,
+                        "Skipping row with invalid transaction_variation"
                     );
                     continue;
                 }
             };
+
             domain_ref.tx_variations.insert(
                 transaction_variation_fin.name().to_string(),
                 transaction_variation_fin,
