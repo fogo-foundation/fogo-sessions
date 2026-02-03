@@ -1,17 +1,16 @@
 import {
+  fetchMaybeNameRecord,
+  fetchMaybeReverseRecord,
   findRegistryPda,
   findReverseRecordPda,
-  fetchMaybeReverseRecord,
-  fetchMaybeNameRecord,
 } from "@fogolend/fns-client";
 import { fromLegacyPublicKey } from "@solana/compat";
 import type { Address, Rpc, SolanaRpcApi } from "@solana/kit";
 import type { PublicKey } from "@solana/web3.js";
 import { useCallback, useMemo } from "react";
-
-import { TruncateKey } from "./truncate-key.js";
 import { useRpc, useSessionContext } from "../hooks/use-session.js";
 import { StateType, useData } from "./component-library/useData/index.js";
+import { TruncateKey } from "./truncate-key.js";
 
 type Props = {
   address: PublicKey;

@@ -1,15 +1,14 @@
 import { Button } from "@fogo/component-library/Button";
 import { useEffect } from "react";
-
-import styles from "./index.module.scss";
 import { useLogger } from "../../hooks/use-logger";
+import styles from "./index.module.scss";
 
 type Props = {
   error: Error & { digest?: string };
   reset?: () => void;
 };
 
-export const Error = ({ error, reset }: Props) => {
+export const ErrorComponent = ({ error, reset }: Props) => {
   const logger = useLogger();
 
   useEffect(() => {
