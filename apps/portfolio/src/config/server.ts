@@ -1,6 +1,4 @@
-// Disable the following rule because this file is the intended place to declare
 /** biome-ignore-all lint/style/noProcessEnv: this file specifically needs process object access for init */
-// and load all env variables.
 
 import "server-only";
 

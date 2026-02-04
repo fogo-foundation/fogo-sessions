@@ -13,3 +13,4 @@ tilt/test-ledger/
 dist/
 .env
 storybook-static/
+next-env.d.ts
