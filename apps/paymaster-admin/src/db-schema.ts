@@ -41,7 +41,7 @@ export const DataConstraintSpecificationSchema = z.union([
 
 export const DataConstraintSchema = z.object({
   start_byte: u16,
-  data_type: PrimitiveDataTypeSchema,
+  data_type: PrimitiveDataTypeSchema.optional(),
   constraint: DataConstraintSpecificationSchema,
 });
 
