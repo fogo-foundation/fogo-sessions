@@ -176,26 +176,30 @@ pub async fn load_config(network_environment: NetworkEnvironment) -> Result<Conf
     } in variation_rows
     {
         if let Some(domain_ref) = domain_map.get_mut(&domain_config_id) {
-            let result = (|| -> anyhow::Result<TransactionVariation> {
+            let result: anyhow::Result<TransactionVariation> = {
                 match version.as_str() {
                     "v0" => handle_transaction_variation_v0(transaction_variation, name.clone()),
                     "v1" => {
                         // v1 *requires* max_gas_spend
-                        let max = max_gas_spend
-                            .ok_or_else(|| anyhow::anyhow!("v1 row missing max_gas_spend"))?;
-
-                        handle_transaction_variation_v1(
-                            transaction_variation,
-                            name.clone(),
-                            u64::try_from(max)
-                                .map_err(|e| anyhow::anyhow!("Invalid max gas spend: {e}"))?,
-                            paymaster_fee_lamports,
-                            swap_into_fogo,
-                        )
+                        max_gas_spend
+                            .ok_or_else(|| anyhow::anyhow!("v1 row missing max_gas_spend"))
+                            .and_then(|max| {
+                                u64::try_from(max)
+                                    .map_err(|e| anyhow::anyhow!("Invalid max gas spend: {e}"))
+                                    .and_then(|max_u64| {
+                                        handle_transaction_variation_v1(
+                                            transaction_variation,
+                                            name.clone(),
+                                            max_u64,
+                                            paymaster_fee_lamports,
+                                            swap_into_fogo,
+                                        )
+                                    })
+                            })
                     }
                     _ => Err(anyhow::anyhow!("Invalid transaction_variation version")),
                 }
-            })();
+            };
 
             let transaction_variation_fin = match result {
                 Ok(v) => v,

@@ -45,7 +45,8 @@ impl Domain {
                 match variation.try_into() {
                     Ok(parsed) => Some((name, parsed)),
                     Err(e) => {
-                        // very unlikely to happen
+                        // this can happen if TransactionVariation structure goes out of sync with the ParsedTransactionVariation structure, which is very unlikely
+
                         tracing::warn!(
                             variation_name = ?name,
                             error = ?e,
