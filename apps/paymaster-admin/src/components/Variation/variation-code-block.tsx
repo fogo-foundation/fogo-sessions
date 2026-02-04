@@ -9,7 +9,7 @@ import styles from "./variation-code-block.module.scss";
 import "ace-builds/src-noconflict/theme-monokai";
 import "ace-builds/src-noconflict/mode-json";
 import "ace-builds/src-noconflict/mode-toml";
-import type { Variation } from "../../db-schema";
+// import type { Variation } from "../../db-schema";
 import { Badge } from "@fogo/component-library/Badge";
 import { useResizeObserver } from "@react-hookz/web";
 import { VariationTester } from "./variation-tester";
@@ -36,7 +36,7 @@ export const VariationCodeBlock = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [editorHeight, setEditorHeight] = useState(0);
+  const [_editorHeight, setEditorHeight] = useState(0);
 
   const handleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
