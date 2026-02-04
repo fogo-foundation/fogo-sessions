@@ -570,7 +570,7 @@ fn normalize(amount: u128, decimals_from: u32, decimals_to: u32) -> Result<u128>
 /// Based on the logic in https://github.com/wormholelabs-xyz/example-executor-ci-test/blob/6bf0e7156bf81d54f3ded707e53815a2ff62555e/src/utils.ts#L98.
 /// Adjusted to eliminate unnecessary conversions and mitigate chances of arithmetic overflow. Note that this allows some overestimation relative to
 /// the original logic, which is acceptable since the exec_amount needs to be at least the amount computed by the original logic and since the delta
-/// is expected to be small in practice. See comments in the code for details on the delta analysis.
+/// is expected to be small in practice. This slight imprecision is worth the lowered overflow risk. See inline comments for analysis of the delta.
 fn compute_exec_amount(
     to_chain_id: WormholeChainId,
     quote: SignedQuote,
