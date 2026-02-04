@@ -119,7 +119,7 @@ pub struct RemoveProgram<'info> {
 
 impl<'info> AddProgram<'info> {
     fn create_domain_record_if_needed(&self, domain: &Domain) -> Result<()> {
-        if self.domain_record.owner == &System::id(){
+        if self.domain_record.owner == &System::id() {
             system_program::create_pda(
                 &self.authority,
                 &self.domain_record,
