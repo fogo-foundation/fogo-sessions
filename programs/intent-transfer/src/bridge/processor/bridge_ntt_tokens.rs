@@ -601,7 +601,7 @@ fn compute_exec_amount(
     // X * SC / 10^27 = X * (10^18 * R - f) / 10^27 = X * R / 10^9 - X * f / 10^27
     //
     // Meanwhile, our current computation lacks the - X * f / 10^27 term, so the delta is:
-    // 
+    //
     // Delta = floor(X_{gas} * f / 10^27 + X_{msg_value} * f / 10^27)
     // = floor( (ell * q_D * 10^3 + m * 10^9) * f / 10^27 )
     //
