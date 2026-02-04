@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 const execAsync = promisify(exec);
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const { stdout } = await execAsync('echo "Valid Success"');
     return NextResponse.json({ success: true, message: stdout.trim() });
