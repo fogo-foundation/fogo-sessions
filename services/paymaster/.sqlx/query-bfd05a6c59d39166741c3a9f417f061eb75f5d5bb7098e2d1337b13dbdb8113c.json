@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n          v.domain_config_id,\n          v.version::text AS \"version!\",\n          v.name,\n          v.max_gas_spend,\n          v.transaction_variation AS \"transaction_variation: Json<Value>\",\n          v.swap_into_fogo AS \"swap_into_fogo?: Json<Value>\",\n          v.paymaster_fee_lamports AS \"paymaster_fee_lamports?: i64\"\n        FROM variation v\n        INNER JOIN domain_config dc ON v.domain_config_id = dc.id\n        WHERE dc.network_environment = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "domain_config_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "version!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "max_gas_spend",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "transaction_variation: Json<Value>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 5,
+        "name": "swap_into_fogo?: Json<Value>",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "paymaster_fee_lamports?: i64",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "network_environment",
+            "kind": {
+              "Enum": [
+                "mainnet",
+                "testnet",
+                "localnet"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      false,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "bfd05a6c59d39166741c3a9f417f061eb75f5d5bb7098e2d1337b13dbdb8113c"
+}

@@ -568,6 +568,9 @@ fn normalize(amount: u128, decimals_from: u32, decimals_to: u32) -> Result<u128>
 
 /// Computes the estimated cost of initiating the relay based on the quote details and the expected gas spend on the destination chain.
 /// Based on the logic in https://github.com/wormholelabs-xyz/example-executor-ci-test/blob/6bf0e7156bf81d54f3ded707e53815a2ff62555e/src/utils.ts#L98.
+/// Adjusted to eliminate unnecessary conversions and mitigate chances of arithmetic overflow. Note that this allows some overestimation relative to
+/// the original logic, which is acceptable since the exec_amount needs to be at least the amount computed by the original logic and since the delta
+/// is expected to be small in practice. This slight imprecision is worth the lowered overflow risk. See inline comments for analysis of the delta.
 fn compute_exec_amount(
     to_chain_id: WormholeChainId,
     quote: SignedQuote,
@@ -585,16 +588,40 @@ fn compute_exec_amount(
 
     let amount_base = normalize(base_fee, DECIMALS_QUOTE, decimals_source_native)?;
 
-    let src_price_normalized = normalize(source_price, DECIMALS_QUOTE, DECIMALS_MAX)?;
-    let dst_price_normalized = normalize(destination_price, DECIMALS_QUOTE, DECIMALS_MAX)?;
-    let scaled_conversion = dst_price_normalized
-        .checked_mul(10u128.pow(DECIMALS_MAX))
-        .ok_or(ProgramError::ArithmeticOverflow)?
-        .checked_div(src_price_normalized)
-        .ok_or(ProgramError::ArithmeticOverflow)?;
+    // Both amount_msg_value and amount_gas computations use similar computation logic, so we can analyze the delta relative to
+    // the original logic together here. In the original logic, both computations involve a multiplication of the form:
+    //
+    // A = floor(X * SC / 10^27), where SC = floor(p_D * 10^18 / p_S), p_D is destination price, p_S is source price.
+    //
+    // This early flooring of SC introduces a delta relative to the current computation (which multiplies the numerator and denominator
+    // components first and only floors once at the end). The delta can be analyzed as follows:
+    //
+    // R := p_D / p_S
+    // SC = floor(R * 10^18) = 10^18 * R - f, where 0 <= f < 1
+    // X * SC / 10^27 = X * (10^18 * R - f) / 10^27 = X * R / 10^9 - X * f / 10^27
+    //
+    // Meanwhile, our current computation lacks the - X * f / 10^27 term, so the delta is:
+    //
+    // Delta = floor(X_{gas} * f / 10^27) + floor(X_{msg_value} * f / 10^27)
+    // = floor( (ell * q_D * 10^3) * f / 10^27 ) + floor ( (m * 10^9) * f / 10^27 )
+    //
+    // where ell = gas_limit, q_D = destination_gas_price, m = msg_value. Given that f < 1, we can upper bound the delta as:
+    //
+    // Delta < floor( (ell * q_D * 10^3) / 10^27 ) + floor ( (m * 10^9) / 10^27 )
+    //
+    // Given typical values for ell (250_000), q_D (< 100_000_000; this is an extreme upper bound for Solana), and m (11_744_280),
+    // we get
+    //
+    // Delta < floor( (250_000 * 100_000_000 * 10^3) / 10^27 ) + floor ( (11_744_280 * 10^9) / 10^27 ) = 0
+    //
+    // Thus, in practice, the delta is likely to be zero; even if it is non-zero, it is unlikely to exceed 1 or 2 lamports given realistic
+    // parameter values, since each of the terms in the inequality above is unlikely to exceed 1. Therefore, the current computation is a safe
+    // overestimation of the original logic. This logic should be revisited if significantly larger parameter values are expected in the future
+    // or if other chains with very high parameter values are supported.
 
-    // Note that for Fogo -> Solana, assuming gas_limit = 250_000, destination_gas_price = 10_000,
-    // the amount_gas computation will overflow when dest_price / src_price >= 136112947.
+    // Note that for Fogo -> Solana, assuming gas_limit = 250_000, destination_gas_price = 10_000, decimals_destination_gas = 15,
+    // the amount_gas computation will overflow when dest_price (18 decimals) >= 136_112_946_768_375_385_349_842_973 = 1.36e26.
+    // This implies a UI price (9 decimals) of approximately $136.1 quadrillion per SOL. This is well above u64::MAX, so we are safe.
     let gas_limit_cost = gas_limit
         .checked_mul(destination_gas_price)
         .ok_or(ProgramError::ArithmeticOverflow)?;
@@ -602,22 +629,25 @@ fn compute_exec_amount(
         normalize(gas_limit_cost, decimals_destination_gas, DECIMALS_MAX)?;
     let amount_gas = normalize(
         gas_limit_cost_normalized
-            .checked_mul(scaled_conversion)
+            .checked_mul(destination_price)
             .ok_or(ProgramError::ArithmeticOverflow)?
-            .checked_div(10u128.pow(DECIMALS_MAX))
+            .checked_div(source_price)
             .ok_or(ProgramError::ArithmeticOverflow)?,
         DECIMALS_MAX,
         decimals_source_native,
     )?;
 
-    // Note that for Fogo -> Solana, assuming msg_val = 11_744_280,
-    // the amount_msg_value computation will overflow when dest_price / src_price >= 28975.
+    // Note that for Fogo -> Solana, assuming msg_val = 11_744_280, decimals_destination_native = 9,
+    // the amount_msg_value computation will overflow when dest_price (18 decimals) >= 28_974_306_379_015_015_263_889 = 2.89e22.
+    // This implies a UI price (9 decimals) of approximately $28.9 trillion per SOL. This is well above u64::MAX, so we are safe.
+    // For context, we use the msg_val value of 11_744_280 because this appears in some historical NTT transactions.
+    // In practice, msg_val is expected to be lower, but we use this conservative bound to ensure overflow safety.
     let msg_value_normalized = normalize(msg_value, decimals_destination_native, DECIMALS_MAX)?;
     let amount_msg_value = normalize(
         msg_value_normalized
-            .checked_mul(scaled_conversion)
+            .checked_mul(destination_price)
             .ok_or(ProgramError::ArithmeticOverflow)?
-            .checked_div(10u128.pow(DECIMALS_MAX))
+            .checked_div(source_price)
             .ok_or(ProgramError::ArithmeticOverflow)?,
         DECIMALS_MAX,
         decimals_source_native,
@@ -660,5 +690,31 @@ mod tests {
         let result = compute_exec_amount(WormholeChainId::Solana, quote, gas_limit, msg_value);
 
         assert_eq!(result, Ok(7484974250));
+    }
+
+    #[test]
+    fn test_compute_exec_amount_solana_max_price() {
+        let quote = SignedQuote {
+            header: SignedQuoteHeader {
+                prefix: *b"EQ01",
+                quoter_address: [0u8; 20],
+                payee_address: [0u8; 32],
+                source_chain: U16BE(0u16),
+                destination_chain: U16BE(1u16),
+                expiry_time: U64BE(0u64),
+            },
+            base_fee: U64BE(500_000_000),
+            destination_gas_price: U64BE(10_000),
+            source_price: U64BE(2_000_000_000),
+            destination_price: U64BE(u64::MAX),
+            signature: [0u8; 65],
+        };
+
+        let gas_limit = 250_000u128;
+        let msg_value = 11_744_280u128;
+
+        let result = compute_exec_amount(WormholeChainId::Solana, quote, gas_limit, msg_value);
+
+        assert!(result.is_ok());
     }
 }

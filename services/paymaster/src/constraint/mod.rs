@@ -83,9 +83,10 @@ pub struct ParsedVariationOrderedInstructionConstraints {
     pub paymaster_fee_lamports: Option<u64>,
     pub swap_into_fogo: Vec<MintSwapRate>,
 }
-
-#[derive(Clone)]
+#[serde_as]
+#[derive(Clone, Serialize)]
 pub struct MintSwapRate {
+    #[serde_as(as = "DisplayFromStr")]
     mint: Pubkey,
     rate: f64,
 }

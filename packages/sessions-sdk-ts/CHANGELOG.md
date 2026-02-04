@@ -1,5 +1,17 @@
 # @fogo/sessions-sdk
 
+## 0.1.8 (2026-02-04)
+
+### Fixes
+
+- Enable configuring the mint used to charge paymaster fees in sendTransaction.
+
+## 0.1.7 (2026-02-03)
+
+### Fixes
+
+- Allow sending full transactions that don't require a signature by the session key to the paymaster server
+
 ## 0.1.6 (2026-01-24)
 
 ### Fixes

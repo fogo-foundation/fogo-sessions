@@ -41,7 +41,7 @@ export const DataConstraintSpecificationSchema = z.union([
 
 export const DataConstraintSchema = z.object({
   start_byte: u16,
-  data_type: PrimitiveDataTypeSchema,
+  data_type: PrimitiveDataTypeSchema.optional(),
   constraint: DataConstraintSpecificationSchema,
 });
 
@@ -63,6 +63,7 @@ export const InstructionConstraintSchema = z.object({
   accounts: z.array(AccountConstraintSchema).default([]),
   data: z.array(DataConstraintSchema).default([]),
   required: z.boolean(),
+  requires_wrapped_native_tokens: z.boolean().optional(),
 });
 
 export const TransactionVariations = z.array(InstructionConstraintSchema);
