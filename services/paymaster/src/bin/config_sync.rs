@@ -183,6 +183,22 @@ async fn insert_or_update_variation(
         ),
     };
 
+    let swap_into_fogo = match variation {
+        TransactionVariation::V0(_) => None,
+        TransactionVariation::V1(v) => Some(serde_json::to_value(&v.swap_into_fogo)?),
+    };
+
+    let paymaster_fee_lamports =
+        match variation {
+            TransactionVariation::V0(_) => None,
+            TransactionVariation::V1(v) => match v.paymaster_fee_lamports {
+                Some(val) => Some(i64::try_from(val).map_err(|_| {
+                    anyhow::anyhow!("failed to convert paymaster_fee_lamports to i64")
+                })?),
+                None => None,
+            },
+        };
+
     let row = sqlx::query!(
         r#"
     INSERT INTO variation (
@@ -191,14 +207,18 @@ async fn insert_or_update_variation(
       name,
       version,
       max_gas_spend,
-      transaction_variation
+      transaction_variation,
+      swap_into_fogo,
+      paymaster_fee_lamports
     )
-    VALUES ($1, $2, $3, $4, $5, $6)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     ON CONFLICT (domain_config_id, name)
     DO UPDATE SET
       version               = EXCLUDED.version,
       max_gas_spend         = EXCLUDED.max_gas_spend,
-      transaction_variation = EXCLUDED.transaction_variation
+      transaction_variation = EXCLUDED.transaction_variation,
+      swap_into_fogo         = EXCLUDED.swap_into_fogo,
+      paymaster_fee_lamports = EXCLUDED.paymaster_fee_lamports
     RETURNING id
     "#,
         Uuid::new_v4(),
@@ -207,6 +227,8 @@ async fn insert_or_update_variation(
         version as _,
         max_gas_spend,
         transaction_variation_json,
+        swap_into_fogo,
+        paymaster_fee_lamports,
     )
     .fetch_one(pool())
     .await?;

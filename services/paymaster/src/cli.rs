@@ -1,6 +1,11 @@
 use crate::db::config::NetworkEnvironment as DbNetworkEnvironment;
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use std::fmt::{self, Display};
+use solana_pubkey::Pubkey;
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    str::FromStr,
+};
 #[derive(Debug, Parser)]
 #[command(version, about)]
 pub struct Cli {
@@ -46,6 +51,20 @@ impl From<NetworkEnvironment> for DbNetworkEnvironment {
     }
 }
 
+fn parse_fee_coefficients(s: &str) -> Result<HashMap<Pubkey, u64>, String> {
+    let string_map = serde_json::from_str::<HashMap<String, u64>>(s)
+        .map_err(|e| format!("Invalid JSON for fee coefficients: {e}"))?;
+
+    let mut result = HashMap::new();
+    for (key, value) in string_map {
+        let pubkey =
+            Pubkey::from_str(&key).map_err(|e| format!("Invalid Pubkey '{}': {}", key, e))?;
+        result.insert(pubkey, value);
+    }
+
+    Ok(result)
+}
+
 #[derive(Args, Debug, Clone)]
 pub struct RunOptions {
     /// Postgres connection string (required via flag or env)
@@ -55,11 +74,6 @@ pub struct RunOptions {
     /// Network environment to run the paymaster for
     #[arg(long, env = "NETWORK_ENVIRONMENT")]
     pub network_environment: NetworkEnvironment,
-
-    // TODO this is part of the temporary change to load the config from the file. Should be removed.
-    /// Path to TOML config
-    #[arg(short = 'c', long = "config-file", env = "CONFIG_FILE")]
-    pub config_file: String,
 
     /// Path to mnemonic file (env/flag; optional)
     #[arg(long, env = "MNEMONIC_FILE", default_value = "./tilt/secrets/mnemonic")]
@@ -92,6 +106,9 @@ pub struct RunOptions {
 
     #[arg(long, env = "VALIANT_OVERRIDE_URL")]
     pub valiant_override_url: Option<String>,
+
+    #[arg(long, env = "FEE_COEFFICIENTS", value_parser = parse_fee_coefficients, default_value = "{}")]
+    pub fee_coefficients: HashMap<Pubkey, u64>,
 }
 
 #[derive(Args, Debug, Clone)]

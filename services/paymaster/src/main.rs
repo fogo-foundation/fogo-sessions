@@ -1,7 +1,4 @@
-use crate::{
-    cli::Cli,
-    config_manager::{config::Config, fee},
-};
+use crate::cli::Cli;
 use arc_swap::ArcSwap;
 use clap::Parser;
 use opentelemetry::trace::TracerProvider;
@@ -69,18 +66,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         .init();
 
     db::pool::init_db_connection(&opts.db_url).await?;
-    /* TODO Revert this once we have a good way of modifying the config from the DB. */
-    // let mut config =
-    //     config_manager::load_config::load_db_config(opts.network_environment).await?;
-    let config: Config = config::Config::builder()
-        .add_source(config::File::with_name(&opts.config_file))
-        .build()?
-        .try_deserialize()?;
-
-    let fee::Config { fee_coefficients }: fee::Config = config::Config::builder()
-        .add_source(config::File::with_name(&opts.config_file))
-        .build()?
-        .try_deserialize()?;
+    let config = config_manager::load_config::load_db_config(opts.network_environment).await?;
 
     let mnemonic =
         std::fs::read_to_string(&opts.mnemonic_file).expect("Failed to read mnemonic_file");
@@ -88,13 +74,12 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         config.domains,
         &mnemonic,
     )?));
-    // TODO this is commented out as part of the temporary change to load the config from the file.
-    // config_manager::load_config::spawn_config_refresher(
-    //     opts.network_environment,
-    //     mnemonic,
-    //     Arc::clone(&domains),
-    //     opts.db_refresh_interval_seconds,
-    // );
+    config_manager::load_config::spawn_config_refresher(
+        opts.network_environment,
+        mnemonic,
+        Arc::clone(&domains),
+        opts.db_refresh_interval_seconds,
+    );
 
     let rpc_url_ws = opts
         .rpc_url_ws
@@ -105,7 +90,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         opts.ftl_url,
         opts.listen_address,
         domains,
-        fee_coefficients,
+        opts.fee_coefficients,
         opts.network_environment,
         opts.valiant_api_key,
         opts.valiant_override_url,

@@ -27,7 +27,8 @@
             "kind": {
               "Enum": [
                 "mainnet",
-                "testnet"
+                "testnet",
+                "localnet"
               ]
             }
           }
