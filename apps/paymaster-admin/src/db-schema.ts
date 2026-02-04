@@ -63,6 +63,7 @@ export const InstructionConstraintSchema = z.object({
   accounts: z.array(AccountConstraintSchema).default([]),
   data: z.array(DataConstraintSchema).default([]),
   required: z.boolean(),
+  requires_wrapped_native_tokens: z.boolean(),
 });
 
 export const TransactionVariations = z.array(InstructionConstraintSchema);
