@@ -615,8 +615,8 @@ fn compute_exec_amount(
     // Delta < floor( (250_000 * 100_000_000 * 10^3) / 10^27 ) + floor ( (11_744_280 * 10^9) / 10^27 ) = 0
     //
     // Thus, in practice, the delta is likely to be zero; even if it is non-zero, it is unlikely to exceed 1 or 2 lamports given realistic
-    // parameter values, since each of the terms in the inequality above is unlikely to exceed 1. Therefore, the current computation is a safe 
-    // overestimation of the original logic. This logic should be revisited if significantly larger parameter values are expected in the future 
+    // parameter values, since each of the terms in the inequality above is unlikely to exceed 1. Therefore, the current computation is a safe
+    // overestimation of the original logic. This logic should be revisited if significantly larger parameter values are expected in the future
     // or if other chains with very high parameter values are supported.
 
     // Note that for Fogo -> Solana, assuming gas_limit = 250_000, destination_gas_price = 10_000, decimals_destination_gas = 15,
