@@ -112,11 +112,7 @@ SQLX_OFFLINE=true cargo run --bin fogo-paymaster migrate --db-url="postgres://pa
 Update your code and queries accordingly and then run the sqlx prepare command:
 
 ```bash
-# if you chanegd the queries for paymaster-config-sync
-cargo sqlx prepare -- --bin paymaster-config-sync --workspace
-
-# if you changed the queries for the fogo-paymaster
-cargo sqlx prepare -- --bin fogo-paymaster --workspace
+cargo sqlx prepare -- --bin fogo-paymaster --workspace && cargo sqlx prepare -- --bin paymaster-config-sync --workspace
 ```
 
 ## Metrics and Logs
