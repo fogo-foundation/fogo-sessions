@@ -602,21 +602,22 @@ fn compute_exec_amount(
     //
     // Meanwhile, our current computation lacks the - X * f / 10^27 term, so the delta is:
     //
-    // Delta = floor(X_{gas} * f / 10^27 + X_{msg_value} * f / 10^27)
-    // = floor( (ell * q_D * 10^3 + m * 10^9) * f / 10^27 )
+    // Delta = floor(X_{gas} * f / 10^27) + floor(X_{msg_value} * f / 10^27)
+    // = floor( (ell * q_D * 10^3) * f / 10^27 ) + floor ( (m * 10^9) * f / 10^27 )
     //
     // where ell = gas_limit, q_D = destination_gas_price, m = msg_value. Given that f < 1, we can upper bound the delta as:
     //
-    // Delta < floor( (ell * q_D * 10^3 + m * 10^9) / 10^27 )
+    // Delta < floor( (ell * q_D * 10^3) / 10^27 ) + floor ( (m * 10^9) / 10^27 )
     //
     // Given typical values for ell (250_000), q_D (< 100_000_000; this is an extreme upper bound for Solana), and m (11_744_280),
     // we get
     //
-    // Delta < floor( (250_000 * 100_000_000 * 10^3 + 11_744_280 * 10^9) / 10^27 ) = floor ( 3.68 * 10^16 / 10^27 ) = 0
+    // Delta < floor( (250_000 * 100_000_000 * 10^3) / 10^27 ) + floor ( (11_744_280 * 10^9) / 10^27 ) = 0
     //
     // Thus, in practice, the delta is likely to be zero; even if it is non-zero, it is unlikely to exceed 1 or 2 lamports given realistic
-    // parameter values. Therefore, the current computation is a safe overestimation of the original logic. This logic should be revisited
-    // if significantly larger parameter values are expected in the future or if other chains with very high parameter values are supported.
+    // parameter values, since each of the terms in the inequality above is unlikely to exceed 1. Therefore, the current computation is a safe 
+    // overestimation of the original logic. This logic should be revisited if significantly larger parameter values are expected in the future 
+    // or if other chains with very high parameter values are supported.
 
     // Note that for Fogo -> Solana, assuming gas_limit = 250_000, destination_gas_price = 10_000, decimals_destination_gas = 15,
     // the amount_gas computation will overflow when dest_price (18 decimals) >= 136_112_946_768_375_385_349_842_973 = 1.36e26.
