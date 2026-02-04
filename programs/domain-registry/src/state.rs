@@ -119,11 +119,7 @@ mod resizable_account_array {
             } else {
                 rent.minimum_balance(self.acc_info.data_len())
             };
-            let amount_to_transfer = if self.acc_info.data_is_empty() {
-                0
-            } else {
-                amount_required.saturating_sub(self.acc_info.lamports())
-            };
+            let amount_to_transfer = amount_required.saturating_sub(self.acc_info.lamports());
 
             if amount_to_transfer > 0 {
                 let transfer_instruction = system_instruction::transfer(
