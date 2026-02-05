@@ -3,3 +3,9 @@
 .container {
   @include theme.max-width;
 }
+
+.domainsList {
+  display: flex;
+  flex-direction: column;
+  gap: theme.spacing(4);
+}

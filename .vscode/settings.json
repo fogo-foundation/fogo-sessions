@@ -5,6 +5,5 @@
   },
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "biomejs.biome",
-  "editor.formatOnSaveMode": "modificationsIfAvailable",
   "typescript.preferences.preferTypeOnlyAutoImports": true
 }
