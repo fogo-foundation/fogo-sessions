@@ -22,7 +22,7 @@ export const VariationTester = ({
 
   const { state, execute } = useAsync<ValidationResult>(
     useCallback(async () => {
-      const response = await fetch("/api/fake-validate-transaction", {
+      const response = await fetch("/api/validate-transaction", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
 
   try {
     // TODO: need to figure out how to fix the sponsor issue, handling both registered and unregistered domains
-    const { stdout } = await execFileAsync("paymaster-tx-validator", [
+    const validatorPath = join(process.cwd(), "bin", "paymaster-tx-validator");
+    const { stdout } = await execFileAsync(validatorPath, [
       "validate",
       "--config",
       tempPath,
