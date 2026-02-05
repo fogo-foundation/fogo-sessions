@@ -76,13 +76,11 @@ export const VariationCodeBlock = ({
           </div>
           <Editor onChange={onChange} value={value} mode={mode} />
           {footer && (
-            <>
-              <div className={styles.variationCodeBlockFooter}>{footer}</div>
-              <div className={styles.variationCodeBlockTester}>
-                <VariationTester domain={domain} variation={variationForTest} />
-              </div>
-            </>
+            <div className={styles.variationCodeBlockFooter}>{footer}</div>
           )}
+          <div className={styles.variationCodeBlockTester}>
+            <VariationTester domain={domain} variation={variationForTest} />
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
