@@ -1,3 +1,9 @@
+## 0.7.4 (2026-02-05)
+
+### Fixes
+
+- remove unnecessary unwrap tx
+
 ## 0.7.3 (2026-01-24)
 
 ### Fixes
