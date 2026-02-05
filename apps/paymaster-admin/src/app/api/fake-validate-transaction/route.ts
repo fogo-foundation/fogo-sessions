@@ -1,13 +1,15 @@
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
+import { join } from "node:path";
 import { promisify } from "node:util";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export async function POST(_req: NextRequest) {
   try {
-    const { stdout } = await execAsync('echo "Valid Success"');
+    const scriptPath = join(process.cwd(), "scripts", "valid.sh");
+    const { stdout } = await execFileAsync(scriptPath);
     return NextResponse.json({ success: true, message: stdout.trim() });
   } catch (error) {
     return NextResponse.json({

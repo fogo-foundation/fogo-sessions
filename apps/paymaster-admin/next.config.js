@@ -1,5 +1,9 @@
 const config = {
   reactStrictMode: true,
+  // Include scripts in the serverless function bundle
+  outputFileTracingIncludes: {
+    "/api/fake-validate-transaction": ["./scripts/**/*"],
+  },
   cacheComponents: true,
   logging: {
     fetches: {
