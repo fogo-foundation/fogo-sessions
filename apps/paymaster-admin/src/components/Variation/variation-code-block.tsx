@@ -1,10 +1,6 @@
 import { Button } from "@fogo/component-library/Button";
 import { useToast } from "@fogo/component-library/Toast";
-import {
-  ArrowsInIcon,
-  ArrowsOutIcon,
-  ChecksIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { ArrowsInIcon, ArrowsOutIcon } from "@phosphor-icons/react/dist/ssr";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import AceEditor from "react-ace";
@@ -13,7 +9,6 @@ import styles from "./variation-code-block.module.scss";
 import "ace-builds/src-noconflict/theme-monokai";
 import "ace-builds/src-noconflict/mode-json";
 import "ace-builds/src-noconflict/mode-toml";
-import { Badge } from "@fogo/component-library/Badge";
 import { useResizeObserver } from "@react-hookz/web";
 import type { Variation } from "../../db-schema";
 import { VariationTester } from "./variation-tester";
@@ -82,16 +77,7 @@ export const VariationCodeBlock = ({
           <Editor onChange={onChange} value={value} mode={mode} />
           {footer && (
             <>
-              <div className={styles.variationCodeBlockFooter}>
-                <div className={styles.variationCodeBlockFooterInfo}>
-                  <Badge variant="success" size="xs">
-                    Valid format <ChecksIcon />
-                  </Badge>
-                </div>
-                <div className={styles.variationCodeBlockFooterButtons}>
-                  <Button variant="secondary">Save</Button>
-                </div>
-              </div>
+              <div className={styles.variationCodeBlockFooter}>{footer}</div>
               <div className={styles.variationCodeBlockTester}>
                 <VariationTester domain={domain} variation={variationForTest} />
               </div>
