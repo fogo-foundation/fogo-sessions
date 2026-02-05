@@ -9,4 +9,3 @@ pub mod pooled_http_sender;
 pub mod rpc;
 pub mod serde;
 pub mod swap;
-pub mod unwrap_fogo;

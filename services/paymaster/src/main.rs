@@ -18,7 +18,6 @@ mod pooled_http_sender;
 mod rpc;
 mod serde;
 mod swap;
-mod unwrap_fogo;
 
 type DomainStateMap = HashMap<String, api::DomainState>;
 type SharedDomains = Arc<ArcSwap<DomainStateMap>>;
