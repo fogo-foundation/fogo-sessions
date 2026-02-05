@@ -63,7 +63,7 @@ export const AppDomains = (props: AppDomainsProps) => {
             selectionMode="none"
             aria-label="Domains"
             items={props.app.domain_configs}
-            className={styles.domainsList ?? ''}
+            className={styles.domainsList ?? ""}
           >
             {(item) => (
               <GridListItem key={item.id}>
