@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 
 export const useAsync = <T>(fn: () => Promise<T>) => {
   const [state, setState] = useState<State<T>>(State.Base());
@@ -13,12 +13,12 @@ export const useAsync = <T>(fn: () => Promise<T>) => {
         setState(State.Complete(result));
       })
       .catch((error: unknown) => {
-        // eslint-disable-next-line no-console
+        // biome-ignore lint/suspicious/noConsole: need to print error to console
         console.error(error);
         setState(State.ErrorState(error));
         throw error;
       });
-  }, [state, fn, setState]);
+  }, [state, fn]);
 
   return { state, execute };
 };

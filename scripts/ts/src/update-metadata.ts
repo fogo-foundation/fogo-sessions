@@ -1,14 +1,14 @@
 import {
+  createV1,
   findMetadataPda,
   safeFetchMetadata,
-  updateV1,
-  createV1,
   TokenStandard,
+  updateV1,
 } from "@metaplex-foundation/mpl-token-metadata";
 import type { TransactionSignature } from "@metaplex-foundation/umi";
 import {
-  percentAmount,
   keypairIdentity,
+  percentAmount,
   publicKey as umiPublicKey,
 } from "@metaplex-foundation/umi";
 import { base58 } from "@metaplex-foundation/umi/serializers";
@@ -106,6 +106,6 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
 };
 
 const printSignature = ({ signature }: { signature: TransactionSignature }) => {
-  // eslint-disable-next-line no-console
+  // biome-ignore lint/suspicious/noConsole: the point of this function is to log
   console.log(`Transaction signature: ${base58.deserialize(signature)[0]}`);
 };

@@ -57,7 +57,7 @@ export const TextField = ({
       ) : (
         <Input
           data-1p-ignore
-          placeholder={placeholder}
+          placeholder={placeholder ?? ""}
           className={styles.input ?? ""}
           data-has-right-extra={rightExtra ? "" : undefined}
         />
