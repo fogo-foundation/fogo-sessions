@@ -10,7 +10,6 @@ use crate::rpc::{
     SignedVersionedTransaction,
 };
 use crate::swap::SwapConfirmationResult;
-use crate::unwrap_fogo::unwrap_fogo;
 use arc_swap::ArcSwap;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -515,50 +514,6 @@ async fn sponsor_and_send_handler(
                                 &state.rpc_sub,
                             )
                             .await;
-
-                        let n_successful_swaps = swap_results
-                            .iter()
-                            .filter(|result| {
-                                if let Ok(SwapConfirmationResult { confirmation, .. }) = result {
-                                    matches!(
-                                        confirmation,
-                                        ConfirmationResultInternal::Success { .. }
-                                    )
-                                } else {
-                                    false
-                                }
-                            })
-                            .count();
-
-                        if n_successful_swaps > 0 {
-                            match unwrap_fogo(
-                                &transaction_sponsor,
-                                &state.chain_index.rpc,
-                                &state.rpc_sub,
-                            )
-                            .await
-                            {
-                                Ok(confirmation) => match confirmation {
-                                    ConfirmationResultInternal::Failed { signature, error } => {
-                                        tracing::warn!("Failed to unwrap due to failure to confirm transaction for {signature}: {:?}", error);
-                                    }
-                                    ConfirmationResultInternal::UnconfirmedPreflightFailure {
-                                        signature,
-                                        error,
-                                    } => {
-                                        tracing::warn!("Failed to unwrap due to transaction preflight failure for {signature}: {:?}", error);
-                                    }
-                                    ConfirmationResultInternal::Success { .. } => {}
-                                },
-
-                                Err(e) => {
-                                    tracing::warn!(
-                                        "Failed to send and confirm unwrap transaction: {:?}",
-                                        e
-                                    );
-                                }
-                            }
-                        }
 
                         let transaction_sponsor_pubkey = transaction_sponsor.pubkey();
 
