@@ -41,8 +41,6 @@ export const VariationCodeBlock = ({
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [_editorHeight, setEditorHeight] = useState(0);
 
   const handleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -61,10 +59,6 @@ export const VariationCodeBlock = ({
       });
   }, [toast.error]);
 
-  const handleUpdate = useCallback(() => {
-    setEditorHeight(contentRef.current?.clientHeight ?? 0);
-  }, []);
-
   return (
     <AnimatePresence>
       {isExpanded && (
@@ -74,7 +68,6 @@ export const VariationCodeBlock = ({
           exit={{ height: 0, scale: 0.95 }}
           className={styles.variationCodeBlock}
           ref={cardRef}
-          onUpdate={handleUpdate}
         >
           <input type="hidden" name="code" value={value} />
           <div className={styles.variationCodeBlockHeader}>
