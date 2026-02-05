@@ -3,27 +3,25 @@ import { unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { VersionedTransaction } from "@solana/web3.js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import TOML from "smol-toml";
 import { z } from "zod";
 import type { Variation } from "../../../db-schema";
 import { VariationSchema } from "../../../db-schema";
+import { normalizeVersionedTransactionBase64 } from "../../../lib/transactions";
 
 const execFileAsync = promisify(execFile);
 
 const Base64TransactionSchema = z.string().transform((val, ctx) => {
-  try {
-    const buffer = Buffer.from(val, "base64");
-    const tx = VersionedTransaction.deserialize(new Uint8Array(buffer));
-    return Buffer.from(tx.serialize()).toString("base64");
-  } catch (e) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: `Invalid base64 transaction: ${(e as Error).message}`,
-    });
+  const normalized = normalizeVersionedTransactionBase64(val);
+  if (normalized) {
+    return normalized;
   }
+  ctx.addIssue({
+    code: z.ZodIssueCode.custom,
+    message: "Invalid base64 transaction",
+  });
   return z.NEVER;
 });
 

@@ -3,9 +3,9 @@ import { Button } from "@fogo/component-library/Button";
 import { TextField } from "@fogo/component-library/TextField";
 import { StateType, useAsync } from "@fogo/component-library/useAsync";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
-import { VersionedTransaction } from "@solana/web3.js";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Variation } from "../../db-schema";
+import { normalizeVersionedTransactionBase64 } from "../../lib/transactions";
 import styles from "./variation-tester.module.scss";
 
 type ValidationResult = { success: boolean; message: string };
@@ -15,33 +15,15 @@ type VariationTesterProps = {
   variation?: Variation | null;
 };
 
-const base64ToBytes = (value: string): Uint8Array => {
-  const binary = atob(value);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-};
-
-const parseVersionedTransaction = (
-  value: string,
-): VersionedTransaction | null => {
-  if (!value) return null;
-  try {
-    return VersionedTransaction.deserialize(base64ToBytes(value));
-  } catch {
-    return null;
-  }
-};
-
 export const VariationTester = ({
   domain,
   variation,
 }: VariationTesterProps) => {
-  const [transactionSerialized, setTransactionSerialized] = useState("");
-  const [parsedTransaction, setParsedTransaction] =
-    useState<VersionedTransaction | null>(null);
+  const [transactionInput, setTransactionInput] = useState("");
+  const transactionParsed = useMemo(
+    () => normalizeVersionedTransactionBase64(transactionInput),
+    [transactionInput],
+  );
 
   const { state, execute } = useAsync<ValidationResult>(
     useCallback(async () => {
@@ -51,7 +33,7 @@ export const VariationTester = ({
           message: "Variation is invalid. Fix the configuration to test.",
         };
       }
-      if (!parsedTransaction) {
+      if (!transactionParsed) {
         return {
           success: false,
           message:
@@ -62,18 +44,17 @@ export const VariationTester = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          transaction: transactionSerialized,
+          transaction: transactionParsed,
           domain,
           variation,
         }),
       });
       return response.json();
-    }, [parsedTransaction, transactionSerialized, domain, variation]),
+    }, [transactionParsed, domain, variation]),
   );
 
   const handleTransactionChange = useCallback((value: string) => {
-    setTransactionSerialized(value);
-    setParsedTransaction(parseVersionedTransaction(value));
+    setTransactionInput(value);
   }, []);
 
   const isComplete = state.type === StateType.Complete;
@@ -84,7 +65,7 @@ export const VariationTester = ({
     <div>
       <div className={styles.variationTesterInputRow}>
         <TextField
-          value={transactionSerialized}
+          value={transactionInput}
           onChange={handleTransactionChange}
           placeholder="Enter serialized tx or tx hash"
           double={true}
