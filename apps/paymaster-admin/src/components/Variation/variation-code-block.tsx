@@ -1,6 +1,10 @@
 import { Button } from "@fogo/component-library/Button";
 import { useToast } from "@fogo/component-library/Toast";
-import { ArrowsInIcon, ArrowsOutIcon, ChecksIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowsInIcon,
+  ArrowsOutIcon,
+  ChecksIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import AceEditor from "react-ace";
@@ -9,9 +13,9 @@ import styles from "./variation-code-block.module.scss";
 import "ace-builds/src-noconflict/theme-monokai";
 import "ace-builds/src-noconflict/mode-json";
 import "ace-builds/src-noconflict/mode-toml";
-// import type { Variation } from "../../db-schema";
 import { Badge } from "@fogo/component-library/Badge";
 import { useResizeObserver } from "@react-hookz/web";
+import type { Variation } from "../../db-schema";
 import { VariationTester } from "./variation-tester";
 
 type VariationCodeBlockProps = {
@@ -21,6 +25,7 @@ type VariationCodeBlockProps = {
   domain: string;
   footer?: React.ReactNode;
   mode: "toml" | "json";
+  variationForTest: Variation | null;
 };
 
 export const VariationCodeBlock = ({
@@ -30,6 +35,7 @@ export const VariationCodeBlock = ({
   domain,
   footer,
   mode,
+  variationForTest,
 }: VariationCodeBlockProps) => {
   const toast = useToast();
 
@@ -80,11 +86,7 @@ export const VariationCodeBlock = ({
               {isFullscreen ? <ArrowsOutIcon /> : <ArrowsInIcon />}
             </Button>
           </div>
-          <Editor
-            onChange={onChange}
-            value={value}
-            mode={mode}
-          />
+          <Editor onChange={onChange} value={value} mode={mode} />
           {footer && (
             <>
               <div className={styles.variationCodeBlockFooter}>
@@ -98,8 +100,7 @@ export const VariationCodeBlock = ({
                 </div>
               </div>
               <div className={styles.variationCodeBlockTester}>
-                {/* TODO: currently the variation input is disconnected from the code editor. We should figure out the right way to connect these. */}
-                {value && <VariationTester domain={domain} variation={value} />}
+                <VariationTester domain={domain} variation={variationForTest} />
               </div>
             </>
           )}
