@@ -666,13 +666,13 @@ const buildIntentInstruction = async (
       message: signedMessage,
       publicKeyOffsetInMessage,
     });
+  } else {
+    return Ed25519Program.createInstructionWithPublicKey({
+      publicKey,
+      signature,
+      message: signedMessage,
+    });
   }
-
-  return Ed25519Program.createInstructionWithPublicKey({
-    publicKey,
-    signature,
-    message: signedMessage,
-  });
 };
 
 const ED25519_HEADER_LEN = 16;
