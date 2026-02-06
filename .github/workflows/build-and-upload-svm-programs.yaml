@@ -6,6 +6,7 @@ on:
       - programs/**
       - packages/sessions-sdk-rs/**
       - packages/solana-intents/**
+      - .github/workflows/build-and-upload-svm-programs.yaml
   push:
     branches:
       - main
@@ -13,6 +14,12 @@ on:
       - programs/**
       - packages/sessions-sdk-rs/**
       - packages/solana-intents/**
+      - .github/workflows/build-and-upload-svm-programs.yaml
+
+permissions:
+  id-token: write
+  attestations: write
+  artifact-metadata: write
 
 jobs:
   build:
@@ -28,6 +35,11 @@ jobs:
         run: solana-verify build --base-image solanafoundation/solana-verifiable-build:2.2.18
       - name: Print program hashes
         run: sha256sum target/deploy/*.so
+      - name: Attest build provenance
+        if: github.event_name == 'push'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: 'target/deploy/*.so'
       - name: Upload programs
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
