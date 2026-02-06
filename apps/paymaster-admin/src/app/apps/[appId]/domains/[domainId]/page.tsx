@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-import { PaymasterLoading } from "../../../../../components/loading";
 import { Variation } from "../../../../../components/Variation";
 
 export default function DomainIdPage({
@@ -8,9 +6,7 @@ export default function DomainIdPage({
   params: Promise<{ appId: string; domainId: string }>;
 }) {
   return (
-    <Suspense fallback={<PaymasterLoading />}>
       <VariationWithParams params={params} />
-    </Suspense>
   );
 }
 

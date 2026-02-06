@@ -1,7 +1,5 @@
-import { Suspense } from "react";
 
 import { Domain } from "../../../components/Domain";
-import { PaymasterLoading } from "../../../components/loading";
 
 export default function AppIdPage({
   params,
@@ -9,9 +7,7 @@ export default function AppIdPage({
   params: Promise<{ appId: string }>;
 }) {
   return (
-    <Suspense fallback={<PaymasterLoading />}>
-      <DomainWithParams params={params} />
-    </Suspense>
+    <DomainWithParams params={params} />
   );
 }
 
