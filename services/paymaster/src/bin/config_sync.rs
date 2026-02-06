@@ -285,9 +285,10 @@ async fn run_sync_config(
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    dotenvy::dotenv()?;
+    dotenvy::dotenv().ok();
     let opts = Cli::parse();
 
+    println!("Loading config from: {}", opts.config);
     let network_environment = opts.network_environment.into();
 
     run_sync_config(&opts.db_url, &opts.config, network_environment).await?;
