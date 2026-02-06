@@ -64,7 +64,7 @@ struct Ed25519InstructionData {
 }
 
 impl Ed25519InstructionData {
-    fn slice_at<'a>(body: &'a [u8], offset: u16, len: u16) -> std::io::Result<&'a [u8]> {
+    fn slice_at(body: &[u8], offset: u16, len: u16) -> std::io::Result<&[u8]> {
         if offset < Ed25519InstructionHeader::LEN {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
@@ -75,13 +75,11 @@ impl Ed25519InstructionData {
         let end = usize::from(start)
             .checked_add(usize::from(len))
             .expect("adding two u16 can't overflow in usize");
-        if end > body.len() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::UnexpectedEof,
-                "offset out of bounds",
-            ));
-        }
-        Ok(&body[usize::from(start)..end])
+
+        body.get(usize::from(start)..end).ok_or(std::io::Error::new(
+            std::io::ErrorKind::UnexpectedEof,
+            "offset out of bounds",
+        ))
     }
 }
 
