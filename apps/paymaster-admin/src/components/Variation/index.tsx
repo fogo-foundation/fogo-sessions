@@ -69,8 +69,6 @@ const VariationData = ({
   appId: string;
 }) => {
   const userData = useUserData(sessionState);
-  // biome-ignore lint/suspicious/noConsole: we want to log the userData
-  console.log("userData", userData, "domainConfigId", domainConfigId, "appId", appId);
   switch (userData.type) {
     case StateType.Loading: {
       return <DomainVariation isLoading />;
