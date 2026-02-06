@@ -64,11 +64,7 @@ struct Ed25519InstructionData {
 }
 
 impl Ed25519InstructionData {
-    fn slice_at<'a>(
-        body: &'a [u8],
-        offset: u16,
-        len: u16,
-    ) -> std::io::Result<&'a [u8]> {
+    fn slice_at<'a>(body: &'a [u8], offset: u16, len: u16) -> std::io::Result<&'a [u8]> {
         if offset < Ed25519InstructionHeader::LEN {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
@@ -76,7 +72,9 @@ impl Ed25519InstructionData {
             ));
         }
         let start = offset - Ed25519InstructionHeader::LEN;
-        let end = usize::from(start).checked_add(usize::from(len)).expect("adding two u16 can't overflow in usize");
+        let end = usize::from(start)
+            .checked_add(usize::from(len))
+            .expect("adding two u16 can't overflow in usize");
         if end > body.len() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::UnexpectedEof,
@@ -104,7 +102,11 @@ impl BorshDeserialize for Ed25519InstructionData {
         let mut signature = [0u8; 64];
         signature.copy_from_slice(signature_bytes);
 
-        let message_bytes = Self::slice_at(&remaining, header.message_data_offset, header.message_data_size)?;
+        let message_bytes = Self::slice_at(
+            &remaining,
+            header.message_data_offset,
+            header.message_data_size,
+        )?;
         let message = Message::deserialize(message_bytes)?;
         Ok(Self {
             header,
