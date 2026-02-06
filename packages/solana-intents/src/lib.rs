@@ -96,9 +96,7 @@ impl BorshDeserialize for Ed25519InstructionData {
                 .expect("public_key_bytes is 32-byte-slice"),
         );
 
-        let signature_bytes = Self::slice_at(&remaining, header.signature_offset, 64)?;
-        let mut _signature = [0u8; 64]; // We don't check the signature here, the ed25519 program is responsible for that
-        _signature.copy_from_slice(signature_bytes);
+        let _signature_bytes = Self::slice_at(&remaining, header.signature_offset, 64)?; // We don't check the signature here, the ed25519 program is responsible for that
 
         let message_bytes = Self::slice_at(
             &remaining,
