@@ -59,7 +59,6 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
 struct Ed25519InstructionData {
     header: Ed25519InstructionHeader,
     public_key: Pubkey,
-    _signature: [u8; 64], // We don't check the signature here, the ed25519 program is responsible for that
     message: Message,
 }
 
@@ -109,7 +108,6 @@ impl BorshDeserialize for Ed25519InstructionData {
         Ok(Self {
             header,
             public_key,
-            _signature: signature,
             message,
         })
     }
@@ -291,7 +289,6 @@ mod ed25519_tests {
         let decoded = Ed25519InstructionData::try_from_slice(&data).unwrap();
 
         assert_eq!(decoded.public_key, signer_0);
-        assert_eq!(decoded._signature, expected_signature);
         let expected = OffchainMessage::try_from(message_bytes.as_ref()).unwrap();
         assert_eq!(decoded.message, Message::Offchain(expected));
     }
@@ -322,7 +319,6 @@ mod ed25519_tests {
         let decoded = Ed25519InstructionData::try_from_slice(&data).unwrap();
 
         assert_eq!(decoded.public_key, public_key);
-        assert_eq!(decoded._signature, signature);
         assert_eq!(decoded.message, Message::Raw(message_bytes));
     }
 }
