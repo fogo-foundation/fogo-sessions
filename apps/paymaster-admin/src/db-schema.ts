@@ -29,7 +29,7 @@ export const PrimitiveDataValueSchema = z.union([
 ]);
 
 export const PrimitiveDataTypeSchema = z.union([
-  z.enum(["U8", "U16", "U32", "U64", "Bool", "pubkey"]),
+  z.enum(["U8", "U16", "U32", "U64", "Bool", "Pubkey"]),
   z.object({ Bytes: z.object({ length: z.number().int().min(0) }) }),
 ]);
 export const DataConstraintSpecificationSchema = z.union([

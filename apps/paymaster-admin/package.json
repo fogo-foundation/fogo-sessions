@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "next build",
+    "build:validator": "cargo build --release --manifest-path ../../services/paymaster/Cargo.toml --bin paymaster-tx-validator && mkdir -p bin && cp ../../target/release/paymaster-tx-validator bin/",
     "pull:env": "[ $CI ] || VERCEL_ORG_ID=team_M8yTQcRiKOduAwHNMhHQInWq VERCEL_PROJECT_ID=prj_0YVLB5TIHu7VXdMyib1Zmjq4iwtZ vercel env pull",
     "start:dev": "next dev --port 3002",
     "start:prod": "next start --port 3002",
@@ -17,8 +18,8 @@
     "@fogo/component-library": "workspace:*",
     "@fogo/sessions-sdk": "workspace:",
     "@fogo/sessions-sdk-react": "workspace:*",
-    "@phosphor-icons/react": "catalog:",
     "@neondatabase/serverless": "catalog:",
+    "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana/web3.js": "catalog:",
     "ace-builds": "catalog:",
@@ -41,8 +42,8 @@
     "@types/pg": "catalog:",
     "@types/react": "catalog:",
     "autoprefixer": "catalog:",
-    "postcss": "catalog:",
     "modern-normalize": "catalog:",
+    "postcss": "catalog:",
     "typescript": "catalog:",
     "vercel": "catalog:"
   }

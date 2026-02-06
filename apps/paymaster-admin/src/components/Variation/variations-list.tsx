@@ -35,6 +35,7 @@ const VariationsList = (props: VariationsListProps) => {
               sessionState={props.sessionState}
               variation={variation}
               domainConfigId={props.domainConfig.id}
+              domainName={props.domainConfig.domain}
             />
           </GridListItem>
         )}
@@ -42,6 +43,7 @@ const VariationsList = (props: VariationsListProps) => {
       <VariationListItem
         sessionState={props.sessionState}
         domainConfigId={props.domainConfig.id}
+        domainName={props.domainConfig.domain}
       />
     </>
   );
