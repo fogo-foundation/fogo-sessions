@@ -29,13 +29,6 @@ impl ParsedInstructionConstraint {
                         vec![0],
                     )),
                 },
-                // signatureOffset = 16 + 32 = 48
-                ParsedDataConstraint {
-                    start_byte: 2,
-                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
-                        vec![48],
-                    )),
-                },
                 // signatureInstructionIndex = 0xffff
                 ParsedDataConstraint {
                     start_byte: 4,
@@ -43,25 +36,11 @@ impl ParsedInstructionConstraint {
                         vec![u16::MAX],
                     )),
                 },
-                // publicKeyOffset = 16
-                ParsedDataConstraint {
-                    start_byte: 6,
-                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
-                        vec![16],
-                    )),
-                },
                 // publicKeyInstructionIndex = 0xffff
                 ParsedDataConstraint {
                     start_byte: 8,
                     constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
                         vec![u16::MAX],
-                    )),
-                },
-                // messageOffset = 16 + 32 + 64 = 112
-                ParsedDataConstraint {
-                    start_byte: 10,
-                    constraint: ParsedDataConstraintSpecification::U16(IntegerConstraint::EqualTo(
-                        vec![112],
                     )),
                 },
                 // messageInstructionIndex = 0xffff
