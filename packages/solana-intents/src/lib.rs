@@ -59,6 +59,7 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
 struct Ed25519InstructionData {
     header: Ed25519InstructionHeader,
     public_key: Pubkey,
+
     message: Message,
 }
 
@@ -92,12 +93,12 @@ impl BorshDeserialize for Ed25519InstructionData {
         let public_key = Pubkey::new_from_array(
             public_key_bytes
                 .try_into()
-                .expect("public_key_bytes is 32 bytes"),
+                .expect("public_key_bytes is 32-byte-slice"),
         );
 
         let signature_bytes = Self::slice_at(&remaining, header.signature_offset, 64)?;
-        let mut signature = [0u8; 64];
-        signature.copy_from_slice(signature_bytes);
+        let mut _signature = [0u8; 64]; // We don't check the signature here, the ed25519 program is responsible for that
+        _signature.copy_from_slice(signature_bytes);
 
         let message_bytes = Self::slice_at(
             &remaining,
