@@ -18,13 +18,13 @@ import { fromLegacyPublicKey } from "@solana/compat";
 import {
   generateKeyPair,
   getAddressFromPublicKey,
+  getOffchainMessageDecoder,
   getProgramDerivedAddress,
 } from "@solana/kit";
 import { getAssociatedTokenAddressSync, getMint } from "@solana/spl-token";
 import type {
   Connection,
   TransactionError,
-  TransactionInstruction,
   VersionedTransaction,
 } from "@solana/web3.js";
 import {
@@ -32,6 +32,7 @@ import {
   Ed25519Program,
   Keypair,
   PublicKey,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import type {
   Chain,
@@ -653,11 +654,113 @@ const buildIntentInstruction = async (
 
   const { signature, signedMessage } = await options.signMessage(message);
 
+  const publicKey = options.walletPublicKey.toBytes();
+  const publicKeyOffsetInMessage = getOffchainMessagePublicKeyOffset(
+    signedMessage,
+    options.walletPublicKey,
+  );
+  if (publicKeyOffsetInMessage !== undefined) {
+    return buildEd25519InstructionWithOffsets({
+      publicKey: publicKey,
+      signature,
+      message: signedMessage,
+      publicKeyOffsetInMessage,
+    });
+  }
+
   return Ed25519Program.createInstructionWithPublicKey({
-    publicKey: options.walletPublicKey.toBytes(),
+    publicKey,
     signature,
     message: signedMessage,
   });
+};
+
+const ED25519_HEADER_LEN = 16;
+const ED25519_PUBLIC_KEY_LEN = 32;
+const ED25519_SIGNATURE_LEN = 64;
+const ED25519_CURRENT_INSTRUCTION_INDEX = 0xff_ff;
+
+const buildEd25519InstructionWithOffsets = (params: {
+  publicKey: Uint8Array;
+  signature: Uint8Array;
+  message: Uint8Array;
+  publicKeyOffsetInMessage: number;
+}): TransactionInstruction => {
+  const { publicKey, signature, message, publicKeyOffsetInMessage } = params;
+  if (publicKey.length !== ED25519_PUBLIC_KEY_LEN) {
+    throw new Error(
+      `Public Key must be ${ED25519_PUBLIC_KEY_LEN} bytes but received ${publicKey.length} bytes`,
+    );
+  }
+  if (signature.length !== ED25519_SIGNATURE_LEN) {
+    throw new Error(
+      `Signature must be ${ED25519_SIGNATURE_LEN} bytes but received ${signature.length} bytes`,
+    );
+  }
+  if (
+    publicKeyOffsetInMessage < 0 ||
+    publicKeyOffsetInMessage + ED25519_PUBLIC_KEY_LEN > message.length
+  ) {
+    throw new Error("Public key offset is out of bounds of signed message");
+  }
+  const signatureOffset = ED25519_HEADER_LEN;
+  const messageDataOffset = signatureOffset + signature.length;
+  const publicKeyOffsetInInstruction =
+    messageDataOffset + publicKeyOffsetInMessage;
+
+  const instructionData = new Uint8Array(
+    ED25519_HEADER_LEN + ED25519_SIGNATURE_LEN + message.length,
+  );
+  const view = new DataView(instructionData.buffer);
+
+  view.setUint8(0, 1); // num_signatures
+  view.setUint8(1, 0); // padding
+  view.setUint16(2, signatureOffset, true);
+  view.setUint16(4, ED25519_CURRENT_INSTRUCTION_INDEX, true);
+  view.setUint16(6, publicKeyOffsetInInstruction, true);
+  view.setUint16(8, ED25519_CURRENT_INSTRUCTION_INDEX, true);
+  view.setUint16(10, messageDataOffset, true);
+  view.setUint16(12, message.length, true);
+  view.setUint16(14, ED25519_CURRENT_INSTRUCTION_INDEX, true);
+
+  instructionData.set(signature, signatureOffset);
+  instructionData.set(message, messageDataOffset);
+
+  return new TransactionInstruction({
+    keys: [],
+    programId: Ed25519Program.programId,
+    data: Buffer.from(instructionData),
+  });
+};
+
+const OFFCHAIN_SIGNING_DOMAIN_LEN = 16;
+const OFFCHAIN_V0_SIGNER_LIST_OFFSET =
+  OFFCHAIN_SIGNING_DOMAIN_LEN + 1 + 32 + 1 + 1;
+const OFFCHAIN_V1_SIGNER_LIST_OFFSET = OFFCHAIN_SIGNING_DOMAIN_LEN + 1 + 1;
+
+const getOffchainMessagePublicKeyOffset = (
+  signedMessage: Uint8Array,
+  publicKey: PublicKey,
+): number | undefined => {
+  const address = publicKey.toBase58();
+
+  try {
+    const message = getOffchainMessageDecoder().decode(signedMessage);
+    const index = message.requiredSignatories.findIndex(
+      (signer) => signer.address === address,
+    );
+    if (index !== -1) {
+      const baseOffset =
+        message.version === 1
+          ? OFFCHAIN_V1_SIGNER_LIST_OFFSET
+          : OFFCHAIN_V0_SIGNER_LIST_OFFSET;
+      return baseOffset + index * ED25519_PUBLIC_KEY_LEN;
+    } else {
+      return undefined;
+    }
+  } catch {
+    return undefined;
+  }
 };
 
 const serializeExtra = (extra: Record<string, string>) => {
