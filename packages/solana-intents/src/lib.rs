@@ -282,8 +282,7 @@ mod ed25519_tests {
         );
 
         data.extend_from_slice(&message_bytes);
-        let expected_signature = [7u8; 64];
-        data.extend_from_slice(&expected_signature);
+        data.extend_from_slice(&[7u8; 64]);
 
         let decoded = Ed25519InstructionData::try_from_slice(&data).unwrap();
 
