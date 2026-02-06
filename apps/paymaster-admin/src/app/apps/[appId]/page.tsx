@@ -1,4 +1,3 @@
-
 import { Domain } from "../../../components/Domain";
 
 export default function AppIdPage({
@@ -6,9 +5,7 @@ export default function AppIdPage({
 }: {
   params: Promise<{ appId: string }>;
 }) {
-  return (
-    <DomainWithParams params={params} />
-  );
+  return <DomainWithParams params={params} />;
 }
 
 async function DomainWithParams({

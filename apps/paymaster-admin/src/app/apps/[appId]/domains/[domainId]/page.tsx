@@ -5,9 +5,7 @@ export default function DomainIdPage({
 }: {
   params: Promise<{ appId: string; domainId: string }>;
 }) {
-  return (
-      <VariationWithParams params={params} />
-  );
+  return <VariationWithParams params={params} />;
 }
 
 async function VariationWithParams({
