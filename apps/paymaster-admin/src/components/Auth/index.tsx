@@ -7,7 +7,11 @@ import styles from "./index.module.scss";
 import paymasterSvg from "./paymaster.svg";
 import paymasterLabelSvg from "./paymaster-label.svg";
 
-const TermsOfServiceLink = ({ className }: { className?: string | undefined }) => (
+const TermsOfServiceLink = ({
+  className,
+}: {
+  className?: string | undefined;
+}) => (
   <Link
     href="https://www.dourolabs.xyz/Paymaster-Terms-Of-Service.pdf"
     target="_blank"
@@ -48,7 +52,10 @@ export const Auth = () => (
           Fogo Sessions enables seamless authorization.
         </p>
         <SessionButton />
-        <p className={styles.connectWalletCardInfo}>By connecting your wallet and/or using Paymaster you hereby agree to our <TermsOfServiceLink />.</p>
+        <p className={styles.connectWalletCardInfo}>
+          By connecting your wallet and/or using Paymaster you hereby agree to
+          our <TermsOfServiceLink />.
+        </p>
       </div>
       <div className={styles.authCardFooter}>
         <div className={styles.authCardFooterContent}>
@@ -56,7 +63,7 @@ export const Auth = () => (
           <p className={styles.authCardFooterSubtitle}>by Douro Labs</p>
         </div>
         <div className={styles.authCardFooterContent} data-align="right">
-          <TermsOfServiceLink className={styles.authCardFooterLink}/>
+          <TermsOfServiceLink className={styles.authCardFooterLink} />
           <Link
             href="https://www.dourolabs.xyz/Privacy-Notice.pdf"
             target="_blank"
