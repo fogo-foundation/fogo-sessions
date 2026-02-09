@@ -59,23 +59,52 @@ impl<E, M: TryFrom<Vec<u8>, Error = E>> TryFrom<Ed25519InstructionData> for Inte
 struct Ed25519InstructionData {
     header: Ed25519InstructionHeader,
     public_key: Pubkey,
-    _signature: [u8; 64], // We don't check the signature here, the ed25519 program is responsible for that
+
     message: Message,
+}
+
+impl Ed25519InstructionData {
+    fn slice_at(body: &[u8], offset: u16, len: u16) -> std::io::Result<&[u8]> {
+        if offset < Ed25519InstructionHeader::LEN {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "offset before header",
+            ));
+        }
+        let start = offset - Ed25519InstructionHeader::LEN;
+        let end = usize::from(start)
+            .checked_add(usize::from(len))
+            .expect("adding two u16 can't overflow in usize");
+
+        body.get(usize::from(start)..end).ok_or(std::io::Error::new(
+            std::io::ErrorKind::UnexpectedEof,
+            "offset out of bounds",
+        ))
+    }
 }
 
 impl BorshDeserialize for Ed25519InstructionData {
     fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let header = Ed25519InstructionHeader::deserialize_reader(reader)?;
-        let public_key = Pubkey::deserialize_reader(reader)?;
-        let mut signature = [0u8; 64];
-        reader.read_exact(&mut signature)?;
-        let mut message_bytes: Vec<u8> = vec![0u8; usize::from(header.message_data_size)];
-        reader.read_exact(&mut message_bytes)?;
-        let message = Message::deserialize(&message_bytes)?;
+        let mut remaining = Vec::new();
+        reader.read_to_end(&mut remaining)?;
+
+        let public_key_bytes = Self::slice_at(&remaining, header.public_key_offset, 32)?;
+        let public_key = Pubkey::new_from_array(
+            public_key_bytes
+                .try_into()
+                .expect("public_key_bytes is 32-byte-slice"),
+        );
+
+        let message_bytes = Self::slice_at(
+            &remaining,
+            header.message_data_offset,
+            header.message_data_size,
+        )?;
+        let message = Message::deserialize(message_bytes)?;
         Ok(Self {
             header,
             public_key,
-            _signature: signature,
             message,
         })
     }
@@ -101,13 +130,13 @@ impl Ed25519InstructionHeader {
         let expected_header = Self {
             num_signatures: 1,
             padding: 0,
-            signature_offset: Self::LEN + 32,
             signature_instruction_index: u16::MAX, // u16::MAX represents the current instruction
-            public_key_offset: Self::LEN,
             public_key_instruction_index: u16::MAX,
-            message_data_offset: Self::LEN + 32 + 64,
             message_instruction_index: u16::MAX,
             message_data_size: self.message_data_size,
+            signature_offset: self.signature_offset,
+            public_key_offset: self.public_key_offset,
+            message_data_offset: self.message_data_offset,
         };
         if self == &expected_header {
             Ok(())
@@ -192,6 +221,101 @@ impl<P> From<ProgramError> for IntentError<P> {
 impl<P> From<borsh::io::Error> for IntentError<P> {
     fn from(err: borsh::io::Error) -> Self {
         IntentError::DeserializeFailedError(err)
+    }
+}
+
+#[cfg(test)]
+mod ed25519_tests {
+    use super::*;
+    use borsh::BorshDeserialize;
+    use solana_program::pubkey::pubkey;
+
+    fn build_header(
+        signature_offset: u16,
+        public_key_offset: u16,
+        message_data_offset: u16,
+        message_data_size: u16,
+    ) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(usize::from(Ed25519InstructionHeader::LEN));
+        bytes.push(1); // num_signatures
+        bytes.push(0); // padding
+        bytes.extend_from_slice(&signature_offset.to_le_bytes());
+        bytes.extend_from_slice(&u16::MAX.to_le_bytes()); // signature_instruction_index
+        bytes.extend_from_slice(&public_key_offset.to_le_bytes());
+        bytes.extend_from_slice(&u16::MAX.to_le_bytes()); // public_key_instruction_index
+        bytes.extend_from_slice(&message_data_offset.to_le_bytes());
+        bytes.extend_from_slice(&message_data_size.to_le_bytes());
+        bytes.extend_from_slice(&u16::MAX.to_le_bytes()); // message_instruction_index
+        bytes
+    }
+
+    #[test]
+    fn test_deserialize_offchain_message_public_key_offset_inside_message() {
+        let signer_0 = pubkey!("WiABAtWkKuKfpT2U8FKcjMdxoiMLjED8jHA6VNZ7NEm");
+        let signer_1 = pubkey!("865UEUDXB7h2XcPtnkpGS2DPhe9Y58r6RFCAhG4UE1iN");
+        let signer_2 = pubkey!("Eticpp6xSX8oQESNactDVg631mjcZMwSYc3Tz2efRTeQ");
+
+        let message_bytes = [
+            b"\xffsolana offchain".to_vec(),
+            vec![1],
+            vec![3],
+            signer_0.to_bytes().to_vec(),
+            signer_1.to_bytes().to_vec(),
+            signer_2.to_bytes().to_vec(),
+            b"foobarbaz".to_vec(),
+        ]
+        .concat();
+
+        let header_len = Ed25519InstructionHeader::LEN;
+        let message_data_offset = header_len;
+        let public_key_offset = header_len + 16 + 1 + 1; // inside message, at first signer
+        let signature_offset = header_len + u16::try_from(message_bytes.len()).unwrap();
+        let message_data_size = u16::try_from(message_bytes.len()).unwrap();
+
+        let mut data = build_header(
+            signature_offset,
+            public_key_offset,
+            message_data_offset,
+            message_data_size,
+        );
+
+        data.extend_from_slice(&message_bytes);
+        data.extend_from_slice(&[7u8; 64]);
+
+        let decoded = Ed25519InstructionData::try_from_slice(&data).unwrap();
+
+        assert_eq!(decoded.public_key, signer_0);
+        let expected = OffchainMessage::try_from(message_bytes.as_ref()).unwrap();
+        assert_eq!(decoded.message, Message::Offchain(expected));
+    }
+
+    #[test]
+    fn test_deserialize_standard_layout_public_key_signature_message() {
+        let public_key = pubkey!("2xg8b2Qz5sSPhhYh1spuZB3ux1o4d2d5UXJ8gQSdG6Ef");
+        let signature = [42u8; 64];
+        let message_bytes = b"hello".to_vec();
+
+        let header_len = Ed25519InstructionHeader::LEN;
+        let public_key_offset = header_len;
+        let signature_offset = header_len + 32;
+        let message_data_offset = header_len + 32 + 64;
+        let message_data_size = u16::try_from(message_bytes.len()).unwrap();
+
+        let mut data = build_header(
+            signature_offset,
+            public_key_offset,
+            message_data_offset,
+            message_data_size,
+        );
+
+        data.extend_from_slice(&public_key.to_bytes());
+        data.extend_from_slice(&signature);
+        data.extend_from_slice(&message_bytes);
+
+        let decoded = Ed25519InstructionData::try_from_slice(&data).unwrap();
+
+        assert_eq!(decoded.public_key, public_key);
+        assert_eq!(decoded.message, Message::Raw(message_bytes));
     }
 }
 
