@@ -17,8 +17,8 @@ type ListHeaderProps =
 export const ListHeader = (props: ListHeaderProps) =>
   props.isLoading ? (
     <div className={styles.listHeader}>
-      <Skeleton height={6} width={35}/>
-      <Skeleton height={6} width={30}/>
+      <Skeleton height={6} width={35} />
+      <Skeleton height={6} width={30} />
     </div>
   ) : (
     <div className={styles.listHeader}>

@@ -113,7 +113,7 @@ export const DomainSettings = (props: DomainSettingsProps) => {
         count={2}
       />
       {props.isLoading ? (
-        <Skeleton className={styles.domainSettingsSkeleton} height={26}/>
+        <Skeleton className={styles.domainSettingsSkeleton} height={26} />
       ) : (
         <DomainSettingsList
           domainConfig={props.domainConfig}

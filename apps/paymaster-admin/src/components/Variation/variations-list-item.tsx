@@ -36,14 +36,15 @@ type VariationListItemProps =
     };
 
 export const VariationListItem = (props: VariationListItemProps) => {
-
-  return       <div className={styles.variationListItem}>
-  {props.isLoading ? (
-    <Skeleton height={12}/>
-  ) : (
-    <VariationForm {...props} />
-  )}
-  </div>
+  return (
+    <div className={styles.variationListItem}>
+      {props.isLoading ? (
+        <Skeleton height={12} />
+      ) : (
+        <VariationForm {...props} />
+      )}
+    </div>
+  );
 };
 
 type VariationFormProps = {
@@ -300,7 +301,7 @@ const VariationForm = ({
                 isDisabled: true,
               })}
         />
-        </div>
+      </div>
       <VariationCodeBlock
         mode={isEditingJson ? "json" : "toml"}
         isExpanded={isExpanded}
