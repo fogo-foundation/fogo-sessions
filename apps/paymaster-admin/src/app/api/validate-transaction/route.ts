@@ -90,9 +90,34 @@ function generateConfigToml(domain: string, variation: Variation): string {
     domains: [
       {
         domain,
-        tx_variations: [variation],
+        tx_variations: [convertToTomlFormat(variation)],
       },
     ],
   };
   return TOML.stringify(config);
+}
+
+function convertToTomlFormat(variation: Variation) {
+  if (variation.version === "v0") {
+    return {
+      version: "v0",
+      name: variation.name,
+      whitelisted_programs: variation.transaction_variation,
+    };
+  } else if (variation.version === "v1") {
+    return {
+      version: "v1",
+      name: variation.name,
+      max_gas_spend: variation.max_gas_spend,
+      instructions: variation.transaction_variation.map((ix) => ({
+        program: ix.program,
+        required: ix.required,
+        accounts: ix.accounts,
+        data: ix.data,
+        requires_wrapped_native_tokens:
+          ix.requires_wrapped_native_tokens ?? false,
+      })),
+    };
+  }
+  throw new Error("Unknown variation version");
 }
