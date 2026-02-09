@@ -20,12 +20,16 @@ const meta = {
         category: "Skeleton",
       },
     },
-    fill: {
-      control: "boolean",
+    height: {
+      control: "number",
       table: {
         category: "Skeleton",
       },
     },
+  },
+  args: {
+    width: 100,
+    height: 10,
   },
 } satisfies Meta<typeof SkeletonComponent>;
 export default meta;
@@ -38,7 +42,5 @@ export const Skeleton = {
   ),
   args: {
     label: "Loading",
-    fill: false,
-    width: 20,
   },
 } satisfies StoryObj<typeof SkeletonComponent>;
