@@ -1,34 +1,31 @@
 import clsx from "clsx";
 import type { ComponentProps, CSSProperties } from "react";
-
 import styles from "./index.module.css";
 
 type Props = Omit<ComponentProps<"span">, "children"> & {
-  width?: number | undefined;
   label?: string | undefined;
-  fill?: boolean | undefined;
+  width?: number | undefined;
+  height: number;
 };
 
 export const Skeleton = ({
   className,
   label,
   width,
-  fill,
+  height,
   ...props
 }: Props) => (
   <span
-    data-fill-width={width === undefined ? "" : undefined}
-    {...(width &&
-      !fill && { style: { "--skeleton-width": width } as CSSProperties })}
-    data-fill={fill ? "" : undefined}
     className={clsx(styles.skeleton, className)}
+    data-fill={!width ? "true" : undefined}
+    style={
+      {
+        ...(width && { "--skeleton-width": width }),
+        ...(height && { "--skeleton-height": height }),
+      } as CSSProperties
+    }
+    {...props}
   >
-    <span className={clsx(styles.skeletonInner, className)} {...props}>
-      <Label>{label ?? "Loading"}</Label>
-    </span>
+    <span className={styles.skeletonLabel}>{label ?? "Loading"}</span>
   </span>
-);
-
-const Label = ({ children }: { children: string | undefined }) => (
-  <span className={styles.skeletonLabel}>{children ?? "Loading"}</span>
 );

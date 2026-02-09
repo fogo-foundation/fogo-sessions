@@ -32,7 +32,7 @@ const networkBadgeVariation: Record<
 
 export const DomainCard = (props: DomainCardProps) =>
   props.isLoading ? (
-    <Skeleton className={styles.domainCardSkeleton} />
+    <Skeleton height={16.5} />
   ) : (
     <Card className={styles.domainCard}>
       <div className={styles.domainCardHeader}>

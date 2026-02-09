@@ -6,14 +6,12 @@ import {
   isWalletLoading,
   useSession,
 } from "@fogo/sessions-sdk-react";
-import { useParams } from "next/navigation";
 
 import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
 import { UserNotFound } from "../UserNotFound";
 import { AppDomains } from "./app-domains";
 
-export const Domain = () => {
-  const { appId } = useParams<{ appId: string }>();
+export const Domain = ({ appId }: { appId: string }) => {
   const sessionState = useSession();
 
   if (isWalletLoading(sessionState)) {

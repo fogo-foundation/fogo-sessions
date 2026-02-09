@@ -36,10 +36,14 @@ type VariationListItemProps =
     };
 
 export const VariationListItem = (props: VariationListItemProps) => {
-  return props.isLoading ? (
-    <Skeleton className={styles.variationListItemSkeleton} />
-  ) : (
-    <VariationForm {...props} />
+  return (
+    <div className={styles.variationListItem}>
+      {props.isLoading ? (
+        <Skeleton height={12} />
+      ) : (
+        <VariationForm {...props} />
+      )}
+    </div>
   );
 };
 
@@ -233,7 +237,7 @@ const VariationForm = ({
 
   return (
     <Form validationBehavior="aria" onSubmit={handleSubmit}>
-      <div className={styles.variationListItem}>
+      <div className={styles.variationListItemContent}>
         <div
           {...(isExpanded
             ? {}
