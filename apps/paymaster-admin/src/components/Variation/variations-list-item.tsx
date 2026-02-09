@@ -18,7 +18,11 @@ import { parse, stringify } from "smol-toml";
 import z, { ZodError } from "zod";
 import { useUserData } from "../../client/paymaster";
 import type { Variation } from "../../db-schema";
-import { TransactionVariations } from "../../db-schema";
+import {
+  Base58Pubkey,
+  TransactionVariations,
+  VariationSchema,
+} from "../../db-schema";
 import { createOrUpdateVariation } from "./actions/variation";
 import { DeleteVariationButton } from "./delete-variation-button";
 import { VariationCodeBlock } from "./variation-code-block";
@@ -28,6 +32,7 @@ type VariationListItemProps =
   | {
       sessionState: EstablishedSessionState;
       domainConfigId: string;
+      domainName: string;
       variation?: Variation;
       isLoading?: false;
     }
@@ -51,12 +56,14 @@ type VariationFormProps = {
   sessionState: EstablishedSessionState;
   domainConfigId: string;
   variation?: Variation;
+  domainName: string;
 };
 
 const VariationForm = ({
   sessionState,
   variation,
   domainConfigId,
+  domainName,
 }: VariationFormProps) => {
   const userData = useUserData(sessionState);
   const toast = useToast();
@@ -129,6 +136,51 @@ const VariationForm = ({
     },
     [isEditingJson],
   );
+
+  const variationForTest = useMemo<Variation | null>(() => {
+    if (!code) return null;
+
+    try {
+      if (variation?.version === "v0") {
+        const data = JSON.parse(code);
+        const transactionVariation = z.array(Base58Pubkey).parse(data);
+        return VariationSchema.parse({
+          id: variation?.id ?? crypto.randomUUID(),
+          version: "v0",
+          name,
+          transaction_variation: transactionVariation,
+          created_at: variation?.created_at ?? new Date(),
+          updated_at: new Date(),
+        });
+      }
+
+      const transactionVariation = validateCode(code);
+      if (!transactionVariation) return null;
+
+      const maxGasSpendNumber = Number(maxGasSpend || 0);
+      if (!Number.isFinite(maxGasSpendNumber)) return null;
+
+      return VariationSchema.parse({
+        id: variation?.id ?? crypto.randomUUID(),
+        version: "v1",
+        name,
+        transaction_variation: transactionVariation,
+        max_gas_spend: maxGasSpendNumber,
+        created_at: variation?.created_at ?? new Date(),
+        updated_at: new Date(),
+      });
+    } catch {
+      return null;
+    }
+  }, [
+    code,
+    name,
+    maxGasSpend,
+    variation?.id,
+    variation?.version,
+    variation?.created_at,
+    validateCode,
+  ]);
 
   const wrappedCreateOrUpdateVariation = useCallback(async () => {
     const sessionToken = await sessionState.createLogInToken();
@@ -307,6 +359,8 @@ const VariationForm = ({
         isExpanded={isExpanded}
         value={code}
         onChange={handleCodeChange}
+        domain={domainName}
+        variationForTest={variationForTest}
         footer={
           (!variation || variation?.version === "v1") && (
             <>

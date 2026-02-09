@@ -1,0 +1,27 @@
+@use '@fogo/component-library/theme';
+
+.variationTesterInputRow {
+  display: flex;
+  align-items: start;
+  gap: theme.spacing(2);
+  width: 100%;
+}
+
+.variationTesterInput {
+  flex: 1;
+}
+
+.variationTesterOutput {
+  display: flex;
+  align-items: center;
+  gap: theme.spacing(2);
+  padding: theme.spacing(3);
+
+  .variationTesterOutputMessage {
+    @include theme.text('sm', 'normal');
+    color: theme.color('foreground');
+    white-space: pre-wrap;
+    line-height: 1.4;
+    flex: 1;
+  }
+}

@@ -9,28 +9,33 @@ import styles from "./variation-code-block.module.scss";
 import "ace-builds/src-noconflict/theme-monokai";
 import "ace-builds/src-noconflict/mode-json";
 import "ace-builds/src-noconflict/mode-toml";
+import { useResizeObserver } from "@react-hookz/web";
+import type { Variation } from "../../db-schema";
+import { VariationTester } from "./variation-tester";
 
 type VariationCodeBlockProps = {
   value: string;
   onChange: (value: string) => void;
   isExpanded: boolean;
+  domain: string;
   footer?: React.ReactNode;
   mode: "toml" | "json";
+  variationForTest: Variation | null;
 };
 
 export const VariationCodeBlock = ({
   value,
   onChange,
   isExpanded,
+  domain,
   footer,
   mode,
+  variationForTest,
 }: VariationCodeBlockProps) => {
   const toast = useToast();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [editorHeight, setEditorHeight] = useState(0);
 
   const handleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -49,10 +54,6 @@ export const VariationCodeBlock = ({
       });
   }, [toast.error]);
 
-  const handleUpdate = useCallback(() => {
-    setEditorHeight(contentRef.current?.clientHeight ?? 0);
-  }, []);
-
   return (
     <AnimatePresence>
       {isExpanded && (
@@ -62,7 +63,6 @@ export const VariationCodeBlock = ({
           exit={{ height: 0, scale: 0.95 }}
           className={styles.variationCodeBlock}
           ref={cardRef}
-          onUpdate={handleUpdate}
         >
           <input type="hidden" name="code" value={value} />
           <div className={styles.variationCodeBlockHeader}>
@@ -74,26 +74,50 @@ export const VariationCodeBlock = ({
               {isFullscreen ? <ArrowsOutIcon /> : <ArrowsInIcon />}
             </Button>
           </div>
-          <div className={styles.variationCodeBlockContent} ref={contentRef}>
-            {contentRef.current && (
-              <AceEditor
-                value={value}
-                onChange={onChange}
-                className={styles.variationCodeBlockEditor}
-                mode={mode}
-                theme="monokai"
-                width="100%"
-                height={`${editorHeight}px`}
-                showPrintMargin={false}
-                aria-label="Variation code"
-              />
-            )}
-          </div>
+          <Editor onChange={onChange} value={value} mode={mode} />
           {footer && (
             <div className={styles.variationCodeBlockFooter}>{footer}</div>
           )}
+          <div className={styles.variationCodeBlockTester}>
+            <VariationTester domain={domain} variation={variationForTest} />
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+};
+
+type EditorProps = {
+  value: string;
+  onChange: (value: string) => void;
+  mode: "toml" | "json";
+};
+
+const Editor = ({ value, onChange, mode }: EditorProps) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [editorHeight, setEditorHeight] = useState(0);
+
+  const handleUpdate = useCallback(() => {
+    setEditorHeight(contentRef.current?.clientHeight ?? 0);
+  }, []);
+
+  useResizeObserver(contentRef, handleUpdate);
+
+  return (
+    <div className={styles.variationCodeBlockContent} ref={contentRef}>
+      {contentRef.current && (
+        <AceEditor
+          value={value}
+          onChange={onChange}
+          className={styles.variationCodeBlockEditor}
+          mode={mode}
+          theme="monokai"
+          width="100%"
+          height={`${editorHeight}px`}
+          showPrintMargin={false}
+          aria-label="Variation code"
+        />
+      )}
+    </div>
   );
 };
