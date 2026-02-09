@@ -53,7 +53,7 @@ const BreadcrumbNav = ({
 
 const BreadcrumbNavTitle = ({ title, titleLoading }: TitleProps) => {
   return titleLoading ? (
-    <Skeleton className={styles.breadcrumbNavTitleSkeleton} />
+    <Skeleton height={6} width={80} />
   ) : (
     <span className={styles.breadcrumbNavTitle}>{title}</span>
   );
@@ -131,7 +131,7 @@ const BreadcrumbNavItem = ({
   isSmall?: boolean | undefined;
 }) => {
   if (item.isLoading) {
-    return <Skeleton className={styles.breadcrumbNavItemSkeleton} />;
+    return <Skeleton height={6} width={80} />;
   }
   return item.href ? (
     <Link

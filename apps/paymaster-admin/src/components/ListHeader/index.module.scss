@@ -14,16 +14,4 @@
     align-items: center;
     gap: theme.spacing(2);
   }
-
-  .listHeaderTitleSkeleton {
-    width: theme.spacing(35);
-    height: theme.spacing(6);
-    display: inline-block;
-  }
-
-  .listHeaderActionSkeleton {
-    width: theme.spacing(30);
-    height: theme.spacing(6);
-    display: inline-block;
-  }
 }

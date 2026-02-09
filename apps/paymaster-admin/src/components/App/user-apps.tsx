@@ -23,7 +23,7 @@ const AppCard = (props: AppCardProps) => {
   const formatter = useDateFormatter();
 
   return props.isLoading ? (
-    <Skeleton className={styles.appCard} />
+    <Skeleton height={50} />
   ) : (
     <Card className={styles.appCard}>
       <div className={styles.appCardContent}>

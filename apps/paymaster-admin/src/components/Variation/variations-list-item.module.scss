@@ -2,6 +2,10 @@
 
 .variationListItem {
   margin-top: theme.spacing(2);
+}
+
+.variationListItemContent {
+  margin-top: theme.spacing(2);
   display: flex;
   gap: theme.spacing(2);
 
@@ -37,7 +41,6 @@
 }
 
 .variationListItemSkeleton {
-  height: theme.spacing(12);
   margin-top: theme.spacing(2);
 }
 
