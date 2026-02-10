@@ -9,9 +9,11 @@ import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
 import {
   ChecksIcon,
   CodeBlockIcon,
+  ListIcon,
   XIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr/GasPump";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { Form } from "react-aria-components";
 import { parse, stringify } from "smol-toml";
@@ -20,13 +22,19 @@ import { useUserData } from "../../client/paymaster";
 import type { Variation } from "../../db-schema";
 import {
   Base58Pubkey,
+  type InstructionConstraintSchema,
   TransactionVariations,
   VariationSchema,
 } from "../../db-schema";
+import { VariationFormEditor } from "./FormEditor";
 import { createOrUpdateVariation } from "./actions/variation";
 import { DeleteVariationButton } from "./delete-variation-button";
 import { VariationCodeBlock } from "./variation-code-block";
 import styles from "./variations-list-item.module.scss";
+
+type InstructionConstraint = z.infer<typeof InstructionConstraintSchema>;
+
+type EditorMode = "form" | "code";
 
 type VariationListItemProps =
   | {
@@ -69,6 +77,10 @@ const VariationForm = ({
   const toast = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
+  const isV1 = !variation || variation?.version === "v1";
+  const [editorMode, setEditorMode] = useState<EditorMode>(
+    isV1 ? "form" : "code",
+  );
   const [name, setName] = useState(variation?.name ?? "");
   const [code, setCode] = useState(() => {
     if (!variation) return "";
@@ -76,19 +88,27 @@ const VariationForm = ({
       ? JSON.stringify(variation.transaction_variation, null, 2)
       : generateEditableToml(variation.transaction_variation);
   });
+  const [instructions, setInstructions] = useState<InstructionConstraint[]>(
+    () => {
+      if (!variation || variation.version === "v0") return [];
+      return variation.transaction_variation;
+    },
+  );
   const [codeError, setCodeError] = useState<string | undefined>();
   const [maxGasSpend, setMaxGasSpend] = useState(
-    variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
+    variation?.version === "v1"
+      ? variation.max_gas_spend.toString()
+      : "1000000",
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: v0 doesn't have max_gas_spend
   const baseline = useMemo(() => {
     if (!variation?.id) {
-      // When creating a new variation, baseline is the initial empty state
       return {
         name: "",
-        maxGasSpend: "",
+        maxGasSpend: "1000000",
         code: "",
+        instructions: [] as InstructionConstraint[],
       };
     }
     const variationCode =
@@ -100,6 +120,8 @@ const VariationForm = ({
       maxGasSpend:
         variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
       code: variationCode,
+      instructions:
+        variation?.version === "v1" ? variation.transaction_variation : [],
     };
   }, [
     variation?.id,
@@ -114,6 +136,7 @@ const VariationForm = ({
     setName("");
     setMaxGasSpend("");
     setCode("");
+    setInstructions([]);
     setCodeError(undefined);
   }, []);
 
@@ -137,11 +160,48 @@ const VariationForm = ({
     [isEditingJson],
   );
 
-  const variationForTest = useMemo<Variation | null>(() => {
-    if (!code) return null;
+  // Switch from form mode to code mode
+  const handleSwitchToCode = useCallback(() => {
+    const tomlStr = instructions.length > 0
+      ? (isEditingJson
+          ? JSON.stringify(instructions, null, 2)
+          : generateEditableToml(instructions))
+      : "";
+    setCode(tomlStr);
+    setCodeError(undefined);
+    setEditorMode("code");
+  }, [instructions, isEditingJson]);
 
+  // Switch from code mode to form mode
+  const handleSwitchToForm = useCallback(() => {
+    if (!code) {
+      setInstructions([]);
+      setEditorMode("form");
+      return;
+    }
+    const parsed = validateCode(code);
+    if (parsed) {
+      setInstructions(parsed);
+      setEditorMode("form");
+    } else {
+      toast.error(
+        "Cannot switch to form mode: fix code errors first",
+      );
+    }
+  }, [code, validateCode, toast]);
+
+  const handleEditorModeToggle = useCallback(() => {
+    if (editorMode === "form") {
+      handleSwitchToCode();
+    } else {
+      handleSwitchToForm();
+    }
+  }, [editorMode, handleSwitchToCode, handleSwitchToForm]);
+
+  const variationForTest = useMemo<Variation | null>(() => {
     try {
       if (variation?.version === "v0") {
+        if (!code) return null;
         const data = JSON.parse(code);
         const transactionVariation = z.array(Base58Pubkey).parse(data);
         return VariationSchema.parse({
@@ -154,7 +214,18 @@ const VariationForm = ({
         });
       }
 
-      const transactionVariation = validateCode(code);
+      // For V1: use instructions in form mode, parse code in code mode
+      let transactionVariation: z.infer<typeof TransactionVariations> | false;
+      if (editorMode === "form") {
+        try {
+          transactionVariation = TransactionVariations.parse(instructions);
+        } catch {
+          return null;
+        }
+      } else {
+        if (!code) return null;
+        transactionVariation = validateCode(code);
+      }
       if (!transactionVariation) return null;
 
       const maxGasSpendNumber = Number(maxGasSpend || 0);
@@ -174,6 +245,8 @@ const VariationForm = ({
     }
   }, [
     code,
+    instructions,
+    editorMode,
     name,
     maxGasSpend,
     variation?.id,
@@ -184,7 +257,23 @@ const VariationForm = ({
 
   const wrappedCreateOrUpdateVariation = useCallback(async () => {
     const sessionToken = await sessionState.createLogInToken();
-    const variationObject = validateCode(code);
+
+    let variationObject: z.infer<typeof TransactionVariations> | false;
+    if (editorMode === "form") {
+      try {
+        variationObject = TransactionVariations.parse(instructions);
+      } catch (error) {
+        if (error instanceof ZodError) {
+          throw new Error(
+            error.errors.map((e) => e.message).join(", "),
+          );
+        }
+        throw error;
+      }
+    } else {
+      variationObject = validateCode(code);
+    }
+
     if (!variationObject) {
       throw new Error("Invalid variation");
     }
@@ -202,6 +291,8 @@ const VariationForm = ({
     name,
     maxGasSpend,
     code,
+    instructions,
+    editorMode,
     variation?.id,
     validateCode,
   ]);
@@ -213,7 +304,6 @@ const VariationForm = ({
       );
       if ("mutate" in userData) {
         userData.mutate();
-        // reset the empty component that was used to create the variation
         if (!variation) {
           resetForm();
         }
@@ -227,14 +317,20 @@ const VariationForm = ({
     },
   });
 
-  const current = useMemo(() => {
-    return { name, maxGasSpend, code };
-  }, [name, maxGasSpend, code]);
-
-  const isDirty =
-    current.name !== baseline?.name ||
-    current.maxGasSpend !== baseline?.maxGasSpend ||
-    current.code !== baseline?.code;
+  const isDirty = useMemo(() => {
+    if (editorMode === "form") {
+      return (
+        name !== baseline.name ||
+        maxGasSpend !== baseline.maxGasSpend ||
+        JSON.stringify(instructions) !== JSON.stringify(baseline.instructions)
+      );
+    }
+    return (
+      name !== baseline.name ||
+      maxGasSpend !== baseline.maxGasSpend ||
+      code !== baseline.code
+    );
+  }, [editorMode, name, maxGasSpend, code, instructions, baseline]);
 
   const handleEditClick = useCallback(() => {
     setIsExpanded(true);
@@ -287,6 +383,62 @@ const VariationForm = ({
     [execute],
   );
 
+  const footer = isV1 && (
+    <>
+      <div className={styles.variationFormFooterActions}>
+        {editorMode === "code" && (
+          <Button variant="ghost" onClick={handleEditJsonClick} size="sm">
+            {isEditingJson ? "TOML" : "JSON"}
+          </Button>
+        )}
+        <Button variant="ghost" onClick={handleEditorModeToggle} size="sm">
+          {editorMode === "form" ? (
+            <>
+              <CodeBlockIcon /> Code
+            </>
+          ) : (
+            <>
+              <ListIcon /> Form
+            </>
+          )}
+        </Button>
+        {editorMode === "code" &&
+          (codeError || state.type === StateType.Error ? (
+            <p className={styles.variationFormFooterError}>
+              {state.type === StateType.Error
+                ? errorToString(state.error)
+                : codeError}
+            </p>
+          ) : (
+            <Badge variant="success" size="xs">
+              All passed <ChecksIcon />
+            </Badge>
+          ))}
+        {editorMode === "form" && state.type === StateType.Error && (
+          <p className={styles.variationFormFooterError}>
+            {errorToString(state.error)}
+          </p>
+        )}
+      </div>
+      {isDirty ? (
+        <Button
+          variant="secondary"
+          type="submit"
+          isDisabled={
+            state.type === StateType.Running ||
+            (editorMode === "code" && !!codeError)
+          }
+        >
+          {state.type === StateType.Running ? "Saving..." : "Save"}
+        </Button>
+      ) : (
+        <Button variant="ghost" onClick={handleCloseClick}>
+          Dismiss
+        </Button>
+      )}
+    </>
+  );
+
   return (
     <Form validationBehavior="aria" onSubmit={handleSubmit}>
       <div className={styles.variationListItemContent}>
@@ -317,7 +469,7 @@ const VariationForm = ({
             onChange={setName}
             aria-label="Variation name"
           />
-          {(!variation || variation?.version === "v1") && (
+          {isV1 && (
             <TextField
               type="number"
               inputMode="numeric"
@@ -354,49 +506,38 @@ const VariationForm = ({
               })}
         />
       </div>
-      <VariationCodeBlock
-        mode={isEditingJson ? "json" : "toml"}
-        isExpanded={isExpanded}
-        value={code}
-        onChange={handleCodeChange}
-        domain={domainName}
-        variationForTest={variationForTest}
-        footer={
-          (!variation || variation?.version === "v1") && (
-            <>
-              <div className={styles.variationFormFooterActions}>
-                <Button variant="ghost" onClick={handleEditJsonClick} size="sm">
-                  {isEditingJson ? "TOML" : "JSON"}
-                </Button>
-                {codeError || state.type === StateType.Error ? (
-                  <p className={styles.variationFormFooterError}>
-                    {state.type === StateType.Error
-                      ? errorToString(state.error)
-                      : codeError}
-                  </p>
-                ) : (
-                  <Badge variant="success" size="xs">
-                    All passed <ChecksIcon />
-                  </Badge>
-                )}
-              </div>
-              {isDirty ? (
-                <Button
-                  variant="secondary"
-                  type="submit"
-                  isDisabled={state.type === StateType.Running || !!codeError}
-                >
-                  {state.type === StateType.Running ? "Saving..." : "Save"}
-                </Button>
-              ) : (
-                <Button variant="ghost" onClick={handleCloseClick}>
-                  Dismiss
-                </Button>
+      {editorMode === "form" && isV1 ? (
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, scale: 0.95 }}
+              animate={{ height: "50vh", scale: 1 }}
+              exit={{ height: 0, scale: 0.95 }}
+              className={styles.variationFormEditorContainer}
+            >
+              <VariationFormEditor
+                instructions={instructions}
+                onChange={setInstructions}
+              />
+              {footer && (
+                <div className={styles.variationFormEditorFooter}>
+                  {footer}
+                </div>
               )}
-            </>
-          )
-        }
-      />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      ) : (
+        <VariationCodeBlock
+          mode={isEditingJson ? "json" : "toml"}
+          isExpanded={isExpanded}
+          value={code}
+          onChange={handleCodeChange}
+          domain={domainName}
+          variationForTest={variationForTest}
+          footer={footer}
+        />
+      )}
     </Form>
   );
 };
