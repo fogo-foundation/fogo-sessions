@@ -26,6 +26,7 @@ export const PrimitiveDataValueSchema = z.union([
   z.object({
     Bytes: z.string().regex(/^[0-9a-fA-F]*$/, "Hex string expected"),
   }),
+  z.object({ NttSignedQuoter: z.string() }),
 ]);
 
 export const PrimitiveDataTypeSchema = z.union([
