@@ -8,7 +8,8 @@ import { InstructionConstraintForm } from "./instruction-constraint-form";
 
 type InstructionConstraint = z.infer<typeof InstructionConstraintSchema>;
 
-const SYSTEM_PROGRAM_ID = SystemProgram.programId.toBase58() as InstructionConstraint["program"];
+const SYSTEM_PROGRAM_ID =
+  SystemProgram.programId.toBase58() as InstructionConstraint["program"];
 
 const createDefaultInstruction = (): InstructionConstraint => ({
   program: SYSTEM_PROGRAM_ID,

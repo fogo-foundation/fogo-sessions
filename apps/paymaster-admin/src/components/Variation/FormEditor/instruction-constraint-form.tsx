@@ -40,7 +40,10 @@ export const InstructionConstraintForm = ({
 }: InstructionConstraintFormProps) => {
   const handleProgramChange = useCallback(
     (program: string) => {
-      onChange({ ...value, program: program as InstructionConstraint["program"] });
+      onChange({
+        ...value,
+        program: program as InstructionConstraint["program"],
+      });
     },
     [value, onChange],
   );

@@ -58,34 +58,30 @@ export const AccountConstraintForm = ({
           className={styles.narrowField ?? ""}
         />
       </div>
-      {(value.include.length > 0 || value.exclude.length > 0 || true) && (
-        <>
-          <div className={styles.section ?? ""}>
-            <span className={styles.sectionHeader ?? ""}>Include</span>
-            <DynamicList
-              items={value.include}
-              onChange={handleIncludeChange}
-              renderItem={(item, _index, onItemChange) => (
-                <ContextualPubkeyInput value={item} onChange={onItemChange} />
-              )}
-              createDefault={createDefaultPubkey}
-              label="include"
-            />
-          </div>
-          <div className={styles.section ?? ""}>
-            <span className={styles.sectionHeader ?? ""}>Exclude</span>
-            <DynamicList
-              items={value.exclude}
-              onChange={handleExcludeChange}
-              renderItem={(item, _index, onItemChange) => (
-                <ContextualPubkeyInput value={item} onChange={onItemChange} />
-              )}
-              createDefault={createDefaultPubkey}
-              label="exclude"
-            />
-          </div>
-        </>
-      )}
+      <div className={styles.section ?? ""}>
+        <span className={styles.sectionHeader ?? ""}>Include</span>
+        <DynamicList
+          items={value.include}
+          onChange={handleIncludeChange}
+          renderItem={(item, _index, onItemChange) => (
+            <ContextualPubkeyInput value={item} onChange={onItemChange} />
+          )}
+          createDefault={createDefaultPubkey}
+          label="include"
+        />
+      </div>
+      <div className={styles.section ?? ""}>
+        <span className={styles.sectionHeader ?? ""}>Exclude</span>
+        <DynamicList
+          items={value.exclude}
+          onChange={handleExcludeChange}
+          renderItem={(item, _index, onItemChange) => (
+            <ContextualPubkeyInput value={item} onChange={onItemChange} />
+          )}
+          createDefault={createDefaultPubkey}
+          label="exclude"
+        />
+      </div>
     </div>
   );
 };

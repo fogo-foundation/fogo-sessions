@@ -46,7 +46,6 @@ export const DynamicList = <T,>({
   return (
     <div className={styles.dynamicList}>
       {items.map((item, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: stable list edited by index
         <div key={index} className={styles.dynamicListItem}>
           <div className={styles.dynamicListItemContent}>
             {renderItem(item, index, (value) => handleItemChange(index, value))}

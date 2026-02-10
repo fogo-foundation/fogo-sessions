@@ -4,10 +4,10 @@ import type { z } from "zod";
 import type { DataConstraintSpecificationSchema } from "../../../db-schema";
 import { DynamicList } from "./dynamic-list";
 import styles from "./form-editor.module.scss";
+import type { PrimitiveDataValue } from "./primitive-data-value-input";
 import {
-  PrimitiveDataValueInput,
   getDefaultForType,
-  type PrimitiveDataValue,
+  PrimitiveDataValueInput,
 } from "./primitive-data-value-input";
 
 type DataConstraintSpec = z.infer<typeof DataConstraintSpecificationSchema>;

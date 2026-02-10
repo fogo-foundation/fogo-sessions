@@ -1,6 +1,6 @@
-import { SystemProgram } from "@solana/web3.js";
 import { Select } from "@fogo/component-library/Select";
 import { TextField } from "@fogo/component-library/TextField";
+import { SystemProgram } from "@solana/web3.js";
 import { useCallback } from "react";
 import type { z } from "zod";
 import type { PrimitiveDataValueSchema } from "../../../db-schema";
@@ -45,7 +45,9 @@ function getDefaultForType(type: ValueType): PrimitiveDataValue {
       return { Bool: true };
     case "Pubkey":
       // Cast needed: empty string will be validated by Zod on submit
-      return { Pubkey: SystemProgram.programId.toBase58() } as PrimitiveDataValue;
+      return {
+        Pubkey: SystemProgram.programId.toBase58(),
+      } as PrimitiveDataValue;
     case "Bytes":
       return { Bytes: "" };
   }
@@ -112,7 +114,7 @@ const ValueInput = ({ value, valueType, onChange }: ValueInputProps) => {
           inputMode="numeric"
           value={String("U16" in value ? value.U16 : 0)}
           onChange={(v) =>
-            onChange({ U16: Math.min(65535, Math.max(0, Number(v) || 0)) })
+            onChange({ U16: Math.min(65_535, Math.max(0, Number(v) || 0)) })
           }
           placeholder="0-65535"
           aria-label="U16 value"
@@ -127,7 +129,7 @@ const ValueInput = ({ value, valueType, onChange }: ValueInputProps) => {
           value={String("U32" in value ? value.U32 : 0)}
           onChange={(v) =>
             onChange({
-              U32: Math.min(0xffffffff, Math.max(0, Number(v) || 0)),
+              U32: Math.min(0xff_ff_ff_ff, Math.max(0, Number(v) || 0)),
             })
           }
           placeholder="0-4294967295"

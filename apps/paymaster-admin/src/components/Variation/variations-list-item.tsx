@@ -19,16 +19,15 @@ import { Form } from "react-aria-components";
 import { parse, stringify } from "smol-toml";
 import z, { ZodError } from "zod";
 import { useUserData } from "../../client/paymaster";
-import type { Variation } from "../../db-schema";
+import type { InstructionConstraintSchema, Variation } from "../../db-schema";
 import {
   Base58Pubkey,
-  type InstructionConstraintSchema,
   TransactionVariations,
   VariationSchema,
 } from "../../db-schema";
-import { VariationFormEditor } from "./FormEditor";
 import { createOrUpdateVariation } from "./actions/variation";
 import { DeleteVariationButton } from "./delete-variation-button";
+import { VariationFormEditor } from "./FormEditor";
 import { VariationCodeBlock } from "./variation-code-block";
 import styles from "./variations-list-item.module.scss";
 
@@ -162,11 +161,10 @@ const VariationForm = ({
 
   // Switch from form mode to code mode
   const handleSwitchToCode = useCallback(() => {
-    const tomlStr = instructions.length > 0
-      ? (isEditingJson
-          ? JSON.stringify(instructions, null, 2)
-          : generateEditableToml(instructions))
-      : "";
+    const tomlStr =
+      instructions.length > 0 && isEditingJson
+        ? JSON.stringify(instructions, null, 2)
+        : generateEditableToml(instructions);
     setCode(tomlStr);
     setCodeError(undefined);
     setEditorMode("code");
@@ -184,9 +182,7 @@ const VariationForm = ({
       setInstructions(parsed);
       setEditorMode("form");
     } else {
-      toast.error(
-        "Cannot switch to form mode: fix code errors first",
-      );
+      toast.error("Cannot switch to form mode: fix code errors first");
     }
   }, [code, validateCode, toast]);
 
@@ -264,9 +260,7 @@ const VariationForm = ({
         variationObject = TransactionVariations.parse(instructions);
       } catch (error) {
         if (error instanceof ZodError) {
-          throw new Error(
-            error.errors.map((e) => e.message).join(", "),
-          );
+          throw new Error(error.errors.map((e) => e.message).join(", "));
         }
         throw error;
       }
@@ -520,9 +514,7 @@ const VariationForm = ({
                 onChange={setInstructions}
               />
               {footer && (
-                <div className={styles.variationFormEditorFooter}>
-                  {footer}
-                </div>
+                <div className={styles.variationFormEditorFooter}>{footer}</div>
               )}
             </motion.div>
           )}
