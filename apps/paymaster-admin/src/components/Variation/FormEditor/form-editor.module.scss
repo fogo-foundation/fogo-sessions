@@ -7,7 +7,7 @@
   overflow-y: auto;
   flex: 1;
 
-  // Increase spacing between top-level instruction cards
+  // Increase spacing between top-level instruction cards/constraints
   > .dynamicList {
     gap: theme.spacing(8);
   }
@@ -115,6 +115,15 @@
 
 .selectField {
   min-width: theme.spacing(36);
+}
+
+.disabledSelect {
+  pointer-events: none;
+  opacity: 0.5;
+
+  svg {
+    visibility: hidden;
+  }
 }
 
 .narrowField {

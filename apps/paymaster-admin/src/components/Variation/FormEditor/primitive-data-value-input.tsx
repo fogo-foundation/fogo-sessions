@@ -6,11 +6,18 @@ import type { z } from "zod";
 import type { PrimitiveDataValueSchema } from "../../../db-schema";
 import styles from "./form-editor.module.scss";
 
-type PrimitiveDataValue = z.infer<typeof PrimitiveDataValueSchema>;
+export type PrimitiveDataValue = z.infer<typeof PrimitiveDataValueSchema>;
 
-type ValueType = "U8" | "U16" | "U32" | "U64" | "Bool" | "Pubkey" | "Bytes";
+export type ValueType =
+  | "U8"
+  | "U16"
+  | "U32"
+  | "U64"
+  | "Bool"
+  | "Pubkey"
+  | "Bytes";
 
-const ALL_VALUE_TYPE_ITEMS: Array<{ key: ValueType; label: string }> = [
+export const ALL_VALUE_TYPE_ITEMS: Array<{ key: ValueType; label: string }> = [
   { key: "U8", label: "U8" },
   { key: "U16", label: "U16" },
   { key: "U32", label: "U32" },
@@ -38,7 +45,7 @@ function getValueType(value: PrimitiveDataValue): ValueType {
   return "Bytes";
 }
 
-function getDefaultForType(type: ValueType): PrimitiveDataValue {
+export function getDefaultForType(type: ValueType): PrimitiveDataValue {
   switch (type) {
     case "U8":
       return { U8: 0 };
@@ -64,12 +71,14 @@ type PrimitiveDataValueInputProps = {
   value: PrimitiveDataValue;
   onChange: (value: PrimitiveDataValue) => void;
   integerOnly?: boolean;
+  disableTypeSelector?: boolean;
 };
 
 export const PrimitiveDataValueInput = ({
   value,
   onChange,
   integerOnly,
+  disableTypeSelector,
 }: PrimitiveDataValueInputProps) => {
   const valueType = getValueType(value);
 
@@ -86,13 +95,19 @@ export const PrimitiveDataValueInput = ({
 
   return (
     <div className={styles.constraintRow ?? ""}>
-      <Select<ValueType>
-        items={typeItems}
-        selectedKey={valueType}
-        onSelectionChange={(key) => handleTypeChange(key as ValueType)}
-        aria-label="Value type"
-        className={styles.selectField ?? ""}
-      />
+      <div
+        className={
+          disableTypeSelector ? (styles.disabledSelect ?? "") : undefined
+        }
+      >
+        <Select<ValueType>
+          items={typeItems}
+          selectedKey={valueType}
+          onSelectionChange={(key) => handleTypeChange(key as ValueType)}
+          aria-label="Value type"
+          className={styles.selectField ?? ""}
+        />
+      </div>
       <ValueInput value={value} valueType={valueType} onChange={onChange} />
     </div>
   );
@@ -204,5 +219,3 @@ const ValueInput = ({ value, valueType, onChange }: ValueInputProps) => {
       );
   }
 };
-
-export { getDefaultForType, type PrimitiveDataValue };

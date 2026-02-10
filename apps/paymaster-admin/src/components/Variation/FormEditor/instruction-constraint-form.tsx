@@ -79,7 +79,7 @@ export const InstructionConstraintForm = ({
   return (
     <div className={styles.instructionCard ?? ""}>
       <div className={styles.instructionHeader ?? ""}>
-        <h3>Instruction {index + 1}</h3>
+        <h3>Instruction {index}</h3>
       </div>
 
       <div className={styles.fieldGroup ?? ""}>
@@ -88,7 +88,7 @@ export const InstructionConstraintForm = ({
           value={value.program}
           onChange={handleProgramChange}
           placeholder="Program public key (Base58)"
-          aria-label={`Instruction ${index + 1} program`}
+          aria-label={`Instruction ${index} program`}
         />
       </div>
 

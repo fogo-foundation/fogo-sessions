@@ -54,7 +54,7 @@ export const DynamicList = <T,>({
             variant="ghost"
             size="sm"
             onClick={() => handleRemove(index)}
-            aria-label={`Remove ${label} ${index + 1}`}
+            aria-label={`Remove ${label} ${index}`}
           >
             <TrashIcon />
           </Button>

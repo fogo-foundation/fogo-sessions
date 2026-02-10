@@ -4,7 +4,10 @@ import type { z } from "zod";
 import type { DataConstraintSpecificationSchema } from "../../../db-schema";
 import { DynamicList } from "./dynamic-list";
 import styles from "./form-editor.module.scss";
-import type { PrimitiveDataValue } from "./primitive-data-value-input";
+import type {
+  PrimitiveDataValue,
+  ValueType,
+} from "./primitive-data-value-input";
 import {
   getDefaultForType,
   PrimitiveDataValueInput,
@@ -66,8 +69,6 @@ function getArrayValues(spec: DataConstraintSpec): PrimitiveDataValue[] {
   return [getDefaultForType("U8")];
 }
 
-const createDefaultValue = () => getDefaultForType("U8");
-
 type DataConstraintSpecInputProps = {
   value: DataConstraintSpec;
   onChange: (value: DataConstraintSpec) => void;
@@ -79,10 +80,17 @@ export const DataConstraintSpecInput = ({
 }: DataConstraintSpecInputProps) => {
   const operator = getOperator(value);
   const firstValue = getFirstValue(value);
+  const currentType = getValueTypeKey(firstValue) as ValueType;
   const supportsInequality = isIntegerValue(firstValue);
   const operatorItems = supportsInequality
     ? ALL_OPERATOR_ITEMS
     : SCALAR_OPERATOR_ITEMS;
+
+  // "Add value" creates a default matching the current array type
+  const createDefaultValue = useCallback(
+    () => getDefaultForType(currentType),
+    [currentType],
+  );
 
   const handleOperatorChange = useCallback(
     (key: OperatorType) => {
@@ -116,15 +124,22 @@ export const DataConstraintSpecInput = ({
     [operator, onChange],
   );
 
+  // When the first value's type changes, drop all other values
   const handleArrayValuesChange = useCallback(
     (values: PrimitiveDataValue[]) => {
+      const changedValue = values.find(
+        (v) => getValueTypeKey(v) !== currentType,
+      );
+
+      const normalizedValues = changedValue ? [changedValue] : values;
+
       if (operator === "EqualTo") {
-        onChange({ EqualTo: values });
+        onChange({ EqualTo: normalizedValues });
       } else if (operator === "Neq") {
-        onChange({ Neq: values });
+        onChange({ Neq: normalizedValues });
       }
     },
-    [operator, onChange],
+    [operator, onChange, currentType],
   );
 
   const isArrayOperator = operator === "EqualTo" || operator === "Neq";
@@ -143,8 +158,12 @@ export const DataConstraintSpecInput = ({
         <DynamicList
           items={getArrayValues(value)}
           onChange={handleArrayValuesChange}
-          renderItem={(item, _index, onItemChange) => (
-            <PrimitiveDataValueInput value={item} onChange={onItemChange} />
+          renderItem={(item, index, onItemChange) => (
+            <PrimitiveDataValueInput
+              value={item}
+              onChange={onItemChange}
+              disableTypeSelector={index > 0}
+            />
           )}
           createDefault={createDefaultValue}
           label="constraint value"
