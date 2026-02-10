@@ -14,7 +14,9 @@ type AccountConstraint = z.infer<typeof AccountConstraintSchema>;
 type ContextualPubkey = z.infer<typeof ContextualPubkeySchema>;
 
 const createDefaultPubkey = (): ContextualPubkey =>
-  ({ Explicit: { pubkey: SystemProgram.programId.toBase58() } }) as ContextualPubkey;
+  ({
+    Explicit: { pubkey: SystemProgram.programId.toBase58() },
+  }) as ContextualPubkey;
 
 type AccountConstraintFormProps = {
   value: AccountConstraint;
