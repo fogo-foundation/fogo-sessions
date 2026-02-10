@@ -2,6 +2,10 @@
   "private": true,
   "packageManager": "pnpm@10.25.0",
   "type": "module",
+  "engines": {
+    "node": "^22.21.1",
+    "pnpm": "^10.25.0"
+  },
   "scripts": {
     "fix:lint": "./bin/biome-ci --write",
     "fix:lint:unsafe": "./bin/biome-ci --write --unsafe",
