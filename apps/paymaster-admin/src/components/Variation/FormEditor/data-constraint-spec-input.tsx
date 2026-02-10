@@ -116,9 +116,6 @@ export const DataConstraintSpecInput = ({
     [operator, onChange],
   );
 
-  // For array operators, when a value type changes to non-integer while on
-  // an integer operator, no issue since EqualTo/Neq work for all types.
-  // But we need to handle the case where we're editing values in an array.
   const handleArrayValuesChange = useCallback(
     (values: PrimitiveDataValue[]) => {
       if (operator === "EqualTo") {
