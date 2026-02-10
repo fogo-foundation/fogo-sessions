@@ -10,7 +10,7 @@ type PrimitiveDataValue = z.infer<typeof PrimitiveDataValueSchema>;
 
 type ValueType = "U8" | "U16" | "U32" | "U64" | "Bool" | "Pubkey" | "Bytes";
 
-const VALUE_TYPE_ITEMS: Array<{ key: ValueType; label: string }> = [
+const ALL_VALUE_TYPE_ITEMS: Array<{ key: ValueType; label: string }> = [
   { key: "U8", label: "U8" },
   { key: "U16", label: "U16" },
   { key: "U32", label: "U32" },
@@ -18,6 +18,13 @@ const VALUE_TYPE_ITEMS: Array<{ key: ValueType; label: string }> = [
   { key: "Bool", label: "Bool" },
   { key: "Pubkey", label: "Pubkey" },
   { key: "Bytes", label: "Bytes" },
+];
+
+const INTEGER_VALUE_TYPE_ITEMS: Array<{ key: ValueType; label: string }> = [
+  { key: "U8", label: "U8" },
+  { key: "U16", label: "U16" },
+  { key: "U32", label: "U32" },
+  { key: "U64", label: "U64" },
 ];
 
 function getValueType(value: PrimitiveDataValue): ValueType {
@@ -56,11 +63,13 @@ function getDefaultForType(type: ValueType): PrimitiveDataValue {
 type PrimitiveDataValueInputProps = {
   value: PrimitiveDataValue;
   onChange: (value: PrimitiveDataValue) => void;
+  integerOnly?: boolean;
 };
 
 export const PrimitiveDataValueInput = ({
   value,
   onChange,
+  integerOnly,
 }: PrimitiveDataValueInputProps) => {
   const valueType = getValueType(value);
 
@@ -71,10 +80,14 @@ export const PrimitiveDataValueInput = ({
     [onChange],
   );
 
+  const typeItems = integerOnly
+    ? INTEGER_VALUE_TYPE_ITEMS
+    : ALL_VALUE_TYPE_ITEMS;
+
   return (
     <div className={styles.constraintRow ?? ""}>
       <Select<ValueType>
-        items={VALUE_TYPE_ITEMS}
+        items={typeItems}
         selectedKey={valueType}
         onSelectionChange={(key) => handleTypeChange(key as ValueType)}
         aria-label="Value type"

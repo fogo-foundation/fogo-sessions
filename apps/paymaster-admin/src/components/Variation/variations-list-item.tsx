@@ -13,7 +13,6 @@ import {
   XIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr/GasPump";
-import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { Form } from "react-aria-components";
 import { parse, stringify } from "smol-toml";
@@ -27,8 +26,8 @@ import {
 } from "../../db-schema";
 import { createOrUpdateVariation } from "./actions/variation";
 import { DeleteVariationButton } from "./delete-variation-button";
-import { VariationFormEditor } from "./FormEditor";
 import { VariationCodeBlock } from "./variation-code-block";
+import { VariationFormBlock } from "./variation-form-block";
 import styles from "./variations-list-item.module.scss";
 
 type InstructionConstraint = z.infer<typeof InstructionConstraintSchema>;
@@ -501,24 +500,14 @@ const VariationForm = ({
         />
       </div>
       {editorMode === "form" && isV1 ? (
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, scale: 0.95 }}
-              animate={{ height: "50vh", scale: 1 }}
-              exit={{ height: 0, scale: 0.95 }}
-              className={styles.variationFormEditorContainer}
-            >
-              <VariationFormEditor
-                instructions={instructions}
-                onChange={setInstructions}
-              />
-              {footer && (
-                <div className={styles.variationFormEditorFooter}>{footer}</div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <VariationFormBlock
+          isExpanded={isExpanded}
+          instructions={instructions}
+          onChange={setInstructions}
+          domain={domainName}
+          variationForTest={variationForTest}
+          footer={footer}
+        />
       ) : (
         <VariationCodeBlock
           mode={isEditingJson ? "json" : "toml"}
