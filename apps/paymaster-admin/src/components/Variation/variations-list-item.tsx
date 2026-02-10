@@ -158,7 +158,6 @@ const VariationForm = ({
     [isEditingJson],
   );
 
-  // Switch from form mode to code mode
   const handleSwitchToCode = useCallback(() => {
     const tomlStr =
       instructions.length > 0 && isEditingJson
@@ -169,7 +168,6 @@ const VariationForm = ({
     setEditorMode("code");
   }, [instructions, isEditingJson]);
 
-  // Switch from code mode to form mode
   const handleSwitchToForm = useCallback(() => {
     if (!code) {
       setInstructions([]);
