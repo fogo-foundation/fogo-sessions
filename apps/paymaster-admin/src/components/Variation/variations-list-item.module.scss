@@ -65,4 +65,10 @@
 .variationFormFooterError {
   @include theme.text('sm', 'normal');
   color: theme.color('states', 'error', 'foreground');
+  
+  .variationFormFooterErrorCode {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }

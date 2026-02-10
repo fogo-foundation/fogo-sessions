@@ -30,7 +30,7 @@ export const VariationCodeBlock = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [editorHeight, setEditorHeight] = useState(0);
+  const [editorHeight, setEditorHeight] = useState("0");
 
   const handleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -50,7 +50,11 @@ export const VariationCodeBlock = ({
   }, [toast.error]);
 
   const handleUpdate = useCallback(() => {
-    setEditorHeight(contentRef.current?.clientHeight ?? 0);
+    setEditorHeight((contentRef.current?.clientHeight ?? 0).toString() + "px");
+  }, []);
+
+  const handleAnimationComplete = useCallback(() => {
+    setEditorHeight("100%");
   }, []);
 
   return (
@@ -63,6 +67,7 @@ export const VariationCodeBlock = ({
           className={styles.variationCodeBlock}
           ref={cardRef}
           onUpdate={handleUpdate}
+          onAnimationComplete={handleAnimationComplete}
         >
           <input type="hidden" name="code" value={value} />
           <div className={styles.variationCodeBlockHeader}>
@@ -79,11 +84,10 @@ export const VariationCodeBlock = ({
               <AceEditor
                 value={value}
                 onChange={onChange}
-                className={styles.variationCodeBlockEditor}
                 mode={mode}
                 theme="monokai"
                 width="100%"
-                height={`${editorHeight}px`}
+                height={editorHeight}
                 showPrintMargin={false}
                 aria-label="Variation code"
               />
