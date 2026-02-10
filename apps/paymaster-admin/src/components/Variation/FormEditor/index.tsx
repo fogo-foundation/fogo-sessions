@@ -14,6 +14,7 @@ const SYSTEM_PROGRAM_ID =
 const createDefaultInstruction = (): InstructionConstraint => ({
   program: SYSTEM_PROGRAM_ID,
   required: true,
+  requires_wrapped_native_tokens: false,
   accounts: [],
   data: [],
 });
