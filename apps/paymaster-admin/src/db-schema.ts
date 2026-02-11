@@ -88,6 +88,10 @@ export const VariationV1Schema = z.object({
   name: z.string(),
   transaction_variation: TransactionVariations,
   max_gas_spend: u64,
+  paymaster_fee_lamports: u64
+    .nullable()
+    .optional()
+    .transform((val) => (val === null ? undefined : val)),
   created_at: TimeStr,
   updated_at: TimeStr,
 });
