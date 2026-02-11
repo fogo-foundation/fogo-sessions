@@ -15,6 +15,7 @@ import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr/GasPump";
 import { useCallback, useMemo, useState } from "react";
 import { Form } from "react-aria-components";
 import { parse, stringify } from "smol-toml";
+import type { ZodIssue } from "zod";
 import z, { ZodError } from "zod";
 import { useUserData } from "../../client/paymaster";
 import type { Variation } from "../../db-schema";
@@ -127,7 +128,7 @@ const VariationForm = ({
         return TransactionVariations.parse(data);
       } catch (error) {
         if (error instanceof ZodError) {
-          setCodeError(error.errors.map((error) => error.message).join(", "));
+          setCodeError(formatZodErrors(error.errors));
         } else {
           setCodeError(errorToString(error));
         }
@@ -369,11 +370,13 @@ const VariationForm = ({
                   {isEditingJson ? "TOML" : "JSON"}
                 </Button>
                 {codeError || state.type === StateType.Error ? (
-                  <p className={styles.variationFormFooterError}>
-                    {state.type === StateType.Error
-                      ? errorToString(state.error)
-                      : codeError}
-                  </p>
+                  <pre className={styles.variationFormFooterError}>
+                    <code className={styles.variationFormFooterErrorCode}>
+                      {state.type === StateType.Error
+                        ? errorToString(state.error)
+                        : codeError}
+                    </code>
+                  </pre>
                 ) : (
                   <Badge variant="success" size="xs">
                     All passed <ChecksIcon />
@@ -432,3 +435,44 @@ const parseTomlToObject = (value: string) => {
     })
     .parse(parse(value));
 };
+
+const formatPath = (path: (string | number)[]): string =>
+  // example path: ["domains","tx_variations","instructions",0,"program"]
+  path.reduce<string>((acc, segment) => {
+    if (typeof segment === "number") return `${acc}[${segment}]`;
+    return acc ? `${acc}.${segment}` : segment;
+  }, "");
+
+const formatZodIssue = (issue: ZodIssue): string => {
+  let path = formatPath(issue.path);
+
+  // Remove redundant "domains.tx_variations.instructions" prefix as it should not be appended to the errors
+  path = path.replace(/^domains\.tx_variations\./, "");
+  const prefix = path ? `${path}: ` : "";
+
+  if (issue.code === "invalid_union") {
+    const expectations = issue.unionErrors
+      .flatMap((e) => e.issues)
+      .map((issue) => {
+        if (issue.code === "invalid_literal")
+          return JSON.stringify(issue.expected);
+        if (issue.code === "invalid_type") return issue.expected;
+        return issue.message;
+      });
+    const unique = [...new Set(expectations)];
+    return `${prefix}Expected ${unique.join(", ")}`;
+  }
+
+  if (issue.code === "invalid_type") {
+    return `${prefix}Expected ${issue.expected}, received ${issue.received}`;
+  }
+
+  if (issue.code === "invalid_literal") {
+    return `${prefix}Expected ${JSON.stringify(issue.expected)}, received ${JSON.stringify(issue.received)}`;
+  }
+
+  return `${prefix}${issue.message}`;
+};
+
+const formatZodErrors = (errors: ZodIssue[]): string =>
+  errors.map(formatZodIssue).join("\n");
