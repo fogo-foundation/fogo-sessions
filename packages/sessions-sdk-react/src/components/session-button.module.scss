@@ -21,20 +21,29 @@
     background-color 50ms linear,
     outline-color 50ms linear;
 
-  .fogoLogoContainer {
+  .fogoLogoContainer, .expiredIconContainer {
     width: theme.spacing(8);
     height: theme.spacing(8);
-    background-color: theme.color("button", "primary", "background", "normal");
     display: grid;
     place-content: center;
     border-radius: theme.border-radius();
     transition: background-color 50ms linear;
+  }
+
+  .fogoLogoContainer {
+    background-color: theme.color("button", "primary", "background", "normal");
 
     .fogoLogo {
       color: theme.pallette-color("white");
       height: theme.spacing(4);
       transition: opacity 50ms linear;
     }
+  }
+
+  .expiredIconContainer {
+    font-size: theme.spacing(6);
+    background-color: rgb(from white r g b / 20%);
+    color: theme.color("states", "error", "foreground");
   }
 
   .contents {
