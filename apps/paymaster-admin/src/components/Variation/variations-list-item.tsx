@@ -11,6 +11,7 @@ import {
   CodeBlockIcon,
   XIcon,
 } from "@phosphor-icons/react/dist/ssr";
+import { CoinsIcon } from "@phosphor-icons/react/dist/ssr/Coins";
 import { GasPumpIcon } from "@phosphor-icons/react/dist/ssr/GasPump";
 import { useCallback, useMemo, useState } from "react";
 import { Form } from "react-aria-components";
@@ -81,6 +82,11 @@ const VariationForm = ({
   const [maxGasSpend, setMaxGasSpend] = useState(
     variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
   );
+  const [paymasterFeeLamports, setPaymasterFeeLamports] = useState(
+    variation?.version === "v1" && variation.paymaster_fee_lamports
+      ? variation.paymaster_fee_lamports?.toString()
+      : "",
+  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: v0 doesn't have max_gas_spend
   const baseline = useMemo(() => {
@@ -89,6 +95,7 @@ const VariationForm = ({
       return {
         name: "",
         maxGasSpend: "",
+        paymasterFeeLamports: "",
         code: "",
       };
     }
@@ -100,6 +107,10 @@ const VariationForm = ({
       name: variation?.name ?? "",
       maxGasSpend:
         variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
+      paymasterFeeLamports:
+        variation?.version === "v1" && variation.paymaster_fee_lamports
+          ? variation.paymaster_fee_lamports.toString()
+          : "",
       code: variationCode,
     };
   }, [
@@ -109,11 +120,13 @@ const VariationForm = ({
     variation?.transaction_variation,
     isEditingJson,
     variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
+    variation?.version === "v1" ? variation.paymaster_fee_lamports : undefined,
   ]);
 
   const resetForm = useCallback(() => {
     setName("");
     setMaxGasSpend("");
+    setPaymasterFeeLamports("");
     setCode("");
     setCodeError(undefined);
   }, []);
@@ -167,6 +180,7 @@ const VariationForm = ({
         name,
         transaction_variation: transactionVariation,
         max_gas_spend: maxGasSpendNumber,
+        paymaster_fee_lamports: Number(paymasterFeeLamports),
         created_at: variation?.created_at ?? new Date(),
         updated_at: new Date(),
       });
@@ -177,6 +191,7 @@ const VariationForm = ({
     code,
     name,
     maxGasSpend,
+    paymasterFeeLamports,
     variation?.id,
     variation?.version,
     variation?.created_at,
@@ -194,6 +209,7 @@ const VariationForm = ({
       domainConfigId,
       name,
       maxGasSpend,
+      paymasterFeeLamports,
       variation: variationObject,
       sessionToken,
     });
@@ -202,6 +218,7 @@ const VariationForm = ({
     domainConfigId,
     name,
     maxGasSpend,
+    paymasterFeeLamports,
     code,
     variation?.id,
     validateCode,
@@ -229,12 +246,13 @@ const VariationForm = ({
   });
 
   const current = useMemo(() => {
-    return { name, maxGasSpend, code };
-  }, [name, maxGasSpend, code]);
+    return { name, maxGasSpend, paymasterFeeLamports, code };
+  }, [name, maxGasSpend, paymasterFeeLamports, code]);
 
   const isDirty =
     current.name !== baseline?.name ||
     current.maxGasSpend !== baseline?.maxGasSpend ||
+    current.paymasterFeeLamports !== baseline?.paymasterFeeLamports ||
     current.code !== baseline?.code;
 
   const handleEditClick = useCallback(() => {
@@ -319,18 +337,31 @@ const VariationForm = ({
             aria-label="Variation name"
           />
           {(!variation || variation?.version === "v1") && (
-            <TextField
-              type="number"
-              inputMode="numeric"
-              name="maxGasSpend"
-              placeholder="Max gas spend"
-              value={maxGasSpend}
-              isRequired
-              onChange={setMaxGasSpend}
-              rightExtra={<GasPumpIcon />}
-              className={styles.fieldMaxGasSpend ?? ""}
-              aria-label="Max gas spend"
-            />
+            <>
+              <TextField
+                type="number"
+                inputMode="numeric"
+                name="maxGasSpend"
+                placeholder="Max gas spend"
+                value={maxGasSpend}
+                isRequired
+                onChange={setMaxGasSpend}
+                rightExtra={<GasPumpIcon />}
+                className={styles.fieldVariationInput ?? ""}
+                aria-label="Max gas spend"
+              />
+              <TextField
+                type="number"
+                inputMode="numeric"
+                name="paymasterFeeLamports"
+                placeholder="Fee lamports"
+                value={paymasterFeeLamports}
+                onChange={setPaymasterFeeLamports}
+                rightExtra={<CoinsIcon />}
+                className={styles.fieldVariationInput ?? ""}
+                aria-label="Paymaster fee lamports"
+              />
+            </>
           )}
           {isExpanded ? (
             <Button variant="ghost" onClick={handleCloseClick}>

@@ -39,6 +39,7 @@ export const fetchUserPaymasterData = async (walletAddress: string) => {
                             v.version,
                             v.transaction_variation,
                             v.max_gas_spend,
+                            v.paymaster_fee_lamports,
                             v.created_at,
                             v.updated_at
                           FROM variation v
@@ -74,6 +75,7 @@ export const updateVariation = async (
   data: {
     name: string;
     maxGasSpend: number;
+    paymasterFeeLamports?: number | undefined;
     variation: TransactionVariations;
   },
 ) => {
@@ -82,6 +84,7 @@ export const updateVariation = async (
     SET
       name = ${data.name},
       max_gas_spend = ${data.maxGasSpend},
+      paymaster_fee_lamports = ${data.paymasterFeeLamports ?? null},
       transaction_variation = ${JSON.stringify(data.variation)}::jsonb,
       updated_at = now()
     FROM domain_config dc
@@ -107,6 +110,7 @@ export const createVariation = async (
   data: {
     name: string;
     maxGasSpend: number;
+    paymasterFeeLamports?: number | undefined;
     variation: TransactionVariations;
   },
 ) => {
@@ -116,6 +120,7 @@ export const createVariation = async (
       domain_config_id,
       name,
       max_gas_spend,
+      paymaster_fee_lamports,
       transaction_variation,
       version,
       created_at,
@@ -126,6 +131,7 @@ export const createVariation = async (
       dc.id,
       ${data.name},
       ${data.maxGasSpend},
+      ${data.paymasterFeeLamports ?? null},
       ${JSON.stringify(data.variation)}::jsonb,
       'v1',
       now(),

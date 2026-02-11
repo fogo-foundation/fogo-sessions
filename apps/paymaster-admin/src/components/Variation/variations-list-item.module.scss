@@ -48,8 +48,8 @@
   flex: 1;
 }
 
-.fieldMaxGasSpend {
-  width: theme.spacing(28);
+.fieldVariationInput {
+  width: theme.spacing(22);
 
   @include theme.breakpoint('sm') {
     width: theme.spacing(34);

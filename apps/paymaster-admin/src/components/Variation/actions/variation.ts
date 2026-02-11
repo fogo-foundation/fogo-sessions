@@ -17,6 +17,10 @@ const createOrUpdateVariationSchema = z.object({
   maxGasSpend: z.coerce
     .number()
     .min(1, { message: "Max gas spend is required" }),
+  paymasterFeeLamports: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number().int().min(0).optional(),
+  ),
   variation: TransactionVariations,
 });
 
@@ -25,6 +29,7 @@ export const createOrUpdateVariation = async ({
   domainConfigId,
   name,
   maxGasSpend,
+  paymasterFeeLamports,
   variation,
   sessionToken,
 }: {
@@ -32,6 +37,7 @@ export const createOrUpdateVariation = async ({
   domainConfigId: string;
   name: string;
   maxGasSpend: string;
+  paymasterFeeLamports: string;
   variation: TransactionVariations;
   sessionToken: string;
 }) => {
@@ -44,6 +50,7 @@ export const createOrUpdateVariation = async ({
     const validatedFields = createOrUpdateVariationSchema.parse({
       name,
       maxGasSpend,
+      paymasterFeeLamports,
       variation,
     });
     if (variationId) {
