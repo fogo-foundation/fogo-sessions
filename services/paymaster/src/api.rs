@@ -654,14 +654,14 @@ async fn sponsor_pubkey_handler(
                         StatusCode::SERVICE_UNAVAILABLE,
                         format!(
                             "All wallets for the paymaster domain {domain} have insufficient funds, please top up: {}",
-                            sponsors[0].pubkey().to_string()
+                            sponsors[0].pubkey()
                         ),
                     )
                         .into());
                 }
                 let index = next_autoassigned_sponsor_index.fetch_add(1, Ordering::Relaxed)
                     % funded_sponsors.len();
-                Ok(funded_sponsors[index].pubkey().to_string())
+                Ok(funded_sponsors.get(index).expect("0 <= index < funded_sponsors.len() as the remainder of a division by funded_sponsors.len()").pubkey().to_string())
             }
             IndexSelector::Index(i) => {
                 let index = usize::from(i);
