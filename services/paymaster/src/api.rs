@@ -37,7 +37,6 @@ use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
-use solana_program::native_token::LAMPORTS_PER_SOL;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_rpc_client::rpc_client::RpcClientConfig;
@@ -47,7 +46,7 @@ use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
@@ -660,11 +659,11 @@ async fn sponsor_pubkey_handler(
                     )
                         .into());
                 }
-                return Ok(funded_sponsors[next_autoassigned_sponsor_index
+                Ok(funded_sponsors[next_autoassigned_sponsor_index
                     .fetch_add(1, Ordering::Relaxed)
                     % funded_sponsors.len()]
                 .pubkey()
-                .to_string());
+                .to_string())
             }
             IndexSelector::Index(i) => {
                 let index = usize::from(i);
@@ -678,11 +677,11 @@ async fn sponsor_pubkey_handler(
                     )
                         .into());
                 }
-                return Ok(sponsors[index].pubkey().to_string());
+                Ok(sponsors[index].pubkey().to_string())
             }
         }
     } else {
-        return Ok(sponsors[0].pubkey().to_string());
+        Ok(sponsors[0].pubkey().to_string())
     }
 }
 #[serde_as]
