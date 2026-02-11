@@ -1,6 +1,7 @@
 "use client";
 
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
+import { HourglassLowIcon } from "@phosphor-icons/react/dist/ssr/HourglassLow";
 import { LockIcon } from "@phosphor-icons/react/dist/ssr/Lock";
 import type { PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,13 +13,14 @@ import {
 
 import { deserializePublicKeyMap } from "../deserialize-public-key.js";
 import { useSession, useSessionContext } from "../hooks/use-session.js";
+import type { EstablishedSessionState } from "../session-state.js";
 import {
   isEstablished,
   isWalletLoading,
   StateType as SessionStateType,
 } from "../session-state.js";
 import { DisplayAddress } from "./display-address.js";
-import { FogoLogo } from "./fogo-logo.js";
+import { FogoLogo as FogoLogoIcon } from "./fogo-logo.js";
 import styles from "./session-button.module.css";
 import { SessionPanel } from "./session-panel.js";
 
@@ -112,9 +114,11 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
         data-is-signed-in={isEstablished(sessionState) ? "" : undefined}
         data-compact={compact ? "" : undefined}
       >
-        <div className={styles.fogoLogoContainer} aria-hidden={isLoading}>
-          <FogoLogo className={styles.fogoLogo} />
-        </div>
+        {isEstablished(sessionState) ? (
+          <EstablishedLogo sessionState={sessionState} />
+        ) : (
+          <FogoLogo isLoading={isLoading} />
+        )}
         {!compact && (
           <span className={styles.contents}>
             {isEstablished(sessionState) ? (
@@ -147,4 +151,46 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
       </Popover>
     </>
   );
+};
+
+const EstablishedLogo = ({
+  sessionState,
+}: {
+  sessionState: EstablishedSessionState;
+}) => {
+  const isExpired = useIsExpired(sessionState.expiration);
+
+  return isExpired ? <ExpiredIcon /> : <FogoLogo />;
+};
+
+const FogoLogo = ({ isLoading }: { isLoading?: boolean | undefined }) => (
+  <div className={styles.fogoLogoContainer} aria-hidden={isLoading}>
+    <FogoLogoIcon className={styles.fogoLogo} />
+  </div>
+);
+
+const ExpiredIcon = () => (
+  <div className={styles.expiredIconContainer}>
+    <HourglassLowIcon weight="bold" />
+  </div>
+);
+
+export const useIsExpired = (expiry: Date) => {
+  const [expired, setExpired] = useState(new Date() >= expiry);
+
+  useEffect(() => {
+    const msUntilExpired = expiry.getTime() - Date.now();
+    if (msUntilExpired <= 0) {
+      setExpired(true);
+      return;
+    } else {
+      setExpired(false);
+      const timeout = setTimeout(() => {
+        setExpired(true);
+      }, msUntilExpired);
+      return () => clearTimeout(timeout);
+    }
+  }, [expiry]);
+
+  return expired;
 };

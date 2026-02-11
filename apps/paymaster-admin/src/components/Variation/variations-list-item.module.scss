@@ -48,8 +48,8 @@
   flex: 1;
 }
 
-.fieldMaxGasSpend {
-  width: theme.spacing(28);
+.fieldVariationInput {
+  width: theme.spacing(22);
 
   @include theme.breakpoint('sm') {
     width: theme.spacing(34);
@@ -97,4 +97,9 @@
 .variationFormFooterError {
   @include theme.text('sm', 'normal');
   color: theme.color('states', 'error', 'foreground');
+  
+  .variationFormFooterErrorCode {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
 }

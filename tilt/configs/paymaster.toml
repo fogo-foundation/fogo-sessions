@@ -94,30 +94,15 @@ constraint = { EqualTo = [ {U8 = 1} ] }
 start_byte = 1
 constraint = { EqualTo = [ {U8 = 0} ] }
 
-# signatureOffset = 16 + 32 = 48
-[[domains.tx_variations.instructions.data]]
-start_byte = 2
-constraint = { EqualTo = [ {U16 = 48} ] }
-
 # signatureInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 4
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
 
-# publicKeyOffset = 16
-[[domains.tx_variations.instructions.data]]
-start_byte = 6
-constraint = { EqualTo = [ {U16 = 16} ] }
-
 # publicKeyInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 8
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
-
-# messageOffset = 16 + 32 + 64 = 112
-[[domains.tx_variations.instructions.data]]
-start_byte = 10
-constraint = { EqualTo = [ {U16 = 112} ] }
 
 # messageInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
@@ -154,30 +139,15 @@ constraint = { EqualTo = [ {U8 = 1} ] }
 start_byte = 1
 constraint = { EqualTo = [ {U8 = 0} ] }
 
-# signatureOffset = 16 + 32 = 48
-[[domains.tx_variations.instructions.data]]
-start_byte = 2
-constraint = { EqualTo = [ {U16 = 48} ] }
-
 # signatureInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 4
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
 
-# publicKeyOffset = 16
-[[domains.tx_variations.instructions.data]]
-start_byte = 6
-constraint = { EqualTo = [ {U16 = 16} ] }
-
 # publicKeyInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]
 start_byte = 8
 constraint = { EqualTo = [ {U16 = 0xffff} ] }
-
-# messageOffset = 16 + 32 + 64 = 112
-[[domains.tx_variations.instructions.data]]
-start_byte = 10
-constraint = { EqualTo = [ {U16 = 112} ] }
 
 # messageInstructionIndex = 0xffff
 [[domains.tx_variations.instructions.data]]

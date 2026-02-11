@@ -78,6 +78,8 @@ const ONE_HOUR_IN_MS = 60 * ONE_MINUTE_IN_MS;
 const ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
 const DEFAULT_SESSION_DURATION = 7 * ONE_DAY_IN_MS;
 
+const WALLET_READY_TIMEOUT = 3 * ONE_SECOND_IN_MS;
+
 const ERROR_CODE_SESSION_EXPIRED = 4_000_000_000;
 const ERROR_CODE_SESSION_LIMITS_EXCEEDED = 4_000_000_008;
 
@@ -410,7 +412,7 @@ const useSessionState = ({
       limits: Map<PublicKey, bigint> | undefined;
       onSuccess: (session: Session) => void;
     }) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // biome-ignore lint/correctness/noUnusedVariables: destructuring `updateSession` out
       const { updateSession, ...updatingOptions } = establishedOptions;
       setState(
         SessionState.UpdatingSession({ ...updatingOptions, previousState }),
@@ -451,9 +453,8 @@ const useSessionState = ({
     [getSessionContext, toast],
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: completeSessionSetup calls connectWallet and connectWallet calls completeSessionSetup. We should introduce another state in the wallet for when the user is switching accounts and refactor this to remove the circular dependency.
   const completeSessionSetup = useCallback(
-    (session: Session, wallet: SolanaWallet, onEndSession: () => void) => {
+    (session: Session, wallet: SolanaWallet) => {
       setStoredSession(network, {
         sessionKey: session.sessionKey,
         walletPublicKey: session.walletPublicKey,
@@ -467,7 +468,6 @@ const useSessionState = ({
             session,
             sessionContext: getSessionContext(),
           });
-          onEndSession();
         },
         payer: session.payer,
         getSystemProgramSessionWrapInstruction: (amount: bigint) =>
@@ -497,44 +497,12 @@ const useSessionState = ({
             establishedOptions,
             session,
             onSuccess: (newSession) => {
-              completeSessionSetup(newSession, wallet, onEndSession);
+              completeSessionSetup(newSession, wallet);
             },
           });
         },
       };
 
-      // when the wallet is disconnected, we need to end the session
-      const handleEndSession = () => {
-        const address = wallet.publicKey?.toBase58();
-        if (address === undefined) {
-          onEndSession();
-        }
-        wallet.off("disconnect", handleEndSession);
-      };
-
-      const currentAddress = wallet.publicKey?.toBase58();
-
-      const handleSwitchWallet = (key: PublicKey) => {
-        const newAddress = key.toBase58();
-        if (newAddress !== currentAddress) {
-          connectWallet({
-            wallet,
-            requestedLimits: undefined,
-            onCancel: () => {
-              wallet.off("connect", handleSwitchWallet);
-            },
-            onError: () => {
-              wallet.off("connect", handleSwitchWallet);
-            },
-            skipConnectingState: true,
-          });
-          wallet.off("connect", handleSwitchWallet);
-        }
-      };
-      wallet.on("disconnect", handleEndSession);
-      // generally wallets will emit a "connect" event when the wallet has changed the connected address
-      // ("accountChanged" should be emitted but none of the wallets we use emit it)
-      wallet.on("connect", handleSwitchWallet);
       setState(SessionState.Established(establishedOptions));
     },
     [
@@ -552,14 +520,12 @@ const useSessionState = ({
       walletPublicKey,
       sessionDuration,
       limits,
-      onCancel,
       onError,
     }: {
       wallet: SolanaWallet;
       walletPublicKey: PublicKey;
       sessionDuration: number;
       limits?: Map<PublicKey, bigint> | undefined;
-      onCancel: () => void;
       onError: () => void;
     }) => {
       const controller = new AbortController();
@@ -568,7 +534,6 @@ const useSessionState = ({
           cancel: () => {
             controller.abort();
             disconnect(wallet, network);
-            onCancel();
           },
           walletPublicKey,
         }),
@@ -584,7 +549,7 @@ const useSessionState = ({
       )
         .then((session) => {
           if (session !== undefined) {
-            completeSessionSetup(session, wallet, onCancel);
+            completeSessionSetup(session, wallet);
           }
         })
         .catch((error: unknown) => {
@@ -611,15 +576,11 @@ const useSessionState = ({
       wallet: SolanaWallet,
       walletPublicKey: PublicKey,
       requestedLimits: Map<PublicKey, bigint> | undefined,
-      onCancel: () => void,
     ) => {
       setState(
         SessionState.RequestingLimits({
           requestedLimits,
-          cancel: () => {
-            disconnect(wallet, network);
-            onCancel();
-          },
+          cancel: () => disconnect(wallet, network),
           walletPublicKey,
           submitLimits: (sessionDuration, limits) => {
             submitLimits({
@@ -627,14 +588,8 @@ const useSessionState = ({
               walletPublicKey,
               sessionDuration,
               limits,
-              onCancel,
               onError: () => {
-                requestLimits(
-                  wallet,
-                  walletPublicKey,
-                  requestedLimits,
-                  onCancel,
-                );
+                requestLimits(wallet, walletPublicKey, requestedLimits);
               },
             });
           },
@@ -644,40 +599,23 @@ const useSessionState = ({
     [submitLimits, network],
   );
 
-  const connectWallet = useCallback(
+  const setupWalletEvents = useCallback(
     ({
       wallet,
       requestedLimits,
-      onCancel,
+      onDisconnect,
       onError,
-      skipConnectingState = false,
     }: {
       wallet: SolanaWallet;
       requestedLimits?: Map<PublicKey, bigint> | undefined;
-      onCancel: () => void;
+      onDisconnect: () => void;
       onError: () => void;
-      skipConnectingState?: boolean;
     }) => {
-      const controller = new AbortController();
-      if (!skipConnectingState) {
-        setState(
-          SessionState.WalletConnecting({
-            cancel: () => {
-              controller.abort();
-              onCancel();
-            },
-          }),
-        );
-      }
-      connectWalletImpl(network, getSessionContext(), wallet, controller.signal)
-        .then((result) => {
-          switch (result.type) {
-            case ConnectWalletStateType.RestoredSession: {
-              walletName.set(wallet.name);
-              completeSessionSetup(result.session, wallet, onCancel);
-              return;
-            }
-            case ConnectWalletStateType.Connected: {
+      const onWalletConnected = (walletPublicKey: PublicKey) => {
+        setState(SessionState.CheckingStoredSession());
+        checkStoredSession(network, getSessionContext(), walletPublicKey)
+          .then((result) => {
+            if (result === undefined) {
               walletName.set(wallet.name);
               if (
                 (tokens === undefined || tokens.length === 0) &&
@@ -686,42 +624,77 @@ const useSessionState = ({
                 submitLimits({
                   sessionDuration: DEFAULT_SESSION_DURATION,
                   wallet,
-                  walletPublicKey: result.walletPublicKey,
+                  walletPublicKey,
                   onError,
-                  onCancel,
                   limits: new Map(),
                 });
               } else {
-                requestLimits(
-                  wallet,
-                  result.walletPublicKey,
-                  requestedLimits,
-                  onCancel,
-                );
+                requestLimits(wallet, walletPublicKey, requestedLimits);
               }
-              return;
+            } else {
+              walletName.set(wallet.name);
+              completeSessionSetup(result, wallet);
             }
-            case ConnectWalletStateType.Aborted: {
-              return;
-            }
-          }
-        })
-        .catch((error: unknown) => {
-          toast.error("Failed to connect wallet", errorToString(error));
-          onError();
-        });
+          })
+          .catch((error: unknown) => {
+            // biome-ignore lint/suspicious/noConsole: we want to log the error
+            console.error("Failed to restore stored session", error);
+            onError();
+          });
+      };
+
+      const onWalletDisconnected = () => {
+        const address = wallet.publicKey?.toBase58();
+        if (address === undefined) {
+          wallet.off("connect", onWalletConnected);
+          wallet.off("disconnect", onWalletDisconnected);
+          onDisconnect();
+        }
+      };
+
+      wallet.on("connect", onWalletConnected);
+      wallet.on("disconnect", onWalletDisconnected);
     },
     [
-      getSessionContext,
-      walletName,
       completeSessionSetup,
+      getSessionContext,
       tokens,
-      enableUnlimited,
+      walletName.set,
       submitLimits,
+      tokens?.length,
       requestLimits,
-      toast,
+      enableUnlimited,
       network,
     ],
+  );
+
+  const connectWallet = useCallback(
+    (args: {
+      wallet: SolanaWallet;
+      requestedLimits?: Map<PublicKey, bigint> | undefined;
+      onDisconnect: () => void;
+      onError: () => void;
+    }) => {
+      setupWalletEvents(args);
+
+      const controller = new AbortController();
+      setState(
+        SessionState.WalletConnecting({
+          cancel: () => {
+            controller.abort();
+            args.onDisconnect();
+          },
+        }),
+      );
+
+      connectWalletImpl(args.wallet, controller.signal).catch(
+        (error: unknown) => {
+          toast.error("Failed to connect wallet", errorToString(error));
+          args.onError();
+        },
+      );
+    },
+    [toast, setupWalletEvents],
   );
 
   const requestWallet = useCallback(
@@ -736,7 +709,7 @@ const useSessionState = ({
             connectWallet({
               wallet,
               requestedLimits,
-              onCancel: cancel,
+              onDisconnect: cancel,
               onError: () => {
                 requestWallet(requestedLimits);
               },
@@ -757,22 +730,21 @@ const useSessionState = ({
       if (wallet === undefined) {
         setState(SessionState.NotEstablished(requestWallet));
       } else {
+        setupWalletEvents({
+          onDisconnect: () =>
+            setState(SessionState.NotEstablished(requestWallet)),
+          onError: () => requestWallet(),
+          wallet,
+        });
         setState(SessionState.CheckingStoredSession());
-        checkStoredSession(network, getSessionContext(), wallet)
-          .then((session) => {
-            if (session === undefined) {
-              setState(SessionState.NotEstablished(requestWallet));
-            } else {
-              completeSessionSetup(session, wallet, () => {
-                setState(SessionState.NotEstablished(requestWallet));
-              });
-            }
-          })
-          .catch((error: unknown) => {
-            // biome-ignore lint/suspicious/noConsole: we want to log the error
-            console.error("Failed to restore stored session", error);
-            setState(SessionState.NotEstablished(requestWallet));
-          });
+        autoConnectWallet(
+          wallet,
+          AbortSignal.timeout(WALLET_READY_TIMEOUT),
+        ).catch((error: unknown) => {
+          // biome-ignore lint/suspicious/noConsole: we want to log the error
+          console.error("Failed to autoconnect wallet", error);
+          setState(SessionState.NotEstablished(requestWallet));
+        });
       }
     }
   }, [network]);
@@ -783,140 +755,81 @@ const useSessionState = ({
 /**
  * Waits for the wallet to be ready before trying autoConnect. This is especially needed for Nightly Wallet as it's not instantly ready.
  */
-const waitForWalletReady = (wallet: SolanaWallet) => {
-  const WALLET_READY_TIMEOUT = 3000;
-  const isWalletInReadyState = wallet.readyState === WalletReadyState.Installed;
-
-  if (isWalletInReadyState) {
-    return true;
-  }
-
-  // If the wallet is not in the ready state, we wait for it to be ready
-  // or for the timeout to expire so that the user can try to connect again (should never happen)
-  return Promise.race([
-    new Promise((resolve) => {
-      wallet.on("readyStateChange", (readyState) => {
+const waitForWalletReady = async (
+  wallet: SolanaWallet,
+  signal: AbortSignal,
+): Promise<void> => {
+  if (wallet.readyState === WalletReadyState.Installed) {
+    return;
+  } else if (signal.aborted) {
+    throw new DOMException("Aborted", "AbortError");
+  } else {
+    return await new Promise<void>((resolve, reject) => {
+      const onReadyStateChange = (readyState: WalletReadyState) => {
         if (readyState === WalletReadyState.Installed) {
-          resolve(true);
+          wallet.off("readyStateChange", onReadyStateChange);
+          signal.removeEventListener("abort", abortHandler);
+          resolve();
         }
-      });
-    }),
-    new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(false);
-      }, WALLET_READY_TIMEOUT);
-    }),
-  ]);
+      };
+      const abortHandler = () => {
+        wallet.off("readyStateChange", onReadyStateChange);
+        reject(new DOMException("Aborted", "AbortError"));
+      };
+      wallet.on("readyStateChange", onReadyStateChange);
+      signal.addEventListener("abort", abortHandler, { once: true });
+    });
+  }
 };
 
-const checkStoredSession = async (
-  network: Network,
-  sessionContext: Promise<SessionExecutionContext>,
+const autoConnectWallet = async (
   wallet: SolanaWallet,
+  abortSignal: AbortSignal,
 ) => {
-  await waitForWalletReady(wallet);
+  await waitForWalletReady(wallet, abortSignal);
   await wallet.autoConnect();
-  if (wallet.publicKey === null) {
+  if (abortSignal.aborted || !wallet.connected) {
+    await wallet.disconnect();
     return;
   } else {
-    const result = await tryLoadStoredSession(
-      network,
-      sessionContext,
-      wallet,
-      wallet.publicKey,
-    );
-    switch (result.type) {
-      case ConnectWalletStateType.Connected: {
-        await wallet.disconnect();
-        return;
-      }
-      case ConnectWalletStateType.RestoredSession: {
-        return result.session;
-      }
-      case ConnectWalletStateType.Aborted: {
-        return;
-      }
-    }
+    return ensureWalletPublicKey(wallet);
   }
 };
 
 const connectWalletImpl = async (
-  network: Network,
-  sessionContext: Promise<SessionExecutionContext>,
   wallet: SolanaWallet,
   abortSignal: AbortSignal,
 ) => {
   await wallet.connect();
   if (abortSignal.aborted || !wallet.connected) {
     await wallet.disconnect();
-    return ConnectWalletState.Aborted();
+    return;
   } else {
-    const walletPublicKey = ensureWalletPublicKey(wallet);
-    return tryLoadStoredSession(
-      network,
-      sessionContext,
-      wallet,
-      walletPublicKey,
-      abortSignal,
-    );
+    return ensureWalletPublicKey(wallet);
   }
 };
 
-const tryLoadStoredSession = async (
+const checkStoredSession = async (
   network: Network,
   sessionContext: Promise<SessionExecutionContext>,
-  wallet: SolanaWallet,
   walletPublicKey: PublicKey,
-  abortSignal?: AbortSignal,
 ) => {
   const storedSession = await getStoredSession(network, walletPublicKey);
-  if (abortSignal?.aborted) {
-    await wallet.disconnect();
-    return ConnectWalletState.Aborted();
-  } else if (storedSession === undefined) {
-    return ConnectWalletState.Connected(walletPublicKey);
+  if (storedSession === undefined) {
+    return;
   } else {
     const session = await reestablishSession(
       await sessionContext,
       storedSession.walletPublicKey,
       storedSession.sessionKey,
     );
-    if (abortSignal?.aborted) {
-      await wallet.disconnect();
-      return ConnectWalletState.Aborted();
-    } else if (session === undefined) {
+    if (session === undefined) {
       await clearStoredSession(network, walletPublicKey);
-      return ConnectWalletState.Connected(walletPublicKey);
+      return;
     } else {
-      return ConnectWalletState.RestoredSession(session);
+      return session;
     }
   }
-};
-
-enum ConnectWalletStateType {
-  // Indicates that the request to connect a wallet was aborted before
-  // completing (e.g. the user closed the wallet connection modal)
-  Aborted,
-
-  // Indicates that the wallet connected and we found a valid stored session
-  // which has been restored
-  RestoredSession,
-
-  // Indicates that the wallet is connected (but no stored session was found, so
-  // we need to request limits and create a session)
-  Connected,
-}
-
-const ConnectWalletState = {
-  Aborted: () => ({ type: ConnectWalletStateType.Aborted as const }),
-  RestoredSession: (session: Session) => ({
-    type: ConnectWalletStateType.RestoredSession as const,
-    session,
-  }),
-  Connected: (walletPublicKey: PublicKey) => ({
-    type: ConnectWalletStateType.Connected as const,
-    walletPublicKey,
-  }),
 };
 
 const establishSession = async (
