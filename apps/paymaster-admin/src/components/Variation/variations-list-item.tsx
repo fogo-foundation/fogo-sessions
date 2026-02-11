@@ -107,8 +107,8 @@ const VariationForm = ({
       maxGasSpend:
         variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
       paymasterFeeLamports:
-        variation?.version === "v1"
-          ? variation.paymaster_fee_lamports?.toString()
+        variation?.version === "v1" && variation.paymaster_fee_lamports
+          ? variation.paymaster_fee_lamports.toString()
           : "",
       code: variationCode,
     };

@@ -75,7 +75,7 @@ export const updateVariation = async (
   data: {
     name: string;
     maxGasSpend: number;
-    paymasterFeeLamports?: number;
+    paymasterFeeLamports?: number | undefined;
     variation: TransactionVariations;
   },
 ) => {
@@ -110,7 +110,7 @@ export const createVariation = async (
   data: {
     name: string;
     maxGasSpend: number;
-    paymasterFeeLamports?: number;
+    paymasterFeeLamports?: number | undefined;
     variation: TransactionVariations;
   },
 ) => {
