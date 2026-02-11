@@ -368,14 +368,13 @@ async fn sponsor_and_send_handler(
         )
     })?;
 
-    is_enough_balance(state.balances.load().get(fee_payer))
-        .then_some(())
-        .ok_or({
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Paymaster wallet {fee_payer} is out of funds"),
-            )
-        })?;
+    if !is_enough_balance(state.balances.load().get(fee_payer)) {
+        return Err((
+            StatusCode::SERVICE_UNAVAILABLE,
+            format!("Paymaster wallet {fee_payer} is out of funds"),
+        )
+            .into());
+    }
 
     let transaction_sponsor = domain_state
         .sponsors
@@ -652,18 +651,21 @@ async fn sponsor_pubkey_handler(
                     .collect::<Vec<_>>();
                 if funded_sponsors.is_empty() {
                     return Err((
-                        StatusCode::INTERNAL_SERVER_ERROR,
+                        StatusCode::SERVICE_UNAVAILABLE,
                         format!(
-                            "All wallets for the paymaster domain {domain} have insufficient funds"
+                            "All wallets for the paymaster domain {domain} have insufficient funds, please top up: {}",
+                            sponsors[0].pubkey().to_string()
                         ),
                     )
                         .into());
                 }
-                Ok(funded_sponsors[next_autoassigned_sponsor_index
-                    .fetch_add(1, Ordering::Relaxed)
-                    % funded_sponsors.len()]
-                .pubkey()
-                .to_string())
+                Ok(
+                    funded_sponsors[next_autoassigned_sponsor_index
+                        .fetch_add(1, Ordering::Relaxed)
+                        % funded_sponsors.len()]
+                    .pubkey()
+                    .to_string(),
+                )
             }
             IndexSelector::Index(i) => {
                 let index = usize::from(i);
