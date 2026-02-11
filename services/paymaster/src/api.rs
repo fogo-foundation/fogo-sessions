@@ -659,13 +659,9 @@ async fn sponsor_pubkey_handler(
                     )
                         .into());
                 }
-                Ok(
-                    funded_sponsors[next_autoassigned_sponsor_index
-                        .fetch_add(1, Ordering::Relaxed)
-                        % funded_sponsors.len()]
-                    .pubkey()
-                    .to_string(),
-                )
+                let index = next_autoassigned_sponsor_index.fetch_add(1, Ordering::Relaxed)
+                    % funded_sponsors.len();
+                Ok(funded_sponsors[index].pubkey().to_string())
             }
             IndexSelector::Index(i) => {
                 let index = usize::from(i);

@@ -12,7 +12,7 @@ use tokio::time::interval;
 pub fn is_enough_balance(balance: Option<&u64>) -> bool {
     balance
         .map(|balance| *balance >= LAMPORTS_PER_SOL / 10)
-        .unwrap_or(true)
+        .unwrap_or(true) // Return true if we don't know what is the balance
 }
 
 pub fn spawn_balances_refresher(
