@@ -38,7 +38,7 @@ pub fn spawn_balances_refresher(
                 .map(|accounts| {
                     pubkeys
                         .into_iter()
-                        .zip(accounts.into_iter())
+                        .zip(accounts)
                         .map(|(pubkey, account)| (pubkey, account.map(|a| a.lamports).unwrap_or(0)))
                         .collect::<HashMap<Pubkey, u64>>()
                 })
