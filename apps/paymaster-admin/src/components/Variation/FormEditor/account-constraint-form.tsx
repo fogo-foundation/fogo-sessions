@@ -63,7 +63,7 @@ export const AccountConstraintForm = ({
         />
       </div>
       <div className={styles.section ?? ""}>
-        <span className={styles.sectionHeader ?? ""}>Include</span>
+        <span className={styles.sectionHeader ?? ""}>Must be one of</span>
         <DynamicList
           items={value.include}
           onChange={handleIncludeChange}
@@ -71,11 +71,11 @@ export const AccountConstraintForm = ({
             <ContextualPubkeyInput value={item} onChange={onItemChange} />
           )}
           createDefault={createDefaultPubkey}
-          label="include"
+          label="account to match"
         />
       </div>
       <div className={styles.section ?? ""}>
-        <span className={styles.sectionHeader ?? ""}>Exclude</span>
+        <span className={styles.sectionHeader ?? ""}>Must not be one of</span>
         <DynamicList
           items={value.exclude}
           onChange={handleExcludeChange}
@@ -83,7 +83,7 @@ export const AccountConstraintForm = ({
             <ContextualPubkeyInput value={item} onChange={onItemChange} />
           )}
           createDefault={createDefaultPubkey}
-          label="exclude"
+          label="account to not match"
         />
       </div>
     </div>

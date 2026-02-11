@@ -45,7 +45,7 @@ export const DomainVariation = (props: DomainVariationProps) => {
         )}
         <ListHeader
           isLoading={props.isLoading}
-          title="Variations"
+          title="Transaction Variations"
           icon={<StackIcon size={24} weight="duotone" />}
           {...(!props.isLoading && {
             count: props.domainConfig.variations.length,

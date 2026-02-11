@@ -47,7 +47,8 @@ export const VariationFormEditor = ({
     <div className={styles.formEditor ?? ""}>
       {instructions.length === 0 && (
         <p className={styles.emptyState ?? ""}>
-          No instructions yet. Add one to get started.
+          No instructions supported for this transaction variation yet. Add one
+          to get started.
         </p>
       )}
       <DynamicList
@@ -55,7 +56,7 @@ export const VariationFormEditor = ({
         onChange={onChange}
         renderItem={renderInstruction}
         createDefault={createDefaultInstruction}
-        label="instruction"
+        label="instruction constraint"
       />
     </div>
   );

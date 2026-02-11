@@ -79,11 +79,11 @@ export const InstructionConstraintForm = ({
   return (
     <div className={styles.instructionCard ?? ""}>
       <div className={styles.instructionHeader ?? ""}>
-        <h3>Instruction {index}</h3>
+        <h3>Constraints for instruction {index}</h3>
       </div>
 
       <div className={styles.fieldGroup ?? ""}>
-        <span className={styles.fieldLabel ?? ""}>Program</span>
+        <span className={styles.fieldLabel ?? ""}>Program Address</span>
         <TextField
           value={value.program}
           onChange={handleProgramChange}
@@ -99,13 +99,18 @@ export const InstructionConstraintForm = ({
         <Switch
           isSelected={value.requires_wrapped_native_tokens ?? false}
           onChange={handleWrappedNativeChange}
+          aria-label="Enable wrapped native token support"
         >
-          Requires Wrapped Native Tokens
+          <span title="If enabled, the transaction can add wrapped FOGO setup/teardown instructions around this instruction.">
+            Enable Wrapped Native Token Support
+          </span>
         </Switch>
       </div>
 
       <div className={styles.section ?? ""}>
-        <span className={styles.sectionHeader ?? ""}>Account Constraints</span>
+        <span className={styles.sectionHeader ?? ""}>
+          Constraints on accounts in instruction {index}
+        </span>
         <DynamicList
           items={value.accounts}
           onChange={handleAccountsChange}
@@ -118,7 +123,9 @@ export const InstructionConstraintForm = ({
       </div>
 
       <div className={styles.section ?? ""}>
-        <span className={styles.sectionHeader ?? ""}>Data Constraints</span>
+        <span className={styles.sectionHeader ?? ""}>
+          Constraints on data in instruction {index}
+        </span>
         <DynamicList
           items={value.data}
           onChange={handleDataChange}

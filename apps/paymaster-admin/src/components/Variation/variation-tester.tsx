@@ -67,7 +67,7 @@ export const VariationTester = ({
         <TextField
           value={transactionInput}
           onChange={handleTransactionChange}
-          placeholder="Enter serialized tx"
+          placeholder="Enter serialized transaction (base64)"
           double={true}
           className={styles.variationTesterInput ?? ""}
         />

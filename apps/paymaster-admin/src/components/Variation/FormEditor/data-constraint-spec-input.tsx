@@ -18,15 +18,15 @@ type DataConstraintSpec = z.infer<typeof DataConstraintSpecificationSchema>;
 type OperatorType = "LessThan" | "GreaterThan" | "EqualTo" | "Neq";
 
 const ALL_OPERATOR_ITEMS: Array<{ key: OperatorType; label: string }> = [
-  { key: "LessThan", label: "Less Than" },
-  { key: "GreaterThan", label: "Greater Than" },
-  { key: "EqualTo", label: "Equal To" },
-  { key: "Neq", label: "Not Equal" },
+  { key: "LessThan", label: "Less than" },
+  { key: "GreaterThan", label: "Greater than" },
+  { key: "EqualTo", label: "Equal to one of" },
+  { key: "Neq", label: "Not equal to any of" },
 ];
 
 const SCALAR_OPERATOR_ITEMS: Array<{ key: OperatorType; label: string }> = [
   { key: "EqualTo", label: "Equal To" },
-  { key: "Neq", label: "Not Equal" },
+  { key: "Neq", label: "Not Equal To" },
 ];
 
 // Integer types support all operators; scalar/bytes types only support EqualTo/Neq

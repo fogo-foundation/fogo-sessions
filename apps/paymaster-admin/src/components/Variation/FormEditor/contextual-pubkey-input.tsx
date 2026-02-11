@@ -15,10 +15,10 @@ type PubkeyVariant =
   | "Explicit";
 
 const PUBKEY_VARIANT_ITEMS: Array<{ key: PubkeyVariant; label: string }> = [
-  { key: "Sponsor", label: "Sponsor" },
-  { key: "NonFeePayerSigner", label: "NonFeePayerSigner" },
-  { key: "DomainRegistry", label: "DomainRegistry" },
-  { key: "Explicit", label: "Explicit" },
+  { key: "Sponsor", label: "Fee Payer" },
+  { key: "NonFeePayerSigner", label: "(Non-Fee Payer) Signer of Transaction" },
+  { key: "DomainRegistry", label: "Domain Registry Account" },
+  { key: "Explicit", label: "Pubkey Address" },
 ];
 
 function getVariant(value: ContextualPubkey): PubkeyVariant {
