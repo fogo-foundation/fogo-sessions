@@ -18,7 +18,7 @@ const PUBKEY_VARIANT_ITEMS: Array<{ key: PubkeyVariant; label: string }> = [
   { key: "Sponsor", label: "Fee Payer" },
   { key: "NonFeePayerSigner", label: "(Non-Fee Payer) Signer of Transaction" },
   { key: "DomainRegistry", label: "Domain Registry Account" },
-  { key: "Explicit", label: "Pubkey Address" },
+  { key: "Explicit", label: "Public Key" },
 ];
 
 function getVariant(value: ContextualPubkey): PubkeyVariant {
