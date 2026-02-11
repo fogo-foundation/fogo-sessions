@@ -641,27 +641,10 @@ async fn sponsor_pubkey_handler(
         next_autoassigned_sponsor_index,
     } = domain_state;
 
-    if let Some(selector) = index {
+    let sponsor_index = if let Some(selector) = index {
         match selector {
             IndexSelector::Autoassign => {
-                let balances = state.balances.load();
-                let funded_sponsors = sponsors
-                    .iter()
-                    .filter(|sponsor| is_enough_balance(balances.get(&sponsor.pubkey())))
-                    .collect::<Vec<_>>();
-                if funded_sponsors.is_empty() {
-                    return Err((
-                        StatusCode::SERVICE_UNAVAILABLE,
-                        format!(
-                            "All wallets for the paymaster domain {domain} have insufficient funds, please top up: {}",
-                            sponsors[0].pubkey()
-                        ),
-                    )
-                        .into());
-                }
-                let index = next_autoassigned_sponsor_index.fetch_add(1, Ordering::Relaxed)
-                    % funded_sponsors.len();
-                Ok(funded_sponsors.get(index).expect("0 <= index < funded_sponsors.len() as the remainder of a division by funded_sponsors.len()").pubkey().to_string())
+                next_autoassigned_sponsor_index.fetch_add(1, Ordering::Relaxed) % sponsors.len()
             }
             IndexSelector::Index(i) => {
                 let index = usize::from(i);
@@ -675,12 +658,13 @@ async fn sponsor_pubkey_handler(
                     )
                         .into());
                 }
-                Ok(sponsors[index].pubkey().to_string())
+                index
             }
         }
     } else {
-        Ok(sponsors[0].pubkey().to_string())
-    }
+        0usize
+    };
+    Ok(sponsors[sponsor_index].pubkey().to_string())
 }
 #[serde_as]
 #[derive(serde::Deserialize, utoipa::IntoParams)]
