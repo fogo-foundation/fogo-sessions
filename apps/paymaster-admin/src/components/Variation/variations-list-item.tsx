@@ -446,7 +446,7 @@ const formatPath = (path: (string | number)[]): string =>
 const formatZodIssue = (issue: ZodIssue): string => {
   let path = formatPath(issue.path);
 
-  // Remove redundant "domains.tx_variations.instructions" prefix as it should not be appeneded to the errors
+  // Remove redundant "domains.tx_variations.instructions" prefix as it should not be appended to the errors
   path = path.replace(/^domains\.tx_variations\./, "");
   const prefix = path ? `${path}: ` : "";
 
