@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod api;
+mod balances;
 mod cli;
 mod config_manager;
 mod constraint;
@@ -93,6 +94,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         opts.network_environment,
         opts.valiant_api_key,
         opts.valiant_override_url,
+        opts.balance_refresh_interval_seconds,
     )
     .await;
     Ok(())

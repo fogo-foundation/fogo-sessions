@@ -109,6 +109,9 @@ pub struct RunOptions {
 
     #[arg(long, env = "FEE_COEFFICIENTS", value_parser = parse_fee_coefficients, default_value = "{}")]
     pub fee_coefficients: HashMap<Pubkey, u64>,
+
+    #[arg(long, env = "BALANCE_REFRESH_INTERVAL_SECONDS", default_value = "10")]
+    pub balance_refresh_interval_seconds: u64,
 }
 
 #[derive(Args, Debug, Clone)]

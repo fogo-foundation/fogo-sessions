@@ -1,3 +1,4 @@
+use crate::balances::{is_enough_balance, spawn_balances_refresher};
 use crate::cli::NetworkEnvironment;
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
@@ -36,6 +37,7 @@ use solana_commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_derivation_path::DerivationPath;
 use solana_keypair::Keypair;
 use solana_packet::PACKET_DATA_SIZE;
+use solana_program::native_token::LAMPORTS_PER_SOL;
 use solana_pubkey::Pubkey;
 use solana_pubsub_client::nonblocking::pubsub_client::PubsubClient;
 use solana_rpc_client::rpc_client::RpcClientConfig;
@@ -45,7 +47,7 @@ use solana_signer::Signer;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
@@ -113,6 +115,7 @@ pub struct ValiantClient {
 
 pub struct ServerState {
     pub domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
+    pub balances: Arc<ArcSwap<HashMap<Pubkey, u64>>>,
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
     pub ftl_rpc: Option<RpcClient>,
@@ -365,6 +368,16 @@ async fn sponsor_and_send_handler(
             "The transaction must have a fee payer",
         )
     })?;
+
+    is_enough_balance(state.balances.load().get(fee_payer))
+        .then_some(())
+        .ok_or({
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Paymaster wallet {fee_payer} is out of funds"),
+            )
+        })?;
+
     let transaction_sponsor = domain_state
         .sponsors
         .iter()
@@ -630,10 +643,28 @@ async fn sponsor_pubkey_handler(
         next_autoassigned_sponsor_index,
     } = domain_state;
 
-    let sponsor_index = if let Some(selector) = index {
+    if let Some(selector) = index {
         match selector {
             IndexSelector::Autoassign => {
-                next_autoassigned_sponsor_index.fetch_add(1, Ordering::Relaxed) % sponsors.len()
+                let balances = state.balances.load();
+                let funded_sponsors = sponsors
+                    .iter()
+                    .filter(|sponsor| is_enough_balance(balances.get(&sponsor.pubkey())))
+                    .collect::<Vec<_>>();
+                if funded_sponsors.is_empty() {
+                    return Err((
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!(
+                            "All wallets for the paymaster domain {domain} have insufficient funds"
+                        ),
+                    )
+                        .into());
+                }
+                return Ok(funded_sponsors[next_autoassigned_sponsor_index
+                    .fetch_add(1, Ordering::Relaxed)
+                    % funded_sponsors.len()]
+                .pubkey()
+                .to_string());
             }
             IndexSelector::Index(i) => {
                 let index = usize::from(i);
@@ -647,13 +678,12 @@ async fn sponsor_pubkey_handler(
                     )
                         .into());
                 }
-                index
+                return Ok(sponsors[index].pubkey().to_string());
             }
         }
     } else {
-        0usize
-    };
-    Ok(sponsors[sponsor_index].pubkey().to_string())
+        return Ok(sponsors[0].pubkey().to_string());
+    }
 }
 #[serde_as]
 #[derive(serde::Deserialize, utoipa::IntoParams)]
@@ -773,13 +803,14 @@ pub async fn run_server(
     network_environment: NetworkEnvironment,
     valiant_api_key: Option<String>,
     valiant_url_override: Option<String>,
+    balance_refresh_interval_seconds: u64,
 ) {
     let rpc_http_sender = PooledHttpSender::new(rpc_url_http, RPC_POOL_SIZE);
 
-    let rpc = RpcClient::new_sender(
+    let rpc = Arc::new(RpcClient::new_sender(
         rpc_http_sender,
         RpcClientConfig::with_commitment(CommitmentConfig::processed()),
-    );
+    ));
 
     let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
         .await
@@ -837,6 +868,14 @@ pub async fn run_server(
             .expect("Should create Valiant client")
     });
 
+    let balances = Arc::new(ArcSwap::from_pointee(HashMap::new()));
+    spawn_balances_refresher(
+        Arc::clone(&domains_states),
+        Arc::clone(&balances),
+        rpc.clone(),
+        balance_refresh_interval_seconds,
+    );
+
     let app = Router::new()
         .route("/ready", axum::routing::get(readiness_handler))
         .route(
@@ -855,6 +894,7 @@ pub async fn run_server(
         .layer(prometheus_layer)
         .with_state(Arc::new(ServerState {
             domains: domains_states,
+            balances,
             fee_coefficients,
             chain_index: ChainIndex {
                 rpc,
@@ -864,6 +904,7 @@ pub async fn run_server(
             ftl_rpc,
             valiant_client,
         }));
+
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     tracing::info!("Starting paymaster service...");
     axum::serve(listener, app).await.unwrap();
