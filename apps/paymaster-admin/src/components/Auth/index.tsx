@@ -52,10 +52,6 @@ export const Auth = () => (
           Fogo Sessions enables seamless authorization.
         </p>
         <SessionButton />
-        <p className={styles.connectWalletCardInfo}>
-          By connecting your wallet and/or using Paymaster you hereby agree to
-          our <TermsOfServiceLink />.
-        </p>
       </div>
       <div className={styles.authCardFooter}>
         <div className={styles.authCardFooterContent}>

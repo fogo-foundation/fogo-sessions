@@ -7,6 +7,10 @@ import { UserSchema } from "../db-schema";
 
 export const useUserData = (sessionState: EstablishedSessionState) => {
   const getUserData = useCallback(async () => {
+    if (sessionState.expiration < new Date()) {
+      sessionState.endSession();
+      return;
+    }
     const sessionToken = await sessionState.createLogInToken();
     return fetchUserData(sessionToken);
   }, [sessionState]);

@@ -16,7 +16,13 @@ export const Root = ({ children }: Props) => (
     <body className={styles.root}>
       <I18nProvider>
         <ToastProvider>
-          <FogoSessionProvider network={Network.Testnet} domain={DOMAIN}>
+          <FogoSessionProvider
+            network={Network.Testnet}
+            domain={DOMAIN}
+            enableUnlimited={false}
+            termsOfServiceUrl="https://www.dourolabs.xyz/Paymaster-Terms-Of-Service.pdf"
+            privacyPolicyUrl="https://www.dourolabs.xyz/Privacy-Notice.pdf"
+          >
             <AuthenticationLayout>{children}</AuthenticationLayout>
           </FogoSessionProvider>
         </ToastProvider>

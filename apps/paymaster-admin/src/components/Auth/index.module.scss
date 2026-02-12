@@ -39,13 +39,6 @@
     }
   }
 
-  .connectWalletCardInfo {
-    padding-top: theme.spacing(3);
-    @include theme.text('xs', 'light');
-    color: theme.color('muted');
-    opacity: .7;
-  }
-
   .paymasterImage {
     position: absolute;
     top: theme.spacing(40);
