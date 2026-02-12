@@ -26,7 +26,7 @@ use solana_pubkey::Pubkey;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
-use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
+use std::{collections::HashMap, num::NonZeroU32, str::FromStr, sync::Arc};
 
 #[derive(Parser)]
 #[command(name = "tx-validator")]
@@ -135,7 +135,7 @@ async fn main() -> Result<()> {
             let rpc_url_http =
                 rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
-                rpc: RpcClient::new(rpc_url_http),
+                rpc: Arc::new(RpcClient::new(rpc_url_http)),
                 lookup_table_cache: DashMap::new(),
             };
 

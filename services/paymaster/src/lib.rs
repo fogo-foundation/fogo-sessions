@@ -1,4 +1,5 @@
 pub mod api;
+pub mod balances;
 pub mod cli;
 pub mod config_manager;
 pub mod constraint;

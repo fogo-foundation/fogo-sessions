@@ -21,7 +21,7 @@ use solana_transaction_status_client_types::{
     EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding, UiTransactionTokenBalance,
 };
 use spl_token::amount_to_ui_amount;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 use tokio::time::timeout;
 
 use crate::{
@@ -30,7 +30,7 @@ use crate::{
 };
 
 pub struct ChainIndex {
-    pub rpc: RpcClient,
+    pub rpc: Arc<RpcClient>,
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
 
