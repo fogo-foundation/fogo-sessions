@@ -172,10 +172,23 @@ const VariationForm = ({
     [isEditingJson],
   );
 
+  const validateInstructions = useCallback((value: InstructionConstraint[]) => {
+    try {
+      setCodeError(undefined);
+      return TransactionVariations.parse(value);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        setCodeError(formatZodErrors(error.errors));
+      } else {
+        setCodeError(errorToString(error));
+      }
+      return false;
+    }
+  }, []);
+
   const handleSwitchToCode = useCallback(() => {
-    const validated = TransactionVariations.safeParse(instructions);
-    if (!validated.success) {
-      setCodeError(formatZodErrors(validated.error.errors));
+    const validated = validateInstructions(instructions);
+    if (!validated) {
       toast.error("Cannot switch to code mode: fix form errors first");
       return;
     }
@@ -186,7 +199,7 @@ const VariationForm = ({
     setCode(tomlStr);
     setCodeError(undefined);
     setEditorMode("code");
-  }, [instructions, isEditingJson, toast]);
+  }, [instructions, isEditingJson, toast, validateInstructions]);
 
   const handleSwitchToForm = useCallback(() => {
     if (!code) {
@@ -275,14 +288,7 @@ const VariationForm = ({
 
     let variationObject: z.infer<typeof TransactionVariations> | false;
     if (editorMode === "form") {
-      try {
-        variationObject = TransactionVariations.parse(instructions);
-      } catch (error) {
-        if (error instanceof ZodError) {
-          throw new Error(error.errors.map((e) => e.message).join(", "));
-        }
-        throw error;
-      }
+      variationObject = validateInstructions(instructions);
     } else {
       variationObject = validateCode(code);
     }
@@ -310,6 +316,7 @@ const VariationForm = ({
     editorMode,
     variation?.id,
     validateCode,
+    validateInstructions,
   ]);
 
   const { execute, state } = useAsync(wrappedCreateOrUpdateVariation, {
@@ -401,16 +408,9 @@ const VariationForm = ({
   const handleFormInstructionsChange = useCallback(
     (nextInstructions: InstructionConstraint[]) => {
       setInstructions(nextInstructions);
-      const validated = TransactionVariations.safeParse(nextInstructions);
-      if (!validated.success) {
-        setCodeError(formatZodErrors(validated.error.errors));
-        return;
-      }
-      if (codeError) {
-        setCodeError(undefined);
-      }
+      validateInstructions(nextInstructions);
     },
-    [codeError],
+    [validateInstructions],
   );
 
   const handleSubmit = useCallback(
