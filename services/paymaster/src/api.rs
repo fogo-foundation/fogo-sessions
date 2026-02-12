@@ -115,6 +115,7 @@ pub struct ValiantClient {
 pub struct ServerState {
     pub domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
     pub balances: Arc<ArcSwap<HashMap<Pubkey, u64>>>,
+    pub minimum_balance_lamports: u64,
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
     pub ftl_rpc: Option<RpcClient>,
@@ -368,7 +369,10 @@ async fn sponsor_and_send_handler(
         )
     })?;
 
-    if !is_enough_balance(state.balances.load().get(fee_payer)) {
+    if !is_enough_balance(
+        state.balances.load().get(fee_payer),
+        state.minimum_balance_lamports,
+    ) {
         return Err((
             StatusCode::SERVICE_UNAVAILABLE,
             format!("Paymaster wallet {fee_payer} is out of funds"),
@@ -785,6 +789,7 @@ pub async fn run_server(
     valiant_api_key: Option<String>,
     valiant_url_override: Option<String>,
     balance_refresh_interval_seconds: u64,
+    minimum_balance_lamports: u64,
 ) {
     let rpc_http_sender = PooledHttpSender::new(rpc_url_http, RPC_POOL_SIZE);
 
@@ -876,6 +881,7 @@ pub async fn run_server(
         .with_state(Arc::new(ServerState {
             domains: domains_states,
             balances,
+            minimum_balance_lamports,
             fee_coefficients,
             chain_index: ChainIndex {
                 rpc,

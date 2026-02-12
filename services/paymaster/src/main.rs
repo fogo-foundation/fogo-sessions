@@ -1,6 +1,7 @@
 use crate::cli::Cli;
 use arc_swap::ArcSwap;
 use clap::Parser;
+use num_traits::ToPrimitive;
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::trace::BatchConfigBuilder;
@@ -84,6 +85,14 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
     let rpc_url_ws = opts
         .rpc_url_ws
         .unwrap_or_else(|| opts.rpc_url_http.replace("http", "ws"));
+
+    let minimum_balance_lamports =
+        (1_000_000_000f64 * opts.minimum_balance)
+            .to_u64()
+            .ok_or(anyhow::anyhow!(
+                "Failed to convert minimum balance to lamports"
+            ))?;
+
     api::run_server(
         opts.rpc_url_http,
         rpc_url_ws,
@@ -95,6 +104,7 @@ async fn run_server(opts: cli::RunOptions) -> anyhow::Result<()> {
         opts.valiant_api_key,
         opts.valiant_override_url,
         opts.balance_refresh_interval_seconds,
+        minimum_balance_lamports,
     )
     .await;
     Ok(())

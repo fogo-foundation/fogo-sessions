@@ -112,6 +112,10 @@ pub struct RunOptions {
 
     #[arg(long, env = "BALANCE_REFRESH_INTERVAL_SECONDS", default_value = "10")]
     pub balance_refresh_interval_seconds: u64,
+
+    /// Minimum balance in FOGO tokens for a paymaster wallet to be considered funded
+    #[arg(long, env = "MINIMUM_BALANCE", default_value_t = 0.1)]
+    pub minimum_balance: f64,
 }
 
 #[derive(Args, Debug, Clone)]

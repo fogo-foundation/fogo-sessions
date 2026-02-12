@@ -1,7 +1,6 @@
 use crate::api::DomainState;
 use arc_swap::ArcSwap;
 use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_program::native_token::LAMPORTS_PER_SOL;
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use std::collections::HashMap;
@@ -9,9 +8,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::interval;
 
-pub fn is_enough_balance(balance: Option<&u64>) -> bool {
+pub fn is_enough_balance(balance: Option<&u64>, minimum_balance_lamports: u64) -> bool {
     balance
-        .map(|balance| *balance >= LAMPORTS_PER_SOL / 10)
+        .map(|balance| *balance >= minimum_balance_lamports)
         .unwrap_or(true) // Return true if we don't know what is the balance
 }
 
