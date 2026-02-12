@@ -20,7 +20,7 @@ use solana_program::{hash::hashv, instruction::Instruction};
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
-use std::collections::{btree_map::Entry, BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Deref;
 use std::str::FromStr;
 
@@ -187,7 +187,12 @@ async fn send_instruction(
     rpc: &RpcClient,
     authority: &Keypair,
     instruction: Instruction,
+    dry_run: bool,
 ) -> Result<()> {
+    if dry_run {
+        return Ok(());
+    }
+
     let recent_blockhash = rpc.get_latest_blockhash().await?;
     let tx = Transaction::new_signed_with_payer(
         &[instruction],
@@ -243,13 +248,6 @@ async fn ensure_fee_receiver_token_accounts(
             continue;
         }
 
-        if dry_run {
-            println!(
-                "Domain {domain}: would initialize fee receiver ATA {ata} for mint {mint} (dry-run)"
-            );
-            continue;
-        }
-
         println!("Domain {domain}: initializing fee receiver ATA {ata} for mint {mint}");
         let instruction =
             spl_associated_token_account::instruction::create_associated_token_account_idempotent(
@@ -258,7 +256,7 @@ async fn ensure_fee_receiver_token_accounts(
                 mint,
                 &spl_token::id(),
             );
-        send_instruction(rpc, authority, instruction).await?;
+        send_instruction(rpc, authority, instruction, dry_run).await?;
     }
 
     Ok(())
@@ -306,24 +304,15 @@ async fn sync_domain(
     );
 
     for program_id in to_add {
-        if dry_run {
-            println!("Domain {domain}: would add program {program_id} (dry-run)");
-        } else {
-            println!("Domain {domain}: adding program {program_id}");
-            let instruction = build_add_program_instruction(authority.pubkey(), domain, program_id);
-            send_instruction(rpc, authority, instruction).await?;
-        }
+        println!("Domain {domain}: adding program {program_id}");
+        let instruction = build_add_program_instruction(authority.pubkey(), domain, program_id);
+        send_instruction(rpc, authority, instruction, dry_run).await?;
     }
 
     for program_id in to_remove {
-        if dry_run {
-            println!("Domain {domain}: would remove program {program_id} (dry-run)");
-        } else {
-            println!("Domain {domain}: removing program {program_id}");
-            let instruction =
-                build_remove_program_instruction(authority.pubkey(), domain, program_id);
-            send_instruction(rpc, authority, instruction).await?;
-        }
+        println!("Domain {domain}: removing program {program_id}");
+        let instruction = build_remove_program_instruction(authority.pubkey(), domain, program_id);
+        send_instruction(rpc, authority, instruction, dry_run).await?;
     }
 
     Ok(())
