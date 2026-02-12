@@ -14,7 +14,7 @@ use fogo_sessions_sdk::token::PROGRAM_SIGNER_SEED;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_commitment_config::CommitmentConfig;
 use solana_keypair::{read_keypair_file, Keypair};
-use solana_program::{instruction::Instruction, system_program};
+use solana_program::{hash::hashv, instruction::Instruction, system_program};
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
@@ -23,10 +23,12 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::OnceLock;
 
-type DomainProgramSets = BTreeMap<String, BTreeSet<Pubkey>>;
+type DesiredDomainStates = BTreeMap<String, DesiredDomainState>;
 
 const DOMAIN_RECORD_PROGRAM_ENTRY_BYTES: usize = 64;
 const DOMAIN_REGISTRY_CONFIG_SEED: &[u8] = b"config";
+const TOLL_RECIPIENT_SEED: &[u8] = b"toll_recipient";
+const TOLL_RECIPIENT_ID: u8 = 0;
 const EXCLUDED_PROGRAM_IDS: [&str; 10] = [
     "11111111111111111111111111111111",
     "Ed25519SigVerify111111111111111111111111111",
@@ -59,9 +61,19 @@ struct Cli {
     #[arg(short, long, env = "AUTHORITY_KEYPAIR")]
     authority_keypair: String,
 
+    /// Mint addresses for fee token accounts to initialize on toll recipients
+    #[arg(long, env = "FEE_TOKENS", value_delimiter = ',')]
+    fee_tokens: Vec<String>,
+
     /// Print intended actions without sending transactions
     #[arg(long, default_value_t = false)]
     dry_run: bool,
+}
+
+#[derive(Debug, Clone)]
+struct DesiredDomainState {
+    programs: BTreeSet<Pubkey>,
+    requires_fee_receiver: bool,
 }
 
 fn domain_registry_config_address() -> Pubkey {
@@ -105,7 +117,7 @@ fn parse_domain_record_programs(data: &[u8]) -> Result<BTreeSet<Pubkey>> {
     Ok(programs)
 }
 
-fn desired_programs_for_domain(domain: Domain) -> Result<(String, BTreeSet<Pubkey>)> {
+fn desired_programs_for_domain(domain: Domain) -> Result<(String, DesiredDomainState)> {
     let domain_name = domain.domain;
     let parsed_variations = Domain::into_parsed_transaction_variations(
         domain.tx_variations,
@@ -134,19 +146,26 @@ fn desired_programs_for_domain(domain: Domain) -> Result<(String, BTreeSet<Pubke
         programs.remove(&TOLLBOOTH_PROGRAM_ID);
     }
 
-    Ok((domain_name, programs))
+    Ok((
+        domain_name,
+        DesiredDomainState {
+            programs,
+            requires_fee_receiver: requires_tollbooth,
+        },
+    ))
 }
 
-fn desired_domain_program_sets(domains: Vec<Domain>) -> Result<DomainProgramSets> {
+fn desired_domain_states(domains: Vec<Domain>) -> Result<DesiredDomainStates> {
     let mut map = BTreeMap::new();
     for domain in domains {
-        let (domain_name, programs) = desired_programs_for_domain(domain)?;
+        let (domain_name, desired_state) = desired_programs_for_domain(domain)?;
         match map.entry(domain_name) {
             Entry::Vacant(entry) => {
-                entry.insert(programs);
+                entry.insert(desired_state);
             }
             Entry::Occupied(mut entry) => {
-                entry.get_mut().extend(programs);
+                entry.get_mut().programs.extend(desired_state.programs);
+                entry.get_mut().requires_fee_receiver |= desired_state.requires_fee_receiver;
             }
         }
     }
@@ -257,6 +276,66 @@ async fn ensure_registry_initialized(
     .await
 }
 
+fn get_domain_toll_recipient_address(domain: &str) -> Pubkey {
+    let domain_hash = hashv(&[domain.as_bytes()]);
+    Pubkey::find_program_address(
+        &[TOLL_RECIPIENT_SEED, &[TOLL_RECIPIENT_ID], domain_hash.as_ref()],
+        &TOLLBOOTH_PROGRAM_ID,
+    )
+    .0
+}
+
+async fn ensure_fee_receiver_token_accounts(
+    rpc: &RpcClient,
+    authority: &Keypair,
+    domain: &str,
+    fee_tokens: &[Pubkey],
+    dry_run: bool,
+) -> Result<()> {
+    if fee_tokens.is_empty() {
+        println!(
+            "Domain {domain}: paymaster fee configured but no --fee-tokens provided, skipping fee receiver token account initialization"
+        );
+        return Ok(());
+    }
+
+    let recipient = get_domain_toll_recipient_address(domain);
+    for mint in fee_tokens {
+        let ata = spl_associated_token_account::get_associated_token_address_with_program_id(
+            &recipient,
+            mint,
+            &spl_token::id(),
+        );
+        let ata_exists = rpc
+            .get_account_with_commitment(&ata, CommitmentConfig::confirmed())
+            .await?
+            .value
+            .is_some();
+        if ata_exists {
+            continue;
+        }
+
+        if dry_run {
+            println!(
+                "Domain {domain}: would initialize fee receiver ATA {ata} for mint {mint} (dry-run)"
+            );
+            continue;
+        }
+
+        println!("Domain {domain}: initializing fee receiver ATA {ata} for mint {mint}");
+        let instruction =
+            spl_associated_token_account::instruction::create_associated_token_account_idempotent(
+                &authority.pubkey(),
+                &recipient,
+                mint,
+                &spl_token::id(),
+            );
+        send_instruction(rpc, authority, instruction).await?;
+    }
+
+    Ok(())
+}
+
 async fn current_domain_programs(rpc: &RpcClient, domain: &str) -> Result<BTreeSet<Pubkey>> {
     let domain_record = get_domain_record_address(domain);
     let account = rpc
@@ -338,13 +417,39 @@ async fn run(cli: Cli) -> Result<()> {
 
     let rpc = RpcClient::new_with_commitment(cli.rpc_url_http, CommitmentConfig::confirmed());
     ensure_registry_initialized(&rpc, &authority, cli.dry_run).await?;
+    let fee_tokens: Vec<Pubkey> = cli
+        .fee_tokens
+        .iter()
+        .map(|mint| {
+            Pubkey::from_str(mint).with_context(|| format!("invalid fee token mint: {mint}"))
+        })
+        .collect::<Result<_>>()?;
+    let fee_tokens = fee_tokens.into_iter().collect::<BTreeSet<_>>();
+    let fee_tokens = fee_tokens.into_iter().collect::<Vec<_>>();
 
     let config = db::config::load_config(cli.network_environment.into()).await?;
     println!("Loaded {} domains from database", config.domains.len());
-    let desired = desired_domain_program_sets(config.domains)?;
+    let desired = desired_domain_states(config.domains)?;
 
-    for (domain, desired_programs) in desired {
-        sync_domain(&rpc, &authority, &domain, &desired_programs, cli.dry_run).await?;
+    for (domain, desired_state) in desired {
+        sync_domain(
+            &rpc,
+            &authority,
+            &domain,
+            &desired_state.programs,
+            cli.dry_run,
+        )
+        .await?;
+        if desired_state.requires_fee_receiver {
+            ensure_fee_receiver_token_accounts(
+                &rpc,
+                &authority,
+                &domain,
+                &fee_tokens,
+                cli.dry_run,
+            )
+            .await?;
+        }
     }
 
     Ok(())
