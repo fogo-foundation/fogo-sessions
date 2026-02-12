@@ -15,7 +15,8 @@ export type ValueType =
   | "U64"
   | "Bool"
   | "Pubkey"
-  | "Bytes";
+  | "Bytes"
+  | "NttSignedQuoter";
 
 export const ALL_VALUE_TYPE_ITEMS: Array<{ key: ValueType; label: string }> = [
   { key: "U8", label: "U8" },
@@ -25,6 +26,7 @@ export const ALL_VALUE_TYPE_ITEMS: Array<{ key: ValueType; label: string }> = [
   { key: "Bool", label: "Bool" },
   { key: "Pubkey", label: "Pubkey" },
   { key: "Bytes", label: "Bytes" },
+  { key: "NttSignedQuoter", label: "NttSignedQuoter" },
 ];
 
 const INTEGER_VALUE_TYPE_ITEMS: Array<{ key: ValueType; label: string }> = [
@@ -42,6 +44,7 @@ function getValueType(value: PrimitiveDataValue): ValueType {
   if ("Bool" in value) return "Bool";
   if ("Pubkey" in value) return "Pubkey";
   if ("Bytes" in value) return "Bytes";
+  if ("NttSignedQuoter" in value) return "NttSignedQuoter";
   return "Bytes";
 }
 
@@ -61,9 +64,11 @@ export function getDefaultForType(type: ValueType): PrimitiveDataValue {
       // Cast needed: empty string will be validated by Zod on submit
       return {
         Pubkey: SystemProgram.programId.toBase58(),
-      } as PrimitiveDataValue;
+      };
     case "Bytes":
       return { Bytes: "" };
+    case "NttSignedQuoter":
+      return { NttSignedQuoter: "" };
   }
 }
 
@@ -97,10 +102,11 @@ export const PrimitiveDataValueInput = ({
     <div className={styles.constraintRow ?? ""}>
       <div
         className={
-          disableTypeSelector ? (styles.disabledSelect ?? "") : undefined
+          disableTypeSelector && false ? (styles.disabledSelect ?? "") : undefined
         }
       >
         <Select<ValueType>
+          isDisabled={disableTypeSelector ? true : false}
           items={typeItems}
           selectedKey={valueType}
           onSelectionChange={(key) => handleTypeChange(key as ValueType)}
@@ -201,7 +207,7 @@ const ValueInput = ({ value, valueType, onChange }: ValueInputProps) => {
       return (
         <TextField
           value={"Pubkey" in value ? value.Pubkey : ""}
-          onChange={(v) => onChange({ Pubkey: v } as PrimitiveDataValue)}
+          onChange={(v) => onChange({ Pubkey: v })}
           placeholder="Base58 public key"
           aria-label="Pubkey value"
           className={styles.pubkeyField ?? ""}
@@ -214,6 +220,16 @@ const ValueInput = ({ value, valueType, onChange }: ValueInputProps) => {
           onChange={(v) => onChange({ Bytes: v })}
           placeholder="Hex string (e.g. f34bae8)"
           aria-label="Bytes value"
+          className={styles.pubkeyField ?? ""}
+        />
+      );
+    case "NttSignedQuoter":
+      return (
+        <TextField
+          value={"NttSignedQuoter" in value ? value.NttSignedQuoter : ""}
+          onChange={(v) => onChange({ NttSignedQuoter: v })}
+          placeholder="0x-prefixed 20-byte hex (e.g. 0x5241...)"
+          aria-label="NttSignedQuoter value"
           className={styles.pubkeyField ?? ""}
         />
       );

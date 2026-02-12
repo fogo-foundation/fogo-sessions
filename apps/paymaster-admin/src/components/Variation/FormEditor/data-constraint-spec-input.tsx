@@ -32,8 +32,8 @@ const SCALAR_OPERATOR_ITEMS: Array<{ key: OperatorType; label: string }> = [
 // Integer types support all operators; scalar/bytes types only support EqualTo/Neq
 const INTEGER_TYPES = new Set(["U8", "U16", "U32", "U64"]);
 
-function getValueTypeKey(value: PrimitiveDataValue): string {
-  for (const key of Object.keys(value)) return key;
+function getValueTypeKey(value: PrimitiveDataValue): ValueType {
+  for (const key of Object.keys(value)) return key as ValueType;
   return "U8";
 }
 
@@ -80,7 +80,7 @@ export const DataConstraintSpecInput = ({
 }: DataConstraintSpecInputProps) => {
   const operator = getOperator(value);
   const firstValue = getFirstValue(value);
-  const currentType = getValueTypeKey(firstValue) as ValueType;
+  const currentType = getValueTypeKey(firstValue);
   const supportsInequality = isIntegerValue(firstValue);
   const operatorItems = supportsInequality
     ? ALL_OPERATOR_ITEMS

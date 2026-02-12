@@ -50,7 +50,7 @@ export const ContextualPubkeyInput = ({
       if (key === "Explicit") {
         onChange({
           Explicit: { pubkey: SystemProgram.programId.toBase58() },
-        } as ContextualPubkey);
+        });
       } else {
         onChange(key);
       }
@@ -60,7 +60,7 @@ export const ContextualPubkeyInput = ({
 
   const handlePubkeyChange = useCallback(
     (pubkey: string) => {
-      onChange({ Explicit: { pubkey } } as ContextualPubkey);
+      onChange({ Explicit: { pubkey } });
     },
     [onChange],
   );

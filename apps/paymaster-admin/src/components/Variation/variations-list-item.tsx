@@ -114,7 +114,7 @@ const VariationForm = ({
         maxGasSpend: "1000000",
         paymasterFeeLamports: "",
         code: "",
-        instructions: [] as InstructionConstraint[],
+        instructions: [],
       };
     }
     const variationCode =
@@ -173,6 +173,12 @@ const VariationForm = ({
   );
 
   const handleSwitchToCode = useCallback(() => {
+    const validated = TransactionVariations.safeParse(instructions);
+    if (!validated.success) {
+      setCodeError(formatZodErrors(validated.error.errors));
+      toast.error("Cannot switch to code mode: fix form errors first");
+      return;
+    }
     const tomlStr =
       instructions.length > 0 && isEditingJson
         ? JSON.stringify(instructions, null, 2)
@@ -180,7 +186,7 @@ const VariationForm = ({
     setCode(tomlStr);
     setCodeError(undefined);
     setEditorMode("code");
-  }, [instructions, isEditingJson]);
+  }, [instructions, isEditingJson, toast]);
 
   const handleSwitchToForm = useCallback(() => {
     if (!code) {
@@ -385,6 +391,21 @@ const VariationForm = ({
     [validateCode],
   );
 
+  const handleFormInstructionsChange = useCallback(
+    (nextInstructions: InstructionConstraint[]) => {
+      setInstructions(nextInstructions);
+      const validated = TransactionVariations.safeParse(nextInstructions);
+      if (!validated.success) {
+        setCodeError(formatZodErrors(validated.error.errors));
+        return;
+      }
+      if (codeError) {
+        setCodeError(undefined);
+      }
+    },
+    [codeError],
+  );
+
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -412,24 +433,18 @@ const VariationForm = ({
             </>
           )}
         </Button>
-        {editorMode === "code" &&
-          (codeError || state.type === StateType.Error ? (
-            <pre className={styles.variationFormFooterError}>
-              <code className={styles.variationFormFooterErrorCode}>
-                {state.type === StateType.Error
-                  ? errorToString(state.error)
-                  : codeError}
-              </code>
-            </pre>
-          ) : (
-            <Badge variant="success" size="xs">
-              All passed <ChecksIcon />
-            </Badge>
-          ))}
-        {editorMode === "form" && state.type === StateType.Error && (
-          <p className={styles.variationFormFooterError}>
-            {errorToString(state.error)}
-          </p>
+        {codeError || state.type === StateType.Error ? (
+          <pre className={styles.variationFormFooterError}>
+            <code className={styles.variationFormFooterErrorCode}>
+              {state.type === StateType.Error
+                ? errorToString(state.error)
+                : codeError}
+            </code>
+          </pre>
+        ) : (
+          <Badge variant="success" size="xs">
+            All passed <ChecksIcon />
+          </Badge>
         )}
       </div>
       {isDirty ? (
@@ -438,7 +453,7 @@ const VariationForm = ({
           type="submit"
           isDisabled={
             state.type === StateType.Running ||
-            (editorMode === "code" && !!codeError)
+            !!codeError
           }
         >
           {state.type === StateType.Running ? "Saving..." : "Save"}
@@ -535,7 +550,7 @@ const VariationForm = ({
         <VariationFormBlock
           isExpanded={isExpanded}
           instructions={instructions}
-          onChange={setInstructions}
+          onChange={handleFormInstructionsChange}
           domain={domainName}
           variationForTest={variationForTest}
           footer={footer}

@@ -42,7 +42,7 @@ export const InstructionConstraintForm = ({
     (program: string) => {
       onChange({
         ...value,
-        program: program as InstructionConstraint["program"],
+        program,
       });
     },
     [value, onChange],
@@ -79,7 +79,7 @@ export const InstructionConstraintForm = ({
   return (
     <div className={styles.instructionCard ?? ""}>
       <div className={styles.instructionHeader ?? ""}>
-        <h3>Constraints for instruction {index}</h3>
+        <h3 className={styles.instructionTitle ?? ""}>Constraints for instruction {index}</h3>
       </div>
 
       <div className={styles.fieldGroup ?? ""}>
@@ -109,7 +109,7 @@ export const InstructionConstraintForm = ({
 
       <div className={styles.section ?? ""}>
         <span className={styles.sectionHeader ?? ""}>
-          Constraints on accounts in instruction {index}
+          Account constraints in instruction {index}
         </span>
         <DynamicList
           items={value.accounts}
@@ -124,7 +124,7 @@ export const InstructionConstraintForm = ({
 
       <div className={styles.section ?? ""}>
         <span className={styles.sectionHeader ?? ""}>
-          Constraints on data in instruction {index}
+          Data constraints in instruction {index}
         </span>
         <DynamicList
           items={value.data}

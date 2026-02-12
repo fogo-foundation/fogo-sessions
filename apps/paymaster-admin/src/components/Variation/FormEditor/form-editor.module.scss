@@ -29,13 +29,13 @@
   align-items: center;
   padding-bottom: theme.spacing(3);
   border-bottom: 2px solid theme.color('border');
+}
 
-  h3 {
-    @include theme.text('xs', 'semibold');
-    color: theme.color('muted');
-    text-transform: uppercase;
-    letter-spacing: theme.letter-spacing('wider');
-  }
+.instructionTitle {
+  @include theme.text('sm', 'semibold');
+  color: theme.color('muted');
+  text-transform: uppercase;
+  letter-spacing: theme.letter-spacing('wider');
 }
 
 .fieldRow {
