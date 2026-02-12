@@ -333,8 +333,15 @@ const VariationForm = ({
   });
 
   const current = useMemo(() => {
-    return { editorMode, name, maxGasSpend, paymasterFeeLamports, code, instructions };
-  }, [ editorMode, name, maxGasSpend, paymasterFeeLamports, code, instructions]);
+    return {
+      editorMode,
+      name,
+      maxGasSpend,
+      paymasterFeeLamports,
+      code,
+      instructions,
+    };
+  }, [editorMode, name, maxGasSpend, paymasterFeeLamports, code, instructions]);
 
   const isDirty =
     editorMode === "form"
@@ -451,10 +458,7 @@ const VariationForm = ({
         <Button
           variant="secondary"
           type="submit"
-          isDisabled={
-            state.type === StateType.Running ||
-            !!codeError
-          }
+          isDisabled={state.type === StateType.Running || !!codeError}
         >
           {state.type === StateType.Running ? "Saving..." : "Save"}
         </Button>

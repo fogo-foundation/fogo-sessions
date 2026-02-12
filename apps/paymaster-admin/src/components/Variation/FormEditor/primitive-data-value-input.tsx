@@ -102,11 +102,10 @@ export const PrimitiveDataValueInput = ({
     <div className={styles.constraintRow ?? ""}>
       <div
         className={
-          disableTypeSelector && false ? (styles.disabledSelect ?? "") : undefined
+          disableTypeSelector ? (styles.disabledSelect ?? "") : undefined
         }
       >
         <Select<ValueType>
-          isDisabled={disableTypeSelector ? true : false}
           items={typeItems}
           selectedKey={valueType}
           onSelectionChange={(key) => handleTypeChange(key as ValueType)}

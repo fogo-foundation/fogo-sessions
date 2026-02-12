@@ -79,7 +79,9 @@ export const InstructionConstraintForm = ({
   return (
     <div className={styles.instructionCard ?? ""}>
       <div className={styles.instructionHeader ?? ""}>
-        <h3 className={styles.instructionTitle ?? ""}>Constraints for instruction {index}</h3>
+        <h3 className={styles.instructionTitle ?? ""}>
+          Constraints for instruction {index}
+        </h3>
       </div>
 
       <div className={styles.fieldGroup ?? ""}>

@@ -13,10 +13,9 @@ import styles from "./form-editor.module.scss";
 type AccountConstraint = z.infer<typeof AccountConstraintSchema>;
 type ContextualPubkey = z.infer<typeof ContextualPubkeySchema>;
 
-const createDefaultPubkey = (): ContextualPubkey =>
-  ({
-    Explicit: { pubkey: SystemProgram.programId.toBase58() },
-  });
+const createDefaultPubkey = (): ContextualPubkey => ({
+  Explicit: { pubkey: SystemProgram.programId.toBase58() },
+});
 
 type AccountConstraintFormProps = {
   value: AccountConstraint;
