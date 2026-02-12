@@ -22,6 +22,21 @@ const TermsOfServiceLink = ({
   </Link>
 );
 
+const PrivacyPolicyLink = ({
+  className,
+}: {
+  className?: string | undefined;
+}) => (
+  <Link
+    href="https://www.dourolabs.xyz/Privacy-Notice.pdf"
+    target="_blank"
+    rel="noopener noreferrer"
+    className={className ?? ""}
+  >
+    Privacy Notice
+  </Link>
+);
+
 export const Auth = () => (
   <>
     <video
@@ -52,6 +67,10 @@ export const Auth = () => (
           Fogo Sessions enables seamless authorization.
         </p>
         <SessionButton />
+        <p className={styles.connectWalletCardInfo}>
+          By connecting your wallet and/or using Paymaster you hereby agree to
+          our <TermsOfServiceLink /> and <PrivacyPolicyLink />.
+        </p>
       </div>
       <div className={styles.authCardFooter}>
         <div className={styles.authCardFooterContent}>
@@ -60,14 +79,7 @@ export const Auth = () => (
         </div>
         <div className={styles.authCardFooterContent} data-align="right">
           <TermsOfServiceLink className={styles.authCardFooterLink} />
-          <Link
-            href="https://www.dourolabs.xyz/Privacy-Notice.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.authCardFooterLink ?? ""}
-          >
-            Privacy Policy
-          </Link>
+          <PrivacyPolicyLink className={styles.authCardFooterLink} />
         </div>
       </div>
     </div>
