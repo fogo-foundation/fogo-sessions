@@ -31,7 +31,7 @@ pub fn spawn_balances_refresher(
                 .flat_map(|(_, domain)| domain.sponsors.iter().map(|sponsor| sponsor.pubkey()))
                 .collect::<Vec<Pubkey>>();
             let new_balances = rpc_client
-                .get_multiple_accounts(&pubkeys)
+                .get_multiple_accounts(&pubkeys) // TODO: This will break if we reach 100 paymaster wallets
                 .await
                 .inspect_err(|e| tracing::warn!("Failed to refresh balances: {}", e))
                 .map(|accounts| {
