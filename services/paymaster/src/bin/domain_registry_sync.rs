@@ -11,8 +11,8 @@ use fogo_paymaster::db;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use fogo_sessions_sdk::intent_transfer::INTENT_TRANSFER_PROGRAM_ID;
 use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
-use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use fogo_sessions_sdk::token::PROGRAM_SIGNER_SEED;
+use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_commitment_config::CommitmentConfig;
 use solana_keypair::{read_keypair_file, Keypair};
@@ -26,7 +26,6 @@ use std::str::FromStr;
 
 type DesiredDomainStates = BTreeMap<String, DesiredDomainState>;
 
-const DOMAIN_RECORD_PROGRAM_ENTRY_BYTES: usize = 64;
 const TOLL_RECIPIENT_SEED: &[u8] = b"toll_recipient";
 const TOLL_RECIPIENT_ID: u8 = 0;
 const EXCLUDED_PROGRAM_IDS: [Pubkey; 10] = [
@@ -62,8 +61,8 @@ struct Cli {
     keypair: String,
 
     /// Mint address of the tokens that the paymaster accepts for fee payment
-    #[arg(short, long, env = "FEE_TOKENS", value_delimiter = ',')]
-    fee_tokens: Vec<String>,
+    #[arg(short, long, env = "FEE_TOKENS", value_parser = Pubkey::from_str, value_delimiter = ',')]
+    fee_tokens: Vec<Pubkey>,
 
     /// Print intended actions without sending transactions
     #[arg(long, default_value_t = false)]
@@ -73,7 +72,7 @@ struct Cli {
 #[derive(Debug, Clone)]
 struct DesiredDomainState {
     programs: BTreeSet<Pubkey>,
-    requires_fee_receiver: bool,
+    requires_fee_receiver_initialized: bool,
 }
 
 fn domain_program_signer_address(program_id: &Pubkey) -> Pubkey {
@@ -88,23 +87,12 @@ fn filter_excluded_programs(programs: &mut BTreeSet<Pubkey>) {
     programs.retain(|program_id| !EXCLUDED_PROGRAM_IDS.contains(program_id));
 }
 
-fn parse_domain_record_programs(data: &[u8]) -> Result<BTreeSet<Pubkey>> {
-    let mut chunks = data.chunks_exact(DOMAIN_RECORD_PROGRAM_ENTRY_BYTES);
-    anyhow::ensure!(
-        chunks.remainder().is_empty(),
-        "invalid domain record length: {}",
-        data.len()
-    );
-
-    let mut programs = BTreeSet::new();
-    for chunk in chunks.by_ref() {
-        let program_bytes: [u8; 32] = chunk[..32]
-            .try_into()
-            .map_err(|_| anyhow::anyhow!("failed to decode domain record program bytes"))?;
-        programs.insert(Pubkey::new_from_array(program_bytes));
-    }
-
-    Ok(programs)
+fn parse_domain_record_programs(data: &[u8]) ->BTreeSet<Pubkey> {
+    let programs = bytemuck::cast_slice(data)
+        .iter()
+        .map(|slice: &[u8; 64]| Pubkey::new_from_array(slice[..32].try_into().unwrap()))
+        .collect();
+    programs
 }
 
 fn desired_programs_for_domain(domain: Domain) -> Result<(String, DesiredDomainState)> {
@@ -122,7 +110,7 @@ fn desired_programs_for_domain(domain: Domain) -> Result<(String, DesiredDomainS
                 programs.extend(v0.whitelisted_programs.iter().copied());
             }
             ParsedTransactionVariation::V1(v1) => {
-                if v1.paymaster_fee_lamports.unwrap_or(0) > 0 {
+                if v1.paymaster_fee_lamports.map(|p| p > 0).unwrap_or(false) {
                     requires_tollbooth = true;
                 }
                 programs.extend(v1.instructions.iter().map(|ix| *ix.program.deref()));
@@ -130,6 +118,7 @@ fn desired_programs_for_domain(domain: Domain) -> Result<(String, DesiredDomainS
         }
     }
     filter_excluded_programs(&mut programs);
+    
     if requires_tollbooth {
         programs.insert(TOLLBOOTH_PROGRAM_ID);
     } else {
@@ -140,26 +129,13 @@ fn desired_programs_for_domain(domain: Domain) -> Result<(String, DesiredDomainS
         domain_name,
         DesiredDomainState {
             programs,
-            requires_fee_receiver: requires_tollbooth,
+            requires_fee_receiver_initialized: requires_tollbooth,
         },
     ))
 }
 
 fn desired_domain_states(domains: Vec<Domain>) -> Result<DesiredDomainStates> {
-    let mut map = BTreeMap::new();
-    for domain in domains {
-        let (domain_name, desired_state) = desired_programs_for_domain(domain)?;
-        match map.entry(domain_name) {
-            Entry::Vacant(entry) => {
-                entry.insert(desired_state);
-            }
-            Entry::Occupied(mut entry) => {
-                entry.get_mut().programs.extend(desired_state.programs);
-                entry.get_mut().requires_fee_receiver |= desired_state.requires_fee_receiver;
-            }
-        }
-    }
-    Ok(map)
+    domains.into_iter().map(|domain| desired_programs_for_domain(domain)).collect::<Result<BTreeMap<String, DesiredDomainState>>>()
 }
 
 fn build_add_program_instruction(
@@ -227,7 +203,11 @@ async fn send_instruction(
 fn get_domain_toll_recipient_address(domain: &str) -> Pubkey {
     let domain_hash = hashv(&[domain.as_bytes()]);
     Pubkey::find_program_address(
-        &[TOLL_RECIPIENT_SEED, &[TOLL_RECIPIENT_ID], domain_hash.as_ref()],
+        &[
+            TOLL_RECIPIENT_SEED,
+            &[TOLL_RECIPIENT_ID],
+            domain_hash.as_ref(),
+        ],
         &TOLLBOOTH_PROGRAM_ID,
     )
     .0
@@ -292,8 +272,7 @@ async fn current_domain_programs(rpc: &RpcClient, domain: &str) -> Result<BTreeS
         .value;
 
     match account {
-        Some(acc) => parse_domain_record_programs(&acc.data)
-            .with_context(|| format!("failed parsing domain record for domain {domain}")),
+        Some(acc) => Ok(parse_domain_record_programs(&acc.data)),
         None => Ok(BTreeSet::new()),
     }
 }
@@ -317,7 +296,6 @@ async fn sync_domain(
         .collect();
 
     if to_add.is_empty() && to_remove.is_empty() {
-        // println!("Domain {domain}: already in sync");
         return Ok(());
     }
 
@@ -356,26 +334,11 @@ async fn run(cli: Cli) -> Result<()> {
 
     let authority = read_keypair_file(&cli.keypair)
         .map_err(|e| anyhow::anyhow!(e.to_string()))
-        .with_context(|| {
-            format!(
-                "failed to read authority keypair file at {}",
-                cli.keypair
-            )
-        })?;
+        .with_context(|| format!("failed to read authority keypair file at {}", cli.keypair))?;
 
     let rpc = RpcClient::new_with_commitment(cli.rpc_url_http, CommitmentConfig::confirmed());
-    let fee_tokens: Vec<Pubkey> = cli
-        .fee_tokens
-        .iter()
-        .map(|mint| {
-            Pubkey::from_str(mint).with_context(|| format!("invalid fee token mint: {mint}"))
-        })
-        .collect::<Result<_>>()?;
-    let fee_tokens = fee_tokens.into_iter().collect::<BTreeSet<_>>();
-    let fee_tokens = fee_tokens.into_iter().collect::<Vec<_>>();
 
     let config = db::config::load_config(cli.network_environment.into()).await?;
-    println!("Loaded {} domains from database", config.domains.len());
     let desired = desired_domain_states(config.domains)?;
 
     for (domain, desired_state) in desired {
@@ -387,15 +350,9 @@ async fn run(cli: Cli) -> Result<()> {
             cli.dry_run,
         )
         .await?;
-        if desired_state.requires_fee_receiver {
-            ensure_fee_receiver_token_accounts(
-                &rpc,
-                &authority,
-                &domain,
-                &fee_tokens,
-                cli.dry_run,
-            )
-            .await?;
+        if desired_state.requires_fee_receiver_initialized {
+            ensure_fee_receiver_token_accounts(&rpc, &authority, &domain, &cli.fee_tokens, cli.dry_run)
+                .await?;
         }
     }
 
