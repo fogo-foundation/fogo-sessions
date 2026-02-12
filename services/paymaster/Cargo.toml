@@ -30,6 +30,7 @@ governor = {workspace = true}
 hex = {workspace = true}
 intent-transfer = {workspace = true}
 libsecp256k1 = "0.6.0"
+mpl-token-metadata = {workspace = true}
 nonempty = "0.12.0"
 opentelemetry = "0.30.0"
 opentelemetry-otlp = {version = "0.30.0", features = ["grpc-tonic"]}
@@ -65,6 +66,7 @@ solana-transaction = {workspace = true}
 solana-transaction-error = {workspace = true}
 solana-transaction-status-client-types = {workspace = true}
 spl-associated-token-account = {workspace = true}
+spl-memo = {workspace = true}
 spl-token = {workspace = true}
 sqlx = { version = "0.8", features = [ "postgres", "runtime-tokio", "tls-native-tls", "uuid" ] }
 tokio = {workspace = true}

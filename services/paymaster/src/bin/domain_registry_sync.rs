@@ -9,47 +9,47 @@ use fogo_paymaster::config_manager::config::Domain;
 use fogo_paymaster::constraint::ParsedTransactionVariation;
 use fogo_paymaster::db;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
+use fogo_sessions_sdk::intent_transfer::INTENT_TRANSFER_PROGRAM_ID;
+use fogo_sessions_sdk::session::SESSION_MANAGER_ID;
 use fogo_sessions_sdk::tollbooth::TOLLBOOTH_PROGRAM_ID;
 use fogo_sessions_sdk::token::PROGRAM_SIGNER_SEED;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_commitment_config::CommitmentConfig;
 use solana_keypair::{read_keypair_file, Keypair};
-use solana_program::{hash::hashv, instruction::Instruction, system_program};
+use solana_program::{hash::hashv, instruction::Instruction};
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
 use std::collections::{btree_map::Entry, BTreeMap, BTreeSet};
 use std::ops::Deref;
 use std::str::FromStr;
-use std::sync::OnceLock;
 
 type DesiredDomainStates = BTreeMap<String, DesiredDomainState>;
 
 const DOMAIN_RECORD_PROGRAM_ENTRY_BYTES: usize = 64;
-const DOMAIN_REGISTRY_CONFIG_SEED: &[u8] = b"config";
 const TOLL_RECIPIENT_SEED: &[u8] = b"toll_recipient";
 const TOLL_RECIPIENT_ID: u8 = 0;
-const EXCLUDED_PROGRAM_IDS: [&str; 10] = [
-    "11111111111111111111111111111111",
-    "Ed25519SigVerify111111111111111111111111111",
-    "SesswvJ7puvAgpyqp7N8HnjNnvpnS8447tKNF3sPgbC",
-    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
-    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
-    "ComputeBudget111111111111111111111111111111",
-    "Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD",
-    "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
-    "KeccakSecp256k11111111111111111111111111111",
-    "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+const EXCLUDED_PROGRAM_IDS: [Pubkey; 10] = [
+    solana_sdk_ids::system_program::ID,
+    solana_sdk_ids::ed25519_program::ID,
+    solana_sdk_ids::secp256k1_program::ID,
+    solana_sdk_ids::compute_budget::ID,
+    SESSION_MANAGER_ID,
+    INTENT_TRANSFER_PROGRAM_ID,
+    spl_token::id(),
+    spl_associated_token_account::id(),
+    spl_memo::id(),
+    mpl_token_metadata::ID,
 ];
 
 #[derive(Debug, Parser)]
 #[command(version, about)]
 struct Cli {
     /// Postgres connection string
-    #[arg(short = 'd', long = "db-url", env = "DATABASE_URL")]
+    #[arg(short, long, env = "DATABASE_URL")]
     db_url: String,
 
-    /// Network environment to sync as
+    /// Network environment to sync
     #[arg(short, long, env = "NETWORK_ENVIRONMENT")]
     network_environment: CliNetworkEnvironment,
 
@@ -57,12 +57,12 @@ struct Cli {
     #[arg(long, env = "RPC_URL_HTTP", default_value = "http://localhost:8899")]
     rpc_url_http: String,
 
-    /// Path to authority keypair file used to update the on-chain domain registry
-    #[arg(short, long, env = "AUTHORITY_KEYPAIR")]
-    authority_keypair: String,
+    /// Path to keypair file used to send transactions, must be the authority of the domain registry
+    #[arg(short, long, env = "KEYPAIR")]
+    keypair: String,
 
-    /// Mint addresses for fee token accounts to initialize on toll recipients
-    #[arg(long, env = "FEE_TOKENS", value_delimiter = ',')]
+    /// Mint address of the tokens that the paymaster accepts for fee payment
+    #[arg(short, long, env = "FEE_TOKENS", value_delimiter = ',')]
     fee_tokens: Vec<String>,
 
     /// Print intended actions without sending transactions
@@ -76,26 +76,16 @@ struct DesiredDomainState {
     requires_fee_receiver: bool,
 }
 
-fn domain_registry_config_address() -> Pubkey {
-    Pubkey::find_program_address(&[DOMAIN_REGISTRY_CONFIG_SEED], &domain_registry::ID).0
-}
-
 fn domain_program_signer_address(program_id: &Pubkey) -> Pubkey {
     Pubkey::find_program_address(&[PROGRAM_SIGNER_SEED], program_id).0
 }
 
-fn excluded_program_ids() -> &'static BTreeSet<Pubkey> {
-    static IDS: OnceLock<BTreeSet<Pubkey>> = OnceLock::new();
-    IDS.get_or_init(|| {
-        EXCLUDED_PROGRAM_IDS
-            .iter()
-            .map(|id| Pubkey::from_str(id).expect("excluded program id must be valid"))
-            .collect()
-    })
+fn domain_registry_config_address() -> Pubkey {
+    Pubkey::find_program_address(&[domain_registry::state::CONFIG_SEED], &domain_registry::ID).0
 }
 
 fn filter_excluded_programs(programs: &mut BTreeSet<Pubkey>) {
-    programs.retain(|program_id| !excluded_program_ids().contains(program_id));
+    programs.retain(|program_id| !EXCLUDED_PROGRAM_IDS.contains(program_id));
 }
 
 fn parse_domain_record_programs(data: &[u8]) -> Result<BTreeSet<Pubkey>> {
@@ -172,19 +162,6 @@ fn desired_domain_states(domains: Vec<Domain>) -> Result<DesiredDomainStates> {
     Ok(map)
 }
 
-fn build_initialize_instruction(authority: Pubkey) -> Instruction {
-    Instruction {
-        program_id: domain_registry::ID,
-        accounts: domain_registry_accounts::Initialize {
-            authority,
-            config: domain_registry_config_address(),
-            system_program: system_program::ID,
-        }
-        .to_account_metas(None),
-        data: domain_registry_instruction::Initialize {}.data(),
-    }
-}
-
 fn build_add_program_instruction(
     authority: Pubkey,
     domain: &str,
@@ -198,7 +175,7 @@ fn build_add_program_instruction(
             domain_record: get_domain_record_address(domain),
             program_id,
             signer_pda: domain_program_signer_address(&program_id),
-            system_program: system_program::ID,
+            system_program: solana_sdk_ids::system_program::ID,
         }
         .to_account_metas(None),
         data: domain_registry_instruction::AddProgram {
@@ -220,7 +197,7 @@ fn build_remove_program_instruction(
             config: domain_registry_config_address(),
             domain_record: get_domain_record_address(domain),
             program_id,
-            system_program: system_program::ID,
+            system_program: solana_sdk_ids::system_program::ID,
         }
         .to_account_metas(None),
         data: domain_registry_instruction::RemoveProgram {
@@ -245,35 +222,6 @@ async fn send_instruction(
     let signature = rpc.send_and_confirm_transaction(&tx).await?;
     println!("Submitted tx: {signature}");
     Ok(())
-}
-
-async fn ensure_registry_initialized(
-    rpc: &RpcClient,
-    authority: &Keypair,
-    dry_run: bool,
-) -> Result<()> {
-    let config = domain_registry_config_address();
-    let config_account = rpc
-        .get_account_with_commitment(&config, CommitmentConfig::confirmed())
-        .await?
-        .value;
-
-    if config_account.is_some() {
-        return Ok(());
-    }
-
-    if dry_run {
-        println!("Domain registry config is missing. Would initialize (dry-run).");
-        return Ok(());
-    }
-
-    println!("Domain registry config is missing. Initializing...");
-    send_instruction(
-        rpc,
-        authority,
-        build_initialize_instruction(authority.pubkey()),
-    )
-    .await
 }
 
 fn get_domain_toll_recipient_address(domain: &str) -> Pubkey {
@@ -406,17 +354,16 @@ async fn sync_domain(
 async fn run(cli: Cli) -> Result<()> {
     db::pool::init_db_connection(&cli.db_url).await?;
 
-    let authority = read_keypair_file(&cli.authority_keypair)
+    let authority = read_keypair_file(&cli.keypair)
         .map_err(|e| anyhow::anyhow!(e.to_string()))
         .with_context(|| {
             format!(
                 "failed to read authority keypair file at {}",
-                cli.authority_keypair
+                cli.keypair
             )
         })?;
 
     let rpc = RpcClient::new_with_commitment(cli.rpc_url_http, CommitmentConfig::confirmed());
-    ensure_registry_initialized(&rpc, &authority, cli.dry_run).await?;
     let fee_tokens: Vec<Pubkey> = cli
         .fee_tokens
         .iter()
