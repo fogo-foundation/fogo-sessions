@@ -12,16 +12,16 @@ type Props = {
 };
 
 export const Root = ({ children }: Props) => (
-  <html lang="en" className={styles.root}>
+  <html className={styles.root} lang="en">
     <body className={styles.root}>
       <I18nProvider>
         <ToastProvider>
           <FogoSessionProvider
-            network={Network.Testnet}
             domain={DOMAIN}
             enableUnlimited={false}
-            termsOfServiceUrl="https://www.dourolabs.xyz/Paymaster-Terms-Of-Service.pdf"
+            network={Network.Testnet}
             privacyPolicyUrl="https://www.dourolabs.xyz/Privacy-Notice.pdf"
+            termsOfServiceUrl="https://www.dourolabs.xyz/Paymaster-Terms-Of-Service.pdf"
           >
             <AuthenticationLayout>{children}</AuthenticationLayout>
           </FogoSessionProvider>
