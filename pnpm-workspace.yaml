@@ -9,7 +9,7 @@ catalog:
   "@changesets/cli": ^2.29.4
   "@better-builds/ts-duality": ^0.1.2
   "@babel/preset-typescript": ^7.27.1
-  "@biomejs/biome": ^2.3.11
+  "@biomejs/biome": ^2.3.14
   "@coral-xyz/anchor": ^0.31.1
   "@cprussin/jest-config": ^3.1.2
   "@cprussin/prettier-config": ^3.0.0

@@ -1,13 +1,23 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
-  "root": true,
-  "vcs": {
-    "clientKind": "git",
-    "defaultBranch": "origin/main",
-    "enabled": true,
-    "useIgnoreFile": true
+  "$schema": "https://biomejs.dev/schemas/2.3.14/schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on",
+        "recommended": true,
+        "useSortedAttributes": "on",
+        "useSortedKeys": "on"
+      }
+    },
+    "enabled": true
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
   },
   "files": {
+    "ignoreUnknown": true,
     "includes": [
       "**",
       "!**/tilt",
@@ -17,19 +27,30 @@
       "!coverage/**/*",
       "!node_modules/**/*",
       "!*.tsbuildinfo"
-    ],
-    "ignoreUnknown": true
+    ]
   },
   "formatter": {
+    "bracketSameLine": false,
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2,
-    "bracketSameLine": false
+    "indentWidth": 2
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true
+    },
+    "linter": {
+      "enabled": true
+    }
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": false,
       "a11y": {
         "noAccessKey": "error",
         "noAriaUnsupportedElements": "error",
@@ -65,18 +86,18 @@
       },
       "complexity": {
         "noAdjacentSpacesInRegex": "error",
+        "noArguments": "error",
         "noExtraBooleanCast": "error",
         "noForEach": "error",
         "noStaticOnlyClass": "error",
         "noUselessCatch": "error",
+        "noUselessConstructor": "error",
         "noUselessEscapeInRegex": "error",
         "noUselessSwitchCase": "error",
+        "noUselessTypeConstraint": "error",
         "useDateNow": "error",
         "useFlatMap": "error",
         "useIndexOf": "error",
-        "noArguments": "error",
-        "noUselessConstructor": "error",
-        "noUselessTypeConstraint": "error",
         "useLiteralKeys": "error",
         "useOptionalChain": "error"
       },
@@ -99,6 +120,7 @@
         "noUnreachableSuper": "error",
         "noUnsafeFinally": "error",
         "noUnsafeOptionalChaining": "error",
+        "noUnusedImports": "error",
         "noUnusedLabels": "error",
         "noUnusedPrivateClassMembers": "error",
         "noUnusedVariables": "error",
@@ -110,40 +132,27 @@
         "useValidTypeof": "error",
         "useYield": "error"
       },
+      "nursery": {
+        "noUndeclaredEnvVars": "warn"
+      },
+      "recommended": false,
       "security": {
         "noDangerouslySetInnerHtmlWithChildren": "error"
       },
       "style": {
+        "noCommonJs": "error",
         "noDoneCallback": "error",
+        "noInferrableTypes": "error",
+        "noNamespace": "error",
         "noNegationElse": "off",
         "noNestedTernary": "warn",
+        "noNonNullAssertion": "error",
         "noProcessEnv": "error",
         "noSubstr": "error",
-        "useBlockStatements": "off",
-        "useCollapsedIf": "error",
-        "useExplicitLengthCheck": "error",
-        "useForOf": "error",
-        "useNodejsImportProtocol": "error",
-        "useNumberNamespace": "error",
-        "useNumericSeparators": "error",
-        "useThrowNewError": "error",
-        "useTrimStartEnd": "error",
-        "useExportType": "error",
-        "useImportType": {
-          "level": "error",
-          "options": {
-            "style": "separatedType"
-          }
-        },
-        "useConst": "error",
-        "noCommonJs": "error",
-        "noNamespace": "error",
-        "noNonNullAssertion": "error",
         "useArrayLiterals": "error",
         "useAsConstAssertion": "error",
-        "useLiteralEnumMembers": "error",
-        "useUnifiedTypeSignatures": "error",
-        "noInferrableTypes": "error",
+        "useBlockStatements": "off",
+        "useCollapsedIf": "error",
         "useConsistentArrayType": "error",
         "useConsistentTypeDefinitions": {
           "level": "error",
@@ -151,7 +160,24 @@
             "style": "type"
           }
         },
-        "useShorthandFunctionType": "error"
+        "useConst": "error",
+        "useExplicitLengthCheck": "error",
+        "useExportType": "error",
+        "useForOf": "error",
+        "useImportType": {
+          "level": "error",
+          "options": {
+            "style": "separatedType"
+          }
+        },
+        "useLiteralEnumMembers": "error",
+        "useNodejsImportProtocol": "error",
+        "useNumberNamespace": "error",
+        "useNumericSeparators": "error",
+        "useShorthandFunctionType": "error",
+        "useThrowNewError": "error",
+        "useTrimStartEnd": "error",
+        "useUnifiedTypeSignatures": "error"
       },
       "suspicious": {
         "noAlert": "error",
@@ -160,6 +186,7 @@
         "noClassAssign": "error",
         "noCommentText": "error",
         "noCompareNegZero": "error",
+        "noConfusingVoidType": "error",
         "noConsole": "error",
         "noConstantBinaryExpressions": "error",
         "noControlCharactersInRegex": "error",
@@ -172,47 +199,32 @@
         "noDuplicateObjectKeys": "error",
         "noDuplicateParameters": "error",
         "noEmptyBlockStatements": "error",
+        "noExplicitAny": "error",
+        "noExtraNonNullAssertion": "error",
         "noFallthroughSwitchClause": "error",
         "noFunctionAssign": "error",
         "noGlobalAssign": "error",
         "noImportAssign": "error",
         "noIrregularWhitespace": "error",
         "noMisleadingCharacterClass": "error",
+        "noMisleadingInstantiator": "error",
+        "noNonNullAssertedOptionalChain": "error",
         "noPrototypeBuiltins": "error",
         "noRedeclare": "error",
         "noShadowRestrictedNames": "error",
         "noSparseArray": "error",
         "noThenProperty": "error",
+        "noUnsafeDeclarationMerging": "error",
         "noUnsafeNegation": "error",
         "noUselessRegexBackrefs": "error",
         "noWith": "error",
+        "useAdjacentOverloadSignatures": "error",
+        "useAwait": "error",
         "useErrorMessage": "error",
         "useGetterReturn": "error",
-        "useNumberToFixedDigitsArgument": "error",
-        "noConfusingVoidType": "error",
-        "noExplicitAny": "error",
-        "noExtraNonNullAssertion": "error",
-        "noMisleadingInstantiator": "error",
-        "noNonNullAssertedOptionalChain": "error",
-        "noUnsafeDeclarationMerging": "error",
-        "useAwait": "error",
         "useNamespaceKeyword": "error",
-        "useAdjacentOverloadSignatures": "error"
+        "useNumberToFixedDigitsArgument": "error"
       }
-    }
-  },
-
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double"
-    }
-  },
-  "json": {
-    "formatter": {
-      "enabled": true
-    },
-    "linter": {
-      "enabled": true
     }
   },
   "overrides": [
@@ -238,13 +250,11 @@
       }
     }
   ],
-  "assist": {
+  "root": true,
+  "vcs": {
+    "clientKind": "git",
+    "defaultBranch": "origin/main",
     "enabled": true,
-    "actions": {
-      "source": {
-        "organizeImports": "on",
-        "recommended": true
-      }
-    }
+    "useIgnoreFile": true
   }
 }
