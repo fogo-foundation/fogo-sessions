@@ -38,27 +38,27 @@ export const VariationEditorBlock = ({
     <AnimatePresence>
       {isExpanded && (
         <motion.div
-          initial={{ height: 0, scale: 0.95 }}
           animate={{ height: "50vh", scale: 1 }}
-          exit={{ height: 0, scale: 0.95 }}
           className={styles.variationEditorBlock}
+          exit={{ height: 0, scale: 0.95 }}
+          initial={{ height: 0, scale: 0.95 }}
         >
           {editorMode === "form" && isV1 ? (
             <VariationFormBlock
+              domain={domain}
+              footer={footer}
               instructions={instructions}
               onChange={onInstructionsChange}
-              domain={domain}
               variationForTest={variationForTest}
-              footer={footer}
             />
           ) : (
             <VariationCodeBlock
-              mode={codeMode}
-              value={code}
-              onChange={onCodeChange}
               domain={domain}
-              variationForTest={variationForTest}
               footer={footer}
+              mode={codeMode}
+              onChange={onCodeChange}
+              value={code}
+              variationForTest={variationForTest}
             />
           )}
         </motion.div>

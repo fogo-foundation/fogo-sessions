@@ -106,14 +106,14 @@ export const PrimitiveDataValueInput = ({
         }
       >
         <Select<ValueType>
-          items={typeItems}
-          selectedKey={valueType}
-          onSelectionChange={(key) => handleTypeChange(key as ValueType)}
           aria-label="Value type"
           className={styles.selectField ?? ""}
+          items={typeItems}
+          onSelectionChange={(key) => handleTypeChange(key as ValueType)}
+          selectedKey={valueType}
         />
       </div>
-      <ValueInput value={value} valueType={valueType} onChange={onChange} />
+      <ValueInput onChange={onChange} value={value} valueType={valueType} />
     </div>
   );
 };
@@ -129,53 +129,53 @@ const ValueInput = ({ value, valueType, onChange }: ValueInputProps) => {
     case "U8":
       return (
         <TextField
-          type="number"
+          aria-label="U8 value"
+          className={styles.narrowField ?? ""}
           inputMode="numeric"
-          value={String("U8" in value ? value.U8 : 0)}
           onChange={(v) =>
             onChange({ U8: Math.min(255, Math.max(0, Number(v) || 0)) })
           }
           placeholder="0-255"
-          aria-label="U8 value"
-          className={styles.narrowField ?? ""}
+          type="number"
+          value={String("U8" in value ? value.U8 : 0)}
         />
       );
     case "U16":
       return (
         <TextField
-          type="number"
+          aria-label="U16 value"
+          className={styles.narrowField ?? ""}
           inputMode="numeric"
-          value={String("U16" in value ? value.U16 : 0)}
           onChange={(v) =>
             onChange({ U16: Math.min(65_535, Math.max(0, Number(v) || 0)) })
           }
           placeholder="0-65535"
-          aria-label="U16 value"
-          className={styles.narrowField ?? ""}
+          type="number"
+          value={String("U16" in value ? value.U16 : 0)}
         />
       );
     case "U32":
       return (
         <TextField
-          type="number"
+          aria-label="U32 value"
+          className={styles.narrowField ?? ""}
           inputMode="numeric"
-          value={String("U32" in value ? value.U32 : 0)}
           onChange={(v) =>
             onChange({
               U32: Math.min(0xff_ff_ff_ff, Math.max(0, Number(v) || 0)),
             })
           }
           placeholder="0-4294967295"
-          aria-label="U32 value"
-          className={styles.narrowField ?? ""}
+          type="number"
+          value={String("U32" in value ? value.U32 : 0)}
         />
       );
     case "U64":
       return (
         <TextField
-          type="number"
+          aria-label="U64 value"
+          className={styles.narrowField ?? ""}
           inputMode="numeric"
-          value={String("U64" in value ? value.U64 : 0)}
           onChange={(v) =>
             onChange({
               U64: Math.min(
@@ -185,51 +185,51 @@ const ValueInput = ({ value, valueType, onChange }: ValueInputProps) => {
             })
           }
           placeholder="0"
-          aria-label="U64 value"
-          className={styles.narrowField ?? ""}
+          type="number"
+          value={String("U64" in value ? value.U64 : 0)}
         />
       );
     case "Bool":
       return (
         <Select<"true" | "false">
+          aria-label="Bool value"
+          className={styles.selectField ?? ""}
           items={[
             { key: "true", label: "true" },
             { key: "false", label: "false" },
           ]}
-          selectedKey={("Bool" in value ? value.Bool : true) ? "true" : "false"}
           onSelectionChange={(key) => onChange({ Bool: key === "true" })}
-          aria-label="Bool value"
-          className={styles.selectField ?? ""}
+          selectedKey={("Bool" in value ? value.Bool : true) ? "true" : "false"}
         />
       );
     case "Pubkey":
       return (
         <TextField
-          value={"Pubkey" in value ? value.Pubkey : ""}
-          onChange={(v) => onChange({ Pubkey: v })}
-          placeholder="Base58 public key"
           aria-label="Pubkey value"
           className={styles.pubkeyField ?? ""}
+          onChange={(v) => onChange({ Pubkey: v })}
+          placeholder="Base58 public key"
+          value={"Pubkey" in value ? value.Pubkey : ""}
         />
       );
     case "Bytes":
       return (
         <TextField
-          value={"Bytes" in value ? value.Bytes : ""}
-          onChange={(v) => onChange({ Bytes: v })}
-          placeholder="Hex string (e.g. f34bae8)"
           aria-label="Bytes value"
           className={styles.pubkeyField ?? ""}
+          onChange={(v) => onChange({ Bytes: v })}
+          placeholder="Hex string (e.g. f34bae8)"
+          value={"Bytes" in value ? value.Bytes : ""}
         />
       );
     case "NttSignedQuoter":
       return (
         <TextField
-          value={"NttSignedQuoter" in value ? value.NttSignedQuoter : ""}
-          onChange={(v) => onChange({ NttSignedQuoter: v })}
-          placeholder="0x-prefixed 20-byte hex (e.g. 0x5241...)"
           aria-label="NttSignedQuoter value"
           className={styles.pubkeyField ?? ""}
+          onChange={(v) => onChange({ NttSignedQuoter: v })}
+          placeholder="0x-prefixed 20-byte hex (e.g. 0x5241...)"
+          value={"NttSignedQuoter" in value ? value.NttSignedQuoter : ""}
         />
       );
   }

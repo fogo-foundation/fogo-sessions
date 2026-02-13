@@ -148,31 +148,31 @@ export const DataConstraintSpecInput = ({
     <div className={styles.fieldGroup ?? ""}>
       <span className={styles.fieldLabel ?? ""}>Constraint</span>
       <Select<OperatorType>
-        items={operatorItems}
-        selectedKey={operator}
-        onSelectionChange={(key) => handleOperatorChange(key as OperatorType)}
         aria-label="Constraint operator"
         className={styles.selectField ?? ""}
+        items={operatorItems}
+        onSelectionChange={(key) => handleOperatorChange(key as OperatorType)}
+        selectedKey={operator}
       />
       {isArrayOperator ? (
         <DynamicList
+          createDefault={createDefaultValue}
           items={getArrayValues(value)}
+          label="constraint value"
           onChange={handleArrayValuesChange}
           renderItem={(item, index, onItemChange) => (
             <PrimitiveDataValueInput
-              value={item}
-              onChange={onItemChange}
               disableTypeSelector={index > 0}
+              onChange={onItemChange}
+              value={item}
             />
           )}
-          createDefault={createDefaultValue}
-          label="constraint value"
         />
       ) : (
         <PrimitiveDataValueInput
-          value={getSingleValue(value)}
-          onChange={handleSingleValueChange}
           integerOnly
+          onChange={handleSingleValueChange}
+          value={getSingleValue(value)}
         />
       )}
     </div>

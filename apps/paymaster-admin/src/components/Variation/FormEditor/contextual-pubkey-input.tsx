@@ -68,19 +68,19 @@ export const ContextualPubkeyInput = ({
   return (
     <div className={styles.constraintRow ?? ""}>
       <Select<PubkeyVariant>
-        items={PUBKEY_VARIANT_ITEMS}
-        selectedKey={variant}
-        onSelectionChange={(key) => handleVariantChange(key as PubkeyVariant)}
         aria-label="Pubkey type"
         className={styles.selectField ?? ""}
+        items={PUBKEY_VARIANT_ITEMS}
+        onSelectionChange={(key) => handleVariantChange(key as PubkeyVariant)}
+        selectedKey={variant}
       />
       {variant === "Explicit" && (
         <TextField
-          value={getExplicitPubkey(value)}
-          onChange={handlePubkeyChange}
-          placeholder="Base58 public key"
           aria-label="Explicit pubkey"
           className={styles.pubkeyField ?? ""}
+          onChange={handlePubkeyChange}
+          placeholder="Base58 public key"
+          value={getExplicitPubkey(value)}
         />
       )}
     </div>

@@ -23,10 +23,10 @@ export const DomainVariation = (props: DomainVariationProps) => {
     <>
       <BreadcrumbNav
         items={[
-          { label: "Apps", href: "/" },
+          { href: "/", label: "Apps" },
           props.isLoading
             ? { isLoading: true }
-            : { label: props.app.name, href: `/apps/${props.app.id}` },
+            : { href: `/apps/${props.app.id}`, label: props.app.name },
           props.isLoading
             ? { isLoading: true }
             : { label: props.domainConfig.domain },
@@ -44,9 +44,9 @@ export const DomainVariation = (props: DomainVariationProps) => {
           />
         )}
         <ListHeader
+          icon={<StackIcon size={24} weight="duotone" />}
           isLoading={props.isLoading}
           title="Transaction Variations"
-          icon={<StackIcon size={24} weight="duotone" />}
           {...(!props.isLoading && {
             count: props.domainConfig.variations.length,
           })}
@@ -55,8 +55,8 @@ export const DomainVariation = (props: DomainVariationProps) => {
           <VariationsList isLoading />
         ) : (
           <VariationsList
-            sessionState={props.sessionState}
             domainConfig={props.domainConfig}
+            sessionState={props.sessionState}
           />
         )}
       </div>

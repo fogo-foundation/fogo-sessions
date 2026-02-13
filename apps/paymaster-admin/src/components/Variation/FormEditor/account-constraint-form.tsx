@@ -52,37 +52,37 @@ export const AccountConstraintForm = ({
       <div className={styles.fieldGroup ?? ""}>
         <span className={styles.fieldLabel ?? ""}>Account Index</span>
         <TextField
-          type="number"
-          inputMode="numeric"
-          value={String(value.index)}
-          onChange={handleIndexChange}
-          placeholder="0"
           aria-label="Account index"
           className={styles.narrowField ?? ""}
+          inputMode="numeric"
+          onChange={handleIndexChange}
+          placeholder="0"
+          type="number"
+          value={String(value.index)}
         />
       </div>
       <div className={styles.section ?? ""}>
         <span className={styles.sectionHeader ?? ""}>Must be one of</span>
         <DynamicList
+          createDefault={createDefaultPubkey}
           items={value.include}
+          label="account to match"
           onChange={handleIncludeChange}
           renderItem={(item, _index, onItemChange) => (
-            <ContextualPubkeyInput value={item} onChange={onItemChange} />
+            <ContextualPubkeyInput onChange={onItemChange} value={item} />
           )}
-          createDefault={createDefaultPubkey}
-          label="account to match"
         />
       </div>
       <div className={styles.section ?? ""}>
         <span className={styles.sectionHeader ?? ""}>Must not be one of</span>
         <DynamicList
+          createDefault={createDefaultPubkey}
           items={value.exclude}
+          label="account to not match"
           onChange={handleExcludeChange}
           renderItem={(item, _index, onItemChange) => (
-            <ContextualPubkeyInput value={item} onChange={onItemChange} />
+            <ContextualPubkeyInput onChange={onItemChange} value={item} />
           )}
-          createDefault={createDefaultPubkey}
-          label="account to not match"
         />
       </div>
     </div>

@@ -46,21 +46,21 @@ export const DynamicList = <T,>({
   return (
     <div className={styles.dynamicList}>
       {items.map((item, index) => (
-        <div key={index} className={styles.dynamicListItem}>
+        <div className={styles.dynamicListItem} key={index}>
           <div className={styles.dynamicListItemContent}>
             {renderItem(item, index, (value) => handleItemChange(index, value))}
           </div>
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleRemove(index)}
             aria-label={`Remove ${label} ${index}`}
+            onClick={() => handleRemove(index)}
+            size="sm"
+            variant="ghost"
           >
             <TrashIcon />
           </Button>
         </div>
       ))}
-      <Button variant="outline" size="sm" onClick={handleAdd}>
+      <Button onClick={handleAdd} size="sm" variant="outline">
         <PlusIcon /> Add {label}
       </Button>
     </div>

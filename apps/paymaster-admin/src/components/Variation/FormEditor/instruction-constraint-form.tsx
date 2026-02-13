@@ -17,14 +17,14 @@ type AccountConstraint = z.infer<typeof AccountConstraintSchema>;
 type DataConstraint = z.infer<typeof DataConstraintSchema>;
 
 const createDefaultAccountConstraint = (): AccountConstraint => ({
-  index: 0,
-  include: [],
   exclude: [],
+  include: [],
+  index: 0,
 });
 
 const createDefaultDataConstraint = (): DataConstraint => ({
-  start_byte: 0,
   constraint: { EqualTo: [{ U8: 0 }] },
+  start_byte: 0,
 });
 
 type InstructionConstraintFormProps = {
@@ -87,10 +87,10 @@ export const InstructionConstraintForm = ({
       <div className={styles.fieldGroup ?? ""}>
         <span className={styles.fieldLabel ?? ""}>Program Address</span>
         <TextField
-          value={value.program}
+          aria-label={`Instruction ${index} program`}
           onChange={handleProgramChange}
           placeholder="Program public key (Base58)"
-          aria-label={`Instruction ${index} program`}
+          value={value.program}
         />
       </div>
 
@@ -99,9 +99,9 @@ export const InstructionConstraintForm = ({
           Required
         </Switch>
         <Switch
+          aria-label="Enable wrapped native token support"
           isSelected={value.requires_wrapped_native_tokens ?? false}
           onChange={handleWrappedNativeChange}
-          aria-label="Enable wrapped native token support"
         >
           <span title="If enabled, the transaction can add wrapped FOGO setup/teardown instructions around this instruction.">
             Enable Wrapped Native Token Support
@@ -114,13 +114,13 @@ export const InstructionConstraintForm = ({
           Account constraints in instruction {index}
         </span>
         <DynamicList
+          createDefault={createDefaultAccountConstraint}
           items={value.accounts}
+          label="account constraint"
           onChange={handleAccountsChange}
           renderItem={(item, _idx, onItemChange) => (
-            <AccountConstraintForm value={item} onChange={onItemChange} />
+            <AccountConstraintForm onChange={onItemChange} value={item} />
           )}
-          createDefault={createDefaultAccountConstraint}
-          label="account constraint"
         />
       </div>
 
@@ -129,13 +129,13 @@ export const InstructionConstraintForm = ({
           Data constraints in instruction {index}
         </span>
         <DynamicList
+          createDefault={createDefaultDataConstraint}
           items={value.data}
+          label="data constraint"
           onChange={handleDataChange}
           renderItem={(item, _idx, onItemChange) => (
-            <DataConstraintForm value={item} onChange={onItemChange} />
+            <DataConstraintForm onChange={onItemChange} value={item} />
           )}
-          createDefault={createDefaultDataConstraint}
-          label="data constraint"
         />
       </div>
     </div>

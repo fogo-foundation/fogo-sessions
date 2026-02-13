@@ -11,11 +11,11 @@ type InstructionConstraint = z.infer<typeof InstructionConstraintSchema>;
 const SYSTEM_PROGRAM_ID = SystemProgram.programId.toBase58();
 
 const createDefaultInstruction = (): InstructionConstraint => ({
+  accounts: [],
+  data: [],
   program: SYSTEM_PROGRAM_ID,
   required: true,
   requires_wrapped_native_tokens: false,
-  accounts: [],
-  data: [],
 });
 
 type VariationFormEditorProps = {
@@ -34,9 +34,9 @@ export const VariationFormEditor = ({
       onItemChange: (value: InstructionConstraint) => void,
     ) => (
       <InstructionConstraintForm
-        value={item}
-        onChange={onItemChange}
         index={index}
+        onChange={onItemChange}
+        value={item}
       />
     ),
     [],
@@ -51,11 +51,11 @@ export const VariationFormEditor = ({
         </p>
       )}
       <DynamicList
+        createDefault={createDefaultInstruction}
         items={instructions}
+        label="instruction constraint"
         onChange={onChange}
         renderItem={renderInstruction}
-        createDefault={createDefaultInstruction}
-        label="instruction constraint"
       />
     </div>
   );

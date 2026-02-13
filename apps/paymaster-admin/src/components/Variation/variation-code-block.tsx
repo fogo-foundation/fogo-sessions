@@ -49,21 +49,21 @@ export const VariationCodeBlock = ({
       .catch((err) => {
         toast.error(`Error enabling fullscreen: ${err.message}`);
       });
-  }, [toast.error]);
+  }, [toast]);
 
   return (
     <div className={styles.variationCodeBlock} ref={cardRef}>
-      <input type="hidden" name="code" value={value} />
+      <input name="code" type="hidden" value={value} />
       <div className={styles.variationCodeBlockHeader}>
         <h2 className={styles.variationCodeBlockHeaderTitle}>
           Edit Configuration
         </h2>
-        <Button variant="outline" onClick={handleFullscreen}>
+        <Button onClick={handleFullscreen} variant="outline">
           {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           {isFullscreen ? <ArrowsOutIcon /> : <ArrowsInIcon />}
         </Button>
       </div>
-      <Editor onChange={onChange} value={value} mode={mode} />
+      <Editor mode={mode} onChange={onChange} value={value} />
       {footer && (
         <div className={styles.variationCodeBlockFooter}>{footer}</div>
       )}
@@ -94,15 +94,15 @@ const Editor = ({ value, onChange, mode }: EditorProps) => {
     <div className={styles.variationCodeBlockContent} ref={contentRef}>
       {contentRef.current && (
         <AceEditor
-          value={value}
-          onChange={onChange}
-          className={styles.variationCodeBlockEditor}
-          mode={mode}
-          theme="monokai"
-          width="100%"
-          height={`${editorHeight}px`}
-          showPrintMargin={false}
           aria-label="Variation code"
+          className={styles.variationCodeBlockEditor}
+          height={`${editorHeight}px`}
+          mode={mode}
+          onChange={onChange}
+          showPrintMargin={false}
+          theme="monokai"
+          value={value}
+          width="100%"
         />
       )}
     </div>

@@ -29,25 +29,25 @@ export const VariationTester = ({
     useCallback(async () => {
       if (!variation) {
         return {
-          success: false,
           message: "Variation is invalid. Fix the configuration to test.",
+          success: false,
         };
       }
       if (!transactionParsed) {
         return {
-          success: false,
           message:
             "Transaction is invalid. Please enter a valid base64 transaction.",
+          success: false,
         };
       }
       const response = await fetch("/api/validate-transaction", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          transaction: transactionParsed,
           domain,
+          transaction: transactionParsed,
           variation,
         }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
       });
       return response.json();
     }, [transactionParsed, domain, variation]),
@@ -65,19 +65,19 @@ export const VariationTester = ({
     <div>
       <div className={styles.variationTesterInputRow}>
         <TextField
-          value={transactionInput}
+          className={styles.variationTesterInput ?? ""}
+          double={true}
           onChange={handleTransactionChange}
           placeholder="Enter serialized transaction (base64)"
-          double={true}
-          className={styles.variationTesterInput ?? ""}
+          value={transactionInput}
         />
-        <Button variant="secondary" onClick={execute} isDisabled={isLoading}>
+        <Button isDisabled={isLoading} onClick={execute} variant="secondary">
           Test
         </Button>
       </div>
       {isComplete && (
         <div className={styles.variationTesterOutput}>
-          <Badge variant={state.result.success ? "success" : "error"} size="xs">
+          <Badge size="xs" variant={state.result.success ? "success" : "error"}>
             {state.result.success ? (
               <CheckCircleIcon weight="duotone" />
             ) : (
@@ -91,7 +91,7 @@ export const VariationTester = ({
       )}
       {isError && (
         <div className={styles.variationTesterOutput}>
-          <Badge variant="error" size="xs">
+          <Badge size="xs" variant="error">
             <XCircleIcon weight="duotone" />
           </Badge>
           <span className={styles.variationTesterOutputMessage}>

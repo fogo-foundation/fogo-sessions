@@ -28,18 +28,18 @@ export const DataConstraintForm = ({
       <div className={styles.fieldGroup ?? ""}>
         <span className={styles.fieldLabel ?? ""}>Start Byte Index</span>
         <TextField
-          type="number"
-          inputMode="numeric"
-          value={String(value.start_byte)}
-          onChange={handleStartByteChange}
-          placeholder="0"
           aria-label="Start byte index"
           className={styles.narrowField ?? ""}
+          inputMode="numeric"
+          onChange={handleStartByteChange}
+          placeholder="0"
+          type="number"
+          value={String(value.start_byte)}
         />
       </div>
       <DataConstraintSpecInput
-        value={value.constraint}
         onChange={(constraint) => onChange({ ...value, constraint })}
+        value={value.constraint}
       />
     </div>
   );

@@ -109,11 +109,11 @@ const VariationForm = ({
   const baseline = useMemo(() => {
     if (!variation?.id) {
       return {
-        name: "",
-        maxGasSpend: "1000000",
-        paymasterFeeLamports: "",
         code: "",
         instructions: [],
+        maxGasSpend: "1000000",
+        name: "",
+        paymasterFeeLamports: "",
       };
     }
     const variationCode =
@@ -121,16 +121,16 @@ const VariationForm = ({
         ? JSON.stringify(variation?.transaction_variation, null, 2)
         : generateEditableToml(variation?.transaction_variation ?? []);
     return {
-      name: variation?.name ?? "",
+      code: variationCode,
+      instructions:
+        variation?.version === "v1" ? variation.transaction_variation : [],
       maxGasSpend:
         variation?.version === "v1" ? variation.max_gas_spend.toString() : "",
+      name: variation?.name ?? "",
       paymasterFeeLamports:
         variation?.version === "v1" && variation.paymaster_fee_lamports
           ? variation.paymaster_fee_lamports.toString()
           : "",
-      code: variationCode,
-      instructions:
-        variation?.version === "v1" ? variation.transaction_variation : [],
     };
   }, [
     variation?.id,
@@ -230,12 +230,12 @@ const VariationForm = ({
         const data = JSON.parse(code);
         const transactionVariation = z.array(Base58Pubkey).parse(data);
         return VariationSchema.parse({
+          created_at: variation?.created_at ?? new Date(),
           id: variation?.id ?? crypto.randomUUID(),
-          version: "v0",
           name,
           transaction_variation: transactionVariation,
-          created_at: variation?.created_at ?? new Date(),
           updated_at: new Date(),
+          version: "v0",
         });
       }
 
@@ -257,14 +257,14 @@ const VariationForm = ({
       if (!Number.isFinite(maxGasSpendNumber)) return null;
 
       return VariationSchema.parse({
-        id: variation?.id ?? crypto.randomUUID(),
-        version: "v1",
-        name,
-        transaction_variation: transactionVariation,
-        max_gas_spend: maxGasSpendNumber,
-        paymaster_fee_lamports: Number(paymasterFeeLamports),
         created_at: variation?.created_at ?? new Date(),
+        id: variation?.id ?? crypto.randomUUID(),
+        max_gas_spend: maxGasSpendNumber,
+        name,
+        paymaster_fee_lamports: Number(paymasterFeeLamports),
+        transaction_variation: transactionVariation,
         updated_at: new Date(),
+        version: "v1",
       });
     } catch {
       return null;
@@ -296,13 +296,13 @@ const VariationForm = ({
       throw new Error("Invalid variation");
     }
     return createOrUpdateVariation({
-      variationId: variation?.id,
       domainConfigId,
-      name,
       maxGasSpend,
+      name,
       paymasterFeeLamports,
-      variation: variationObject,
       sessionToken,
+      variation: variationObject,
+      variationId: variation?.id,
     });
   }, [
     sessionState,
@@ -319,6 +319,11 @@ const VariationForm = ({
   ]);
 
   const { execute, state } = useAsync(wrappedCreateOrUpdateVariation, {
+    onError: (error) => {
+      toast.error(
+        `Failed to update variation ${name}: ${errorToString(error)}`,
+      );
+    },
     onSuccess: () => {
       toast.success(
         variation ? `Variation ${name} updated!` : `Variation ${name} created!`,
@@ -331,21 +336,16 @@ const VariationForm = ({
       }
       setIsExpanded(false);
     },
-    onError: (error) => {
-      toast.error(
-        `Failed to update variation ${name}: ${errorToString(error)}`,
-      );
-    },
   });
 
   const current = useMemo(() => {
     return {
-      editorMode,
-      name,
-      maxGasSpend,
-      paymasterFeeLamports,
       code,
+      editorMode,
       instructions,
+      maxGasSpend,
+      name,
+      paymasterFeeLamports,
     };
   }, [editorMode, name, maxGasSpend, paymasterFeeLamports, code, instructions]);
 
@@ -424,11 +424,11 @@ const VariationForm = ({
     <>
       <div className={styles.variationFormFooterActions}>
         {editorMode === "code" && (
-          <Button variant="ghost" onClick={handleEditJsonClick} size="sm">
+          <Button onClick={handleEditJsonClick} size="sm" variant="ghost">
             {isEditingJson ? "TOML" : "JSON"}
           </Button>
         )}
-        <Button variant="ghost" onClick={handleEditorModeToggle} size="sm">
+        <Button onClick={handleEditorModeToggle} size="sm" variant="ghost">
           {editorMode === "form" ? (
             <>
               <CodeBlockIcon /> Code
@@ -448,21 +448,21 @@ const VariationForm = ({
             </code>
           </pre>
         ) : (
-          <Badge variant="success" size="xs">
+          <Badge size="xs" variant="success">
             All passed <ChecksIcon />
           </Badge>
         )}
       </div>
       {isDirty ? (
         <Button
-          variant="secondary"
-          type="submit"
           isDisabled={state.type === StateType.Running || !!codeError}
+          type="submit"
+          variant="secondary"
         >
           {state.type === StateType.Running ? "Saving..." : "Save"}
         </Button>
       ) : (
-        <Button variant="ghost" onClick={handleCloseClick}>
+        <Button onClick={handleCloseClick} variant="ghost">
           Dismiss
         </Button>
       )}
@@ -470,68 +470,68 @@ const VariationForm = ({
   );
 
   return (
-    <Form validationBehavior="aria" onSubmit={handleSubmit}>
+    <Form onSubmit={handleSubmit} validationBehavior="aria">
       <div className={styles.variationListItemContent}>
         <div
           {...(isExpanded
             ? {}
             : {
-                role: "button",
                 onClick: handleEditClick,
                 onKeyDown: handleCardKeyDown,
+                role: "button",
               })}
           className={styles.variationListCard}
-          data-is-expanded={isExpanded ? "" : undefined}
           data-is-editable={isExpanded ? "" : undefined}
+          data-is-expanded={isExpanded ? "" : undefined}
         >
           <VariationVersionBadge version={variation?.version ?? "v1"} />
           <TextField
-            name="name"
-            value={name}
+            aria-label="Variation name"
+            className={styles.fieldVariationName ?? ""}
             inputMode="text"
+            isRequired
+            maxLength={255}
+            minLength={1}
+            name="name"
+            onChange={setName}
             placeholder={
               isExpanded ? "Variation name" : "Click to add variation"
             }
-            minLength={1}
-            maxLength={255}
-            isRequired
-            className={styles.fieldVariationName ?? ""}
-            onChange={setName}
-            aria-label="Variation name"
+            value={name}
           />
           {isV1 && (
             <>
               <TextField
-                type="number"
-                inputMode="numeric"
-                name="maxGasSpend"
-                placeholder="Max gas spend"
-                value={maxGasSpend}
-                isRequired
-                onChange={setMaxGasSpend}
-                rightExtra={<GasPumpIcon />}
-                className={styles.fieldMaxGasSpend ?? ""}
                 aria-label="Max gas spend"
+                className={styles.fieldMaxGasSpend ?? ""}
+                inputMode="numeric"
+                isRequired
+                name="maxGasSpend"
+                onChange={setMaxGasSpend}
+                placeholder="Max gas spend"
+                rightExtra={<GasPumpIcon />}
+                type="number"
+                value={maxGasSpend}
               />
               <TextField
-                type="number"
+                aria-label="Paymaster fee lamports"
+                className={styles.fieldVariationInput ?? ""}
                 inputMode="numeric"
                 name="paymasterFeeLamports"
-                placeholder="Fee lamports"
-                value={paymasterFeeLamports}
                 onChange={setPaymasterFeeLamports}
+                placeholder="Fee lamports"
                 rightExtra={<CoinsIcon />}
-                className={styles.fieldVariationInput ?? ""}
-                aria-label="Paymaster fee lamports"
+                type="number"
+                value={paymasterFeeLamports}
               />
             </>
           )}
           {isExpanded ? (
-            <Button variant="ghost" onClick={handleCloseClick}>
+            <Button onClick={handleCloseClick} variant="ghost">
               <XIcon />
             </Button>
           ) : (
-            <Button variant="outline" onClick={handleEditClick}>
+            <Button onClick={handleEditClick} variant="outline">
               <CodeBlockIcon />
             </Button>
           )}
@@ -539,28 +539,28 @@ const VariationForm = ({
         <DeleteVariationButton
           {...(variation?.id
             ? {
+                isDisabled: false,
                 sessionState,
                 variation,
-                isDisabled: false,
               }
             : {
-                sessionState,
                 isDisabled: true,
+                sessionState,
               })}
         />
       </div>
       <VariationEditorBlock
-        isExpanded={isExpanded}
-        editorMode={editorMode}
-        isV1={isV1}
-        instructions={instructions}
-        onInstructionsChange={handleFormInstructionsChange}
         code={code}
-        onCodeChange={handleCodeChange}
         codeMode={isEditingJson ? "json" : "toml"}
         domain={domainName}
-        variationForTest={variationForTest}
+        editorMode={editorMode}
         footer={footer}
+        instructions={instructions}
+        isExpanded={isExpanded}
+        isV1={isV1}
+        onCodeChange={handleCodeChange}
+        onInstructionsChange={handleFormInstructionsChange}
+        variationForTest={variationForTest}
       />
     </Form>
   );
@@ -572,7 +572,7 @@ const VariationVersionBadge = ({
   version: Variation["version"];
 }) => {
   return (
-    <Badge variant="info" size="xs">
+    <Badge size="xs" variant="info">
       {version === "v0" ? "V0" : "V1"}
     </Badge>
   );
