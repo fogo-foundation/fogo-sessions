@@ -65,6 +65,17 @@ export const main = async (argv: string[] = hideBin(process.argv)) =>
           }),
       (args) => handleRemove(args),
     )
+    .command(
+      "update-authority <new-authority>",
+      "Update the authority of the domain registry",
+      (y) =>
+        y.positional("new-authority", {
+          type: "string",
+          description: "New authority for the domain registry",
+          demandOption: true,
+        }),
+      (args) => handleUpdateAuthority(args),
+    )
     .demandCommand(1, "Please specify a command")
     .strict()
     .parse();
@@ -133,4 +144,9 @@ const handleRemove = async (
       domainRecord: getDomainRecordAddress(args.domain),
     })
     .rpc();
+};
+
+const handleUpdateAuthority = async (args: { newAuthority: string } & AnchorArgs) => {
+  const program = new DomainRegistryProgram(createAnchorProvider(args));
+  await program.methods.updateAuthority(new PublicKey(args.newAuthority)).rpc();
 };
