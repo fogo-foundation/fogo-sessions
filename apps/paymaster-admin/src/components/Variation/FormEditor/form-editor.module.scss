@@ -116,15 +116,6 @@
   min-width: theme.spacing(36);
 }
 
-.disabledSelect {
-  pointer-events: none;
-  opacity: 0.5;
-
-  svg {
-    visibility: hidden;
-  }
-}
-
 .narrowField {
   width: theme.spacing(28);
 }

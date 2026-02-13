@@ -100,19 +100,14 @@ export const PrimitiveDataValueInput = ({
 
   return (
     <div className={styles.constraintRow ?? ""}>
-      <div
-        className={
-          disableTypeSelector ? (styles.disabledSelect ?? "") : undefined
-        }
-      >
-        <Select<ValueType>
-          aria-label="Value type"
-          className={styles.selectField ?? ""}
-          items={typeItems}
-          onSelectionChange={(key) => handleTypeChange(key as ValueType)}
-          selectedKey={valueType}
-        />
-      </div>
+      <Select<ValueType>
+        aria-label="Value type"
+        className={styles.selectField ?? ""}
+        isDisabled={disableTypeSelector ?? false}
+        items={typeItems}
+        onSelectionChange={(key) => handleTypeChange(key as ValueType)}
+        selectedKey={valueType}
+      />
       <ValueInput onChange={onChange} value={value} valueType={valueType} />
     </div>
   );
