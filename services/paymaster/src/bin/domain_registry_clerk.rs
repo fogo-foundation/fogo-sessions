@@ -96,7 +96,13 @@ fn filter_excluded_programs(programs: &mut BTreeSet<Pubkey>) {
 fn parse_domain_record_programs(data: &[u8]) -> BTreeSet<Pubkey> {
     let programs = bytemuck::cast_slice(data)
         .iter()
-        .map(|slice: &[u8; 64]| Pubkey::new_from_array(slice[..32].try_into().unwrap()))
+        .map(|slice: &[u8; 64]| {
+            Pubkey::new_from_array(
+                slice[..32]
+                    .try_into()
+                    .expect("this length of this slice must be 32"),
+            )
+        })
         .collect();
     programs
 }
@@ -143,7 +149,7 @@ fn desired_programs_for_domain(domain: Domain) -> Result<(String, DesiredDomainS
 fn desired_domain_states(domains: Vec<Domain>) -> Result<DesiredDomainStates> {
     domains
         .into_iter()
-        .map(|domain| desired_programs_for_domain(domain))
+        .map(desired_programs_for_domain)
         .collect::<Result<BTreeMap<String, DesiredDomainState>>>()
 }
 
@@ -317,8 +323,8 @@ async fn sync_once(cli: &Cli, rpc: &RpcClient, authority: &Keypair) -> Result<()
 
     for (domain, desired_state) in desired {
         sync_domain(
-            &rpc,
-            &authority,
+            rpc,
+            authority,
             &domain,
             &desired_state.programs,
             cli.dry_run,
@@ -326,8 +332,8 @@ async fn sync_once(cli: &Cli, rpc: &RpcClient, authority: &Keypair) -> Result<()
         .await?;
         if desired_state.requires_fee_receiver_initialized {
             ensure_fee_receiver_token_accounts(
-                &rpc,
-                &authority,
+                rpc,
+                authority,
                 &domain,
                 &cli.fee_tokens,
                 cli.dry_run,
