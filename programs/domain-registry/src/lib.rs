@@ -24,7 +24,10 @@ pub mod domain_registry {
         Ok(())
     }
 
-    pub fn update_authority<'info>(ctx: Context<'_, '_, '_, 'info, UpdateAuthority<'info>>, new_authority: Pubkey) -> Result<()> {
+    pub fn update_authority<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdateAuthority<'info>>,
+        new_authority: Pubkey,
+    ) -> Result<()> {
         ctx.accounts.config.authority = new_authority;
         Ok(())
     }
