@@ -26,7 +26,11 @@ export const PrimitiveDataValueSchema = z.union([
   z.object({
     Bytes: z.string().regex(/^[0-9a-fA-F]*$/, "Hex string expected"),
   }),
-  z.object({ NttSignedQuoter: z.string() }),
+  z.object({
+    NttSignedQuoter: z
+      .string()
+      .regex(/^0x[0-9a-fA-F]{40}$/, "Expected 0x-prefixed 20-byte hex string"),
+  }),
 ]);
 
 export const PrimitiveDataTypeSchema = z.union([
@@ -41,9 +45,9 @@ export const DataConstraintSpecificationSchema = z.union([
 ]);
 
 export const DataConstraintSchema = z.object({
-  start_byte: u16,
-  data_type: PrimitiveDataTypeSchema.optional(),
   constraint: DataConstraintSpecificationSchema,
+  data_type: PrimitiveDataTypeSchema.optional(),
+  start_byte: u16,
 });
 
 export const ContextualPubkeySchema = z.union([
@@ -54,15 +58,15 @@ export const ContextualPubkeySchema = z.union([
 ]);
 
 export const AccountConstraintSchema = z.object({
-  index: u16,
-  include: z.array(ContextualPubkeySchema).default([]),
   exclude: z.array(ContextualPubkeySchema).default([]),
+  include: z.array(ContextualPubkeySchema).default([]),
+  index: u16,
 });
 
 export const InstructionConstraintSchema = z.object({
-  program: Base58Pubkey,
   accounts: z.array(AccountConstraintSchema).default([]),
   data: z.array(DataConstraintSchema).default([]),
+  program: Base58Pubkey,
   required: z.boolean(),
   requires_wrapped_native_tokens: z.boolean().optional(),
 });
@@ -74,26 +78,26 @@ export const TransactionVariations = z.array(InstructionConstraintSchema);
 // - v0: array of program pubkeys (whitelisted_programs)
 // - v1: array of instruction constraints
 export const VariationV0Schema = z.object({
+  created_at: TimeStr,
   id: UUID,
-  version: z.literal("v0"),
   name: z.string(),
   transaction_variation: z.array(Base58Pubkey),
-  created_at: TimeStr,
   updated_at: TimeStr,
+  version: z.literal("v0"),
 });
 
 export const VariationV1Schema = z.object({
+  created_at: TimeStr,
   id: UUID,
-  version: z.literal("v1"),
-  name: z.string(),
-  transaction_variation: TransactionVariations,
   max_gas_spend: u64,
+  name: z.string(),
   paymaster_fee_lamports: u64
     .nullable()
     .optional()
     .transform((val) => (val === null ? undefined : val)),
-  created_at: TimeStr,
+  transaction_variation: TransactionVariations,
   updated_at: TimeStr,
+  version: z.literal("v1"),
 });
 
 export const VariationSchema = z.discriminatedUnion("version", [
@@ -108,31 +112,31 @@ export const NetworkEnvironmentSchema = z.enum([
 ]);
 
 export const DomainConfigWithVariationsSchema = z.object({
-  id: UUID,
-  domain: z.string(),
-  network_environment: NetworkEnvironmentSchema,
-  enable_session_management: z.boolean(),
-  enable_preflight_simulation: z.boolean(),
   created_at: TimeStr,
+  domain: z.string(),
+  enable_preflight_simulation: z.boolean(),
+  enable_session_management: z.boolean(),
+  id: UUID,
+  network_environment: NetworkEnvironmentSchema,
   updated_at: TimeStr,
   variations: z.array(VariationSchema),
 });
 
 export const AppWithDomainConfigsSchema = z.object({
+  created_at: TimeStr,
+  domain_configs: z.array(DomainConfigWithVariationsSchema),
   id: UUID,
   name: z.string(),
-  created_at: TimeStr,
   updated_at: TimeStr,
-  domain_configs: z.array(DomainConfigWithVariationsSchema),
 });
 
 export const UserSchema = z.object({
+  apps: z.array(AppWithDomainConfigsSchema),
+  created_at: TimeStr,
   id: UUID,
+  updated_at: TimeStr,
   username: z.string(),
   wallet_address: z.string(),
-  created_at: TimeStr,
-  updated_at: TimeStr,
-  apps: z.array(AppWithDomainConfigsSchema),
 });
 
 export type User = z.infer<typeof UserSchema>;

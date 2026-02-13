@@ -1,7 +1,6 @@
 import { Button } from "@fogo/component-library/Button";
 import { useToast } from "@fogo/component-library/Toast";
 import { ArrowsInIcon, ArrowsOutIcon } from "@phosphor-icons/react/dist/ssr";
-import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import AceEditor from "react-ace";
 import "./ace-theme.scss";
@@ -16,7 +15,6 @@ import { VariationTester } from "./variation-tester";
 type VariationCodeBlockProps = {
   value: string;
   onChange: (value: string) => void;
-  isExpanded: boolean;
   domain: string;
   footer?: React.ReactNode;
   mode: "toml" | "json";
@@ -26,7 +24,6 @@ type VariationCodeBlockProps = {
 export const VariationCodeBlock = ({
   value,
   onChange,
-  isExpanded,
   domain,
   footer,
   mode,
@@ -52,38 +49,28 @@ export const VariationCodeBlock = ({
       .catch((err) => {
         toast.error(`Error enabling fullscreen: ${err.message}`);
       });
-  }, [toast.error]);
+  }, [toast]);
 
   return (
-    <AnimatePresence>
-      {isExpanded && (
-        <motion.div
-          initial={{ height: 0, scale: 0.95 }}
-          animate={{ height: "50vh", scale: 1 }}
-          exit={{ height: 0, scale: 0.95 }}
-          className={styles.variationCodeBlock}
-          ref={cardRef}
-        >
-          <input type="hidden" name="code" value={value} />
-          <div className={styles.variationCodeBlockHeader}>
-            <h2 className={styles.variationCodeBlockHeaderTitle}>
-              Edit Configuration
-            </h2>
-            <Button variant="outline" onClick={handleFullscreen}>
-              {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-              {isFullscreen ? <ArrowsOutIcon /> : <ArrowsInIcon />}
-            </Button>
-          </div>
-          <Editor onChange={onChange} value={value} mode={mode} />
-          {footer && (
-            <div className={styles.variationCodeBlockFooter}>{footer}</div>
-          )}
-          <div className={styles.variationCodeBlockTester}>
-            <VariationTester domain={domain} variation={variationForTest} />
-          </div>
-        </motion.div>
+    <div className={styles.variationCodeBlock} ref={cardRef}>
+      <input name="code" type="hidden" value={value} />
+      <div className={styles.variationCodeBlockHeader}>
+        <h2 className={styles.variationCodeBlockHeaderTitle}>
+          Edit Configuration
+        </h2>
+        <Button onClick={handleFullscreen} variant="outline">
+          {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          {isFullscreen ? <ArrowsOutIcon /> : <ArrowsInIcon />}
+        </Button>
+      </div>
+      <Editor mode={mode} onChange={onChange} value={value} />
+      {footer && (
+        <div className={styles.variationCodeBlockFooter}>{footer}</div>
       )}
-    </AnimatePresence>
+      <div className={styles.variationCodeBlockTester}>
+        <VariationTester domain={domain} variation={variationForTest} />
+      </div>
+    </div>
   );
 };
 
@@ -107,15 +94,15 @@ const Editor = ({ value, onChange, mode }: EditorProps) => {
     <div className={styles.variationCodeBlockContent} ref={contentRef}>
       {contentRef.current && (
         <AceEditor
-          value={value}
-          onChange={onChange}
-          className={styles.variationCodeBlockEditor}
-          mode={mode}
-          theme="monokai"
-          width="100%"
-          height={`${editorHeight}px`}
-          showPrintMargin={false}
           aria-label="Variation code"
+          className={styles.variationCodeBlockEditor}
+          height={`${editorHeight}px`}
+          mode={mode}
+          onChange={onChange}
+          showPrintMargin={false}
+          theme="monokai"
+          value={value}
+          width="100%"
         />
       )}
     </div>
