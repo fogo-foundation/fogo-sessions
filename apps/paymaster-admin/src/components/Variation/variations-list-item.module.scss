@@ -73,6 +73,10 @@
   }
 }
 
+.variationEditorBlock {
+  display: flex;
+}
+
 .variationFormEditorTester {
   padding: theme.spacing(3);
   border-top: 1px solid theme.color('border');

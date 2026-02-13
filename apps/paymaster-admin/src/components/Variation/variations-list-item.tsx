@@ -28,8 +28,7 @@ import {
 } from "../../db-schema";
 import { createOrUpdateVariation } from "./actions/variation";
 import { DeleteVariationButton } from "./delete-variation-button";
-import { VariationCodeBlock } from "./variation-code-block";
-import { VariationFormBlock } from "./variation-form-block";
+import { VariationEditorBlock } from "./variation-editor-block";
 import styles from "./variations-list-item.module.scss";
 
 type InstructionConstraint = z.infer<typeof InstructionConstraintSchema>;
@@ -550,26 +549,19 @@ const VariationForm = ({
               })}
         />
       </div>
-      {editorMode === "form" && isV1 ? (
-        <VariationFormBlock
-          isExpanded={isExpanded}
-          instructions={instructions}
-          onChange={handleFormInstructionsChange}
-          domain={domainName}
-          variationForTest={variationForTest}
-          footer={footer}
-        />
-      ) : (
-        <VariationCodeBlock
-          mode={isEditingJson ? "json" : "toml"}
-          isExpanded={isExpanded}
-          value={code}
-          onChange={handleCodeChange}
-          domain={domainName}
-          variationForTest={variationForTest}
-          footer={footer}
-        />
-      )}
+      <VariationEditorBlock
+        isExpanded={isExpanded}
+        editorMode={editorMode}
+        isV1={isV1}
+        instructions={instructions}
+        onInstructionsChange={handleFormInstructionsChange}
+        code={code}
+        onCodeChange={handleCodeChange}
+        codeMode={isEditingJson ? "json" : "toml"}
+        domain={domainName}
+        variationForTest={variationForTest}
+        footer={footer}
+      />
     </Form>
   );
 };
