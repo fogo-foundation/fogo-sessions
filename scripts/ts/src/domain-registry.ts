@@ -26,14 +26,14 @@ export const main = async (argv: string[] = hideBin(process.argv)) =>
       (y) =>
         y
           .positional("domain", {
-            type: "string",
-            description: "Domain to update",
             demandOption: true,
+            description: "Domain to update",
+            type: "string",
           })
           .positional("program-id", {
-            type: "string",
-            description: "Program ID to add to the domain",
             demandOption: true,
+            description: "Program ID to add to the domain",
+            type: "string",
           }),
       (args) => handleAdd(args),
     )
@@ -42,9 +42,9 @@ export const main = async (argv: string[] = hideBin(process.argv)) =>
       "List the program IDs whitelisted for the given domain",
       (y) =>
         y.positional("domain", {
-          type: "string",
-          description: "Domain to get whitelisted programs for",
           demandOption: true,
+          description: "Domain to get whitelisted programs for",
+          type: "string",
         }),
       (args) => handleList(args),
     )
@@ -54,14 +54,14 @@ export const main = async (argv: string[] = hideBin(process.argv)) =>
       (y) =>
         y
           .positional("domain", {
-            type: "string",
-            description: "Domain to update",
             demandOption: true,
+            description: "Domain to update",
+            type: "string",
           })
           .positional("program-id", {
-            type: "string",
-            description: "Program ID to remove from the domain",
             demandOption: true,
+            description: "Program ID to remove from the domain",
+            type: "string",
           }),
       (args) => handleRemove(args),
     )
@@ -70,9 +70,9 @@ export const main = async (argv: string[] = hideBin(process.argv)) =>
       "Update the authority of the domain registry",
       (y) =>
         y.positional("new-authority", {
-          type: "string",
-          description: "New authority for the domain registry",
           demandOption: true,
+          description: "New authority for the domain registry",
+          type: "string",
         }),
       (args) => handleUpdateAuthority(args),
     )
@@ -96,8 +96,8 @@ const handleAdd = async (
   await program.methods
     .addProgram(args.domain)
     .accounts({
-      programId: new PublicKey(args["program-id"]),
       domainRecord: getDomainRecordAddress(args.domain),
+      programId: new PublicKey(args["program-id"]),
     })
     .preInstructions(
       config ? [] : [await program.methods.initialize().instruction()],
@@ -140,13 +140,15 @@ const handleRemove = async (
   await program.methods
     .removeProgram(args.domain)
     .accounts({
-      programId: new PublicKey(args["program-id"]),
       domainRecord: getDomainRecordAddress(args.domain),
+      programId: new PublicKey(args["program-id"]),
     })
     .rpc();
 };
 
-const handleUpdateAuthority = async (args: { newAuthority: string } & AnchorArgs) => {
+const handleUpdateAuthority = async (
+  args: { newAuthority: string } & AnchorArgs,
+) => {
   const program = new DomainRegistryProgram(createAnchorProvider(args));
   await program.methods.updateAuthority(new PublicKey(args.newAuthority)).rpc();
 };
