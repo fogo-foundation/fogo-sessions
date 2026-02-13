@@ -27,7 +27,7 @@ pub fn get_domain_toll_recipient_address(domain_hash: &DomainHash) -> Pubkey {
             &[TOLL_RECIPIENT_ID],
             domain_hash.as_ref(),
         ],
-        &crate::ID
+        &crate::ID,
     )
     .0
 }

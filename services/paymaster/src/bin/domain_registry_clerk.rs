@@ -20,12 +20,12 @@ use solana_program::{hash::hashv, instruction::Instruction};
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
-use tollbooth::get_domain_toll_recipient_address;
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Deref;
 use std::str::FromStr;
 use std::time::Duration;
 use tokio::time::sleep;
+use tollbooth::get_domain_toll_recipient_address;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 type DesiredDomainStates = BTreeMap<String, DesiredDomainState>;
@@ -231,10 +231,7 @@ async fn ensure_fee_receiver_token_accounts(
     let domain_hash = hashv(&[domain.as_bytes()]);
     let recipient = get_domain_toll_recipient_address(&domain_hash.to_bytes());
     for mint in fee_tokens {
-        let ata = spl_associated_token_account::get_associated_token_address(
-            &recipient,
-            mint,
-        );
+        let ata = spl_associated_token_account::get_associated_token_address(&recipient, mint);
         let ata_exists = rpc
             .get_account_with_commitment(&ata, CommitmentConfig::confirmed())
             .await?
