@@ -200,7 +200,7 @@ fn build_remove_program_instruction(
 
 async fn send_instruction(
     rpc: &RpcClient,
-    authority: &Keypair,
+    signer: &Keypair,
     instruction: Instruction,
     dry_run: bool,
 ) -> Result<()> {
@@ -211,8 +211,8 @@ async fn send_instruction(
     let recent_blockhash = rpc.get_latest_blockhash().await?;
     let tx = Transaction::new_signed_with_payer(
         &[instruction],
-        Some(&authority.pubkey()),
-        &[authority],
+        Some(&signer.pubkey()),
+        &[signer],
         recent_blockhash,
     );
     let signature = rpc.send_and_confirm_transaction(&tx).await?;
@@ -276,7 +276,7 @@ async fn current_domain_programs(rpc: &RpcClient, domain: &str) -> Result<BTreeS
 
 async fn sync_domain(
     rpc: &RpcClient,
-    authority: &Keypair,
+    keypair: &Keypair,
     domain: &str,
     desired_programs: &BTreeSet<Pubkey>,
     dry_run: bool,
@@ -304,41 +304,28 @@ async fn sync_domain(
 
     for program_id in to_add {
         tracing::info!("Domain {domain}: adding program {program_id}");
-        let instruction = build_add_program_instruction(authority.pubkey(), domain, program_id);
-        send_instruction(rpc, authority, instruction, dry_run).await?;
+        let instruction = build_add_program_instruction(keypair.pubkey(), domain, program_id);
+        send_instruction(rpc, keypair, instruction, dry_run).await?;
     }
 
     for program_id in to_remove {
         tracing::info!("Domain {domain}: removing program {program_id}");
-        let instruction = build_remove_program_instruction(authority.pubkey(), domain, program_id);
-        send_instruction(rpc, authority, instruction, dry_run).await?;
+        let instruction = build_remove_program_instruction(keypair.pubkey(), domain, program_id);
+        send_instruction(rpc, keypair, instruction, dry_run).await?;
     }
 
     Ok(())
 }
 
-async fn sync_once(cli: &Cli, rpc: &RpcClient, authority: &Keypair) -> Result<()> {
+async fn sync_once(cli: &Cli, rpc: &RpcClient, keypair: &Keypair) -> Result<()> {
     let config = db::config::load_config(cli.network_environment.into()).await?;
     let desired = desired_domain_states(config.domains)?;
 
     for (domain, desired_state) in desired {
-        sync_domain(
-            rpc,
-            authority,
-            &domain,
-            &desired_state.programs,
-            cli.dry_run,
-        )
-        .await?;
+        sync_domain(rpc, keypair, &domain, &desired_state.programs, cli.dry_run).await?;
         if desired_state.requires_fee_receiver_initialized {
-            ensure_fee_receiver_token_accounts(
-                rpc,
-                authority,
-                &domain,
-                &cli.fee_tokens,
-                cli.dry_run,
-            )
-            .await?;
+            ensure_fee_receiver_token_accounts(rpc, keypair, &domain, &cli.fee_tokens, cli.dry_run)
+                .await?;
         }
     }
 
@@ -348,7 +335,7 @@ async fn sync_once(cli: &Cli, rpc: &RpcClient, authority: &Keypair) -> Result<()
 async fn run(cli: Cli) -> Result<()> {
     db::pool::init_db_connection(&cli.db_url).await?;
 
-    let authority = read_keypair_file(&cli.keypair)
+    let keypair = read_keypair_file(&cli.keypair)
         .map_err(|e| anyhow::anyhow!(e.to_string()))
         .with_context(|| format!("failed to read authority keypair file at {}", cli.keypair))?;
 
@@ -363,7 +350,7 @@ async fn run(cli: Cli) -> Result<()> {
     );
 
     loop {
-        if let Err(err) = sync_once(&cli, &rpc, &authority).await {
+        if let Err(err) = sync_once(&cli, &rpc, &keypair).await {
             tracing::error!("Domain registry clerk sync failed: {err:#}");
         }
 
