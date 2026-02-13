@@ -1,3 +1,4 @@
+use crate::balances::{is_enough_balance, spawn_balances_refresher};
 use crate::cli::NetworkEnvironment;
 use crate::config_manager::config::Domain;
 use crate::constraint::transaction::TransactionToValidate;
@@ -113,6 +114,8 @@ pub struct ValiantClient {
 
 pub struct ServerState {
     pub domains: Arc<ArcSwap<HashMap<String, DomainState>>>,
+    pub balances: Arc<ArcSwap<HashMap<Pubkey, u64>>>,
+    pub minimum_balance_lamports: u64,
     pub chain_index: ChainIndex,
     pub rpc_sub: PubsubClientWithReconnect,
     pub ftl_rpc: Option<RpcClient>,
@@ -365,6 +368,18 @@ async fn sponsor_and_send_handler(
             "The transaction must have a fee payer",
         )
     })?;
+
+    if !is_enough_balance(
+        state.balances.load().get(fee_payer),
+        state.minimum_balance_lamports,
+    ) {
+        return Err((
+            StatusCode::SERVICE_UNAVAILABLE,
+            format!("Paymaster wallet {fee_payer} is out of funds"),
+        )
+            .into());
+    }
+
     let transaction_sponsor = domain_state
         .sponsors
         .iter()
@@ -773,13 +788,15 @@ pub async fn run_server(
     network_environment: NetworkEnvironment,
     valiant_api_key: Option<String>,
     valiant_url_override: Option<String>,
+    balance_refresh_interval_seconds: u64,
+    minimum_balance_lamports: u64,
 ) {
     let rpc_http_sender = PooledHttpSender::new(rpc_url_http, RPC_POOL_SIZE);
 
-    let rpc = RpcClient::new_sender(
+    let rpc = Arc::new(RpcClient::new_sender(
         rpc_http_sender,
         RpcClientConfig::with_commitment(CommitmentConfig::processed()),
-    );
+    ));
 
     let rpc_sub_client = PubsubClient::new(&rpc_url_ws)
         .await
@@ -837,6 +854,14 @@ pub async fn run_server(
             .expect("Should create Valiant client")
     });
 
+    let balances = Arc::new(ArcSwap::from_pointee(HashMap::new()));
+    spawn_balances_refresher(
+        Arc::clone(&domains_states),
+        Arc::clone(&balances),
+        rpc.clone(),
+        balance_refresh_interval_seconds,
+    );
+
     let app = Router::new()
         .route("/ready", axum::routing::get(readiness_handler))
         .route(
@@ -855,6 +880,8 @@ pub async fn run_server(
         .layer(prometheus_layer)
         .with_state(Arc::new(ServerState {
             domains: domains_states,
+            balances,
+            minimum_balance_lamports,
             fee_coefficients,
             chain_index: ChainIndex {
                 rpc,
@@ -864,6 +891,7 @@ pub async fn run_server(
             ftl_rpc,
             valiant_client,
         }));
+
     let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
     tracing::info!("Starting paymaster service...");
     axum::serve(listener, app).await.unwrap();

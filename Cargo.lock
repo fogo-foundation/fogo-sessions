@@ -1947,6 +1947,7 @@ dependencies = [
  "intent-transfer",
  "libsecp256k1",
  "nonempty",
+ "num-traits",
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
