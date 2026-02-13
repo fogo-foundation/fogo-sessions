@@ -20,14 +20,16 @@ use solana_program::{hash::hashv, instruction::Instruction};
 use solana_pubkey::Pubkey;
 use solana_signer::Signer;
 use solana_transaction::Transaction;
+use tollbooth::get_domain_toll_recipient_address;
 use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Deref;
 use std::str::FromStr;
+use std::time::Duration;
+use tokio::time::sleep;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 type DesiredDomainStates = BTreeMap<String, DesiredDomainState>;
 
-const TOLL_RECIPIENT_SEED: &[u8] = b"toll_recipient";
-const TOLL_RECIPIENT_ID: u8 = 0;
 const EXCLUDED_PROGRAM_IDS: [Pubkey; 10] = [
     solana_sdk_ids::system_program::ID,
     solana_sdk_ids::ed25519_program::ID,
@@ -67,6 +69,10 @@ struct Cli {
     /// Print intended actions without sending transactions
     #[arg(long, default_value_t = false)]
     dry_run: bool,
+
+    /// Heartbeat interval in seconds between sync passes
+    #[arg(long, env = "HEARTBEAT_SECONDS", default_value = "30", value_parser = clap::value_parser!(u64).range(1..))]
+    heartbeat_seconds: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -87,7 +93,7 @@ fn filter_excluded_programs(programs: &mut BTreeSet<Pubkey>) {
     programs.retain(|program_id| !EXCLUDED_PROGRAM_IDS.contains(program_id));
 }
 
-fn parse_domain_record_programs(data: &[u8]) ->BTreeSet<Pubkey> {
+fn parse_domain_record_programs(data: &[u8]) -> BTreeSet<Pubkey> {
     let programs = bytemuck::cast_slice(data)
         .iter()
         .map(|slice: &[u8; 64]| Pubkey::new_from_array(slice[..32].try_into().unwrap()))
@@ -118,7 +124,7 @@ fn desired_programs_for_domain(domain: Domain) -> Result<(String, DesiredDomainS
         }
     }
     filter_excluded_programs(&mut programs);
-    
+
     if requires_tollbooth {
         programs.insert(TOLLBOOTH_PROGRAM_ID);
     } else {
@@ -135,7 +141,10 @@ fn desired_programs_for_domain(domain: Domain) -> Result<(String, DesiredDomainS
 }
 
 fn desired_domain_states(domains: Vec<Domain>) -> Result<DesiredDomainStates> {
-    domains.into_iter().map(|domain| desired_programs_for_domain(domain)).collect::<Result<BTreeMap<String, DesiredDomainState>>>()
+    domains
+        .into_iter()
+        .map(|domain| desired_programs_for_domain(domain))
+        .collect::<Result<BTreeMap<String, DesiredDomainState>>>()
 }
 
 fn build_add_program_instruction(
@@ -201,43 +210,30 @@ async fn send_instruction(
         recent_blockhash,
     );
     let signature = rpc.send_and_confirm_transaction(&tx).await?;
-    println!("Submitted tx: {signature}");
+    tracing::info!("Submitted tx: {signature}");
     Ok(())
-}
-
-fn get_domain_toll_recipient_address(domain: &str) -> Pubkey {
-    let domain_hash = hashv(&[domain.as_bytes()]);
-    Pubkey::find_program_address(
-        &[
-            TOLL_RECIPIENT_SEED,
-            &[TOLL_RECIPIENT_ID],
-            domain_hash.as_ref(),
-        ],
-        &TOLLBOOTH_PROGRAM_ID,
-    )
-    .0
 }
 
 async fn ensure_fee_receiver_token_accounts(
     rpc: &RpcClient,
-    authority: &Keypair,
+    keypair: &Keypair,
     domain: &str,
     fee_tokens: &[Pubkey],
     dry_run: bool,
 ) -> Result<()> {
     if fee_tokens.is_empty() {
-        println!(
+        tracing::info!(
             "Domain {domain}: paymaster fee configured but no --fee-tokens provided, skipping fee receiver token account initialization"
         );
         return Ok(());
     }
 
-    let recipient = get_domain_toll_recipient_address(domain);
+    let domain_hash = hashv(&[domain.as_bytes()]);
+    let recipient = get_domain_toll_recipient_address(&domain_hash.to_bytes());
     for mint in fee_tokens {
-        let ata = spl_associated_token_account::get_associated_token_address_with_program_id(
+        let ata = spl_associated_token_account::get_associated_token_address(
             &recipient,
             mint,
-            &spl_token::id(),
         );
         let ata_exists = rpc
             .get_account_with_commitment(&ata, CommitmentConfig::confirmed())
@@ -248,15 +244,15 @@ async fn ensure_fee_receiver_token_accounts(
             continue;
         }
 
-        println!("Domain {domain}: initializing fee receiver ATA {ata} for mint {mint}");
+        tracing::info!("Domain {domain}: initializing fee receiver ATA {ata} for mint {mint}");
         let instruction =
             spl_associated_token_account::instruction::create_associated_token_account_idempotent(
-                &authority.pubkey(),
+                &keypair.pubkey(),
                 &recipient,
                 mint,
                 &spl_token::id(),
             );
-        send_instruction(rpc, authority, instruction, dry_run).await?;
+        send_instruction(rpc, keypair, instruction, dry_run).await?;
     }
 
     Ok(())
@@ -297,20 +293,20 @@ async fn sync_domain(
         return Ok(());
     }
 
-    println!(
+    tracing::info!(
         "Domain {domain}: {} program(s) to add, {} program(s) to remove",
         to_add.len(),
         to_remove.len()
     );
 
     for program_id in to_add {
-        println!("Domain {domain}: adding program {program_id}");
+        tracing::info!("Domain {domain}: adding program {program_id}");
         let instruction = build_add_program_instruction(authority.pubkey(), domain, program_id);
         send_instruction(rpc, authority, instruction, dry_run).await?;
     }
 
     for program_id in to_remove {
-        println!("Domain {domain}: removing program {program_id}");
+        tracing::info!("Domain {domain}: removing program {program_id}");
         let instruction = build_remove_program_instruction(authority.pubkey(), domain, program_id);
         send_instruction(rpc, authority, instruction, dry_run).await?;
     }
@@ -318,15 +314,7 @@ async fn sync_domain(
     Ok(())
 }
 
-async fn run(cli: Cli) -> Result<()> {
-    db::pool::init_db_connection(&cli.db_url).await?;
-
-    let authority = read_keypair_file(&cli.keypair)
-        .map_err(|e| anyhow::anyhow!(e.to_string()))
-        .with_context(|| format!("failed to read authority keypair file at {}", cli.keypair))?;
-
-    let rpc = RpcClient::new_with_commitment(cli.rpc_url_http, CommitmentConfig::confirmed());
-
+async fn sync_once(cli: &Cli, rpc: &RpcClient, authority: &Keypair) -> Result<()> {
     let config = db::config::load_config(cli.network_environment.into()).await?;
     let desired = desired_domain_states(config.domains)?;
 
@@ -340,17 +328,57 @@ async fn run(cli: Cli) -> Result<()> {
         )
         .await?;
         if desired_state.requires_fee_receiver_initialized {
-            ensure_fee_receiver_token_accounts(&rpc, &authority, &domain, &cli.fee_tokens, cli.dry_run)
-                .await?;
+            ensure_fee_receiver_token_accounts(
+                &rpc,
+                &authority,
+                &domain,
+                &cli.fee_tokens,
+                cli.dry_run,
+            )
+            .await?;
         }
     }
 
     Ok(())
 }
 
+async fn run(cli: Cli) -> Result<()> {
+    db::pool::init_db_connection(&cli.db_url).await?;
+
+    let authority = read_keypair_file(&cli.keypair)
+        .map_err(|e| anyhow::anyhow!(e.to_string()))
+        .with_context(|| format!("failed to read authority keypair file at {}", cli.keypair))?;
+
+    let rpc =
+        RpcClient::new_with_commitment(cli.rpc_url_http.clone(), CommitmentConfig::confirmed());
+    let heartbeat = Duration::from_secs(cli.heartbeat_seconds);
+
+    tracing::info!(
+        "Starting domain registry clerk loop (heartbeat={}s, dry_run={})",
+        cli.heartbeat_seconds,
+        cli.dry_run
+    );
+
+    loop {
+        if let Err(err) = sync_once(&cli, &rpc, &authority).await {
+            tracing::error!("Domain registry clerk sync failed: {err:#}");
+        }
+
+        tracing::info!("Heartbeat: next sync in {}s", cli.heartbeat_seconds);
+        sleep(heartbeat).await;
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer().with_target(false))
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "info".parse().expect("info is a valid env filter")),
+        )
+        .init();
     let cli = Cli::parse();
     run(cli).await
 }

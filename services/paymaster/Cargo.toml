@@ -89,8 +89,8 @@ name = "paymaster-config-sync"
 path = "src/bin/config_sync.rs"
 
 [[bin]]
-name = "paymaster-domain-registry-sync"
-path = "src/bin/domain_registry_sync.rs"
+name = "paymaster-domain-registry-clerk"
+path = "src/bin/domain_registry_clerk.rs"
 
 [lints]
 workspace = true
