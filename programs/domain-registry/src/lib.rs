@@ -24,6 +24,14 @@ pub mod domain_registry {
         Ok(())
     }
 
+    pub fn update_authority<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdateAuthority<'info>>,
+        new_authority: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.config.authority = new_authority;
+        Ok(())
+    }
+
     pub fn add_program<'info>(
         ctx: Context<'_, '_, '_, 'info, AddProgram<'info>>,
         domain: String,
@@ -82,6 +90,13 @@ pub struct Initialize<'info> {
     #[account(init, payer = authority, space = 8 + 32, seeds = [CONFIG_SEED], bump)]
     pub config: Account<'info, Config>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateAuthority<'info> {
+    pub authority: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED], bump, has_one = authority)]
+    pub config: Account<'info, Config>,
 }
 
 #[derive(Accounts)]
