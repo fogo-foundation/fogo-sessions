@@ -176,20 +176,20 @@ export const FogoSessionProvider = ({
   return (
     <ToastProvider>
       <SessionProvider
-        tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
         defaultRequestedLimits={
           defaultRequestedLimits === undefined
             ? undefined
             : deserializePublicKeyMap(defaultRequestedLimits)
         }
+        tokens={tokens ? deserializePublicKeyList(tokens) : undefined}
         wallets={walletsWithMobileAdapter}
         {...props}
       >
         {children}
         <SignInModal
-          wallets={walletsWithMobileAdapter}
-          termsOfServiceUrl={termsOfServiceUrl}
           privacyPolicyUrl={privacyPolicyUrl}
+          termsOfServiceUrl={termsOfServiceUrl}
+          wallets={walletsWithMobileAdapter}
         />
         <RenewSessionModal />
       </SessionProvider>
@@ -256,8 +256,8 @@ const SessionProvider = ({
       // override typescript.
       createSessionConnection({
         network,
-        rpc,
         paymaster,
+        rpc,
         sendToPaymaster,
         sponsor,
       }),
@@ -280,23 +280,23 @@ const SessionProvider = ({
     ...args,
     enableUnlimited,
     getSessionContext,
-    setShowBridgeIn: setShowBridgeIn,
     network,
+    setShowBridgeIn: setShowBridgeIn,
   });
 
   const state = useMemo(
     () => ({
-      network,
       connection: sessionConnection.connection,
-      rpc: sessionConnection.rpc,
-      getSessionContext,
-      sessionState,
-      enableUnlimited: enableUnlimited ?? false,
-      whitelistedTokens: args.tokens ?? [],
-      onStartSessionInit,
       defaultRequestedLimits,
-      showBridgeIn,
+      enableUnlimited: enableUnlimited ?? false,
+      getSessionContext,
+      network,
+      onStartSessionInit,
+      rpc: sessionConnection.rpc,
+      sessionState,
       setShowBridgeIn,
+      showBridgeIn,
+      whitelistedTokens: args.tokens ?? [],
     }),
     [
       network,
@@ -412,7 +412,6 @@ const useSessionState = ({
       limits: Map<PublicKey, bigint> | undefined;
       onSuccess: (session: Session) => void;
     }) => {
-      // biome-ignore lint/correctness/noUnusedVariables: destructuring `updateSession` out
       const { updateSession, ...updatingOptions } = establishedOptions;
       setState(
         SessionState.UpdatingSession({ ...updatingOptions, previousState }),
@@ -420,11 +419,11 @@ const useSessionState = ({
       getSessionContext()
         .then((context) =>
           replaceSession({
-            expires: new Date(Date.now() + duration),
             context,
+            expires: new Date(Date.now() + duration),
+            session,
             signMessage: (message) =>
               signWithWallet(establishedOptions.solanaWallet, message),
-            session,
             ...(limits === undefined ? { unlimited: true } : { limits }),
           }),
         )
@@ -463,53 +462,55 @@ const useSessionState = ({
         console.error("Failed to persist session", error);
       });
       const establishedOptions: EstablishedOptions = {
+        createLogInToken: () => createLogInToken(session),
         endSession: () => {
           disconnect(wallet, network, {
             session,
             sessionContext: getSessionContext(),
           });
         },
-        payer: session.payer,
-        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
-          session.getSystemProgramSessionWrapInstruction(amount),
-        getSessionWrapInstructions: (amount: bigint) =>
-          session.getSessionWrapInstructions(amount),
+        expiration: session.sessionInfo.expiration,
         getSessionUnwrapInstructions: () =>
           session.getSessionUnwrapInstructions(),
+        getSessionWrapInstructions: (amount: bigint) =>
+          session.getSessionWrapInstructions(amount),
+        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
+          session.getSystemProgramSessionWrapInstruction(amount),
+        isLimited:
+          session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
+        payer: session.payer,
+        requestExtendedExpiry: (onCancel?: () => void) => {
+          setState(
+            SessionState.RequestingExtendedExpiry({
+              ...establishedOptions,
+              cancel: () => {
+                setState(SessionState.Established(establishedOptions));
+                onCancel?.();
+              },
+            }),
+          );
+        },
         sendTransaction: (instructions, options) =>
           sendTransaction(session, establishedOptions, instructions, options),
         sessionKey: session.sessionKey,
-        isLimited:
-          session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
-        walletPublicKey: session.walletPublicKey,
-        solanaWallet: wallet,
         sessionPublicKey: session.sessionPublicKey,
-        createLogInToken: () => createLogInToken(session),
         showBridgeIn: () => {
           setShowBridgeIn(true);
         },
-        expiration: session.sessionInfo.expiration,
-        requestExtendedExpiry: (onCancel?: () => void) => {
-          setState(SessionState.RequestingExtendedExpiry({
-            ...establishedOptions,
-            cancel: () => {
-              setState(SessionState.Established(establishedOptions));
-              onCancel?.();
-            },
-          }));
-        },
+        solanaWallet: wallet,
         updateSession: (previousState, duration, limits) => {
           updateSession({
-            previousState,
             duration,
-            limits,
             establishedOptions,
-            session,
+            limits,
             onSuccess: (newSession) => {
               completeSessionSetup(newSession, wallet);
             },
+            previousState,
+            session,
           });
         },
+        walletPublicKey: session.walletPublicKey,
       };
 
       setState(SessionState.Established(establishedOptions));
@@ -588,20 +589,20 @@ const useSessionState = ({
     ) => {
       setState(
         SessionState.RequestingLimits({
-          requestedLimits,
           cancel: () => disconnect(wallet, network),
-          walletPublicKey,
+          requestedLimits,
           submitLimits: (sessionDuration, limits) => {
             submitLimits({
-              wallet,
-              walletPublicKey,
-              sessionDuration,
               limits,
               onError: () => {
                 requestLimits(wallet, walletPublicKey, requestedLimits);
               },
+              sessionDuration,
+              wallet,
+              walletPublicKey,
             });
           },
+          walletPublicKey,
         }),
       );
     },
@@ -631,11 +632,11 @@ const useSessionState = ({
                 !enableUnlimited
               ) {
                 submitLimits({
+                  limits: new Map(),
+                  onError,
                   sessionDuration: DEFAULT_SESSION_DURATION,
                   wallet,
                   walletPublicKey,
-                  onError,
-                  limits: new Map(),
                 });
               } else {
                 requestLimits(wallet, walletPublicKey, requestedLimits);
@@ -674,6 +675,7 @@ const useSessionState = ({
       requestLimits,
       enableUnlimited,
       network,
+      walletName,
     ],
   );
 
@@ -716,12 +718,12 @@ const useSessionState = ({
           cancel,
           selectWallet: (wallet) => {
             connectWallet({
-              wallet,
-              requestedLimits,
               onDisconnect: cancel,
               onError: () => {
                 requestWallet(requestedLimits);
               },
+              requestedLimits,
+              wallet,
             });
           },
         }),
@@ -852,11 +854,11 @@ const establishSession = async (
 ) => {
   const context = await sessionContext;
   const result = await establishSessionImpl({
-    expires: new Date(Date.now() + sessionDuration),
     context,
+    expires: new Date(Date.now() + sessionDuration),
+    sessionEstablishmentLookupTable,
     signMessage: (message) => signWithWallet(wallet, message),
     walletPublicKey: walletPublicKey,
-    sessionEstablishmentLookupTable,
     ...(limits === undefined ? { unlimited: true } : { limits }),
   });
   switch (result.type) {

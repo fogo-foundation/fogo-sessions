@@ -33,59 +33,21 @@ export type EstablishedOptions = Omit<Session, "sessionInfo"> & {
 };
 
 export const SessionState = {
-  Initializing: () => ({ type: StateType.Initializing as const }),
-
   CheckingStoredSession: () => ({
     type: StateType.CheckingStoredSession as const,
-  }),
-
-  NotEstablished: (
-    establishSession: (requestedLimits?: Map<PublicKey, bigint>) => void,
-  ) => ({
-    type: StateType.NotEstablished as const,
-    establishSession,
-  }),
-
-  SelectingWallet: (args: {
-    selectWallet: (wallet: SolanaWallet) => void;
-    cancel: () => void;
-  }) => ({ type: StateType.SelectingWallet as const, ...args }),
-
-  WalletConnecting: (args: { cancel: () => void }) => ({
-    type: StateType.WalletConnecting as const,
-    ...args,
-  }),
-
-  RequestingLimits: (args: {
-    requestedLimits?: Map<PublicKey, bigint> | undefined;
-    submitLimits: (duration: number, limits?: Map<PublicKey, bigint>) => void;
-    cancel: () => void;
-    walletPublicKey: PublicKey;
-  }) => ({
-    type: StateType.RequestingLimits as const,
-    ...args,
-  }),
-
-  SettingLimits: (args: {
-    cancel: () => void;
-    walletPublicKey: PublicKey;
-  }) => ({
-    type: StateType.SettingLimits as const,
-    ...args,
   }),
 
   Established: (args: EstablishedOptions) => ({
     type: StateType.Established as const,
     ...args,
   }),
+  Initializing: () => ({ type: StateType.Initializing as const }),
 
-  UpdatingSession: (
-    args: Omit<EstablishedOptions, "updateSession"> & {
-      previousState: StateType;
-    },
+  NotEstablished: (
+    establishSession: (requestedLimits?: Map<PublicKey, bigint>) => void,
   ) => ({
-    type: StateType.UpdatingSession as const,
-    ...args,
+    establishSession,
+    type: StateType.NotEstablished as const,
   }),
 
   RequestingExtendedExpiry: (
@@ -103,6 +65,43 @@ export const SessionState = {
     },
   ) => ({
     type: StateType.RequestingIncreasedLimits as const,
+    ...args,
+  }),
+
+  RequestingLimits: (args: {
+    requestedLimits?: Map<PublicKey, bigint> | undefined;
+    submitLimits: (duration: number, limits?: Map<PublicKey, bigint>) => void;
+    cancel: () => void;
+    walletPublicKey: PublicKey;
+  }) => ({
+    type: StateType.RequestingLimits as const,
+    ...args,
+  }),
+
+  SelectingWallet: (args: {
+    selectWallet: (wallet: SolanaWallet) => void;
+    cancel: () => void;
+  }) => ({ type: StateType.SelectingWallet as const, ...args }),
+
+  SettingLimits: (args: {
+    cancel: () => void;
+    walletPublicKey: PublicKey;
+  }) => ({
+    type: StateType.SettingLimits as const,
+    ...args,
+  }),
+
+  UpdatingSession: (
+    args: Omit<EstablishedOptions, "updateSession"> & {
+      previousState: StateType;
+    },
+  ) => ({
+    type: StateType.UpdatingSession as const,
+    ...args,
+  }),
+
+  WalletConnecting: (args: { cancel: () => void }) => ({
+    type: StateType.WalletConnecting as const,
     ...args,
   }),
 };
