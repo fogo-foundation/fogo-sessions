@@ -17,7 +17,11 @@ export const useUserData = (sessionState: EstablishedSessionState) => {
   }, [sessionState]);
 
   return useData(
-    ["user-data", sessionState.walletPublicKey.toBase58() + sessionState.expiration.toISOString()],
+    [
+      "user-data",
+      sessionState.walletPublicKey.toBase58() +
+        sessionState.expiration.toISOString(),
+    ],
     getUserData,
     { revalidateOnFocus: true },
   );
