@@ -13,37 +13,52 @@ const TermsOfServiceLink = ({
   className?: string | undefined;
 }) => (
   <Link
-    href="https://www.dourolabs.xyz/Paymaster-Terms-Of-Service.pdf"
-    target="_blank"
-    rel="noopener noreferrer"
     className={className ?? ""}
+    href="https://www.dourolabs.xyz/Paymaster-Terms-Of-Service.pdf"
+    rel="noopener noreferrer"
+    target="_blank"
   >
     Terms of Service
+  </Link>
+);
+
+const PrivacyPolicyLink = ({
+  className,
+}: {
+  className?: string | undefined;
+}) => (
+  <Link
+    className={className ?? ""}
+    href="https://www.dourolabs.xyz/Privacy-Notice.pdf"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    Privacy Notice
   </Link>
 );
 
 export const Auth = () => (
   <>
     <video
-      src="/auth-background.mp4"
       autoPlay
-      muted
-      loop
       className={styles.authVideoBackground}
+      loop
+      muted
+      src="/auth-background.mp4"
     />
     <div className={styles.authCard}>
       <Image
-        src={fogoPaymasterLabelSvg}
         alt="Fogo Paymaster Label"
         className={styles.fogoPaymasterLabel}
+        src={fogoPaymasterLabelSvg}
       />
       <p className={styles.authCardDescription}>
         Your backstage pass to seamless gas on-chain.
       </p>
       <Image
-        src={paymasterSvg}
         alt="Paymaster"
         className={styles.paymasterImage}
+        src={paymasterSvg}
       />
       <div className={styles.connectWalletCard}>
         <span className={styles.connectWalletCardHighlightLine} />
@@ -54,24 +69,17 @@ export const Auth = () => (
         <SessionButton />
         <p className={styles.connectWalletCardInfo}>
           By connecting your wallet and/or using Paymaster you hereby agree to
-          our <TermsOfServiceLink />.
+          our <TermsOfServiceLink /> and <PrivacyPolicyLink />.
         </p>
       </div>
       <div className={styles.authCardFooter}>
         <div className={styles.authCardFooterContent}>
-          <Image src={paymasterLabelSvg} alt="Paymaster" />
+          <Image alt="Paymaster" src={paymasterLabelSvg} />
           <p className={styles.authCardFooterSubtitle}>by Douro Labs</p>
         </div>
         <div className={styles.authCardFooterContent} data-align="right">
           <TermsOfServiceLink className={styles.authCardFooterLink} />
-          <Link
-            href="https://www.dourolabs.xyz/Privacy-Notice.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.authCardFooterLink ?? ""}
-          >
-            Privacy Policy
-          </Link>
+          <PrivacyPolicyLink className={styles.authCardFooterLink} />
         </div>
       </div>
     </div>
