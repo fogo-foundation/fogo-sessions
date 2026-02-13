@@ -13,6 +13,10 @@ repo = "fogo-sessions"
 versioned_files = ["programs/chain-id/Cargo.toml", "Cargo.lock", { path = "Cargo.toml", dependency = "chain-id" }]
 changelog = "programs/chain-id/CHANGELOG.md"
 
+[packages.domain-registry]
+versioned_files = ["programs/domain-registry/Cargo.toml", "Cargo.lock", { path = "Cargo.toml", dependency = "domain-registry" }]
+changelog = "programs/domain-registry/CHANGELOG.md"
+
 [packages.intent-transfer]
 versioned_files = ["programs/intent-transfer/Cargo.toml", "Cargo.lock", { path = "Cargo.toml", dependency = "intent-transfer" }]
 changelog = "programs/intent-transfer/CHANGELOG.md"
