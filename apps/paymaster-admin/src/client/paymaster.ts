@@ -8,14 +8,16 @@ import { UserSchema } from "../db-schema";
 export const useUserData = (sessionState: EstablishedSessionState) => {
   const getUserData = useCallback(async () => {
     if (sessionState.expiration < new Date()) {
-      sessionState.endSession();
+      sessionState.requestExtendedExpiry(() => {
+        sessionState.endSession();
+      });
     }
     const sessionToken = await sessionState.createLogInToken();
     return fetchUserData(sessionToken);
   }, [sessionState]);
 
   return useData(
-    ["user-data", sessionState.walletPublicKey.toBase58()],
+    ["user-data", sessionState.walletPublicKey.toBase58() + sessionState.expiration.toISOString()],
     getUserData,
     { revalidateOnFocus: true },
   );

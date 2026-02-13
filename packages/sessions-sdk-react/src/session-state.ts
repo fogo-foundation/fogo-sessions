@@ -29,6 +29,7 @@ export type EstablishedOptions = Omit<Session, "sessionInfo"> & {
     duration: number,
     limits?: Map<PublicKey, bigint>,
   ) => void;
+  requestExtendedExpiry: (onCancel?: () => void) => void;
 };
 
 export const SessionState = {

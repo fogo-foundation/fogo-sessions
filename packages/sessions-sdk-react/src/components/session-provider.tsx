@@ -489,6 +489,15 @@ const useSessionState = ({
           setShowBridgeIn(true);
         },
         expiration: session.sessionInfo.expiration,
+        requestExtendedExpiry: (onCancel?: () => void) => {
+          setState(SessionState.RequestingExtendedExpiry({
+            ...establishedOptions,
+            cancel: () => {
+              setState(SessionState.Established(establishedOptions));
+              onCancel?.();
+            },
+          }));
+        },
         updateSession: (previousState, duration, limits) => {
           updateSession({
             previousState,
