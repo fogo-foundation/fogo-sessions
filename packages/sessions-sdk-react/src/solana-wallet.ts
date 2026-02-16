@@ -123,7 +123,6 @@ const addLegacyOffchainMessagePrefixToMessageIfNeeded = async (
   } else {
     // Source: https://github.com/anza-xyz/solana-sdk/blob/master/offchain-message/src/lib.rs#L162
     const messageWithOffchainMessagePrefix = Uint8Array.from([
-      // eslint-disable-next-line unicorn/number-literal-case
       0xff,
       ...new TextEncoder().encode("solana offchain"),
       0,
