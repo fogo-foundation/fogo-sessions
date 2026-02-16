@@ -1,3 +1,5 @@
+import type { SignatureBytes } from "@solana/kit";
+import { signatureBytes, verifySignature } from "@solana/kit";
 import type {
   BaseSignerWalletAdapter,
   MessageSignerWalletAdapterProps,
@@ -8,7 +10,6 @@ import { isWalletAdapterCompatibleStandardWallet } from "@solana/wallet-adapter-
 import { SolanaSignMessage } from "@solana/wallet-standard-features";
 import type { PublicKey } from "@solana/web3.js";
 import type { SolanaMobileWalletAdapter } from "@solana-mobile/wallet-adapter-mobile";
-import { signatureBytes, verifySignature, type SignatureBytes } from "@solana/kit";
 
 /**
  * The BaseWalletAdapter is used by all Solana wallet types. It extends EventEmitter but the types from the EventEmitter are not present so we are creating our own
@@ -76,7 +77,7 @@ export const signWithWallet = async (
           //
           // The `signedMessage` seems to be reliable in all other wallets and
           // when using nightly with a wallet that IS backed by a ledger...
-          signedMessage: await (async () => {
+          signedMessage: await (() => {
             if (result.signedMessage.byteLength === 1) {
               return message;
             } else if (wallet.publicKey) {
@@ -92,8 +93,8 @@ export const signWithWallet = async (
     }
   } else {
     return {
-      signedMessage: message,
       signature: await wallet.signMessage(message),
+      signedMessage: message,
     };
   }
 };
