@@ -8,6 +8,7 @@ import { isWalletAdapterCompatibleStandardWallet } from "@solana/wallet-adapter-
 import { SolanaSignMessage } from "@solana/wallet-standard-features";
 import type { PublicKey } from "@solana/web3.js";
 import type { SolanaMobileWalletAdapter } from "@solana-mobile/wallet-adapter-mobile";
+import { signatureBytes, verifySignature, type SignatureBytes } from "@solana/kit";
 
 /**
  * The BaseWalletAdapter is used by all Solana wallet types. It extends EventEmitter but the types from the EventEmitter are not present so we are creating our own
@@ -70,12 +71,22 @@ export const signWithWallet = async (
           // ledger, the `signedMessage` that Nightly returns is 1-byte
           // Uint8Array and is not actually the message that was signed.
           //
+          // It also seems that some wallets (Phantom) when used with the old Nano S ledger, will return the raw message as signed message.
+          // The `addLegacyOffchainMessagePrefixToMessageIfNeeded` function handles that case.
+          //
           // The `signedMessage` seems to be reliable in all other wallets and
           // when using nightly with a wallet that IS backed by a ledger...
-          signedMessage:
-            result.signedMessage.byteLength === 1
-              ? message
-              : result.signedMessage,
+          signedMessage: await (async () => {
+            if (result.signedMessage.byteLength === 1) {
+              return message;
+            } else if (wallet.publicKey) {
+              return addLegacyOffchainMessagePrefixToMessageIfNeeded(
+                wallet.publicKey,
+                signatureBytes(result.signature),
+                result.signedMessage,
+              );
+            } else return result.signedMessage;
+          })(),
         };
       }
     }
@@ -84,5 +95,53 @@ export const signWithWallet = async (
       signedMessage: message,
       signature: await wallet.signMessage(message),
     };
+  }
+};
+
+const serializeU16LE = (value: number) => {
+  const result = new ArrayBuffer(2);
+  new DataView(result).setUint16(0, value, true); // littleEndian = true
+  return new Uint8Array(result);
+};
+
+const addLegacyOffchainMessagePrefixToMessageIfNeeded = async (
+  walletPublicKey: PublicKey,
+  signature: SignatureBytes,
+  message: Uint8Array,
+) => {
+  const publicKey = await crypto.subtle.importKey(
+    "raw",
+    walletPublicKey.toBytes(),
+    { name: "Ed25519" },
+    true,
+    ["verify"],
+  );
+
+  if (await verifySignature(publicKey, signature, message)) {
+    return message;
+  } else {
+    // Source: https://github.com/anza-xyz/solana-sdk/blob/master/offchain-message/src/lib.rs#L162
+    const messageWithOffchainMessagePrefix = Uint8Array.from([
+      // eslint-disable-next-line unicorn/number-literal-case
+      0xff,
+      ...new TextEncoder().encode("solana offchain"),
+      0,
+      1,
+      ...serializeU16LE(message.length),
+      ...message,
+    ]);
+    if (
+      await verifySignature(
+        publicKey,
+        signature,
+        messageWithOffchainMessagePrefix,
+      )
+    ) {
+      return messageWithOffchainMessagePrefix;
+    } else {
+      throw new Error(
+        "The signature provided by the browser wallet is not valid",
+      );
+    }
   }
 };
