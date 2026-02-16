@@ -146,16 +146,9 @@ const handleRemove = async (
     .rpc();
 };
 
-<<<<<<< HEAD
 const handleUpdateAuthority = async (
   args: { newAuthority: string } & AnchorArgs,
 ) => {
   const program = new DomainRegistryProgram(createAnchorProvider(args));
   await program.methods.updateAuthority(new PublicKey(args.newAuthority)).rpc();
 };
-=======
-const handleUpdateAuthority = async (args: { newAuthority: string } & AnchorArgs) => {
-  const program = new DomainRegistryProgram(createAnchorProvider(args));
-  await program.methods.updateAuthority(new PublicKey(args.newAuthority)).rpc();
-};
->>>>>>> 72a283fb (go)
