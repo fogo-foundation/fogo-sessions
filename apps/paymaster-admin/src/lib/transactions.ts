@@ -21,10 +21,10 @@ export const normalizeVersionedTransactionBase64 = (
   return Buffer.from(parsed.serialize()).toString("base64");
 };
 
-/** Solana tx signatures are 64 bytes base58-encoded. */
 export const isValidTxHash = (value: string): boolean => {
   try {
-    return bs58.decode(value.trim()).length === 64;
+    // Solana tx signatures are 64 bytes base58-encoded.
+    return bs58.decode(value).length === 64;
   } catch {
     return false;
   }
