@@ -48,7 +48,6 @@ export async function POST(req: NextRequest) {
   await writeFile(tempPath, generateConfigToml(domain, variation));
 
   try {
-    // TODO: need to figure out how to fix the sponsor issue, handling both registered and unregistered domains
     const validatorPath = join(process.cwd(), "bin", "paymaster-tx-validator");
     const { stdout } = await execFileAsync(validatorPath, [
       "validate",
@@ -60,8 +59,6 @@ export async function POST(req: NextRequest) {
       domain,
       "--variation",
       variation.name,
-      "--sponsor",
-      "11111111111111111111111111111111",
       "--network",
       network,
     ]);
