@@ -24,26 +24,28 @@ const VariationsList = (props: VariationsListProps) => {
   ) : (
     <>
       <GridList
-        className={styles.variationsList ?? ""}
         aria-label="Variations"
-        layout="grid"
+        className={styles.variationsList ?? ""}
         items={props.domainConfig.variations}
+        layout="grid"
       >
         {(variation) => (
           <GridListItem key={variation.id}>
             <VariationListItem
-              sessionState={props.sessionState}
-              variation={variation}
               domainConfigId={props.domainConfig.id}
               domainName={props.domainConfig.domain}
+              networkEnvironment={props.domainConfig.network_environment}
+              sessionState={props.sessionState}
+              variation={variation}
             />
           </GridListItem>
         )}
       </GridList>
       <VariationListItem
-        sessionState={props.sessionState}
         domainConfigId={props.domainConfig.id}
         domainName={props.domainConfig.domain}
+        networkEnvironment={props.domainConfig.network_environment}
+        sessionState={props.sessionState}
       />
     </>
   );

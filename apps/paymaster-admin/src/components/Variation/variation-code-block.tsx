@@ -18,6 +18,7 @@ type VariationCodeBlockProps = {
   domain: string;
   footer?: React.ReactNode;
   mode: "toml" | "json";
+  networkEnvironment: string;
   variationForTest: Variation | null;
 };
 
@@ -27,6 +28,7 @@ export const VariationCodeBlock = ({
   domain,
   footer,
   mode,
+  networkEnvironment,
   variationForTest,
 }: VariationCodeBlockProps) => {
   const toast = useToast();
@@ -68,7 +70,11 @@ export const VariationCodeBlock = ({
         <div className={styles.variationCodeBlockFooter}>{footer}</div>
       )}
       <div className={styles.variationCodeBlockTester}>
-        <VariationTester domain={domain} variation={variationForTest} />
+        <VariationTester
+          domain={domain}
+          networkEnvironment={networkEnvironment}
+          variation={variationForTest}
+        />
       </div>
     </div>
   );

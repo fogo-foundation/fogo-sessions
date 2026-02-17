@@ -40,6 +40,7 @@ type VariationListItemProps =
       sessionState: EstablishedSessionState;
       domainConfigId: string;
       domainName: string;
+      networkEnvironment: string;
       variation?: Variation;
       isLoading?: false;
     }
@@ -64,6 +65,7 @@ type VariationFormProps = {
   domainConfigId: string;
   variation?: Variation;
   domainName: string;
+  networkEnvironment: string;
 };
 
 const VariationForm = ({
@@ -71,6 +73,7 @@ const VariationForm = ({
   variation,
   domainConfigId,
   domainName,
+  networkEnvironment,
 }: VariationFormProps) => {
   const userData = useUserData(sessionState);
   const toast = useToast();
@@ -558,6 +561,7 @@ const VariationForm = ({
         instructions={instructions}
         isExpanded={isExpanded}
         isV1={isV1}
+        networkEnvironment={networkEnvironment}
         onCodeChange={handleCodeChange}
         onInstructionsChange={handleFormInstructionsChange}
         variationForTest={variationForTest}
