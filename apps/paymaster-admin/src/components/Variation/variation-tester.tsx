@@ -12,11 +12,13 @@ type ValidationResult = { success: boolean; message: string };
 
 type VariationTesterProps = {
   domain: string;
+  networkEnvironment: string;
   variation?: Variation | null;
 };
 
 export const VariationTester = ({
   domain,
+  networkEnvironment,
   variation,
 }: VariationTesterProps) => {
   const [transactionInput, setTransactionInput] = useState("");
@@ -43,6 +45,7 @@ export const VariationTester = ({
       const response = await fetch("/api/validate-transaction", {
         body: JSON.stringify({
           domain,
+          network: networkEnvironment,
           transaction: transactionParsed,
           variation,
         }),
@@ -50,7 +53,7 @@ export const VariationTester = ({
         method: "POST",
       });
       return response.json();
-    }, [transactionParsed, domain, variation]),
+    }, [transactionParsed, domain, networkEnvironment, variation]),
   );
 
   const handleTransactionChange = useCallback((value: string) => {

@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 import TOML from "smol-toml";
 import { z } from "zod";
 import type { Variation } from "../../../db-schema";
-import { VariationSchema } from "../../../db-schema";
+import { NetworkEnvironmentSchema, VariationSchema } from "../../../db-schema";
 import { normalizeVersionedTransactionBase64 } from "../../../lib/transactions";
 
 const execFileAsync = promisify(execFile);
@@ -26,8 +26,9 @@ const Base64TransactionSchema = z.string().transform((val, ctx) => {
 });
 
 const RequestBodySchema = z.object({
-  transaction: Base64TransactionSchema,
   domain: z.string().min(1),
+  network: NetworkEnvironmentSchema,
+  transaction: Base64TransactionSchema,
   variation: VariationSchema,
 });
 
@@ -36,18 +37,17 @@ export async function POST(req: NextRequest) {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: parsed.error.message },
+      { message: parsed.error.message, success: false },
       { status: 400 },
     );
   }
 
-  const { transaction, domain, variation } = parsed.data;
+  const { transaction, domain, variation, network } = parsed.data;
 
   const tempPath = join(tmpdir(), `config-${Date.now()}.toml`);
   await writeFile(tempPath, generateConfigToml(domain, variation));
 
   try {
-    // TODO: need to figure out how to fix the sponsor issue, handling both registered and unregistered domains
     const validatorPath = join(process.cwd(), "bin", "paymaster-tx-validator");
     const { stdout } = await execFileAsync(validatorPath, [
       "validate",
@@ -59,8 +59,8 @@ export async function POST(req: NextRequest) {
       domain,
       "--variation",
       variation.name,
-      "--sponsor",
-      "11111111111111111111111111111111",
+      "--network",
+      network,
     ]);
 
     // TODO: clean up the paymaster tx validator tool to have more standard success/error return format
@@ -68,15 +68,15 @@ export async function POST(req: NextRequest) {
     const message = stdout;
 
     if (success) {
-      return NextResponse.json({ success: true, message });
+      return NextResponse.json({ message, success: true });
     } else {
-      return NextResponse.json({ success: false, message });
+      return NextResponse.json({ message, success: false });
     }
   } catch (error) {
     return NextResponse.json(
       {
-        success: false,
         message: `Error validating transaction: ${(error as Error).message}`,
+        success: false,
       },
       { status: 500 },
     );
@@ -100,23 +100,23 @@ function generateConfigToml(domain: string, variation: Variation): string {
 function convertToTomlFormat(variation: Variation) {
   if (variation.version === "v0") {
     return {
-      version: "v0",
       name: variation.name,
+      version: "v0",
       whitelisted_programs: variation.transaction_variation,
     };
   } else if (variation.version === "v1") {
     return {
-      version: "v1",
-      name: variation.name,
-      max_gas_spend: variation.max_gas_spend,
       instructions: variation.transaction_variation.map((ix) => ({
-        program: ix.program,
-        required: ix.required,
         accounts: ix.accounts,
         data: ix.data,
+        program: ix.program,
+        required: ix.required,
         requires_wrapped_native_tokens:
           ix.requires_wrapped_native_tokens ?? false,
       })),
+      max_gas_spend: variation.max_gas_spend,
+      name: variation.name,
+      version: "v1",
     };
   }
   throw new Error("Unknown variation version");

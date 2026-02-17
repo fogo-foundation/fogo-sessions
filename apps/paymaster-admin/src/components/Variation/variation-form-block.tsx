@@ -10,6 +10,7 @@ type VariationFormBlockProps = {
   instructions: InstructionConstraint[];
   onChange: (instructions: InstructionConstraint[]) => void;
   domain: string;
+  networkEnvironment: string;
   variationForTest: Variation | null;
   footer?: React.ReactNode;
 };
@@ -18,6 +19,7 @@ export const VariationFormBlock = ({
   instructions,
   onChange,
   domain,
+  networkEnvironment,
   variationForTest,
   footer,
 }: VariationFormBlockProps) => {
@@ -28,7 +30,11 @@ export const VariationFormBlock = ({
         <div className={styles.variationFormEditorFooter}>{footer}</div>
       )}
       <div className={styles.variationFormEditorTester}>
-        <VariationTester domain={domain} variation={variationForTest} />
+        <VariationTester
+          domain={domain}
+          networkEnvironment={networkEnvironment}
+          variation={variationForTest}
+        />
       </div>
     </div>
   );

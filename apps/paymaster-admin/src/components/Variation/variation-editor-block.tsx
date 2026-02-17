@@ -17,6 +17,7 @@ type VariationEditorBlockProps = {
   onCodeChange: (value: string) => void;
   codeMode: "toml" | "json";
   domain: string;
+  networkEnvironment: string;
   variationForTest: Variation | null;
   footer?: React.ReactNode;
 };
@@ -31,6 +32,7 @@ export const VariationEditorBlock = ({
   onCodeChange,
   codeMode,
   domain,
+  networkEnvironment,
   variationForTest,
   footer,
 }: VariationEditorBlockProps) => {
@@ -48,6 +50,7 @@ export const VariationEditorBlock = ({
               domain={domain}
               footer={footer}
               instructions={instructions}
+              networkEnvironment={networkEnvironment}
               onChange={onInstructionsChange}
               variationForTest={variationForTest}
             />
@@ -56,6 +59,7 @@ export const VariationEditorBlock = ({
               domain={domain}
               footer={footer}
               mode={codeMode}
+              networkEnvironment={networkEnvironment}
               onChange={onCodeChange}
               value={code}
               variationForTest={variationForTest}
