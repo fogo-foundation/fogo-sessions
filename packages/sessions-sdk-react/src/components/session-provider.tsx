@@ -355,14 +355,7 @@ const useSessionState = ({
           switch (parsedError.data.InstructionError[1].Custom) {
             case ERROR_CODE_SESSION_EXPIRED: {
               onOpenExtendSessionExpiry?.();
-              setState(
-                SessionState.RequestingExtendedExpiry({
-                  ...establishedOptions,
-                  cancel: () => {
-                    setState(SessionState.Established(establishedOptions));
-                  },
-                }),
-              );
+              establishedOptions.requestExtendedExpiry();
               break;
             }
             case ERROR_CODE_SESSION_LIMITS_EXCEEDED: {
@@ -479,13 +472,23 @@ const useSessionState = ({
         isLimited:
           session.sessionInfo.authorizedTokens === AuthorizedTokens.Specific,
         payer: session.payer,
-        requestExtendedExpiry: (onCancel?: () => void) => {
+        requestExtendedExpiry: (options?: {
+          onCancel?: (() => void) | undefined;
+          clearSessionOnCancel?: boolean | undefined;
+        }) => {
           setState(
             SessionState.RequestingExtendedExpiry({
               ...establishedOptions,
               cancel: () => {
-                setState(SessionState.Established(establishedOptions));
-                onCancel?.();
+                if (options?.clearSessionOnCancel) {
+                  disconnect(wallet, network, {
+                    session,
+                    sessionContext: getSessionContext(),
+                  });
+                } else {
+                  setState(SessionState.Established(establishedOptions));
+                }
+                options?.onCancel?.();
               },
             }),
           );

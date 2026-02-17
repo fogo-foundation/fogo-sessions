@@ -1,6 +1,10 @@
 import { useCallback } from "react";
 import type { KeyedMutator } from "swr";
-import useSWR from "swr";
+import useSWR, { useSWRConfig as useSWRConfigHook } from "swr";
+
+export type { Cache } from "swr";
+
+export const useSWRConfig = useSWRConfigHook;
 
 export const useData = <T>(...args: Parameters<typeof useSWR<T>>) => {
   const { data, isLoading, mutate, ...rest } = useSWR(...args);
@@ -35,20 +39,20 @@ export enum StateType {
 }
 
 const State = {
-  NotLoaded: <T>(mutate: KeyedMutator<T>) => ({
-    type: StateType.NotLoaded as const,
-    mutate,
-  }),
-  Loading: () => ({ type: StateType.Loading as const }),
-  Loaded: <T>(data: T, mutate: KeyedMutator<T>) => ({
-    type: StateType.Loaded as const,
-    mutate,
-    data,
-  }),
   ErrorState: (error: UseDataError, reset: () => void) => ({
-    type: StateType.Error as const,
     error,
     reset,
+    type: StateType.Error as const,
+  }),
+  Loaded: <T>(data: T, mutate: KeyedMutator<T>) => ({
+    data,
+    mutate,
+    type: StateType.Loaded as const,
+  }),
+  Loading: () => ({ type: StateType.Loading as const }),
+  NotLoaded: <T>(mutate: KeyedMutator<T>) => ({
+    mutate,
+    type: StateType.NotLoaded as const,
   }),
 };
 
