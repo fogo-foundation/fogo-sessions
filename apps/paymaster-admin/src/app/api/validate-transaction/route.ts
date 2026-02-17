@@ -10,6 +10,7 @@ import { z } from "zod";
 import type { Variation } from "../../../db-schema";
 import { VariationSchema } from "../../../db-schema";
 import { normalizeVersionedTransactionBase64 } from "../../../lib/transactions";
+import { VersionedTransaction } from "@solana/web3.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -48,6 +49,20 @@ export async function POST(req: NextRequest) {
 
   try {
     // TODO: need to figure out how to fix the sponsor issue, handling both registered and unregistered domains
+    // If domain is registered, we should just disregard the sponsor input arg.
+    const parsedTransaction = VersionedTransaction.deserialize(
+      new Uint8Array(Buffer.from(transaction, "base64")),
+    );
+
+    const feePayerKey = parsedTransaction.message.staticAccountKeys[0];
+    if (!feePayerKey) {
+      return NextResponse.json(
+        { success: false, message: "Transaction has no fee payer" },
+        { status: 400 },
+      );
+    }
+    const feePayer = feePayerKey.toBase58();
+
     const validatorPath = join(process.cwd(), "bin", "paymaster-tx-validator");
     const { stdout } = await execFileAsync(validatorPath, [
       "validate",
@@ -60,7 +75,7 @@ export async function POST(req: NextRequest) {
       "--variation",
       variation.name,
       "--sponsor",
-      "11111111111111111111111111111111",
+      feePayer,
     ]);
 
     // TODO: clean up the paymaster tx validator tool to have more standard success/error return format
