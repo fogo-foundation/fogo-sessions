@@ -36,6 +36,16 @@ export async function POST(req: NextRequest) {
   const { transactionInput, domain, variation, network } = parsed.data;
 
   const txType = classifyTransactionInput(transactionInput);
+  if (txType === "invalid") {
+    return NextResponse.json(
+      {
+        message:
+          "Input must be a valid base64 serialized transaction or a Solana transaction hash",
+        success: false,
+      },
+      { status: 400 },
+    );
+  }
   const txFlag = txType === "serialized" ? "--transaction" : "--transaction-hash";
   const txValue = transactionInput.trim();
 
