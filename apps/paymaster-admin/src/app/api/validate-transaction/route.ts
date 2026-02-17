@@ -16,10 +16,13 @@ const execFileAsync = promisify(execFile);
 const RequestBodySchema = z.object({
   domain: z.string().min(1),
   network: NetworkEnvironmentSchema,
-  transactionInput: z.string().min(1).refine(
-    (val) => classifyTransactionInput(val) !== "invalid",
-    "Input must be a valid base64 serialized transaction or a Solana transaction hash",
-  ),
+  transactionInput: z
+    .string()
+    .min(1)
+    .refine(
+      (val) => classifyTransactionInput(val) !== "invalid",
+      "Input must be a valid base64 serialized transaction or a Solana transaction hash",
+    ),
   variation: VariationSchema,
 });
 
@@ -46,7 +49,8 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const txFlag = txType === "serialized" ? "--transaction" : "--transaction-hash";
+  const txFlag =
+    txType === "serialized" ? "--transaction" : "--transaction-hash";
   const txValue = transactionInput.trim();
 
   const tempPath = join(tmpdir(), `config-${Date.now()}.toml`);

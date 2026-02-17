@@ -76,13 +76,18 @@ export const VariationTester = ({
           placeholder="Enter serialized transaction (base64) or transaction hash"
           value={transactionInput}
         />
-        <Button isDisabled={isLoading || !variation || inputType === "invalid"} onClick={execute} variant="secondary">
+        <Button
+          isDisabled={isLoading || !variation || inputType === "invalid"}
+          onClick={execute}
+          variant="secondary"
+        >
           Test
         </Button>
       </div>
       {transactionInput && inputType === "invalid" && (
         <span className={styles.variationTesterError ?? ""}>
-          Input must be a valid serialized transaction (base64) or transaction hash
+          Input must be a valid serialized transaction (base64) or transaction
+          hash
         </span>
       )}
       {isComplete && (
