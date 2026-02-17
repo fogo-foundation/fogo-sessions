@@ -22,6 +22,7 @@
     "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
     "@solana/web3.js": "catalog:",
+    "bs58": "catalog:",
     "ace-builds": "catalog:",
     "clsx": "catalog:",
     "motion": "catalog:",
