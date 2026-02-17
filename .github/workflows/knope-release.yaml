@@ -70,7 +70,7 @@ jobs:
       - name: Publish Cargo packages
         run: |
           set +e
-          cargo release publish -p chain-id -p intent-transfer -p fogo-paymaster -p fogo-sessions-sdk -p solana-intents -p tollbooth --execute --no-confirm
+          cargo release publish -p chain-id -p domain-registry -p intent-transfer -p fogo-paymaster -p fogo-sessions-sdk -p solana-intents -p tollbooth --execute --no-confirm
           # cargo release will exit with error code 2 if there are no packages
           # to be published, but we don't want that to fail the pipeline
           EXIT_CODE=$?
