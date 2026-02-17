@@ -3,6 +3,7 @@ import { unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { VersionedTransaction } from "@solana/web3.js";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import TOML from "smol-toml";
@@ -10,7 +11,6 @@ import { z } from "zod";
 import type { Variation } from "../../../db-schema";
 import { VariationSchema } from "../../../db-schema";
 import { normalizeVersionedTransactionBase64 } from "../../../lib/transactions";
-import { VersionedTransaction } from "@solana/web3.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -27,8 +27,8 @@ const Base64TransactionSchema = z.string().transform((val, ctx) => {
 });
 
 const RequestBodySchema = z.object({
-  transaction: Base64TransactionSchema,
   domain: z.string().min(1),
+  transaction: Base64TransactionSchema,
   variation: VariationSchema,
 });
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: parsed.error.message },
+      { message: parsed.error.message, success: false },
       { status: 400 },
     );
   }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const feePayerKey = parsedTransaction.message.staticAccountKeys[0];
     if (!feePayerKey) {
       return NextResponse.json(
-        { success: false, message: "Transaction has no fee payer" },
+        { message: "Transaction has no fee payer", success: false },
         { status: 400 },
       );
     }
@@ -83,15 +83,15 @@ export async function POST(req: NextRequest) {
     const message = stdout;
 
     if (success) {
-      return NextResponse.json({ success: true, message });
+      return NextResponse.json({ message, success: true });
     } else {
-      return NextResponse.json({ success: false, message });
+      return NextResponse.json({ message, success: false });
     }
   } catch (error) {
     return NextResponse.json(
       {
-        success: false,
         message: `Error validating transaction: ${(error as Error).message}`,
+        success: false,
       },
       { status: 500 },
     );
@@ -115,23 +115,23 @@ function generateConfigToml(domain: string, variation: Variation): string {
 function convertToTomlFormat(variation: Variation) {
   if (variation.version === "v0") {
     return {
-      version: "v0",
       name: variation.name,
+      version: "v0",
       whitelisted_programs: variation.transaction_variation,
     };
   } else if (variation.version === "v1") {
     return {
-      version: "v1",
-      name: variation.name,
-      max_gas_spend: variation.max_gas_spend,
       instructions: variation.transaction_variation.map((ix) => ({
-        program: ix.program,
-        required: ix.required,
         accounts: ix.accounts,
         data: ix.data,
+        program: ix.program,
+        required: ix.required,
         requires_wrapped_native_tokens:
           ix.requires_wrapped_native_tokens ?? false,
       })),
+      max_gas_spend: variation.max_gas_spend,
+      name: variation.name,
+      version: "v1",
     };
   }
   throw new Error("Unknown variation version");
