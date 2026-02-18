@@ -6,7 +6,7 @@ import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useCallback, useMemo, useState } from "react";
 import type { Variation } from "../../db-schema";
 import { stableStringify } from "../../lib/stable-stringify";
-import { classifyTransactionInput } from "../../lib/transactions";
+import { parseTransactionInput } from "../../lib/transactions";
 import styles from "./variation-tester.module.scss";
 
 type ValidationResult = { success: boolean; message: string };
@@ -26,10 +26,13 @@ export const VariationTester = ({
   const [validatedInput, setValidatedInput] = useState("");
   const [validatedVariationJson, setValidatedVariationJson] = useState("");
 
-  const inputType = useMemo(
-    () => classifyTransactionInput(transactionInput),
-    [transactionInput],
-  );
+  const parsedInput = useMemo(() => {
+    try {
+      return parseTransactionInput(transactionInput);
+    } catch {
+      return null;
+    }
+  }, [transactionInput]);
 
   const { state, execute: executeAsync } = useAsync<ValidationResult>(
     useCallback(async () => {
@@ -37,7 +40,7 @@ export const VariationTester = ({
         body: JSON.stringify({
           domain,
           network: networkEnvironment,
-          transactionInput: transactionInput.trim(),
+          transactionInput: parsedInput?.value ?? transactionInput.trim(),
           variation,
         }),
         headers: { "Content-Type": "application/json" },
@@ -77,14 +80,14 @@ export const VariationTester = ({
           value={transactionInput}
         />
         <Button
-          isDisabled={isLoading || !variation || inputType === "invalid"}
+          isDisabled={isLoading || !variation || !parsedInput}
           onClick={execute}
           variant="secondary"
         >
           Test
         </Button>
       </div>
-      {transactionInput && inputType === "invalid" && (
+      {transactionInput && !parsedInput && (
         <span className={styles.variationTesterError ?? ""}>
           Input must be a valid serialized transaction (base64) or transaction
           hash

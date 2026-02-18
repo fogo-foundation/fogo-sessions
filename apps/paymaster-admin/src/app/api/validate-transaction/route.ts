@@ -9,20 +9,14 @@ import TOML from "smol-toml";
 import { z } from "zod";
 import type { Variation } from "../../../db-schema";
 import { NetworkEnvironmentSchema, VariationSchema } from "../../../db-schema";
-import { classifyTransactionInput } from "../../../lib/transactions";
+import { parseTransactionInput } from "../../../lib/transactions";
 
 const execFileAsync = promisify(execFile);
 
 const RequestBodySchema = z.object({
   domain: z.string().min(1),
   network: NetworkEnvironmentSchema,
-  transactionInput: z
-    .string()
-    .min(1)
-    .refine(
-      (val) => classifyTransactionInput(val) !== "invalid",
-      "Input must be a valid base64 serialized transaction or a Solana transaction hash",
-    ),
+  transactionInput: z.string().trim().min(1),
   variation: VariationSchema,
 });
 
@@ -38,20 +32,23 @@ export async function POST(req: NextRequest) {
 
   const { transactionInput, domain, variation, network } = parsed.data;
 
-  const txType = classifyTransactionInput(transactionInput);
-  if (txType === "invalid") {
+  let parsedInput;
+  try {
+    parsedInput = parseTransactionInput(transactionInput);
+  } catch (error) {
     return NextResponse.json(
       {
         message:
-          "Input must be a valid base64 serialized transaction or a Solana transaction hash",
+          error instanceof Error
+            ? error.message
+            : "Input must be a valid base64 serialized transaction or a Solana transaction hash",
         success: false,
       },
       { status: 400 },
     );
   }
   const txFlag =
-    txType === "serialized" ? "--transaction" : "--transaction-hash";
-  const txValue = transactionInput.trim();
+    parsedInput.type === "serialized" ? "--transaction" : "--transaction-hash";
 
   const tempPath = join(tmpdir(), `config-${Date.now()}.toml`);
   await writeFile(tempPath, generateConfigToml(domain, variation));
@@ -63,7 +60,7 @@ export async function POST(req: NextRequest) {
       "--config",
       tempPath,
       txFlag,
-      txValue,
+      parsedInput.value,
       "--domain",
       domain,
       "--variation",

@@ -30,14 +30,15 @@ export const isValidTxHash = (value: string): boolean => {
   }
 };
 
-export type TransactionInputType = "serialized" | "hash" | "invalid";
+export type TransactionInput =
+  | { type: "serialized"; value: string }
+  | { type: "hash"; value: string };
 
-export const classifyTransactionInput = (
-  value: string,
-): TransactionInputType => {
+export const parseTransactionInput = (value: string): TransactionInput => {
   const trimmed = value.trim();
-  if (!trimmed) return "invalid";
-  if (normalizeVersionedTransactionBase64(trimmed)) return "serialized";
-  if (isValidTxHash(trimmed)) return "hash";
-  return "invalid";
+  if (!trimmed) throw new Error("Transaction input cannot be empty");
+  if (normalizeVersionedTransactionBase64(trimmed))
+    return { type: "serialized", value: trimmed };
+  if (isValidTxHash(trimmed)) return { type: "hash", value: trimmed };
+  throw new Error("Invalid transaction input");
 };
