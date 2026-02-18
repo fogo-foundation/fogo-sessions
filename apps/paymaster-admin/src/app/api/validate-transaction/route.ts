@@ -32,21 +32,7 @@ export async function POST(req: NextRequest) {
 
   const { transactionInput, domain, variation, network } = parsed.data;
 
-  let parsedInput;
-  try {
-    parsedInput = parseTransactionInput(transactionInput);
-  } catch (error) {
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error
-            ? error.message
-            : "Input must be a valid base64 serialized transaction or a Solana transaction hash",
-        success: false,
-      },
-      { status: 400 },
-    );
-  }
+  let parsedInput = parseTransactionInput(transactionInput);
   const txFlag =
     parsedInput.type === "serialized" ? "--transaction" : "--transaction-hash";
 

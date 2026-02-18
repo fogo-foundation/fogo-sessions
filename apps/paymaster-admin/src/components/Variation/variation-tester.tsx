@@ -5,7 +5,6 @@ import { StateType, useAsync } from "@fogo/component-library/useAsync";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useCallback, useMemo, useState } from "react";
 import type { Variation } from "../../db-schema";
-import { stableStringify } from "../../lib/stable-stringify";
 import { parseTransactionInput } from "../../lib/transactions";
 import styles from "./variation-tester.module.scss";
 
@@ -17,6 +16,12 @@ type VariationTesterProps = {
   variation?: Variation | null;
 };
 
+function variationsEqual(variation1: Variation, variation2: Variation): boolean {
+  const { updated_at: _updatedAt1, ...rest1 } = variation1;
+  const { updated_at: _updatedAt2, ...rest2 } = variation2;
+  return JSON.stringify(rest1) === JSON.stringify(rest2);
+}
+
 export const VariationTester = ({
   domain,
   networkEnvironment,
@@ -24,7 +29,8 @@ export const VariationTester = ({
 }: VariationTesterProps) => {
   const [transactionInput, setTransactionInput] = useState("");
   const [validatedInput, setValidatedInput] = useState("");
-  const [validatedVariationJson, setValidatedVariationJson] = useState("");
+  const [validatedVariation, setValidatedVariation] =
+    useState<Variation | null>(null);
 
   const parsedInput = useMemo(() => {
     try {
@@ -50,13 +56,11 @@ export const VariationTester = ({
     }, [transactionInput, domain, networkEnvironment, variation]),
   );
 
-  const variationJson = stableStringify(variation);
-
   const execute = useCallback(() => {
     setValidatedInput(transactionInput);
-    setValidatedVariationJson(variationJson);
+    setValidatedVariation(variation ?? null);
     executeAsync();
-  }, [transactionInput, variationJson, executeAsync]);
+  }, [transactionInput, variation, executeAsync]);
 
   const handleTransactionChange = useCallback((value: string) => {
     setTransactionInput(value);
@@ -64,7 +68,9 @@ export const VariationTester = ({
 
   const showResult =
     transactionInput === validatedInput &&
-    variationJson === validatedVariationJson;
+    !!variation &&
+    !!validatedVariation &&
+    variationsEqual(variation, validatedVariation);
   const isComplete = showResult && state.type === StateType.Complete;
   const isError = showResult && state.type === StateType.Error;
   const isLoading = state.type === StateType.Running;
