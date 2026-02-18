@@ -16,7 +16,10 @@ type VariationTesterProps = {
   variation?: Variation | null;
 };
 
-function variationsEqual(variation1: Variation, variation2: Variation): boolean {
+function variationsEqual(
+  variation1: Variation,
+  variation2: Variation,
+): boolean {
   const { updated_at: _updatedAt1, ...rest1 } = variation1;
   const { updated_at: _updatedAt2, ...rest2 } = variation2;
   return JSON.stringify(rest1) === JSON.stringify(rest2);
@@ -66,11 +69,15 @@ export const VariationTester = ({
     setTransactionInput(value);
   }, []);
 
-  const showResult =
-    transactionInput === validatedInput &&
-    !!variation &&
-    !!validatedVariation &&
-    variationsEqual(variation, validatedVariation);
+  const variationsMatch = useMemo(
+    () =>
+      !!variation &&
+      !!validatedVariation &&
+      variationsEqual(variation, validatedVariation),
+    [variation, validatedVariation],
+  );
+
+  const showResult = transactionInput === validatedInput && variationsMatch;
   const isComplete = showResult && state.type === StateType.Complete;
   const isError = showResult && state.type === StateType.Error;
   const isLoading = state.type === StateType.Running;

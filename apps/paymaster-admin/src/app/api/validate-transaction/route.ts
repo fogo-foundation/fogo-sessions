@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   const { transactionInput, domain, variation, network } = parsed.data;
 
-  let parsedInput = parseTransactionInput(transactionInput);
+  const parsedInput = parseTransactionInput(transactionInput);
   const txFlag =
     parsedInput.type === "serialized" ? "--transaction" : "--transaction-hash";
 
