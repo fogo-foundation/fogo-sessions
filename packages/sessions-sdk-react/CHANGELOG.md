@@ -1,5 +1,13 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.16 (2026-02-19)
+
+### Fixes
+
+- Fix bugginess when changing wallets
+- Fix legacy ledger firmware to work again
+- Indicate session is expired in session button
+
 ## 0.1.15 (2026-01-21)
 
 ### Fixes

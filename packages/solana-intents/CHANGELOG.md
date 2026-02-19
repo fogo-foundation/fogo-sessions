@@ -1,3 +1,9 @@
+## 0.1.3 (2026-02-19)
+
+### Fixes
+
+- Accept more flexible offsets in the Ed25519InstructionData.
+
 ## 0.1.2 (2026-01-21)
 
 ### Features
