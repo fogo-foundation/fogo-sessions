@@ -1,5 +1,11 @@
 # @fogo/sessions-idls
 
+## 0.1.3 (2026-02-19)
+
+### Fixes
+
+- Add an instruction to the domain registry program to update the authority.
+
 ## 0.1.2 (2026-01-15)
 
 ### Fixes
