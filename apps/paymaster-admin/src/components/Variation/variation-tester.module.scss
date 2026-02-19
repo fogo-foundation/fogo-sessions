@@ -25,3 +25,10 @@
     flex: 1;
   }
 }
+
+.variationTesterError {
+  @include theme.text('sm', 'normal');
+  display: block;
+  color: theme.color('states', 'error', 'foreground');
+  margin-top: theme.spacing(2);
+}

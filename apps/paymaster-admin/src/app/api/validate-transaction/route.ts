@@ -9,26 +9,14 @@ import TOML from "smol-toml";
 import { z } from "zod";
 import type { Variation } from "../../../db-schema";
 import { NetworkEnvironmentSchema, VariationSchema } from "../../../db-schema";
-import { normalizeVersionedTransactionBase64 } from "../../../lib/transactions";
+import { parseTransactionInput } from "../../../lib/transactions";
 
 const execFileAsync = promisify(execFile);
-
-const Base64TransactionSchema = z.string().transform((val, ctx) => {
-  const normalized = normalizeVersionedTransactionBase64(val);
-  if (normalized) {
-    return normalized;
-  }
-  ctx.addIssue({
-    code: z.ZodIssueCode.custom,
-    message: "Invalid base64 transaction",
-  });
-  return z.NEVER;
-});
 
 const RequestBodySchema = z.object({
   domain: z.string().min(1),
   network: NetworkEnvironmentSchema,
-  transaction: Base64TransactionSchema,
+  transactionInput: z.string().trim().min(1),
   variation: VariationSchema,
 });
 
@@ -42,7 +30,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { transaction, domain, variation, network } = parsed.data;
+  const { transactionInput, domain, variation, network } = parsed.data;
+
+  const parsedInput = parseTransactionInput(transactionInput);
+  const txFlag =
+    parsedInput.type === "serialized" ? "--transaction" : "--transaction-hash";
 
   const tempPath = join(tmpdir(), `config-${Date.now()}.toml`);
   await writeFile(tempPath, generateConfigToml(domain, variation));
@@ -53,8 +45,8 @@ export async function POST(req: NextRequest) {
       "validate",
       "--config",
       tempPath,
-      "--transaction",
-      transaction,
+      txFlag,
+      parsedInput.value,
       "--domain",
       domain,
       "--variation",

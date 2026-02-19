@@ -5,7 +5,7 @@ import { StateType, useAsync } from "@fogo/component-library/useAsync";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useCallback, useMemo, useState } from "react";
 import type { Variation } from "../../db-schema";
-import { normalizeVersionedTransactionBase64 } from "../../lib/transactions";
+import { parseTransactionInput } from "../../lib/transactions";
 import styles from "./variation-tester.module.scss";
 
 type ValidationResult = { success: boolean; message: string };
@@ -16,52 +16,70 @@ type VariationTesterProps = {
   variation?: Variation | null;
 };
 
+function variationsEqual(
+  variation1: Variation,
+  variation2: Variation,
+): boolean {
+  const { updated_at: _updatedAt1, ...rest1 } = variation1;
+  const { updated_at: _updatedAt2, ...rest2 } = variation2;
+  return JSON.stringify(rest1) === JSON.stringify(rest2);
+}
+
 export const VariationTester = ({
   domain,
   networkEnvironment,
   variation,
 }: VariationTesterProps) => {
   const [transactionInput, setTransactionInput] = useState("");
-  const transactionParsed = useMemo(
-    () => normalizeVersionedTransactionBase64(transactionInput),
-    [transactionInput],
-  );
+  const [validatedInput, setValidatedInput] = useState("");
+  const [validatedVariation, setValidatedVariation] =
+    useState<Variation | null>(null);
 
-  const { state, execute } = useAsync<ValidationResult>(
+  const parsedInput = useMemo(() => {
+    try {
+      return parseTransactionInput(transactionInput);
+    } catch {
+      return null;
+    }
+  }, [transactionInput]);
+
+  const { state, execute: executeAsync } = useAsync<ValidationResult>(
     useCallback(async () => {
-      if (!variation) {
-        return {
-          message: "Variation is invalid. Fix the configuration to test.",
-          success: false,
-        };
-      }
-      if (!transactionParsed) {
-        return {
-          message:
-            "Transaction is invalid. Please enter a valid base64 transaction.",
-          success: false,
-        };
-      }
       const response = await fetch("/api/validate-transaction", {
         body: JSON.stringify({
           domain,
           network: networkEnvironment,
-          transaction: transactionParsed,
+          transactionInput: parsedInput?.value ?? transactionInput.trim(),
           variation,
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
       return response.json();
-    }, [transactionParsed, domain, networkEnvironment, variation]),
+    }, [transactionInput, domain, networkEnvironment, variation]),
   );
+
+  const execute = useCallback(() => {
+    setValidatedInput(transactionInput);
+    setValidatedVariation(variation ?? null);
+    executeAsync();
+  }, [transactionInput, variation, executeAsync]);
 
   const handleTransactionChange = useCallback((value: string) => {
     setTransactionInput(value);
   }, []);
 
-  const isComplete = state.type === StateType.Complete;
-  const isError = state.type === StateType.Error;
+  const variationsMatch = useMemo(
+    () =>
+      !!variation &&
+      !!validatedVariation &&
+      variationsEqual(variation, validatedVariation),
+    [variation, validatedVariation],
+  );
+
+  const showResult = transactionInput === validatedInput && variationsMatch;
+  const isComplete = showResult && state.type === StateType.Complete;
+  const isError = showResult && state.type === StateType.Error;
   const isLoading = state.type === StateType.Running;
 
   return (
@@ -71,13 +89,23 @@ export const VariationTester = ({
           className={styles.variationTesterInput ?? ""}
           double={true}
           onChange={handleTransactionChange}
-          placeholder="Enter serialized transaction (base64)"
+          placeholder="Enter serialized transaction (base64) or transaction hash"
           value={transactionInput}
         />
-        <Button isDisabled={isLoading} onClick={execute} variant="secondary">
+        <Button
+          isDisabled={isLoading || !variation || !parsedInput}
+          onClick={execute}
+          variant="secondary"
+        >
           Test
         </Button>
       </div>
+      {transactionInput && !parsedInput && (
+        <span className={styles.variationTesterError ?? ""}>
+          Input must be a valid serialized transaction (base64) or transaction
+          hash
+        </span>
+      )}
       {isComplete && (
         <div className={styles.variationTesterOutput}>
           <Badge size="xs" variant={state.result.success ? "success" : "error"}>

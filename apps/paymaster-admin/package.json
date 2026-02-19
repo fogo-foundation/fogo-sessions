@@ -1,19 +1,4 @@
 {
-  "name": "@fogo/paymaster-admin",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "engines": {
-    "node": "22"
-  },
-  "scripts": {
-    "build": "next build",
-    "build:validator": "cargo build --release --manifest-path ../../services/paymaster/Cargo.toml --bin paymaster-tx-validator && mkdir -p bin && cp ../../target/release/paymaster-tx-validator bin/",
-    "pull:env": "[ $CI ] || VERCEL_ORG_ID=team_M8yTQcRiKOduAwHNMhHQInWq VERCEL_PROJECT_ID=prj_0YVLB5TIHu7VXdMyib1Zmjq4iwtZ vercel env pull",
-    "start:dev": "next dev --port 3002",
-    "start:prod": "next start --port 3002",
-    "test:types": "tsc"
-  },
   "dependencies": {
     "@fogo/component-library": "workspace:*",
     "@fogo/sessions-sdk": "workspace:",
@@ -23,6 +8,7 @@
     "@react-hookz/web": "catalog:",
     "@solana/web3.js": "catalog:",
     "ace-builds": "catalog:",
+    "bs58": "catalog:",
     "clsx": "catalog:",
     "motion": "catalog:",
     "next": "catalog:",
@@ -46,5 +32,20 @@
     "postcss": "catalog:",
     "typescript": "catalog:",
     "vercel": "catalog:"
-  }
+  },
+  "engines": {
+    "node": "22"
+  },
+  "name": "@fogo/paymaster-admin",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "build:validator": "cargo build --release --manifest-path ../../services/paymaster/Cargo.toml --bin paymaster-tx-validator && mkdir -p bin && cp ../../target/release/paymaster-tx-validator bin/",
+    "pull:env": "[ $CI ] || VERCEL_ORG_ID=team_M8yTQcRiKOduAwHNMhHQInWq VERCEL_PROJECT_ID=prj_0YVLB5TIHu7VXdMyib1Zmjq4iwtZ vercel env pull",
+    "start:dev": "next dev --port 3002",
+    "start:prod": "next start --port 3002",
+    "test:types": "tsc"
+  },
+  "type": "module",
+  "version": "0.0.0"
 }
