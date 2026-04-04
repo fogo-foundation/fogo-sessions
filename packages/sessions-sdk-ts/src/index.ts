@@ -508,6 +508,24 @@ const addOffchainMessagePrefixToMessageIfNeeded = async (
     }
   }
 };
+
+const signIntentMessage = async (
+  options: Pick<EstablishSessionOptions, "signMessage" | "walletPublicKey">,
+  message: Uint8Array,
+) => {
+  const requestedMessage = Uint8Array.from(message);
+  const signature = signatureBytes(
+    await options.signMessage(Uint8Array.from(requestedMessage)),
+  );
+  const signedMessage = await addOffchainMessagePrefixToMessageIfNeeded(
+    options.walletPublicKey,
+    signature,
+    requestedMessage,
+  );
+
+  return { signature, signedMessage };
+};
+
 const buildIntentInstruction = async (
   options: EstablishSessionOptions,
   sessionKey: CryptoKeyPair,
@@ -522,16 +540,12 @@ const buildIntentInstruction = async (
     extra: options.extra,
   });
 
-  const intentSignature = signatureBytes(await options.signMessage(message));
+  const { signature, signedMessage } = await signIntentMessage(options, message);
 
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
-    signature: intentSignature,
-    message: await addOffchainMessagePrefixToMessageIfNeeded(
-      options.walletPublicKey,
-      intentSignature,
-      message,
-    ),
+    signature,
+    message: signedMessage,
   });
 };
 
@@ -786,16 +800,12 @@ const buildTransferIntentInstruction = async (
     ].join("\n"),
   );
 
-  const intentSignature = signatureBytes(await options.signMessage(message));
+  const { signature, signedMessage } = await signIntentMessage(options, message);
 
   return Ed25519Program.createInstructionWithPublicKey({
     publicKey: options.walletPublicKey.toBytes(),
-    signature: intentSignature,
-    message: await addOffchainMessagePrefixToMessageIfNeeded(
-      options.walletPublicKey,
-      intentSignature,
-      message,
-    ),
+    signature,
+    message: signedMessage,
   });
 };
 
