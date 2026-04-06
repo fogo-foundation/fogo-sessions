@@ -67,9 +67,8 @@ export const signWithWallet = async (
       if (result === undefined) {
         throw new Error("No signature result returned by wallet");
       } else {
-        const signature = Uint8Array.from(result.signature);
         return {
-          signature,
+          signature: result.signature,
           // It seems that, when using a Nightly wallet that is NOT backed by a
           // ledger, the `signedMessage` that Nightly returns is 1-byte
           // Uint8Array and is not actually the message that was signed.
@@ -83,31 +82,20 @@ export const signWithWallet = async (
             if (result.signedMessage.byteLength === 1) {
               return requestedMessage;
             } else if (wallet.publicKey) {
-              return normalizeSignedMessage(
+              return addLegacyOffchainMessagePrefixToMessageIfNeeded(
                 wallet.publicKey,
-                signatureBytes(signature),
-                requestedMessage,
+                signatureBytes(result.signature),
                 result.signedMessage,
               );
-            } else return Uint8Array.from(result.signedMessage);
+            } else return result.signedMessage;
           })(),
         };
       }
     }
   } else {
-    const signature = Uint8Array.from(
-      await wallet.signMessage(Uint8Array.from(requestedMessage)),
-    );
     return {
-      signature,
-      signedMessage: wallet.publicKey
-        ? await normalizeSignedMessage(
-            wallet.publicKey,
-            signatureBytes(signature),
-            requestedMessage,
-            requestedMessage,
-          )
-        : requestedMessage,
+      signature: await wallet.signMessage(Uint8Array.from(requestedMessage)),
+      signedMessage: requestedMessage,
     };
   }
 };
@@ -118,18 +106,12 @@ const serializeU16LE = (value: number) => {
   return new Uint8Array(result);
 };
 
-const addLegacyOffchainMessagePrefix = (message: Uint8Array) =>
-  Uint8Array.from([
-    0xff,
-    ...new TextEncoder().encode("solana offchain"),
-    0,
-    1,
-    ...serializeU16LE(message.length),
-    ...message,
-  ]);
-
-const importEd25519PublicKey = (walletPublicKey: PublicKey) =>
-  crypto.subtle.importKey(
+const addLegacyOffchainMessagePrefixToMessageIfNeeded = async (
+  walletPublicKey: PublicKey,
+  signature: SignatureBytes,
+  message: Uint8Array,
+) => {
+  const publicKey = await crypto.subtle.importKey(
     "raw",
     walletPublicKey.toBytes(),
     { name: "Ed25519" },
@@ -137,35 +119,30 @@ const importEd25519PublicKey = (walletPublicKey: PublicKey) =>
     ["verify"],
   );
 
-const normalizeSignedMessage = async (
-  walletPublicKey: PublicKey,
-  signature: SignatureBytes,
-  requestedMessage: Uint8Array,
-  candidateSignedMessage: Uint8Array,
-) => {
-  const publicKey = await importEd25519PublicKey(walletPublicKey);
-  const normalizedCandidate =
-    candidateSignedMessage.byteLength === 1
-      ? requestedMessage
-      : Uint8Array.from(candidateSignedMessage);
-  const candidateWithPrefix =
-    addLegacyOffchainMessagePrefix(normalizedCandidate);
-
-  if (await verifySignature(publicKey, signature, normalizedCandidate)) {
-    return normalizedCandidate;
+  if (await verifySignature(publicKey, signature, message)) {
+    return message;
+  } else {
+    // Source: https://github.com/anza-xyz/solana-sdk/blob/master/offchain-message/src/lib.rs#L162
+    const messageWithOffchainMessagePrefix = Uint8Array.from([
+      0xff,
+      ...new TextEncoder().encode("solana offchain"),
+      0,
+      1,
+      ...serializeU16LE(message.length),
+      ...message,
+    ]);
+    if (
+      await verifySignature(
+        publicKey,
+        signature,
+        messageWithOffchainMessagePrefix,
+      )
+    ) {
+      return messageWithOffchainMessagePrefix;
+    } else {
+      throw new Error(
+        "The signature provided by the browser wallet is not valid",
+      );
+    }
   }
-  if (await verifySignature(publicKey, signature, candidateWithPrefix)) {
-    return candidateWithPrefix;
-  }
-
-  if (await verifySignature(publicKey, signature, requestedMessage)) {
-    return requestedMessage;
-  }
-  const requestedMessageWithPrefix =
-    addLegacyOffchainMessagePrefix(requestedMessage);
-  if (await verifySignature(publicKey, signature, requestedMessageWithPrefix)) {
-    return requestedMessageWithPrefix;
-  }
-
-  throw new Error("The signature provided by the browser wallet is not valid");
 };
