@@ -1,7 +1,15 @@
 use anyhow::{anyhow, Context, Result};
-use base64::prelude::*;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
+use config::File;
 use dashmap::DashMap;
+use fogo_paymaster::{
+    config_manager::config::{Config, Domain},
+    constraint::{
+        transaction::TransactionToValidate, ContextualDomainKeys, ParsedTransactionVariation,
+    },
+    parse::parse_transaction_from_base64,
+    rpc::ChainIndex,
+};
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
 use futures::stream::{FuturesOrdered, StreamExt};
 use governor::{
@@ -14,16 +22,11 @@ use solana_client::{
     nonblocking::rpc_client::RpcClient, rpc_client::GetConfirmedSignaturesForAddress2Config,
     rpc_config::RpcTransactionConfig,
 };
+use solana_pubkey::Pubkey;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_status_client_types::UiTransactionEncoding;
-use std::{collections::HashMap, num::NonZeroU32, str::FromStr};
-
-use fogo_paymaster::{
-    config::{load_config, Domain},
-    constraint::{ContextualDomainKeys, TransactionVariation},
-    rpc::ChainIndex,
-};
+use std::{collections::HashMap, num::NonZeroU32, str::FromStr, sync::Arc};
 
 #[derive(Parser)]
 #[command(name = "tx-validator")]
@@ -44,6 +47,18 @@ enum Commands {
         #[arg(short, long)]
         domain: Option<String>,
 
+        /// Transaction variation to check against (if not provided, checks all variations in scope)
+        #[arg(short, long, requires = "domain")]
+        variation: Option<String>,
+
+        /// Fogo network to target, this determines the paymaster instance and the default RPC endpoint to use.
+        #[arg(long, value_enum, default_value_t = Network::Testnet)]
+        network: Network,
+
+        /// Sponsor pubkey for the provided domain, if this is provided the sponsor pubkey won't be fetched from the paymaster server. This is useful if your domain is not registered with the paymaster server yet.
+        #[arg(long, requires = "domain")]
+        sponsor: Option<Pubkey>,
+
         /// Transaction hash to fetch from RPC
         #[arg(long, conflicts_with_all = ["transaction", "recent_sponsor_txs"])]
         transaction_hash: Option<String>,
@@ -60,13 +75,43 @@ enum Commands {
         #[arg(long, default_value_t = 10)]
         rpc_quota_per_second: u32,
 
-        /// RPC HTTP URL
+        /// RPC HTTP URL (defaults to the network-specific endpoint)
         #[arg(long)]
-        rpc_url_http: String,
+        rpc_url_http: Option<String>,
     },
 }
 
 type RpcRateLimiter = RateLimiter<NotKeyed, InMemoryState, DefaultClock, NoOpMiddleware>;
+
+#[derive(Copy, Clone, ValueEnum)]
+enum Network {
+    Mainnet,
+    Testnet,
+}
+
+impl Network {
+    fn paymaster_base_url(self) -> &'static str {
+        match self {
+            Network::Mainnet => "https://fogo-mainnet.dourolabs-paymaster.xyz",
+            Network::Testnet => "https://fogo-testnet.dourolabs-paymaster.xyz",
+        }
+    }
+
+    fn default_rpc_url_http(self) -> &'static str {
+        match self {
+            Network::Mainnet => "https://mainnet.fogo.io",
+            Network::Testnet => "https://testnet.fogo.io",
+        }
+    }
+}
+
+pub fn load_file_config(config_path: &str) -> Result<Config> {
+    let config: Config = config::Config::builder()
+        .add_source(File::with_name(config_path))
+        .build()?
+        .try_deserialize()?;
+    Ok(config)
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -76,16 +121,21 @@ async fn main() -> Result<()> {
         Commands::Validate {
             config,
             domain,
+            variation,
+            network,
+            sponsor,
             transaction_hash,
             transaction,
             recent_sponsor_txs,
             rpc_quota_per_second,
             rpc_url_http,
         } => {
-            let config = load_config(&config)?;
-            let domains = get_domains_for_validation(&config, &domain);
+            let config = load_file_config(&config)?;
+            let domains = get_domains_for_validation(config, &domain, &variation)?;
+            let rpc_url_http =
+                rpc_url_http.unwrap_or_else(|| network.default_rpc_url_http().to_string());
             let chain_index = ChainIndex {
-                rpc: RpcClient::new(rpc_url_http),
+                rpc: Arc::new(RpcClient::new(rpc_url_http)),
                 lookup_table_cache: DashMap::new(),
             };
 
@@ -93,6 +143,9 @@ async fn main() -> Result<()> {
                 NonZeroU32::new(rpc_quota_per_second)
                     .expect("RPC quota per second must be greater than zero"),
             ));
+
+            let contextual_keys_cache: ContextualKeysCache =
+                ContextualKeysCache::new(&domains, network, sponsor).await?;
 
             let (transactions, is_batch) = fetch_transactions(
                 recent_sponsor_txs,
@@ -102,17 +155,9 @@ async fn main() -> Result<()> {
                 &domains,
                 &chain_index,
                 &rpc_limiter,
+                &contextual_keys_cache,
             )
             .await?;
-
-            let contextual_keys_cache: HashMap<_, _> =
-                futures::future::try_join_all(domains.iter().map(|domain| async {
-                    let keys = compute_contextual_keys(&domain.domain).await?;
-                    Ok::<_, anyhow::Error>((domain.domain.clone(), keys))
-                }))
-                .await?
-                .into_iter()
-                .collect();
 
             let (validation_counts, failure_count) = validate_transactions(
                 &transactions,
@@ -120,6 +165,7 @@ async fn main() -> Result<()> {
                 &chain_index,
                 &contextual_keys_cache,
                 is_batch,
+                variation.is_some(),
                 true,
             )
             .await;
@@ -133,35 +179,67 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn get_domains_for_validation<'a>(
-    config: &'a fogo_paymaster::config::Config,
+type Domains = HashMap<String, HashMap<String, ParsedTransactionVariation>>;
+
+/// Extracts from the config the domains to use in validation.
+/// If `domain` is specified, only returns that domain's variations.
+/// If `variation` is specified, filters out all other variations.
+fn get_domains_for_validation(
+    config: fogo_paymaster::config_manager::config::Config,
     domain: &Option<String>,
-) -> Vec<&'a Domain> {
-    if let Some(domain_name) = domain {
+    variation: &Option<String>,
+) -> Result<Domains> {
+    let domains = if let Some(domain_name) = domain {
         vec![config
             .domains
-            .iter()
+            .into_iter()
             .find(|d| d.domain == *domain_name)
             .expect("Specified domain not found in config")]
     } else {
-        config.domains.iter().collect()
-    }
+        config.domains
+    };
+
+    domains
+        .into_iter()
+        .map(
+            |Domain {
+                 domain,
+                 tx_variations,
+                 enable_session_management,
+                 ..
+             }| {
+                let parsed_transaction_variations = Domain::into_parsed_transaction_variations(
+                    tx_variations,
+                    enable_session_management,
+                )?
+                .into_iter()
+                .filter(|(_, v)| variation.as_ref().is_none_or(|name| v.name() == name))
+                .collect();
+                Ok((domain, parsed_transaction_variations))
+            },
+        )
+        .collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn fetch_transactions(
     recent_sponsor_txs: Option<usize>,
     transaction_hash: Option<String>,
     transaction: Option<String>,
     domain: &Option<String>,
-    domains: &[&Domain],
+    domains: &Domains,
     chain_index: &ChainIndex,
     rpc_limiter: &RpcRateLimiter,
+    contextual_keys_cache: &ContextualKeysCache,
 ) -> Result<(Vec<VersionedTransaction>, bool)> {
     if let Some(limit) = recent_sponsor_txs {
         let domain_for_sponsor = if let Some(domain_name) = domain {
             domain_name.as_str()
         } else if domains.len() == 1 {
-            &domains[0].domain
+            domains
+                .keys()
+                .next()
+                .expect("Length is 1, should not panic")
         } else if domains.is_empty() {
             return Err(anyhow!("No domains found in config"));
         } else {
@@ -169,7 +247,7 @@ async fn fetch_transactions(
                 "When using --recent-sponsor-txs with multiple domains, --domain must be specified"
             ));
         };
-        let sponsor = compute_contextual_keys(domain_for_sponsor).await?.sponsor;
+        let sponsor = contextual_keys_cache.get(domain_for_sponsor).await?.sponsor;
         let txs = fetch_recent_sponsor_transactions(&sponsor, limit, &chain_index.rpc, rpc_limiter)
             .await?;
         println!(
@@ -195,30 +273,38 @@ async fn fetch_transactions(
 
 async fn validate_transactions(
     transactions: &[VersionedTransaction],
-    domains: &[&Domain],
+    domains: &Domains,
     chain_index: &ChainIndex,
-    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
+    contextual_keys_cache: &ContextualKeysCache,
     is_batch: bool,
-    verbose: bool,
+    show_validation_details: bool,
+    show_validation_outcomes: bool,
 ) -> (HashMap<(String, String), usize>, usize) {
     let mut validation_stream = transactions
         .iter()
         .enumerate()
         .map(|(idx, tx)| async move {
-            let results = futures::future::join_all(domains.iter().map(|domain| async {
-                let variations =
-                    get_matching_variations(tx, domain, chain_index, contextual_keys_cache)
-                        .await
-                        .unwrap_or_default();
-                variations
-                    .into_iter()
-                    .map(|v| (domain.domain.as_str(), v))
-                    .collect::<Vec<_>>()
-            }))
-            .await
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>();
+            let results =
+                futures::future::join_all(domains.iter().map(|(domain, tx_variations)| async {
+                    let variations = get_matching_variations(
+                        tx,
+                        domain,
+                        tx_variations,
+                        chain_index,
+                        contextual_keys_cache,
+                        show_validation_details,
+                    )
+                    .await
+                    .unwrap_or_default();
+                    variations
+                        .into_iter()
+                        .map(|v| (domain.as_str(), v))
+                        .collect::<Vec<_>>()
+                }))
+                .await
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>();
 
             (idx, tx, results)
         })
@@ -239,9 +325,15 @@ async fn validate_transactions(
             }
         }
 
-        if verbose {
+        if show_validation_outcomes {
             if is_batch {
-                println!("Transaction {} ({})", idx + 1, tx.signatures[0]);
+                println!(
+                    "Transaction {} ({})",
+                    idx + 1,
+                    tx.signatures
+                        .first()
+                        .expect("Failed to access fee-payer signature")
+                );
             }
 
             if validations.is_empty() {
@@ -387,37 +479,61 @@ async fn fetch_recent_sponsor_transactions(
     results.into_iter().collect::<Result<Vec<_>, _>>()
 }
 
-fn parse_transaction_from_base64(encoded_tx: &str) -> Result<VersionedTransaction> {
-    let tx_bytes = BASE64_STANDARD
-        .decode(encoded_tx)
-        .context("Failed to decode base64 transaction")?;
-
-    bincode::deserialize(&tx_bytes).context("Failed to deserialize transaction")
-}
-
 async fn get_matching_variations<'a>(
     transaction: &VersionedTransaction,
-    domain: &'a Domain,
+    domain: &str,
+    tx_variations: &'a HashMap<String, ParsedTransactionVariation>,
     chain_index: &ChainIndex,
-    contextual_keys_cache: &HashMap<String, ContextualDomainKeys>,
-) -> Result<Vec<&'a TransactionVariation>> {
+    contextual_keys_cache: &ContextualKeysCache,
+    show_validation_details: bool,
+) -> Result<Vec<&'a ParsedTransactionVariation>> {
     let mut matching_variations = Vec::new();
 
-    let contextual_keys = if let Some(keys) = contextual_keys_cache.get(&domain.domain) {
-        keys
-    } else {
-        &compute_contextual_keys(&domain.domain).await?
-    };
-
-    for variation in &domain.tx_variations {
-        let matches = match variation {
-            TransactionVariation::V0(v0_variation) => {
-                v0_variation.validate_transaction(transaction).is_ok()
+    let contextual_keys = contextual_keys_cache.get(domain).await?;
+    for variation in tx_variations.values() {
+        let matches = if let Ok(paymaster_transaction) =
+            TransactionToValidate::parse(transaction, chain_index, &HashMap::new()).await
+        {
+            match variation {
+                ParsedTransactionVariation::V0(v0_variation) => {
+                    let validation = v0_variation.validate_transaction(&paymaster_transaction);
+                    if show_validation_details {
+                        match validation {
+                            Ok(()) => println!(
+                                "Validation against v0 variation {}: ✅",
+                                v0_variation.name
+                            ),
+                            Err((status_code, ref details)) => println!(
+                                "Validation against v0 variation {}: ❌ ({}) {}",
+                                v0_variation.name, status_code, details
+                            ),
+                        }
+                    }
+                    validation.is_ok()
+                }
+                ParsedTransactionVariation::V1(v1_variation) => {
+                    let validation_compute_units =
+                        v1_variation.validate_compute_units(&paymaster_transaction);
+                    let validation_instruction_constraints = v1_variation
+                        .validate_instruction_constraints(
+                            &paymaster_transaction,
+                            &contextual_keys,
+                            chain_index,
+                        )
+                        .await;
+                    if show_validation_details {
+                        match (&validation_compute_units, &validation_instruction_constraints) {
+                            (Err((status_code, ref details_cu)), Ok(())) => println!("Validation against v1 variation {}: ❌ (Compute Units: {}) {}", v1_variation.name, status_code, details_cu),
+                            (Ok(()), Err((status_code, ref details_ic))) => println!("Validation against v1 variation {}: ❌ (Instruction Constraints: {}) {}", v1_variation.name, status_code, details_ic),
+                            (Err((status_code_cu, ref details_cu)), Err((status_code_ic, ref details_ic))) => println!("Validation against v1 variation {}: ❌ \n -(Compute Units: {}) {} \n -(Instruction Constraints: {}) {}", v1_variation.name, status_code_cu, details_cu, status_code_ic, details_ic),
+                            _ => println!("Validation against v1 variation {}: ✅", v1_variation.name),
+                        }
+                    }
+                    validation_compute_units.is_ok() && validation_instruction_constraints.is_ok()
+                } // TODO: make the tx validator fetch the paymaster fee coefficients so we can use validate_transaction here
             }
-            TransactionVariation::V1(v1_variation) => v1_variation
-                .validate_transaction(transaction, contextual_keys, chain_index)
-                .await
-                .is_ok(),
+        } else {
+            false
         };
 
         if matches {
@@ -428,10 +544,11 @@ async fn get_matching_variations<'a>(
     Ok(matching_variations)
 }
 
-async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
-    let domain_registry = get_domain_record_address(domain);
-
-    let url = format!("https://paymaster.fogo.io/api/sponsor_pubkey?domain={domain}");
+async fn fetch_sponsor_pubkey(domain: &str, network: Network) -> Result<Pubkey> {
+    let url = format!(
+        "{}/api/sponsor_pubkey?domain={domain}",
+        network.paymaster_base_url()
+    );
     let client = reqwest::Client::new();
     let response =
         client.get(&url).send().await.with_context(|| {
@@ -450,12 +567,61 @@ async fn compute_contextual_keys(domain: &str) -> Result<ContextualDomainKeys> {
         .await
         .with_context(|| format!("Failed to read response body for domain: {domain}"))?;
 
-    let sponsor = solana_pubkey::Pubkey::from_str(sponsor_str.trim()).with_context(|| {
+    solana_pubkey::Pubkey::from_str(sponsor_str.trim()).with_context(|| {
         format!("Failed to parse sponsor pubkey from API response for domain: {domain}")
-    })?;
+    })
+}
+
+struct ContextualKeysCache {
+    pub cache: DashMap<String, ContextualDomainKeys>,
+    pub network: Network,
+    /// If this is Some, the sponsor pubkey won't be fetched from the paymaster server and the inner pubkey will be used instead. This is useful for apps whose domain is not registered with the paymaster server, so they don't have a sponsor wallet.
+    pub sponsor_override: Option<Pubkey>,
+}
+
+impl ContextualKeysCache {
+    pub async fn new(
+        domains: &Domains,
+        network: Network,
+        sponsor_override: Option<Pubkey>,
+    ) -> Result<Self> {
+        Ok(Self {
+            cache: futures::future::try_join_all(domains.keys().map(|domain| async {
+                let keys = compute_contextual_keys(domain, network, sponsor_override).await?;
+                Ok::<_, anyhow::Error>((domain.clone(), keys))
+            }))
+            .await?
+            .into_iter()
+            .collect(),
+            network,
+            sponsor_override,
+        })
+    }
+
+    pub async fn get(&self, domain: &str) -> Result<ContextualDomainKeys> {
+        if let Some(keys) = self.cache.get(domain) {
+            Ok(keys.clone())
+        } else {
+            let keys = compute_contextual_keys(domain, self.network, self.sponsor_override).await?;
+            self.cache.insert(domain.to_string(), keys.clone());
+            Ok(keys)
+        }
+    }
+}
+
+async fn compute_contextual_keys(
+    domain: &str,
+    network: Network,
+    sponsor_override: Option<Pubkey>,
+) -> Result<ContextualDomainKeys> {
+    let sponsor = if let Some(sponsor) = sponsor_override {
+        sponsor
+    } else {
+        fetch_sponsor_pubkey(domain, network).await?
+    };
 
     Ok(ContextualDomainKeys {
-        domain_registry,
+        domain_registry: get_domain_record_address(domain),
         sponsor,
     })
 }

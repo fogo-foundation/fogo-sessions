@@ -1,9 +1,8 @@
 import { FogoSessionProvider, SessionButton } from "@fogo/sessions-sdk-react";
 import { NATIVE_MINT } from "@solana/spl-token";
 import type { ReactNode } from "react";
-
-import styles from "./index.module.scss";
 import { PROVIDER_CONFIG } from "../../config/server";
+import styles from "./index.module.scss";
 
 type Props = {
   children: ReactNode;

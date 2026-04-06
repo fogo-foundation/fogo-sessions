@@ -1,14 +1,19 @@
 "use client";
 
-import type { SessionContext as SessionExecutionContext } from "@fogo/sessions-sdk";
+import type {
+  Network,
+  SessionContext as SessionExecutionContext,
+} from "@fogo/sessions-sdk";
 import type { Rpc, SolanaRpcApi } from "@solana/kit";
 import type { Connection, PublicKey } from "@solana/web3.js";
+import type { Dispatch, SetStateAction } from "react";
 import { createContext, use } from "react";
 
 import type { SessionState } from "../session-state.js";
 
 export const SessionContext = createContext<
   | {
+      network: Network;
       connection: Connection;
       rpc: Rpc<SolanaRpcApi>;
       getSessionContext: () => Promise<SessionExecutionContext>;
@@ -20,6 +25,8 @@ export const SessionContext = createContext<
         | (() => Promise<boolean> | boolean)
         | (() => Promise<void> | void)
         | undefined;
+      showBridgeIn: boolean;
+      setShowBridgeIn: Dispatch<SetStateAction<boolean>>;
     }
   | undefined
 >(undefined);

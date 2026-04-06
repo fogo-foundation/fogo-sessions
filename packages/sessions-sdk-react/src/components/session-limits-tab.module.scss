@@ -1,4 +1,4 @@
-@use "../theme";
+@use "./component-library/theme";
 
 .sessionLimitsTab {
   height: 100%;
@@ -69,38 +69,6 @@
       display: grid;
       place-content: center;
       background: theme.color("card");
-    }
-  }
-
-  .sessionLimitsError {
-    display: flex;
-    flex-flow: column nowrap;
-    align-items: center;
-    text-align: center;
-    justify-content: center;
-    gap: theme.spacing(3);
-
-    .icon,
-    .headline {
-      color: theme.color("states", "error", "foreground");
-    }
-
-    .icon {
-      font-size: theme.spacing(8);
-    }
-
-    .headline {
-      @include theme.text;
-    }
-
-    .message {
-      @include theme.text("xs");
-
-      color: theme.color("muted");
-    }
-
-    .retryButton {
-      margin-top: theme.spacing(2);
     }
   }
 }

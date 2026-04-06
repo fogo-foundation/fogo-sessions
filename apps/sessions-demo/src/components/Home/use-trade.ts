@@ -1,4 +1,5 @@
-import { AnchorProvider, BN, Wallet } from "@coral-xyz/anchor";
+import type { Wallet } from "@coral-xyz/anchor";
+import { AnchorProvider, BN } from "@coral-xyz/anchor";
 import { ExampleProgram } from "@fogo/sessions-idls";
 import { TransactionResultType } from "@fogo/sessions-sdk";
 import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
@@ -8,11 +9,10 @@ import {
   getAssociatedTokenAddressSync,
   getMint,
 } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
-
-import type { Transaction } from "./use-transaction-log";
 import { useAsync } from "../../hooks/use-async";
+import type { Transaction } from "./use-transaction-log";
 
 export const useTrade = (
   sessionState: EstablishedSessionState,
@@ -29,25 +29,28 @@ export const useTrade = (
     );
     const { decimals } = await getMint(connection, mint);
 
-    const result = await sessionState.sendTransaction([
-      createAssociatedTokenAccountIdempotentInstruction(
-        sessionState.payer,
-        sinkAta,
-        sessionState.payer,
-        mint,
-      ),
-      await new ExampleProgram(
-        new AnchorProvider(connection, {} as Wallet, {}),
-      ).methods
-        .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
-        .accountsPartial({
-          signerOrSession: sessionState.sessionPublicKey,
-          sink: sinkAta,
-          userTokenAccount,
+    const result = await sessionState.sendTransaction(
+      [
+        createAssociatedTokenAccountIdempotentInstruction(
+          sessionState.payer,
+          sinkAta,
+          sessionState.payer,
           mint,
-        })
-        .instruction(),
-    ]);
+        ),
+        await new ExampleProgram(
+          new AnchorProvider(connection, {} as Wallet, {}),
+        ).methods
+          .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
+          .accountsPartial({
+            signerOrSession: sessionState.sessionPublicKey,
+            sink: sinkAta,
+            userTokenAccount,
+            mint,
+          })
+          .instruction(),
+      ],
+      { variation: "Example v1 Variation" },
+    );
 
     appendTransaction({
       description: "Trade",

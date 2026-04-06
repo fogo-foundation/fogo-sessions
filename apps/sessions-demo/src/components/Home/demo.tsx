@@ -8,17 +8,17 @@ import {
   useSession,
 } from "@fogo/sessions-sdk-react";
 import { NATIVE_MINT } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import type { PublicKey } from "@solana/web3.js";
 import Link from "next/link";
 import { useMemo } from "react";
-
+import { StateType as AsyncStateType } from "../../hooks/use-async";
+import { Button } from "../Button";
 import styles from "./demo.module.scss";
 import { useAirdrop } from "./use-airdrop";
+import { useAirdropUsdc } from "./use-airdrop-usdc";
 import { useTrade } from "./use-trade";
 import type { Transaction } from "./use-transaction-log";
 import { useTransactionLog } from "./use-transaction-log";
-import { StateType as AsyncStateType } from "../../hooks/use-async";
-import { Button } from "../Button";
 
 export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
   const connection = useConnection();
@@ -45,10 +45,16 @@ export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
         {isEstablished(sessionState) && (
           <div className={styles.buttons}>
             {faucetAvailable && (
-              <AirdropButton
-                sessionState={sessionState}
-                appendTransaction={appendTransaction}
-              />
+              <>
+                <AirdropButton
+                  sessionState={sessionState}
+                  appendTransaction={appendTransaction}
+                />
+                <AirdropUsdcButton
+                  sessionState={sessionState}
+                  appendTransaction={appendTransaction}
+                />
+              </>
             )}
             <TradeButton
               sessionState={sessionState}
@@ -56,6 +62,13 @@ export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
               amount={0.5}
               mint={NATIVE_MINT}
             />
+            <Button
+              onPress={() => {
+                sessionState.showBridgeIn();
+              }}
+            >
+              Bridge In
+            </Button>
           </div>
         )}
       </section>
@@ -92,6 +105,21 @@ const AirdropButton = ({
   return (
     <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
       Airdrop 1 FOGO
+    </Button>
+  );
+};
+
+const AirdropUsdcButton = ({
+  sessionState,
+  appendTransaction,
+}: {
+  sessionState: EstablishedSessionState;
+  appendTransaction: (tx: Transaction) => void;
+}) => {
+  const { state, execute } = useAirdropUsdc(sessionState, appendTransaction);
+  return (
+    <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
+      Airdrop 100 USDC
     </Button>
   );
 };

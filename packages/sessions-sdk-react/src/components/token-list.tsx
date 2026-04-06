@@ -1,28 +1,43 @@
+import { TransactionResultType } from "@fogo/sessions-sdk";
 import { PaperPlaneTiltIcon } from "@phosphor-icons/react/dist/ssr/PaperPlaneTilt";
 import { WalletIcon } from "@phosphor-icons/react/dist/ssr/Wallet";
+import { NATIVE_MINT } from "@solana/spl-token";
 import { motion } from "motion/react";
+import type { ComponentProps } from "react";
+import { useCallback } from "react";
 import { GridList, GridListItem } from "react-aria-components";
-
 import { amountToString } from "../amount-to-string.js";
-import type { EstablishedSessionState } from "../session-state.js";
-import { Button } from "./button.js";
-import { CopyButton } from "./copy-button.js";
-import { FetchError } from "./fetch-error.js";
-import { Link } from "./link.js";
-import styles from "./token-list.module.css";
-import { TruncateKey } from "./truncate-key.js";
-import { useFaucet } from "../hooks/use-faucet.js";
+import { usePrice } from "../hooks/use-price.js";
+import { useSessionContext } from "../hooks/use-session.js";
 import type { Token } from "../hooks/use-token-account-data.js";
 import {
+  StateType as PriceDataStateType,
   StateType as TokenDataStateType,
   useTokenAccountData,
 } from "../hooks/use-token-account-data.js";
+import type { EstablishedSessionState } from "../session-state.js";
+import { Button } from "./component-library/Button/index.js";
+import { CopyButton } from "./component-library/CopyButton/index.js";
+import { errorToString } from "./component-library/error-to-string/index.js";
+import { Link } from "./component-library/Link/index.js";
+import { useToast } from "./component-library/Toast/index.js";
+import {
+  StateType as AsyncStateType,
+  useAsync,
+} from "./component-library/useAsync/index.js";
+import { ExplorerLink } from "./explorer-link.js";
+import { FetchError } from "./fetch-error.js";
+import { NotionalAmount } from "./notional-amount.js";
+import styles from "./token-list.module.css";
+import { TruncateKey } from "./truncate-key.js";
 
-const MotionGridList = motion.create(GridList<Token>);
+export const SESSIONS_INTERNAL_PAYMASTER_DOMAIN = "sessions";
+
+const MotionGridListItem = motion.create(GridListItem<Token>);
 
 type Props = {
   sessionState: EstablishedSessionState;
-  onPressReceiveTokens: () => void;
+  onPressTransferIn: () => void;
 } & (
   | { onPressToken: (token: Token) => void }
   | { onPressSend: (token: Token) => void }
@@ -30,10 +45,9 @@ type Props = {
 
 export const TokenList = ({
   sessionState,
-  onPressReceiveTokens,
+  onPressTransferIn,
   ...props
 }: Props) => {
-  const { faucetUrl, showFaucet } = useFaucet(sessionState);
   const state = useTokenAccountData(sessionState);
   switch (state.type) {
     case TokenDataStateType.Error: {
@@ -52,99 +66,33 @@ export const TokenList = ({
           <WalletIcon className={styles.emptyIcon} />
           <span className={styles.message}>Your wallet is empty</span>
           <span className={styles.hints}>
-            <Link onPress={onPressReceiveTokens}>Receive</Link> or{" "}
-            <Link
-              onPress={showFaucet}
-              href={faucetUrl.toString()}
-              target="_blank"
-            >
-              Get tokens
-            </Link>
+            <Link onPress={onPressTransferIn}>Transfer USDC to Fogo</Link>
           </span>
         </div>
       ) : (
-        <MotionGridList
-          layoutId="token-list"
+        <GridList
           className={styles.tokenList ?? ""}
           selectionMode="none"
           aria-label="Tokens"
-          items={state.data.tokensInWallet
-            .map((token) => ({ ...token, id: token.mint.toBase58() }))
-            .sort((a, b) => {
-              if (a.name === undefined) {
-                return b.name === undefined
-                  ? a.mint.toString().localeCompare(b.mint.toString())
-                  : 1;
-              } else if (b.name === undefined) {
-                return -1;
-              } else {
-                return a.name.toString().localeCompare(b.name.toString());
-              }
-            })}
+          items={state.data.tokensInWallet.map((token) => ({
+            id: token.isNative ? "native" : token.mint.toBase58(),
+            token,
+          }))}
         >
-          {(token) => {
-            const { mint, amountInWallet, decimals, image, name, symbol } =
-              token;
-            const amountAsString = amountToString(amountInWallet, decimals);
-            const contents = (
-              <>
-                <div className={styles.nameAndIcon}>
-                  {image ? (
-                    <img alt="" src={image} className={styles.icon} />
-                  ) : (
-                    <div className={styles.icon} />
-                  )}
-                  <div className={styles.nameAndMint}>
-                    <span className={styles.name}>
-                      {name ?? mint.toBase58()}
-                    </span>
-                    <CopyButton
-                      className={styles.mint ?? ""}
-                      text={mint.toBase58()}
-                    >
-                      <TruncateKey keyValue={mint} />
-                    </CopyButton>
-                  </div>
-                </div>
-                <div className={styles.amountAndActions}>
-                  <div className={styles.amountAndSymbol}>
-                    <span className={styles.amount}>{amountAsString}</span>
-                    {symbol && <span className={styles.symbol}>{symbol}</span>}
-                  </div>
-                  {"onPressSend" in props && (
-                    <div className={styles.actions}>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className={styles.sendButton ?? ""}
-                        onPress={() => {
-                          props.onPressSend(token);
-                        }}
-                      >
-                        <PaperPlaneTiltIcon />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </>
-            );
-            return (
-              <GridListItem
-                textValue={name ?? mint.toBase58()}
-                key={mint.toString()}
-                className={styles.token ?? ""}
-                data-is-button={"onPressToken" in props ? "" : undefined}
-                {...("onPressToken" in props && {
-                  onAction: () => {
-                    props.onPressToken(token);
-                  },
-                })}
-              >
-                {contents}
-              </GridListItem>
-            );
-          }}
-        </MotionGridList>
+          {(item) => (
+            <TokenItem
+              sessionState={sessionState}
+              {...item}
+              {...("onPressToken" in props
+                ? {
+                    onPressToken: props.onPressToken,
+                  }
+                : {
+                    onPressSend: props.onPressSend,
+                  })}
+            />
+          )}
+        </GridList>
       );
     }
     case TokenDataStateType.NotLoaded:
@@ -158,6 +106,107 @@ export const TokenList = ({
   }
 };
 
+type TokenItemProps = {
+  id: string;
+  token: Token;
+  sessionState: EstablishedSessionState;
+} & (
+  | { onPressToken: (token: Token) => void }
+  | { onPressSend: (token: Token) => void }
+);
+
+const TokenItem = ({ id, token, sessionState, ...props }: TokenItemProps) => {
+  const { amountInWallet, decimals, image } = token;
+  const amountAsString = amountToString(amountInWallet, decimals);
+  const price = usePrice(id);
+  const name = token.name ?? id;
+
+  const contents = (
+    <>
+      <div className={styles.nameAndIcon}>
+        {image ? (
+          <img alt="" src={image} className={styles.icon} />
+        ) : (
+          <div className={styles.icon} />
+        )}
+        <div className={styles.nameAndMint}>
+          <span className={styles.name}>{name}</span>
+          {token.isNative ? (
+            <div className={styles.mint} data-is-native>
+              NATIVE
+            </div>
+          ) : (
+            <CopyButton className={styles.mint ?? ""} text={id}>
+              <TruncateKey keyValue={token.mint} />
+            </CopyButton>
+          )}
+        </div>
+      </div>
+      <div
+        className={styles.amountAndActions}
+        data-is-native={
+          "mint" in token && token.mint.equals(NATIVE_MINT) ? "" : undefined
+        }
+      >
+        <div className={styles.amountAndDetails}>
+          <span className={styles.amount}>{amountAsString}</span>
+          {price.type === PriceDataStateType.Loaded && (
+            <NotionalAmount
+              amount={amountInWallet}
+              decimals={decimals}
+              price={price.data}
+              className={styles.notional}
+            />
+          )}
+        </div>
+        {"onPressSend" in props && (
+          <div className={styles.actions}>
+            {"mint" in token && token.mint.equals(NATIVE_MINT) ? (
+              <UnwrapButton
+                variant="secondary"
+                size="sm"
+                className={styles.unwrapButton ?? ""}
+                sessionState={sessionState}
+              >
+                Unwrap
+              </UnwrapButton>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                className={styles.sendButton ?? ""}
+                onPress={() => {
+                  props.onPressSend(token);
+                }}
+              >
+                <PaperPlaneTiltIcon />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+
+  return (
+    <MotionGridListItem
+      layoutId={`token-item-${id}`}
+      layoutScroll
+      textValue={name}
+      key={id}
+      className={styles.token ?? ""}
+      data-is-button={"onPressToken" in props ? "" : undefined}
+      {...("onPressToken" in props && {
+        onAction: () => {
+          props.onPressToken(token);
+        },
+      })}
+    >
+      {contents}
+    </MotionGridListItem>
+  );
+};
+
 const LoadingToken = () => (
   <div data-is-loading="" className={styles.token}>
     <div className={styles.nameAndIcon}>
@@ -168,10 +217,56 @@ const LoadingToken = () => (
       </div>
     </div>
     <div className={styles.amountAndActions}>
-      <div className={styles.amountAndSymbol}>
+      <div className={styles.amountAndDetails}>
         <span className={styles.amount} />
-        <span className={styles.symbol} />
+        <span className={styles.notional} />
       </div>
     </div>
   </div>
 );
+
+const UnwrapButton = ({
+  sessionState,
+  ...props
+}: ComponentProps<typeof Button> & {
+  sessionState: EstablishedSessionState;
+}) => {
+  const toast = useToast();
+  const { network } = useSessionContext();
+  const doUnwrap = useCallback(async () => {
+    try {
+      const result = await sessionState.sendTransaction(
+        sessionState.getSessionUnwrapInstructions(),
+        {
+          variation: "Unwrap",
+          paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+        },
+      );
+      if (result.type === TransactionResultType.Success) {
+        toast.success(
+          "Successfuly unwrapped!",
+          <ExplorerLink network={network} txHash={result.signature} />,
+        );
+      } else {
+        toast.error("Failed to unwrap", errorToString(result.error));
+      }
+    } catch (error: unknown) {
+      // biome-ignore lint/suspicious/noConsole: we want to log the error
+      console.error(error);
+      toast.error("Failed to unwrap", errorToString(error));
+    }
+  }, [sessionState, toast, network]);
+  const { execute, state } = useAsync(doUnwrap);
+
+  return (
+    <Button
+      isDisabled={state.type === AsyncStateType.Running}
+      isPending={state.type === AsyncStateType.Running}
+      hideLoadingSpinner
+      onPress={execute}
+      {...props}
+    >
+      Unwrap
+    </Button>
+  );
+};

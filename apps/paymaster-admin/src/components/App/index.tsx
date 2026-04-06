@@ -1,0 +1,65 @@
+"use client";
+import { StateType } from "@fogo/component-library/useData";
+import type { EstablishedSessionState } from "@fogo/sessions-sdk-react";
+import {
+  isEstablished,
+  isWalletLoading,
+  useSession,
+} from "@fogo/sessions-sdk-react";
+
+import { FetchUserDataStateType, useUserData } from "../../client/paymaster";
+import { UserNotFound } from "../UserNotFound";
+import { UserApps } from "./user-apps";
+
+export const Apps = () => {
+  const sessionState = useSession();
+
+  if (isWalletLoading(sessionState)) {
+    return <AppsContents isLoading />;
+  } else if (isEstablished(sessionState)) {
+    return <AppsContents sessionState={sessionState} />;
+  } else {
+    return;
+  }
+};
+
+type AppsContentsProps =
+  | {
+      isLoading?: false;
+      sessionState: EstablishedSessionState;
+    }
+  | {
+      isLoading: true;
+    };
+
+const AppsContents = (props: AppsContentsProps) => {
+  if (props.isLoading) {
+    return <UserApps isLoading />;
+  }
+  return <AppData sessionState={props.sessionState} />;
+};
+
+const AppData = ({
+  sessionState,
+}: {
+  sessionState: EstablishedSessionState;
+}) => {
+  const userData = useUserData(sessionState);
+  switch (userData.type) {
+    case StateType.Error: {
+      return <div>Error loading user data: {userData.error.message}</div>;
+    }
+    case StateType.NotLoaded: {
+      return;
+    }
+    case StateType.Loading: {
+      return <UserApps isLoading />;
+    }
+    default: {
+      if (userData.data.type === FetchUserDataStateType.NotFound) {
+        return <UserNotFound />;
+      }
+      return <UserApps user={userData.data.user} />;
+    }
+  }
+};

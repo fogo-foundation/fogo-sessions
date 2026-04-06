@@ -1,58 +1,58 @@
+import { TollboothIdl } from "@fogo/sessions-idls";
 import {
+  fromLegacyKeypair,
   fromLegacyPublicKey,
   fromLegacyTransactionInstruction,
   fromVersionedTransaction,
 } from "@solana/compat";
 import type {
-  Transaction,
+  Address,
+  GetLatestBlockhashApi,
   Instruction,
-  Blockhash,
+  Rpc,
+  Transaction,
   TransactionWithLifetime,
 } from "@solana/kit";
 import {
-  createSolanaRpc,
-  getBase64EncodedWireTransaction,
-  createTransactionMessage,
-  setTransactionMessageFeePayer,
-  setTransactionMessageLifetimeUsingBlockhash,
-  appendTransactionMessageInstructions,
-  partiallySignTransactionMessageWithSigners,
-  pipe,
   addSignersToTransactionMessage,
+  appendTransactionMessageInstructions,
   compressTransactionMessageUsingAddressLookupTables,
   createSignerFromKeyPair,
+  createSolanaRpc,
+  createTransactionMessage,
+  getAddressFromPublicKey,
+  getBase64EncodedWireTransaction,
   partiallySignTransaction,
+  partiallySignTransactionMessageWithSigners,
+  pipe,
+  setTransactionMessageFeePayer,
+  setTransactionMessageLifetimeUsingBlockhash,
 } from "@solana/kit";
 import type {
   AddressLookupTableAccount,
   TransactionError,
 } from "@solana/web3.js";
 import {
-  Connection as Web3Connection,
+  Keypair,
+  PublicKey,
   TransactionInstruction,
   VersionedTransaction,
-  PublicKey,
+  Connection as Web3Connection,
 } from "@solana/web3.js";
+import BN from "bn.js";
 import { z } from "zod";
+import { createPaymasterFeeInstruction } from "./instructions.js";
+import { Network } from "./network.js";
+import { getPaymasterFee, PaymasterResponseError } from "./paymaster.js";
 
-export enum Network {
-  Testnet,
-  Mainnet,
-}
-
-export const DEFAULT_RPC = {
+const DEFAULT_RPC = {
   [Network.Testnet]: "https://testnet.fogo.io",
   [Network.Mainnet]: "https://mainnet.fogo.io",
 };
 
-export const DEFAULT_PAYMASTER = {
-  [Network.Testnet]: "https://paymaster.fogo.io",
-  [Network.Mainnet]: "https://paymaster.dourolabs.app",
-};
-
-const DEFAULT_ADDRESS_LOOKUP_TABLE_ADDRESS = {
-  [Network.Testnet]: "B8cUjJMqaWWTNNSTXBmeptjWswwCH1gTSCRYv4nu7kJW",
-  [Network.Mainnet]: undefined,
+const DEFAULT_PAYMASTER = {
+  [Network.Testnet]: "https://fogo-testnet.dourolabs-paymaster.xyz",
+  [Network.Mainnet]: "https://fogo-mainnet.dourolabs-paymaster.xyz",
 };
 
 export enum TransactionResultType {
@@ -77,85 +77,130 @@ export type TransactionResult = ReturnType<
 >;
 
 export const createSessionConnection = (
-  options: // This is a bit of a complex type that basically says "you can either
-  // specify a network and optionally override the rpc, or you can explicitly
-  // specify both the rpc AND the paymaster"
-  | {
-        network: Network;
-        rpc?: string | URL | undefined;
-        paymaster?: undefined;
+  options: {
+    network: Network;
+    rpc?: string | URL | undefined;
+  } & (
+    | {
+        paymaster?: string | URL | undefined;
         sendToPaymaster?: undefined;
         sponsor?: undefined;
       }
-    | ({
-        network?: Network | undefined;
-        rpc: string | URL;
-      } & (
-        | {
-            paymaster: string | URL;
-            sendToPaymaster?: undefined;
-            sponsor?: undefined;
-          }
-        | {
-            paymaster?: undefined;
-            sendToPaymaster: (
-              transaction: Transaction,
-            ) => Promise<TransactionResult>;
-            sponsor: PublicKey;
-          }
-      )),
+    | {
+        paymaster?: undefined;
+        sendToPaymaster: (
+          transaction: Transaction,
+        ) => Promise<TransactionResult>;
+        sponsor: PublicKey;
+      }
+  ),
 ) => {
-  // For some reason, typescript is unable to narrow this type even though it's
-  // obvious that `rpc` can only be `undefined` if `network` is defined.  I
-  // don't like the non-null assertion, but here we can guarantee it's safe (and
-  // typescript really should be able to narrow this...)
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const rpcUrl = (options.rpc ?? DEFAULT_RPC[options.network!]).toString();
+  const rpcUrl = (options.rpc ?? DEFAULT_RPC[options.network]).toString();
   const rpc = createSolanaRpc(rpcUrl);
   const connection = new Web3Connection(rpcUrl, "confirmed");
+  const addressLookupTableCache = new Map<string, AddressLookupTableAccount>();
+  const sponsorCache = new Map<string, PublicKey>();
 
   return {
     rpc,
     connection,
+    network: options.network,
+    getSolanaConnection: createSolanaConnectionGetter(options.network),
     sendToPaymaster: async (
       domain: string,
-      sponsor: PublicKey,
-      addressLookupTables: AddressLookupTableAccount[] | undefined,
       sessionKey: CryptoKeyPair | undefined,
-      instructions:
-        | (TransactionInstruction | Instruction)[]
-        | VersionedTransaction
-        | (Transaction & TransactionWithLifetime),
-    ) => {
-      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-      const transaction = await buildTransaction(
-        latestBlockhash,
+      instructions: TransactionOrInstructions,
+      walletPublicKey: PublicKey,
+      extraConfig?: SendTransactionOptions,
+    ) =>
+      sendToPaymaster(
+        { ...options, rpc, connection, addressLookupTableCache, sponsorCache },
+        domain,
         sessionKey,
-        sponsor,
         instructions,
-        addressLookupTables,
-      );
-      return sendToPaymaster(options, domain, transaction);
-    },
-    getSponsor: (domain: string) => getSponsor(options, domain),
-    getAddressLookupTables: (addressLookupTableAddress?: string) =>
-      getAddressLookupTables(options, connection, addressLookupTableAddress),
+        walletPublicKey,
+        extraConfig,
+      ),
+    getSponsor: (domain: string) => getSponsor(options, sponsorCache, domain),
   };
+};
+
+export type TransactionOrInstructions =
+  | (TransactionInstruction | Instruction)[]
+  | VersionedTransaction
+  | (Transaction & TransactionWithLifetime);
+
+export type SendTransactionOptions = {
+  variation?: string | undefined;
+  addressLookupTable?: string | undefined;
+  extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
+  feeMint?: PublicKey | Address;
 };
 
 export type Connection = ReturnType<typeof createSessionConnection>;
 
+const createSolanaConnectionGetter = (network: Network) => {
+  let connection: Web3Connection | undefined;
+  return async () => {
+    if (connection === undefined) {
+      const url = new URL("https://api.fogo.io/api/solana-rpc");
+      url.searchParams.set("network", NETWORK_TO_QUERY_PARAM[network]);
+      const rpcUrlRes = await fetch(url);
+      if (rpcUrlRes.status === 200) {
+        const rpcUrl = await rpcUrlRes.text();
+        connection = new Web3Connection(rpcUrl);
+      } else {
+        throw new Error("Failed to resolve Solana RPC url");
+      }
+    }
+    return connection;
+  };
+};
+
+const NETWORK_TO_QUERY_PARAM = {
+  [Network.Mainnet]: "mainnet",
+  [Network.Testnet]: "testnet",
+};
+
 const sendToPaymaster = async (
-  options: Parameters<typeof createSessionConnection>[0],
+  connection: Pick<
+    Parameters<typeof createSessionConnection>[0],
+    "paymaster" | "network" | "sponsor" | "sendToPaymaster"
+  > & {
+    rpc: Rpc<GetLatestBlockhashApi>;
+    connection: Web3Connection;
+    addressLookupTableCache: Map<string, AddressLookupTableAccount>;
+    sponsorCache: Map<string, PublicKey>;
+  },
   domain: string,
-  transaction: Transaction,
+  sessionKey: CryptoKeyPair | undefined,
+  instructions: TransactionOrInstructions,
+  walletPublicKey: PublicKey,
+  extraConfig?: SendTransactionOptions,
 ): Promise<TransactionResult> => {
-  if (options.sendToPaymaster === undefined) {
+  const signerKeys = await getSignerKeys(sessionKey, extraConfig?.extraSigners);
+
+  const transaction = Array.isArray(instructions)
+    ? await buildTransaction(
+        connection,
+        domain,
+        sessionKey,
+        signerKeys,
+        instructions,
+        walletPublicKey,
+        extraConfig,
+      )
+    : await addSignaturesToExistingTransaction(instructions, signerKeys);
+
+  if (connection.sendToPaymaster === undefined) {
     const url = new URL(
       "/api/sponsor_and_send",
-      options.paymaster ?? DEFAULT_PAYMASTER[options.network],
+      connection.paymaster ?? DEFAULT_PAYMASTER[connection.network],
     );
     url.searchParams.set("domain", domain);
+    if (extraConfig?.variation !== undefined) {
+      url.searchParams.set("variation", extraConfig.variation);
+    }
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -172,76 +217,183 @@ const sendToPaymaster = async (
       throw new PaymasterResponseError(response.status, await response.text());
     }
   } else {
-    return options.sendToPaymaster(transaction);
+    return connection.sendToPaymaster(transaction);
   }
 };
 
 const buildTransaction = async (
-  latestBlockhash: Readonly<{
-    blockhash: Blockhash;
-    lastValidBlockHeight: bigint;
-  }>,
+  connection: Pick<
+    Parameters<typeof createSessionConnection>[0],
+    "paymaster" | "network" | "sponsor"
+  > & {
+    rpc: Rpc<GetLatestBlockhashApi>;
+    connection: Web3Connection;
+    addressLookupTableCache: Map<string, AddressLookupTableAccount>;
+    sponsorCache: Map<string, PublicKey>;
+  },
+  domain: string,
   sessionKey: CryptoKeyPair | undefined,
-  sponsor: PublicKey,
-  instructions:
-    | (TransactionInstruction | Instruction)[]
-    | VersionedTransaction
-    | (Transaction & TransactionWithLifetime),
-  addressLookupTables: AddressLookupTableAccount[] | undefined,
+  signerKeys: CryptoKeyPair[],
+  instructions: (TransactionInstruction | Instruction)[],
+  walletPublicKey: PublicKey,
+  extraConfig?: {
+    addressLookupTable?: string | undefined;
+    extraSigners?: (CryptoKeyPair | Keypair)[] | undefined;
+    variation?: string | undefined;
+    feeMint?: PublicKey | Address;
+  },
 ) => {
-  const sessionKeySigner = sessionKey
-    ? await createSignerFromKeyPair(sessionKey)
-    : undefined;
+  const feeMint =
+    extraConfig?.feeMint === undefined
+      ? undefined
+      : new PublicKey(extraConfig.feeMint);
+  const [
+    { value: latestBlockhash },
+    sponsor,
+    addressLookupTable,
+    signers,
+    feeAmount,
+    sessionKeyAddress,
+  ] = await Promise.all([
+    connection.rpc.getLatestBlockhash().send(),
+    connection.sponsor === undefined
+      ? getSponsor(connection, connection.sponsorCache, domain)
+      : Promise.resolve(connection.sponsor),
+    extraConfig?.addressLookupTable === undefined
+      ? Promise.resolve(undefined)
+      : getAddressLookupTable(
+          connection.connection,
+          connection.addressLookupTableCache,
+          extraConfig.addressLookupTable,
+        ),
+    Promise.all(signerKeys.map((signer) => createSignerFromKeyPair(signer))),
+    extraConfig?.variation === undefined || feeMint === undefined
+      ? Promise.resolve(new BN(0))
+      : getPaymasterFee(
+          connection.paymaster ?? DEFAULT_PAYMASTER[connection.network],
+          domain,
+          extraConfig.variation,
+          feeMint,
+        ),
+    sessionKey === undefined
+      ? Promise.resolve(undefined)
+      : getAddressFromPublicKey(sessionKey.publicKey),
+  ]);
 
-  if (Array.isArray(instructions)) {
-    return partiallySignTransactionMessageWithSigners(
-      pipe(
-        createTransactionMessage({ version: 0 }),
-        (tx) => setTransactionMessageFeePayer(fromLegacyPublicKey(sponsor), tx),
-        (tx) =>
-          setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-        (tx) =>
-          appendTransactionMessageInstructions(
-            instructions.map((instruction) =>
-              instruction instanceof TransactionInstruction
-                ? fromLegacyTransactionInstruction(instruction)
-                : instruction,
-            ),
-            tx,
+  const tollboothInstruction = await buildTollboothInstructionIfNeeded({
+    sessionKeyAddress,
+    walletPublicKey,
+    domain,
+    feeMint,
+    feeAmount,
+  });
+
+  return partiallySignTransactionMessageWithSigners(
+    pipe(
+      createTransactionMessage({ version: 0 }),
+      (tx) => setTransactionMessageFeePayer(fromLegacyPublicKey(sponsor), tx),
+      (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+      (tx) =>
+        appendTransactionMessageInstructions(
+          instructions.map((instruction) =>
+            instruction instanceof TransactionInstruction
+              ? fromLegacyTransactionInstruction(instruction)
+              : instruction,
           ),
-        (tx) =>
-          compressTransactionMessageUsingAddressLookupTables(
-            tx,
-            Object.fromEntries(
-              addressLookupTables?.map(
-                (table) =>
-                  [
-                    fromLegacyPublicKey(table.key),
-                    table.state.addresses.map((address) =>
-                      fromLegacyPublicKey(address),
-                    ),
-                  ] as const,
-              ) ?? [],
-            ),
-          ),
-        (tx) =>
-          sessionKeySigner === undefined
-            ? tx
-            : addSignersToTransactionMessage([sessionKeySigner], tx),
-      ),
-    );
+          tx,
+        ),
+      (tx) =>
+        tollboothInstruction === undefined ||
+        tx.instructions.some(
+          (instruction) => instruction.programAddress == TollboothIdl.address,
+        )
+          ? tx
+          : appendTransactionMessageInstructions([tollboothInstruction], tx),
+      (tx) =>
+        addressLookupTable === undefined
+          ? tx
+          : compressTransactionMessageUsingAddressLookupTables(tx, {
+              [fromLegacyPublicKey(addressLookupTable.key)]:
+                addressLookupTable.state.addresses.map((address) =>
+                  fromLegacyPublicKey(address),
+                ),
+            }),
+      (tx) => addSignersToTransactionMessage(signers, tx),
+    ),
+  );
+};
+
+const buildTollboothInstructionIfNeeded = ({
+  sessionKeyAddress,
+  walletPublicKey,
+  domain,
+  feeMint,
+  feeAmount,
+}: {
+  sessionKeyAddress: Address | undefined;
+  walletPublicKey: PublicKey;
+  domain: string;
+  feeMint: PublicKey | undefined;
+  feeAmount: BN;
+}) => {
+  if (
+    feeAmount.gt(new BN(0)) &&
+    sessionKeyAddress !== undefined &&
+    feeMint !== undefined
+  ) {
+    return createPaymasterFeeInstruction({
+      sessionKey: new PublicKey(sessionKeyAddress),
+      walletPublicKey,
+      domain,
+      feeMint,
+      feeAmount,
+    }).then(fromLegacyTransactionInstruction);
   } else {
-    const tx =
-      instructions instanceof VersionedTransaction
-        ? (fromVersionedTransaction(instructions) as ReturnType<
-            typeof fromVersionedTransaction
-          > &
-            TransactionWithLifetime) // VersionedTransaction has a lifetime so it's fine to cast it so we can call partiallySignTransaction
-        : instructions;
-    return sessionKey === undefined
-      ? tx
-      : partiallySignTransaction([sessionKey], tx);
+    return undefined;
   }
+};
+
+const addSignaturesToExistingTransaction = async (
+  transaction: VersionedTransaction | (Transaction & TransactionWithLifetime),
+  signerKeys: CryptoKeyPair[],
+) => {
+  const kitTransaction =
+    transaction instanceof VersionedTransaction
+      ? (fromVersionedTransaction(transaction) as ReturnType<
+          typeof fromVersionedTransaction
+        > &
+          TransactionWithLifetime) // VersionedTransaction has a lifetime so it's fine to cast it so we can call partiallySignTransaction
+      : transaction;
+
+  const signerAddresses = await Promise.all(
+    signerKeys.map(
+      async (signer) =>
+        [signer, await getAddressFromPublicKey(signer.publicKey)] as const,
+    ),
+  );
+  const filteredSignerKeys = signerAddresses
+    .filter(([, address]) => kitTransaction.signatures[address] !== undefined)
+    .map(([signer]) => signer);
+
+  return partiallySignTransaction(filteredSignerKeys, kitTransaction);
+};
+
+const getSignerKeys = async (
+  sessionKey: CryptoKeyPair | undefined,
+  extraSigners?: (CryptoKeyPair | Keypair)[],
+) => {
+  const extraSignerKeys =
+    extraSigners === undefined
+      ? []
+      : await Promise.all(
+          extraSigners.map((signer) =>
+            signer instanceof Keypair ? fromLegacyKeypair(signer) : signer,
+          ),
+        );
+  return [
+    ...extraSignerKeys,
+    ...(sessionKey === undefined ? [] : [sessionKey]),
+  ];
 };
 
 const sponsorAndSendResponseSchema = z
@@ -265,52 +417,52 @@ const sponsorAndSendResponseSchema = z
   });
 
 const getSponsor = async (
-  options: Parameters<typeof createSessionConnection>[0],
+  options: Pick<
+    Parameters<typeof createSessionConnection>[0],
+    "paymaster" | "network"
+  >,
+  sponsorCache: Map<string, PublicKey>,
   domain: string,
 ) => {
-  if (options.sponsor === undefined) {
+  const value = sponsorCache.get(domain);
+  if (value === undefined) {
     const url = new URL(
       "/api/sponsor_pubkey",
       options.paymaster ?? DEFAULT_PAYMASTER[options.network],
     );
     url.searchParams.set("domain", domain);
+    url.searchParams.set("index", "autoassign");
     const response = await fetch(url);
 
     if (response.status === 200) {
-      return new PublicKey(z.string().parse(await response.text()));
+      const sponsor = new PublicKey(z.string().parse(await response.text()));
+      sponsorCache.set(domain, sponsor);
+      return sponsor;
     } else {
       throw new PaymasterResponseError(response.status, await response.text());
     }
   } else {
-    return options.sponsor;
+    return value;
   }
 };
 
-const getAddressLookupTables = async (
-  options: Parameters<typeof createSessionConnection>[0],
+const getAddressLookupTable = async (
   connection: Web3Connection,
-  addressLookupTableAddress?: string,
+  addressLookupTableCache: Map<string, AddressLookupTableAccount>,
+  addressLookupTableAddress: string,
 ) => {
-  const altAddress =
-    addressLookupTableAddress ??
-    (options.network === undefined
-      ? undefined
-      : DEFAULT_ADDRESS_LOOKUP_TABLE_ADDRESS[options.network]);
-  if (altAddress) {
-    const addressLookupTableResult = await connection.getAddressLookupTable(
-      new PublicKey(altAddress),
+  const value = addressLookupTableCache.get(addressLookupTableAddress);
+  if (value === undefined) {
+    const result = await connection.getAddressLookupTable(
+      new PublicKey(addressLookupTableAddress),
     );
-    return addressLookupTableResult.value
-      ? [addressLookupTableResult.value]
-      : undefined;
+    if (result.value === null) {
+      return;
+    } else {
+      addressLookupTableCache.set(addressLookupTableAddress, result.value);
+      return result.value;
+    }
   } else {
-    return;
+    return value;
   }
 };
-
-class PaymasterResponseError extends Error {
-  constructor(statusCode: number, message: string) {
-    super(`Paymaster sent a ${statusCode.toString()} response: ${message}`);
-    this.name = "PaymasterResponseError";
-  }
-}

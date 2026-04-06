@@ -23,6 +23,8 @@ pub enum SessionError {
     LimitsExceeded,
     #[error("This session was revoked")]
     Revoked,
+    #[error("A session can only send rent to its user account when closing a token account")]
+    TokenCloseAccountWrongDestination,
 }
 
 impl From<SessionError> for u32 {
@@ -38,6 +40,7 @@ impl From<SessionError> for u32 {
             SessionError::InvalidAccountVersion => 4_000_000_007,
             SessionError::LimitsExceeded => 4_000_000_008,
             SessionError::Revoked => 4_000_000_009,
+            SessionError::TokenCloseAccountWrongDestination => 4_000_000_010,
         }
     }
 }

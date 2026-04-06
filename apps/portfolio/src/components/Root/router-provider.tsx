@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ComponentProps } from "react";
 import { useCallback } from "react";
 import { RouterProvider as BaseRouterProvider } from "react-aria-components";

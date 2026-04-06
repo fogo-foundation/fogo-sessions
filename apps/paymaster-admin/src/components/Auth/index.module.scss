@@ -1,0 +1,133 @@
+@use '@fogo/component-library/theme';
+
+.authVideoBackground {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.authCard {
+  background-color: theme.color('card');
+  max-width: 90%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: theme.spacing(14) theme.spacing(8) theme.spacing(0);
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  
+  @include theme.breakpoint('md') {
+    left: theme.spacing(10);
+    width: theme.spacing(109);
+  }
+
+  .fogoPaymasterLabel {
+    margin-top: theme.spacing(8);
+  }
+
+  .authCardDescription {
+    @include theme.text('2xl', 'light');
+    color: theme.color('muted');
+    margin-top: theme.spacing(9.5);
+
+    @include theme.breakpoint('md') {
+      width: 80%;
+    }
+  }
+
+  .connectWalletCardInfo {
+    padding-top: theme.spacing(3);
+    @include theme.text('xs', 'light');
+    color: theme.color('muted');
+    opacity: .7;
+  }
+
+  .paymasterImage {
+    position: absolute;
+    top: theme.spacing(40);
+    left: 75%;
+    display: none;
+
+    @include theme.breakpoint('md') {
+      display: block;
+    }
+  }
+
+  .connectWalletCard {
+    margin-top: theme.spacing(40);
+    padding: theme.spacing(6);
+    background-color: theme.color('background');
+    border-radius: theme.border-radius('xl');
+    border: 1px solid theme.color('border');
+    position: relative;
+
+    @include theme.breakpoint('md') {
+      width: 120%;
+    }
+
+    .connectWalletCardHighlightLine {
+      width: 204px;
+      height: 1px;
+      position: absolute;
+      top: 0;
+      left: theme.spacing(6);
+      background: linear-gradient(
+        90deg,
+        #{theme.color('border')} 0%,
+        #{theme.color('brand')} 47.46%,
+        #{theme.color('border')} 98.72%
+      );
+      filter: blur(1px);
+    }
+
+    .connectWalletCardTitle {
+      @include theme.text('2xl', 'normal');
+      color: theme.color('heading');
+    }
+
+    .connectWalletCardDescription {
+      @include theme.text('base', 'normal');
+      color: theme.color('paragraph');
+      opacity: 0.6;
+
+      margin: theme.spacing(4) 0 theme.spacing(4);
+    }
+  }
+
+  .authCardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: theme.spacing(8) 0;
+    margin-top: auto;
+    
+    .authCardFooterContent {
+      display: flex;
+      flex-direction: column;
+      gap: theme.spacing(2);
+      
+      &[data-align="right"] {
+        align-items: flex-end;
+      }
+    }
+
+    .authCardFooterTitle {
+      @include theme.text('xl', 'bold');
+      color: theme.color('heading');
+    }
+
+    .authCardFooterSubtitle {
+      @include theme.text('sm', 'normal');
+      color: theme.color('muted');
+      opacity: 0.7;
+    }
+
+    .authCardFooterLink {
+      @include theme.text('sm', 'normal');
+    }
+  }
+}

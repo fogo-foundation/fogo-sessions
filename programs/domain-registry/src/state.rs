@@ -57,14 +57,41 @@ mod resizable_account_array {
 
             let data_len = self.acc_info.data_len();
             let mut data = self.acc_info.try_borrow_mut_data()?;
-            let new: &mut T = bytemuck::from_bytes_mut(&mut data[data_len - size_of::<T>()..]);
+            let new = bytemuck::from_bytes_mut(
+                data.get_mut(data_len - size_of::<T>()..)
+                    .expect("data_len >= size_of::<T>() after extend"),
+            );
             *new = value;
+            Ok(())
+        }
+
+        /// Remove the element at an index efficiently and simply without preserving the order of the elements
+        pub fn swap_remove(&mut self, index: usize) -> Result<()> {
+            // swap the element at index `index` with the last element
+            {
+                let mut data = self.acc_info.try_borrow_mut_data()?;
+                let elements = bytemuck::cast_slice_mut::<_, T>(&mut data);
+                if index < elements.len() {
+                    elements.swap(index, elements.len() - 1);
+                } else {
+                    return Err(ProgramError::AccountDataTooSmall.into());
+                }
+            }
+
+            // remove the last element by reallocating down the account
+            let data_len = self.acc_info.data_len();
+            self.acc_info.realloc(data_len - size_of::<T>(), false)?;
+            self.adjust_rent_if_needed()?;
             Ok(())
         }
 
         pub fn contains(&self, value: T) -> Result<bool> {
             let data = self.acc_info.try_borrow_data()?;
             Ok(bytemuck::cast_slice(&data).contains(&value))
+        }
+        pub fn position(&self, predicate: impl Fn(&T) -> bool) -> Result<Option<usize>> {
+            let data = self.acc_info.try_borrow_data()?;
+            Ok(bytemuck::cast_slice(&data).iter().position(predicate))
         }
 
         pub fn to_vec<U>(&self) -> Result<Vec<U>>
@@ -87,7 +114,11 @@ mod resizable_account_array {
 
         fn adjust_rent_if_needed(&mut self) -> Result<()> {
             let rent = Rent::get()?;
-            let amount_required = rent.minimum_balance(self.acc_info.data_len());
+            let amount_required = if self.acc_info.data_is_empty() {
+                0
+            } else {
+                rent.minimum_balance(self.acc_info.data_len())
+            };
             let amount_to_transfer = amount_required.saturating_sub(self.acc_info.lamports());
 
             if amount_to_transfer > 0 {

@@ -1,5 +1,6 @@
-use crate::Message;
 use anchor_lang::prelude::*;
+use nom::error::Error;
+use nom::Err;
 use solana_intents::IntentError;
 
 #[error_code]
@@ -36,10 +37,23 @@ pub enum IntentTransferError {
     SymbolMismatch,
     #[msg("The message's nonce is not one more than the previous nonce")]
     NonceFailure,
+    #[msg("The recipient address could not be parsed as a valid address")]
+    InvalidRecipientAddress,
+    #[msg("The provided to chain ID is unsupported")]
+    UnsupportedToChainId,
+    #[msg("The provided Ntt manager for the given mint is invalid")]
+    InvalidNttManager,
+    #[msg("Unauthorized: only upgrade authority can call this")]
+    Unauthorized,
+    #[msg("The signed quote for NTT execution is invalid")]
+    InvalidNttSignedQuote,
+    #[msg("The fee amount signed by the user is not enough for this action")]
+    InsufficientFeeAmount,
 }
 
-impl From<IntentError<<Message as TryFrom<Vec<u8>>>::Error>> for IntentTransferError {
-    fn from(err: IntentError<<Message as TryFrom<Vec<u8>>>::Error>) -> Self {
+type NomError = Err<Error<Vec<u8>>>;
+impl From<IntentError<NomError>> for IntentTransferError {
+    fn from(err: IntentError<NomError>) -> Self {
         match err {
             IntentError::NoIntentMessageInstruction(_) => {
                 IntentTransferError::NoIntentMessageInstruction

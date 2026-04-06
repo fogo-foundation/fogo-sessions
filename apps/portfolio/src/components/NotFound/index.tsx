@@ -1,4 +1,5 @@
-import { Button } from "../Button";
+import { Button } from "@fogo/component-library/Button";
+
 import styles from "./index.module.scss";
 
 export const NotFound = () => (
@@ -7,6 +8,8 @@ export const NotFound = () => (
     <p className={styles.subheader}>
       {"The page you're looking for isn't here"}
     </p>
-    <Button href="/">Go Home</Button>
+    <Button href="/" variant="outline" size="lg">
+      Go Home
+    </Button>
   </main>
 );

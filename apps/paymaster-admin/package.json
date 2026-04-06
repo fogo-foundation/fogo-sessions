@@ -1,31 +1,51 @@
 {
+  "dependencies": {
+    "@fogo/component-library": "workspace:*",
+    "@fogo/sessions-sdk": "workspace:",
+    "@fogo/sessions-sdk-react": "workspace:*",
+    "@neondatabase/serverless": "catalog:",
+    "@phosphor-icons/react": "catalog:",
+    "@react-hookz/web": "catalog:",
+    "@solana/web3.js": "catalog:",
+    "ace-builds": "catalog:",
+    "bs58": "catalog:",
+    "clsx": "catalog:",
+    "motion": "catalog:",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-ace": "catalog:",
+    "react-aria": "catalog:",
+    "react-aria-components": "catalog:",
+    "react-dom": "catalog:",
+    "smol-toml": "catalog:",
+    "swr": "catalog:",
+    "uuid": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@cprussin/jest-config": "catalog:",
+    "@cprussin/tsconfig": "catalog:",
+    "@types/pg": "catalog:",
+    "@types/react": "catalog:",
+    "autoprefixer": "catalog:",
+    "modern-normalize": "catalog:",
+    "postcss": "catalog:",
+    "typescript": "catalog:",
+    "vercel": "catalog:"
+  },
+  "engines": {
+    "node": "22"
+  },
   "name": "@fogo/paymaster-admin",
-  "version": "0.0.0",
   "private": true,
   "scripts": {
     "build": "next build",
-    "fix:format": "prettier --write .",
-    "fix:lint": "eslint --fix .",
+    "build:validator": "cargo build --release --manifest-path ../../services/paymaster/Cargo.toml --bin paymaster-tx-validator && mkdir -p bin && cp ../../target/release/paymaster-tx-validator bin/",
+    "pull:env": "[ $CI ] || VERCEL_ORG_ID=team_M8yTQcRiKOduAwHNMhHQInWq VERCEL_PROJECT_ID=prj_0YVLB5TIHu7VXdMyib1Zmjq4iwtZ vercel env pull",
     "start:dev": "next dev --port 3002",
     "start:prod": "next start --port 3002",
-    "test:format": "prettier --check .",
-    "test:lint": "eslint .",
     "test:types": "tsc"
   },
-  "dependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "next": "catalog:",
-    "clsx": "catalog:"
-  },
-  "devDependencies": {
-    "@cprussin/eslint-config": "catalog:",
-    "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
-    "@cprussin/tsconfig": "catalog:",
-    "@types/react": "catalog:",
-    "autoprefixer": "catalog:",
-    "postcss": "catalog:",
-    "typescript": "catalog:"
-  }
+  "type": "module",
+  "version": "0.0.0"
 }

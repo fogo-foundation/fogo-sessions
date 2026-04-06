@@ -1,17 +1,9 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": ["NODE_ENV"],
-  "globalPassThroughEnv": ["COREPACK_HOME"],
+  "globalPassThroughEnv": ["COREPACK_HOME", "BIOME_BINARY", "FORCE_COLOR"],
   "ui": "tui",
   "tasks": {
-    "//#build:replace-packages-with-built-packages": {
-      "dependsOn": [
-        "@fogo/sessions-idls#build",
-        "@fogo/sessions-sdk-react#build",
-        "@fogo/sessions-sdk#build",
-        "@fogo/sessions-sdk-web#build"
-      ]
-    },
     "//#fix": {
       "dependsOn": ["//#fix:lint", "//#fix:format"],
       "cache": false
@@ -35,15 +27,27 @@
       ],
       "outputs": ["pnpm-lock.yaml"]
     },
-    "//#publish": {
-      "dependsOn": ["//#build:replace-packages-with-built-packages"],
-      "cache": false
-    },
-    "//#run:add-program-id-to-domain-registry": {
+    "//#run:domain-registry": {
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },
     "//#run:initialize-chain-id": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
+    "//#run:initialize-tollbooth": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
+    "//#run:register-ntt-manager": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
+    "//#run:register-fee-config": {
+      "dependsOn": ["@fogo/scripts#build"],
+      "cache": false
+    },
+    "//#run:update-metadata": {
       "dependsOn": ["@fogo/scripts#build"],
       "cache": false
     },
@@ -84,7 +88,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
@@ -99,7 +103,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
@@ -113,7 +117,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"
@@ -139,7 +143,7 @@
         "!README.md",
         "!**/*.test.*",
         "!jest.config.js",
-        "!eslint.config.js",
+        "!biome.json",
         "!prettier.config.js",
         "!vercel.json",
         "!**/dist/**"

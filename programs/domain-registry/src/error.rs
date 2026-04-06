@@ -6,4 +6,6 @@ pub enum DomainRegistryError {
     InvalidDomainRecordPda,
     #[msg("The program is already added to the domain record")]
     ProgramAlreadyAdded,
+    #[msg("This program is not in the domain record")]
+    ProgramNotFound,
 }

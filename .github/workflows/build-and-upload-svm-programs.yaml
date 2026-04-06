@@ -4,11 +4,22 @@ on:
   pull_request:
     paths:
       - programs/**
+      - packages/sessions-sdk-rs/**
+      - packages/solana-intents/**
+      - .github/workflows/build-and-upload-svm-programs.yaml
   push:
     branches:
       - main
     paths:
       - programs/**
+      - packages/sessions-sdk-rs/**
+      - packages/solana-intents/**
+      - .github/workflows/build-and-upload-svm-programs.yaml
+
+permissions:
+  id-token: write
+  attestations: write
+  artifact-metadata: write
 
 jobs:
   build:
@@ -19,11 +30,16 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev libudev-dev
       - name: Install Solana Verify CLI
         run: |
-          cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 610cdc3
+          cargo install solana-verify --locked --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 610cdc3
       - name: Build
         run: solana-verify build --base-image solanafoundation/solana-verifiable-build:2.2.18
       - name: Print program hashes
         run: sha256sum target/deploy/*.so
+      - name: Attest build provenance
+        if: github.event_name == 'push'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: 'target/deploy/*.so'
       - name: Upload programs
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v4

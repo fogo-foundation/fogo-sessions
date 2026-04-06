@@ -1,4 +1,8 @@
 #![allow(unexpected_cfgs)] // warning: unexpected `cfg` condition value: `anchor-debug`
+#![allow(
+    clippy::used_underscore_binding,
+    reason = "_recipient_id is not used in the program logic"
+)]
 
 use crate::error::TollboothError;
 use anchor_lang::prelude::*;
@@ -13,6 +17,7 @@ mod error;
 declare_id!("toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp");
 
 const TOLL_RECIPIENT_SEED: &[u8] = b"toll_recipient";
+const TOLL_RECIPIENT_ID: u8 = 0;
 
 #[program]
 pub mod tollbooth {
@@ -22,6 +27,7 @@ pub mod tollbooth {
     pub fn pay_toll<'info>(
         ctx: Context<'_, '_, '_, 'info, PayToll<'info>>,
         amount: u64,
+        _recipient_id: u8, // This field may be used in the future to enable multiple toll recipients for the same domain for better SVM parallelization
     ) -> Result<()> {
         require_eq!(
             get_associated_token_address(
@@ -37,6 +43,7 @@ pub mod tollbooth {
                 &Pubkey::find_program_address(
                     &[
                         TOLL_RECIPIENT_SEED,
+                        &[TOLL_RECIPIENT_ID],
                         ctx.accounts.session.get_domain_hash_checked()?.as_ref(),
                     ],
                     &crate::ID

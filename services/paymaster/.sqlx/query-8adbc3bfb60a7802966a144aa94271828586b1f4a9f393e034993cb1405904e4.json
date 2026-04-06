@@ -1,0 +1,51 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n          id,\n          domain,\n          enable_session_management,\n          enable_preflight_simulation\n        FROM domain_config\n        WHERE network_environment = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "domain",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "enable_session_management",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "enable_preflight_simulation",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "network_environment",
+            "kind": {
+              "Enum": [
+                "mainnet",
+                "testnet",
+                "localnet"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8adbc3bfb60a7802966a144aa94271828586b1f4a9f393e034993cb1405904e4"
+}

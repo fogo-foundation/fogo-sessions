@@ -3,7 +3,8 @@ name = "solana-intents"
 description = "A set of utilities for loading & validating intent-based transactions in solana"
 edition = { workspace = true }
 license = { workspace = true }
-version = "0.1.0"
+repository = "https://github.com/fogo-foundation/fogo-sessions"
+version = "0.1.2"
 
 [lib]
 crate-type = ["rlib"]
@@ -11,6 +12,10 @@ name = "solana_intents"
 
 [dependencies]
 borsh = { workspace = true }
+itertools.workspace = true
 nom = { workspace = true }
 solana-offchain-message = { workspace = true }
 solana-program = { workspace = true }
+
+[lints]
+workspace = true

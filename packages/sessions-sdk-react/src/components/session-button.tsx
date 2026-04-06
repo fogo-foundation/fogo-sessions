@@ -1,25 +1,28 @@
 "use client";
 
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
+import { HourglassLowIcon } from "@phosphor-icons/react/dist/ssr/HourglassLow";
 import { LockIcon } from "@phosphor-icons/react/dist/ssr/Lock";
-import { PublicKey } from "@solana/web3.js";
-import { useMemo, useState, useRef, useCallback, useEffect } from "react";
+import type { PublicKey } from "@solana/web3.js";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Button as UnstyledButton,
   Dialog,
   Popover,
+  Button as UnstyledButton,
 } from "react-aria-components";
 
 import { deserializePublicKeyMap } from "../deserialize-public-key.js";
-import { FogoLogo } from "./fogo-logo.js";
+import { useSession, useSessionContext } from "../hooks/use-session.js";
+import type { EstablishedSessionState } from "../session-state.js";
+import {
+  isEstablished,
+  isWalletLoading,
+  StateType as SessionStateType,
+} from "../session-state.js";
+import { DisplayAddress } from "./display-address.js";
+import { FogoLogo as FogoLogoIcon } from "./fogo-logo.js";
 import styles from "./session-button.module.css";
 import { SessionPanel } from "./session-panel.js";
-import { useSession, useSessionContext } from "../hooks/use-session.js";
-import {
-  StateType as SessionStateType,
-  isEstablished,
-} from "../session-state.js";
-import { TruncateKey } from "./truncate-key.js";
 
 type Props = {
   requestedLimits?: Map<PublicKey, bigint> | Record<string, bigint> | undefined;
@@ -27,7 +30,7 @@ type Props = {
 };
 
 export const SessionButton = ({ requestedLimits, compact }: Props) => {
-  const { onStartSessionInit } = useSessionContext();
+  const { onStartSessionInit, showBridgeIn } = useSessionContext();
   const sessionState = useSession();
   const prevSessionState = useRef(sessionState);
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
@@ -55,7 +58,7 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
               }
             })
             .catch((error: unknown) => {
-              // eslint-disable-next-line no-console
+              // biome-ignore lint/suspicious/noConsole: we want to log the error
               console.error("Error in `onStartSessionInit` callback", error);
             });
         } else if (callbackReturn !== false) {
@@ -64,38 +67,40 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
       }
     }
   }, [sessionState, limits, onStartSessionInit]);
-  const handleSessionPanelOpenChange = useCallback(
-    (isOpen: boolean) => {
-      if (!isOpen) {
-        setSessionPanelOpen(false);
-      }
-    },
-    [setSessionPanelOpen],
-  );
+
+  const handleSessionPanelOpenChange = useCallback((isOpen: boolean) => {
+    if (!isOpen) {
+      setSessionPanelOpen(false);
+    }
+  }, []);
+
   const closeSessionPanel = useCallback(() => {
     setSessionPanelOpen(false);
-  }, [setSessionPanelOpen]);
-  const isLoading = [
-    SessionStateType.Initializing,
-    SessionStateType.CheckingStoredSession,
-    SessionStateType.RequestingLimits,
-    SessionStateType.SettingLimits,
-    SessionStateType.WalletConnecting,
-    SessionStateType.SelectingWallet,
-  ].includes(sessionState.type);
+  }, []);
+  const isLoading = isWalletLoading(sessionState);
 
   useEffect(() => {
     if (sessionState.type !== prevSessionState.current.type) {
       if (
         isEstablished(sessionState) &&
         !isEstablished(prevSessionState.current) &&
-        prevSessionState.current.type !== SessionStateType.CheckingStoredSession
+        prevSessionState.current.type !==
+          SessionStateType.CheckingStoredSession &&
+        !localStorage.getItem("fogo-session-widget-shown")
       ) {
+        // Only show the widget automatically on first connection
         setSessionPanelOpen(true);
+        localStorage.setItem("fogo-session-widget-shown", "true");
       }
       prevSessionState.current = sessionState;
     }
   }, [sessionState]);
+
+  useEffect(() => {
+    if (showBridgeIn) {
+      setSessionPanelOpen(true);
+    }
+  }, [showBridgeIn]);
 
   return (
     <>
@@ -109,13 +114,15 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
         data-is-signed-in={isEstablished(sessionState) ? "" : undefined}
         data-compact={compact ? "" : undefined}
       >
-        <div className={styles.fogoLogoContainer} aria-hidden={isLoading}>
-          <FogoLogo className={styles.fogoLogo} />
-        </div>
+        {isEstablished(sessionState) ? (
+          <EstablishedLogo sessionState={sessionState} />
+        ) : (
+          <FogoLogo isLoading={isLoading} />
+        )}
         {!compact && (
           <span className={styles.contents}>
             {isEstablished(sessionState) ? (
-              <TruncateKey keyValue={sessionState.walletPublicKey} />
+              <DisplayAddress address={sessionState.walletPublicKey} />
             ) : (
               "Sign in"
             )}
@@ -144,4 +151,46 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
       </Popover>
     </>
   );
+};
+
+const EstablishedLogo = ({
+  sessionState,
+}: {
+  sessionState: EstablishedSessionState;
+}) => {
+  const isExpired = useIsExpired(sessionState.expiration);
+
+  return isExpired ? <ExpiredIcon /> : <FogoLogo />;
+};
+
+const FogoLogo = ({ isLoading }: { isLoading?: boolean | undefined }) => (
+  <div className={styles.fogoLogoContainer} aria-hidden={isLoading}>
+    <FogoLogoIcon className={styles.fogoLogo} />
+  </div>
+);
+
+const ExpiredIcon = () => (
+  <div className={styles.expiredIconContainer}>
+    <HourglassLowIcon weight="bold" />
+  </div>
+);
+
+export const useIsExpired = (expiry: Date) => {
+  const [expired, setExpired] = useState(new Date() >= expiry);
+
+  useEffect(() => {
+    const msUntilExpired = expiry.getTime() - Date.now();
+    if (msUntilExpired <= 0) {
+      setExpired(true);
+      return;
+    } else {
+      setExpired(false);
+      const timeout = setTimeout(() => {
+        setExpired(true);
+      }, msUntilExpired);
+      return () => clearTimeout(timeout);
+    }
+  }, [expiry]);
+
+  return expired;
 };

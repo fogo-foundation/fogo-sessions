@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "incremental": false,
+    "declaration": true
+  },
+  "exclude": [
+    ".storybook",
+    "node_modules",
+    "dist",
+    "integration-tests",
+    "**/*.stories.*",
+    "**/*.test.ts"
+  ]
+}

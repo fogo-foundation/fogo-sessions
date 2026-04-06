@@ -1,32 +1,31 @@
 {
   "private": true,
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@10.25.0",
   "type": "module",
   "engines": {
-    "node": "^22.17.0",
-    "pnpm": "^10.13.1"
+    "node": "^22.21.1",
+    "pnpm": "^10.25.0"
   },
   "scripts": {
-    "build:replace-packages-with-built-packages": "bash -c 'for package in packages/*/package.json; do packagePath=${package///package.json}; mv \"${packagePath}\" \"${packagePath}-old\"; mv \"${packagePath}-old/dist\" \"${packagePath}\"; rm -rf \"${packagePath}-old\"; done'; pnpm i --no-frozen-lockfile",
-    "fix:format": "prettier --write .",
-    "fix:lint": "eslint --fix .",
+    "fix:lint": "./bin/biome-ci --write",
+    "fix:lint:unsafe": "./bin/biome-ci --write --unsafe",
     "install:modules": "[ $CI ] && true || pnpm install",
-    "publish": "changeset publish",
-    "run:add-program-id-to-domain-registry": "add-program-id-to-domain-registry",
+    "prepare": "./scripts/ci/npm-prepare.sh",
+    "run:domain-registry": "domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
-    "test:format": "run-jest --colors --selectProjects format",
-    "test:lint": "run-jest --colors --selectProjects lint",
+    "run:initialize-tollbooth": "initialize-tollbooth",
+    "run:register-ntt-manager": "register-ntt-manager",
+    "run:register-fee-config": "register-fee-config",
+    "run:update-metadata": "update-metadata",
+    "test:lint": "./bin/biome-ci",
     "turbo": "[ ! -d node_modules ] && pnpm install; turbo"
   },
   "devDependencies": {
+    "@biomejs/biome": "catalog:",
     "@changesets/cli": "catalog:",
-    "@cprussin/eslint-config": "catalog:",
     "@cprussin/jest-config": "catalog:",
-    "@cprussin/prettier-config": "catalog:",
-    "eslint": "catalog:",
     "@fogo/scripts": "workspace:*",
     "jest": "catalog:",
-    "prettier": "catalog:",
     "turbo": "catalog:"
   }
 }

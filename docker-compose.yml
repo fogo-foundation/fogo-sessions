@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:17
+    container_name: paymaster_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: paymaster
+      POSTGRES_PASSWORD: paymaster
+      POSTGRES_DB: paymaster
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  db-ui:
+    image: sosedoff/pgweb
+    container_name: paymaster_pgweb
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      # connect straight to the Postgres service in the same network
+      DATABASE_URL: postgres://paymaster:paymaster@db:5432/paymaster?sslmode=disable
+    ports:
+      - "8080:8081"
+    command: ["--bind=0.0.0.0", "--listen=8081"]
+
+volumes:
+  db_data:

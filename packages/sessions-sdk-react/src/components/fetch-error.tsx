@@ -1,15 +1,14 @@
 import { WarningCircleIcon } from "@phosphor-icons/react/dist/ssr/WarningCircle";
 import clsx from "clsx";
 import type { ComponentProps, ReactNode } from "react";
-
-import { Button } from "./button.js";
-import { errorToString } from "../error-to-string.js";
+import { Button } from "./component-library/Button/index.js";
+import { errorToString } from "./component-library/error-to-string/index.js";
 import styles from "./fetch-error.module.css";
 
 type Props = {
   headline: ReactNode;
   error: unknown;
-  reset: () => void;
+  reset?: (() => void) | undefined;
 } & ComponentProps<"div">;
 
 export const FetchError = ({
@@ -23,12 +22,14 @@ export const FetchError = ({
     <WarningCircleIcon className={styles.icon} />
     <span className={styles.headline}>{headline}</span>
     <span className={styles.message}>{errorToString(error)}</span>
-    <Button
-      className={styles.retryButton ?? ""}
-      variant="solid"
-      onPress={reset}
-    >
-      Retry
-    </Button>
+    {reset !== undefined && (
+      <Button
+        className={styles.retryButton ?? ""}
+        variant="solid"
+        onPress={reset}
+      >
+        Retry
+      </Button>
+    )}
   </div>
 );

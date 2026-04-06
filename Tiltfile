@@ -1,3 +1,5 @@
+USDC_MINT = "ELNbJ1RtERV2fjtuZjbTscDekWhVzkQ1LjmiPsxp5uND"
+
 local_resource(
     "build-programs",
     "anchor build --no-idl",
@@ -14,11 +16,13 @@ local_resource(
         ../target/deploy/chain_id.so \
         --bpf-program DomaLfEueNY6JrQSEFjuXeUDiohFmSrFeTNTPamS2yog \
         ../target/deploy/domain_registry.so \
-        --bpf-program Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD \
+        --bpf-program toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp \
+        ../target/deploy/tollbooth.so \
+        --upgradeable-program Xfry4dW9m42ncAqm8LyEnyS5V6xu5DSJTMRQLiGkARD \
         ../target/deploy/intent_transfer.so \
+        $(solana-keygen pubkey ./keypairs/faucet.json) \
         --mint $(solana-keygen pubkey ./keypairs/faucet.json) \
         --bpf-program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA ./programs/spl_token.so \
-        --bpf-program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL ./programs/spl_associated_token_account.so \
         --account-dir ./accounts \
         --reset",
     serve_dir="./tilt",
@@ -31,6 +35,21 @@ local_resource(
 )
 
 local_resource(
+    "check-fee-mint-authority",
+    """
+    FAUCET_PUBKEY=$(solana-keygen pubkey ./tilt/keypairs/faucet.json) &&
+    MINT_AUTHORITY=$(spl-token display %s -u l --output json | jq -r '.mintAuthority') &&
+    if [ "$FAUCET_PUBKEY" != "$MINT_AUTHORITY" ]; then
+        echo "ERROR: Faucet pubkey ($FAUCET_PUBKEY) does not match fee mint authority ($MINT_AUTHORITY)"
+        echo "Please update tilt/accounts/fee-mint.json with the correct mint authority"
+        exit 1
+    fi &&
+    echo "Fee mint authority verified: $MINT_AUTHORITY"
+    """ % USDC_MINT,
+    resource_deps=["svm-localnet"],
+)
+
+local_resource(
     "setup-wrapped-sol-faucet",
     """spl-token -u l wrap 100 --fee-payer ./tilt/keypairs/faucet.json ./tilt/keypairs/faucet.json""",
     resource_deps=["svm-localnet"],
@@ -38,7 +57,10 @@ local_resource(
 
 local_resource(
     "setup-sponsor",
-    """solana -u l airdrop 1 5SKUh8pPXYCa5GroGKgniL1Gjt7XHKQkkjK94nVXfSkF""",
+    """
+    solana -u l airdrop 1 5SKUh8pPXYCa5GroGKgniL1Gjt7XHKQkkjK94nVXfSkF && # http://localhost:3000 domain
+    solana -u l airdrop 1 HCHyvfDFW8tvefdaSX9XLeemqYoC5gYPfh5HnzbyfaMy # sessions domain
+    """,
     resource_deps=["svm-localnet"],
 )
 
@@ -56,11 +78,12 @@ LOOKUP_TABLE_ADDRESSES=[
 local_resource(
     "initialize-programs",
     """
-    pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json --chain-id localnet &&
-    pnpm turbo run:add-program-id-to-domain-registry -- -u l -k ./tilt/keypairs/faucet.json --domain http://localhost:3000 --program-id Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3
-
-    """,
-    resource_deps=["svm-localnet"],
+    pnpm turbo run:initialize-chain-id -- -u l -k ./tilt/keypairs/faucet.json localnet &&
+    pnpm turbo run:domain-registry -- add http://localhost:3000 Examtz9qAwhxcADNFodNA2QpxK7SM9bCHyiaUvWvFBM3 -u l -k ./tilt/keypairs/faucet.json &&
+    pnpm turbo run:initialize-tollbooth -- http://localhost:3000 -u l -k ./tilt/keypairs/faucet.json
+    pnpm turbo run:register-fee-config -- %s 100000 100000 -u l -k ./tilt/keypairs/faucet.json
+    """ % USDC_MINT,
+    resource_deps=["svm-localnet", "check-fee-mint-authority"],
 )
 
 local_resource(
@@ -76,7 +99,7 @@ local_resource(
 
 local_resource(
     "paymaster",
-    serve_cmd="cargo run --bin fogo-paymaster -- --rpc-url-http http://127.0.0.1:8899 --rpc-url-ws ws://127.0.0.1:8900 --mnemonic-file ./tilt/secrets/mnemonic",
+    serve_cmd="cargo run --bin fogo-paymaster migrate --db-url postgres://paymaster:paymaster@localhost:5432/paymaster && cargo run --bin fogo-paymaster run --db-url postgres://paymaster:paymaster@localhost:5432/paymaster --rpc-url-http http://localhost:8899 --rpc-url-ws ws://localhost:8900 --network-environment localnet --valiant-override-url http://api.valiant.trade",
     resource_deps=["svm-localnet"],
 )
 

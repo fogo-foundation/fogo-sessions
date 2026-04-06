@@ -64,6 +64,7 @@ mod tests {
         }
 
         #[test]
+        #[allow(unsafe_code)]
         fn test_major_only() {
             assert_eq!(
                 "5".parse::<Version>().unwrap_err(),

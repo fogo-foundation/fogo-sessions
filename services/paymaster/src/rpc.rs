@@ -1,28 +1,36 @@
 use axum::{http::StatusCode, response::ErrorResponse};
+use base64::prelude::*;
 use dashmap::DashMap;
 use futures::stream::StreamExt;
+use serde_json::json;
 use solana_address_lookup_table_interface::state::AddressLookupTable;
 use solana_client::{
     nonblocking::rpc_client::RpcClient,
     rpc_config::{RpcSendTransactionConfig, RpcSignatureSubscribeConfig, RpcTransactionConfig},
 };
 use solana_commitment_config::CommitmentConfig;
+use solana_message::VersionedMessage;
+use solana_program::program_pack::Pack;
 use solana_pubkey::Pubkey;
-use solana_rpc_client_api::client_error::Error;
+use solana_rpc_client_api::client_error::{Error, ErrorKind};
+use solana_rpc_client_api::request::RpcRequest;
 use solana_signature::Signature;
 use solana_transaction::versioned::VersionedTransaction;
 use solana_transaction_error::TransactionError;
-use solana_transaction_status_client_types::UiTransactionEncoding;
-use std::time::Duration;
+use solana_transaction_status_client_types::{
+    EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding, UiTransactionTokenBalance,
+};
+use spl_token::amount_to_ui_amount;
+use std::{sync::Arc, time::Duration};
 use tokio::time::timeout;
 
 use crate::{
     api::{ConfirmationResult, PubsubClientWithReconnect},
-    constraint::compute_gas_spent,
+    constraint::transaction::InstructionWithIndex,
 };
 
 pub struct ChainIndex {
-    pub rpc: RpcClient,
+    pub rpc: Arc<RpcClient>,
     pub lookup_table_cache: DashMap<Pubkey, Vec<Pubkey>>,
 }
 
@@ -71,6 +79,37 @@ impl From<ConfirmationResultInternal> for ConfirmationResult {
     }
 }
 
+/// A wrapper around `VersionedTransaction` that guarantees the transaction has been signed by its fee payer (first signature slot).
+pub struct SignedVersionedTransaction(VersionedTransaction);
+
+impl SignedVersionedTransaction {
+    /// Creates a new SignedVersionedTransaction by adding the signature to the transaction.
+    /// Returns an error if the transaction has no signature slots.
+    pub fn new(
+        mut transaction: VersionedTransaction,
+        signature: Signature,
+    ) -> anyhow::Result<Self> {
+        *transaction.signatures.get_mut(0).ok_or_else(|| {
+            anyhow::anyhow!("Transaction must have at least one signature slot")
+        })? = signature;
+        Ok(Self(transaction))
+    }
+
+    /// Returns the fee-payer signature of the transaction.
+    pub fn signature(&self) -> &Signature {
+        self.0
+            .signatures
+            .first()
+            .expect("SignedVersionedTransaction is guaranteed to have at least one signature slot")
+    }
+}
+
+impl AsRef<VersionedTransaction> for SignedVersionedTransaction {
+    fn as_ref(&self) -> &VersionedTransaction {
+        &self.0
+    }
+}
+
 fn to_error_response(err: Error) -> ErrorResponse {
     (
         StatusCode::BAD_GATEWAY,
@@ -80,8 +119,65 @@ fn to_error_response(err: Error) -> ErrorResponse {
 }
 
 impl ChainIndex {
+    /// Find the pubkey for the account at index `account_index_within_instruction` within the `instruction_with_index` in the given `transaction`.
+    pub async fn resolve_instruction_account_pubkey(
+        &self,
+        message: &VersionedMessage,
+        InstructionWithIndex {
+            index: instruction_index,
+            instruction,
+        }: &InstructionWithIndex<'_>,
+        account_index_within_instruction: usize,
+    ) -> Result<Pubkey, (StatusCode, String)> {
+        let account_index_within_transaction = usize::from(*instruction
+            .accounts
+            .get(account_index_within_instruction)
+            .ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!(
+                        "Account index {account_index_within_instruction} out of bounds for instruction {instruction_index}",
+                    ),
+                )
+            })?);
+        if let Some(pubkey) = message
+            .static_account_keys()
+            .get(account_index_within_transaction)
+        {
+            Ok(*pubkey)
+        } else if let Some(lookup_tables) = message.address_table_lookups() {
+            let lookup_accounts: Vec<(Pubkey, u8)> = lookup_tables
+                .iter()
+                .flat_map(|x| {
+                    x.writable_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                })
+                .chain(lookup_tables.iter().flat_map(|x| {
+                    x.readonly_indexes
+                        .clone()
+                        .into_iter()
+                        .map(|y| (x.account_key, y))
+                }))
+                .collect();
+            let account_index_within_lookup_tables =
+                account_index_within_transaction - message.static_account_keys().len();
+            return self
+                .find_and_query_lookup_table(lookup_accounts, account_index_within_lookup_tables)
+                .await;
+        } else {
+            Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "Account index {account_index_within_instruction} for instruction {instruction_index} expected to be in the address table lookup but the transaction does not reference any address table lookups",
+                ),
+            ))
+        }
+    }
+
     /// Finds the lookup table and the index within that table that correspond to the given relative account position within the list of lookup invoked accounts.
-    pub async fn find_and_query_lookup_table(
+    async fn find_and_query_lookup_table(
         &self,
         lookup_accounts: Vec<(Pubkey, u8)>,
         account_position_lookups: usize,
@@ -156,17 +252,20 @@ impl ChainIndex {
 #[tracing::instrument(
     skip_all,
     fields(
-        tx_hash = %transaction.signatures[0],
+        tx_hash = %transaction.signature(),
         result
     )
 )]
 pub async fn send_and_confirm_transaction(
     rpc: &RpcClient,
     pubsub: &PubsubClientWithReconnect,
-    transaction: &VersionedTransaction,
+    transaction: &SignedVersionedTransaction,
     config: RpcSendTransactionConfig,
 ) -> Result<ConfirmationResultInternal, ErrorResponse> {
-    let signature = match rpc.send_transaction_with_config(transaction, config).await {
+    let signature = match rpc
+        .send_transaction_with_config(transaction.as_ref(), config)
+        .await
+    {
         Ok(sig) => {
             tracing::Span::current().record("result", "sent");
             sig
@@ -176,17 +275,17 @@ pub async fn send_and_confirm_transaction(
                 tracing::Span::current().record("result", "preflight_failure");
                 tracing::warn!(
                     "Transaction {} failed preflight: {error}",
-                    transaction.signatures[0]
+                    transaction.signature()
                 );
                 return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
-                    signature: transaction.signatures[0],
+                    signature: *transaction.signature(),
                     error,
                 });
             }
             tracing::Span::current().record("result", "send_failed");
             tracing::error!(
                 "Failed to send transaction {}: {err}",
-                transaction.signatures[0]
+                transaction.signature()
             );
             return Err(to_error_response(err));
         }
@@ -195,7 +294,107 @@ pub async fn send_and_confirm_transaction(
     confirm_transaction(pubsub, signature, Some(rpc.commitment())).await
 }
 
-pub const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
+/// Sends a transaction using the FTL service which handles both sending and confirmation.
+/// The FTL service requires a "confirm" parameter set to true in the RPC config.
+#[tracing::instrument(
+    skip_all,
+    fields(
+        tx_hash = %transaction.signature(),
+        result
+    )
+)]
+pub async fn send_and_confirm_transaction_ftl(
+    ftl_rpc: &RpcClient,
+    transaction: &SignedVersionedTransaction,
+    config: RpcSendTransactionConfig,
+) -> Result<ConfirmationResultInternal, ErrorResponse> {
+    let tx_bytes = bincode::serde::encode_to_vec(transaction.as_ref(), bincode::config::standard())
+        .map_err(|e| {
+            tracing::error!("Failed to serialize transaction: {e}");
+            ErrorResponse::from((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to serialize transaction",
+            ))
+        })?;
+    let tx_base64 = BASE64_STANDARD.encode(&tx_bytes);
+
+    let mut config_value = serde_json::to_value(RpcSendTransactionConfig {
+        encoding: Some(config.encoding.unwrap_or(UiTransactionEncoding::Base64)),
+        preflight_commitment: Some(config.preflight_commitment.unwrap_or_default()),
+        ..config
+    })
+    .map_err(|e| {
+        tracing::error!("Failed to serialize config: {e}");
+        ErrorResponse::from((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to serialize config",
+        ))
+    })?;
+
+    // Add the "confirm" parameter to the config
+    if let Some(obj) = config_value.as_object_mut() {
+        obj.insert("confirm".to_string(), json!(true));
+    }
+
+    // Use the RPC client's send method to make the request
+    let signature: String = match ftl_rpc
+        .send(
+            RpcRequest::SendTransaction,
+            json!([tx_base64, config_value]),
+        )
+        .await
+    {
+        Ok(sig) => {
+            tracing::Span::current().record("result", "sent");
+            sig
+        }
+        Err(err) => {
+            let preflight = matches!(&err.kind, &ErrorKind::RpcError(_));
+            if let Some(error) = err.get_transaction_error() {
+                if preflight {
+                    tracing::Span::current().record("result", "preflight_failure");
+                    tracing::warn!(
+                        "Transaction {} failed preflight: {error}",
+                        transaction.signature()
+                    );
+                    return Ok(ConfirmationResultInternal::UnconfirmedPreflightFailure {
+                        signature: *transaction.signature(),
+                        error,
+                    });
+                } else {
+                    // confirmed failed
+                    tracing::Span::current().record("result", "failed");
+                    return Ok(ConfirmationResultInternal::Failed {
+                        signature: *transaction.signature(),
+                        error,
+                    });
+                }
+            }
+
+            tracing::Span::current().record("result", "send_failed");
+            tracing::error!(
+                "Failed to send transaction {}: {err}",
+                transaction.signature()
+            );
+            return Err(to_error_response(err));
+        }
+    };
+
+    let signature = signature.parse::<Signature>().map_err(|e| {
+        tracing::Span::current().record("result", "send_failed");
+        tracing::error!("Failed to parse signature from FTL response: {e}");
+        ErrorResponse::from((
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to parse signature: {e}"),
+        ))
+    })?;
+
+    tracing::Span::current().record("result", "success");
+    // Since FTL handles confirmation, we return success immediately
+    Ok(ConfirmationResultInternal::Success { signature })
+}
+
+const CONFIRMATION_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[tracing::instrument(
     skip_all,
@@ -315,17 +514,18 @@ pub struct RetryConfig {
     pub sleep_ms: u64,
 }
 
-/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
-/// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
+/// Fetches a transaction from RPC with retry logic, then applies a processing function to the response.
 /// retry_config configures the retries of the RPC call with sleep on failure. This is useful in cases where the
 /// transaction was sent with a lower commitment level, so it may not be confirmed yet.
-#[tracing::instrument(skip_all, fields(tx_hash = %signature))]
-pub async fn fetch_transaction_cost_details(
+async fn fetch_transaction_with_retry<T, F>(
     rpc: &RpcClient,
     signature: &Signature,
-    transaction: &VersionedTransaction,
-    retry_config: RetryConfig,
-) -> anyhow::Result<TransactionCostDetails> {
+    retry_config: &RetryConfig,
+    process: F,
+) -> anyhow::Result<T>
+where
+    F: Fn(EncodedConfirmedTransactionWithStatusMeta) -> anyhow::Result<T>,
+{
     let config = RpcTransactionConfig {
         encoding: Some(UiTransactionEncoding::Base64),
         max_supported_transaction_version: Some(0),
@@ -342,33 +542,7 @@ pub async fn fetch_transaction_cost_details(
 
         match rpc.get_transaction_with_config(signature, config).await {
             Ok(tx_response) => {
-                // balance_spend is positive if balance decreased
-                let (fee, balance_spend) = tx_response
-                    .transaction
-                    .meta
-                    .map(|meta| {
-                        let balance_spend = meta
-                            .pre_balances
-                            .first()
-                            .and_then(|&before| {
-                                meta.post_balances.first().map(|&after| (before, after))
-                            })
-                            .and_then(|(before, after)| {
-                                i64::try_from(after)
-                                    .ok()
-                                    .zip(i64::try_from(before).ok())
-                                    .map(|(after_i64, before_i64)| {
-                                        before_i64.saturating_sub(after_i64)
-                                    })
-                            });
-                        (meta.fee, balance_spend)
-                    })
-                    .unwrap_or_else(|| {
-                        let fee = compute_gas_spent(transaction).unwrap_or(0);
-                        (fee, None)
-                    });
-
-                return Ok(TransactionCostDetails { fee, balance_spend });
+                return process(tx_response);
             }
             Err(e) => {
                 last_error = Some(e);
@@ -381,4 +555,137 @@ pub async fn fetch_transaction_cost_details(
         retry_config.max_tries,
         last_error
     ))
+}
+
+/// Fetches transaction details from RPC and extracts cost information (fee and balance changes) for the tx fee payer.
+/// If metadata is not available from RPC, falls back to computing gas spend from the transaction.
+#[tracing::instrument(skip_all, fields(tx_hash = %signature))]
+pub async fn fetch_transaction_cost_details(
+    rpc: &RpcClient,
+    signature: &Signature,
+    gas_spent: u64,
+    retry_config: RetryConfig,
+) -> anyhow::Result<TransactionCostDetails> {
+    fetch_transaction_with_retry(rpc, signature, &retry_config, |tx_response| {
+        // balance_spend is positive if balance decreased
+        let (fee, balance_spend) = tx_response
+            .transaction
+            .meta
+            .map(|meta| {
+                let balance_spend = meta
+                    .pre_balances
+                    .first()
+                    .and_then(|&before| meta.post_balances.first().map(|&after| (before, after)))
+                    .and_then(|(before, after)| {
+                        i64::try_from(after)
+                            .ok()
+                            .zip(i64::try_from(before).ok())
+                            .map(|(after_i64, before_i64)| before_i64.saturating_sub(after_i64))
+                    });
+                (meta.fee, balance_spend)
+            })
+            .unwrap_or_else(|| (gas_spent, None));
+
+        Ok(TransactionCostDetails { fee, balance_spend })
+    })
+    .await
+}
+
+pub async fn get_spl_ata_balance(
+    rpc: &RpcClient,
+    owner: &Pubkey,
+    mint: &Pubkey,
+) -> anyhow::Result<u64> {
+    let ata = spl_associated_token_account::get_associated_token_address(owner, mint);
+    let account = rpc.get_account(&ata).await?;
+    spl_token::state::Account::unpack(&account.data)
+        .map(|token_account| token_account.amount)
+        .map_err(|e| anyhow::anyhow!("Failed to unpack token account: {}", e))
+}
+
+pub struct SwapBalanceChange {
+    pub mint: Pubkey,
+    pub token_spent: f64,
+    pub fogo_received: f64,
+}
+
+/// Fetches transaction details from RPC and extracts balance changes for the specified mint and WFOGO due to the swap.
+#[tracing::instrument(skip_all, fields(mint = %mint_in, tx_hash = %signature))]
+pub async fn fetch_swap_balance_changes(
+    rpc: &RpcClient,
+    signature: &Signature,
+    owner: &Pubkey,
+    mint_in: &Pubkey,
+    retry_config: RetryConfig,
+) -> anyhow::Result<SwapBalanceChange> {
+    fetch_transaction_with_retry(rpc, signature, &retry_config, |tx_response| {
+        let meta = tx_response
+            .transaction
+            .meta
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Transaction metadata not available"))?;
+
+        let pre_token_balances: Option<&Vec<_>> = meta.pre_token_balances.as_ref().into();
+        let post_token_balances: Option<&Vec<_>> = meta.post_token_balances.as_ref().into();
+
+        let (token_spent, fogo_received) = pre_token_balances
+            .zip(post_token_balances)
+            .and_then(|(pre_balances, post_balances)| {
+                let token_spent =
+                    compute_balance_change(pre_balances, post_balances, owner, mint_in, true)?;
+                let fogo_received = compute_balance_change(
+                    pre_balances,
+                    post_balances,
+                    owner,
+                    &spl_token::native_mint::id(),
+                    false,
+                )?;
+                Some((token_spent, fogo_received))
+            })
+            .ok_or_else(|| {
+                anyhow::anyhow!("Failed to compute swap balance changes from transaction metadata")
+            })?;
+
+        Ok(SwapBalanceChange {
+            mint: *mint_in,
+            token_spent,
+            fogo_received,
+        })
+    })
+    .await
+}
+
+/// Computes the balance change for a particular owner and mint combination.
+/// token_spent indicates whether to compute the amount spent (true) or received (false).
+fn compute_balance_change(
+    pre_balances: &[UiTransactionTokenBalance],
+    post_balances: &[UiTransactionTokenBalance],
+    owner: &Pubkey,
+    mint: &Pubkey,
+    token_spent: bool,
+) -> Option<f64> {
+    pre_balances.iter().find_map(|pre| {
+        if pre.mint == mint.to_string()
+            && pre
+                .owner
+                .as_ref()
+                .map_or(false, |o| *o == owner.to_string())
+        {
+            let post = post_balances
+                .iter()
+                .find(|p| p.account_index == pre.account_index)?;
+            let pre_amount = pre.ui_token_amount.amount.parse::<u64>().ok()?;
+            let post_amount = post.ui_token_amount.amount.parse::<u64>().ok()?;
+            Some(amount_to_ui_amount(
+                if token_spent {
+                    pre_amount.saturating_sub(post_amount)
+                } else {
+                    post_amount.saturating_sub(pre_amount)
+                },
+                post.ui_token_amount.decimals,
+            ))
+        } else {
+            None
+        }
+    })
 }

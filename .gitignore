@@ -11,3 +11,6 @@ target
 tilt/test-ledger/
 .DS_Store
 dist/
+.env
+storybook-static/
+next-env.d.ts

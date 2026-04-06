@@ -14,5 +14,14 @@ jobs:
         with:
           profile: minimal
           toolchain: 1.87.0
+
+      - name: Install solana cli
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v2.2.20/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Build Solana programs
+        run: cargo build-sbf
+
       - name: Test
-        run: cargo +1.87.0 test
+        run: cargo test

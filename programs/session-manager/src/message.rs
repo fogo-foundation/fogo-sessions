@@ -4,6 +4,7 @@ use anchor_spl::token::spl_token::try_ui_amount_into_amount;
 use chrono::{DateTime, FixedOffset};
 use domain_registry::domain::Domain;
 use fogo_sessions_sdk::session::MAJOR;
+use nom::bytes::complete::take_while1;
 use nom::combinator::eof;
 use nom::error::FromExternalError;
 use nom::lib::std::fmt::Debug;
@@ -18,7 +19,7 @@ use nom::{
     sequence::preceded,
     AsChar, Compare, Err, IResult, Input, Offset, ParseTo, Parser,
 };
-use solana_intents::{key_value, tag_key_value, SymbolOrMint, Version};
+use solana_intents::{key_value, key_value_with_key_type, tag_key_value, SymbolOrMint, Version};
 use std::{collections::HashMap, str::FromStr};
 
 const MESSAGE_PREFIX: &str = "Fogo Sessions:\nSigning this intent will allow this app to interact with your on-chain balances. Please make sure you trust this app and the domain in the message matches the domain of the current web application.\n";
@@ -131,6 +132,16 @@ impl UiTokenAmount {
     }
 }
 
+fn symbol_or_mint<I, E>(input: I) -> IResult<I, I, E>
+where
+    I: Input,
+    E: ParseError<I>,
+    <I as Input>::Item: AsChar,
+{
+    take_while1(|c: <I as Input>::Item| c.is_alphanum() || ['.'].contains(&c.as_char()))
+        .parse(input)
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Tokens {
     Specific(Vec<(SymbolOrMint, UiTokenAmount)>),
@@ -146,7 +157,7 @@ impl FromStr for Tokens {
             TOKENLESS_PERMISSIONS_VALUE => Ok(Tokens::Specific(vec![])),
             _ => map(
                 many1(map_res(
-                    preceded(tag("-"), key_value),
+                    preceded(tag("-"), key_value_with_key_type(symbol_or_mint)),
                     |(key, value): (&str, String)| {
                         key.parse().map(|token| (token, UiTokenAmount::new(value)))
                     },
@@ -253,7 +264,7 @@ mod tests {
                 expires: 2014-11-28T21:00:09+09:00
                 session_key: 2jKr1met2kCteHoTNtkTL51Sgw7rQKcF4YNdP5xfkPRB
                 tokens:
-                -SOL: 100
+                -USDC.s: 100
                 -DFVMuhuS4hBfXsJE18EGVX9k75QMycUBNNLJi5bwADnu: 200
                 key1: value1
                 key2: value2");
@@ -268,7 +279,7 @@ mod tests {
                         .unwrap(),
                     tokens: Tokens::Specific(vec![
                         (
-                            SymbolOrMint::Symbol("SOL".to_string()),
+                            SymbolOrMint::Symbol("USDC.s".to_string()),
                             UiTokenAmount::new("100".to_string())
                         ),
                         (

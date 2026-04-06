@@ -1,6 +1,10 @@
 const config = {
   reactStrictMode: true,
-
+  // Include binaries in the serverless function bundle
+  outputFileTracingIncludes: {
+    "/api/validate-transaction": ["./bin/**/*"],
+  },
+  cacheComponents: true,
   logging: {
     fetches: {
       fullUrl: true,

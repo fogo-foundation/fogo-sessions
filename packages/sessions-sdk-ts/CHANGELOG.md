@@ -1,5 +1,154 @@
 # @fogo/sessions-sdk
 
+## 0.1.8 (2026-02-04)
+
+### Fixes
+
+- Enable configuring the mint used to charge paymaster fees in sendTransaction.
+
+## 0.1.7 (2026-02-03)
+
+### Fixes
+
+- Allow sending full transactions that don't require a signature by the session key to the paymaster server
+
+## 0.1.6 (2026-01-24)
+
+### Fixes
+
+- Discard sessions when they don't match the on-chain domain registry
+
+## 0.1.5 (2026-01-23)
+
+### Fixes
+
+- Expose `getPaymasterFee` and `createPaymasterFeeInstruction`  to enable crafting instructions to charge end-users paymaster fees.
+
+## 0.1.4 (2026-01-22)
+
+### Fixes
+
+- Import BN from bn.js instead of anchor
+
+## 0.1.3 (2026-01-15)
+
+### Fixes
+
+- separated typing-only imports from code imports to improve compatibility with certain bundlers and build systems
+
+## 0.1.2 (2026-01-15)
+
+### Fixes
+
+- Make native FOGO transfers fee exempt
+
+## 0.1.1 (2026-01-12)
+
+### Fixes
+
+- Add support for paymaster fees
+- Expose createSessionUnwrapInstruction, createSessionWrapInstructions and createSystemProgramSessionWrapInstruction for users hand rolling transactions.
+
+## 0.1.0 (2026-01-11)
+
+### Breaking Changes
+
+- Cut 0.1.x versions of typescript sdks to avoid versioning issues with transitive dependencies
+
+## 0.0.32 (2026-01-08)
+
+### Fixes
+
+- Use v4 sessions
+
+## 0.0.30 (2026-01-08)
+
+### Fixes
+
+- Add getSessionWrapInstructions and getSessionUnwrapInstructions to allow wrapping and unwrapping native tokens within sessions
+- Support transferring native tokens with the intent transfer program
+
+## 0.0.29 (2026-01-05)
+
+### Fixes
+
+- Fix ledger support for new firmware (for wallets that have support for signing messages on new Ledger firmware)
+
+## 0.0.28 (2025-12-10)
+
+### Fixes
+
+- Add repository to package.json
+
+## 0.0.27 (2025-12-10)
+
+### Fixes
+
+- Support v0.4 session accounts, fix bugs in the parsing of v0.3 session accounts
+
+## 0.0.26 (2025-12-10)
+
+### Fixes
+
+- Update paymaster URLs to the latest version
+
+## 0.0.25
+
+### Patch Changes
+
+- a4306fc: Update the paymaster URLs
+- cf63fff: Update mainnet USDC bridge out ALT
+- Updated dependencies [f28e02a]
+  - @fogo/sessions-idls@0.0.11
+
+## 0.0.24
+
+### Patch Changes
+
+- Updated dependencies [02d8d5c]
+  - @fogo/sessions-idls@0.0.10
+
+## 0.0.23
+
+### Patch Changes
+
+- 5086061: Bump bridge-out compute units limit to 240,000
+- d23c949: Silence Phantom warnings
+
+## 0.0.22
+
+### Patch Changes
+
+- c3b04b7: Use central paymaster for transfers & bridging
+- d46b221: Disallow setting limits for tokens that the user doesn't have
+- aa33949: Fix fee symbol in testnet
+- 91bef2a: Add support for explicitly specifying the tx variation when sending a tx to the paymaster
+- d9bc9dc: Ensure session context only gets initialized once
+- d063d55: update signed quote bytes array in bridge ix
+
+## 0.0.21
+
+### Patch Changes
+
+- 79d7449: Add fees when transferring tokens or bridging tokens out
+- 3a04f78: Update wormhole contract addresses in mainnet
+- Updated dependencies [79d7449]
+  - @fogo/sessions-idls@0.0.9
+
+## 0.0.20
+
+### Patch Changes
+
+- 55ad299: Add mainnet bridging config
+
+## 0.0.19
+
+### Patch Changes
+
+- c69ea06: Add support for bridging tokens to/from Solana
+- Updated dependencies [c69ea06]
+  - @fogo/sessions-idls@0.0.8
+
 ## 0.0.18
 
 ### Patch Changes

@@ -1,0 +1,21 @@
+@use '../theme';
+@use '../reset';
+
+.skeleton {
+  @include reset.reset {
+    display: inline-block;
+    border-radius: theme.border-radius('lg');
+    background: theme.color('button', 'disabled', 'background');
+    width: calc(theme.spacing(1) * var(--skeleton-width));
+    height: calc(theme.spacing(1) * var(--skeleton-height));
+    @include theme.pulse;
+
+    &[data-fill] {
+      width: 100%;
+    }
+
+    .skeletonLabel {
+      @include theme.sr-only;
+    }
+  }
+}
