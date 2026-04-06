@@ -62,7 +62,7 @@ export const signWithWallet = async (
         SolanaSignMessage
       ].signMessage({
         account,
-        message: Uint8Array.from(requestedMessage),
+        message,
       });
       if (result === undefined) {
         throw new Error("No signature result returned by wallet");
@@ -94,7 +94,7 @@ export const signWithWallet = async (
     }
   } else {
     return {
-      signature: await wallet.signMessage(Uint8Array.from(requestedMessage)),
+      signature: await wallet.signMessage(message),
       signedMessage: requestedMessage,
     };
   }
