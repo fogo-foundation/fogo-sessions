@@ -45,6 +45,7 @@ export const signWithWallet = async (
   wallet: SolanaWallet,
   message: Uint8Array,
 ): Promise<{ signedMessage: Uint8Array; signature: Uint8Array }> => {
+  const requestedMessage = Uint8Array.from(message);
   if (
     "wallet" in wallet &&
     /* @ts-expect-error The Solana wallet adapter ts types are absolutely cooked... */
@@ -79,7 +80,7 @@ export const signWithWallet = async (
           // when using nightly with a wallet that IS backed by a ledger...
           signedMessage: await (() => {
             if (result.signedMessage.byteLength === 1) {
-              return message;
+              return requestedMessage;
             } else if (wallet.publicKey) {
               return addLegacyOffchainMessagePrefixToMessageIfNeeded(
                 wallet.publicKey,
@@ -94,7 +95,7 @@ export const signWithWallet = async (
   } else {
     return {
       signature: await wallet.signMessage(message),
-      signedMessage: message,
+      signedMessage: requestedMessage,
     };
   }
 };
