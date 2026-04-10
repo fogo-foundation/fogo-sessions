@@ -29,8 +29,8 @@ export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
     <>
       <section className={styles.top}>
         <div
-          data-state={SESSION_STATE_TO_BADGE_STATE[sessionState.type]}
           className={styles.badge}
+          data-state={SESSION_STATE_TO_BADGE_STATE[sessionState.type]}
         >
           {SESSION_STATE_TO_DESCRIPTION[sessionState.type]}
           {isEstablished(sessionState) && (
@@ -47,20 +47,20 @@ export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
             {faucetAvailable && (
               <>
                 <AirdropButton
-                  sessionState={sessionState}
                   appendTransaction={appendTransaction}
+                  sessionState={sessionState}
                 />
                 <AirdropUsdcButton
-                  sessionState={sessionState}
                   appendTransaction={appendTransaction}
+                  sessionState={sessionState}
                 />
               </>
             )}
             <TradeButton
-              sessionState={sessionState}
-              appendTransaction={appendTransaction}
               amount={0.5}
+              appendTransaction={appendTransaction}
               mint={NATIVE_MINT}
+              sessionState={sessionState}
             />
             <Button
               onPress={() => {
@@ -79,10 +79,10 @@ export const Demo = ({ faucetAvailable }: { faucetAvailable: boolean }) => {
             <li key={tx.signature}>
               {tx.success ? "✅" : "❌"}
               <Link
-                href={`https://explorer.fogo.io/tx/${tx.signature}?cluster=custom&customUrl=${connection.rpcEndpoint}`}
-                target="_blank"
-                rel="noreferrer"
                 className={styles.exlporerLink}
+                href={`https://explorer.fogo.io/tx/${tx.signature}?cluster=custom&customUrl=${connection.rpcEndpoint}`}
+                rel="noreferrer"
+                target="_blank"
               >
                 {tx.description}
               </Link>
@@ -103,7 +103,7 @@ const AirdropButton = ({
 }) => {
   const { state, execute } = useAirdrop(sessionState, appendTransaction);
   return (
-    <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
+    <Button isPending={state.type === AsyncStateType.Running} onClick={execute}>
       Airdrop 1 FOGO
     </Button>
   );
@@ -118,7 +118,7 @@ const AirdropUsdcButton = ({
 }) => {
   const { state, execute } = useAirdropUsdc(sessionState, appendTransaction);
   return (
-    <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
+    <Button isPending={state.type === AsyncStateType.Running} onClick={execute}>
       Airdrop 100 USDC
     </Button>
   );
@@ -142,7 +142,7 @@ const TradeButton = ({
     mint,
   );
   return (
-    <Button onClick={execute} isPending={state.type === AsyncStateType.Running}>
+    <Button isPending={state.type === AsyncStateType.Running} onClick={execute}>
       Trade {amount} FOGO
     </Button>
   );

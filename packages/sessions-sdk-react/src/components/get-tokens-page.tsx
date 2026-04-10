@@ -22,9 +22,9 @@ export const GetTokensPage = ({
   return (
     <div className={styles.getTokensPage ?? ""}>
       <Button
+        className={styles.backButton ?? ""}
         onPress={onPressBack}
         variant="outline"
-        className={styles.backButton ?? ""}
       >
         Back
       </Button>

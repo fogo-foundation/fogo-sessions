@@ -9,9 +9,9 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     .command("* <chain-id>", "Set the chain ID")
     .options(anchorOptions)
     .positional("chain-id", {
-      type: "string",
-      description: "Chain ID to set as a string",
       demandOption: true,
+      description: "Chain ID to set as a string",
+      type: "string",
     })
     .parse();
 

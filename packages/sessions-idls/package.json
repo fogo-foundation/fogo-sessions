@@ -1,40 +1,8 @@
 {
-  "name": "@fogo/sessions-idls",
-  "version": "0.1.3",
-  "private": true,
+  "dependencies": {
+    "@coral-xyz/anchor": "catalog:"
+  },
   "description": "The IDLs for the on-chain programs involved in the Fogo Sessions protocol",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/fogo-foundation/fogo-sessions",
-    "directory": "packages/sessions-idls"
-  },
-  "keywords": [
-    "fogo",
-    "sessions",
-    "crypto",
-    "wallet"
-  ],
-  "type": "module",
-  "main": "./dist/cjs/index.js",
-  "types": "./dist/types/index.d.ts",
-  "exports": {
-    "import": {
-      "types": "./dist/types/index.d.ts",
-      "default": "./dist/esm/index.js"
-    },
-    "require": {
-      "types": "./dist/types/index.d.ts",
-      "default": "./dist/cjs/index.js"
-    }
-  },
-  "scripts": {
-    "build:cjs": "swc src -d dist/cjs --strip-leading-paths --copy-files -C module.type=commonjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-    "build:esm": "swc src -d dist/esm --strip-leading-paths --copy-files -C jsc.experimental.keepImportAttributes=true && echo '{\"type\":\"module\"}' > dist/esm/package.json",
-    "build:idl": "mkdir -p src/idl src/types && for program in chain-id domain-registry example intent-transfer session-manager tollbooth; do anchor idl build --program-name $program --out-ts src/types/$program.ts --out src/idl/$program.json; done",
-    "build:package-json": "transform-package-json ./package.json dist/package.json",
-    "build:types": "tsc --project tsconfig.build.json",
-    "test:types": "tsc"
-  },
   "devDependencies": {
     "@cprussin/jest-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
@@ -46,7 +14,39 @@
     "jest": "catalog:",
     "typescript": "catalog:"
   },
-  "dependencies": {
-    "@coral-xyz/anchor": "catalog:"
-  }
+  "exports": {
+    "import": {
+      "default": "./dist/esm/index.js",
+      "types": "./dist/types/index.d.ts"
+    },
+    "require": {
+      "default": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "keywords": [
+    "fogo",
+    "sessions",
+    "crypto",
+    "wallet"
+  ],
+  "main": "./dist/cjs/index.js",
+  "name": "@fogo/sessions-idls",
+  "private": true,
+  "repository": {
+    "directory": "packages/sessions-idls",
+    "type": "git",
+    "url": "https://github.com/fogo-foundation/fogo-sessions"
+  },
+  "scripts": {
+    "build:cjs": "swc src -d dist/cjs --strip-leading-paths --copy-files -C module.type=commonjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "build:esm": "swc src -d dist/esm --strip-leading-paths --copy-files -C jsc.experimental.keepImportAttributes=true && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "build:idl": "mkdir -p src/idl src/types && for program in chain-id domain-registry example intent-transfer session-manager tollbooth; do anchor idl build --program-name $program --out-ts src/types/$program.ts --out src/idl/$program.json; done",
+    "build:package-json": "transform-package-json ./package.json dist/package.json",
+    "build:types": "tsc --project tsconfig.build.json",
+    "test:types": "tsc"
+  },
+  "type": "module",
+  "types": "./dist/types/index.d.ts",
+  "version": "0.1.3"
 }

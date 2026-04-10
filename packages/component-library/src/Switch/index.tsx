@@ -21,20 +21,20 @@ export const Switch = ({
 }: Props) => (
   <AriaSwitch
     className={clsx(styles.switch, className)}
-    isDisabled={isDisabled === true || isPending === true}
     data-pending={isPending ? "" : undefined}
+    isDisabled={isDisabled === true || isPending === true}
     {...props}
   >
     {(args) => (
       <>
         <div className={styles.indicator}>
           <motion.div
-            layout
             className={styles.dot}
+            layout
             transition={{
-              type: "spring",
-              stiffness: 500,
               damping: 20,
+              stiffness: 500,
+              type: "spring",
             }}
           />
         </div>

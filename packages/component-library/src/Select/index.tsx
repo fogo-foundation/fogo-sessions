@@ -41,10 +41,10 @@ export const Select = <T extends string | number>({
         <SelectValue className={styles.value ?? ""} />
         <CaretDownIcon className={styles.arrow ?? ""} />
       </Button>
-      <Popover offset={4} className={styles.selectPopover ?? ""}>
+      <Popover className={styles.selectPopover ?? ""} offset={4}>
         <ListBox items={items}>
           {(item) => (
-            <ListBoxItem id={item.key} className={styles.selectItem ?? ""}>
+            <ListBoxItem className={styles.selectItem ?? ""} id={item.key}>
               {item.label}
             </ListBoxItem>
           )}

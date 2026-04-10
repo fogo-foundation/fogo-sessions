@@ -64,26 +64,45 @@ const getTokenAccounts = async (
   );
 
   return {
+    sessionLimits: isEstablished(sessionState)
+      ? splAccounts
+          .filter(
+            ({ delegate, delegateAmount }) =>
+              delegate === sessionState.sessionPublicKey.toBase58() &&
+              delegateAmount !== 0n,
+          )
+          .map(({ mint, delegateAmount, decimals }) =>
+            delegateAmount === undefined
+              ? undefined
+              : {
+                  decimals,
+                  mint: new PublicKey(mint),
+                  sessionLimit: delegateAmount,
+                  ...metadata[mint],
+                },
+          )
+          .filter((account) => account !== undefined)
+      : [],
     tokensInWallet: [
       ...(nativeBalance === 0
         ? []
         : [
             {
-              isNative: true as const,
               amountInWallet: BigInt(nativeBalance),
               decimals: FOGO_DECIMALS,
-              name: "Fogo",
               image: "https://api.fogo.io/tokens/fogo.svg",
+              isNative: true as const,
+              name: "Fogo",
               symbol: "FOGO",
             },
           ]),
       ...splAccounts
         .filter(({ amountInWallet }) => amountInWallet !== 0n)
         .map(({ mint, amountInWallet, decimals }) => ({
-          isNative: false as const,
-          mint: new PublicKey(mint),
           amountInWallet,
           decimals,
+          isNative: false as const,
+          mint: new PublicKey(mint),
           ...metadata[mint],
         }))
         .toSorted((a, b) => {
@@ -98,25 +117,6 @@ const getTokenAccounts = async (
           }
         }),
     ],
-    sessionLimits: isEstablished(sessionState)
-      ? splAccounts
-          .filter(
-            ({ delegate, delegateAmount }) =>
-              delegate === sessionState.sessionPublicKey.toBase58() &&
-              delegateAmount !== 0n,
-          )
-          .map(({ mint, delegateAmount, decimals }) =>
-            delegateAmount === undefined
-              ? undefined
-              : {
-                  mint: new PublicKey(mint),
-                  sessionLimit: delegateAmount,
-                  decimals,
-                  ...metadata[mint],
-                },
-          )
-          .filter((account) => account !== undefined)
-      : [],
   };
 };
 
@@ -127,18 +127,18 @@ const accountsSchema = z.array(
         data: z.object({
           parsed: z.object({
             info: z.object({
-              mint: z.string(),
               delegate: z.string().optional(),
-              tokenAmount: z.object({
-                amount: z.string(),
-                decimals: z.number(),
-              }),
               delegatedAmount: z
                 .object({
                   amount: z.string(),
                   decimals: z.number(),
                 })
                 .optional(),
+              mint: z.string(),
+              tokenAmount: z.object({
+                amount: z.string(),
+                decimals: z.number(),
+              }),
             }),
           }),
         }),
@@ -148,14 +148,14 @@ const accountsSchema = z.array(
       const { info } = account.data.parsed;
       const { tokenAmount, delegatedAmount, mint, delegate } = info;
       return {
-        mint,
-        delegate,
         amountInWallet: BigInt(tokenAmount.amount),
+        decimals: tokenAmount.decimals,
+        delegate,
         delegateAmount:
           delegatedAmount === undefined
             ? undefined
             : BigInt(delegatedAmount.amount),
-        decimals: tokenAmount.decimals,
+        mint,
       };
     }),
 );

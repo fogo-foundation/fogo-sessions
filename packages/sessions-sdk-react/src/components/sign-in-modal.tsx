@@ -57,18 +57,18 @@ export const SignInModal = ({
     <ModalDialog isOpen={isOpen} onOpenChange={onOpenChange} {...props}>
       {isOpen && (
         <motion.div
-          className={styles.selectWalletAnimationContainer}
           animate={{ height }}
+          className={styles.selectWalletAnimationContainer}
         >
           <SignInModalContents
-            sessionState={sessionState}
-            wallets={wallets}
-            privacyPolicyUrl={privacyPolicyUrl}
-            termsOfServiceUrl={termsOfServiceUrl}
-            setHeight={setHeight}
             onClose={() => {
               onOpenChange(false);
             }}
+            privacyPolicyUrl={privacyPolicyUrl}
+            sessionState={sessionState}
+            setHeight={setHeight}
+            termsOfServiceUrl={termsOfServiceUrl}
+            wallets={wallets}
           />
         </motion.div>
       )}
@@ -127,10 +127,10 @@ const SignInModalContents = ({
 
   const selectWalletOrDisclaimer = didAcceptDisclaimer.value ? (
     <motion.div
-      key="wallets"
-      initial={initialDidAcceptDisclaimer.current ? false : { x: "100%" }}
       animate={{ x: 0 }}
       exit={{ x: "-100%" }}
+      initial={initialDidAcceptDisclaimer.current ? false : { x: "100%" }}
+      key="wallets"
       ref={(elem) => {
         step2.current = elem;
         if (elem) {
@@ -142,21 +142,21 @@ const SignInModalContents = ({
       }}
     >
       <WalletsPage
-        wallets={wallets}
+        cancel={onClose}
+        privacyPolicyUrl={privacyPolicyUrl}
         selectWallet={
           sessionState.type === StateType.SelectingWallet
             ? sessionState.selectWallet
             : undefined
         }
-        cancel={onClose}
-        privacyPolicyUrl={privacyPolicyUrl}
         termsOfServiceUrl={termsOfServiceUrl}
+        wallets={wallets}
       />
     </motion.div>
   ) : (
     <motion.div
-      key="disclaimer"
       exit={{ x: "-100%" }}
+      key="disclaimer"
       ref={(elem) => {
         step1.current = elem;
         if (elem) {
@@ -167,7 +167,7 @@ const SignInModalContents = ({
         }
       }}
     >
-      <DisclaimerPage onCancel={onClose} onAccept={handleDidAcceptDisclaimer} />
+      <DisclaimerPage onAccept={handleDidAcceptDisclaimer} onCancel={onClose} />
     </motion.div>
   );
 
@@ -180,9 +180,9 @@ const SignInModalContents = ({
         selectWalletOrDisclaimer
       ) : (
         <motion.div
-          key="limits"
-          initial={{ x: "100%" }}
           animate={{ x: 0 }}
+          initial={{ x: "100%" }}
+          key="limits"
           ref={(elem) => {
             step3.current = elem;
             setHeight(elem?.offsetHeight ?? 0);
@@ -247,16 +247,16 @@ const WalletsPage = ({
         : "otherWallets";
     });
     return {
-      otherWallets: otherWallets ?? [],
       installedWallets: installedWallets ?? [],
+      otherWallets: otherWallets ?? [],
     };
   }, [wallets]);
   return (
     <Page heading="Select a wallet" message="Select a Solana wallet to connect">
       <Button
-        variant="ghost"
-        onPress={cancel}
         className={styles.closeButton ?? ""}
+        onPress={cancel}
+        variant="ghost"
       >
         <XIcon />
       </Button>
@@ -267,8 +267,8 @@ const WalletsPage = ({
             {"We couldn't find any available installed wallets."}
           </span>
           <Link
-            href="https://solana.com/solana-wallets"
             className={styles.hint ?? ""}
+            href="https://solana.com/solana-wallets"
             target="_blank"
           >
             Get an SVM wallet
@@ -278,14 +278,14 @@ const WalletsPage = ({
         <div className={styles.wallets}>
           {installedWallets.map((wallet) => (
             <Button
+              className={styles.wallet ?? ""}
+              isPending={selectWallet === undefined}
               key={wallet.name}
               onPress={() => selectWallet?.(wallet)}
               variant="outline"
-              className={styles.wallet ?? ""}
-              isPending={selectWallet === undefined}
             >
               <div className={styles.walletNameAndIcon}>
-                <img src={wallet.icon} alt="" className={styles.walletIcon} />
+                <img alt="" className={styles.walletIcon} src={wallet.icon} />
                 {wallet.name}
               </div>
               <div />
@@ -296,37 +296,37 @@ const WalletsPage = ({
       {otherWallets.length > 0 && (
         <div className={styles.moreOptionsContainer}>
           <Button
-            variant="ghost"
             className={styles.moreOptions ?? ""}
+            data-more-options-open={moreOptionsOpen ? "" : undefined}
             onPress={() => {
               setMoreOptionsOpen((value) => !value);
             }}
-            data-more-options-open={moreOptionsOpen ? "" : undefined}
+            variant="ghost"
           >
             More Options <CaretDownIcon className={styles.arrow} />
           </Button>
           <AnimatePresence>
             {moreOptionsOpen && (
               <motion.div
-                className={styles.wallets}
-                initial={{ height: 0 }}
                 animate={{ height: "auto" }}
+                className={styles.wallets}
                 exit={{ height: 0 }}
+                initial={{ height: 0 }}
               >
                 {otherWallets.map((wallet) => (
                   <Button
-                    key={wallet.name}
+                    className={styles.wallet ?? ""}
                     href={wallet.url}
+                    isPending={selectWallet === undefined}
+                    key={wallet.name}
                     target="_blank"
                     variant="outline"
-                    className={styles.wallet ?? ""}
-                    isPending={selectWallet === undefined}
                   >
                     <div className={styles.walletNameAndIcon}>
                       <img
-                        src={wallet.icon}
                         alt=""
                         className={styles.walletIcon}
+                        src={wallet.icon}
                       />
                       {wallet.name}
                     </div>
@@ -372,11 +372,11 @@ const LimitsPage = ({
     message="Limit how many tokens this app is allowed to interact with"
   >
     <SessionLimits
-      className={styles.sessionLimits}
-      sessionState={sessionState}
-      buttonText="Log in"
-      // eslint-disable-next-line jsx-a11y/no-autofocus
       autoFocus
+      buttonText="Log in"
+      className={styles.sessionLimits}
+      // eslint-disable-next-line jsx-a11y/no-autofocus
+      sessionState={sessionState}
     />
   </Page>
 );
@@ -391,7 +391,7 @@ const Page = ({
   children: ReactNode;
 }) => (
   <>
-    <Heading slot="title" className={styles.heading ?? ""}>
+    <Heading className={styles.heading ?? ""} slot="title">
       {heading}
     </Heading>
     <div className={styles.message}>{message}</div>

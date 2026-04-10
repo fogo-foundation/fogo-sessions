@@ -29,23 +29,23 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     .options({
       ...anchorOptions,
       name: {
-        type: "string",
         description: "Token name to update to, omit to leave as-is",
+        type: "string",
       },
       symbol: {
-        type: "string",
         description: "Token symbol to update to, omit to leave as-is",
+        type: "string",
       },
       tokenUri: {
-        type: "string",
         description: "Token metadata uri to update to, omit to leave as-is",
+        type: "string",
       },
     })
     .positional("mint", {
-      type: "string",
-      description: "Mint to set the metadata for",
-      demandOption: true,
       coerce: (mint: string) => new PublicKey(mint),
+      demandOption: true,
+      description: "Mint to set the metadata for",
+      type: "string",
     })
     .parse();
 
@@ -75,31 +75,31 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     }
     printSignature(
       await createV1(umi, {
-        mint,
         authority: umi.identity,
-        name: args.name,
-        symbol: args.symbol,
-        uri: args.tokenUri ?? "",
-        sellerFeeBasisPoints: percentAmount(0),
-        tokenStandard: TokenStandard.Fungible,
         // eslint-disable-next-line unicorn/no-null
         creators: null,
+        mint,
+        name: args.name,
+        sellerFeeBasisPoints: percentAmount(0),
+        symbol: args.symbol,
+        tokenStandard: TokenStandard.Fungible,
+        uri: args.tokenUri ?? "",
       }).sendAndConfirm(umi),
     );
   } else {
     printSignature(
       await updateV1(umi, {
-        mint,
-        metadata: metadataPda,
         authority: umi.identity,
         data: {
-          name: args.name ?? metadata.name,
-          symbol: args.symbol ?? metadata.symbol,
-          uri: args.tokenUri ?? metadata.uri,
-          sellerFeeBasisPoints: 0,
           // eslint-disable-next-line unicorn/no-null
           creators: null,
+          name: args.name ?? metadata.name,
+          sellerFeeBasisPoints: 0,
+          symbol: args.symbol ?? metadata.symbol,
+          uri: args.tokenUri ?? metadata.uri,
         },
+        metadata: metadataPda,
+        mint,
       }).sendAndConfirm(umi),
     );
   }

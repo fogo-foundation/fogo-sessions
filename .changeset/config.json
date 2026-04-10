@@ -1,17 +1,17 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@2.3.0/schema.json",
+  "access": "public",
+  "baseBranch": "main",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "linked": [],
-  "access": "public",
-  "baseBranch": "main",
-  "updateInternalDependencies": "patch",
   "ignore": [
     "@fogo/portfolio",
     "@fogo/sessions-demo",
     "@fogo/paymaster-admin",
     "@fogo/scripts"
   ],
-  "message": "chore: version packages"
+  "linked": [],
+  "message": "chore: version packages",
+  "updateInternalDependencies": "patch"
 }

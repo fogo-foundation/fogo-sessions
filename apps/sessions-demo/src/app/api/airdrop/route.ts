@@ -49,8 +49,8 @@ export const POST = async (req: Request) => {
   const [[userAta], [faucetAta]] = await Promise.all(
     [userAddress, faucetAddress].map((owner) =>
       findAssociatedTokenPda({
-        owner,
         mint: NATIVE_MINT,
+        owner,
         tokenProgram: TOKEN_PROGRAM_ADDRESS,
       }),
     ) as [
@@ -61,16 +61,16 @@ export const POST = async (req: Request) => {
 
   const instructions = [
     getCreateAssociatedTokenIdempotentInstruction({
-      payer: faucetSigner,
-      owner: userAddress,
-      mint: NATIVE_MINT,
       ata: userAta,
+      mint: NATIVE_MINT,
+      owner: userAddress,
+      payer: faucetSigner,
     }),
     getTransferInstruction({
-      source: faucetAta,
-      destination: userAta,
-      authority: faucetSigner,
       amount: 1_000_000_000n,
+      authority: faucetSigner,
+      destination: userAta,
+      source: faucetAta,
     }),
   ];
 

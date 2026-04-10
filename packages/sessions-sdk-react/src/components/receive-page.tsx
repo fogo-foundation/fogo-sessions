@@ -19,11 +19,11 @@ export const ReceivePage = ({ onPressDone, sessionState }: Props) => (
         <span className={styles.text}>Receive</span>
       </h1>
       <Button
-        variant="secondary"
-        size="sm"
-        onPress={onPressDone}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus
+        onPress={onPressDone}
+        size="sm"
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        variant="secondary"
       >
         Done
       </Button>
@@ -34,9 +34,9 @@ export const ReceivePage = ({ onPressDone, sessionState }: Props) => (
         value={sessionState.walletPublicKey.toBase58()}
       />
       <CopyButton
-        variant="expanded"
         className={styles.copyWalletKeyButton ?? ""}
         text={sessionState.walletPublicKey.toBase58()}
+        variant="expanded"
       >
         <code className={styles.walletAddress}>
           {sessionState.walletPublicKey.toBase58()}

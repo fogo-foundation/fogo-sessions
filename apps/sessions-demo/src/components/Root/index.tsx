@@ -9,14 +9,14 @@ type Props = {
 };
 
 export const Root = ({ children }: Props) => (
-  <html lang="en" className={styles.root}>
+  <html className={styles.root} lang="en">
     <body>
       <FogoSessionProvider
-        tokens={[NATIVE_MINT.toBase58()]}
         defaultRequestedLimits={{
           [NATIVE_MINT.toBase58()]: 1_500_000_000n,
         }}
         enableUnlimited
+        tokens={[NATIVE_MINT.toBase58()]}
         {...PROVIDER_CONFIG}
       >
         <header className={styles.header}>

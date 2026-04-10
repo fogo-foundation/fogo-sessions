@@ -28,21 +28,21 @@ export const ModalDialog = ({
   <AnimatePresence>
     {isOpen && (
       <MotionModalOverlay
-        isDismissable
-        className={clsx(styles.modalOverlay, overlayClassName)}
-        initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
+        className={clsx(styles.modalOverlay, overlayClassName)}
         exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+        isDismissable
         isOpen
         {...props}
       >
         <MotionModal
-          isDismissable
-          initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
-          exit={{ scale: 1.1 }}
           className={clsx(styles.modal, modalClassName)}
           data-no-padding={noPadding ? "true" : undefined}
+          exit={{ scale: 1.1 }}
+          initial={{ scale: 0.8 }}
+          isDismissable
         >
           {(args) => (
             <Dialog className={clsx(styles.dialog, dialogClassName)}>

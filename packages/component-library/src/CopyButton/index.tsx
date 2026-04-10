@@ -42,10 +42,10 @@ export const CopyButton = ({
   return (
     <Button
       className={clsx(className, styles.copyButton)}
-      onPress={copyAddress}
-      isDisabled={isCopied}
       data-copied={isCopied ? "" : undefined}
       data-variant={variant}
+      isDisabled={isCopied}
+      onPress={copyAddress}
       {...props}
     >
       <div className={styles.contents}>{children}</div>

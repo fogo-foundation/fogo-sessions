@@ -35,8 +35,8 @@ export const DomainSettingsList = (props: DomainSettingsListProps) => {
       const sessionToken = await props.sessionState.createLogInToken();
       await updateDomainSettings({
         domainConfigId: props.domainConfig.id,
-        enableSessionManagement,
         enablePreflightSimulation,
+        enableSessionManagement,
         sessionToken,
       });
       if ("mutate" in userData) {
@@ -46,11 +46,11 @@ export const DomainSettingsList = (props: DomainSettingsListProps) => {
   }, [props.sessionState, props.domainConfig.id, userData]);
 
   const { execute, state } = useAsync(wrappedUpdateDomainSettings, {
-    onSuccess: () => {
-      toast.success("Domain settings updated");
-    },
     onError: (error) => {
       toast.error(`Failed to update domain settings: ${errorToString(error)}`);
+    },
+    onSuccess: () => {
+      toast.success("Domain settings updated");
     },
   });
 
@@ -64,27 +64,27 @@ export const DomainSettingsList = (props: DomainSettingsListProps) => {
 
   return (
     <Form
-      ref={formRef}
       className={styles.domainSettingsCheckboxes ?? ""}
       onSubmit={handleSubmit}
+      ref={formRef}
     >
       <Switch
-        name="enableSessionManagement"
         defaultSelected={props.domainConfig.enable_session_management}
+        name="enableSessionManagement"
       >
         Enable Session Management
       </Switch>
       <Switch
-        name="enablePreflightSimulation"
         defaultSelected={props.domainConfig.enable_preflight_simulation}
+        name="enablePreflightSimulation"
       >
         Enable Preflight Simulation
       </Switch>
       <div>
         <Button
+          isDisabled={state.type === StateType.Running}
           type="submit"
           variant="secondary"
-          isDisabled={state.type === StateType.Running}
         >
           {state.type === StateType.Running ? "Saving..." : "Save"}
         </Button>
@@ -107,10 +107,10 @@ export const DomainSettings = (props: DomainSettingsProps) => {
   return (
     <div className={styles.domainSettings}>
       <ListHeader
+        count={2}
+        icon={<GearIcon size={24} weight="duotone" />}
         isLoading={props.isLoading}
         title="Domain Settings"
-        icon={<GearIcon size={24} weight="duotone" />}
-        count={2}
       />
       {props.isLoading ? (
         <Skeleton className={styles.domainSettingsSkeleton} height={26} />

@@ -33,25 +33,25 @@ export const AppDomains = (props: AppDomainsProps) => {
   return (
     <>
       <BreadcrumbNav
-        items={[
-          { label: "Apps", href: "/" },
-          props.isLoading ? { isLoading: true } : { label: props.app.name },
-        ]}
         action={
           <Button onClick={handleClose} variant="outline">
             Close
           </Button>
         }
+        items={[
+          { href: "/", label: "Apps" },
+          props.isLoading ? { isLoading: true } : { label: props.app.name },
+        ]}
       />
       <div className={styles.container}>
         <ListHeader
-          title="Domains"
-          isLoading={props.isLoading}
           action={
-            <Button variant="secondary" onClick={handleAddDomain}>
+            <Button onClick={handleAddDomain} variant="secondary">
               Add Domain
             </Button>
           }
+          isLoading={props.isLoading}
+          title="Domains"
           {...(!props.isLoading && {
             count: props.app.domain_configs.length,
           })}
@@ -60,10 +60,10 @@ export const AppDomains = (props: AppDomainsProps) => {
           <DomainCard isLoading />
         ) : (
           <GridList
-            selectionMode="none"
             aria-label="Domains"
-            items={props.app.domain_configs}
             className={styles.domainsList ?? ""}
+            items={props.app.domain_configs}
+            selectionMode="none"
           >
             {(item) => (
               <GridListItem key={item.id}>

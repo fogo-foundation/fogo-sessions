@@ -1,19 +1,11 @@
 {
-  "name": "@fogo/scripts",
-  "version": "0.0.10",
-  "private": true,
-  "type": "module",
   "bin": {
-    "initialize-tollbooth": "./bin/initialize-tollbooth.js",
-    "initialize-chain-id": "./bin/initialize-chain-id.js",
-    "register-ntt-manager": "./bin/register-ntt-manager.js",
     "domain-registry": "./bin/domain-registry.js",
+    "initialize-chain-id": "./bin/initialize-chain-id.js",
+    "initialize-tollbooth": "./bin/initialize-tollbooth.js",
     "register-fee-config": "./bin/register-fee-config.js",
+    "register-ntt-manager": "./bin/register-ntt-manager.js",
     "update-metadata": "./bin/update-metadata.js"
-  },
-  "scripts": {
-    "build": "tsc --noEmit false --outDir ./dist",
-    "test:types": "tsc"
   },
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
@@ -21,11 +13,11 @@
     "@fogo/sessions-sdk": "workspace:*",
     "@ledgerhq/hw-transport": "catalog:",
     "@ledgerhq/hw-transport-node-hid": "catalog:",
-    "@noble/hashes": "catalog:",
     "@metaplex-foundation/mpl-token-metadata": "catalog:",
     "@metaplex-foundation/umi": "catalog:",
     "@metaplex-foundation/umi-bundle-defaults": "catalog:",
     "@metaplex-foundation/umi-web3js-adapters": "catalog:",
+    "@noble/hashes": "catalog:",
     "@solana/spl-token": "catalog:",
     "@solana/wallet-adapter-ledger": "catalog:",
     "@solana/web3.js": "catalog:",
@@ -41,5 +33,13 @@
     "@types/yargs": "catalog:",
     "jest": "catalog:",
     "typescript": "catalog:"
-  }
+  },
+  "name": "@fogo/scripts",
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit false --outDir ./dist",
+    "test:types": "tsc"
+  },
+  "type": "module",
+  "version": "0.0.10"
 }

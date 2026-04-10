@@ -42,10 +42,10 @@ export const useTrade = (
         ).methods
           .exampleTransfer(new BN(amount * Math.pow(10, decimals)))
           .accountsPartial({
+            mint,
             signerOrSession: sessionState.sessionPublicKey,
             sink: sinkAta,
             userTokenAccount,
-            mint,
           })
           .instruction(),
       ],

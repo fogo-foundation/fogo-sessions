@@ -12,11 +12,11 @@
       ]
     },
     "build:validator": {
-      "outputs": ["bin/**"],
       "inputs": [
         "../../services/paymaster/src/**",
         "../../services/paymaster/Cargo.toml"
-      ]
+      ],
+      "outputs": ["bin/**"]
     },
     "test:types": {
       "dependsOn": ["build"]

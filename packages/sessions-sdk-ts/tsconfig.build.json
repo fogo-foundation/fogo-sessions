@@ -1,9 +1,9 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": false,
+    "declaration": true,
     "incremental": false,
-    "declaration": true
+    "noEmit": false
   },
-  "exclude": ["node_modules", "dist", "integration-tests", "**/*.test.ts"]
+  "exclude": ["node_modules", "dist", "integration-tests", "**/*.test.ts"],
+  "extends": "./tsconfig.json"
 }

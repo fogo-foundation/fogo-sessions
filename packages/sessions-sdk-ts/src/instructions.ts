@@ -38,17 +38,17 @@ export function createSystemProgramSessionWrapInstruction(
   view.setBigUint64(4, amount, true);
 
   return new TransactionInstruction({
-    programId: SystemProgram.programId,
+    data: Buffer.from(data),
     keys: [
-      { pubkey: walletPublicKey, isSigner: false, isWritable: true },
+      { isSigner: false, isWritable: true, pubkey: walletPublicKey },
       {
-        pubkey: getNativeMintAssociatedTokenAddressSync(walletPublicKey),
         isSigner: false,
         isWritable: true,
+        pubkey: getNativeMintAssociatedTokenAddressSync(walletPublicKey),
       },
-      { pubkey: sessionKey, isSigner: true, isWritable: false },
+      { isSigner: true, isWritable: false, pubkey: sessionKey },
     ],
-    data: Buffer.from(data),
+    programId: SystemProgram.programId,
   });
 }
 
@@ -131,10 +131,10 @@ export const createPaymasterFeeInstruction = ({
   ).methods
     .payToll(feeAmount, 0)
     .accounts({
-      session: sessionKey,
-      source: getAssociatedTokenAddressSync(feeMint, walletPublicKey),
       destination: getAssociatedTokenAddressSync(feeMint, recipient, true),
       mint: feeMint,
+      session: sessionKey,
+      source: getAssociatedTokenAddressSync(feeMint, walletPublicKey),
     })
     .instruction();
 };

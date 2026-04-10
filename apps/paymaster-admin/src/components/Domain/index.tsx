@@ -17,7 +17,7 @@ export const Domain = ({ appId }: { appId: string }) => {
   if (isWalletLoading(sessionState)) {
     return <DomainContents isLoading />;
   } else if (isEstablished(sessionState)) {
-    return <DomainContents sessionState={sessionState} appId={appId} />;
+    return <DomainContents appId={appId} sessionState={sessionState} />;
   } else {
     return;
   }
@@ -37,7 +37,7 @@ const DomainContents = (props: DomainContentsProps) => {
   if (props.isLoading) {
     return <AppDomains isLoading />;
   }
-  return <DomainData sessionState={props.sessionState} appId={props.appId} />;
+  return <DomainData appId={props.appId} sessionState={props.sessionState} />;
 };
 
 const DomainData = ({

@@ -3,11 +3,37 @@ import type * as React from "react";
 import { TextField as TextFieldComponent } from "./index.jsx";
 
 const meta = {
-  component: TextFieldComponent,
-  globals: {
-    backgrounds: { value: "dark" },
-  },
   argTypes: {
+    double: {
+      control: "boolean",
+      table: {
+        category: "State",
+      },
+    },
+    errorMessage: {
+      control: "text",
+      table: {
+        category: "State",
+      },
+    },
+    isDisabled: {
+      control: "boolean",
+      table: {
+        category: "State",
+      },
+    },
+    isInvalid: {
+      control: "boolean",
+      table: {
+        category: "State",
+      },
+    },
+    isPending: {
+      control: "boolean",
+      table: {
+        category: "State",
+      },
+    },
     label: {
       control: "text",
       table: {
@@ -26,48 +52,22 @@ const meta = {
         category: "Contents",
       },
     },
-    double: {
-      control: "boolean",
-      table: {
-        category: "State",
-      },
-    },
-    isDisabled: {
-      control: "boolean",
-      table: {
-        category: "State",
-      },
-    },
-    isPending: {
-      control: "boolean",
-      table: {
-        category: "State",
-      },
-    },
-    isInvalid: {
-      control: "boolean",
-      table: {
-        category: "State",
-      },
-    },
-    errorMessage: {
-      control: "text",
-      table: {
-        category: "State",
-      },
-    },
+  },
+  component: TextFieldComponent,
+  globals: {
+    backgrounds: { value: "dark" },
   },
 };
 export default meta;
 
 export const TextField = {
   args: {
-    label: "Label",
-    labelExtra: "Optional",
-    placeholder: "Type here…",
     double: false,
     isDisabled: false,
     isPending: false,
+    label: "Label",
+    labelExtra: "Optional",
+    placeholder: "Type here…",
   },
   render: (args: React.ComponentProps<typeof TextFieldComponent>) => (
     <TextFieldComponent {...args} />

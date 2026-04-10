@@ -1,17 +1,4 @@
 {
-  "name": "@fogo/portfolio",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "engines": {
-    "node": "22"
-  },
-  "scripts": {
-    "build": "next build",
-    "start:dev": "next dev --port 3001",
-    "start:prod": "next start --port 3001",
-    "test:types": "tsc"
-  },
   "dependencies": {
     "@fogo/component-library": "workspace:*",
     "@fogo/sessions-sdk-react": "workspace:*",
@@ -42,5 +29,18 @@
     "stylelint": "catalog:",
     "stylelint-config-standard-scss": "catalog:",
     "typescript": "catalog:"
-  }
+  },
+  "engines": {
+    "node": "22"
+  },
+  "name": "@fogo/portfolio",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "start:dev": "next dev --port 3001",
+    "start:prod": "next start --port 3001",
+    "test:types": "tsc"
+  },
+  "type": "module",
+  "version": "0.0.0"
 }

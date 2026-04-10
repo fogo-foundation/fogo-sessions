@@ -13,10 +13,10 @@ import {
 } from "../../../server/paymaster";
 
 const createOrUpdateVariationSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }),
   maxGasSpend: z.coerce
     .number()
     .min(1, { message: "Max gas spend is required" }),
+  name: z.string().min(1, { message: "Name is required" }),
   paymasterFeeLamports: z.preprocess(
     (val) => (val === "" ? undefined : val),
     z.coerce.number().int().min(0).optional(),
@@ -48,8 +48,8 @@ export const createOrUpdateVariation = async ({
   }
   try {
     const validatedFields = createOrUpdateVariationSchema.parse({
-      name,
       maxGasSpend,
+      name,
       paymasterFeeLamports,
       variation,
     });

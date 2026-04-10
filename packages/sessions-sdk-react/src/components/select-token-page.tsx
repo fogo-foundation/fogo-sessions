@@ -25,19 +25,19 @@ export const SelectTokenPage = ({
         <span className={styles.text}>Send</span>
       </h1>
       <Button
-        variant="outline"
-        size="sm"
-        onPress={onPressBack}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus
+        onPress={onPressBack}
+        size="sm"
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        variant="outline"
       >
         Back
       </Button>
     </div>
     <TokenList
-      sessionState={sessionState}
       onPressToken={onPressSend}
       onPressTransferIn={onPressTransferIn}
+      sessionState={sessionState}
     />
   </div>
 );

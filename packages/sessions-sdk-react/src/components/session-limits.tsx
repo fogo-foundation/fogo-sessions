@@ -119,22 +119,22 @@ export const SessionLimits = ({
       <div className={clsx(styles.body, bodyClassName)}>
         {header}
         <Select
-          name="duration"
-          label="Session duration"
           defaultSelectedKey="one-week"
           isDisabled={onSubmit === undefined}
           items={Object.entries(DURATION).map(([key, { label }]) => ({
             key,
             label,
           }))}
+          label="Session duration"
+          name="duration"
         />
         <div>
           {enableUnlimited && (
             <Checkbox
-              name="applyLimits"
               className={styles.applyLimits ?? ""}
               isDisabled={onSubmit === undefined}
               isSelected={applyLimits}
+              name="applyLimits"
               onChange={setApplyLimits}
             >
               <div className={styles.checkbox}>
@@ -146,11 +146,11 @@ export const SessionLimits = ({
           <AnimatePresence>
             {applyLimits && (
               <motion.ul
-                initial={enableUnlimited ? { height: 0 } : false}
                 animate={enableUnlimited ? { height: "auto" } : false}
-                exit={enableUnlimited ? { height: 0 } : {}}
                 className={styles.tokenList}
                 data-enable-unlimited={enableUnlimited ? "" : undefined}
+                exit={enableUnlimited ? { height: 0 } : {}}
+                initial={enableUnlimited ? { height: 0 } : false}
               >
                 <TokenLimits sessionState={sessionState} />
               </motion.ul>
@@ -161,18 +161,18 @@ export const SessionLimits = ({
       <div className={clsx(styles.footer, footerClassName)}>
         {!hideCancel && (
           <Button
-            variant="outline"
-            slot="close"
             isDisabled={onSubmit === undefined}
+            slot="close"
+            variant="outline"
           >
             Cancel
           </Button>
         )}
         <Button
-          type="submit"
-          variant="secondary"
           isDisabled={onSubmit === undefined}
           isPending={onSubmit === undefined}
+          type="submit"
+          variant="secondary"
           {...(autoFocus && { autoFocus })}
         >
           {buttonText}
@@ -274,7 +274,6 @@ const LoadedTokenLimits = ({
       {whitelistedTokensThatUserHas.map((mint) => (
         <li key={mint.toBase58()}>
           <Token
-            mint={mint}
             initialAmount={
               initialLimits === undefined
                 ? 0n
@@ -282,6 +281,7 @@ const LoadedTokenLimits = ({
                     .entries()
                     .find(([limitMint]) => limitMint.equals(mint))?.[1] ?? 0n)
             }
+            mint={mint}
           />
         </li>
       ))}
@@ -313,15 +313,20 @@ const Token = ({
           />
           <TokenAmountInput
             className={styles.tokenAmountInput ?? ""}
+            decimals={metadata.data.decimals}
+            defaultValue={amountToString(
+              initialAmount,
+              metadata.data.decimals,
+              false,
+            )}
             inputGroupClassName={styles.inputGroup}
-            labelLineClassName={styles.labelLine}
             label={
               <div className={styles.label}>
                 {metadata.data.image ? (
                   <img
                     alt=""
-                    src={metadata.data.image}
                     className={styles.icon}
+                    src={metadata.data.image}
                   />
                 ) : (
                   <div className={styles.icon} />
@@ -333,15 +338,10 @@ const Token = ({
                 </span>
               </div>
             }
-            decimals={metadata.data.decimals}
-            symbol={metadata.data.symbol}
-            name={mint.toBase58()}
-            defaultValue={amountToString(
-              initialAmount,
-              metadata.data.decimals,
-              false,
-            )}
+            labelLineClassName={styles.labelLine}
             min={0n}
+            name={mint.toBase58()}
+            symbol={metadata.data.symbol}
           />
         </>
       );
@@ -358,13 +358,13 @@ const LoadingToken = () => (
   <TextField
     className={styles.tokenAmountInput ?? ""}
     inputGroupClassName={styles.inputGroup}
+    isPending
     label={
       <div className={styles.label}>
         <div className={styles.icon} />
         <div className={styles.name} />
       </div>
     }
-    isPending
   />
 );
 
@@ -373,13 +373,13 @@ const DURATION = {
     label: "30 Seconds",
     value: 30 * ONE_SECOND_IN_MS,
   },
-  "one-hour": {
-    label: "One Hour",
-    value: ONE_HOUR_IN_MS,
-  },
   "one-day": {
     label: "One Day",
     value: ONE_DAY_IN_MS,
+  },
+  "one-hour": {
+    label: "One Hour",
+    value: ONE_HOUR_IN_MS,
   },
   "one-week": {
     label: "One Week",

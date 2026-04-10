@@ -3,11 +3,17 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Skeleton as SkeletonComponent } from "./index.jsx";
 
 const meta = {
-  component: SkeletonComponent,
-  globals: {
-    backgrounds: { value: "dark" },
+  args: {
+    height: 10,
+    width: 100,
   },
   argTypes: {
+    height: {
+      control: "number",
+      table: {
+        category: "Skeleton",
+      },
+    },
     label: {
       control: "text",
       table: {
@@ -20,27 +26,21 @@ const meta = {
         category: "Skeleton",
       },
     },
-    height: {
-      control: "number",
-      table: {
-        category: "Skeleton",
-      },
-    },
   },
-  args: {
-    width: 100,
-    height: 10,
+  component: SkeletonComponent,
+  globals: {
+    backgrounds: { value: "dark" },
   },
 } satisfies Meta<typeof SkeletonComponent>;
 export default meta;
 
 export const Skeleton = {
-  render: (args) => (
-    <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
-      <SkeletonComponent {...args} />
-    </div>
-  ),
   args: {
     label: "Loading",
   },
+  render: (args) => (
+    <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+      <SkeletonComponent {...args} />
+    </div>
+  ),
 } satisfies StoryObj<typeof SkeletonComponent>;

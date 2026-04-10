@@ -7,7 +7,7 @@ import { LoggerProvider } from "../hooks/use-logger";
 
 const GlobalError = (props: ComponentProps<typeof ErrorComponent>) => (
   <LoggerProvider>
-    <html lang="en" dir="ltr">
+    <html dir="ltr" lang="en">
       <body>
         <ErrorComponent {...props} />
       </body>

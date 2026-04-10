@@ -24,7 +24,7 @@ export const ConfirmModal = ({
   subtitle,
   action,
 }: ConfirmModalProps) => (
-  <ModalDialog isOpen={isOpen} onOpenChange={onOpenChange} noPadding>
+  <ModalDialog isOpen={isOpen} noPadding onOpenChange={onOpenChange}>
     <div
       className={styles.confirmModalHeader}
       data-no-children={children ? undefined : "true"}
@@ -41,7 +41,7 @@ export const ConfirmModal = ({
     </div>
     {children && <div className={styles.confirmModalContent}>{children}</div>}
     <div className={styles.confirmModalFooter}>
-      <Button variant="outline" onClick={() => onOpenChange(false)}>
+      <Button onClick={() => onOpenChange(false)} variant="outline">
         Cancel
       </Button>
       <div>{action}</div>

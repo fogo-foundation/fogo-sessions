@@ -8,7 +8,7 @@ export const NotFound = () => (
     <p className={styles.subheader}>
       {"The page you're looking for isn't here"}
     </p>
-    <Button href="/" variant="outline" size="lg">
+    <Button href="/" size="lg" variant="outline">
       Go Home
     </Button>
   </main>

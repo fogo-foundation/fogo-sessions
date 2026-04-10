@@ -53,10 +53,10 @@ export const TokenList = ({
     case TokenDataStateType.Error: {
       return (
         <FetchError
-          headline="Failed to fetch your wallet balances"
-          error={state.error}
-          reset={state.reset}
           className={styles.tokenListError}
+          error={state.error}
+          headline="Failed to fetch your wallet balances"
+          reset={state.reset}
         />
       );
     }
@@ -71,13 +71,13 @@ export const TokenList = ({
         </div>
       ) : (
         <GridList
-          className={styles.tokenList ?? ""}
-          selectionMode="none"
           aria-label="Tokens"
+          className={styles.tokenList ?? ""}
           items={state.data.tokensInWallet.map((token) => ({
             id: token.isNative ? "native" : token.mint.toBase58(),
             token,
           }))}
+          selectionMode="none"
         >
           {(item) => (
             <TokenItem
@@ -125,7 +125,7 @@ const TokenItem = ({ id, token, sessionState, ...props }: TokenItemProps) => {
     <>
       <div className={styles.nameAndIcon}>
         {image ? (
-          <img alt="" src={image} className={styles.icon} />
+          <img alt="" className={styles.icon} src={image} />
         ) : (
           <div className={styles.icon} />
         )}
@@ -153,9 +153,9 @@ const TokenItem = ({ id, token, sessionState, ...props }: TokenItemProps) => {
           {price.type === PriceDataStateType.Loaded && (
             <NotionalAmount
               amount={amountInWallet}
+              className={styles.notional}
               decimals={decimals}
               price={price.data}
-              className={styles.notional}
             />
           )}
         </div>
@@ -163,21 +163,21 @@ const TokenItem = ({ id, token, sessionState, ...props }: TokenItemProps) => {
           <div className={styles.actions}>
             {"mint" in token && token.mint.equals(NATIVE_MINT) ? (
               <UnwrapButton
-                variant="secondary"
-                size="sm"
                 className={styles.unwrapButton ?? ""}
                 sessionState={sessionState}
+                size="sm"
+                variant="secondary"
               >
                 Unwrap
               </UnwrapButton>
             ) : (
               <Button
-                variant="secondary"
-                size="sm"
                 className={styles.sendButton ?? ""}
                 onPress={() => {
                   props.onPressSend(token);
                 }}
+                size="sm"
+                variant="secondary"
               >
                 <PaperPlaneTiltIcon />
               </Button>
@@ -190,12 +190,12 @@ const TokenItem = ({ id, token, sessionState, ...props }: TokenItemProps) => {
 
   return (
     <MotionGridListItem
+      className={styles.token ?? ""}
+      data-is-button={"onPressToken" in props ? "" : undefined}
+      key={id}
       layoutId={`token-item-${id}`}
       layoutScroll
       textValue={name}
-      key={id}
-      className={styles.token ?? ""}
-      data-is-button={"onPressToken" in props ? "" : undefined}
       {...("onPressToken" in props && {
         onAction: () => {
           props.onPressToken(token);
@@ -208,7 +208,7 @@ const TokenItem = ({ id, token, sessionState, ...props }: TokenItemProps) => {
 };
 
 const LoadingToken = () => (
-  <div data-is-loading="" className={styles.token}>
+  <div className={styles.token} data-is-loading="">
     <div className={styles.nameAndIcon}>
       <div className={styles.icon} />
       <div className={styles.nameAndMint}>
@@ -238,8 +238,8 @@ const UnwrapButton = ({
       const result = await sessionState.sendTransaction(
         sessionState.getSessionUnwrapInstructions(),
         {
-          variation: "Unwrap",
           paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+          variation: "Unwrap",
         },
       );
       if (result.type === TransactionResultType.Success) {
@@ -260,9 +260,9 @@ const UnwrapButton = ({
 
   return (
     <Button
+      hideLoadingSpinner
       isDisabled={state.type === AsyncStateType.Running}
       isPending={state.type === AsyncStateType.Running}
-      hideLoadingSpinner
       onPress={execute}
       {...props}
     >

@@ -25,8 +25,8 @@ export const FetchError = ({
     {reset !== undefined && (
       <Button
         className={styles.retryButton ?? ""}
-        variant="solid"
         onPress={reset}
+        variant="solid"
       >
         Retry
       </Button>

@@ -1,55 +1,4 @@
 {
-  "name": "@fogo/component-library",
-  "version": "0.0.0",
-  "private": true,
-  "description": "React components and hooks for use in various Sessions related projects",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/fogo-foundation/fogo-sessions",
-    "directory": "packages/component-library"
-  },
-  "type": "module",
-  "engines": {
-    "node": "22"
-  },
-  "keywords": [
-    "crypto",
-    "fogo",
-    "react",
-    "sessions",
-    "wallet",
-    "web"
-  ],
-  "exports": {
-    "./*": {
-      "import": {
-        "types": "./dist/esm/*/index.d.ts",
-        "default": "./dist/esm/*/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/*/index.d.ts",
-        "default": "./dist/cjs/*/index.js"
-      }
-    },
-    "./theme": "./dist/theme.scss"
-  },
-  "scripts": {
-    "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-    "build:css:cjs": "sass --pkg-importer node --no-source-map src:dist/cjs",
-    "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
-    "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
-    "build:package-json": "transform-package-json --no-remove-private ./package.json dist/package.json",
-    "build:storybook": "storybook build",
-    "build:theme.scss": "mkdir -p dist && cp src/theme.scss dist/theme.scss",
-    "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
-    "start:dev:theme.scss": "copy-and-watch --watch src/theme.scss dist",
-    "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
-    "storybook": "storybook dev -p 6006",
-    "test:types": "tsc"
-  },
-  "peerDependencies": {
-    "react": "^19"
-  },
   "dependencies": {
     "@phosphor-icons/react": "catalog:",
     "@react-hookz/web": "catalog:",
@@ -61,6 +10,7 @@
     "react-aria-components": "catalog:",
     "swr": "catalog:"
   },
+  "description": "React components and hooks for use in various Sessions related projects",
   "devDependencies": {
     "@cprussin/jest-config": "catalog:",
     "@cprussin/transform-package-json": "catalog:",
@@ -86,5 +36,55 @@
     "stylelint": "catalog:",
     "stylelint-config-standard-scss": "catalog:",
     "typescript": "catalog:"
-  }
+  },
+  "engines": {
+    "node": "22"
+  },
+  "exports": {
+    "./*": {
+      "import": {
+        "default": "./dist/esm/*/index.js",
+        "types": "./dist/esm/*/index.d.ts"
+      },
+      "require": {
+        "default": "./dist/cjs/*/index.js",
+        "types": "./dist/cjs/*/index.d.ts"
+      }
+    },
+    "./theme": "./dist/theme.scss"
+  },
+  "keywords": [
+    "crypto",
+    "fogo",
+    "react",
+    "sessions",
+    "wallet",
+    "web"
+  ],
+  "name": "@fogo/component-library",
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "private": true,
+  "repository": {
+    "directory": "packages/component-library",
+    "type": "git",
+    "url": "https://github.com/fogo-foundation/fogo-sessions"
+  },
+  "scripts": {
+    "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "build:css:cjs": "sass --pkg-importer node --no-source-map src:dist/cjs",
+    "build:css:esm": "sass --pkg-importer node --no-source-map src:dist/esm",
+    "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "build:package-json": "transform-package-json --no-remove-private ./package.json dist/package.json",
+    "build:storybook": "storybook build",
+    "build:theme.scss": "mkdir -p dist && cp src/theme.scss dist/theme.scss",
+    "start:dev:sass": "sass --pkg-importer node --watch src:dist/esm",
+    "start:dev:theme.scss": "copy-and-watch --watch src/theme.scss dist",
+    "start:dev:tsc": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
+    "storybook": "storybook dev -p 6006",
+    "test:types": "tsc"
+  },
+  "type": "module",
+  "version": "0.0.0"
 }

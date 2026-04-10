@@ -47,23 +47,23 @@ export const POST = async (req: Request) => {
   const userAddress = address(postBodySchema.parse(await req.json()).address);
 
   const [userAta] = await findAssociatedTokenPda({
-    owner: userAddress,
     mint: USDC_MINT,
+    owner: userAddress,
     tokenProgram: TOKEN_PROGRAM_ADDRESS,
   });
 
   const instructions = [
     getCreateAssociatedTokenIdempotentInstruction({
-      payer: faucetSigner,
-      owner: userAddress,
-      mint: USDC_MINT,
       ata: userAta,
+      mint: USDC_MINT,
+      owner: userAddress,
+      payer: faucetSigner,
     }),
     getMintToInstruction({
-      mint: USDC_MINT,
-      token: userAta,
-      mintAuthority: faucetSigner,
       amount: 100_000_000n,
+      mint: USDC_MINT,
+      mintAuthority: faucetSigner,
+      token: userAta,
     }),
   ];
 

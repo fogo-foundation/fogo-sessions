@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 
 export const UsdcIcon = (props: ComponentProps<"svg">) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 2000" {...props}>
+  <svg viewBox="0 0 2000 2000" xmlns="http://www.w3.org/2000/svg" {...props}>
     <path
       d="M1000 2000c554.17 0 1000-445.83 1000-1000S1554.17 0 1000 0 0 445.83 0 1000s445.83 1000 1000 1000z"
       fill="#2775ca"

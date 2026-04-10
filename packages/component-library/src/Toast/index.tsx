@@ -35,24 +35,24 @@ export const ToastProvider = ({
         {({ toast }) => (
           <ReactAriaToast
             className={styles.toast ?? ""}
-            toast={toast}
             data-variant={TOAST_TYPE_TO_VARIANT[toast.content.type]}
+            toast={toast}
           >
             <ToastContent className={styles.toastContent}>
-              <Text slot="title" className={styles.title}>
+              <Text className={styles.title} slot="title">
                 {toast.content.title}
               </Text>
               {toast.content.description && (
-                <Text slot="description" className={styles.description}>
+                <Text className={styles.description} slot="description">
                   {toast.content.description}
                 </Text>
               )}
             </ToastContent>
             <Button
+              className={styles.dismissButton ?? ""}
+              size="sm"
               slot="close"
               variant="ghost"
-              size="sm"
-              className={styles.dismissButton ?? ""}
             >
               <XIcon size={16} />
             </Button>
@@ -76,16 +76,16 @@ export const useToast = () => {
         }: Parameters<ToastQueue<ToastContents>["add"]>[1] | undefined = {},
       ) =>
         queue?.add(
-          { type: toastType, title, description },
+          { description, title, type: toastType },
           { timeout, ...opts },
         ),
     [queue],
   );
   const out = useMemo(
     () => ({
+      error: mkToastFn(ToastType.Error),
       queue,
       success: mkToastFn(ToastType.Success),
-      error: mkToastFn(ToastType.Error),
     }),
     [queue, mkToastFn],
   );

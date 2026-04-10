@@ -105,14 +105,14 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
   return (
     <>
       <UnstyledButton
-        ref={triggerRef}
         className={styles.sessionButton ?? ""}
+        data-compact={compact ? "" : undefined}
+        data-is-signed-in={isEstablished(sessionState) ? "" : undefined}
+        data-session-panel-open={sessionPanelOpen ? "" : undefined}
         isDisabled={isLoading}
         isPending={isLoading}
         onPress={handlePress}
-        data-session-panel-open={sessionPanelOpen ? "" : undefined}
-        data-is-signed-in={isEstablished(sessionState) ? "" : undefined}
-        data-compact={compact ? "" : undefined}
+        ref={triggerRef}
       >
         {isEstablished(sessionState) ? (
           <EstablishedLogo sessionState={sessionState} />
@@ -137,10 +137,10 @@ export const SessionButton = ({ requestedLimits, compact }: Props) => {
       </UnstyledButton>
       <Popover
         className={styles.sessionPanelPopover ?? ""}
-        offset={1}
         isOpen={sessionPanelOpen && isEstablished(sessionState)}
-        triggerRef={triggerRef}
+        offset={1}
         onOpenChange={handleSessionPanelOpenChange}
+        triggerRef={triggerRef}
       >
         <Dialog className={styles.sessionPanelDialog ?? ""}>
           <SessionPanel
@@ -164,7 +164,7 @@ const EstablishedLogo = ({
 };
 
 const FogoLogo = ({ isLoading }: { isLoading?: boolean | undefined }) => (
-  <div className={styles.fogoLogoContainer} aria-hidden={isLoading}>
+  <div aria-hidden={isLoading} className={styles.fogoLogoContainer}>
     <FogoLogoIcon className={styles.fogoLogo} />
   </div>
 );

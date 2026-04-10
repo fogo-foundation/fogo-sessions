@@ -1,20 +1,24 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": ["NODE_ENV"],
-  "globalPassThroughEnv": ["COREPACK_HOME", "BIOME_BINARY", "FORCE_COLOR"],
-  "ui": "tui",
+  "globalPassThroughEnv": [
+    "COREPACK_HOME",
+    "BIOME_BINARY",
+    "FORCE_COLOR",
+    "PKG_CONFIG_PATH"
+  ],
   "tasks": {
     "//#fix": {
-      "dependsOn": ["//#fix:lint", "//#fix:format"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["//#fix:lint", "//#fix:format"]
     },
     "//#fix:format": {
-      "dependsOn": ["//#install:modules", "//#fix:lint"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["//#install:modules", "//#fix:lint"]
     },
     "//#fix:lint": {
-      "dependsOn": ["//#install:modules", "^build"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "//#install:modules": {
       "inputs": [
@@ -28,28 +32,28 @@
       "outputs": ["pnpm-lock.yaml"]
     },
     "//#run:domain-registry": {
-      "dependsOn": ["@fogo/scripts#build"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["@fogo/scripts#build"]
     },
     "//#run:initialize-chain-id": {
-      "dependsOn": ["@fogo/scripts#build"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["@fogo/scripts#build"]
     },
     "//#run:initialize-tollbooth": {
-      "dependsOn": ["@fogo/scripts#build"],
-      "cache": false
-    },
-    "//#run:register-ntt-manager": {
-      "dependsOn": ["@fogo/scripts#build"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["@fogo/scripts#build"]
     },
     "//#run:register-fee-config": {
-      "dependsOn": ["@fogo/scripts#build"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["@fogo/scripts#build"]
+    },
+    "//#run:register-ntt-manager": {
+      "cache": false,
+      "dependsOn": ["@fogo/scripts#build"]
     },
     "//#run:update-metadata": {
-      "dependsOn": ["@fogo/scripts#build"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["@fogo/scripts#build"]
     },
     "//#test": {
       "dependsOn": [
@@ -83,6 +87,7 @@
         "build:readme",
         "build:types"
       ],
+      "env": ["VERCEL_ENV"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!README.md",
@@ -93,8 +98,7 @@
         "!vercel.json",
         "!**/dist/**"
       ],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
-      "env": ["VERCEL_ENV"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "build:cjs": {
       "dependsOn": ["//#install:modules", "^build"],
@@ -151,31 +155,31 @@
       "outputs": ["dist/types/**"]
     },
     "fix": {
-      "dependsOn": ["fix:lint", "fix:format"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["fix:lint", "fix:format"]
     },
     "fix:format": {
-      "dependsOn": ["//#install:modules", "fix:lint"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["//#install:modules", "fix:lint"]
     },
     "fix:lint": {
-      "dependsOn": ["//#install:modules", "^build"],
-      "cache": false
+      "cache": false,
+      "dependsOn": ["//#install:modules", "^build"]
     },
     "pull:env": {
+      "cache": false,
       "dependsOn": ["//#install:modules"],
-      "outputs": [".env.local"],
-      "cache": false
+      "outputs": [".env.local"]
     },
     "start:dev": {
+      "cache": false,
       "dependsOn": ["//#install:modules", "pull:env", "^build"],
-      "persistent": true,
-      "cache": false
+      "persistent": true
     },
     "start:prod": {
+      "cache": false,
       "dependsOn": ["//#install:modules", "build"],
-      "persistent": true,
-      "cache": false
+      "persistent": true
     },
     "test": {
       "dependsOn": [
@@ -189,6 +193,10 @@
     "test:format": {
       "dependsOn": ["//#install:modules"]
     },
+    "test:integration": {
+      "dependsOn": ["//#install:modules", "build"],
+      "env": ["PUPPETEER_EXECUTABLE_PATH"]
+    },
     "test:lint": {
       "dependsOn": ["//#install:modules", "^build"]
     },
@@ -197,10 +205,7 @@
     },
     "test:unit": {
       "dependsOn": ["//#install:modules", "^build"]
-    },
-    "test:integration": {
-      "dependsOn": ["//#install:modules", "build"],
-      "env": ["PUPPETEER_EXECUTABLE_PATH"]
     }
-  }
+  },
+  "ui": "tui"
 }

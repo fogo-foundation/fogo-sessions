@@ -13,13 +13,6 @@
         "build:esm"
       ]
     },
-    "storybook": {
-      "dependsOn": ["//#install:modules"]
-    },
-    "build:storybook": {
-      "dependsOn": ["//#install:modules"],
-      "outputs": ["storybook-static/**"]
-    },
     "build:css:cjs": {
       "dependsOn": ["//#install:modules"],
       "inputs": ["src/**/*.scss"],
@@ -30,29 +23,36 @@
       "inputs": ["src/**/*.scss"],
       "outputs": ["dist/esm/**/*.css"]
     },
+    "build:storybook": {
+      "dependsOn": ["//#install:modules"],
+      "outputs": ["storybook-static/**"]
+    },
     "build:theme.scss": {
       "dependsOn": ["//#install:modules"],
       "inputs": ["src/theme.scss"],
       "outputs": ["dist/theme.scss"]
     },
     "start:dev": {
-      "with": ["start:dev:sass", "start:dev:theme.scss", "start:dev:tsc"],
-      "persistent": false
+      "persistent": false,
+      "with": ["start:dev:sass", "start:dev:theme.scss", "start:dev:tsc"]
     },
     "start:dev:sass": {
+      "cache": false,
       "dependsOn": ["//#install:modules"],
-      "persistent": true,
-      "cache": false
+      "persistent": true
     },
     "start:dev:theme.scss": {
+      "cache": false,
       "dependsOn": ["//#install:modules", "^build"],
-      "persistent": true,
-      "cache": false
+      "persistent": true
     },
     "start:dev:tsc": {
+      "cache": false,
       "dependsOn": ["//#install:modules", "^build"],
-      "persistent": true,
-      "cache": false
+      "persistent": true
+    },
+    "storybook": {
+      "dependsOn": ["//#install:modules"]
     }
   }
 }

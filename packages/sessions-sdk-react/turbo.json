@@ -23,24 +23,24 @@
       "outputs": ["dist/esm/**/*.css"]
     },
     "start:dev": {
+      "persistent": false,
       "with": [
         "start:dev:tsc",
         "start:dev:sass",
         "@fogo/sessions-sdk#start:dev",
         "@fogo/sessions-sdk-web#start:dev",
         "@fogo/component-library#start:dev"
-      ],
-      "persistent": false
-    },
-    "start:dev:tsc": {
-      "dependsOn": ["//#install:modules", "^build"],
-      "persistent": true,
-      "cache": false
+      ]
     },
     "start:dev:sass": {
+      "cache": false,
       "dependsOn": ["//#install:modules"],
-      "persistent": true,
-      "cache": false
+      "persistent": true
+    },
+    "start:dev:tsc": {
+      "cache": false,
+      "dependsOn": ["//#install:modules", "^build"],
+      "persistent": true
     }
   }
 }

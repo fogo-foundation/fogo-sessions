@@ -134,16 +134,17 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1765229236,
-        "narHash": "sha256-RkRurhmERLZ2NKcJNdwdJ6E4cvL/SDfPiB5azbtlHTs=",
+        "lastModified": 1770422259,
+        "narHash": "sha256-Z9PWE0737kPUd0krsrh4OlWYGtIgW04EsPQcGRrAmgM=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "11bf93bc079691e43e20524c45bc10bf9d7b8642",
+        "rev": "bca67f2ca172f4b4e8d9930122e74f20f6753865",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
         "repo": "nixpkgs",
+        "rev": "bca67f2ca172f4b4e8d9930122e74f20f6753865",
         "type": "github"
       }
     },
@@ -173,7 +174,9 @@
     },
     "rust-overlay": {
       "inputs": {
-        "nixpkgs": ["nixpkgs"]
+        "nixpkgs": [
+          "nixpkgs"
+        ]
       },
       "locked": {
         "lastModified": 1765161692,
@@ -191,7 +194,10 @@
     },
     "rust-overlay_2": {
       "inputs": {
-        "nixpkgs": ["solana-nix", "nixpkgs"]
+        "nixpkgs": [
+          "solana-nix",
+          "nixpkgs"
+        ]
       },
       "locked": {
         "lastModified": 1765161692,

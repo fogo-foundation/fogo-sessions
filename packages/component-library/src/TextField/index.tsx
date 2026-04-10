@@ -49,17 +49,17 @@ export const TextField = ({
     <Group className={clsx(styles.inputGroup, inputGroupClassName)}>
       {props.double ? (
         <TextArea
-          data-1p-ignore
-          placeholder={placeholder}
           className={styles.input ?? ""}
+          data-1p-ignore
           data-has-right-extra={rightExtra ? "" : undefined}
+          placeholder={placeholder}
         />
       ) : (
         <Input
-          data-1p-ignore
-          placeholder={placeholder ?? ""}
           className={styles.input ?? ""}
+          data-1p-ignore
           data-has-right-extra={rightExtra ? "" : undefined}
+          placeholder={placeholder ?? ""}
         />
       )}
       {rightExtra && <div className={styles.rightExtra}>{rightExtra}</div>}
@@ -67,10 +67,10 @@ export const TextField = ({
         {({ defaultChildren }) => (
           <>
             <svg
-              width={12}
+              className={styles.overlayArrow}
               height={12}
               viewBox="0 0 12 12"
-              className={styles.overlayArrow}
+              width={12}
             >
               <path d="M0 0 L6 6 L12 0" />
             </svg>

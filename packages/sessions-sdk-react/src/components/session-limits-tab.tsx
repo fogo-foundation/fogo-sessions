@@ -17,12 +17,10 @@ export const SessionLimitsTab = ({
   <div className={styles.sessionLimitsTab}>
     <SessionExpiryBanner expiration={sessionState.expiration} />
     <SessionLimits
-      sessionState={sessionState}
-      className={styles.sessionLimits}
       bodyClassName={styles.body}
-      footerClassName={styles.footer}
-      hideCancel
       buttonText="Update Limits"
+      className={styles.sessionLimits}
+      footerClassName={styles.footer}
       header={
         <div className={styles.header}>
           <h2 className={styles.title}>Session Limits</h2>
@@ -31,6 +29,8 @@ export const SessionLimitsTab = ({
           </span>
         </div>
       }
+      hideCancel
+      sessionState={sessionState}
     />
   </div>
 );
