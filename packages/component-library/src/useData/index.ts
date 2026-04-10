@@ -34,7 +34,7 @@ export enum StateType {
   Error,
 }
 
-const State = {
+export const State = {
   NotLoaded: <T>(mutate: KeyedMutator<T>) => ({
     type: StateType.NotLoaded as const,
     mutate,
@@ -51,6 +51,12 @@ const State = {
     reset,
   }),
 };
+
+export type State<T> =
+  | ReturnType<typeof State.NotLoaded<T>>
+  | ReturnType<typeof State.Loading>
+  | ReturnType<typeof State.Loaded<T>>
+  | ReturnType<typeof State.ErrorState>;
 
 class UseDataError extends Error {
   constructor(cause: unknown) {
