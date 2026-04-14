@@ -5,7 +5,6 @@ import { Button } from "../Button/index.jsx";
 import { ModalDialog as ModalDialogComponent } from "./index.jsx";
 
 const meta = {
-  component: ModalDialogComponent,
   argTypes: {
     children: {
       control: "text",
@@ -14,6 +13,7 @@ const meta = {
       },
     },
   },
+  component: ModalDialogComponent,
 } satisfies Meta<typeof ModalDialogComponent>;
 export default meta;
 

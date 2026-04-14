@@ -13,16 +13,16 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     )
     .options(anchorOptions)
     .positional("mint", {
-      type: "string",
-      description: "Mint address to set ntt manager for",
-      demandOption: true,
       coerce: (mint: string) => new PublicKey(mint),
+      demandOption: true,
+      description: "Mint address to set ntt manager for",
+      type: "string",
     })
     .positional("ntt-manager", {
-      type: "string",
-      description: "Address of NTT manager for the mint",
-      demandOption: true,
       coerce: (manager: string) => new PublicKey(manager),
+      demandOption: true,
+      description: "Address of NTT manager for the mint",
+      type: "string",
     })
     .parse();
 

@@ -61,14 +61,14 @@ export enum TransactionResultType {
 }
 
 const TransactionResult = {
-  Success: (signature: string) => ({
-    type: TransactionResultType.Success as const,
-    signature,
-  }),
   Failed: (signature: string, error: TransactionError) => ({
-    type: TransactionResultType.Failed as const,
-    signature,
     error,
+    signature,
+    type: TransactionResultType.Failed as const,
+  }),
+  Success: (signature: string) => ({
+    signature,
+    type: TransactionResultType.Success as const,
   }),
 };
 
@@ -102,10 +102,11 @@ export const createSessionConnection = (
   const sponsorCache = new Map<string, PublicKey>();
 
   return {
-    rpc,
     connection,
-    network: options.network,
     getSolanaConnection: createSolanaConnectionGetter(options.network),
+    getSponsor: (domain: string) => getSponsor(options, sponsorCache, domain),
+    network: options.network,
+    rpc,
     sendToPaymaster: async (
       domain: string,
       sessionKey: CryptoKeyPair | undefined,
@@ -114,14 +115,13 @@ export const createSessionConnection = (
       extraConfig?: SendTransactionOptions,
     ) =>
       sendToPaymaster(
-        { ...options, rpc, connection, addressLookupTableCache, sponsorCache },
+        { ...options, addressLookupTableCache, connection, rpc, sponsorCache },
         domain,
         sessionKey,
         instructions,
         walletPublicKey,
         extraConfig,
       ),
-    getSponsor: (domain: string) => getSponsor(options, sponsorCache, domain),
   };
 };
 
@@ -202,13 +202,13 @@ const sendToPaymaster = async (
       url.searchParams.set("variation", extraConfig.variation);
     }
     const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         transaction: getBase64EncodedWireTransaction(transaction),
       }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
     });
 
     if (response.status === 200) {
@@ -281,11 +281,11 @@ const buildTransaction = async (
   ]);
 
   const tollboothInstruction = await buildTollboothInstructionIfNeeded({
+    domain,
+    feeAmount,
+    feeMint,
     sessionKeyAddress,
     walletPublicKey,
-    domain,
-    feeMint,
-    feeAmount,
   });
 
   return partiallySignTransactionMessageWithSigners(
@@ -342,11 +342,11 @@ const buildTollboothInstructionIfNeeded = ({
     feeMint !== undefined
   ) {
     return createPaymasterFeeInstruction({
+      domain,
+      feeAmount,
+      feeMint,
       sessionKey: new PublicKey(sessionKeyAddress),
       walletPublicKey,
-      domain,
-      feeMint,
-      feeAmount,
     }).then(fromLegacyTransactionInstruction);
   } else {
     return undefined;
@@ -399,15 +399,15 @@ const getSignerKeys = async (
 const sponsorAndSendResponseSchema = z
   .discriminatedUnion("type", [
     z.object({
-      type: z.literal("success"),
       signature: z.string(),
+      type: z.literal("success"),
     }),
     z.object({
-      type: z.literal("failed"),
-      signature: z.string(),
       error: z.object({
         InstructionError: z.tuple([z.number(), z.unknown()]),
       }),
+      signature: z.string(),
+      type: z.literal("failed"),
     }),
   ])
   .transform((data) => {

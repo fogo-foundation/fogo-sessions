@@ -4,16 +4,16 @@ import { Tab, TabList, TabPanel, Tabs as TabsComponent } from "./index.jsx";
 
 const meta = {
   component: TabsComponent,
-  globals: {
-    backgrounds: { value: "dark" },
-  },
   decorators: [
     (Story) => (
-      <div style={{ width: 400, height: 300 }}>
+      <div style={{ height: 300, width: 400 }}>
         <Story />
       </div>
     ),
   ],
+  globals: {
+    backgrounds: { value: "dark" },
+  },
 } satisfies Meta<typeof TabsComponent>;
 export default meta;
 

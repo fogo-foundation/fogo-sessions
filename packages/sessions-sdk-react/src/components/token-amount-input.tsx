@@ -18,11 +18,11 @@ export const TokenAmountInput = ({
   <TextField
     {...useTokenAmountInput({
       decimals,
-      symbol,
-      min,
-      max,
       gt,
       lt,
+      max,
+      min,
+      symbol,
     })}
     {...props}
   />

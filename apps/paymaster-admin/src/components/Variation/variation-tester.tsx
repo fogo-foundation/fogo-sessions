@@ -56,7 +56,13 @@ export const VariationTester = ({
         method: "POST",
       });
       return response.json();
-    }, [transactionInput, domain, networkEnvironment, variation]),
+    }, [
+      transactionInput,
+      domain,
+      networkEnvironment,
+      variation,
+      parsedInput?.value,
+    ]),
   );
 
   const execute = useCallback(() => {

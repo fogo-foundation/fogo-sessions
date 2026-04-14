@@ -13,7 +13,6 @@
       ]
     },
     "start:dev": {
-      "with": ["@fogo/sessions-sdk-react#start:dev"],
       "env": [
         "ADDRESS_LOOKUP_TABLE_ADDRESS",
         "RPC",
@@ -21,7 +20,8 @@
         "PAYMASTER",
         "NETWORK",
         "FAUCET_KEY"
-      ]
+      ],
+      "with": ["@fogo/sessions-sdk-react#start:dev"]
     },
     "start:prod": {
       "env": [

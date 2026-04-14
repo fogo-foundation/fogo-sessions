@@ -23,9 +23,9 @@ export const Badge = ({
 }: BadgeProps) => (
   <span
     className={clsx(styles.badge, className)}
-    data-variant={variant}
     data-size={size}
     data-style={style}
+    data-variant={variant}
     {...props}
   >
     {children}

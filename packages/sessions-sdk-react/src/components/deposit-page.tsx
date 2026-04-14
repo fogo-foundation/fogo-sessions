@@ -40,9 +40,9 @@ const NO_ACCOUNT_MESSAGE =
 export const DepositPage = ({ onPressBack, ...props }: Props) => (
   <div className={styles.depositPage ?? ""}>
     <Button
+      className={styles.backButton ?? ""}
       onPress={onPressBack}
       variant="outline"
-      className={styles.backButton ?? ""}
     >
       Back
     </Button>
@@ -63,7 +63,7 @@ const DepositPageContents = (props: Omit<Props, "onPressBack">) => {
       ),
       connection.getBalance(props.sessionState.walletPublicKey),
     ]);
-    return { usdc, sol };
+    return { sol, usdc };
   }, [getSessionContext, props.sessionState.walletPublicKey, network]);
   const solanaBalances = useData(
     ["solanaBalances", network, props.sessionState.walletPublicKey],
@@ -76,8 +76,8 @@ const DepositPageContents = (props: Omit<Props, "onPressBack">) => {
       return (
         <FetchError
           className={styles.fetchError}
-          headline="Failed to load Solana account balances"
           error={solanaBalances.error}
+          headline="Failed to load Solana account balances"
           reset={solanaBalances.reset}
         />
       );
@@ -87,16 +87,16 @@ const DepositPageContents = (props: Omit<Props, "onPressBack">) => {
         return (
           <FetchError
             className={styles.fetchError}
-            headline="No SOL in your Solana wallet"
             error="You must have SOL in your Solana wallet to pay gas on Solana to transfer to Fogo."
+            headline="No SOL in your Solana wallet"
           />
         );
       } else if (solanaBalances.data.usdc.amount === "0") {
         return (
           <FetchError
             className={styles.fetchError}
-            headline="No USDC in your Solana wallet"
             error="You have no USDC on Solana to transfer to Fogo."
+            headline="No USDC in your Solana wallet"
           />
         );
       } else {
@@ -180,13 +180,13 @@ const DepositForm = ({
       getSessionContext()
         .then((context) =>
           bridgeIn({
+            amount: stringToAmount(amount, USDC.decimals),
             context,
-            walletPublicKey: sessionState.walletPublicKey,
+            fromToken: USDC.chains[network].solana,
             signTransaction: (tx) =>
               sessionState.solanaWallet.signTransaction(tx),
-            fromToken: USDC.chains[network].solana,
             toToken: USDC.chains[network].fogo,
-            amount: stringToAmount(amount, USDC.decimals),
+            walletPublicKey: sessionState.walletPublicKey,
           }),
         )
         .then((result) => {
@@ -202,8 +202,8 @@ const DepositForm = ({
               "Tokens transferred to Fogo successfully!",
               txHash === undefined ? undefined : (
                 <ExplorerLink
-                  network={network}
                   chain={Chain.Solana}
+                  network={network}
                   txHash={txHash}
                 />
               ),
@@ -262,14 +262,9 @@ const DepositForm = ({
       <TokenAmountInput
         className={styles.field ?? ""}
         decimals={USDC.decimals}
-        label="Amount"
-        name="amount"
-        symbol="USDC"
-        isRequired
         gt={0n}
-        value={amount}
-        onChange={setAmount}
-        placeholder="Enter an amount"
+        isRequired
+        label="Amount"
         labelExtra={
           <Link
             className={styles.action ?? ""}
@@ -284,18 +279,23 @@ const DepositForm = ({
             Max
           </Link>
         }
+        name="amount"
+        onChange={setAmount}
+        placeholder="Enter an amount"
+        symbol="USDC"
+        value={amount}
         {...(props.isLoading
           ? { isPending: true }
           : {
-              max: BigInt(props.balances.usdc.amount),
               isPending: isSubmitting,
+              max: BigInt(props.balances.usdc.amount),
             })}
       />
       <Button
-        type="submit"
-        variant="secondary"
         className={styles.submitButton ?? ""}
         isPending={props.isLoading === true || isSubmitting}
+        type="submit"
+        variant="secondary"
       >
         Transfer
       </Button>

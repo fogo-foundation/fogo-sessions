@@ -55,10 +55,10 @@ export const SendTokenPage = (props: Props) => {
     case StateType.Error: {
       return (
         <FetchError
-          headline="Failed to load fee information"
           error={feeConfig.error}
-          reset={feeConfig.reset}
+          headline="Failed to load fee information"
           onPressBack={props.onPressBack}
+          reset={feeConfig.reset}
         />
       );
     }
@@ -105,10 +105,10 @@ const SendTokenWithFeeConfig = (
     case StateType.Error: {
       return (
         <FetchError
-          headline="Failed to load token account balance"
           error={feeTokenAccountBalance.error}
-          reset={feeTokenAccountBalance.reset}
+          headline="Failed to load token account balance"
           onPressBack={props.onPressBack}
+          reset={feeTokenAccountBalance.reset}
         />
       );
     }
@@ -116,13 +116,13 @@ const SendTokenWithFeeConfig = (
       return !props.isNative &&
         feeTokenAccountBalance.data < props.feeConfig.fee ? (
         <FetchError
-          headline={`Not enough ${props.feeConfig.symbolOrMint}`}
           error={`You need at least ${amountToString(
             props.feeConfig.fee,
             props.feeConfig.decimals,
           )} ${
             props.feeConfig.symbolOrMint
           } to pay network fees to send tokens.`}
+          headline={`Not enough ${props.feeConfig.symbolOrMint}`}
           onPressBack={props.onPressBack}
         />
       ) : (
@@ -195,13 +195,13 @@ const LoadedSendTokenPage = ({
       getSessionContext()
         .then((context) => {
           const args = {
+            amount: stringToAmount(amount, props.token.decimals),
             context,
-            walletPublicKey: sessionState.walletPublicKey,
+            feeConfig,
+            recipient: new PublicKey(recipient),
             signMessage: (message: Uint8Array) =>
               signWithWallet(sessionState.solanaWallet, message),
-            amount: stringToAmount(amount, props.token.decimals),
-            recipient: new PublicKey(recipient),
-            feeConfig,
+            walletPublicKey: sessionState.walletPublicKey,
           };
           return props.token.isNative
             ? sendNativeTransfer(args)
@@ -246,31 +246,30 @@ const LoadedSendTokenPage = ({
   return (
     <SendTokenPageImpl
       {...props}
-      sessionState={sessionState}
-      onSendComplete={onSendComplete}
-      isSubmitting={isSubmitting}
-      onSubmit={onSubmit}
-      recipient={recipient}
       amount={amount}
+      feeConfig={feeConfig}
+      isSubmitting={isSubmitting}
       maxSendAmount={maxSendAmount}
-      price={price}
+      onChangeAmount={setAmount}
       onChangeRecipient={setRecipient}
       onPressScanner={() => {
         setShowScanner(true);
       }}
-      onChangeAmount={setAmount}
-      feeConfig={feeConfig}
+      onSendComplete={onSendComplete}
+      onSubmit={onSubmit}
+      price={price}
+      recipient={recipient}
       scanner={
         showScanner ? (
           <div className={styles.qrCodeScanner}>
             <Button
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
-              variant="solid"
               className={styles.closeButton ?? ""}
               onPress={() => {
                 setShowScanner(false);
               }}
+              variant="solid"
             >
               <span className={styles.label}>Close</span>
             </Button>
@@ -287,6 +286,7 @@ const LoadedSendTokenPage = ({
           </div>
         ) : undefined
       }
+      sessionState={sessionState}
     />
   );
 };
@@ -330,10 +330,10 @@ const SendTokenPageImpl = ({
   return (
     <div className={styles.sendTokenPage ?? ""}>
       <Button
+        className={styles.backButton ?? ""}
         excludeFromTabOrder={scannerShowing}
         onPress={onPressBack}
         variant="outline"
-        className={styles.backButton ?? ""}
       >
         Back
       </Button>
@@ -345,7 +345,7 @@ const SendTokenPageImpl = ({
       >
         <div className={styles.header}>
           {token.image ? (
-            <img alt="" src={token.image} className={styles.tokenIcon} />
+            <img alt="" className={styles.tokenIcon} src={token.image} />
           ) : (
             <div className={styles.tokenIcon} />
           )}
@@ -363,19 +363,17 @@ const SendTokenPageImpl = ({
           </div>
         </div>
         <TextField
-          excludeFromTabOrder={scannerShowing}
+          autoFocus
           className={styles.field ?? ""}
-          name="recipient"
-          label="Recipient"
+          double
+          excludeFromTabOrder={scannerShowing}
           isRequired
           // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus
-          placeholder="Enter recipient address"
-          double
+          label="Recipient"
           labelExtra={
             <Link
-              excludeFromTabOrder={scannerShowing}
               className={styles.action ?? ""}
+              excludeFromTabOrder={scannerShowing}
               {...(props.isLoading || props.isSubmitting
                 ? { isPending: true }
                 : {
@@ -385,6 +383,8 @@ const SendTokenPageImpl = ({
               Scan QR
             </Link>
           }
+          name="recipient"
+          placeholder="Enter recipient address"
           validate={(value) => {
             if (value) {
               try {
@@ -408,19 +408,16 @@ const SendTokenPageImpl = ({
           })}
         />
         <TokenAmountInput
-          excludeFromTabOrder={scannerShowing}
           className={styles.field ?? ""}
           decimals={token.decimals}
-          label="Amount"
-          name="amount"
-          symbol={token.symbol}
-          isRequired
+          excludeFromTabOrder={scannerShowing}
           gt={0n}
-          placeholder="Enter an amount"
+          isRequired
+          label="Amount"
           labelExtra={
             <Link
-              excludeFromTabOrder={scannerShowing}
               className={styles.action ?? ""}
+              excludeFromTabOrder={scannerShowing}
               {...(props.isLoading || props.isSubmitting
                 ? { isPending: true }
                 : {
@@ -438,6 +435,9 @@ const SendTokenPageImpl = ({
               Max
             </Link>
           }
+          name="amount"
+          placeholder="Enter an amount"
+          symbol={token.symbol}
           {...(props.isLoading || props.isSubmitting
             ? { isPending: true }
             : {
@@ -453,17 +453,17 @@ const SendTokenPageImpl = ({
           notionalAmount !== undefined && (
             <NotionalAmount
               amount={notionalAmount}
+              className={styles.notionalAmount}
               decimals={token.decimals}
               price={props.price}
-              className={styles.notionalAmount}
             />
           )}
         <Button
+          className={styles.submitButton ?? ""}
           excludeFromTabOrder={scannerShowing}
+          isPending={props.isLoading === true || props.isSubmitting}
           type="submit"
           variant="secondary"
-          className={styles.submitButton ?? ""}
-          isPending={props.isLoading === true || props.isSubmitting}
         >
           Send
         </Button>
@@ -496,9 +496,9 @@ const FetchError = ({
 }) => (
   <div className={clsx(styles.sendTokenPage, className)}>
     <Button
+      className={styles.backButton ?? ""}
       onPress={onPressBack}
       variant="outline"
-      className={styles.backButton ?? ""}
     >
       Back
     </Button>

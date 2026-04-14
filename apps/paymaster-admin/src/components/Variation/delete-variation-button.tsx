@@ -20,7 +20,7 @@ const useDeleteVariation = (
   const toast = useToast();
   const deleteVariation = useCallback(async () => {
     const sessionToken = await sessionState.createLogInToken();
-    await deleteVariationPaymaster({ variationId, sessionToken });
+    await deleteVariationPaymaster({ sessionToken, variationId });
     if ("mutate" in userData) {
       await userData.mutate();
     }
@@ -29,16 +29,16 @@ const useDeleteVariation = (
   const onSuccessCallback = useCallback(() => {
     toast.success("Variation deleted");
     onSuccess?.();
-  }, [toast.success, onSuccess]);
+  }, [toast, onSuccess]);
 
   const onErrorCallback = useCallback(() => {
     toast.error("Failed to delete variation");
     onError?.();
-  }, [toast.error, onError]);
+  }, [toast, onError]);
 
   return useAsync(deleteVariation, {
-    onSuccess: onSuccessCallback,
     onError: onErrorCallback,
+    onSuccess: onSuccessCallback,
   });
 };
 
@@ -46,10 +46,10 @@ const getDeleteButtonProps = (additionalProps?: {
   onClick?: () => void;
   isDisabled?: boolean;
 }) => ({
-  variant: "ghost" as const,
+  children: <TrashIcon />,
   className: styles.deleteVariationButton ?? "",
   size: "lg" as const,
-  children: <TrashIcon />,
+  variant: "ghost" as const,
   ...additionalProps,
 });
 
@@ -77,19 +77,19 @@ const DeleteVariationButtonWithModal = ({
   return (
     <>
       <ConfirmModal
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        altText="Variant"
-        title="Delete variation"
-        subtitle="This action cannot be undone. Proceed with caution."
         action={
           <Button
-            onClick={execute}
             isDisabled={state.type === StateType.Running}
+            onClick={execute}
           >
             Delete
           </Button>
         }
+        altText="Variant"
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        subtitle="This action cannot be undone. Proceed with caution."
+        title="Delete variation"
       >
         <span>Are you sure you want to delete this variation?</span>
       </ConfirmModal>

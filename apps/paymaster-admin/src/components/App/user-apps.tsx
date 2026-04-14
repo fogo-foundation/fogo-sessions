@@ -33,7 +33,7 @@ const AppCard = (props: AppCardProps) => {
         </p>
       </div>
       <div>
-        <Button variant="outline" href={`/apps/${props.app.id}`}>
+        <Button href={`/apps/${props.app.id}`} variant="outline">
           View
         </Button>
       </div>
@@ -60,13 +60,13 @@ export const UserApps = (props: UserAppsProps) => {
   return (
     <div className={styles.userAppsContainer}>
       <ListHeader
-        title="Apps"
-        isLoading={props.isLoading}
         action={
-          <Button variant="secondary" onClick={handleRequestApp}>
+          <Button onClick={handleRequestApp} variant="secondary">
             Request App <AppWindowIcon />
           </Button>
         }
+        isLoading={props.isLoading}
+        title="Apps"
         {...(!props.isLoading && {
           count: props.user.apps.length,
         })}
@@ -81,10 +81,10 @@ export const UserApps = (props: UserAppsProps) => {
         </div>
       ) : (
         <GridList
-          className={styles.userApps ?? ""}
-          selectionMode="none"
           aria-label="Apps"
+          className={styles.userApps ?? ""}
           items={props.user.apps}
+          selectionMode="none"
         >
           {(item) => (
             <GridListItem key={item.id}>

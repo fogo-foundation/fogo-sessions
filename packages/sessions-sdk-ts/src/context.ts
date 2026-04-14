@@ -27,13 +27,13 @@ export const createSessionContext = async (options: {
   ]);
   return {
     chainId: await fetchChainId(options.connection.connection),
-    domain: getDomain(options.domain),
-    payer: sponsor,
-    internalPayer: internalSponsor,
-    getSolanaConnection: options.connection.getSolanaConnection,
     connection: options.connection.connection,
-    rpc: options.connection.rpc,
+    domain: getDomain(options.domain),
+    getSolanaConnection: options.connection.getSolanaConnection,
+    internalPayer: internalSponsor,
     network: options.connection.network,
+    payer: sponsor,
+    rpc: options.connection.rpc,
     sendTransaction: (
       sessionKey: CryptoKeyPair | undefined,
       instructions: TransactionOrInstructions,

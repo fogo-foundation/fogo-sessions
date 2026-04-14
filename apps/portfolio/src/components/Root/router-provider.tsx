@@ -13,7 +13,7 @@ export const RouterProvider = (
   const navigate = useCallback(
     (newPath: string) => {
       if (newPath === pathname) {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ behavior: "smooth", top: 0 });
       } else {
         router.push(newPath);
       }

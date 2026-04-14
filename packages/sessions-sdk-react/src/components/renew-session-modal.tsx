@@ -32,13 +32,13 @@ export const RenewSessionModal = () => {
 
   return (
     <ModalDialog
+      dialogClassName={styles.renewSessionModal}
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      dialogClassName={styles.renewSessionModal}
     >
       {isOpen && (
         <>
-          <Heading slot="title" className={styles.heading ?? ""}>
+          <Heading className={styles.heading ?? ""} slot="title">
             {isRequestingExtendedExpiry
               ? "Your session is expired"
               : "This trade exceeds your set limits"}

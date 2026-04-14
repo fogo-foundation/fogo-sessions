@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs?rev=bca67f2ca172f4b4e8d9930122e74f20f6753865";
     flake-utils.url = "github:numtide/flake-utils";
     mkCli.url = "github:cprussin/mkCli";
     solana-nix.url = "github:cprussin/solana-nix";
@@ -76,14 +76,14 @@
 
         knope = final.rustPlatform.buildRustPackage (finalAttrs: {
           pname = "knope";
-          version = "0.21.7";
+          version = "0.22.4";
 
           src = final.fetchCrate {
             inherit (finalAttrs) pname version;
-            hash = "sha256-ap4xip2QhsX1pqb2WZc60NfuSGMJxggD1XjMfC4C5ng=";
+            hash = "sha256-Q71L5zy29Hnk1VSvEZqJUXEbenFN3+rSngccy+An7x0=";
           };
 
-          cargoHash = "sha256-zQqSggmcuaQVJSgf6UAZZD7pT0QboWaGACu63RQ7QXI=";
+          cargoHash = "sha256-zX7QSXAHgsPykntE/xy8ylfw0Cr9seAXXl+Ge5OBmws=";
           doCheck = false;
         });
       in {
@@ -92,17 +92,20 @@
           PUPPETEER_SKIP_DOWNLOAD = 1;
           PUPPETEER_EXECUTABLE_PATH = final.lib.getExe final.chromium;
           BIOME_BINARY = final.lib.getExe final.biome;
+          PKG_CONFIG_PATH = "${final.openssl.dev}/lib/pkgconfig";
           name = "project-shell";
           buildInputs = [
             final.cli
             final.git
             final.libusb1
-            final.nodejs
-            final.pnpm
+            final.nodejs_22
+            (final.pnpm.override {
+              nodejs = final.nodejs_22;
+            })
             final.python3
             final.tilt
             final.jq
-            final.openssl
+            final.openssl.dev
             final.pkg-config
             final.biome
             (final.rust-bin.nightly.latest.default.override {extensions = ["rust-analyzer"];})

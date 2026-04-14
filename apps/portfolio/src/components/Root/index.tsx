@@ -37,7 +37,7 @@ export const Root = ({ children }: Props) => (
   <RouterProvider>
     <LoggerProvider>
       <NuqsAdapter>
-        <html lang="en" className={clsx(sans.className, styles.root)}>
+        <html className={clsx(sans.className, styles.root)} lang="en">
           <body className={styles.body}>
             <FogoNetworkProvider>
               <header className={styles.header}>

@@ -1,57 +1,4 @@
 {
-  "name": "@fogo/sessions-sdk",
-  "version": "0.1.8",
-  "private": true,
-  "description": "A set of utilities for integrating with Fogo sessions",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/fogo-foundation/fogo-sessions",
-    "directory": "packages/sessions-sdk-ts"
-  },
-  "keywords": [
-    "fogo",
-    "sessions",
-    "crypto",
-    "wallet"
-  ],
-  "type": "module",
-  "main": "./dist/cjs/index.js",
-  "types": "./dist/cjs/index.d.ts",
-  "engines": {
-    "node": ">=22"
-  },
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      }
-    }
-  },
-  "scripts": {
-    "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
-    "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
-    "build:package-json": "transform-package-json ./package.json dist/package.json",
-    "start:dev": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
-    "test:integration": "run-jest --colors --selectProjects integration",
-    "test:types": "tsc",
-    "test:unit": "run-jest --colors --coverage --selectProjects unit"
-  },
-  "devDependencies": {
-    "@cprussin/jest-config": "catalog:",
-    "@cprussin/transform-package-json": "catalog:",
-    "@cprussin/tsconfig": "catalog:",
-    "@solana/wallet-adapter-base": "catalog:",
-    "@types/bn.js": "catalog:",
-    "@types/jest": "catalog:",
-    "@types/node": "catalog:",
-    "jest": "catalog:",
-    "typescript": "catalog:"
-  },
   "dependencies": {
     "@coral-xyz/anchor": "catalog:",
     "@fogo/sessions-idls": "workspace:^",
@@ -71,5 +18,58 @@
     "bn.js": "catalog:",
     "bs58": "catalog:",
     "zod": "catalog:"
-  }
+  },
+  "description": "A set of utilities for integrating with Fogo sessions",
+  "devDependencies": {
+    "@cprussin/jest-config": "catalog:",
+    "@cprussin/transform-package-json": "catalog:",
+    "@cprussin/tsconfig": "catalog:",
+    "@solana/wallet-adapter-base": "catalog:",
+    "@types/bn.js": "catalog:",
+    "@types/jest": "catalog:",
+    "@types/node": "catalog:",
+    "jest": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "default": "./dist/esm/index.js",
+        "types": "./dist/esm/index.d.ts"
+      },
+      "require": {
+        "default": "./dist/cjs/index.js",
+        "types": "./dist/cjs/index.d.ts"
+      }
+    }
+  },
+  "keywords": [
+    "fogo",
+    "sessions",
+    "crypto",
+    "wallet"
+  ],
+  "main": "./dist/cjs/index.js",
+  "name": "@fogo/sessions-sdk",
+  "private": true,
+  "repository": {
+    "directory": "packages/sessions-sdk-ts",
+    "type": "git",
+    "url": "https://github.com/fogo-foundation/fogo-sessions"
+  },
+  "scripts": {
+    "build:cjs": "tsc --project tsconfig.build.json --verbatimModuleSyntax false --module commonjs --outDir ./dist/cjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "build:esm": "tsc --project tsconfig.build.json --outDir ./dist/esm && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "build:package-json": "transform-package-json ./package.json dist/package.json",
+    "start:dev": "tsc --project tsconfig.build.json --outDir ./dist/esm --watch",
+    "test:integration": "run-jest --colors --selectProjects integration",
+    "test:types": "tsc",
+    "test:unit": "run-jest --colors --coverage --selectProjects unit"
+  },
+  "type": "module",
+  "types": "./dist/cjs/index.d.ts",
+  "version": "0.1.8"
 }

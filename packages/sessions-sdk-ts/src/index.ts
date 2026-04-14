@@ -172,10 +172,10 @@ const sendSessionEstablishTransaction = async (
     instructions,
     options.walletPublicKey,
     {
-      variation: "Session Establishment",
       addressLookupTable:
         sessionEstablishmentLookupTable ??
         SESSION_ESTABLISHMENT_LOOKUP_TABLE_ADDRESS[options.context.network],
+      variation: "Session Establishment",
     },
   );
 
@@ -228,8 +228,8 @@ export const revokeSession = async (options: {
     ).methods
       .revokeSession()
       .accounts({
-        sponsor: options.session.sessionInfo.sponsor,
         session: options.session.sessionPublicKey,
+        sponsor: options.session.sessionInfo.sponsor,
       })
       .instruction();
     return options.context.sendTransaction(
@@ -327,25 +327,22 @@ const createSession = async (
     )
     ? undefined
     : {
-        sessionPublicKey,
-        walletPublicKey,
-        sessionKey,
-        payer: context.payer,
-        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
-          createSystemProgramSessionWrapInstruction(
-            sessionPublicKey,
-            walletPublicKey,
-            amount,
-          ),
+        getSessionUnwrapInstructions: () => [
+          createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey),
+        ],
         getSessionWrapInstructions: (amount: bigint) =>
           createSessionWrapInstructions(
             sessionPublicKey,
             walletPublicKey,
             amount,
           ),
-        getSessionUnwrapInstructions: () => [
-          createSessionUnwrapInstruction(sessionPublicKey, walletPublicKey),
-        ],
+        getSystemProgramSessionWrapInstruction: (amount: bigint) =>
+          createSystemProgramSessionWrapInstruction(
+            sessionPublicKey,
+            walletPublicKey,
+            amount,
+          ),
+        payer: context.payer,
         sendTransaction: (instructions, extraConfig) =>
           context.sendTransaction(
             sessionKey,
@@ -354,6 +351,9 @@ const createSession = async (
             extraConfig,
           ),
         sessionInfo,
+        sessionKey,
+        sessionPublicKey,
+        walletPublicKey,
       };
 };
 
@@ -367,9 +367,9 @@ const authorizedTokensSchema = z.union([
 ]);
 
 const revokedSessionInfoSchema = z.object({
-  user: z.instanceof(PublicKey),
-  expiration: z.instanceof(BN),
   authorized_tokens_with_mints: authorizedTokensSchema,
+  expiration: z.instanceof(BN),
+  user: z.instanceof(PublicKey),
 });
 
 const activeSessionInfoSchema = z.object({
@@ -405,6 +405,7 @@ const activeSessionInfoSchema = z.object({
 
 const sessionInfoSchema = z
   .object({
+    major: z.number(),
     session_info: z.union([
       z.object({
         V1: z.object({
@@ -502,8 +503,8 @@ const sessionInfoSchema = z
             z.object({
               Active: z.object({
                 "0": z.object({
-                  domain_hash: z.array(z.number()).length(32),
                   active_session_info: activeSessionInfoSchema,
+                  domain_hash: z.array(z.number()).length(32),
                 }),
               }),
             }),
@@ -511,7 +512,6 @@ const sessionInfoSchema = z
         }),
       }),
     ]),
-    major: z.number(),
     sponsor: z.instanceof(PublicKey),
   })
   .transform(({ session_info, major, sponsor }) => {
@@ -554,8 +554,8 @@ const sessionInfoSchema = z
       extra: activeSessionInfo.extra[0],
       major: major,
       minor: minor,
-      user: activeSessionInfo.user,
       sponsor,
+      user: activeSessionInfo.user,
     };
   });
 
@@ -567,8 +567,8 @@ export enum AuthorizedProgramsType {
 const AuthorizedPrograms = {
   All: () => ({ type: AuthorizedProgramsType.All as const }),
   Specific: (programs: { programId: PublicKey; signerPda: PublicKey }[]) => ({
-    type: AuthorizedProgramsType.Specific as const,
     programs,
+    type: AuthorizedProgramsType.Specific as const,
   }),
 };
 
@@ -583,13 +583,13 @@ enum SymbolOrMintType {
 }
 
 const SymbolOrMint = {
-  Symbol: (symbol: string) => ({
-    type: SymbolOrMintType.Symbol as const,
-    symbol,
-  }),
   Mint: (mint: PublicKey) => ({
-    type: SymbolOrMintType.Mint as const,
     mint,
+    type: SymbolOrMintType.Mint as const,
+  }),
+  Symbol: (symbol: string) => ({
+    symbol,
+    type: SymbolOrMintType.Symbol as const,
   }),
 };
 
@@ -608,13 +608,13 @@ const getTokenInfo = (
       ]);
 
       return {
+        amount,
+        decimals: mintInfo.decimals,
+        metadataAddress: new PublicKey(metadataAddress),
+        mint,
         symbolOrMint: metadata?.symbol
           ? SymbolOrMint.Symbol(metadata.symbol)
           : SymbolOrMint.Mint(mint),
-        metadataAddress: new PublicKey(metadataAddress),
-        amount,
-        mint,
-        decimals: mintInfo.decimals,
       };
     }),
   );
@@ -627,14 +627,19 @@ const buildStartSessionIntentInstruction = async (
   sessionKey: CryptoKeyPair,
   tokens?: TokenInfo[],
 ) =>
-  buildIntentInstruction(options, MESSAGE_HEADER, {
-    version: `${CURRENT_MAJOR}.${CURRENT_MINOR}`,
-    chain_id: options.context.chainId,
-    domain: options.context.domain,
-    expires: options.expires.toISOString(),
-    session_key: await getAddressFromPublicKey(sessionKey.publicKey),
-    tokens: serializeTokenList(tokens),
-  });
+  buildIntentInstruction(
+    options,
+    MESSAGE_HEADER,
+    // biome-ignore assist/source/useSortedKeys: The sort order is important here
+    {
+      version: `${CURRENT_MAJOR}.${CURRENT_MINOR}`,
+      chain_id: options.context.chainId,
+      domain: options.context.domain,
+      expires: options.expires.toISOString(),
+      session_key: await getAddressFromPublicKey(sessionKey.publicKey),
+      tokens: serializeTokenList(tokens),
+    },
+  );
 
 const buildIntentInstruction = async (
   options: {
@@ -654,9 +659,9 @@ const buildIntentInstruction = async (
   const { signature, signedMessage } = await options.signMessage(message);
 
   return Ed25519Program.createInstructionWithPublicKey({
+    message: signedMessage,
     publicKey: options.walletPublicKey.toBytes(),
     signature,
-    message: signedMessage,
   });
 };
 
@@ -745,9 +750,9 @@ const buildStartSessionInstruction = async (
   ).methods
     .startSession()
     .accounts({
-      sponsor: options.context.payer,
-      session: await getAddressFromPublicKey(sessionKey.publicKey),
       domainRegistry: getDomainRecordAddress(options.context.domain),
+      session: await getAddressFromPublicKey(sessionKey.publicKey),
+      sponsor: options.context.payer,
     });
 
   return tokens === undefined
@@ -756,24 +761,24 @@ const buildStartSessionInstruction = async (
         .remainingAccounts(
           tokens.flatMap(({ symbolOrMint, mint, metadataAddress }) => [
             {
+              isSigner: false,
+              isWritable: true,
               pubkey: getAssociatedTokenAddressSync(
                 mint,
                 options.walletPublicKey,
               ),
-              isWritable: true,
-              isSigner: false,
             },
             {
-              pubkey: mint,
-              isWritable: false,
               isSigner: false,
+              isWritable: false,
+              pubkey: mint,
             },
             ...(symbolOrMint.type === SymbolOrMintType.Symbol
               ? [
                   {
-                    pubkey: metadataAddress,
-                    isWritable: false,
                     isSigner: false,
+                    isWritable: false,
+                    pubkey: metadataAddress,
                   },
                 ]
               : []),
@@ -788,15 +793,15 @@ export enum SessionResultType {
 }
 
 const EstablishSessionResult = {
-  Success: (signature: string, session: Session) => ({
-    type: SessionResultType.Success as const,
-    signature,
-    session,
-  }),
   Failed: (signature: string, error: TransactionError) => ({
-    type: SessionResultType.Failed as const,
-    signature,
     error,
+    signature,
+    type: SessionResultType.Failed as const,
+  }),
+  Success: (signature: string, session: Session) => ({
+    session,
+    signature,
+    type: SessionResultType.Success as const,
   }),
 };
 
@@ -851,16 +856,16 @@ const getFee = async (context: SessionContext) => {
   const feeConfig = await program.account.feeConfig.fetch(feeConfigPda);
 
   return {
+    decimals: USDC_DECIMALS,
+    fee: {
+      bridgeTransfer: BigInt(feeConfig.bridgeTransferFee.toString()),
+      intrachainTransfer: BigInt(feeConfig.intrachainTransferFee.toString()),
+    },
     metadata: findMetadataPda(umi, {
       mint: metaplexPublicKey(usdcMintAddress),
     })[0],
     mint: usdcMint,
     symbolOrMint: "USDC.s",
-    decimals: USDC_DECIMALS,
-    fee: {
-      intrachainTransfer: BigInt(feeConfig.intrachainTransferFee.toString()),
-      bridgeTransfer: BigInt(feeConfig.bridgeTransferFee.toString()),
-    },
   };
 };
 
@@ -914,19 +919,19 @@ export const sendTransfer = async (options: SendTransferOptions) => {
             options.feeConfig.mint,
             options.walletPublicKey,
           ),
-          mint: options.mint,
-          source: sourceAta,
-          sponsor: options.context.internalPayer,
           metadata:
             // eslint-disable-next-line unicorn/no-null
             symbol === undefined ? null : new PublicKey(metadataAddress),
+          mint: options.mint,
+          source: sourceAta,
+          sponsor: options.context.internalPayer,
         })
         .instruction(),
     ],
     options.walletPublicKey,
     {
-      variation: "Intent Transfer",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+      variation: "Intent Transfer",
     },
   );
 };
@@ -942,16 +947,21 @@ const buildTransferIntentInstruction = async (
     getNonce(program, options.walletPublicKey, NonceType.Transfer),
     getMint(options.context.connection, options.mint),
   ]);
-  return buildIntentInstruction(options, TRANSFER_MESSAGE_HEADER, {
-    version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
-    chain_id: options.context.chainId,
-    token: symbol ?? options.mint.toBase58(),
-    amount: amountToString(options.amount, decimals),
-    recipient: options.recipient.toBase58(),
-    fee_token: feeToken,
-    fee_amount: feeAmount,
-    nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
-  });
+  return buildIntentInstruction(
+    options,
+    TRANSFER_MESSAGE_HEADER,
+    // biome-ignore assist/source/useSortedKeys: The sort order is important here
+    {
+      version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
+      chain_id: options.context.chainId,
+      token: symbol ?? options.mint.toBase58(),
+      amount: amountToString(options.amount, decimals),
+      recipient: options.recipient.toBase58(),
+      fee_token: feeToken,
+      fee_amount: feeAmount,
+      nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
+    },
+  );
 };
 
 type SendNativeTransferOptions = {
@@ -984,23 +994,23 @@ export const sendNativeTransfer = async (
       await program.methods
         .sendNative()
         .accounts({
+          destination: options.recipient,
+          feeDestination: IntentTransferIdl.address,
           feeMetadata: options.feeConfig.metadata,
           feeMint: options.feeConfig.mint,
           feeSource: getAssociatedTokenAddressSync(
             options.feeConfig.mint,
             options.walletPublicKey,
           ),
-          feeDestination: IntentTransferIdl.address,
           source: options.walletPublicKey,
-          destination: options.recipient,
           sponsor: options.context.internalPayer,
         })
         .instruction(),
     ],
     options.walletPublicKey,
     {
-      variation: "Intent Transfer",
       paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+      variation: "Intent Transfer",
     },
   );
 };
@@ -1018,16 +1028,21 @@ const buildNativeTransferIntentInstruction = async (
     options.walletPublicKey,
     NonceType.Transfer,
   );
-  return buildIntentInstruction(options, TRANSFER_MESSAGE_HEADER, {
-    version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
-    chain_id: options.context.chainId,
-    token: "FOGO",
-    amount: amountToString(options.amount, FOGO_DECIMALS),
-    recipient: options.recipient.toBase58(),
-    fee_token: feeToken,
-    fee_amount: feeAmount,
-    nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
-  });
+  return buildIntentInstruction(
+    options,
+    TRANSFER_MESSAGE_HEADER,
+    // biome-ignore assist/source/useSortedKeys: The sort order is important here
+    {
+      version: `${CURRENT_INTENT_TRANSFER_MAJOR}.${CURRENT_INTENT_TRANSFER_MINOR}`,
+      chain_id: options.context.chainId,
+      token: "FOGO",
+      amount: amountToString(options.amount, FOGO_DECIMALS),
+      recipient: options.recipient.toBase58(),
+      fee_token: feeToken,
+      fee_amount: feeAmount,
+      nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
+    },
+  );
 };
 
 const BRIDGE_OUT_MESSAGE_HEADER = `Fogo Bridge Transfer:
@@ -1103,24 +1118,24 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
         signedQuoteBytes: [...quote.signedQuote],
       })
       .accounts({
-        sponsor: options.context.internalPayer,
-        mint: options.fromToken.mint,
-        metadata:
-          metadata?.symbol === undefined
-            ? // eslint-disable-next-line unicorn/no-null
-              null
-            : new PublicKey(metadataAddress),
-        source: getAssociatedTokenAddressSync(
-          options.fromToken.mint,
-          options.walletPublicKey,
-        ),
-        ntt: nttPdas,
         feeMetadata: options.feeConfig.metadata,
         feeMint: options.feeConfig.mint,
         feeSource: getAssociatedTokenAddressSync(
           options.feeConfig.mint,
           options.walletPublicKey,
         ),
+        metadata:
+          metadata?.symbol === undefined
+            ? // eslint-disable-next-line unicorn/no-null
+              null
+            : new PublicKey(metadataAddress),
+        mint: options.fromToken.mint,
+        ntt: nttPdas,
+        source: getAssociatedTokenAddressSync(
+          options.fromToken.mint,
+          options.walletPublicKey,
+        ),
+        sponsor: options.context.internalPayer,
       })
       .instruction(),
   ]);
@@ -1133,13 +1148,13 @@ export const bridgeOut = async (options: SendBridgeOutOptions) => {
     ],
     options.walletPublicKey,
     {
-      variation: "Intent NTT Bridge",
-      paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
-      extraSigners: [outboxItem],
       addressLookupTable:
         BRIDGING_ADDRESS_LOOKUP_TABLE[options.context.network]?.[
           options.fromToken.mint.toBase58()
         ],
+      extraSigners: [outboxItem],
+      paymasterDomain: SESSIONS_INTERNAL_PAYMASTER_DOMAIN,
+      variation: "Intent NTT Bridge",
     },
   );
 };
@@ -1213,11 +1228,11 @@ const getNttPdas = async <N extends WormholeNetwork>(
     nttTokenAuthority: pdas.tokenAuthority(),
     payeeNttWithExecutor: quotePayeeAddress,
     transceiver: registeredTransceiverPda,
-    wormholeProgram: coreBridgeContract,
     wormholeBridge: wormholePdas.wormholeBridge,
     wormholeFeeCollector: wormholePdas.wormholeFeeCollector,
     wormholeMessage:
       transceiverPdas.wormholeMessageAccount(outboxItemPublicKey),
+    wormholeProgram: coreBridgeContract,
     wormholeSequence: wormholePdas.wormholeSequence,
   };
 };
@@ -1235,17 +1250,22 @@ const buildBridgeOutIntent = async (
     options.walletPublicKey,
     NonceType.Bridge,
   );
-  return buildIntentInstruction(options, BRIDGE_OUT_MESSAGE_HEADER, {
-    version: `${CURRENT_BRIDGE_OUT_MAJOR}.${CURRENT_BRIDGE_OUT_MINOR}`,
-    from_chain_id: options.context.chainId,
-    to_chain_id: "solana",
-    token: symbol ?? options.fromToken.mint.toBase58(),
-    amount: amountToString(options.amount, decimals),
-    recipient_address: options.walletPublicKey.toBase58(),
-    fee_token: feeToken,
-    fee_amount: feeAmount,
-    nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
-  });
+  return buildIntentInstruction(
+    options,
+    BRIDGE_OUT_MESSAGE_HEADER,
+    // biome-ignore assist/source/useSortedKeys: The sort order is important here
+    {
+      version: `${CURRENT_BRIDGE_OUT_MAJOR}.${CURRENT_BRIDGE_OUT_MINOR}`,
+      from_chain_id: options.context.chainId,
+      to_chain_id: "solana",
+      token: symbol ?? options.fromToken.mint.toBase58(),
+      amount: amountToString(options.amount, decimals),
+      recipient_address: options.walletPublicKey.toBase58(),
+      fee_token: feeToken,
+      fee_amount: feeAmount,
+      nonce: nonce === null ? "1" : nonce.nonce.add(new BN(1)).toString(),
+    },
+  );
 };
 
 type SendBridgeInOptions = {
@@ -1353,6 +1373,10 @@ const buildWormholeTransfer = async (
   const route = new Route(wh);
 
   const transferRequest = await routes.RouteTransferRequest.create(wh, {
+    destination: Wormhole.tokenId(
+      options.toToken.chain,
+      options.toToken.mint.toBase58(),
+    ),
     recipient: Wormhole.chainAddress(
       options.toToken.chain,
       options.walletPublicKey.toBase58(),
@@ -1360,10 +1384,6 @@ const buildWormholeTransfer = async (
     source: Wormhole.tokenId(
       options.fromToken.chain,
       options.fromToken.mint.toBase58(),
-    ),
-    destination: Wormhole.tokenId(
-      options.toToken.chain,
-      options.toToken.mint.toBase58(),
     ),
   });
 
@@ -1373,11 +1393,11 @@ const buildWormholeTransfer = async (
   });
   if (validated.valid) {
     return {
-      wh,
-      route,
-      transferRequest,
-      transferParams: validated.params,
       decimals,
+      route,
+      transferParams: validated.params,
+      transferRequest,
+      wh,
     };
   } else {
     throw validated.error;

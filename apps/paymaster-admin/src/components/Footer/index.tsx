@@ -7,7 +7,7 @@ export const Footer = () => (
   <footer className={styles.footer}>
     <div className={styles.footerContent}>
       <div>
-        <Image src={fogoFooterImageSvg} alt="Fogo Paymaster" />
+        <Image alt="Fogo Paymaster" src={fogoFooterImageSvg} />
         <p className={styles.footerText}>
           Software is maintained by Dourolabs.xyz
         </p>

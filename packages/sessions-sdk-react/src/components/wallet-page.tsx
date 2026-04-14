@@ -43,55 +43,55 @@ export const WalletPage = ({
     <div className={styles.walletPage}>
       <ActionButtonToolbar>
         <ActionButton
-          onPress={onPressSend}
-          isPending={
-            tokenAccountState.type === TokenDataStateType.Loading ||
-            tokenAccountState.type === TokenDataStateType.NotLoaded
-          }
+          icon={<PaperPlaneTiltIcon />}
           isDisabled={
             tokenAccountState.type === TokenDataStateType.Error ||
             (tokenAccountState.type === TokenDataStateType.Loaded &&
               tokenAccountState.data.tokensInWallet.length === 0)
           }
-          icon={<PaperPlaneTiltIcon />}
+          isPending={
+            tokenAccountState.type === TokenDataStateType.Loading ||
+            tokenAccountState.type === TokenDataStateType.NotLoaded
+          }
+          onPress={onPressSend}
         >
           Send
         </ActionButton>
-        <ActionButton onPress={onPressReceive} icon={<QrCodeIcon />}>
+        <ActionButton icon={<QrCodeIcon />} onPress={onPressReceive}>
           Receive
         </ActionButton>
         {network === Network.Mainnet ? (
           <ActionButton
-            onPress={onPressTransferIn}
             icon={<DownloadSimpleIcon />}
+            onPress={onPressTransferIn}
           >
             Transfer in
           </ActionButton>
         ) : (
-          <ActionButton onPress={onPressGet} icon={<HandCoinsIcon />}>
+          <ActionButton icon={<HandCoinsIcon />} onPress={onPressGet}>
             Get tokens
           </ActionButton>
         )}
         <ActionButton
-          onPress={onPressWithdraw}
-          isPending={
-            tokenAccountState.type === TokenDataStateType.Loading ||
-            tokenAccountState.type === TokenDataStateType.NotLoaded
-          }
+          icon={<ExportIcon />}
           isDisabled={
             tokenAccountState.type === TokenDataStateType.Error ||
             (tokenAccountState.type === TokenDataStateType.Loaded &&
               tokenAccountState.data.tokensInWallet.length === 0)
           }
-          icon={<ExportIcon />}
+          isPending={
+            tokenAccountState.type === TokenDataStateType.Loading ||
+            tokenAccountState.type === TokenDataStateType.NotLoaded
+          }
+          onPress={onPressWithdraw}
         >
           Transfer out
         </ActionButton>
       </ActionButtonToolbar>
       <TokenList
-        sessionState={sessionState}
         onPressSend={onPressSendForToken}
         onPressTransferIn={onPressTransferIn}
+        sessionState={sessionState}
       />
     </div>
   );

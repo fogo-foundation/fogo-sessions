@@ -8,15 +8,12 @@ export type Transaction = {
 
 export const useTransactionLog = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const appendTransaction = useCallback(
-    (transaction: Transaction) => {
-      setTransactions((prev) => [...prev, transaction]);
-    },
-    [setTransactions],
-  );
+  const appendTransaction = useCallback((transaction: Transaction) => {
+    setTransactions((prev) => [...prev, transaction]);
+  }, []);
 
   return useMemo(
-    () => ({ transactions, appendTransaction }),
+    () => ({ appendTransaction, transactions }),
     [transactions, appendTransaction],
   );
 };

@@ -26,13 +26,13 @@ export const NetworkSelect = () => {
 
   return (
     <Select
-      name="network"
       aria-label="Select Network"
       items={NETWORKS}
-      selectedKey={network}
+      name="network"
       // @ts-expect-error for some reason, react-aria insists on typing this as
       // Key, rather than narrowing to the type that is passed in as `items`.
       onSelectionChange={updateNetwork}
+      selectedKey={network}
     />
   );
 };

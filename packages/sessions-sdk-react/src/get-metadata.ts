@@ -19,8 +19,8 @@ export const getMetadata = async (mints: string[], network: Network) => {
 const metadataSchema = z.record(
   z.string(),
   z.object({
+    image: z.string(),
     name: z.string(),
     symbol: z.string().optional(),
-    image: z.string(),
   }),
 );

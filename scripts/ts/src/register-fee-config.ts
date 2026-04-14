@@ -14,29 +14,29 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     )
     .options(anchorOptions)
     .positional("mint", {
-      type: "string",
-      description: "Mint address to set ntt manager for",
-      demandOption: true,
       coerce: (mint: string) => new PublicKey(mint),
+      demandOption: true,
+      description: "Mint address to set ntt manager for",
+      type: "string",
     })
     .positional("intrachain-transfer-fee", {
-      type: "number",
-      description: "Intrachain transfer fee for the mint",
-      demandOption: true,
       coerce: (intrachainTransferFee: number) => new BN(intrachainTransferFee),
+      demandOption: true,
+      description: "Intrachain transfer fee for the mint",
+      type: "number",
     })
     .positional("bridge-transfer-fee", {
-      type: "number",
-      description: "Bridge transfer fee for the mint",
-      demandOption: true,
       coerce: (bridgeTransferFee: number) => new BN(bridgeTransferFee),
+      demandOption: true,
+      description: "Bridge transfer fee for the mint",
+      type: "number",
     })
     .parse();
 
   await new IntentTransferProgram(createAnchorProvider(args)).methods
     .registerFeeConfig({
-      intrachainTransferFee: args.intrachainTransferFee,
       bridgeTransferFee: args.bridgeTransferFee,
+      intrachainTransferFee: args.intrachainTransferFee,
     })
     .accounts({ mint: args.mint, upgradeAuthority: { signer: undefined } })
     .rpc();

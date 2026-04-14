@@ -13,10 +13,10 @@ const ToastStoryInner = ({ title, description, timeoutMs }: ToastStoryArgs) => {
   return (
     <div style={{ display: "flex", gap: 12 }}>
       <Button
-        variant="secondary"
         onClick={() => {
           toast.success(title, description, { timeout: timeoutMs });
         }}
+        variant="secondary"
       >
         Show success toast
       </Button>
@@ -33,17 +33,7 @@ const ToastStoryInner = ({ title, description, timeoutMs }: ToastStoryArgs) => {
 };
 
 const meta = {
-  component: ToastProvider,
-  globals: {
-    backgrounds: { value: "dark" },
-  },
   argTypes: {
-    title: {
-      control: "text",
-      table: {
-        category: "Contents",
-      },
-    },
     description: {
       control: "text",
       table: {
@@ -51,20 +41,30 @@ const meta = {
       },
     },
     timeoutMs: {
-      control: { type: "number", min: 0, step: 500 },
+      control: { min: 0, step: 500, type: "number" },
       table: {
         category: "State",
       },
     },
+    title: {
+      control: "text",
+      table: {
+        category: "Contents",
+      },
+    },
+  },
+  component: ToastProvider,
+  globals: {
+    backgrounds: { value: "dark" },
   },
 };
 export default meta;
 
 export const Toast = {
   args: {
-    title: "Toast title",
     description: "Optional description",
     timeoutMs: 5000,
+    title: "Toast title",
   },
   render: (args: ToastStoryArgs) => (
     <ToastProvider>

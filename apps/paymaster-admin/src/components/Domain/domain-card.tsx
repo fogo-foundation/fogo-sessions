@@ -25,9 +25,9 @@ const networkBadgeVariation: Record<
   z.infer<typeof NetworkEnvironmentSchema>,
   BadgeProps["variant"]
 > = {
+  localnet: "neutral",
   mainnet: "success",
   testnet: "neutral",
-  localnet: "neutral",
 };
 
 export const DomainCard = (props: DomainCardProps) =>
@@ -38,16 +38,16 @@ export const DomainCard = (props: DomainCardProps) =>
       <div className={styles.domainCardHeader}>
         <h3 className={styles.domainCardTitle}>{props.domain.domain}</h3>
         <Badge
-          variant={networkBadgeVariation[props.domain.network_environment]}
           size="md"
           style="filled"
+          variant={networkBadgeVariation[props.domain.network_environment]}
         >
           {props.domain.network_environment}
         </Badge>
       </div>
       <Button
-        variant="outline"
         href={`/apps/${props.appId}/domains/${props.domain.id}`}
+        variant="outline"
       >
         Edit
       </Button>

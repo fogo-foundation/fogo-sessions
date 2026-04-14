@@ -58,14 +58,14 @@ export const Tab = ({ className, children, ...props }: TabProps) => {
           <span>{children}</span>
           {isSelected && underlineLayoutId && (
             <motion.span
-              layoutId={underlineLayoutId}
               className={styles.underline}
+              layoutId={underlineLayoutId}
+              style={{ originY: "top" }}
               transition={{
-                type: "spring",
                 bounce: 0.6,
                 duration: 0.6,
+                type: "spring",
               }}
-              style={{ originY: "top" }}
             />
           )}
         </>

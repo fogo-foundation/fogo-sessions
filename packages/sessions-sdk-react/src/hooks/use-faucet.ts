@@ -36,5 +36,5 @@ export const useFaucet = (sessionState: EstablishedSessionState) => {
     }
   }, [sessionState, faucetUrl, network]);
 
-  return useMemo(() => ({ showFaucet, faucetUrl }), [showFaucet, faucetUrl]);
+  return useMemo(() => ({ faucetUrl, showFaucet }), [showFaucet, faucetUrl]);
 };

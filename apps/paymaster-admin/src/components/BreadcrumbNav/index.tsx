@@ -33,7 +33,7 @@ const BreadcrumbNav = ({
       <div className={styles.breadcrumbNavContainer}>
         {title || titleLoading ? (
           <div>
-            <BreadcrumbNavItems items={items} isSmall />
+            <BreadcrumbNavItems isSmall items={items} />
             <div className={styles.breadcrumbNavTitleContainer}>
               <BreadcrumbNavTitle title={title} titleLoading={titleLoading} />
               <BreadcrumbBackArrow items={items} />
@@ -99,14 +99,14 @@ export const BreadcrumbNavItems = ({
 
   return (
     <Breadcrumbs
-      items={itemsWithIds}
       className={styles.breadcrumbNavList ?? ""}
+      items={itemsWithIds}
     >
       {(item) => (
         <Breadcrumb>
           {({ isCurrent }) => (
             <>
-              <BreadcrumbNavItem item={item} isSmall={isSmall} />
+              <BreadcrumbNavItem isSmall={isSmall} item={item} />
               {!isCurrent && (
                 <span
                   className={styles.breadcrumbNavSeparator}
@@ -135,18 +135,18 @@ const BreadcrumbNavItem = ({
   }
   return item.href ? (
     <Link
-      key={item.href}
-      href={item.href}
       className={styles.breadcrumbNavItem ?? ""}
       data-small={isSmall}
+      href={item.href}
+      key={item.href}
     >
       {item.label}
     </Link>
   ) : (
     <span
-      key={item.label}
       className={styles.breadcrumbNavItem}
       data-small={isSmall}
+      key={item.label}
     >
       {item.label}
     </span>

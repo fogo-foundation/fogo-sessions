@@ -25,9 +25,9 @@ export const Variation = ({
   } else if (isEstablished(sessionState)) {
     return (
       <VariationContents
-        sessionState={sessionState}
-        domainConfigId={domainConfigId}
         appId={appId}
+        domainConfigId={domainConfigId}
+        sessionState={sessionState}
       />
     );
   } else {
@@ -52,9 +52,9 @@ const VariationContents = (props: VariationContentsProps) => {
   }
   return (
     <VariationData
-      sessionState={props.sessionState}
-      domainConfigId={props.domainConfigId}
       appId={props.appId}
+      domainConfigId={props.domainConfigId}
+      sessionState={props.sessionState}
     />
   );
 };
@@ -92,9 +92,9 @@ const VariationData = ({
       }
       return (
         <DomainVariation
-          sessionState={sessionState}
           app={app}
           domainConfig={domainConfig}
+          sessionState={sessionState}
         />
       );
     }

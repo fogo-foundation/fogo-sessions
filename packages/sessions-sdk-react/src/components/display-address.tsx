@@ -33,7 +33,7 @@ const useFNSReverseRecordName = (owner: PublicKey) => {
 
   const key = useMemo(
     () => ["fns-reverse-record", network, owner.toBase58()],
-    [owner],
+    [owner, network],
   );
 
   const fetchName = useCallback(
@@ -54,7 +54,7 @@ const fetchNameImpl = async (
   owner: Address,
 ): Promise<string | undefined> => {
   const [registry] = await findRegistryPda({ seed: REGISTRY_SEED });
-  const [reverseRecordPda] = await findReverseRecordPda({ registry, owner });
+  const [reverseRecordPda] = await findReverseRecordPda({ owner, registry });
   const reverseRecord = await fetchMaybeReverseRecord(rpc, reverseRecordPda);
   return reverseRecord.exists
     ? await getNameFromReverseRecord(rpc, reverseRecord.data.nameRecord)

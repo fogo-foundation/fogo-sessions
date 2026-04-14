@@ -7,7 +7,7 @@ export const Navbar = () => {
   return (
     <nav className={styles.nav}>
       <div className={styles.navContent}>
-        <Image src={fogoNavImageSvg} alt="Fogo Paymaster" />
+        <Image alt="Fogo Paymaster" src={fogoNavImageSvg} />
         <SessionButton />
       </div>
     </nav>

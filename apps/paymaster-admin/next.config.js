@@ -1,20 +1,9 @@
 const config = {
-  reactStrictMode: true,
-  // Include binaries in the serverless function bundle
-  outputFileTracingIncludes: {
-    "/api/validate-transaction": ["./bin/**/*"],
-  },
   cacheComponents: true,
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
-  },
 
   headers: () =>
     Promise.resolve([
       {
-        source: "/:path*",
         headers: [
           {
             key: "X-XSS-Protection",
@@ -38,7 +27,18 @@ const config = {
               "vibrate=(), geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=self",
           },
         ],
+        source: "/:path*",
       },
     ]),
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
+  // Include binaries in the serverless function bundle
+  outputFileTracingIncludes: {
+    "/api/validate-transaction": ["./bin/**/*"],
+  },
+  reactStrictMode: true,
 };
 export default config;

@@ -10,8 +10,8 @@ export const useAirdrop = (
 ) => {
   const doAirdrop = useCallback(async () => {
     const response = await fetch("/api/airdrop", {
-      method: "POST",
       body: JSON.stringify({ address: sessionState.walletPublicKey }),
+      method: "POST",
     });
 
     const signature = await response.text();
@@ -22,8 +22,8 @@ export const useAirdrop = (
     });
 
     return {
-      type: TransactionResultType.Success as const,
       signature,
+      type: TransactionResultType.Success as const,
     };
   }, [sessionState, appendTransaction]);
 

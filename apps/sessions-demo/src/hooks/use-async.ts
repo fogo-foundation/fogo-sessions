@@ -20,7 +20,7 @@ export const useAsync = <T>(fn: () => Promise<T>) => {
       });
   }, [state, fn]);
 
-  return { state, execute };
+  return { execute, state };
 };
 
 export enum StateType {
@@ -32,12 +32,12 @@ export enum StateType {
 
 const State = {
   Base: () => ({ type: StateType.Base as const }),
-  Running: () => ({ type: StateType.Running as const }),
-  Complete: <T>(result: T) => ({ type: StateType.Complete as const, result }),
+  Complete: <T>(result: T) => ({ result, type: StateType.Complete as const }),
   ErrorState: (error: unknown) => ({
-    type: StateType.Error as const,
     error,
+    type: StateType.Error as const,
   }),
+  Running: () => ({ type: StateType.Running as const }),
 };
 
 type Base = ReturnType<typeof State.Base>;

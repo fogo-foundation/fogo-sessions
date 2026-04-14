@@ -41,14 +41,14 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     )
     .options(anchorOptions)
     .positional("domain", {
-      type: "string",
-      description: "Domain to configure",
       demandOption: true,
+      description: "Domain to configure",
+      type: "string",
     })
     .positional("mints", {
-      type: "string",
       array: true,
       description: "Mint addresses or symbols (USDC, WSOL)",
+      type: "string",
     })
     .parse();
 
@@ -82,8 +82,8 @@ export const main = async (argv: string[] = hideBin(process.argv)) => {
     await registryProgram.methods
       .addProgram(args.domain)
       .accounts({
-        programId,
         domainRecord,
+        programId,
       })
       .preInstructions(
         config

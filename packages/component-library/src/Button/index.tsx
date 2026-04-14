@@ -39,7 +39,7 @@ const mkProps = ({
 }) => ({
   ...otherProps,
   className: clsx(styles.button, className),
-  "data-variant": variant,
-  "data-size": size,
   "data-enable-loading-spinner": hideLoadingSpinner ? undefined : "",
+  "data-size": size,
+  "data-variant": variant,
 });

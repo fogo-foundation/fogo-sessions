@@ -43,9 +43,9 @@ export const WithdrawPage = ({ onPressBack, ...props }: Props) => {
   return (
     <div className={styles.withdrawPage}>
       <Button
+        className={styles.backButton ?? ""}
         onPress={onPressBack}
         variant="outline"
-        className={styles.backButton ?? ""}
       >
         Back
       </Button>
@@ -63,8 +63,8 @@ const WithdrawForm = (
       return (
         <FetchError
           className={styles.fetchError}
-          headline="Failed to load fee information"
           error={feeConfig.error}
+          headline="Failed to load fee information"
           reset={feeConfig.reset}
         />
       );
@@ -104,8 +104,8 @@ const WithdrawFormWithFeeConfig = (
       return (
         <FetchError
           className={styles.fetchError}
-          headline="Failed to load token account balance"
           error={tokenAccountState.error}
+          headline="Failed to load token account balance"
           reset={tokenAccountState.reset}
         />
       );
@@ -119,13 +119,13 @@ const WithdrawFormWithFeeConfig = (
       return feeTokenAccountBalance < props.feeConfig.fee ? (
         <FetchError
           className={styles.fetchError}
-          headline={`Not enough ${props.feeConfig.symbolOrMint}`}
           error={`You need at least ${amountToString(
             props.feeConfig.fee,
             props.feeConfig.decimals,
           )} ${
             props.feeConfig.symbolOrMint
           } to pay network fees to transfer tokens out.`}
+          headline={`Not enough ${props.feeConfig.symbolOrMint}`}
         />
       ) : (
         <LoadedWithdrawForm
@@ -173,16 +173,16 @@ const LoadedWithdrawForm = ({
       getSessionContext()
         .then((context) =>
           bridgeOut({
+            amount: stringToAmount(amount, USDC.decimals),
             context,
-            sessionPublicKey: sessionState.sessionPublicKey,
+            feeConfig,
+            fromToken: USDC.chains[network].fogo,
             sessionKey: sessionState.sessionKey,
-            walletPublicKey: sessionState.walletPublicKey,
+            sessionPublicKey: sessionState.sessionPublicKey,
             signMessage: (message) =>
               signWithWallet(sessionState.solanaWallet, message),
-            fromToken: USDC.chains[network].fogo,
             toToken: USDC.chains[network].solana,
-            amount: stringToAmount(amount, USDC.decimals),
-            feeConfig,
+            walletPublicKey: sessionState.walletPublicKey,
           }),
         )
         .then((result) => {
@@ -229,14 +229,14 @@ const LoadedWithdrawForm = ({
 
   return (
     <WithdrawFormImpl
-      isSubmitting={isSubmitting}
-      amountAvailable={amountAvailable}
-      price={price}
-      feeConfig={feeConfig}
-      onSubmit={onSubmit}
       amount={amount}
-      onChangeAmount={setAmount}
+      amountAvailable={amountAvailable}
+      feeConfig={feeConfig}
+      isSubmitting={isSubmitting}
       maxWithdrawAmount={maxWithdrawAmount}
+      onChangeAmount={setAmount}
+      onSubmit={onSubmit}
+      price={price}
     />
   );
 };
@@ -295,12 +295,9 @@ const WithdrawFormImpl = (
       <TokenAmountInput
         className={styles.field ?? ""}
         decimals={USDC.decimals}
-        label="Amount"
-        name="amount"
-        symbol="USDC"
-        isRequired
         gt={0n}
-        placeholder="Enter an amount"
+        isRequired
+        label="Amount"
         labelExtra={
           <Link
             className={styles.action ?? ""}
@@ -321,6 +318,9 @@ const WithdrawFormImpl = (
             Max
           </Link>
         }
+        name="amount"
+        placeholder="Enter an amount"
+        symbol="USDC"
         {...(props.isLoading || props.isSubmitting
           ? { isPending: true }
           : {
@@ -336,16 +336,16 @@ const WithdrawFormImpl = (
         notionalAmount !== undefined && (
           <NotionalAmount
             amount={notionalAmount}
+            className={styles.notionalAmount}
             decimals={USDC.decimals}
             price={props.price}
-            className={styles.notionalAmount}
           />
         )}
       <Button
-        type="submit"
-        variant="secondary"
         className={styles.submitButton ?? ""}
         isPending={props.isLoading === true || props.isSubmitting}
+        type="submit"
+        variant="secondary"
       >
         Transfer
       </Button>

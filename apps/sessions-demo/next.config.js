@@ -1,15 +1,6 @@
 const config = {
-  reactStrictMode: true,
-
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
-  },
-
   headers: async () => [
     {
-      source: "/:path*",
       headers: [
         {
           key: "X-XSS-Protection",
@@ -33,7 +24,15 @@ const config = {
             "vibrate=(), geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=self, magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=self",
         },
       ],
+      source: "/:path*",
     },
   ],
+
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
+  reactStrictMode: true,
 };
 export default config;

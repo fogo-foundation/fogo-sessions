@@ -34,38 +34,38 @@ export const FAUCET_KEY =
 const getProviderConfig = () => {
   if (NETWORK === undefined) {
     return {
-      // This option only matters for the wormhole bridge which won't work in
-      // localnet regardless, so let's just set it to Testnet to appease
-      // typescript.
-      network: Network.Testnet,
       defaultAddressLookupTableAddress:
         process.env.ADDRESS_LOOKUP_TABLE_ADDRESS ??
         "93QGBU8ZHuvyKSvDFeETsdek1KQs4gqk3mEVKG8UxoX3",
       domain: process.env.FOGO_SESSIONS_DOMAIN,
-      rpc: process.env.RPC ?? "http://127.0.0.1:8899",
+      // This option only matters for the wormhole bridge which won't work in
+      // localnet regardless, so let's just set it to Testnet to appease
+      // typescript.
+      network: Network.Testnet,
       paymaster: process.env.PAYMASTER ?? "http://localhost:4000",
+      rpc: process.env.RPC ?? "http://127.0.0.1:8899",
     } satisfies Partial<ComponentProps<typeof FogoSessionProvider>>;
   } else if (
     process.env.PAYMASTER === undefined ||
     process.env.RPC === undefined
   ) {
     return {
-      network: NETWORK,
-      rpc: process.env.RPC,
       defaultAddressLookupTableAddress:
         process.env.ADDRESS_LOOKUP_TABLE_ADDRESS,
       domain:
         process.env.FOGO_SESSIONS_DOMAIN ?? "https://sessions-example.fogo.io",
+      network: NETWORK,
+      rpc: process.env.RPC,
     } satisfies Partial<ComponentProps<typeof FogoSessionProvider>>;
   } else {
     return {
-      network: NETWORK,
-      rpc: process.env.RPC,
-      paymaster: process.env.PAYMASTER,
       defaultAddressLookupTableAddress:
         process.env.ADDRESS_LOOKUP_TABLE_ADDRESS,
       domain:
         process.env.FOGO_SESSIONS_DOMAIN ?? "https://sessions-example.fogo.io",
+      network: NETWORK,
+      paymaster: process.env.PAYMASTER,
+      rpc: process.env.RPC,
     } satisfies Partial<ComponentProps<typeof FogoSessionProvider>>;
   }
 };

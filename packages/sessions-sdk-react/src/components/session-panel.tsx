@@ -50,7 +50,7 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
   return (
     <div className={clsx(styles.sessionPanel, className)} {...props}>
       <div className={styles.header}>
-        <Heading slot="title" className={styles.title}>
+        <Heading className={styles.title} slot="title">
           Your <FogoWordmark /> Wallet
         </Heading>
         {isEstablished(sessionState) && (
@@ -59,7 +59,7 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
           </CopyButton>
         )}
         {onClose && (
-          <Button variant="ghost" onPress={onClose}>
+          <Button onPress={onClose} variant="ghost">
             <XIcon />
           </Button>
         )}
@@ -75,25 +75,25 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
               : [{ id: "session-limits", name: "Session" }]),
           ]}
         />
-        <TabPanel id="tokens" className={styles.tabPanel ?? ""}>
+        <TabPanel className={styles.tabPanel ?? ""} id="tokens">
           {isEstablished(sessionState) && (
             <Tokens
-              sessionState={sessionState}
               currentScreen={currentScreen}
+              sessionState={sessionState}
               setCurrentScreen={setCurrentScreen}
             />
           )}
         </TabPanel>
-        <TabPanel id="activity" className={styles.tabPanel ?? ""}>
+        <TabPanel className={styles.tabPanel ?? ""} id="activity">
           {isEstablished(sessionState) && (
             <Activity sessionState={sessionState} />
           )}
         </TabPanel>
         {whitelistedTokens.length > 0 && (
           <TabPanel
-            id="session-limits"
-            data-panel="session-limits"
             className={styles.tabPanel ?? ""}
+            data-panel="session-limits"
+            id="session-limits"
           >
             {isEstablished(sessionState) && (
               <SessionLimitsTab sessionState={sessionState} />
@@ -103,7 +103,7 @@ export const SessionPanel = ({ onClose, className, ...props }: Props) => {
       </Tabs>
       <div className={styles.footer}>
         <FogoWordmark className={styles.fogoWordmark} />
-        <LogoutButton sessionState={sessionState} onLogout={onClose} />
+        <LogoutButton onLogout={onClose} sessionState={sessionState} />
       </div>
     </div>
   );
@@ -121,8 +121,8 @@ const Activity = ({
     <p className={styles.activityMessage}>
       In the meantime, you can see your transaction history on{" "}
       <Link
-        target="_blank"
         href={`https://fogoscan.com/account/${sessionState.walletPublicKey.toBase58()}#transfers`}
+        target="_blank"
       >
         the Fogo explorer
       </Link>
@@ -147,10 +147,10 @@ const LogoutButton = ({
 
   return (
     <Button
-      variant="ghost"
       className={styles.logoutButton ?? ""}
-      onPress={handleLogOut}
       isDisabled={!isEstablished(sessionState)}
+      onPress={handleLogOut}
+      variant="ghost"
     >
       Log Out
     </Button>
@@ -196,10 +196,10 @@ const Tokens = ({
       return (
         <SelectTokenPage
           onPressBack={showWallet}
-          onPressTransferIn={showDeposit}
           onPressSend={(token) => {
-            showSend({ token, prevScreen: TokenScreenType.SelectTokenToSend });
+            showSend({ prevScreen: TokenScreenType.SelectTokenToSend, token });
           }}
+          onPressTransferIn={showDeposit}
           sessionState={sessionState}
         />
       );
@@ -208,7 +208,6 @@ const Tokens = ({
       {
         return (
           <SendTokenPage
-            sessionState={sessionState}
             onPressBack={() => {
               if (
                 currentScreen.prevScreen === TokenScreenType.SelectTokenToSend
@@ -218,8 +217,9 @@ const Tokens = ({
                 showWallet();
               }
             }}
-            token={currentScreen.token}
             onSendComplete={showWallet}
+            sessionState={sessionState}
+            token={currentScreen.token}
           />
         );
       }
@@ -228,8 +228,8 @@ const Tokens = ({
       return (
         <ReceivePage
           key="receive"
-          sessionState={sessionState}
           onPressDone={showWallet}
+          sessionState={sessionState}
         />
       );
     }
@@ -246,18 +246,18 @@ const Tokens = ({
       return (
         <WithdrawPage
           key="withdraw"
-          sessionState={sessionState}
           onPressBack={showWallet}
           onSendComplete={showWallet}
+          sessionState={sessionState}
         />
       );
     }
     case TokenScreenType.Deposit: {
       return (
         <DepositPage
-          sessionState={sessionState}
           onPressBack={network === Network.Mainnet ? showWallet : showGet}
           onSendComplete={showWallet}
+          sessionState={sessionState}
         />
       );
     }
@@ -265,14 +265,14 @@ const Tokens = ({
       return (
         <WalletPage
           key="wallet"
-          onPressWithdraw={showWithdraw}
+          onPressGet={showGet}
           onPressReceive={showReceive}
           onPressSend={showSelectTokenToSend}
-          onPressGet={showGet}
-          onPressTransferIn={showDeposit}
           onPressSendForToken={(token) => {
-            showSend({ token, prevScreen: TokenScreenType.Wallet });
+            showSend({ prevScreen: TokenScreenType.Wallet, token });
           }}
+          onPressTransferIn={showDeposit}
+          onPressWithdraw={showWithdraw}
           sessionState={sessionState}
         />
       );
@@ -291,6 +291,9 @@ enum TokenScreenType {
 }
 
 const TokenScreen = {
+  Deposit: () => ({ type: TokenScreenType.Deposit as const }),
+  Get: () => ({ type: TokenScreenType.Get as const }),
+  Receive: () => ({ type: TokenScreenType.Receive as const }),
   SelectTokenToSend: () => ({
     type: TokenScreenType.SelectTokenToSend as const,
   }),
@@ -298,10 +301,7 @@ const TokenScreen = {
     type: TokenScreenType.Send as const,
     ...opts,
   }),
-  Receive: () => ({ type: TokenScreenType.Receive as const }),
-  Get: () => ({ type: TokenScreenType.Get as const }),
-  Withdraw: () => ({ type: TokenScreenType.Withdraw as const }),
-  Deposit: () => ({ type: TokenScreenType.Deposit as const }),
   Wallet: () => ({ type: TokenScreenType.Wallet as const }),
+  Withdraw: () => ({ type: TokenScreenType.Withdraw as const }),
 };
 type TokenScreen = ReturnType<(typeof TokenScreen)[keyof typeof TokenScreen]>;

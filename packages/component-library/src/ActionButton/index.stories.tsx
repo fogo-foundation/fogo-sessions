@@ -12,10 +12,6 @@ import {
 } from "./index.jsx";
 
 const meta = {
-  component: ActionButtonComponent,
-  globals: {
-    backgrounds: { value: "dark" },
-  },
   argTypes: {
     children: {
       control: "text",
@@ -36,6 +32,10 @@ const meta = {
       },
     },
   },
+  component: ActionButtonComponent,
+  globals: {
+    backgrounds: { value: "dark" },
+  },
 } satisfies Meta<typeof ActionButtonComponent>;
 export default meta;
 
@@ -50,19 +50,19 @@ export const ActionButton = {
 export const ActionButtonToolbar = {
   args: {
     children: [
-      <ActionButtonComponent key="0" icon={<PaperPlaneTiltIcon />}>
+      <ActionButtonComponent icon={<PaperPlaneTiltIcon />} key="0">
         Send
       </ActionButtonComponent>,
-      <ActionButtonComponent key="1" icon={<QrCodeIcon />}>
+      <ActionButtonComponent icon={<QrCodeIcon />} key="1">
         Receive
       </ActionButtonComponent>,
-      <ActionButtonComponent key="2" icon={<DownloadSimpleIcon />}>
+      <ActionButtonComponent icon={<DownloadSimpleIcon />} key="2">
         Transfer in
       </ActionButtonComponent>,
-      <ActionButtonComponent key="3" icon={<HandCoinsIcon />}>
+      <ActionButtonComponent icon={<HandCoinsIcon />} key="3">
         Get tokens
       </ActionButtonComponent>,
-      <ActionButtonComponent key="4" icon={<ExportIcon />}>
+      <ActionButtonComponent icon={<ExportIcon />} key="4">
         Transfer out
       </ActionButtonComponent>,
     ],

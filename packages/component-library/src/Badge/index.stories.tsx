@@ -3,10 +3,6 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Badge as BadgeComponent, SIZES, STYLES, VARIANTS } from "./index.jsx";
 
 const meta = {
-  component: BadgeComponent,
-  globals: {
-    backgrounds: { value: "dark" },
-  },
   argTypes: {
     children: {
       control: "text",
@@ -14,9 +10,9 @@ const meta = {
         category: "Contents",
       },
     },
-    variant: {
+    size: {
       control: "inline-radio",
-      options: VARIANTS,
+      options: SIZES,
       table: {
         category: "Variant",
       },
@@ -28,13 +24,17 @@ const meta = {
         category: "Variant",
       },
     },
-    size: {
+    variant: {
       control: "inline-radio",
-      options: SIZES,
+      options: VARIANTS,
       table: {
         category: "Variant",
       },
     },
+  },
+  component: BadgeComponent,
+  globals: {
+    backgrounds: { value: "dark" },
   },
 } satisfies Meta<typeof BadgeComponent>;
 export default meta;
@@ -42,8 +42,8 @@ export default meta;
 export const Badge = {
   args: {
     children: "A BADGE",
-    variant: "neutral",
-    style: "filled",
     size: "md",
+    style: "filled",
+    variant: "neutral",
   },
 } satisfies StoryObj<typeof BadgeComponent>;
