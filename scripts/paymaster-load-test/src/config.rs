@@ -52,7 +52,7 @@ pub struct FileConfig {
 }
 
 fn default_one() -> NonZeroUsize {
-    NonZeroUsize::new(1).expect("non-zero u8 provided, should not panic")
+    NonZeroUsize::new(1).expect("non-zero usize provided, should not panic")
 }
 
 #[derive(Debug, Clone, Deserialize)]
