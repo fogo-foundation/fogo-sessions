@@ -13,7 +13,7 @@ import {
 } from "@metaplex-foundation/mpl-token-metadata";
 import { publicKey as metaplexPublicKey } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { sha256 } from "@noble/hashes/sha2";
+import { sha256 } from "@noble/hashes/sha2.js";
 import { fromLegacyPublicKey } from "@solana/compat";
 import {
   generateKeyPair,
@@ -37,12 +37,16 @@ import type {
   Chain,
   Network as WormholeNetwork,
 } from "@wormhole-foundation/sdk";
-import { routes, Wormhole, wormhole } from "@wormhole-foundation/sdk";
+import { Wormhole, wormhole } from "@wormhole-foundation/sdk";
 import solanaSdk from "@wormhole-foundation/sdk/solana";
 import { contracts } from "@wormhole-foundation/sdk-base";
+import * as routes from "@wormhole-foundation/sdk-connect/routes";
 import { nttExecutorRoute } from "@wormhole-foundation/sdk-route-ntt";
 import { utils } from "@wormhole-foundation/sdk-solana-core";
-import { NTT } from "@wormhole-foundation/sdk-solana-ntt";
+import {
+  NTT,
+  register as registerNtt,
+} from "@wormhole-foundation/sdk-solana-ntt";
 import BN from "bn.js";
 import bs58 from "bs58";
 import { z } from "zod";
@@ -66,6 +70,8 @@ import {
 } from "./instructions.js";
 import { USDC_DECIMALS, USDC_MINT } from "./mints.js";
 import { Network } from "./network.js";
+
+registerNtt();
 
 export {
   type Connection,
@@ -717,7 +723,7 @@ const amountToString = (amount: bigint, decimals: number): string => {
 };
 
 export const getDomainRecordAddress = (domain: string) => {
-  const hash = sha256(domain);
+  const hash = sha256(new TextEncoder().encode(domain));
   return PublicKey.findProgramAddressSync(
     [Buffer.from("domain-record"), hash],
     new PublicKey(DomainRegistryIdl.address),

@@ -65,7 +65,7 @@ export const createOrUpdateVariation = async ({
     revalidateTag("user-data", "max");
   } catch (error: unknown) {
     if (error instanceof ZodError) {
-      throw new Error(error.errors.map((error) => error.message).join(", "));
+      throw new Error(error.issues.map((error) => error.message).join(", "));
     } else {
       throw new Error(String(error));
     }

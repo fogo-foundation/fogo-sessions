@@ -18,7 +18,7 @@ export const NetworkSelect = () => {
   const updateNetwork = useCallback(
     (network: Network) => {
       setNetwork(network).catch((error: unknown) => {
-        logger.error("Failed to update network query param", error);
+        logger.error(error, "Failed to update network query param");
       });
     },
     [setNetwork, logger],

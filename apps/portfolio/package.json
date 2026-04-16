@@ -6,7 +6,7 @@
     "@phosphor-icons/react": "catalog:",
     "clsx": "catalog:",
     "next": "catalog:",
-    "nuqs": "^2.8.0",
+    "nuqs": "^2.8.9",
     "pino": "catalog:",
     "react": "catalog:",
     "react-aria": "catalog:",
@@ -31,7 +31,7 @@
     "typescript": "catalog:"
   },
   "engines": {
-    "node": "22"
+    "node": "24"
   },
   "name": "@fogo/portfolio",
   "private": true,

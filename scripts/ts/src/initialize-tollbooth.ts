@@ -1,5 +1,5 @@
 import { DomainRegistryProgram, TollboothIdl } from "@fogo/sessions-idls";
-import { sha256 } from "@noble/hashes/sha2";
+import { sha256 } from "@noble/hashes/sha2.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
@@ -18,7 +18,7 @@ const USDC_MINT = {
 } as const;
 
 const getDomainTollRecipientAddress = (domain: string) => {
-  const hash = sha256(domain);
+  const hash = sha256(new TextEncoder().encode(domain));
   return PublicKey.findProgramAddressSync(
     [Buffer.from("toll_recipient"), Buffer.from([0]), hash],
     new PublicKey(TollboothIdl.address),

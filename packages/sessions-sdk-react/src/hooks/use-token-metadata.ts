@@ -3,6 +3,7 @@ import { getMint } from "@solana/spl-token";
 import type { Connection, PublicKey } from "@solana/web3.js";
 import { useCallback, useEffect } from "react";
 
+import type { State } from "../components/component-library/useData/index.js";
 import {
   StateType,
   useData,
@@ -14,7 +15,7 @@ export { StateType } from "../components/component-library/useData/index.js";
 
 export type Metadata = Awaited<ReturnType<typeof getTokenMetadata>>;
 
-export const useTokenMetadata = (mint: PublicKey) => {
+export const useTokenMetadata = (mint: PublicKey): State<Metadata> => {
   const connection = useConnection();
   const { network } = useSessionContext();
   const getMetadata = useCallback(

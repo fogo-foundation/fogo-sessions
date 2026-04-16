@@ -2,7 +2,8 @@
   "compilerOptions": {
     "declaration": true,
     "incremental": false,
-    "noEmit": false
+    "noEmit": false,
+    "rootDir": "./src"
   },
   "exclude": [
     "node_modules",

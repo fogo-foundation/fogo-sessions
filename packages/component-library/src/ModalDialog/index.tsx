@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import type { MotionProps } from "motion/react";
 import { AnimatePresence, motion } from "motion/react";
 import type { ComponentProps } from "react";
 import { Dialog, Modal, ModalOverlay } from "react-aria-components";
@@ -8,7 +9,7 @@ import styles from "./index.module.css";
 const MotionModal = motion.create(Modal);
 const MotionModalOverlay = motion.create(ModalOverlay);
 
-type Props = Omit<ComponentProps<typeof MotionModalOverlay>, "children"> & {
+type Props = Omit<ComponentProps<typeof ModalOverlay>, keyof MotionProps> & {
   children: ComponentProps<typeof Modal>["children"];
   dialogClassName?: string | undefined;
   overlayClassName?: string | undefined;

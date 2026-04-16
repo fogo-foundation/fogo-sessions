@@ -113,7 +113,7 @@ const addLegacyOffchainMessagePrefixToMessageIfNeeded = async (
 ) => {
   const publicKey = await crypto.subtle.importKey(
     "raw",
-    walletPublicKey.toBytes(),
+    Buffer.from(walletPublicKey.toBytes()),
     { name: "Ed25519" },
     true,
     ["verify"],

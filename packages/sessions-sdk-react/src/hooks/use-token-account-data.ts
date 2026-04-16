@@ -5,6 +5,7 @@ import { PublicKey } from "@solana/web3.js";
 import { useCallback } from "react";
 import { z } from "zod";
 
+import type { State } from "../components/component-library/useData/index.js";
 import { useData } from "../components/component-library/useData/index.js";
 import { getMetadata } from "../get-metadata.js";
 import type { WalletConnectedSessionState } from "../session-state.js";
@@ -17,7 +18,7 @@ const FOGO_DECIMALS = 9;
 
 export const useTokenAccountData = (
   sessionState: WalletConnectedSessionState,
-) => {
+): State<TokenAccountData> => {
   const connection = useConnection();
   const { network } = useSessionContext();
   const getTokenAccountData = useCallback(

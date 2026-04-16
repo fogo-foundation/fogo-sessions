@@ -1,7 +1,7 @@
 import type { Wallet } from "@coral-xyz/anchor";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { TollboothIdl, TollboothProgram } from "@fogo/sessions-idls";
-import { sha256 } from "@noble/hashes/sha2";
+import { sha256 } from "@noble/hashes/sha2.js";
 import {
   createAssociatedTokenAccountIdempotentInstruction,
   createCloseAccountInstruction,
@@ -100,7 +100,7 @@ export function createSessionUnwrapInstruction(
 }
 
 const getDomainTollRecipientAddress = (domain: string) => {
-  const hash = sha256(domain);
+  const hash = sha256(new TextEncoder().encode(domain));
   return PublicKey.findProgramAddressSync(
     [Buffer.from("toll_recipient"), Buffer.from([0]), hash],
     new PublicKey(TollboothIdl.address),
