@@ -1,0 +1,25 @@
+diff --git a/lib-es/TransportNodeHid.js b/lib-es/TransportNodeHid.js
+index 261be195b42c108223061a907d5745576a6e8689..70952cf197059edaafac07ca4ac6ba53119dc40e 100644
+--- a/lib-es/TransportNodeHid.js
++++ b/lib-es/TransportNodeHid.js
+@@ -2,7 +2,7 @@ import HID from "node-hid";
+ import TransportNodeHidNoEvents, { getDevices } from "@ledgerhq/hw-transport-node-hid-noevents";
+ import { identifyUSBProductId } from "@ledgerhq/devices";
+ import { TransportError } from "@ledgerhq/errors";
+-import listenDevices from "./listenDevices";
++import listenDevices from "./listenDevices.js";
+ let listenDevicesDebounce = 500;
+ let listenDevicesPollingSkip = () => false;
+ /**
+diff --git a/lib-es/listenDevices.js b/lib-es/listenDevices.js
+index f6402df7a4ede6366bfeaf58a31874aba9d0f8c9..56cc9dc195d979586f68cb48e56d2c9874fe849d 100644
+--- a/lib-es/listenDevices.js
++++ b/lib-es/listenDevices.js
+@@ -1,6 +1,6 @@
+ import EventEmitter from "events";
+ import { usb } from "usb";
+-import debounce from "lodash/debounce";
++import debounce from "lodash/debounce.js";
+ import { getDevices } from "@ledgerhq/hw-transport-node-hid-noevents";
+ import { log } from "@ledgerhq/logs";
+ export default (delay, listenDevicesPollingSkip) => {

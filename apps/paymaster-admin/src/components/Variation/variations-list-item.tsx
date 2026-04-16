@@ -164,7 +164,7 @@ const VariationForm = ({
         return TransactionVariations.parse(data);
       } catch (error) {
         if (error instanceof ZodError) {
-          setCodeError(formatZodErrors(error.errors));
+          setCodeError(formatZodErrors(error.issues));
         } else {
           setCodeError(errorToString(error));
         }
@@ -180,7 +180,7 @@ const VariationForm = ({
       return TransactionVariations.parse(value);
     } catch (error) {
       if (error instanceof ZodError) {
-        setCodeError(formatZodErrors(error.errors));
+        setCodeError(formatZodErrors(error.issues));
       } else {
         setCodeError(errorToString(error));
       }
@@ -602,11 +602,11 @@ const parseTomlToObject = (value: string) => {
     .parse(parse(value));
 };
 
-const formatPath = (path: (string | number)[]): string =>
+const formatPath = (path: PropertyKey[]): string =>
   // example path: ["domains","tx_variations","instructions",0,"program"]
   path.reduce<string>((acc, segment) => {
     if (typeof segment === "number") return `${acc}[${segment}]`;
-    return acc ? `${acc}.${segment}` : segment;
+    return acc ? `${acc}.${segment.toString()}` : segment.toString();
   }, "");
 
 const formatZodIssue = (issue: ZodIssue): string => {
@@ -617,24 +617,18 @@ const formatZodIssue = (issue: ZodIssue): string => {
   const prefix = path ? `${path}: ` : "";
 
   if (issue.code === "invalid_union") {
-    const expectations = issue.unionErrors
-      .flatMap((e) => e.issues)
-      .map((issue) => {
-        if (issue.code === "invalid_literal")
-          return JSON.stringify(issue.expected);
+    const expectations = issue.errors.flatMap((issues) =>
+      issues.map((issue) => {
         if (issue.code === "invalid_type") return issue.expected;
         return issue.message;
-      });
+      }),
+    );
     const unique = [...new Set(expectations)];
     return `${prefix}Expected ${unique.join(", ")}`;
   }
 
   if (issue.code === "invalid_type") {
-    return `${prefix}Expected ${issue.expected}, received ${issue.received}`;
-  }
-
-  if (issue.code === "invalid_literal") {
-    return `${prefix}Expected ${JSON.stringify(issue.expected)}, received ${JSON.stringify(issue.received)}`;
+    return `${prefix}Expected ${issue.expected}, received ${issue.input}`;
   }
 
   return `${prefix}${issue.message}`;

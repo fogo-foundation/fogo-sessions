@@ -1,5 +1,5 @@
 import { DomainRegistryIdl, DomainRegistryProgram } from "@fogo/sessions-idls";
-import { sha256 } from "@noble/hashes/sha2";
+import { sha256 } from "@noble/hashes/sha2.js";
 import { PublicKey } from "@solana/web3.js";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
@@ -10,7 +10,7 @@ type AnchorArgs = Parameters<typeof createAnchorProvider>[0];
 
 // Remove this if we fix the @fogo/sessions-sdk import issue
 export const getDomainRecordAddress = (domain: string) => {
-  const hash = sha256(domain);
+  const hash = sha256(new TextEncoder().encode(domain));
   return PublicKey.findProgramAddressSync(
     [Buffer.from("domain-record"), hash],
     new PublicKey(DomainRegistryIdl.address),

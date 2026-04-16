@@ -33,7 +33,7 @@
     "typescript": "catalog:"
   },
   "engines": {
-    "node": "22"
+    "node": "24"
   },
   "name": "@fogo/sessions-demo",
   "private": true,

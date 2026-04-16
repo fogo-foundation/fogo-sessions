@@ -31,11 +31,11 @@ import {
 import type {
   AddressLookupTableAccount,
   TransactionError,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import {
   Keypair,
   PublicKey,
-  TransactionInstruction,
   VersionedTransaction,
   Connection as Web3Connection,
 } from "@solana/web3.js";
@@ -296,7 +296,7 @@ const buildTransaction = async (
       (tx) =>
         appendTransactionMessageInstructions(
           instructions.map((instruction) =>
-            instruction instanceof TransactionInstruction
+            "programId" in instruction
               ? fromLegacyTransactionInstruction(instruction)
               : instruction,
           ),

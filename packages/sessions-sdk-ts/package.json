@@ -12,6 +12,7 @@
     "@solana/web3.js": "catalog:",
     "@wormhole-foundation/sdk": "catalog:",
     "@wormhole-foundation/sdk-base": "catalog:",
+    "@wormhole-foundation/sdk-connect": "catalog:",
     "@wormhole-foundation/sdk-route-ntt": "catalog:",
     "@wormhole-foundation/sdk-solana-core": "catalog:",
     "@wormhole-foundation/sdk-solana-ntt": "catalog:",

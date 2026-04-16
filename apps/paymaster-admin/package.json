@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@fogo/component-library": "workspace:*",
-    "@fogo/sessions-sdk": "workspace:",
+    "@fogo/sessions-sdk": "workspace:^",
     "@fogo/sessions-sdk-react": "workspace:*",
     "@neondatabase/serverless": "catalog:",
     "@phosphor-icons/react": "catalog:",
@@ -34,7 +34,7 @@
     "vercel": "catalog:"
   },
   "engines": {
-    "node": "22"
+    "node": "24"
   },
   "name": "@fogo/paymaster-admin",
   "private": true,

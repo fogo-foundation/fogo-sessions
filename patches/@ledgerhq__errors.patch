@@ -1,0 +1,10 @@
+diff --git a/lib-es/index.js b/lib-es/index.js
+index effb8674ab85fe229403fd8d89b619757d1961c3..c9294b98a27b11e1a685b1fd0f93a182738c17ad 100644
+--- a/lib-es/index.js
++++ b/lib-es/index.js
+@@ -1,4 +1,4 @@
+-import { serializeError, deserializeError, createCustomErrorClass, addCustomErrorDeserializer, } from "./helpers";
++import { serializeError, deserializeError, createCustomErrorClass, addCustomErrorDeserializer, } from "./helpers.js";
+ export { serializeError, deserializeError, createCustomErrorClass, addCustomErrorDeserializer };
+ export const AccountNameRequiredError = createCustomErrorClass("AccountNameRequired");
+ export const AccountNotSupported = createCustomErrorClass("AccountNotSupported");

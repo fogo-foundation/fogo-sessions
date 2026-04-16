@@ -33,7 +33,7 @@ export const verifyMessageWithKey = async (
   const isValid = await crypto.subtle.verify(
     { name: "Ed25519" },
     publicKey,
-    bs58.decode(signature),
+    Buffer.from(bs58.decode(signature)),
     new TextEncoder().encode(message),
   );
 
