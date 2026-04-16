@@ -1,5 +1,12 @@
 # @fogo/sessions-sdk
 
+## 0.1.9 (2026-04-16)
+
+### Fixes
+
+- Apply biome fixes treewide
+- Upgrade dependencies
+
 ## 0.1.8 (2026-02-04)
 
 ### Fixes

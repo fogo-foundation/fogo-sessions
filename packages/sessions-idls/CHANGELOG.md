@@ -1,5 +1,12 @@
 # @fogo/sessions-idls
 
+## 0.1.4 (2026-04-16)
+
+### Fixes
+
+- Apply biome fixes treewide
+- Upgrade dependencies
+
 ## 0.1.3 (2026-04-09)
 
 ### Fixes

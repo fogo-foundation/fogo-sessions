@@ -1,5 +1,13 @@
 # @fogo/sessions-sdk-react
 
+## 0.1.17 (2026-04-16)
+
+### Fixes
+
+- Apply biome fixes treewide
+- Silence errors from fetching token price
+- Upgrade dependencies
+
 ## 0.1.16 (2026-04-09)
 
 ### Fixes
