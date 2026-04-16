@@ -1,5 +1,12 @@
 # @fogo/sessions-sdk-web
 
+## 0.1.1 (2026-04-16)
+
+### Fixes
+
+- Apply biome fixes treewide
+- Upgrade dependencies
+
 ## 0.1.0 (2026-01-11)
 
 ### Breaking Changes
