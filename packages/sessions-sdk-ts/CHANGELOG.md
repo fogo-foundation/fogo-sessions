@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.1.10 (2026-04-20)
+
+### Fixes
+
+- Optimize transaction size by not including the public key in the Ed25519Program instruction if it's already present in the message.
+
 ## 0.1.9 (2026-04-16)
 
 ### Fixes
