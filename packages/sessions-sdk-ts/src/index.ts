@@ -672,16 +672,16 @@ const buildIntentInstruction = async (
   );
   if (publicKeyOffsetInMessage !== undefined) {
     return buildEd25519InstructionWithOffsets({
-      publicKey: publicKey,
-      signature,
       message: signedMessage,
+      publicKey: publicKey,
       publicKeyOffsetInMessage,
+      signature,
     });
   } else {
     return Ed25519Program.createInstructionWithPublicKey({
+      message: signedMessage,
       publicKey,
       signature,
-      message: signedMessage,
     });
   }
 };
@@ -738,9 +738,9 @@ const buildEd25519InstructionWithOffsets = (params: {
   instructionData.set(message, messageDataOffset);
 
   return new TransactionInstruction({
+    data: Buffer.from(instructionData),
     keys: [],
     programId: Ed25519Program.programId,
-    data: Buffer.from(instructionData),
   });
 };
 
