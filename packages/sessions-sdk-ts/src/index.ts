@@ -673,7 +673,6 @@ const buildIntentInstruction = async (
   if (publicKeyOffsetInMessage !== undefined) {
     return buildEd25519InstructionWithOffsets({
       message: signedMessage,
-      publicKey: publicKey,
       publicKeyOffsetInMessage,
       signature,
     });
@@ -692,17 +691,11 @@ const ED25519_SIGNATURE_LEN = 64;
 const ED25519_CURRENT_INSTRUCTION_INDEX = 0xff_ff;
 
 const buildEd25519InstructionWithOffsets = (params: {
-  publicKey: Uint8Array;
   signature: Uint8Array;
   message: Uint8Array;
   publicKeyOffsetInMessage: number;
 }): TransactionInstruction => {
-  const { publicKey, signature, message, publicKeyOffsetInMessage } = params;
-  if (publicKey.length !== ED25519_PUBLIC_KEY_LEN) {
-    throw new Error(
-      `Public Key must be ${ED25519_PUBLIC_KEY_LEN} bytes but received ${publicKey.length} bytes`,
-    );
-  }
+  const { signature, message, publicKeyOffsetInMessage } = params;
   if (signature.length !== ED25519_SIGNATURE_LEN) {
     throw new Error(
       `Signature must be ${ED25519_SIGNATURE_LEN} bytes but received ${signature.length} bytes`,
