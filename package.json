@@ -16,7 +16,6 @@
   "scripts": {
     "fix:lint": "biome check --max-diagnostics=none --write",
     "install:modules": "[ $CI ] && true || pnpm install",
-    "prepare": "./scripts/ci/npm-prepare.sh",
     "run:domain-registry": "domain-registry",
     "run:initialize-chain-id": "initialize-chain-id",
     "run:initialize-tollbooth": "initialize-tollbooth",
