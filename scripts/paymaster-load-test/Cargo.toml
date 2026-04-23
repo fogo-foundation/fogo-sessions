@@ -32,7 +32,7 @@ solana-pubkey = { workspace = true }
 solana-signature = { workspace = true }
 solana-signer = { workspace = true }
 solana-transaction = { workspace = true }
-spl-memo = "6.0.0"
+spl-memo = { workspace = true }
 spl-token = "7.0.0"
 time = "0.3.44"
 tokio = {workspace = true}
