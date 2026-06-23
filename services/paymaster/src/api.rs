@@ -23,7 +23,7 @@ use axum::{
 use axum_extra::headers::Origin;
 use axum_extra::TypedHeader;
 use axum_prometheus::metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
-use axum_prometheus::PrometheusMetricLayer;
+use axum_prometheus::{EndpointLabel, PrometheusMetricLayerBuilder};
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
@@ -847,7 +847,12 @@ pub async fn run_server(
         .install_recorder()
         .expect("install metrics recorder");
 
-    let prometheus_layer = PrometheusMetricLayer::new();
+    let (prometheus_layer, handle) = PrometheusMetricLayerBuilder::new()
+        .with_endpoint_label_type(EndpointLabel::MatchedPathWithFallbackFn(|_path| {
+            "<other>".to_string()
+        }))
+        .with_metrics_from_fn(|| handle)
+        .build_pair();
 
     let valiant_client = valiant_api_key.map(|key| {
         ValiantClient::from_params(&key, network_environment, valiant_url_override)
