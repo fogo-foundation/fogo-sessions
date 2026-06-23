@@ -819,6 +819,8 @@ pub async fn run_server(
         .split_for_parts();
 
     let handle = PrometheusBuilder::new()
+        .set_quantiles(&[0.5, 0.9, 0.99])
+        .unwrap()
         .set_buckets_for_metric(
             Matcher::Full(crate::metrics::GAS_SPEND_HISTOGRAM.to_string()),
             crate::metrics::TRANSACTION_COST_BUCKETS,
