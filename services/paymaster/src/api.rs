@@ -23,7 +23,7 @@ use axum::{
 use axum_extra::headers::Origin;
 use axum_extra::TypedHeader;
 use axum_prometheus::metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
-use axum_prometheus::PrometheusMetricLayer;
+use axum_prometheus::{EndpointLabel, PrometheusMetricLayerBuilder};
 use base64::Engine;
 use dashmap::DashMap;
 use fogo_sessions_sdk::domain_registry::get_domain_record_address;
@@ -819,6 +819,8 @@ pub async fn run_server(
         .split_for_parts();
 
     let handle = PrometheusBuilder::new()
+        .set_quantiles(&[0.5, 0.9, 0.99])
+        .unwrap()
         .set_buckets_for_metric(
             Matcher::Full(crate::metrics::GAS_SPEND_HISTOGRAM.to_string()),
             crate::metrics::TRANSACTION_COST_BUCKETS,
@@ -847,7 +849,11 @@ pub async fn run_server(
         .install_recorder()
         .expect("install metrics recorder");
 
-    let prometheus_layer = PrometheusMetricLayer::new();
+    let prometheus_layer = PrometheusMetricLayerBuilder::new()
+        .with_endpoint_label_type(EndpointLabel::MatchedPathWithFallbackFn(|_path| {
+            "<other>".to_string()
+        }))
+        .build();
 
     let valiant_client = valiant_api_key.map(|key| {
         ValiantClient::from_params(&key, network_environment, valiant_url_override)
