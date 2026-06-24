@@ -849,12 +849,11 @@ pub async fn run_server(
         .install_recorder()
         .expect("install metrics recorder");
 
-    let (prometheus_layer, handle) = PrometheusMetricLayerBuilder::new()
+    let prometheus_layer = PrometheusMetricLayerBuilder::new()
         .with_endpoint_label_type(EndpointLabel::MatchedPathWithFallbackFn(|_path| {
             "<other>".to_string()
         }))
-        .with_metrics_from_fn(|| handle)
-        .build_pair();
+        .build();
 
     let valiant_client = valiant_api_key.map(|key| {
         ValiantClient::from_params(&key, network_environment, valiant_url_override)
