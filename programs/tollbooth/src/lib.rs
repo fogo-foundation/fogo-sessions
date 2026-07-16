@@ -9,6 +9,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke_signed;
 use anchor_spl::associated_token::get_associated_token_address;
 use anchor_spl::token::{Mint, Token, TokenAccount};
+use fogo_sessions_sdk::session::DomainHash;
 use fogo_sessions_sdk::{
     session::Session, token::instruction::transfer, token::PROGRAM_SIGNER_SEED,
 };
@@ -18,6 +19,18 @@ declare_id!("toLLShH3xqYgVZuNUotUgQNWZ3Ldwrq9qCp27sJBaDp");
 
 const TOLL_RECIPIENT_SEED: &[u8] = b"toll_recipient";
 const TOLL_RECIPIENT_ID: u8 = 0;
+
+pub fn get_domain_toll_recipient_address(domain_hash: &DomainHash) -> Pubkey {
+    Pubkey::find_program_address(
+        &[
+            TOLL_RECIPIENT_SEED,
+            &[TOLL_RECIPIENT_ID],
+            domain_hash.as_ref(),
+        ],
+        &crate::ID,
+    )
+    .0
+}
 
 #[program]
 pub mod tollbooth {
@@ -40,15 +53,7 @@ pub mod tollbooth {
 
         require_eq!(
             get_associated_token_address(
-                &Pubkey::find_program_address(
-                    &[
-                        TOLL_RECIPIENT_SEED,
-                        &[TOLL_RECIPIENT_ID],
-                        ctx.accounts.session.get_domain_hash_checked()?.as_ref(),
-                    ],
-                    &crate::ID
-                )
-                .0,
+                &get_domain_toll_recipient_address(ctx.accounts.session.get_domain_hash_checked()?),
                 &ctx.accounts.mint.key()
             ),
             ctx.accounts.destination.key(),

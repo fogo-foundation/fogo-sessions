@@ -22,6 +22,7 @@ bytemuck = {workspace = true}
 clap = {workspace = true}
 config = "0.15.13"
 dashmap = {workspace = true}
+domain-registry = { path = "../../programs/domain-registry", features = ["no-entrypoint"] }
 dotenvy = "0.15.7"
 fogo-sessions-sdk = { version = "0.7.0", path = "../../packages/sessions-sdk-rs" }
 futures = {workspace = true}
@@ -29,6 +30,7 @@ governor = {workspace = true}
 hex = {workspace = true}
 intent-transfer = {workspace = true}
 libsecp256k1 = "0.6.0"
+mpl-token-metadata = {workspace = true}
 nonempty = "0.12.0"
 num-traits = {workspace = true}
 opentelemetry = "0.30.0"
@@ -65,6 +67,7 @@ solana-transaction = {workspace = true}
 solana-transaction-error = {workspace = true}
 solana-transaction-status-client-types = {workspace = true}
 spl-associated-token-account = {workspace = true}
+spl-memo = {workspace = true}
 spl-token = {workspace = true}
 sqlx = { version = "0.8", features = [ "postgres", "runtime-tokio", "tls-native-tls", "uuid" ] }
 tokio = {workspace = true}
@@ -85,6 +88,10 @@ path = "src/bin/tx_validator.rs"
 [[bin]]
 name = "paymaster-config-sync"
 path = "src/bin/config_sync.rs"
+
+[[bin]]
+name = "paymaster-domain-registry-clerk"
+path = "src/bin/domain_registry_clerk.rs"
 
 [lints]
 workspace = true

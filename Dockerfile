@@ -19,3 +19,4 @@ RUN apt-get update && apt-get install -y \
 
 # Copy artifacts from other images
 COPY --from=build /src/output/fogo-paymaster /usr/local/bin/
+COPY --from=build /src/output/paymaster-domain-registry-clerk /usr/local/bin/
