@@ -5,109 +5,109 @@ packages:
   - scripts/ts
 
 catalog:
-  '@axe-core/react': ^4.11.1
+  '@axe-core/react': ^4.14.0
   '@babel/preset-typescript': ^7.27.1
   '@better-builds/ts-duality': ^0.1.2
-  '@biomejs/biome': ^2.4.12
-  '@changesets/cli': ^2.30.0
+  '@biomejs/biome': 2.4.12
+  '@changesets/cli': ^2.31.1
   '@coral-xyz/anchor': ^0.32.1
-  '@cprussin/jest-config': ^3.1.3
+  '@cprussin/jest-config': ^3.1.4
   '@cprussin/prettier-config': ^3.0.0
-  '@cprussin/transform-package-json': ^2.1.0
+  '@cprussin/transform-package-json': ^2.1.1
   '@cprussin/tsconfig': ^4.0.2
   '@fogolend/fns-client': ^0.1.0
-  '@ledgerhq/hw-transport': ^6.35.0
-  '@ledgerhq/hw-transport-node-hid': ^6.33.0
+  '@ledgerhq/hw-transport': ^6.37.0
+  '@ledgerhq/hw-transport-node-hid': ^6.33.5
   '@metaplex-foundation/mpl-token-metadata': ^3.4.0
-  '@metaplex-foundation/umi': ^1.5.1
-  '@metaplex-foundation/umi-bundle-defaults': ^1.5.1
-  '@metaplex-foundation/umi-web3js-adapters': ^1.5.1
-  '@neondatabase/serverless': ^1.0.2
-  '@next/third-parties': ^16.2.4
-  '@noble/hashes': ^2.2.0
+  '@metaplex-foundation/umi': ^1.6.0
+  '@metaplex-foundation/umi-bundle-defaults': ^1.6.0
+  '@metaplex-foundation/umi-web3js-adapters': ^1.6.0
+  '@neondatabase/serverless': ^1.2.1
+  '@next/third-parties': ^16.4.6
+  '@noble/hashes': ^2.4.0
   '@phosphor-icons/react': ^2.1.10
-  '@radix-ui/react-slot': ^1.2.4
+  '@radix-ui/react-slot': ^1.5.0
   '@react-hookz/web': 25.2.0
-  '@solana-mobile/wallet-adapter-mobile': ^2.2.8
+  '@solana-mobile/wallet-adapter-mobile': ^2.3.0
   '@solana-program/token': ^0.13.0
-  '@solana/compat': ^6.8.0
-  '@solana/kit': ^6.8.0
-  '@solana/spl-token': ^0.4.14
+  '@solana/compat': ~6.8.0
+  '@solana/kit': ~6.8.0
+  '@solana/spl-token': ^0.4.15
   '@solana/wallet-adapter-backpack': 0.1.14
   '@solana/wallet-adapter-base': 0.9.27
-  '@solana/wallet-adapter-ledger': ^0.9.29
-  '@solana/wallet-adapter-wallets': ^0.19.38
-  '@solana/wallet-standard-features': ^1.3.0
-  '@solana/wallet-standard-wallet-adapter-react': ^1.1.4
-  '@solana/web3.js': ^1.98.4
-  '@solana/webcrypto-ed25519-polyfill': ^6.8.0
-  '@storybook/addon-styling-webpack': ^3.0.2
-  '@storybook/addon-themes': ^10.3.5
-  '@storybook/nextjs': ^10.3.5
-  '@storybook/react': ^10.3.5
+  '@solana/wallet-adapter-ledger': ^0.9.30
+  '@solana/wallet-adapter-wallets': ^0.19.40
+  '@solana/wallet-standard-features': ^1.5.0
+  '@solana/wallet-standard-wallet-adapter-react': ^1.1.8
+  '@solana/web3.js': ^1.99.0
+  '@solana/webcrypto-ed25519-polyfill': ~6.8.0
+  '@storybook/addon-styling-webpack': ^3.0.3
+  '@storybook/addon-themes': ^10.6.8
+  '@storybook/nextjs': ^10.6.8
+  '@storybook/react': ^10.6.8
   '@svgr/webpack': ^8.1.0
-  '@swc/cli': ^0.8.1
-  '@swc/core': ^1.15.26
-  '@testing-library/dom': ^10.4.1
+  '@swc/cli': ^0.8.2
+  '@swc/core': ^1.16.22
+  '@testing-library/dom': ^10.4.2
   '@testing-library/jest-dom': ^6.9.1
-  '@testing-library/react': ^16.3.2
+  '@testing-library/react': ^16.3.3
   '@types/bn.js': ^5.2.0
   '@types/jest': ^30.0.0
-  '@types/node': ^25.6.0
-  '@types/pg': ^8.20.0
-  '@types/react': ^19.2.14
-  '@types/react-dom': ^19.2.3
+  '@types/node': ^25.9.9
+  '@types/pg': ^8.23.1
+  '@types/react': ^19.3.0
+  '@types/react-dom': ^19.3.0
   '@types/yargs': ^17.0.35
-  '@wormhole-foundation/sdk': ^4.17.0
-  '@wormhole-foundation/sdk-base': ^4.17.0
-  '@wormhole-foundation/sdk-connect': ^4.17.0
+  '@wormhole-foundation/sdk': ^4.24.0
+  '@wormhole-foundation/sdk-base': ^4.24.0
+  '@wormhole-foundation/sdk-connect': ^4.24.0
   '@wormhole-foundation/sdk-route-ntt': ^4.0.17
-  '@wormhole-foundation/sdk-solana-core': ^4.17.0
+  '@wormhole-foundation/sdk-solana-core': ^4.24.0
   '@wormhole-foundation/sdk-solana-ntt': ^4.0.17
-  '@yudiel/react-qr-scanner': ^2.5.1
-  ace-builds: ^1.43.6
-  autoprefixer: ^10.5.0
+  '@yudiel/react-qr-scanner': ^2.6.0
+  ace-builds: ^1.45.2
+  autoprefixer: ^10.7.0
   babel-plugin-react-compiler: 19.1.0-rc.1
-  bn.js: ^5.2.3
+  bn.js: ^5.2.5
   bs58: ^6.0.0
   class-variance-authority: ^0.7.1
   clsx: ^2.1.1
   copy-and-watch: ^0.1.8
   copyfiles: ^2.4.1
-  css-loader: ^7.1.4
-  dnum: ^2.17.0
-  idb: ^8.0.3
-  jest: ^30.3.0
-  lucide-react: ^1.8.0
+  css-loader: ^7.1.5
+  dnum: ^2.18.1
+  idb: ^8.0.4
+  jest: ^30.5.2
+  lucide-react: ^1.79.0
   modern-normalize: ^3.0.1
-  motion: ^12.38.0
-  next: ^16.2.4
-  pino: ^10.3.1
-  pino-pretty: ^13.1.3
-  postcss: ^8.5.10
+  motion: ^12.43.0
+  next: ^16.4.6
+  pino: ^10.4.0
+  pino-pretty: ^13.2.0
+  postcss: ^8.5.33
   postcss-loader: ^8.1.1
   prettier: ^3.5.3
-  puppeteer: ^24.41.0
+  puppeteer: ^24.43.1
   qrcode.react: ^4.2.0
-  react: ^19.2.5
-  react-ace: ^14.0.1
-  react-aria: ^3.48.0
-  react-aria-components: ^1.17.0
-  react-dom: ^19.2.5
-  sass: ^1.99.0
-  sass-loader: ^16.0.7
-  smol-toml: ^1.6.1
-  storybook: ^10.3.5
+  react: ^19.3.1
+  react-ace: ^14.1.0
+  react-aria: ~3.48.0
+  react-aria-components: ~1.17.0
+  react-dom: ^19.3.1
+  sass: ^1.108.2
+  sass-loader: ^16.0.8
+  smol-toml: ^1.9.1
+  storybook: ^10.6.8
   style-loader: ^4.0.0
-  stylelint: ^17.8.0
+  stylelint: ^17.16.0
   stylelint-config-standard-scss: ^17.0.0
-  swr: ^2.4.1
-  thread-stream: ^4.0.0
-  turbo: ^2.9.6
-  typescript: ^6.0.2
-  uuid: ^13.0.0
-  vercel: ^51.5.0
-  yargs: ^18.0.0
+  swr: ^2.5.1
+  thread-stream: ^4.2.1
+  turbo: ^2.11.13
+  typescript: ^6.0.3
+  uuid: ^13.0.2
+  vercel: ^66.6.0
+  yargs: ^18.2.0
   zod: 4.3.6
 
 engineStrict: true
@@ -132,6 +132,14 @@ onlyBuiltDependencies:
   - unrs-resolver
   - usb
   - utf-8-validate
+
+overrides:
+  # @cprussin/jest-config peers on next@^15, which makes pnpm auto-install a
+  # vulnerable next@15 into packages that don't use Next. Pin it to our catalog.
+  '@cprussin/jest-config>next': 'catalog:'
+  # Adapters must share one BaseWalletAdapter class, or TS rejects them
+  # (protected members are nominal). Keep everything on the catalog pin.
+  '@solana/wallet-adapter-base': 'catalog:'
 
 packageManagerStrict: true
 
