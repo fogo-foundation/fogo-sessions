@@ -19,7 +19,7 @@ export const Root = ({ children }: Props) => (
           <FogoSessionProvider
             domain={DOMAIN}
             enableUnlimited={false}
-            network={Network.Testnet}
+            network={Network.Mainnet}
             privacyPolicyUrl="https://www.dourolabs.xyz/Privacy-Notice.pdf"
             termsOfServiceUrl="https://www.dourolabs.xyz/Paymaster-Terms-Of-Service.pdf"
           >

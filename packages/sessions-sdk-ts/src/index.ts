@@ -264,7 +264,7 @@ export const getSessionAccount = async (
   sessionPublicKey: PublicKey,
 ) => {
   const result = await connection.getAccountInfo(sessionPublicKey, "confirmed");
-  return result === null
+  return result === null || !result.owner.equals(new PublicKey(SessionManagerIdl.address))
     ? undefined
     : sessionInfoSchema.parse(
         new BorshAccountsCoder(SessionManagerIdl).decode(
