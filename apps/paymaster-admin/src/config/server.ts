@@ -40,7 +40,7 @@ export const GOOGLE_ANALYTICS_ID = defaultInProduction(
   "G-8SYVHSS051",
 );
 
-export const RPC = getEnvOrDefault("RPC", "https://testnet.fogo.io");
+export const RPC = getEnvOrDefault("RPC", "https://mainnet.fogo.io");
 export const DOMAIN = getEnvOrDefault(
   "DOMAIN",
   "https://admin.dourolabs-paymaster.xyz",
