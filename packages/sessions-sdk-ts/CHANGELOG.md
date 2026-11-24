@@ -1,5 +1,11 @@
 # @fogo/sessions-sdk
 
+## 0.1.11 (2026-11-24)
+
+### Fixes
+
+- Improve verifyLogInToken
+
 ## 0.1.10 (2026-04-20)
 
 ### Fixes
