@@ -3,6 +3,7 @@
 import { verifyLogInToken } from "@fogo/sessions-sdk";
 import { revalidateTag } from "next/cache";
 import { ZodError, z } from "zod";
+import { DOMAIN } from "../../../config/server";
 import { TransactionVariations } from "../../../db-schema";
 import { connection } from "../../../fogo-connection";
 import {
@@ -41,7 +42,11 @@ export const createOrUpdateVariation = async ({
   variation: TransactionVariations;
   sessionToken: string;
 }) => {
-  const sessionAccount = await verifyLogInToken(sessionToken, connection);
+  const sessionAccount = await verifyLogInToken(
+    sessionToken,
+    connection,
+    DOMAIN,
+  );
   const userAddress = sessionAccount?.user.toString();
   if (!userAddress) {
     throw new Error("User not found");
@@ -81,7 +86,11 @@ export const deleteVariation = async ({
   variationId: string;
   sessionToken: string;
 }) => {
-  const sessionAccount = await verifyLogInToken(sessionToken, connection);
+  const sessionAccount = await verifyLogInToken(
+    sessionToken,
+    connection,
+    DOMAIN,
+  );
   const userAddress = sessionAccount?.user.toString();
   if (!userAddress) {
     throw new Error("User not found");

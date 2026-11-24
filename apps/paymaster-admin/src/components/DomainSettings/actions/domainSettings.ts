@@ -2,6 +2,7 @@
 
 import { verifyLogInToken } from "@fogo/sessions-sdk";
 import { revalidateTag } from "next/cache";
+import { DOMAIN } from "../../../config/server";
 import { connection } from "../../../fogo-connection";
 import {
   fetchUserPaymasterData,
@@ -19,7 +20,11 @@ export const updateDomainSettings = async ({
   enablePreflightSimulation: boolean;
   sessionToken: string;
 }) => {
-  const sessionAccount = await verifyLogInToken(sessionToken, connection);
+  const sessionAccount = await verifyLogInToken(
+    sessionToken,
+    connection,
+    DOMAIN,
+  );
   const userAddress = sessionAccount?.user.toString();
   if (!userAddress) {
     throw new Error("User not found");

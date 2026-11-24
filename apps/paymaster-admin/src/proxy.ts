@@ -2,6 +2,7 @@ import { verifyLogInToken } from "@fogo/sessions-sdk";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { DOMAIN } from "./config/server";
 import { connection } from "./fogo-connection";
 
 export const config = {
@@ -16,7 +17,7 @@ export default async function proxy(request: NextRequest) {
   }
 
   try {
-    const acc = await verifyLogInToken(sessionToken, connection);
+    const acc = await verifyLogInToken(sessionToken, connection, DOMAIN);
     if (!acc) {
       return NextResponse.json("Invalid session token", { status: 401 });
     }

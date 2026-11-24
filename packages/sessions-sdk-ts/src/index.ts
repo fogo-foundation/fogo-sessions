@@ -264,7 +264,8 @@ export const getSessionAccount = async (
   sessionPublicKey: PublicKey,
 ) => {
   const result = await connection.getAccountInfo(sessionPublicKey, "confirmed");
-  return result === null || !result.owner.equals(new PublicKey(SessionManagerIdl.address))
+  return result === null ||
+    !result.owner.equals(new PublicKey(SessionManagerIdl.address))
     ? undefined
     : sessionInfoSchema.parse(
         new BorshAccountsCoder(SessionManagerIdl).decode(
@@ -524,6 +525,7 @@ const sessionInfoSchema = z
   .transform(({ session_info, major, sponsor }) => {
     let activeSessionInfo;
     let minor: 1 | 2 | 3 | 4;
+    let domainHash: Uint8Array | undefined;
 
     if ("V1" in session_info) {
       activeSessionInfo = session_info.V1["0"];
@@ -536,6 +538,9 @@ const sessionInfoSchema = z
       minor = 3;
     } else if ("V4" in session_info && "Active" in session_info.V4["0"]) {
       activeSessionInfo = session_info.V4["0"].Active["0"].active_session_info;
+      domainHash = Uint8Array.from(
+        session_info.V4["0"].Active["0"].domain_hash,
+      );
       minor = 4;
     } else {
       return;
@@ -557,6 +562,8 @@ const sessionInfoSchema = z
         "All" in activeSessionInfo.authorized_tokens
           ? AuthorizedTokens.All
           : AuthorizedTokens.Specific,
+      // Only sessions with minor version 4 or above store the domain hash
+      domainHash,
       expiration: new Date(Number(activeSessionInfo.expiration) * 1000),
       extra: activeSessionInfo.extra[0],
       major: major,
@@ -818,8 +825,11 @@ const amountToString = (amount: bigint, decimals: number): string => {
   ].join("");
 };
 
+const getDomainHash = (domain: string) =>
+  sha256(new TextEncoder().encode(domain));
+
 export const getDomainRecordAddress = (domain: string) => {
-  const hash = sha256(new TextEncoder().encode(domain));
+  const hash = getDomainHash(domain);
   return PublicKey.findProgramAddressSync(
     [Buffer.from("domain-record"), hash],
     new PublicKey(DomainRegistryIdl.address),
@@ -1566,11 +1576,13 @@ export const createLogInToken = async (session: Session) => {
  * Verify a login token
  * @param token - The login token to verify against the session public key
  * @param connection - The connection to use to get the session account
+ * @param domain - The domain the session must have been created for
  * @returns The session account if the token is valid, otherwise undefined
  */
 export const verifyLogInToken = async (
   token: string,
   connection: Connection,
+  domain: string,
 ) => {
   const [rawMessage, signature] = token.split(".");
   if (!rawMessage || !signature) return;
@@ -1593,6 +1605,18 @@ export const verifyLogInToken = async (
     new PublicKey(payload.sessionPublicKey),
   );
   if (!sessionAccount) return;
+
+  // Sessions older than minor version 4 don't store the domain hash, so we
+  // can't tell which domain they were created for and we reject them.
+  const expectedDomainHash = getDomainHash(domain);
+  if (
+    sessionAccount.domainHash?.length !== expectedDomainHash.length ||
+    !sessionAccount.domainHash.every(
+      (byte, i) => byte === expectedDomainHash[i],
+    )
+  ) {
+    return;
+  }
 
   if (sessionAccount.expiration.getTime() < Date.now()) {
     throw new Error("The session associated with this login token has expired");
